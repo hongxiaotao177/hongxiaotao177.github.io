@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<!--
+====================================================================
+ 学习笔记·双链版 —— 单文件 HTML 工具
+====================================================================
+ 修改记录：
+   v1.0  2026-07-31  首版发布
+         - AI 生成学习笔记（Kimi / Moonshot API，模型可选）
+         - 极简 Markdown 渲染（标题/粗体/列表/段落），HTML 转义防注入
+         - [[双链]] 与反链（被提到）区
+         - localStorage 本机存储（study_notes_v1 / bg_apikey 与血气分析同源共用）
+         - 手写 store-only ZIP（含 CRC32）导出 Obsidian .md
+         - 移动端优先、大按钮、输入框 >=16px
+ 说明：
+   - 完全自包含，无任何外部 CDN/库；唯一网络请求为 api.moonshot.cn
+   - 数据仅保存在本机浏览器 localStorage
+====================================================================
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>学习笔记·双链版</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; padding: 0;
+    background: #faf7f2;
+    color: #3a3a3a;
+    font-family: -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    font-size: 17px; line-height: 1.7;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 16px 16px 60px; }
+  h1.app-title { font-size: 24px; text-align: center; margin: 14px 0 4px; color: #5a4632; }
+  .app-sub { text-align: center; color: #9a8f80; font-size: 14px; margin-bottom: 16px; }
+
+  .card {
+    background: #ffffff; border-radius: 14px;
+    box-shadow: 0 2px 10px rgba(90,70,50,.06);
+    padding: 18px; margin-bottom: 16px;
+  }
+  .card h2 { font-size: 19px; margin: 0 0 12px; color: #5a4632; }
+
+  label { display: block; font-size: 15px; color: #7a6f60; margin: 10px 0 6px; }
+  input[type=text], input[type=password], select {
+    width: 100%; font-size: 16px; /* 防止 iOS 聚焦自动缩放 */
+    padding: 13px 14px; border: 1px solid #e5ddd0; border-radius: 12px;
+    background: #fdfcfa; color: #3a3a3a; outline: none;
+  }
+  input:focus, select:focus { border-color: #c9a877; }
+
+  .btn {
+    display: inline-block; width: 100%; text-align: center;
+    font-size: 18px; font-weight: 600;
+    padding: 15px 20px; margin-top: 12px;
+    border: none; border-radius: 14px; cursor: pointer;
+    background: #d8b98a; color: #fff;
+    -webkit-appearance: none;
+  }
+  .btn:active { opacity: .85; }
+  .btn.secondary { background: #efe7da; color: #6a5b47; }
+  .btn.danger { background: #e8d5d5; color: #a05a5a; font-size: 16px; padding: 10px 16px; width: auto; }
+  .btn.small { width: auto; font-size: 15px; padding: 10px 16px; margin-top: 8px; }
+  .btn:disabled { opacity: .55; cursor: default; }
+  .btn-row { display: flex; gap: 10px; }
+  .btn-row .btn { flex: 1; }
+
+  .hint { font-size: 14px; color: #9a8f80; margin-top: 8px; }
+  .msg { font-size: 15px; margin-top: 10px; padding: 10px 14px; border-radius: 10px; display: none; }
+  .msg.err { display: block; background: #fbeaea; color: #a04545; }
+  .msg.ok { display: block; background: #ecf5ec; color: #4a7a4a; }
+
+  /* 笔记列表 */
+  .note-card { display: block; }
+  .note-item {
+    background: #fff; border-radius: 14px; padding: 16px;
+    box-shadow: 0 2px 10px rgba(90,70,50,.06); margin-bottom: 12px;
+  }
+  .note-item h3 { margin: 0 0 6px; font-size: 19px; color: #4a3b28; }
+  .note-item .excerpt { font-size: 15px; color: #7a7266; margin: 0 0 8px; }
+  .note-item .meta { font-size: 13px; color: #b0a696; display: flex; justify-content: space-between; align-items: center; }
+  .empty-tip { text-align: center; color: #b0a696; padding: 30px 0; }
+
+  /* 详情页 Markdown */
+  .md-body h1 { font-size: 22px; color: #4a3b28; margin: 18px 0 8px; }
+  .md-body h2 { font-size: 20px; color: #4a3b28; margin: 16px 0 8px; border-bottom: 1px solid #efe7da; padding-bottom: 4px; }
+  .md-body h3 { font-size: 18px; color: #5a4632; margin: 14px 0 6px; }
+  .md-body p { margin: 10px 0; }
+  .md-body ul { margin: 8px 0; padding-left: 24px; }
+  .md-body li { margin: 4px 0; }
+  .md-body strong { color: #4a3b28; }
+  a.wikilink {
+    color: #b08a4f; text-decoration: none; font-weight: 600;
+    border-bottom: 2px solid #e8dcc8; padding: 2px 2px;
+  }
+  a.wikilink:active { background: #f5ecdd; }
+
+  .backlinks { margin-top: 20px; border-top: 1px dashed #e5ddd0; padding-top: 14px; }
+  .backlinks h3 { font-size: 17px; color: #7a6f60; margin: 0 0 8px; }
+  .backlink-item { display: inline-block; background: #f5efe4; color: #6a5b47; border-radius: 10px; padding: 8px 14px; margin: 4px 6px 4px 0; font-size: 16px; cursor: pointer; }
+
+  .loading { text-align: center; color: #9a8f80; padding: 14px 0; display: none; font-size: 16px; }
+  .spinner { display: inline-block; width: 18px; height: 18px; border: 3px solid #e5ddd0; border-top-color: #c9a877; border-radius: 50%; vertical-align: -3px; margin-right: 8px; animation: spin 0.9s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* 关于/版本说明 折叠区 */
+  details.about { margin-top: 24px; background: #fff; border-radius: 14px; box-shadow: 0 2px 10px rgba(90,70,50,.06); padding: 14px 18px; }
+  details.about summary { font-size: 17px; font-weight: 600; color: #7a6f60; cursor: pointer; padding: 6px 0; }
+  details.about .inner { font-size: 15px; color: #6a6255; padding-top: 8px; }
+  details.about ol { padding-left: 22px; margin: 8px 0; }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 class="app-title">📖 学习笔记·双链版</h1>
+  <div class="app-sub">AI 帮你学 · 知识相互连接 · 数据只存本机</div>
+
+  <!-- ===== 视图：首页（列表 + 设置 + 新建） ===== -->
+  <div id="viewHome">
+
+    <div class="card">
+      <h2>🔑 API 设置（Kimi）</h2>
+      <label for="apiKey">API Key（与血气分析工具同源共用）</label>
+      <input type="password" id="apiKey" placeholder="请输入 Moonshot API Key，如 sk-..." autocomplete="off">
+      <label for="modelSel">模型</label>
+      <select id="modelSel">
+        <option value="kimi-k2.6" selected>kimi-k2.6（默认）</option>
+        <option value="moonshot-v1-32k">moonshot-v1-32k</option>
+        <option value="moonshot-v1-128k">moonshot-v1-128k</option>
+      </select>
+      <div class="btn-row">
+        <button class="btn" id="btnSaveKey">保存 Key</button>
+        <button class="btn secondary" id="btnCopyKey">复制已保存 Key</button>
+      </div>
+      <div class="msg" id="keyMsg"></div>
+      <div class="hint">Key 仅保存在您自己手机的浏览器里，不会上传到任何地方。</div>
+    </div>
+
+    <div class="card">
+      <h2>✨ 新建笔记</h2>
+      <label for="topicInput">想学的主题（如：乳酸）</label>
+      <input type="text" id="topicInput" placeholder="输入一个医学主题">
+      <button class="btn" id="btnGen">🤖 AI 帮我学</button>
+      <div class="loading" id="genLoading"><span class="spinner"></span>AI 正在整理笔记，请稍候（约 10-30 秒）…</div>
+      <div class="msg" id="genMsg"></div>
+    </div>
+
+    <div class="card note-card">
+      <h2>📚 我的笔记库</h2>
+      <input type="text" id="searchInput" placeholder="🔍 搜索标题…">
+      <div class="btn-row">
+        <button class="btn secondary" id="btnExport">📦 导出全部笔记（Obsidian）</button>
+      </div>
+      <div class="msg" id="exportMsg"></div>
+    </div>
+
+    <div id="noteList"></div>
+  </div>
+
+  <!-- ===== 视图：笔记详情 ===== -->
+  <div id="viewDetail" class="hidden">
+    <button class="btn secondary" id="btnBack">← 返回笔记库</button>
+    <div class="card" style="margin-top:12px;">
+      <h2 id="detailTitle"></h2>
+      <div class="hint" id="detailTime"></div>
+      <div class="md-body" id="detailBody"></div>
+      <div class="backlinks" id="backlinkBox">
+        <h3>🔗 被提到（反链）</h3>
+        <div id="backlinkList"></div>
+      </div>
+      <div style="margin-top:18px; text-align:right;">
+        <button class="btn danger" id="btnDelete">🗑 删除本篇</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 关于 / 版本说明 ===== -->
+  <details class="about">
+    <summary>📋 关于 / 版本说明</summary>
+    <div class="inner">
+      <p><b>版本：</b>v1.0（2026-07-31）</p>
+      <p><b>数据安全：</b>所有笔记和 API Key 只保存在您本机浏览器（localStorage），不上传到任何服务器；清除浏览器数据会丢失笔记，请定期导出备份。</p>
+      <p><b>如何导入 Obsidian：</b></p>
+      <ol>
+        <li>点「导出全部笔记」，得到一个 zip 压缩包，解压出若干 .md 文件；</li>
+        <li>打开 Obsidian，新建（或打开）一个仓库（Vault）；</li>
+        <li>把所有 .md 文件拷进该仓库文件夹，[[双链]] 会自动生效。</li>
+      </ol>
+      <p><b>AI 生成失败怎么办：</b>通常是网络不通或 API Key 未填/已过期。请检查网络，并在上方「API 设置」里确认 Key 已保存后重试。</p>
+    </div>
+  </details>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ==================== 数据层 ==================== */
+var LS_NOTES = 'study_notes_v1';
+var LS_KEY = 'bg_apikey';
+
+function loadNotes(){
+  try{
+    var raw = localStorage.getItem(LS_NOTES);
+    if(!raw) return [];
+    var arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr : [];
+  }catch(e){ return []; }
+}
+function saveNotes(notes){
+  try{ localStorage.setItem(LS_NOTES, JSON.stringify(notes)); return true; }
+  catch(e){ showMsg(genMsg, '保存失败：本机存储空间不足或被禁用。', 'err'); return false; }
+}
+function findNote(title){
+  var notes = loadNotes();
+  for(var i=0;i<notes.length;i++) if(notes[i].title === title) return notes[i];
+  return null;
+}
+function getNoteById(id){
+  var notes = loadNotes();
+  for(var i=0;i<notes.length;i++) if(notes[i].id === id) return notes[i];
+  return null;
+}
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+
+/* ==================== 界面辅助 ==================== */
+function $(id){ return document.getElementById(id); }
+var apiKeyInput=$('apiKey'), modelSel=$('modelSel'), keyMsg=$('keyMsg'),
+    topicInput=$('topicInput'), genMsg=$('genMsg'), genLoading=$('genLoading'),
+    searchInput=$('searchInput'), noteList=$('noteList'), exportMsg=$('exportMsg'),
+    viewHome=$('viewHome'), viewDetail=$('viewDetail'),
+    detailTitle=$('detailTitle'), detailTime=$('detailTime'), detailBody=$('detailBody'),
+    backlinkList=$('backlinkList');
+
+function showMsg(el, text, type){
+  el.textContent = text;
+  el.className = 'msg ' + (type || 'ok');
+}
+function fmtTime(ts){
+  var d = new Date(ts);
+  function p(n){ return n<10 ? '0'+n : ''+n; }
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes());
+}
+
+/* ==================== 极简 Markdown 渲染（先转义，再处理 [[X]]） ==================== */
+function escapeHtml(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+                  .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function renderInline(escapedLine){
+  // 先 **粗体**，再把 [[X]] 换成可点链接（X 内容已在转义后的文本上匹配，再转义一次以防引号）
+  var s = escapedLine.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  s = s.replace(/\[\[([^\[\]]+)\]\]/g, function(m, name){
+    return '<a href="javascript:void(0)" class="wikilink" data-link="'+name.replace(/"/g,'&quot;')+'">'+name+'</a>';
+  });
+  return s;
+}
+function renderMarkdown(src){
+  var esc = escapeHtml(src || '');
+  var lines = esc.split(/\r?\n/);
+  var html = '', inList = false, para = [];
+  function flushPara(){
+    if(para.length){ html += '<p>' + para.map(renderInline).join('<br>') + '</p>'; para = []; }
+  }
+  function closeList(){ if(inList){ html += '</ul>'; inList = false; } }
+  for(var i=0;i<lines.length;i++){
+    var line = lines[i];
+    var t = line.replace(/^\s+|\s+$/g,'');
+    if(t === ''){ flushPara(); closeList(); continue; }
+    var m;
+    if((m = t.match(/^###\s+(.*)$/))){ flushPara(); closeList(); html += '<h3>'+renderInline(m[1])+'</h3>'; continue; }
+    if((m = t.match(/^##\s+(.*)$/))){ flushPara(); closeList(); html += '<h2>'+renderInline(m[1])+'</h2>'; continue; }
+    if((m = t.match(/^#\s+(.*)$/))){ flushPara(); closeList(); html += '<h1>'+renderInline(m[1])+'</h1>'; continue; }
+    if((m = t.match(/^[-*]\s+(.*)$/))){ flushPara(); if(!inList){ html += '<ul>'; inList = true; } html += '<li>'+renderInline(m[1])+'</li>'; continue; }
+    para.push(line);
+  }
+  flushPara(); closeList();
+  return html;
+}
+
+/* ==================== AI 调用 ==================== */
+function callAI(topic, onOk, onErr){
+  var key = (localStorage.getItem(LS_KEY) || '').trim();
+  if(!key){ onErr('还没有填写 API Key。请先在上方「API 设置」里输入并保存 Key。'); return; }
+  var model = modelSel.value;
+  var payload = {
+    model: model,
+    messages: [
+      { role: 'system', content:
+        '你是一位资深的重症医学（ICU）教学专家，为一位 60 岁的中文医生整理学习笔记。' +
+        '请严格只输出一个 JSON 对象（不要输出其他任何文字），格式如下：\n' +
+        '{"title":"主题名","content":"Markdown 正文","links":["相关主题1","相关主题2"]}\n' +
+        '要求：content 为医学学习笔记风格，包含 ## 定义、## 机制、## 临床要点、## 常见误区 等小节，' +
+        '总字数 800 字以内，使用 # / ## / ### 标题、**粗体**、- 列表；' +
+        'links 给出 5-8 个与本主题最相关的医学主题名词（只给名词本身）。' },
+      { role: 'user', content: '请帮我整理主题：' + topic }
+    ],
+    temperature: 0.4,
+    response_format: { type: 'json_object' }
+  };
+  fetch('https://api.moonshot.cn/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+    body: JSON.stringify(payload)
+  }).then(function(resp){
+    if(!resp.ok){
+      return resp.text().then(function(t){
+        var tip = '请求失败（HTTP ' + resp.status + '）。';
+        if(resp.status === 401) tip = 'API Key 无效或已过期，请检查 Key。';
+        else if(resp.status === 429) tip = '请求太频繁或额度不足，请稍后再试。';
+        else if(resp.status >= 500) tip = 'Kimi 服务器暂时繁忙，请稍后再试。';
+        throw new Error(tip);
+      });
+    }
+    return resp.json();
+  }).then(function(data){
+    var text = '';
+    try{ text = data.choices[0].message.content; }catch(e){}
+    if(!text) throw new Error('AI 返回内容为空，请重试。');
+    var parsed = parseAIJson(text);
+    if(!parsed || !parsed.title || !parsed.content){
+      throw new Error('AI 返回格式不对，请再点一次重试。');
+    }
+    if(!Array.isArray(parsed.links)) parsed.links = [];
+    onOk(parsed);
+  }).catch(function(err){
+    var m = (err && err.message) ? err.message : '网络连接失败，请检查网络后重试。';
+    if(/Failed to fetch|NetworkError|Load failed/i.test(m)) m = '网络连接失败，请检查网络后重试。';
+    onErr(m);
+  });
+}
+/* 容错解析：提取第一个 { 到最后一个 } 再 JSON.parse，兼容 ```json 围栏和多余文本 */
+function parseAIJson(text){
+  var s = String(text);
+  var i = s.indexOf('{'), j = s.lastIndexOf('}');
+  if(i < 0 || j <= i) return null;
+  var body = s.slice(i, j+1);
+  try{ return JSON.parse(body); }catch(e){ return null; }
+}
+
+/* ==================== 笔记生成流程 ==================== */
+var btnGen = $('btnGen');
+btnGen.addEventListener('click', function(){
+  var topic = topicInput.value.replace(/^\s+|\s+$/g,'');
+  if(!topic){ showMsg(genMsg, '请先输入一个想学的主题。', 'err'); return; }
+  genMsg.className = 'msg';
+  genLoading.style.display = 'block';
+  btnGen.disabled = true;
+  generateNote(topic, function(err){
+    genLoading.style.display = 'none';
+    btnGen.disabled = false;
+  });
+});
+
+function generateNote(topic, done){
+  callAI(topic, function(parsed){
+    var now = Date.now();
+    var existing = findNote(parsed.title);
+    var note;
+    if(existing){
+      existing.content = parsed.content;
+      existing.links = parsed.links;
+      existing.updatedAt = now;
+      note = existing;
+      var notes = loadNotes();
+      for(var i=0;i<notes.length;i++) if(notes[i].id === existing.id) notes[i] = existing;
+      saveNotes(notes);
+    }else{
+      note = { id: uid(), title: parsed.title, content: parsed.content,
+               links: parsed.links, createdAt: now, updatedAt: now };
+      var notes2 = loadNotes(); notes2.unshift(note); saveNotes(notes2);
+    }
+    topicInput.value = '';
+    done(null);
+    openDetail(note.id);
+  }, function(errMsg){
+    showMsg(genMsg, errMsg + '（可再点一次「AI 帮我学」重试）', 'err');
+    done(errMsg);
+  });
+}
+
+/* ==================== 列表页 ==================== */
+function renderList(){
+  var kw = searchInput.value.replace(/^\s+|\s+$/g,'');
+  var notes = loadNotes();
+  var html = '';
+  var count = 0;
+  for(var i=0;i<notes.length;i++){
+    var n = notes[i];
+    if(kw && n.title.indexOf(kw) < 0) continue;
+    count++;
+    var plain = (n.content || '').replace(/[#*\[\]]/g,'').replace(/\s+/g,' ');
+    var excerpt = plain.length > 80 ? plain.slice(0,80) + '…' : plain;
+    var linkCount = (n.links ? n.links.length : 0);
+    html += '<div class="note-item" data-id="'+n.id+'">' +
+      '<h3>'+escapeHtml(n.title)+'</h3>' +
+      '<p class="excerpt">'+escapeHtml(excerpt)+'</p>' +
+      '<div class="meta"><span>🕐 '+fmtTime(n.updatedAt)+'</span><span>🔗 '+linkCount+' 条关联</span></div>' +
+      '</div>';
+  }
+  if(count === 0){
+    html = '<div class="empty-tip">' + (loadNotes().length === 0 ? '还没有笔记，输入主题让 AI 帮你学吧！' : '没有找到相关笔记') + '</div>';
+  }
+  noteList.innerHTML = html;
+}
+noteList.addEventListener('click', function(e){
+  var el = e.target;
+  while(el && el !== noteList){
+    if(el.getAttribute && el.getAttribute('data-id')){ openDetail(el.getAttribute('data-id')); return; }
+    el = el.parentNode;
+  }
+});
+searchInput.addEventListener('input', renderList);
+
+/* ==================== 详情页 + 反链 ==================== */
+var currentNoteId = null;
+
+function buildContentWithLinks(note){
+  var md = note.content || '';
+  if(note.links && note.links.length){
+    md += '\n\n## 关联线索\n';
+    for(var i=0;i<note.links.length;i++) md += '- [[' + note.links[i] + ']]\n';
+  }
+  return md;
+}
+
+function openDetail(id){
+  var note = getNoteById(id);
+  if(!note){ renderList(); return; }
+  currentNoteId = id;
+  detailTitle.textContent = note.title;
+  detailTime.textContent = '创建 '+fmtTime(note.createdAt)+' · 更新 '+fmtTime(note.updatedAt);
+  detailBody.innerHTML = renderMarkdown(buildContentWithLinks(note));
+  renderBacklinks(note);
+  viewHome.classList.add('hidden');
+  viewDetail.classList.remove('hidden');
+  window.scrollTo(0,0);
+}
+
+function renderBacklinks(note){
+  var notes = loadNotes();
+  var hits = [];
+  var needle = '[[' + note.title + ']]';
+  for(var i=0;i<notes.length;i++){
+    var n = notes[i];
+    if(n.id === note.id) continue;
+    var inContent = (n.content || '').indexOf(needle) >= 0;
+    var inLinks = false;
+    if(n.links){ for(var j=0;j<n.links.length;j++){ if(n.links[j] === note.title){ inLinks = true; break; } } }
+    if(inContent || inLinks) hits.push(n);
+  }
+  if(hits.length === 0){
+    backlinkList.innerHTML = '<span class="hint">暂无其他笔记提到本篇。</span>';
+  }else{
+    var html = '';
+    for(var k=0;k<hits.length;k++){
+      html += '<span class="backlink-item" data-id="'+hits[k].id+'">'+escapeHtml(hits[k].title)+'</span>';
+    }
+    backlinkList.innerHTML = html;
+  }
+}
+
+/* 事件委托：[[X]] 链接点击 */
+detailBody.addEventListener('click', function(e){
+  var el = e.target;
+  while(el && el !== detailBody){
+    if(el.getAttribute && el.getAttribute('data-link')){
+      handleLinkClick(el.getAttribute('data-link'));
+      return;
+    }
+    el = el.parentNode;
+  }
+});
+backlinkList.addEventListener('click', function(e){
+  var el = e.target;
+  while(el && el !== backlinkList){
+    if(el.getAttribute && el.getAttribute('data-id')){ openDetail(el.getAttribute('data-id')); return; }
+    el = el.parentNode;
+  }
+});
+
+function handleLinkClick(name){
+  var target = findNote(name);
+  if(target){ openDetail(target.id); return; }
+  if(window.confirm('还没有《' + name + '》的笔记，让 AI 现在生成吗？')){
+    genMsg.className = 'msg';
+    showMsg(genMsg, '正在为《' + name + '》生成笔记…', 'ok');
+    genLoading.style.display = 'block';
+    generateNote(name, function(err){
+      genLoading.style.display = 'none';
+      if(err){ viewHome.classList.remove('hidden'); viewDetail.classList.add('hidden'); window.scrollTo(0,0); }
+    });
+  }
+}
+
+$('btnBack').addEventListener('click', function(){
+  viewDetail.classList.add('hidden');
+  viewHome.classList.remove('hidden');
+  renderList();
+});
+
+$('btnDelete').addEventListener('click', function(){
+  var note = getNoteById(currentNoteId);
+  if(!note) return;
+  if(!window.confirm('确定删除《' + note.title + '》吗？删除后无法恢复。')) return;
+  var notes = loadNotes().filter(function(n){ return n.id !== note.id; });
+  saveNotes(notes);
+  viewDetail.classList.add('hidden');
+  viewHome.classList.remove('hidden');
+  renderList();
+});
+
+/* ==================== API Key 设置 ==================== */
+apiKeyInput.value = localStorage.getItem(LS_KEY) || '';
+$('btnSaveKey').addEventListener('click', function(){
+  var v = apiKeyInput.value.replace(/^\s+|\s+$/g,'');
+  if(!v){ showMsg(keyMsg, 'Key 不能为空。', 'err'); return; }
+  try{
+    localStorage.setItem(LS_KEY, v);
+    showMsg(keyMsg, '✅ Key 已保存到本机。', 'ok');
+  }catch(e){
+    showMsg(keyMsg, '保存失败：浏览器禁止了本地存储。', 'err');
+  }
+});
+$('btnCopyKey').addEventListener('click', function(){
+  var v = localStorage.getItem(LS_KEY) || '';
+  if(!v){ showMsg(keyMsg, '还没有保存过 Key。', 'err'); return; }
+  function fallback(){
+    apiKeyInput.value = v;
+    apiKeyInput.select();
+    try{ document.execCommand('copy'); showMsg(keyMsg, '✅ 已复制 Key。', 'ok'); }
+    catch(e){ showMsg(keyMsg, '复制失败，请长按输入框手动复制。', 'err'); }
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(v).then(function(){
+      showMsg(keyMsg, '✅ 已复制 Key，可粘贴到备忘录备份。', 'ok');
+    }).catch(fallback);
+  }else fallback();
+});
+
+/* ==================== ZIP 导出（手写 store-only + CRC32） ==================== */
+var CRC_TABLE = (function(){
+  var t = new Uint32Array(256);
+  for(var n=0;n<256;n++){
+    var c = n;
+    for(var k=0;k<8;k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+function crc32(bytes){
+  var c = 0xFFFFFFFF;
+  for(var i=0;i<bytes.length;i++) c = CRC_TABLE[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+function utf8Bytes(str){
+  if(typeof TextEncoder !== 'undefined') return new TextEncoder().encode(str);
+  var s = unescape(encodeURIComponent(str)), b = new Uint8Array(s.length);
+  for(var i=0;i<s.length;i++) b[i] = s.charCodeAt(i);
+  return b;
+}
+function dosDateTime(d){
+  var time = ((d.getHours() & 31) << 11) | ((d.getMinutes() & 63) << 5) | ((Math.floor(d.getSeconds()/2)) & 31);
+  var date = (((d.getFullYear()-1980) & 127) << 9) | (((d.getMonth()+1) & 15) << 5) | (d.getDate() & 31);
+  return { time: time, date: date };
+}
+/* files: [{name: string, data: Uint8Array}] → Uint8Array (store-only zip, UTF-8 flag bit 11 置位) */
+function buildZip(files){
+  var parts = [], central = [], offset = 0;
+  var dt = dosDateTime(new Date());
+  for(var i=0;i<files.length;i++){
+    var nameB = utf8Bytes(files[i].name);
+    var data = files[i].data;
+    var crc = crc32(data);
+    // Local file header (30 bytes + name)
+    var lh = new Uint8Array(30 + nameB.length);
+    var lv = new DataView(lh.buffer);
+    lv.setUint32(0, 0x04034b50, true);   // signature
+    lv.setUint16(4, 20, true);           // version needed
+    lv.setUint16(6, 0x0800, true);       // flags: bit 11 = UTF-8 文件名
+    lv.setUint16(8, 0, true);            // method: store
+    lv.setUint16(10, dt.time, true);
+    lv.setUint16(12, dt.date, true);
+    lv.setUint32(14, crc, true);
+    lv.setUint32(18, data.length, true); // compressed size
+    lv.setUint32(22, data.length, true); // uncompressed size
+    lv.setUint16(26, nameB.length, true);
+    lv.setUint16(28, 0, true);           // extra length
+    lh.set(nameB, 30);
+    parts.push(lh, data);
+    // Central directory entry (46 bytes + name)
+    var ch = new Uint8Array(46 + nameB.length);
+    var cv = new DataView(ch.buffer);
+    cv.setUint32(0, 0x02014b50, true);
+    cv.setUint16(4, 20, true);           // version made by
+    cv.setUint16(6, 20, true);           // version needed
+    cv.setUint16(8, 0x0800, true);       // UTF-8 flag
+    cv.setUint16(10, 0, true);
+    cv.setUint16(12, dt.time, true);
+    cv.setUint16(14, dt.date, true);
+    cv.setUint32(16, crc, true);
+    cv.setUint32(20, data.length, true);
+    cv.setUint32(24, data.length, true);
+    cv.setUint16(28, nameB.length, true);
+    cv.setUint16(30, 0, true); cv.setUint16(32, 0, true);
+    cv.setUint16(34, 0, true); cv.setUint16(36, 0, true);
+    cv.setUint32(38, 0, true);           // external attrs
+    cv.setUint32(42, offset, true);      // local header offset
+    ch.set(nameB, 46);
+    central.push(ch);
+    offset += lh.length + data.length;
+  }
+  var centralSize = 0;
+  for(var j=0;j<central.length;j++) centralSize += central[j].length;
+  // End of central directory (22 bytes)
+  var eocd = new Uint8Array(22);
+  var ev = new DataView(eocd.buffer);
+  ev.setUint32(0, 0x06054b50, true);
+  ev.setUint16(4, 0, true); ev.setUint16(6, 0, true);
+  ev.setUint16(8, files.length, true);
+  ev.setUint16(10, files.length, true);
+  ev.setUint32(12, centralSize, true);
+  ev.setUint32(16, offset, true);
+  ev.setUint16(20, 0, true);
+  // 拼接
+  var total = offset + centralSize + 22;
+  var out = new Uint8Array(total), p = 0;
+  for(var a=0;a<parts.length;a++){ out.set(parts[a], p); p += parts[a].length; }
+  for(var b=0;b<central.length;b++){ out.set(central[b], p); p += central[b].length; }
+  out.set(eocd, p);
+  return out;
+}
+
+function safeFileName(title){
+  return title.replace(/[\/\\:*?"<>|]/g, '-');
+}
+function buildMarkdown(note){
+  var md = note.content || '';
+  if(note.links && note.links.length){
+    md += '\n\n## 关联\n';
+    for(var i=0;i<note.links.length;i++) md += '- [[' + note.links[i] + ']]\n';
+  }
+  return md;
+}
+
+$('btnExport').addEventListener('click', function(){
+  var notes = loadNotes();
+  if(notes.length === 0){ showMsg(exportMsg, '还没有笔记可以导出。', 'err'); return; }
+  try{
+    var used = {}, files = [];
+    for(var i=0;i<notes.length;i++){
+      var base = safeFileName(notes[i].title) || '未命名';
+      var fname = base + '.md', n = 2;
+      while(used[fname]){ fname = base + '-' + n + '.md'; n++; }
+      used[fname] = true;
+      files.push({ name: fname, data: utf8Bytes(buildMarkdown(notes[i])) });
+    }
+    var zipBytes = buildZip(files);
+    var blob = new Blob([zipBytes], { type: 'application/zip' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    var d = new Date();
+    function p(x){ return x<10 ? '0'+x : ''+x; }
+    a.href = url;
+    // 文件名用 ASCII：部分浏览器（Chromium 系/Android WebView）会丢弃含中文的 download 文件名
+    a.download = 'xuexi-notes_' + d.getFullYear() + p(d.getMonth()+1) + p(d.getDate()) + '.zip';
+    document.body.appendChild(a);
+    a.click();
+    // 延迟移除锚点和释放 blob：部分浏览器（尤其 iOS/Android WebView）
+    // 在元素被立即移除或 blob 被提前释放时，会丢失 download 文件名或下载失败
+    setTimeout(function(){
+      try{ document.body.removeChild(a); }catch(_){}
+      URL.revokeObjectURL(url);
+    }, 5000);
+    showMsg(exportMsg, '✅ 已导出 ' + files.length + ' 篇笔记。', 'ok');
+  }catch(e){
+    showMsg(exportMsg, '导出失败：' + e.message, 'err');
+  }
+});
+
+/* ==================== 初始化 ==================== */
+renderList();
+})();
+</script>
+</body>
+</html>
