@@ -4,6 +4,13 @@
  学习笔记·双链版 —— 单文件 HTML 工具
 ====================================================================
  修改记录：
+   v1.4.1 2026-07-31 修复+增强：
+         - 修复「删除这条注释」点不动：删除处理原先误绑在 detailBody 的点击委托上，
+           而气泡 #annotPop 不是 detailBody 的子元素，事件根本到不了处理器；
+           现改为气泡自身委托（桌面 click，触摸端 touchend + elementFromPoint，
+           沿用 v1.1.1 词条菜单的触摸兼容模式），桌面和手机均可删除
+         - 气泡新增「✏️ 编辑这条注释」：textarea 预填解释手动改写；待解释空角标
+           填上内容即视为人工解释完成（pending 清除），空文本则保持待解释
    v1.0  2026-07-31  首版发布
    v1.0.1 2026-07-31 修复：kimi-k2.6 不支持 response_format 导致 AI 调用 HTTP 400；
                      导出下载文件名改 ASCII（防 Chromium 系丢名）；导出锚点延迟释放
@@ -137,7 +144,15 @@
   #annotPop { display: none; position: absolute; z-index: 60; max-width: 300px; background: #fffdf8;
     border: 1px solid #e5d9c4; border-radius: 12px; box-shadow: 0 4px 18px rgba(80,60,30,.18);
     padding: 12px 14px; font-size: 15px; line-height: 1.7; color: #4a3f33; }
-  #annotPop .pop-del { margin-top: 8px; font-size: 12px; color: #b0906a; text-decoration: underline; cursor: pointer; text-align: right; }
+  #annotPop .pop-acts { margin-top: 8px; display: flex; justify-content: space-between; gap: 10px; }
+  #annotPop .pop-act { font-size: 13px; color: #b0906a; text-decoration: underline; cursor: pointer; padding: 4px 0; }
+  #annotPop .pop-del { color: #a05a5a; }
+  /* v1.4.1 气泡内编辑框 */
+  #annotPop textarea { width: 100%; min-height: 76px; margin-top: 6px; font-size: 16px; font-family: inherit;
+    padding: 10px 12px; border: 1px solid #e5ddd0; border-radius: 10px; background: #fff; color: #3a3a3a; outline: none; resize: vertical; }
+  #annotPop textarea:focus { border-color: #c9a877; }
+  #annotPop .btn-row { margin-top: 4px; }
+  #annotPop .btn.small { margin-top: 8px; padding: 9px 12px; }
   #toast { position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%); z-index: 70;
     background: rgba(255,253,248,.97); border: 1px solid #e5d9c4; border-radius: 12px;
     box-shadow: 0 4px 18px rgba(80,60,30,.18); padding: 12px 18px; font-size: 15px; color: #4a3f33; }
@@ -281,7 +296,7 @@
   <details class="about">
     <summary>📋 关于 / 版本说明</summary>
     <div class="inner">
-      <p><b>版本：</b>v1.4（2026-07-31）手动批量角标：读正文时涂黑一个词，点弹出菜单的「➕ 加角标」，立即立一个灰色虚线空角标（不发 AI 请求，可连加多个）；读完后点「🤖 批量解释」按钮，把所有空角标一次性发给 AI，解释自动填回各角标变实色。另有 v1.3 词条脚注注释（正文词条旁 ① 小角标，点开看大白话，导出转 Obsidian 标准脚注）与 v1.1 交互式改稿（分栏、快捷指令、5 版历史可回退）。AI 请求保持不传 temperature / response_format（兼容 kimi-k2.6）。</p>
+      <p><b>版本：</b>v1.4.1（2026-07-31）修复注释气泡里「删除这条注释」点不动的问题，并新增「✏️ 编辑这条注释」：点词条旁角标后可直接改写解释，待解释的空角标自己填上内容也算解释完成。上一版 v1.4 手动批量角标：读正文时涂黑一个词，点弹出菜单的「➕ 加角标」，立即立一个灰色虚线空角标（不发 AI 请求，可连加多个）；读完后点「🤖 批量解释」按钮，把所有空角标一次性发给 AI，解释自动填回各角标变实色。另有 v1.3 词条脚注注释（正文词条旁 ① 小角标，点开看大白话，导出转 Obsidian 标准脚注）与 v1.1 交互式改稿（分栏、快捷指令、5 版历史可回退）。AI 请求保持不传 temperature / response_format（兼容 kimi-k2.6）。</p>
       <p><b>历史版本：</b>v1.2 默认改快模型（秒级响应）+ 分步进度提示（发送→思考→解析+用时秒数）；v1.1.1 修复手机词条菜单按钮；v1.1.2 AI 请求加 180 秒超时；v1.0.2 修复 AI 调用 400 报错</p>
       <p><b>数据安全：</b>所有笔记和 API Key 只保存在您本机浏览器（localStorage），不上传到任何服务器；清除浏览器数据会丢失笔记，请定期导出备份。</p>
       <p><b>如何导入 Obsidian：</b></p>
@@ -615,49 +630,143 @@ function applyAnnotBadges(note){
   }
 }
 
-/* 角标气泡 */
+/* 角标气泡（v1.4.1 重写）
+   修复：原「删除这条注释」的处理逻辑绑在 detailBody 的 click 委托上，但 #annotPop
+   并不是 detailBody 的子元素（它在 .wrap 下是兄弟节点），所以点删除永远到不了处理器；
+   移动端 document 级 touchend 还会先把气泡关掉。现改为：气泡内的所有操作（删除/编辑/
+   保存/取消）都在 annotPop 自身做委托，桌面走 click，触摸设备走 touchend +
+   elementFromPoint（沿用 v1.1.1 词条菜单的触摸兼容模式）。 */
 var annotPop = $('annotPop');
+var popIdx = -1; // 当前气泡对应的 annot 下标
+function closeAnnotPop(){ annotPop.style.display = 'none'; popIdx = -1; }
+/* 气泡内操作完成后的统一提示（复用 #toast 浮层） */
+function popToast(html, ms){
+  toast.style.display = 'block';
+  toastLoading.innerHTML = html;
+  setTimeout(function(){ toast.style.display = 'none'; }, ms || 3000);
+}
+/* 修改 annots 后统一重渲染正文（角标随数据增减自动消失/更新） */
+function rerenderDetail(note){
+  detailBody.innerHTML = renderMarkdown(buildContentWithLinks(note));
+  applyAnnotBadges(note);
+  renderBacklinks(note);
+  refreshBatchBtn();
+}
+/* 气泡"查看模式"内容（只重建 innerHTML，不动位置，取消编辑时也用它恢复） */
+function renderPopView(i){
+  var note = getNoteById(currentNoteId);
+  var a = getAnnots(note)[i];
+  if(!a) return false;
+  annotPop.innerHTML = '<b>' + escapeHtml(a.term) + '</b>：' +
+    (a.pending ? '⏳ 待解释：可点下方『批量解释』让 AI 解释，或点编辑自己写' : escapeHtml(a.note)) +
+    '<div class="pop-acts">' +
+      '<span class="pop-act" data-act="edit">✏️ 编辑这条注释</span>' +
+      '<span class="pop-act pop-del" data-act="del">删除这条注释</span>' +
+    '</div>';
+  return true;
+}
+function showAnnotPop(i, badgeEl){
+  if(!renderPopView(i)) return;
+  popIdx = i;
+  var r = badgeEl.getBoundingClientRect();
+  annotPop.style.display = 'block';
+  var pw = annotPop.offsetWidth, ph = annotPop.offsetHeight;
+  var left = Math.max(8, Math.min(r.left + window.scrollX - pw/2 + r.width/2, window.scrollX + document.documentElement.clientWidth - pw - 8));
+  var top = r.bottom + window.scrollY + 6;
+  if(top + ph > window.scrollY + document.documentElement.clientHeight - 8) top = r.top + window.scrollY - ph - 6;
+  annotPop.style.left = left + 'px';
+  annotPop.style.top = top + 'px';
+}
+/* v1.4.1 气泡"编辑模式"：textarea 预填当前解释，保存/取消 */
+function showAnnotEdit(i){
+  var note = getNoteById(currentNoteId);
+  var a = getAnnots(note)[i];
+  if(!a) return;
+  popIdx = i;
+  annotPop.innerHTML = '<b>' + escapeHtml(a.term) + '</b>：' +
+    '<textarea id="popEditTa" placeholder="用你自己的话写解释…">' +
+      (a.pending ? '' : escapeHtml(a.note)) + '</textarea>' +
+    '<div class="btn-row">' +
+      '<button type="button" class="btn small" data-act="save">💾 保存</button>' +
+      '<button type="button" class="btn small secondary" data-act="cancel">取消</button>' +
+    '</div>';
+}
+function deleteAnnot(i){
+  var note = getNoteById(currentNoteId);
+  if(note && Array.isArray(note.annots) && note.annots[i]){
+    note.annots.splice(i, 1);
+    note.updatedAt = Date.now();
+    persistNote(note);
+    rerenderDetail(note);
+  }
+  closeAnnotPop();
+  popToast('🗑 已删除注释', 2500);
+}
+function saveAnnotEdit(i){
+  var ta = $('popEditTa');
+  var note = getNoteById(currentNoteId);
+  var a = note && getAnnots(note)[i];
+  if(!a){ closeAnnotPop(); return; }
+  var v = ta ? ta.value.replace(/^\s+|\s+$/g,'') : '';
+  if(!v){
+    // 空文本不写入：pending 的仍保持待解释
+    closeAnnotPop();
+    popToast(a.pending ? '⚠️ 内容为空，仍为待解释' : '⚠️ 内容为空，未做修改', 3000);
+    return;
+  }
+  a.note = v;
+  delete a.pending; // 原本待解释且已填写内容：视为人工解释完成
+  note.updatedAt = Date.now();
+  persistNote(note);
+  rerenderDetail(note);
+  closeAnnotPop();
+  popToast('✅ 已保存', 2500);
+}
+/* 气泡内动作分派 */
+function findPopAct(target){
+  var el = target;
+  while(el && el !== annotPop){
+    if(el.getAttribute && el.getAttribute('data-act')) return el.getAttribute('data-act');
+    el = el.parentNode;
+  }
+  return null;
+}
+function runPopAction(act){
+  if(popIdx < 0) return;
+  if(act === 'del') deleteAnnot(popIdx);
+  else if(act === 'edit') showAnnotEdit(popIdx);
+  else if(act === 'save') saveAnnotEdit(popIdx);
+  else if(act === 'cancel') renderPopView(popIdx); // 取消：恢复查看模式
+}
+annotPop.addEventListener('click', function(e){
+  var act = findPopAct(e.target);
+  if(act){ e.stopPropagation(); runPopAction(act); }
+});
+/* 触摸端：touchend 里用 elementFromPoint 直接触发；命中操作钮时 preventDefault
+   阻止浏览器再合成 click（避免重复触发）；点 textarea 不拦截，保证能聚焦输入 */
+annotPop.addEventListener('touchend', function(e){
+  var t = e.changedTouches && e.changedTouches[0];
+  var el = t ? document.elementFromPoint(t.clientX, t.clientY) : e.target;
+  if(!el || !annotPop.contains(el)) return;
+  var act = findPopAct(el);
+  if(act){
+    e.preventDefault();
+    e.stopPropagation();
+    runPopAction(act);
+  }
+}, { passive: false });
+
 detailBody.addEventListener('click', function(e){
   var b = e.target;
   if(b.classList && b.classList.contains('annot-badge')){
     e.stopPropagation();
-    var note = getNoteById(currentNoteId);
-    var annots = getAnnots(note);
-    var i = +b.getAttribute('data-i');
-    var a = annots[i];
-    if(!a) return;
-    annotPop.innerHTML = '<b>' + escapeHtml(a.term) + '</b>：' +
-      (a.pending ? '⏳ 待解释：点下方『批量解释』按钮让 AI 一次性解释' : escapeHtml(a.note)) +
-      '<div class="pop-del" data-i="' + i + '">删除这条注释</div>';
-    var r = b.getBoundingClientRect();
-    annotPop.style.display = 'block';
-    var pw = annotPop.offsetWidth, ph = annotPop.offsetHeight;
-    var left = Math.max(8, Math.min(r.left + window.scrollX - pw/2 + r.width/2, window.scrollX + document.documentElement.clientWidth - pw - 8));
-    var top = r.bottom + window.scrollY + 6;
-    if(top + ph > window.scrollY + document.documentElement.clientHeight - 8) top = r.top + window.scrollY - ph - 6;
-    annotPop.style.left = left + 'px';
-    annotPop.style.top = top + 'px';
+    showAnnotPop(+b.getAttribute('data-i'), b);
     return;
   }
-  var del = e.target;
-  if(del.classList && del.classList.contains('pop-del')){
-    var note2 = getNoteById(currentNoteId);
-    if(note2 && Array.isArray(note2.annots)){
-      note2.annots.splice(+del.getAttribute('data-i'), 1);
-      note2.updatedAt = Date.now();
-      persistNote(note2);
-      detailBody.innerHTML = renderMarkdown(buildContentWithLinks(note2));
-      applyAnnotBadges(note2);
-      renderBacklinks(note2);
-      refreshBatchBtn();
-    }
-    annotPop.style.display = 'none';
-    return;
-  }
-  annotPop.style.display = 'none';
+  closeAnnotPop();
 });
 document.addEventListener('touchend', function(e){
-  if(annotPop.style.display === 'block' && !annotPop.contains(e.target)) annotPop.style.display = 'none';
+  if(annotPop.style.display === 'block' && !annotPop.contains(e.target)) closeAnnotPop();
 }, { passive: true });
 
 function openDetail(id){
