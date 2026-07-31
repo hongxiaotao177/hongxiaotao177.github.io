@@ -17,6 +17,11 @@
          （touchstart 被 preventDefault 后浏览器不再合成 click，动作改由 touchend 直接触发）
    v1.1.2 2026-07-31 修复：AI 请求加 180 秒超时（fetchWithTimeout + AbortController），
          防止 kimi-k2.6 思考型模型偶发长考/连接挂住时页面无限转圈；加载提示改为 30~90 秒预期
+   v1.4  2026-07-31 手动批量角标：
+         - 涂黑词语 → 菜单「➕ 加角标」立即立空角标（灰色虚线，不发 AI 请求），可连加多个
+         - 详情页「🤖 批量解释（N）」把所有空角标一次性发给 AI，返回后自动填回并变实色；
+           未返回的词保持待解释可再点；批量前自动存一版历史可回退
+         - annots 结构扩展为 {term,note,pending}；pending 角标不导出脚注
    v1.3  2026-07-31 词条脚注注释：
          - 「解释这个词条」/「📖 解释生词」不再把解释塞进正文，改为词条旁 ① 小角标，
            点角标弹气泡看解释（气泡内可删除该条注释）；正文一个字不加长
@@ -127,6 +132,8 @@
   .annot-badge { display: inline-block; min-width: 17px; height: 17px; line-height: 17px; text-align: center;
     background: #c9a877; color: #fff; border-radius: 50%; font-size: 11px; font-weight: 600;
     margin-left: 2px; padding: 0 3px; cursor: pointer; vertical-align: super; }
+  /* v1.4 待解释的空角标：灰底虚线 */
+  .annot-badge.pending { background: #fdfcfa; color: #9a8f80; border: 1px dashed #9a8f80; }
   #annotPop { display: none; position: absolute; z-index: 60; max-width: 300px; background: #fffdf8;
     border: 1px solid #e5d9c4; border-radius: 12px; box-shadow: 0 4px 18px rgba(80,60,30,.18);
     padding: 12px 14px; font-size: 15px; line-height: 1.7; color: #4a3f33; }
@@ -237,7 +244,10 @@
         <h3>🔗 被提到（反链）</h3>
         <div id="backlinkList"></div>
       </div>
-      <button class="btn secondary" id="btnRevise" style="margin-top:16px;">✏️ 让 AI 改</button>
+      <div class="btn-row">
+        <button class="btn secondary" id="btnRevise" style="margin-top:16px;">✏️ 让 AI 改</button>
+        <button class="btn secondary" id="btnBatchAnnot" style="margin-top:16px; display:none;">🤖 批量解释</button>
+      </div>
       <!-- v1.1 改稿区（分栏下半栏） -->
       <div class="revise-panel hidden" id="revisePanel">
         <div class="qbtn-row" id="qbtnRow"></div>
@@ -258,6 +268,7 @@
   <!-- v1.1 选中词条浮出菜单 -->
   <div id="selMenu">
     <button type="button" data-act="explain">📖 解释这个词条</button><span class="sep"></span>
+    <button type="button" data-act="mark">➕ 加角标</button><span class="sep"></span>
     <button type="button" data-act="newnote">📄 另开一篇</button><span class="sep"></span>
     <button type="button" data-act="fill">✂️ 填入要求框</button>
   </div>
@@ -270,7 +281,7 @@
   <details class="about">
     <summary>📋 关于 / 版本说明</summary>
     <div class="inner">
-      <p><b>版本：</b>v1.3（2026-07-31）词条脚注注释：选中词点「解释这个词条」或用「📖 解释生词」，正文词条旁出现 ① 小角标，点开看大白话解释，正文不再加长；导出时自动转为 Obsidian 标准脚注。另有 v1.1 交互式改稿（分栏、快捷指令、5 版历史可回退）。AI 请求保持不传 temperature / response_format（兼容 kimi-k2.6）。</p>
+      <p><b>版本：</b>v1.4（2026-07-31）手动批量角标：读正文时涂黑一个词，点弹出菜单的「➕ 加角标」，立即立一个灰色虚线空角标（不发 AI 请求，可连加多个）；读完后点「🤖 批量解释」按钮，把所有空角标一次性发给 AI，解释自动填回各角标变实色。另有 v1.3 词条脚注注释（正文词条旁 ① 小角标，点开看大白话，导出转 Obsidian 标准脚注）与 v1.1 交互式改稿（分栏、快捷指令、5 版历史可回退）。AI 请求保持不传 temperature / response_format（兼容 kimi-k2.6）。</p>
       <p><b>历史版本：</b>v1.2 默认改快模型（秒级响应）+ 分步进度提示（发送→思考→解析+用时秒数）；v1.1.1 修复手机词条菜单按钮；v1.1.2 AI 请求加 180 秒超时；v1.0.2 修复 AI 调用 400 报错</p>
       <p><b>数据安全：</b>所有笔记和 API Key 只保存在您本机浏览器（localStorage），不上传到任何服务器；清除浏览器数据会丢失笔记，请定期导出备份。</p>
       <p><b>如何导入 Obsidian：</b></p>
@@ -554,8 +565,9 @@ function buildContentWithLinks(note){
   return md;
 }
 
-/* ==================== v1.3 词条脚注注释 ====================
-   数据：note.annots = [{term, note}]（note 为 <=60 字大白话解释）
+/* ==================== v1.3/v1.4 词条脚注注释 ====================
+   数据：note.annots = [{term, note, pending}]（note 为 <=60 字大白话解释；
+         v1.4 pending=true 表示手动加的待解释空角标，note 为空）
    渲染：正文第一处词条旁加可点小角标，点击弹出气泡，正文不增加文字
    导出：转为 Obsidian 原生脚注 [^n]（见 buildMarkdown） */
 function getAnnots(note){ return Array.isArray(note && note.annots) ? note.annots : []; }
@@ -590,7 +602,7 @@ function applyAnnotBadges(note){
       span.className = 'annot-term';
       span.textContent = term;
       var badge = document.createElement('sup');
-      badge.className = 'annot-badge';
+      badge.className = 'annot-badge' + (annots[a].pending ? ' pending' : ''); // v1.4 空角标灰色虚线
       badge.setAttribute('data-i', a);
       badge.textContent = (a + 1);
       span.appendChild(badge);
@@ -614,7 +626,8 @@ detailBody.addEventListener('click', function(e){
     var i = +b.getAttribute('data-i');
     var a = annots[i];
     if(!a) return;
-    annotPop.innerHTML = '<b>' + escapeHtml(a.term) + '</b>：' + escapeHtml(a.note) +
+    annotPop.innerHTML = '<b>' + escapeHtml(a.term) + '</b>：' +
+      (a.pending ? '⏳ 待解释：点下方『批量解释』按钮让 AI 一次性解释' : escapeHtml(a.note)) +
       '<div class="pop-del" data-i="' + i + '">删除这条注释</div>';
     var r = b.getBoundingClientRect();
     annotPop.style.display = 'block';
@@ -636,6 +649,7 @@ detailBody.addEventListener('click', function(e){
       detailBody.innerHTML = renderMarkdown(buildContentWithLinks(note2));
       applyAnnotBadges(note2);
       renderBacklinks(note2);
+      refreshBatchBtn();
     }
     annotPop.style.display = 'none';
     return;
@@ -655,6 +669,7 @@ function openDetail(id){
   detailBody.innerHTML = renderMarkdown(buildContentWithLinks(note));
   applyAnnotBadges(note);
   renderBacklinks(note);
+  refreshBatchBtn();
   setReviseOpen(false);
   hideSelMenu();
   viewHome.classList.add('hidden');
@@ -754,7 +769,15 @@ function callAnnotAI(note, term, onOk, onErr, st){
   var key = (localStorage.getItem(LS_KEY) || '').trim();
   if(!key){ onErr('还没有填写 API Key。请先返回首页在「API 设置」里保存 Key。'); return; }
   var sys, usr;
-  if(term){
+  if(Object.prototype.toString.call(term) === '[object Array]'){
+    // v1.4 批量解释模式：term 为用户手动加的待解释术语列表，AI 逐个解释（不再自己挑词）
+    sys = '你是一位资深的重症医学（ICU）教学专家。用户正在读一篇医学笔记，划选了若干术语想让你逐一解释。' +
+      '请严格只输出一个 JSON 对象（不要输出其他任何文字）：{"annots":[{"term":"术语","note":"解释"}]}\n' +
+      '要求：对用户给出的每一个术语都返回一条；term 必须与用户给的词一字不差地原样返回；' +
+      'note 用大白话解释该词在这篇笔记语境下的含义，60 字以内，先给一句话定义，必要时补半句临床意义。';
+    usr = '笔记标题：《' + note.title + '》\n笔记全文：\n' + (note.content || '') +
+      '\n\n请逐一解释这些术语（每个都要解释，term 原样返回）：\n' + term.join('\n');
+  }else if(term){
     sys = '你是一位资深的重症医学（ICU）教学专家。用户正在读一篇医学笔记，划选了一个词想让你解释。' +
       '请严格只输出一个 JSON 对象（不要输出其他任何文字）：{"term":"该词","note":"解释"}\n' +
       '要求：note 用大白话解释该词在这篇笔记语境下的含义，60 字以内，先给一句话定义，必要时补半句临床意义；不要重复笔记原文的长段内容。';
@@ -813,7 +836,7 @@ function mergeAnnots(note, parsed, doneMsg){
     if((note.content || '').indexOf(t) < 0) continue; // 只收原文里真实存在的词
     var found = false;
     for(var j = 0; j < note.annots.length; j++){
-      if(note.annots[j].term === t){ note.annots[j].note = n; found = true; break; }
+      if(note.annots[j].term === t){ note.annots[j].note = n; delete note.annots[j].pending; found = true; break; }
     }
     if(!found){ note.annots.push({term: t, note: n}); added++; }
   }
@@ -822,15 +845,84 @@ function mergeAnnots(note, parsed, doneMsg){
   detailBody.innerHTML = renderMarkdown(buildContentWithLinks(note));
   applyAnnotBadges(note);
   renderBacklinks(note);
+  refreshBatchBtn();
   toastLoading.innerHTML = '✅ ' + doneMsg + '（正文词条旁的 ① 小角标，点开看解释）';
   setTimeout(function(){ toast.style.display = 'none'; }, 4000);
 }
 
+/* v1.4 批量解释按钮：统计待解释空角标数，为 0 时隐藏 */
+var btnBatchAnnot = $('btnBatchAnnot');
+function countPending(note){
+  var c = 0, annots = getAnnots(note);
+  for(var i = 0; i < annots.length; i++) if(annots[i].pending) c++;
+  return c;
+}
+function refreshBatchBtn(){
+  var note = currentNoteId ? getNoteById(currentNoteId) : null;
+  var n = countPending(note);
+  if(n > 0){
+    btnBatchAnnot.style.display = '';
+    btnBatchAnnot.textContent = '🤖 批量解释（' + n + '）';
+  }else{
+    btnBatchAnnot.style.display = 'none';
+  }
+}
+btnBatchAnnot.addEventListener('click', function(){
+  var note = getNoteById(currentNoteId);
+  if(!note) return;
+  var terms = [], annots = getAnnots(note);
+  for(var i = 0; i < annots.length; i++) if(annots[i].pending) terms.push(annots[i].term);
+  if(!terms.length){ refreshBatchBtn(); return; }
+  btnBatchAnnot.disabled = true;
+  toast.style.display = 'block';
+  callAnnotAI(note, terms, function(parsed){
+    btnBatchAnnot.disabled = false;
+    pushHistory(note); // 批量解释前存一版历史，可回退
+    var filled = 0;
+    var list = (parsed && parsed.annots) ? parsed.annots : ((parsed && parsed.term) ? [parsed] : []);
+    for(var i = 0; i < list.length; i++){
+      var t = (list[i].term || '').trim(), n = (list[i].note || '').trim();
+      if(!t || !n) continue;
+      for(var j = 0; j < note.annots.length; j++){
+        if(note.annots[j].term === t && note.annots[j].pending){
+          note.annots[j].note = n;
+          delete note.annots[j].pending;
+          filled++;
+          break;
+        }
+      }
+    }
+    var missing = terms.length - filled;
+    note.updatedAt = Date.now();
+    persistNote(note);
+    detailBody.innerHTML = renderMarkdown(buildContentWithLinks(note));
+    applyAnnotBadges(note);
+    renderBacklinks(note);
+    refreshBatchBtn();
+    if(filled === 0){
+      toastLoading.innerHTML = '⚠️ AI 没有返回能对应的解释，请再点一次重试。';
+    }else if(missing > 0){
+      toastLoading.innerHTML = '✅ 已解释 ' + filled + ' 个；有 ' + missing + ' 个未返回，可再点一次';
+    }else{
+      toastLoading.innerHTML = '✅ 已全部解释（' + filled + ' 个），角标已变实色，点开看解释';
+    }
+    setTimeout(function(){ toast.style.display = 'none'; }, 4500);
+  }, function(errMsg){
+    btnBatchAnnot.disabled = false;
+    toastLoading.innerHTML = '⚠️ ' + errMsg;
+    setTimeout(function(){ toast.style.display = 'none'; }, 5000);
+  }, stageWatch(toastLoading));
+});
+
 /* 改稿历史：最多 5 版 */
+function snapshotAnnots(annots){
+  if(!Array.isArray(annots)) return [];
+  return annots.map(function(a){ var o = {term:a.term, note:a.note}; if(a.pending) o.pending = true; return o; });
+}
 function pushHistory(note){
   if(!Array.isArray(note.history)) note.history = [];
   note.history.push({ content: note.content, links: (note.links || []).slice(),
-                      annots: Array.isArray(note.annots) ? note.annots.map(function(a){return {term:a.term,note:a.note};}) : [],
+                      annots: snapshotAnnots(note.annots),
                       updatedAt: note.updatedAt });
   while(note.history.length > 5) note.history.shift();
 }
@@ -991,7 +1083,7 @@ btnRevert.addEventListener('click', function(){
   if(!note || !Array.isArray(note.history) || note.history.length === 0) return;
   // 回退也视为一次修改：当前版压入历史，再弹出上一版
   note.history.push({ content: note.content, links: (note.links || []).slice(),
-                      annots: Array.isArray(note.annots) ? note.annots.map(function(a){return {term:a.term,note:a.note};}) : [],
+                      annots: snapshotAnnots(note.annots),
                       updatedAt: note.updatedAt });
   var prev = note.history.splice(note.history.length - 2, 1)[0];
   while(note.history.length > 5) note.history.shift();
@@ -1002,7 +1094,9 @@ btnRevert.addEventListener('click', function(){
   if(persistNote(note)){
     detailTime.textContent = '创建 '+fmtTime(note.createdAt)+' · 更新 '+fmtTime(note.updatedAt);
     detailBody.innerHTML = renderMarkdown(buildContentWithLinks(note));
+    applyAnnotBadges(note);
     renderBacklinks(note);
+    refreshBatchBtn();
     refreshRevertBtn();
     showMsg(reviseMsg, '↩️ 已回退到上一版（刚才那版也存进了历史）。', 'ok');
   }
@@ -1075,6 +1169,29 @@ function runSelAction(b){
       toastLoading.innerHTML = '⚠️ ' + errMsg;
       setTimeout(function(){ toast.style.display = 'none'; }, 5000);
     }, stageWatch(toastLoading));
+  }else if(act === 'mark'){
+    // v1.4：立即立空角标（pending），不发 AI 请求
+    var note2 = getNoteById(currentNoteId);
+    if(!note2) return;
+    if(!Array.isArray(note2.annots)) note2.annots = [];
+    var dup = false;
+    for(var mi = 0; mi < note2.annots.length; mi++){ if(note2.annots[mi].term === term){ dup = true; break; } }
+    if(dup){
+      toast.style.display = 'block';
+      toastLoading.innerHTML = '「' + escapeHtml(term) + '」已有角标';
+      setTimeout(function(){ toast.style.display = 'none'; }, 2500);
+      return;
+    }
+    note2.annots.push({ term: term, note: '', pending: true });
+    note2.updatedAt = Date.now();
+    persistNote(note2);
+    detailBody.innerHTML = renderMarkdown(buildContentWithLinks(note2));
+    applyAnnotBadges(note2);
+    renderBacklinks(note2);
+    refreshBatchBtn();
+    toast.style.display = 'block';
+    toastLoading.innerHTML = '🏷 已加角标（待解释），读完后点下方『批量解释』';
+    setTimeout(function(){ toast.style.display = 'none'; }, 3500);
   }else if(act === 'fill'){
     setReviseOpen(true);
     reviseInput.value = term;
@@ -1279,7 +1396,7 @@ function buildMarkdown(note){
   var defs = '', num = 0;
   for(var i = 0; i < annots.length; i++){
     var t = annots[i].term, n = annots[i].note;
-    if(!t || !n) continue;
+    if(annots[i].pending || !t || !n) continue; // v1.4：待解释空角标不导出脚注
     var idx = md.indexOf(t);
     if(idx < 0) continue; // 词条已不在正文（可能被改稿删掉）则跳过
     num++;
