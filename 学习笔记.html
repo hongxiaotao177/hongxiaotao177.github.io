@@ -8,6 +8,11 @@
    v1.0.1 2026-07-31 修复：kimi-k2.6 不支持 response_format 导致 AI 调用 HTTP 400；
                      导出下载文件名改 ASCII（防 Chromium 系丢名）；导出锚点延迟释放
    v1.0.2 2026-07-31 修复：kimi-k2.6 仅允许 temperature=1，去掉自定义 temperature
+   v1.1  2026-07-31 交互式改稿：
+         - 详情页「✏️ 让 AI 改」上下分栏改稿（快捷指令按钮 + 自由要求框 + 按此修改）
+         - 改稿历史 history（每篇最多 5 版）与「↩️ 回退上一版」
+         - 选中词条浮出菜单：解释词条 / 另开一篇《X》（首处原文替换为 [[X]]，links 去重补上）/ 填入要求框
+         - AI 请求仍不传 temperature / response_format（兼容 kimi-k2.6）
          - AI 生成学习笔记（Kimi / Moonshot API，模型可选）
          - 极简 Markdown 渲染（标题/粗体/列表/段落），HTML 转义防注入
          - [[双链]] 与反链（被提到）区
@@ -113,6 +118,36 @@
   details.about .inner { font-size: 15px; color: #6a6255; padding-top: 8px; }
   details.about ol { padding-left: 22px; margin: 8px 0; }
 
+  /* v1.1 改稿分栏 */
+  .md-body.split-view { max-height: 38vh; overflow-y: auto; -webkit-overflow-scrolling: touch; border-bottom: 2px dashed #e5ddd0; padding-bottom: 10px; }
+  .revise-panel { margin-top: 14px; }
+  .revise-panel .qbtn-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+  .revise-panel .qbtn {
+    background: #f5efe4; color: #6a5b47; border: 1px solid #e8dcc8; border-radius: 20px;
+    font-size: 15px; padding: 8px 14px; cursor: pointer; -webkit-appearance: none;
+  }
+  .revise-panel .qbtn:active { background: #ecdfc9; }
+  .revise-panel textarea {
+    width: 100%; min-height: 84px; font-size: 16px; font-family: inherit;
+    padding: 12px 14px; border: 1px solid #e5ddd0; border-radius: 12px;
+    background: #fdfcfa; color: #3a3a3a; outline: none; resize: vertical;
+  }
+  .revise-panel textarea:focus { border-color: #c9a877; }
+
+  /* v1.1 选中词条浮出菜单 */
+  #selMenu {
+    position: fixed; z-index: 9999; display: none;
+    background: #fff; border-radius: 12px; box-shadow: 0 4px 18px rgba(90,70,50,.22);
+    padding: 6px; border: 1px solid #e8dcc8; white-space: nowrap;
+  }
+  #selMenu button {
+    display: inline-block; background: none; border: none; cursor: pointer;
+    font-size: 15px; color: #6a5b47; padding: 10px 12px; font-family: inherit;
+    -webkit-appearance: none;
+  }
+  #selMenu button:active { background: #f5ecdd; border-radius: 8px; }
+  #selMenu .sep { display: inline-block; width: 1px; height: 18px; background: #e5ddd0; vertical-align: middle; }
+
   .hidden { display: none !important; }
 </style>
 </head>
@@ -174,17 +209,37 @@
         <h3>🔗 被提到（反链）</h3>
         <div id="backlinkList"></div>
       </div>
+      <button class="btn secondary" id="btnRevise" style="margin-top:16px;">✏️ 让 AI 改</button>
+      <!-- v1.1 改稿区（分栏下半栏） -->
+      <div class="revise-panel hidden" id="revisePanel">
+        <div class="qbtn-row" id="qbtnRow"></div>
+        <textarea id="reviseInput" placeholder="想怎么改？点上方快捷按钮，或直接写你的要求…"></textarea>
+        <div class="btn-row">
+          <button class="btn" id="btnDoRevise">🤖 按此修改</button>
+          <button class="btn secondary" id="btnRevert">↩️ 回退上一版</button>
+        </div>
+        <div class="loading" id="reviseLoading"><span class="spinner"></span>AI 正在按要求修改，请稍候…</div>
+        <div class="msg" id="reviseMsg"></div>
+      </div>
       <div style="margin-top:18px; text-align:right;">
         <button class="btn danger" id="btnDelete">🗑 删除本篇</button>
       </div>
     </div>
   </div>
 
+  <!-- v1.1 选中词条浮出菜单 -->
+  <div id="selMenu">
+    <button type="button" data-act="explain">📖 解释这个词条</button><span class="sep"></span>
+    <button type="button" data-act="newnote">📄 另开一篇</button><span class="sep"></span>
+    <button type="button" data-act="fill">✂️ 填入要求框</button>
+  </div>
+
   <!-- ===== 关于 / 版本说明 ===== -->
   <details class="about">
     <summary>📋 关于 / 版本说明</summary>
     <div class="inner">
-      <p><b>版本：</b>v1.0.2（2026-07-31）修复 AI 调用 400 报错（response_format / temperature 兼容性）</p>
+      <p><b>版本：</b>v1.1（2026-07-31）新增「交互式改稿」：详情页点「✏️ 让 AI 改」可上下分栏改稿（快捷指令 + 自由要求），每篇保留最近 5 版历史可回退；在正文里选中一个词（1~30 字）会浮出菜单，可「解释这个词条」「另开一篇」或填入要求框。AI 请求保持不传 temperature / response_format（兼容 kimi-k2.6）。</p>
+      <p><b>历史版本：</b>v1.0.2 修复 AI 调用 400 报错（response_format / temperature 兼容性）</p>
       <p><b>数据安全：</b>所有笔记和 API Key 只保存在您本机浏览器（localStorage），不上传到任何服务器；清除浏览器数据会丢失笔记，请定期导出备份。</p>
       <p><b>如何导入 Obsidian：</b></p>
       <ol>
@@ -441,6 +496,8 @@ function openDetail(id){
   detailTime.textContent = '创建 '+fmtTime(note.createdAt)+' · 更新 '+fmtTime(note.updatedAt);
   detailBody.innerHTML = renderMarkdown(buildContentWithLinks(note));
   renderBacklinks(note);
+  setReviseOpen(false);
+  hideSelMenu();
   viewHome.classList.add('hidden');
   viewDetail.classList.remove('hidden');
   window.scrollTo(0,0);
@@ -503,6 +560,8 @@ function handleLinkClick(name){
 }
 
 $('btnBack').addEventListener('click', function(){
+  setReviseOpen(false);
+  hideSelMenu();
   viewDetail.classList.add('hidden');
   viewHome.classList.remove('hidden');
   renderList();
@@ -518,6 +577,291 @@ $('btnDelete').addEventListener('click', function(){
   viewHome.classList.remove('hidden');
   renderList();
 });
+
+/* ==================== v1.1 交互式改稿 ==================== */
+var revisePanel = $('revisePanel'), reviseInput = $('reviseInput'),
+    reviseMsg = $('reviseMsg'), reviseLoading = $('reviseLoading'),
+    btnRevise = $('btnRevise'), btnDoRevise = $('btnDoRevise'), btnRevert = $('btnRevert'),
+    selMenu = $('selMenu');
+
+/* 持久化一篇已修改的笔记 */
+function persistNote(note){
+  var notes = loadNotes();
+  for(var i=0;i<notes.length;i++) if(notes[i].id === note.id){ notes[i] = note; break; }
+  return saveNotes(notes);
+}
+/* 改稿历史：最多 5 版 */
+function pushHistory(note){
+  if(!Array.isArray(note.history)) note.history = [];
+  note.history.push({ content: note.content, links: (note.links || []).slice(), updatedAt: note.updatedAt });
+  while(note.history.length > 5) note.history.shift();
+}
+/* 快捷指令按钮（SPEC v1.1 §2） */
+var QUICK_CMDS = [
+  ['✂️ 太啰嗦', '把笔记精简到一半篇幅，只保留核心干货'],
+  ['📋 没条理', '重新梳理结构：分级标题+列表，逻辑递进，层级清晰'],
+  ['📖 解释生词', '找出文中最难懂的 5~8 个专业术语，在首次出现处用括号加大白话注释'],
+  ['🔬 更深入', '增加机制细节与循证依据，深度面向 ICU 主治医生'],
+  ['🗣 说人话', '用比喻和临床场景重写，实习医生也能看懂'],
+  ['❓ 出考题', '根据本篇内容在文末出 3~5 道自测题并附答案']
+];
+(function(){
+  var row = $('qbtnRow'), html = '';
+  for(var i=0;i<QUICK_CMDS.length;i++){
+    html += '<button type="button" class="qbtn" data-cmd="'+i+'">'+QUICK_CMDS[i][0]+'</button>';
+  }
+  row.innerHTML = html;
+  row.addEventListener('click', function(e){
+    var b = e.target;
+    while(b && b !== row){
+      if(b.getAttribute && b.getAttribute('data-cmd') !== null){
+        reviseInput.value = QUICK_CMDS[+b.getAttribute('data-cmd')][1];
+        reviseInput.focus();
+        return;
+      }
+      b = b.parentNode;
+    }
+  });
+})();
+
+function setReviseOpen(open){
+  if(open){
+    revisePanel.classList.remove('hidden');
+    detailBody.classList.add('split-view');
+    btnRevise.textContent = '✏️ 收起改稿';
+    refreshRevertBtn();
+  }else{
+    revisePanel.classList.add('hidden');
+    detailBody.classList.remove('split-view');
+    btnRevise.textContent = '✏️ 让 AI 改';
+    reviseMsg.className = 'msg';
+  }
+}
+function isReviseOpen(){ return !revisePanel.classList.contains('hidden'); }
+function refreshRevertBtn(){
+  var note = getNoteById(currentNoteId);
+  var n = (note && Array.isArray(note.history)) ? note.history.length : 0;
+  btnRevert.disabled = (n === 0);
+  btnRevert.textContent = n > 0 ? ('↩️ 回退上一版（共 ' + n + ' 版）') : '↩️ 回退上一版';
+}
+btnRevise.addEventListener('click', function(){ setReviseOpen(!isReviseOpen()); });
+
+/* 改稿 AI 调用：原笔记全文 + 用户要求 → 同格式 JSON（不传 temperature/response_format） */
+function callReviseAI(note, instruction, onOk, onErr){
+  var key = (localStorage.getItem(LS_KEY) || '').trim();
+  if(!key){ onErr('还没有填写 API Key。请先返回首页在「API 设置」里保存 Key。'); return; }
+  var payload = {
+    model: modelSel.value,
+    messages: [
+      { role: 'system', content:
+        '你是一位资深的重症医学（ICU）教学编辑。用户会给你一篇医学学习笔记（Markdown）和一条修改要求。' +
+        '请严格按照修改要求改写这篇笔记，并严格只输出一个 JSON 对象（不要输出其他任何文字），格式如下：\n' +
+        '{"title":"原标题","content":"修改后的 Markdown 正文","links":["相关主题1","相关主题2"]}\n' +
+        '要求：title 必须保持原标题不变；content 沿用 # / ## / ### 标题、**粗体**、- 列表的笔记风格；' +
+        'links 给出 5-8 个最相关的医学主题名词（可按修改后内容更新，只给名词本身）。' },
+      { role: 'user', content:
+        '原标题：《' + note.title + '》\n\n【原笔记全文】\n' + (note.content || '') +
+        '\n\n【修改要求】\n' + instruction }
+    ]
+  };
+  fetch('https://api.moonshot.cn/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+    body: JSON.stringify(payload)
+  }).then(function(resp){
+    if(!resp.ok){
+      return resp.text().then(function(t){
+        var tip = '请求失败（HTTP ' + resp.status + '）。';
+        if(resp.status === 401) tip = 'API Key 无效或已过期，请检查 Key。';
+        else if(resp.status === 429) tip = '请求太频繁或额度不足，请稍后再试。';
+        else if(resp.status >= 500) tip = 'Kimi 服务器暂时繁忙，请稍后再试。';
+        if(t){ var s = t.replace(/\s+/g,' ').slice(0,150); tip += '（服务器说：' + s + '）'; }
+        throw new Error(tip);
+      });
+    }
+    return resp.json();
+  }).then(function(data){
+    var text = '';
+    try{ text = data.choices[0].message.content; }catch(e){}
+    if(!text) throw new Error('AI 返回内容为空，请重试。');
+    var parsed = parseAIJson(text);
+    if(!parsed || !parsed.content) throw new Error('AI 返回格式不对，请再点一次重试。');
+    if(!Array.isArray(parsed.links)) parsed.links = [];
+    onOk(parsed);
+  }).catch(function(err){
+    var m = (err && err.message) ? err.message : '网络连接失败，请检查网络后重试。';
+    if(/Failed to fetch|NetworkError|Load failed/i.test(m)) m = '网络连接失败，请检查网络后重试。';
+    onErr(m);
+  });
+}
+
+btnDoRevise.addEventListener('click', function(){
+  var note = getNoteById(currentNoteId);
+  if(!note) return;
+  var instruction = reviseInput.value.replace(/^\s+|\s+$/g,'');
+  if(!instruction){ showMsg(reviseMsg, '请先填写修改要求（可点上方快捷按钮）。', 'err'); return; }
+  reviseMsg.className = 'msg';
+  reviseLoading.style.display = 'block';
+  btnDoRevise.disabled = true;
+  callReviseAI(note, instruction, function(parsed){
+    reviseLoading.style.display = 'none';
+    btnDoRevise.disabled = false;
+    pushHistory(note);
+    note.content = parsed.content;
+    note.links = parsed.links;
+    note.updatedAt = Date.now();
+    if(persistNote(note)){
+      // 重新渲染详情（双链/反链自动联动），改稿完成收起分栏
+      detailTitle.textContent = note.title;
+      detailTime.textContent = '创建 '+fmtTime(note.createdAt)+' · 更新 '+fmtTime(note.updatedAt);
+      detailBody.innerHTML = renderMarkdown(buildContentWithLinks(note));
+      renderBacklinks(note);
+      reviseInput.value = '';
+      setReviseOpen(false);
+      showMsg(reviseMsg, '✅ 已按你的要求改好，旧版已存入历史（可点「让 AI 改」里的回退恢复）。', 'ok');
+      reviseMsg.className = 'msg ok'; // 收起后仍短暂保留提示
+    }
+  }, function(errMsg){
+    reviseLoading.style.display = 'none';
+    btnDoRevise.disabled = false;
+    showMsg(reviseMsg, errMsg, 'err');
+  });
+});
+
+btnRevert.addEventListener('click', function(){
+  var note = getNoteById(currentNoteId);
+  if(!note || !Array.isArray(note.history) || note.history.length === 0) return;
+  // 回退也视为一次修改：当前版压入历史，再弹出上一版
+  note.history.push({ content: note.content, links: (note.links || []).slice(), updatedAt: note.updatedAt });
+  var prev = note.history.splice(note.history.length - 2, 1)[0];
+  while(note.history.length > 5) note.history.shift();
+  note.content = prev.content;
+  note.links = prev.links;
+  note.updatedAt = Date.now();
+  if(persistNote(note)){
+    detailTime.textContent = '创建 '+fmtTime(note.createdAt)+' · 更新 '+fmtTime(note.updatedAt);
+    detailBody.innerHTML = renderMarkdown(buildContentWithLinks(note));
+    renderBacklinks(note);
+    refreshRevertBtn();
+    showMsg(reviseMsg, '↩️ 已回退到上一版（刚才那版也存进了历史）。', 'ok');
+  }
+});
+
+/* ---------- 选中词条浮出菜单 ---------- */
+var selMenuTerm = '';
+function hideSelMenu(){ selMenu.style.display = 'none'; selMenuTerm = ''; }
+function selectionInDetail(){
+  var sel = window.getSelection();
+  if(!sel || sel.isCollapsed || sel.rangeCount === 0) return null;
+  var text = sel.toString().replace(/^\s+|\s+$/g,'');
+  if(!text || text.length > 30) return null;
+  var range = sel.getRangeAt(0);
+  var container = range.commonAncestorContainer;
+  var node = container.nodeType === 1 ? container : container.parentNode;
+  if(!node || !detailBody.contains(node)) return null;
+  if(viewDetail.classList.contains('hidden')) return null;
+  return { text: text, rect: range.getBoundingClientRect() };
+}
+function showSelMenu(){
+  var info = selectionInDetail();
+  if(!info){ hideSelMenu(); return; }
+  selMenuTerm = info.text;
+  selMenu.style.display = 'block';
+  var mw = selMenu.offsetWidth, mh = selMenu.offsetHeight;
+  var left = info.rect.left + (info.rect.width - mw) / 2;
+  left = Math.max(8, Math.min(left, window.innerWidth - mw - 8));
+  var top = info.rect.bottom + 8;
+  if(top + mh > window.innerHeight - 8) top = info.rect.top - mh - 8;
+  top = Math.max(8, Math.min(top, window.innerHeight - mh - 8));
+  selMenu.style.left = left + 'px';
+  selMenu.style.top = top + 'px';
+}
+var selTimer = null;
+document.addEventListener('selectionchange', function(){
+  if(selTimer) clearTimeout(selTimer);
+  selTimer = setTimeout(function(){
+    var info = selectionInDetail();
+    if(info) showSelMenu(); else hideSelMenu();
+  }, 260);
+});
+detailBody.addEventListener('mouseup', function(){ setTimeout(showSelMenu, 60); });
+detailBody.addEventListener('touchend', function(){ setTimeout(showSelMenu, 120); });
+/* 菜单按钮用 mousedown/touchstart 阻止默认，避免点击时选区被清掉 */
+function menuPress(e){ e.preventDefault(); e.stopPropagation(); }
+selMenu.addEventListener('mousedown', menuPress);
+selMenu.addEventListener('touchstart', menuPress, { passive: false });
+document.addEventListener('mousedown', function(e){
+  if(selMenu.style.display === 'block' && !selMenu.contains(e.target)){
+    var sel = window.getSelection();
+    if(!sel || sel.isCollapsed) hideSelMenu();
+  }
+});
+selMenu.addEventListener('click', function(e){
+  var b = e.target;
+  while(b && b !== selMenu){
+    if(b.getAttribute && b.getAttribute('data-act')){
+      var act = b.getAttribute('data-act'), term = selMenuTerm;
+      hideSelMenu();
+      if(!term) return;
+      if(act === 'explain'){
+        setReviseOpen(true);
+        reviseInput.value = '请用大白话解释"' + term + '"这个词，并在首次出现处加注释';
+        reviseInput.focus();
+      }else if(act === 'fill'){
+        setReviseOpen(true);
+        reviseInput.value = term;
+        reviseInput.focus();
+      }else if(act === 'newnote'){
+        createNoteFromTerm(term, currentNoteId);
+      }
+      return;
+    }
+    b = b.parentNode;
+  }
+});
+
+/* 「另开一篇」：复用 [[wikilink]] 生成流程；成功后把当前笔记首个该词条替换为 [[X]] */
+function createNoteFromTerm(term, srcId){
+  var srcNote = getNoteById(srcId);
+  if(!srcNote) return;
+  var existing = findNote(term);
+  if(existing){ openDetail(existing.id); return; }
+  if(!window.confirm('还没有《' + term + '》的笔记，让 AI 现在生成吗？')) return;
+  showMsg(reviseMsg, '正在为《' + term + '》生成笔记…', 'ok');
+  reviseLoading.style.display = 'block';
+  callAI(term, function(parsed){
+    var now = Date.now();
+    var newNote;
+    var again = findNote(parsed.title);
+    if(again){
+      again.content = parsed.content; again.links = parsed.links; again.updatedAt = now;
+      persistNote(again); newNote = again;
+    }else{
+      newNote = { id: uid(), title: parsed.title, content: parsed.content,
+                  links: parsed.links, createdAt: now, updatedAt: now, history: [] };
+      var notes = loadNotes(); notes.unshift(newNote); saveNotes(notes);
+    }
+    /* 回原笔记：第一处该词条原文替换为 [[X]]（已有 [[X]] 则不重复替换），links 去重补上 */
+    var cur = getNoteById(srcId);
+    if(cur){
+      var linked = '[[' + term + ']]';
+      if(cur.content.indexOf(linked) < 0){
+        var idx = cur.content.indexOf(term);
+        if(idx >= 0) cur.content = cur.content.slice(0, idx) + linked + cur.content.slice(idx + term.length);
+      }
+      if(!Array.isArray(cur.links)) cur.links = [];
+      if(cur.links.indexOf(term) < 0) cur.links.push(term);
+      cur.updatedAt = now;
+      persistNote(cur);
+    }
+    reviseLoading.style.display = 'none';
+    reviseMsg.className = 'msg';
+    openDetail(newNote.id);
+  }, function(errMsg){
+    reviseLoading.style.display = 'none';
+    showMsg(reviseMsg, errMsg, 'err');
+  });
+}
 
 /* ==================== API Key 设置 ==================== */
 apiKeyInput.value = localStorage.getItem(LS_KEY) || '';
