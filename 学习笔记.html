@@ -4,6 +4,15 @@
  学习笔记·双链版 —— 单文件 HTML 工具
 ====================================================================
  修改记录：
+   v1.5.2 2026-07-31 嵌套注释（套娃角标）：
+         - 注释气泡里涂黑的生词，正文没有、但本条注释文字里有，也能加角标：
+           annots 新增可选字段 parent（父注释 term），角标贴在气泡注释文字里，
+           点子角标切换进子注释视图，「← 返回」逐级回到父注释；可继续向下套，不限层数
+         - 批量解释/让AI改写 对嵌套注释生效：上下文取父注释文字（而非正文段落），
+           prompt 里每个术语附出处文字
+         - 导出：嵌套注释不单独出脚注，解释平铺附加到最顶层父脚注末尾，
+           如 [^3]: 驱动压：……。（肺的应力：肺泡壁承受的牵张力）
+         - 快照 snapshotAnnots 保留 parent，回退不丢嵌套关系
    v1.5.1 2026-07-31 关键修复：贴角标后更新节点列表误用覆盖（nodes[k+1]=），
          弄丢了下一个文本节点的引用，导致第一个角标之后、位于其他元素里的
          词条（ARDS、PEEP 等）全部贴不上角标。改为 splice 插入，全部词条正常
@@ -152,6 +161,10 @@
     margin-left: 2px; padding: 0 3px; cursor: pointer; vertical-align: super; }
   /* v1.4 待解释的空角标：灰底虚线 */
   .annot-badge.pending { background: #fdfcfa; color: #9a8f80; border: 1px dashed #9a8f80; }
+  /* v1.5.2 嵌套子角标（贴在气泡注释文字里）：偏蓝灰，与正文角标区分 */
+  .annot-badge.child { background: #9aa7b8; }
+  .annot-badge.child.pending { background: #fdfcfa; color: #8b98a8; border: 1px dashed #8b98a8; }
+  #annotPop .pop-back { display: block; font-size: 13px; color: #b0906a; text-decoration: underline; cursor: pointer; margin-bottom: 4px; }
   #annotPop { display: none; position: absolute; z-index: 60; max-width: 300px; background: #fffdf8;
     border: 1px solid #e5d9c4; border-radius: 12px; box-shadow: 0 4px 18px rgba(80,60,30,.18);
     padding: 12px 14px; font-size: 15px; line-height: 1.7; color: #4a3f33; }
@@ -307,7 +320,7 @@
   <details class="about">
     <summary>📋 关于 / 版本说明</summary>
     <div class="inner">
-      <p><b>版本：</b>v1.5.1（2026-07-31）修复：一篇笔记里多个词条分散在不同段落时，第一个角标之后的词条（如 ARDS、PEEP）会贴不上角标的问题，现已全部正常。以下为 v1.5 功能：① 手动加的角标现在贴在您涂黑的那个确切位置（记住涂黑处前后文），不再跳到全篇第一次出现的地方；并有词边界保护，像 ARDS 不会再嵌进 ARDSNet 中间。② 注释气泡新增「🤖 让AI改写」：点词条角标后可让 AI 按要求改写解释，改写要求可以随意修改（默认是"更通俗、更简短"），改写前自动存一版历史可回退。③ 气泡里涂黑注释文字中的生词，点「➕ 选词加角标」即可把它加为本篇待解释角标（不发 AI 请求），之后随批量解释一起让 AI 讲解。上一版 v1.4 手动批量角标：读正文时涂黑一个词，点弹出菜单的「➕ 加角标」，立即立一个灰色虚线空角标（不发 AI 请求，可连加多个）；读完后点「🤖 批量解释」按钮，把所有空角标一次性发给 AI，解释自动填回各角标变实色。另有 v1.3 词条脚注注释（正文词条旁 ① 小角标，点开看大白话，导出转 Obsidian 标准脚注）与 v1.1 交互式改稿（分栏、快捷指令、5 版历史可回退）。AI 请求保持不传 temperature / response_format（兼容 kimi-k2.6）。</p>
+      <p><b>版本：</b>v1.5.2（2026-07-31）新功能：注释里的生词，正文没有也能加角标——在注释气泡里涂黑注释文字中的生词点「➕ 选词加角标」，它会变成一个贴在气泡里的小角标（灰色虚线=待解释），点角标可钻进去看/编辑，「← 返回」回到上一条；随「批量解释」一起让 AI 讲解（AI 会参考它所在的那条注释文字）；导出时嵌套解释不单独出脚注，附加在父脚注末尾，如「……。（肺的应力：肺泡壁承受的牵张力）」。上一版 v1.5.1 修复：一篇笔记里多个词条分散在不同段落时，第一个角标之后的词条（如 ARDS、PEEP）会贴不上角标的问题，现已全部正常。以下为 v1.5 功能：① 手动加的角标现在贴在您涂黑的那个确切位置（记住涂黑处前后文），不再跳到全篇第一次出现的地方；并有词边界保护，像 ARDS 不会再嵌进 ARDSNet 中间。② 注释气泡新增「🤖 让AI改写」：点词条角标后可让 AI 按要求改写解释，改写要求可以随意修改（默认是"更通俗、更简短"），改写前自动存一版历史可回退。③ 气泡里涂黑注释文字中的生词，点「➕ 选词加角标」即可把它加为本篇待解释角标（不发 AI 请求），之后随批量解释一起让 AI 讲解。上一版 v1.4 手动批量角标：读正文时涂黑一个词，点弹出菜单的「➕ 加角标」，立即立一个灰色虚线空角标（不发 AI 请求，可连加多个）；读完后点「🤖 批量解释」按钮，把所有空角标一次性发给 AI，解释自动填回各角标变实色。另有 v1.3 词条脚注注释（正文词条旁 ① 小角标，点开看大白话，导出转 Obsidian 标准脚注）与 v1.1 交互式改稿（分栏、快捷指令、5 版历史可回退）。AI 请求保持不传 temperature / response_format（兼容 kimi-k2.6）。</p>
       <p><b>历史版本：</b>v1.2 默认改快模型（秒级响应）+ 分步进度提示（发送→思考→解析+用时秒数）；v1.1.1 修复手机词条菜单按钮；v1.1.2 AI 请求加 180 秒超时；v1.0.2 修复 AI 调用 400 报错</p>
       <p><b>数据安全：</b>所有笔记和 API Key 只保存在您本机浏览器（localStorage），不上传到任何服务器；清除浏览器数据会丢失笔记，请定期导出备份。</p>
       <p><b>如何导入 Obsidian：</b></p>
@@ -592,7 +605,8 @@ function buildContentWithLinks(note){
 }
 
 /* ==================== v1.3/v1.4 词条脚注注释 ====================
-   数据：note.annots = [{term, note, pending, anchor?}]（note 为 <=60 字大白话解释；
+   数据：note.annots = [{term, note, pending, anchor?, parent?}]（note 为 <=60 字大白话解释；
+         v1.5.2 parent=父注释的 term：嵌套注释，角标贴在父注释气泡里而非正文；
          v1.4 pending=true 表示手动加的待解释空角标，note 为空；
          v1.5 可选 anchor={pre,post} 涂黑处前后 ~15 字上下文，用于贴回确切位置）
    渲染：正文第一处词条旁加可点小角标，点击弹出气泡，正文不增加文字
@@ -653,6 +667,7 @@ function applyAnnotBadges(note){
   for(var a = 0; a < annots.length; a++){
     var term = annots[a].term;
     if(!term || used[term]) continue;
+    if(annots[a].parent) continue; // v1.5.2 嵌套注释：角标贴在父注释气泡里，不注入正文
     var anchor = annots[a].anchor;
     var hitK = -1, hitIdx = -1;
     /* v1.5：带 anchor 的角标优先按上下文定位到涂黑的确切位置 */
@@ -723,13 +738,43 @@ function rerenderDetail(note){
   renderBacklinks(note);
   refreshBatchBtn();
 }
+/* v1.5.2 把子注释（parent===a.term）的 term 在注释文字里第一次出现处包上子角标。
+   先按原始文本找位置（词边界保护复用 findTermIdx），再逐段转义拼 HTML，避免注入。 */
+function annotTextWithChildBadges(annots, a){
+  var text = a.note || '';
+  var marks = [];
+  for(var j = 0; j < annots.length; j++){
+    var c = annots[j];
+    if(!c || c.parent !== a.term || !c.term) continue;
+    var p = findTermIdx(text, c.term, 0);
+    if(p >= 0) marks.push({ start: p, end: p + c.term.length, idx: j });
+  }
+  marks.sort(function(x, y){ return x.start - y.start; });
+  var html = '', pos = 0;
+  for(var m = 0; m < marks.length; m++){
+    var mk = marks[m];
+    if(mk.start < pos) continue; // 重叠的跳过，先到先得
+    html += escapeHtml(text.slice(pos, mk.start));
+    html += '<span class="annot-term">' + escapeHtml(text.slice(mk.start, mk.end)) +
+      '<sup class="annot-badge child' + (annots[mk.idx].pending ? ' pending' : '') +
+      '" data-i="' + mk.idx + '">' + (mk.idx + 1) + '</sup></span>';
+    pos = mk.end;
+  }
+  html += escapeHtml(text.slice(pos));
+  return html;
+}
 /* 气泡"查看模式"内容（只重建 innerHTML，不动位置，取消编辑时也用它恢复） */
 function renderPopView(i){
   var note = getNoteById(currentNoteId);
-  var a = getAnnots(note)[i];
+  var annots = getAnnots(note);
+  var a = annots[i];
   if(!a) return false;
-  annotPop.innerHTML = '<b>' + escapeHtml(a.term) + '</b>：' +
-    (a.pending ? '⏳ 待解释：可点下方『批量解释』让 AI 解释，或点编辑自己写' : escapeHtml(a.note)) +
+  var backHtml = '';
+  if(a.parent){ // v1.5.2 子注释视图：显示逐级返回链接
+    backHtml = '<span class="pop-back" data-act="back">← 返回 ' + escapeHtml(a.parent) + '</span>';
+  }
+  annotPop.innerHTML = backHtml + '<b>' + escapeHtml(a.term) + '</b>：' +
+    (a.pending ? '⏳ 待解释：可点下方『批量解释』让 AI 解释，或点编辑自己写' : annotTextWithChildBadges(annots, a)) +
     '<div class="pop-acts">' +
       '<span class="pop-act" data-act="addword" title="在注释文字里涂黑一个词，再点这里">➕ 选词加角标</span>' +
       '<span class="pop-act" data-act="edit">✏️ 编辑</span>' +
@@ -808,9 +853,20 @@ function callRewriteAI(note, annot, userReq, onOk, onErr, st){
   var sys = '你是一位资深的重症医学（ICU）教学专家。用户会给你一个医学术语、它所在的笔记段落、' +
     '现有的注释文字，以及一条改写要求。请严格按改写要求处理这条注释，' +
     '只输出改写后的解释纯文本（80 字以内），不要输出引号、说明或其他任何文字。';
+  // v1.5.2 嵌套注释的上下文 = 父注释文字（该词正文里没有）
+  var ctxText;
+  if(annot.parent){
+    var ans = getAnnots(note), pnote = '';
+    for(var pi = 0; pi < ans.length; pi++){
+      if(ans[pi].term === annot.parent){ pnote = ans[pi].note || ''; break; }
+    }
+    ctxText = '（该词出自注释「' + annot.parent + '」的解释文字）\n' + pnote;
+  }else{
+    ctxText = termContext(note.content, annot.term, 500);
+  }
   var usr = '【改写要求】\n' + userReq +
     '\n\n【术语】\n' + annot.term +
-    '\n\n【笔记上下文】\n' + termContext(note.content, annot.term, 500) +
+    '\n\n【笔记上下文】\n' + ctxText +
     '\n\n【现有注释】\n' + (annot.note || '（暂无）') +
     '\n\n请输出改写后的解释：';
   var payload = { model: modelSel.value, messages: [ {role:'system',content:sys}, {role:'user',content:usr} ] };
@@ -892,27 +948,58 @@ function addAnnotWordFromPop(){
   var term = getPopSelText();
   if(!term){ popToast('⚠️ 请先在注释文字里涂黑一个词，再点这个按钮', 3000); return; }
   if(term.length > 30){ popToast('⚠️ 选的词太长了，请只涂一个词', 3000); return; }
-  if((note.content || '').indexOf(term) < 0){ popToast('⚠️ 正文里没有「' + escapeHtml(term) + '」这个词，加不了角标', 3500); return; }
   if(!Array.isArray(note.annots)) note.annots = [];
   for(var i = 0; i < note.annots.length; i++){
     if(note.annots[i].term === term){ popToast('「' + escapeHtml(term) + '」已有角标', 2500); return; }
   }
-  note.annots.push({ term: term, note: '', pending: true });
+  var inContent = (note.content || '').indexOf(term) >= 0;
+  var cur = (popIdx >= 0) ? note.annots[popIdx] : null;
+  var ta = $('popEditTa');
+  // v1.5.2 当前气泡的注释文字 = 查看模式的 note 或 编辑模式 textarea 内容
+  var popText = (cur && cur.note ? cur.note : '') + '\n' + (ta ? ta.value : '');
+  var newAnnot = { term: term, note: '', pending: true };
+  var nested = false;
+  if(!inContent){
+    if(cur && popText.indexOf(term) >= 0){
+      // v1.5.2 正文没有、但本条注释文字里有 → 嵌套注释，角标贴在气泡里
+      newAnnot.parent = cur.term;
+      nested = true;
+    }else{
+      popToast('⚠️ 这个词在正文和本条注释里都没有，加不了角标', 3500);
+      return;
+    }
+  }
+  note.annots.push(newAnnot);
   note.updatedAt = Date.now();
   persistNote(note);
-  rerenderDetail(note); // 角标贴正文第一处合法出现处（词边界保护生效）
+  rerenderDetail(note); // 普通角标贴正文；嵌套角标不进正文（applyAnnotBadges 跳过）
   var sel = window.getSelection();
   if(sel) sel.removeAllRanges();
-  renderPopView(popIdx); // 回到查看模式，气泡保持打开
-  popToast('已加入待解释列表，点下方批量解释', 3000);
+  renderPopView(popIdx); // 回到查看模式，气泡保持打开（嵌套词旁出现子角标）
+  popToast(nested
+    ? '已加入待解释（嵌在「' + escapeHtml(cur.term) + '」里），点下方批量解释'
+    : '已加入待解释列表，点下方批量解释', 3000);
 }
 function deleteAnnot(i){
   var note = getNoteById(currentNoteId);
+  var parentTerm = null;
   if(note && Array.isArray(note.annots) && note.annots[i]){
+    parentTerm = note.annots[i].parent || null; // v1.5.2 删子注释后回到父视图
     note.annots.splice(i, 1);
     note.updatedAt = Date.now();
     persistNote(note);
     rerenderDetail(note);
+  }
+  if(parentTerm && note){
+    var annots = getAnnots(note);
+    for(var pi = 0; pi < annots.length; pi++){
+      if(annots[pi].term === parentTerm){
+        popIdx = pi;
+        renderPopView(pi);
+        popToast('🗑 已删除注释', 2500);
+        return;
+      }
+    }
   }
   closeAnnotPop();
   popToast('🗑 已删除注释', 2500);
@@ -955,6 +1042,25 @@ function runPopAction(act){
   else if(act === 'addword') addAnnotWordFromPop();
   else if(act === 'save') saveAnnotEdit(popIdx);
   else if(act === 'cancel') renderPopView(popIdx); // 取消：恢复查看模式
+  else if(act === 'back'){ // v1.5.2 子注释视图逐级返回父注释
+    var note = getNoteById(currentNoteId);
+    var annots = getAnnots(note);
+    var cur = annots[popIdx];
+    if(cur && cur.parent){
+      for(var bi = 0; bi < annots.length; bi++){
+        if(annots[bi].term === cur.parent){ popIdx = bi; renderPopView(bi); break; }
+      }
+    }
+  }
+}
+/* v1.5.2 气泡内点击子角标：气泡内容原地切换为该子注释的查看视图（不移动位置） */
+function popBadgeHit(target){
+  var el = target;
+  while(el && el !== annotPop){
+    if(el.classList && el.classList.contains('annot-badge')) return el;
+    el = el.parentNode;
+  }
+  return null;
 }
 /* v1.5 保选区：点「➕ 选词加角标」时阻止 mousedown/touchstart 默认行为，
    否则浏览器会先清掉气泡内/编辑框里的选区，读不到所选词 */
@@ -971,6 +1077,8 @@ function popPressKeepSel(e){
 annotPop.addEventListener('mousedown', popPressKeepSel);
 annotPop.addEventListener('touchstart', popPressKeepSel, { passive: false });
 annotPop.addEventListener('click', function(e){
+  var bd = popBadgeHit(e.target); // v1.5.2 气泡内子角标优先
+  if(bd){ e.stopPropagation(); popIdx = +bd.getAttribute('data-i'); renderPopView(popIdx); return; }
   var act = findPopAct(e.target);
   if(act){ e.stopPropagation(); runPopAction(act); }
 });
@@ -980,6 +1088,14 @@ annotPop.addEventListener('touchend', function(e){
   var t = e.changedTouches && e.changedTouches[0];
   var el = t ? document.elementFromPoint(t.clientX, t.clientY) : e.target;
   if(!el || !annotPop.contains(el)) return;
+  var bd = popBadgeHit(el); // v1.5.2 气泡内子角标优先
+  if(bd){
+    e.preventDefault();
+    e.stopPropagation();
+    popIdx = +bd.getAttribute('data-i');
+    renderPopView(popIdx);
+    return;
+  }
   var act = findPopAct(el);
   if(act){
     e.preventDefault();
@@ -1106,7 +1222,7 @@ function persistNote(note){
   return saveNotes(notes);
 }
 /* v1.3 词条注释 AI：单词条或批量生词，返回解释（正文不动，解释进 annots 角标） */
-function callAnnotAI(note, term, onOk, onErr, st){
+function callAnnotAI(note, term, onOk, onErr, st, ctxMap){
   var key = (localStorage.getItem(LS_KEY) || '').trim();
   if(!key){ onErr('还没有填写 API Key。请先返回首页在「API 设置」里保存 Key。'); return; }
   var sys, usr;
@@ -1116,8 +1232,13 @@ function callAnnotAI(note, term, onOk, onErr, st){
       '请严格只输出一个 JSON 对象（不要输出其他任何文字）：{"annots":[{"term":"术语","note":"解释"}]}\n' +
       '要求：对用户给出的每一个术语都返回一条；term 必须与用户给的词一字不差地原样返回；' +
       'note 用大白话解释该词在这篇笔记语境下的含义，60 字以内，先给一句话定义，必要时补半句临床意义。';
+    // v1.5.2 每个术语附出处文字（正文段落或父注释文本），嵌套生词也能解释准确
+    var lines = [];
+    for(var ti = 0; ti < term.length; ti++){
+      lines.push(term[ti] + (ctxMap && ctxMap[term[ti]] ? '\n（出处：' + ctxMap[term[ti]] + '）' : ''));
+    }
     usr = '笔记标题：《' + note.title + '》\n笔记全文：\n' + (note.content || '') +
-      '\n\n请逐一解释这些术语（每个都要解释，term 原样返回）：\n' + term.join('\n');
+      '\n\n请逐一解释这些术语（每个都要解释，term 原样返回）：\n' + lines.join('\n');
   }else if(term){
     sys = '你是一位资深的重症医学（ICU）教学专家。用户正在读一篇医学笔记，划选了一个词想让你解释。' +
       '请严格只输出一个 JSON 对象（不要输出其他任何文字）：{"term":"该词","note":"解释"}\n' +
@@ -1212,7 +1333,20 @@ btnBatchAnnot.addEventListener('click', function(){
   var note = getNoteById(currentNoteId);
   if(!note) return;
   var terms = [], annots = getAnnots(note);
-  for(var i = 0; i < annots.length; i++) if(annots[i].pending) terms.push(annots[i].term);
+  var ctxMap = {}; // v1.5.2 每个术语的出处文字：正文段落 / 父注释文本
+  for(var i = 0; i < annots.length; i++){
+    if(!annots[i].pending) continue;
+    terms.push(annots[i].term);
+    if(annots[i].parent){
+      var pn = '';
+      for(var pi = 0; pi < annots.length; pi++){
+        if(annots[pi].term === annots[i].parent){ pn = annots[pi].note || ''; break; }
+      }
+      ctxMap[annots[i].term] = '该词出自注释「' + annots[i].parent + '」的解释文字：' + pn;
+    }else{
+      ctxMap[annots[i].term] = '该词出自笔记正文段落：' + termContext(note.content, annots[i].term, 300);
+    }
+  }
   if(!terms.length){ refreshBatchBtn(); return; }
   btnBatchAnnot.disabled = true;
   toast.style.display = 'block';
@@ -1252,13 +1386,14 @@ btnBatchAnnot.addEventListener('click', function(){
     btnBatchAnnot.disabled = false;
     toastLoading.innerHTML = '⚠️ ' + errMsg;
     setTimeout(function(){ toast.style.display = 'none'; }, 5000);
-  }, stageWatch(toastLoading));
+  }, stageWatch(toastLoading), ctxMap);
 });
 
 /* 改稿历史：最多 5 版 */
 function snapshotAnnots(annots){
   if(!Array.isArray(annots)) return [];
   return annots.map(function(a){ var o = {term:a.term, note:a.note}; if(a.pending) o.pending = true;
+    if(a.parent) o.parent = a.parent; // v1.5.2 保留嵌套关系，回退不丢
     if(a.anchor) o.anchor = {pre:a.anchor.pre||'', post:a.anchor.post||''}; return o; });
 }
 function pushHistory(note){
@@ -1744,6 +1879,15 @@ function buildZip(files){
 function safeFileName(title){
   return title.replace(/[\/\\:*?"<>|]/g, '-');
 }
+/* v1.5.2 收集某个 term 的所有后代嵌套注释（有 note 且非 pending），按 annots 原顺序平铺 */
+function collectNestedForExport(annots, parentTerm, out){
+  for(var i = 0; i < annots.length; i++){
+    var a = annots[i];
+    if(!a || a.parent !== parentTerm || a.pending || !a.term || !a.note) continue;
+    out.push(a);
+    collectNestedForExport(annots, a.term, out); // 多层嵌套递归，统一平铺到最顶层父脚注
+  }
+}
 function buildMarkdown(note){
   var md = note.content || '';
   // v1.3：词条注释转为 Obsidian 原生脚注 [^n]（正文只多个角标，解释在文末）
@@ -1751,12 +1895,17 @@ function buildMarkdown(note){
   var defs = '', num = 0;
   for(var i = 0; i < annots.length; i++){
     var t = annots[i].term, n = annots[i].note;
+    if(annots[i].parent) continue; // v1.5.2 嵌套注释不单独出脚注，附加到最顶层父脚注末尾
     if(annots[i].pending || !t || !n) continue; // v1.4：待解释空角标不导出脚注
     var idx = md.indexOf(t);
     if(idx < 0) continue; // 词条已不在正文（可能被改稿删掉）则跳过
     num++;
     md = md.slice(0, idx + t.length) + '[^' + num + ']' + md.slice(idx + t.length);
-    defs += '[^' + num + ']: ' + t + '：' + n + '\n';
+    var def = '[^' + num + ']: ' + t + '：' + n;
+    var nested = [];
+    collectNestedForExport(annots, t, nested);
+    for(var k = 0; k < nested.length; k++) def += '。（' + nested[k].term + '：' + nested[k].note + '）';
+    defs += def + '\n';
   }
   if(note.links && note.links.length){
     md += '\n\n## 关联\n';
@@ -1766,6 +1915,7 @@ function buildMarkdown(note){
   return md;
 }
 
+window.buildMarkdown = buildMarkdown; // 暴露给自动化测试/控制台调试
 $('btnExport').addEventListener('click', function(){
   var notes = loadNotes();
   if(notes.length === 0){ showMsg(exportMsg, '还没有笔记可以导出。', 'err'); return; }
