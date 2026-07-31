@@ -5,6 +5,8 @@
 ====================================================================
  修改记录：
    v1.0  2026-07-31  首版发布
+   v1.0.1 2026-07-31 修复：kimi-k2.6 不支持 response_format 导致 AI 调用 HTTP 400；
+                     导出下载文件名改 ASCII（防 Chromium 系丢名）；导出锚点延迟释放
          - AI 生成学习笔记（Kimi / Moonshot API，模型可选）
          - 极简 Markdown 渲染（标题/粗体/列表/段落），HTML 转义防注入
          - [[双链]] 与反链（被提到）区
@@ -181,7 +183,7 @@
   <details class="about">
     <summary>📋 关于 / 版本说明</summary>
     <div class="inner">
-      <p><b>版本：</b>v1.0（2026-07-31）</p>
+      <p><b>版本：</b>v1.0.1（2026-07-31）修复 AI 调用 400 报错</p>
       <p><b>数据安全：</b>所有笔记和 API Key 只保存在您本机浏览器（localStorage），不上传到任何服务器；清除浏览器数据会丢失笔记，请定期导出备份。</p>
       <p><b>如何导入 Obsidian：</b></p>
       <ol>
@@ -298,9 +300,10 @@ function callAI(topic, onOk, onErr){
         'links 给出 5-8 个与本主题最相关的医学主题名词（只给名词本身）。' },
       { role: 'user', content: '请帮我整理主题：' + topic }
     ],
-    temperature: 0.4,
-    response_format: { type: 'json_object' }
+    temperature: 0.4
   };
+  // v1.0.1：去掉 response_format（kimi-k2.6 对该参数会返回 HTTP 400）；
+  // JSON 由提示词约束 + parseAIJson 容错提取（正则取首尾大括号），实测可靠。
   fetch('https://api.moonshot.cn/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
@@ -312,6 +315,8 @@ function callAI(topic, onOk, onErr){
         if(resp.status === 401) tip = 'API Key 无效或已过期，请检查 Key。';
         else if(resp.status === 429) tip = '请求太频繁或额度不足，请稍后再试。';
         else if(resp.status >= 500) tip = 'Kimi 服务器暂时繁忙，请稍后再试。';
+        // 附带上服务器返回的细节，方便排查（截断防刷屏）
+        if(t){ var s = t.replace(/\s+/g,' ').slice(0,150); tip += '（服务器说：' + s + '）'; }
         throw new Error(tip);
       });
     }
