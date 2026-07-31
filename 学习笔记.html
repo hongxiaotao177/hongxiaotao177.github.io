@@ -13,6 +13,8 @@
          - 改稿历史 history（每篇最多 5 版）与「↩️ 回退上一版」
          - 选中词条浮出菜单：解释词条 / 另开一篇《X》（首处原文替换为 [[X]]，links 去重补上）/ 填入要求框
          - AI 请求仍不传 temperature / response_format（兼容 kimi-k2.6）
+   v1.1.1 2026-07-31 修复：手机端词条菜单按钮点击无效
+         （touchstart 被 preventDefault 后浏览器不再合成 click，动作改由 touchend 直接触发）
          - AI 生成学习笔记（Kimi / Moonshot API，模型可选）
          - 极简 Markdown 渲染（标题/粗体/列表/段落），HTML 转义防注入
          - [[双链]] 与反链（被提到）区
@@ -786,7 +788,10 @@ document.addEventListener('selectionchange', function(){
 });
 detailBody.addEventListener('mouseup', function(){ setTimeout(showSelMenu, 60); });
 detailBody.addEventListener('touchend', function(){ setTimeout(showSelMenu, 120); });
-/* 菜单按钮用 mousedown/touchstart 阻止默认，避免点击时选区被清掉 */
+/* 菜单按钮用 mousedown/touchstart 阻止默认，避免点击时选区被清掉。
+   v1.1.1 修复：手机端 touchstart 被 preventDefault 后，浏览器不再合成 click，
+   导致菜单按钮"点了没反应"。改为：动作逻辑抽成 runSelAction，
+   桌面端走 click，移动端在 touchend 里直接触发。 */
 function menuPress(e){ e.preventDefault(); e.stopPropagation(); }
 selMenu.addEventListener('mousedown', menuPress);
 selMenu.addEventListener('touchstart', menuPress, { passive: false });
@@ -796,29 +801,43 @@ document.addEventListener('mousedown', function(e){
     if(!sel || sel.isCollapsed) hideSelMenu();
   }
 });
-selMenu.addEventListener('click', function(e){
-  var b = e.target;
+function runSelAction(b){
+  var act = b.getAttribute('data-act'), term = selMenuTerm;
+  hideSelMenu();
+  if(!term) return;
+  if(act === 'explain'){
+    setReviseOpen(true);
+    reviseInput.value = '请用大白话解释"' + term + '"这个词，并在首次出现处加注释';
+    reviseInput.focus();
+  }else if(act === 'fill'){
+    setReviseOpen(true);
+    reviseInput.value = term;
+    reviseInput.focus();
+  }else if(act === 'newnote'){
+    createNoteFromTerm(term, currentNoteId);
+  }
+}
+function findMenuBtn(target){
+  var b = target;
   while(b && b !== selMenu){
-    if(b.getAttribute && b.getAttribute('data-act')){
-      var act = b.getAttribute('data-act'), term = selMenuTerm;
-      hideSelMenu();
-      if(!term) return;
-      if(act === 'explain'){
-        setReviseOpen(true);
-        reviseInput.value = '请用大白话解释"' + term + '"这个词，并在首次出现处加注释';
-        reviseInput.focus();
-      }else if(act === 'fill'){
-        setReviseOpen(true);
-        reviseInput.value = term;
-        reviseInput.focus();
-      }else if(act === 'newnote'){
-        createNoteFromTerm(term, currentNoteId);
-      }
-      return;
-    }
+    if(b.getAttribute && b.getAttribute('data-act')) return b;
     b = b.parentNode;
   }
+  return null;
+}
+selMenu.addEventListener('click', function(e){
+  var b = findMenuBtn(e.target);
+  if(b) runSelAction(b);
 });
+/* 移动端：touchstart 已被 preventDefault（click 不触发），在 touchend 里直接执行动作 */
+selMenu.addEventListener('touchend', function(e){
+  e.preventDefault();
+  e.stopPropagation();
+  var t = e.changedTouches && e.changedTouches[0];
+  var el = t ? document.elementFromPoint(t.clientX, t.clientY) : e.target;
+  var b = el ? findMenuBtn(el) : null;
+  if(b) runSelAction(b);
+}, { passive: false });
 
 /* 「另开一篇」：复用 [[wikilink]] 生成流程；成功后把当前笔记首个该词条替换为 [[X]] */
 function createNoteFromTerm(term, srcId){
