@@ -4,6 +4,21 @@
  学习笔记·双链版 —— 单文件 HTML 工具
 ====================================================================
  修改记录：
+   v1.6  2026-07-31 涂黑段落局部替换：
+         - 选中菜单新增「🔄 替换这段」：涂黑一大段文字（不再限 30 字），
+           记录选中文本 selText + 选区起点前/终点后 ~20 字（preCtx/postCtx）
+           用于之后在 note.content 里精确找回这段
+         - 替换面板（固定定位居中卡片）：灰色只读原文 + 预设快捷按钮
+           （点击只把文字追加进提示词框，不立即发送，可叠加多个再手写补充）
+           + 可自由编辑的提示词框（预填默认改写要求）+ 发送/取消
+         - AI 提示词 = 用户提示词 +【要改写的段落】+【上下文】（该段前后各 ~300 字
+           仅供衔接理解）+ 硬性要求"只返回改写后的这一段正文，保留 markdown 标记"；
+           仍不传 temperature / response_format；走 stageWatch 分步进度
+         - 返回后进对照视图（上灰原文 / 下新新稿）：「✅ 采用」「🔄 再改一次」
+           （回编辑视图且保留提示词）「取消」；采用时按 preCtx/postCtx 精确定位
+           （失败退化为 selText 第一次出现处）只替换这一段，前后一字不动；
+           pushHistory（快照含 annots）+ persistNote + rerenderDetail/applyAnnotBadges
+           （角标自动重扫，被替换段里的词条注释保留不删，找不到词自然不贴角标）
    v1.5.2 2026-07-31 嵌套注释（套娃角标）：
          - 注释气泡里涂黑的生词，正文没有、但本条注释文字里有，也能加角标：
            annots 新增可选字段 parent（父注释 term），角标贴在气泡注释文字里，
@@ -211,7 +226,9 @@
   #selMenu {
     position: fixed; z-index: 9999; display: none;
     background: #fff; border-radius: 12px; box-shadow: 0 4px 18px rgba(90,70,50,.22);
-    padding: 6px; border: 1px solid #e8dcc8; white-space: nowrap;
+    padding: 6px; border: 1px solid #e8dcc8;
+    /* v1.6：按钮增到 5 个后单行在小屏手机放不下，允许换行并限制在屏内 */
+    max-width: calc(100vw - 16px);
   }
   #selMenu button {
     display: inline-block; background: none; border: none; cursor: pointer;
@@ -220,6 +237,40 @@
   }
   #selMenu button:active { background: #f5ecdd; border-radius: 8px; }
   #selMenu .sep { display: inline-block; width: 1px; height: 18px; background: #e5ddd0; vertical-align: middle; }
+
+  /* v1.6 段落替换面板：固定定位居中卡片（手机友好，全屏遮罩 + 大按钮） */
+  #replacePanel {
+    position: fixed; inset: 0; z-index: 80;
+    background: rgba(60,48,32,.35);
+    display: flex; align-items: center; justify-content: center;
+    padding: 12px;
+  }
+  .rp-card {
+    background: #fffdf8; border-radius: 16px; box-shadow: 0 8px 30px rgba(80,60,30,.28);
+    width: 100%; max-width: 560px; max-height: 92vh; overflow-y: auto;
+    -webkit-overflow-scrolling: touch; padding: 16px 18px;
+    border: 1px solid #e8dcc8;
+  }
+  .rp-card h3 { margin: 0 0 10px; font-size: 18px; color: #6a5b47; }
+  .rp-label { font-size: 13px; color: #9a8f80; margin: 10px 0 4px; }
+  .rp-orig, .rp-new {
+    font-size: 15px; line-height: 1.7; padding: 10px 12px; border-radius: 10px;
+    white-space: pre-wrap; word-break: break-word; max-height: 30vh; overflow-y: auto;
+  }
+  .rp-orig { background: #f2efe9; color: #8a8175; border: 1px dashed #ddd4c4; }
+  .rp-new { background: #f6fbf2; color: #3a4a35; border: 1px solid #d8e6cf; }
+  .rp-card .qbtn-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 8px; }
+  .rp-card .qbtn {
+    background: #f5efe4; color: #6a5b47; border: 1px solid #e8dcc8; border-radius: 20px;
+    font-size: 15px; padding: 8px 14px; cursor: pointer; -webkit-appearance: none;
+  }
+  .rp-card .qbtn:active { background: #ecdfc9; }
+  .rp-card textarea {
+    width: 100%; min-height: 84px; font-size: 16px; font-family: inherit;
+    padding: 12px 14px; border: 1px solid #e5ddd0; border-radius: 12px;
+    background: #fdfcfa; color: #3a3a3a; outline: none; resize: vertical;
+  }
+  .rp-card textarea:focus { border-color: #c9a877; }
 
   .hidden { display: none !important; }
 </style>
@@ -309,7 +360,42 @@
     <button type="button" data-act="explain">📖 解释这个词条</button><span class="sep"></span>
     <button type="button" data-act="mark">➕ 加角标</button><span class="sep"></span>
     <button type="button" data-act="newnote">📄 另开一篇</button><span class="sep"></span>
-    <button type="button" data-act="fill">✂️ 填入要求框</button>
+    <button type="button" data-act="fill">✂️ 填入要求框</button><span class="sep"></span>
+    <button type="button" data-act="replace">🔄 替换这段</button>
+  </div>
+
+  <!-- v1.6 段落替换面板（涂黑一大段 → 自定义提示词 → AI 只替换这一段） -->
+  <div id="replacePanel" class="hidden">
+    <div class="rp-card">
+      <h3>🔄 替换这段</h3>
+      <!-- 编辑视图：原文对照 + 快捷预设 + 提示词 -->
+      <div id="rpEditView">
+        <div class="rp-label">您涂黑的原文（只读，供对照）：</div>
+        <div class="rp-orig" id="rpOrig"></div>
+        <div class="rp-label">想让 AI 怎么改？点下方预设可叠加，再手写补充：</div>
+        <div class="qbtn-row" id="rpQbtnRow"></div>
+        <textarea id="rpInput"></textarea>
+        <div class="btn-row">
+          <button type="button" class="btn" id="rpSend">🤖 发送改写</button>
+          <button type="button" class="btn secondary" id="rpCancel">取消</button>
+        </div>
+        <div class="loading" id="rpLoading"><span class="spinner"></span>AI 正在改写这一段…</div>
+        <div class="msg" id="rpMsg"></div>
+      </div>
+      <!-- 对照视图：原文 vs 新稿，采用/再改/取消 -->
+      <div id="rpPreviewView" class="hidden">
+        <div class="rp-label">原文：</div>
+        <div class="rp-orig" id="rpOld"></div>
+        <div class="rp-label">AI 新稿：</div>
+        <div class="rp-new" id="rpNew"></div>
+        <div class="btn-row">
+          <button type="button" class="btn" id="rpAdopt">✅ 采用</button>
+          <button type="button" class="btn secondary" id="rpRetry">🔄 再改一次</button>
+          <button type="button" class="btn secondary" id="rpCancel2">取消</button>
+        </div>
+        <div class="msg" id="rpMsg2"></div>
+      </div>
+    </div>
   </div>
 
   <!-- v1.3 词条注释气泡 + 进度浮层 -->
@@ -320,7 +406,7 @@
   <details class="about">
     <summary>📋 关于 / 版本说明</summary>
     <div class="inner">
-      <p><b>版本：</b>v1.5.2（2026-07-31）新功能：注释里的生词，正文没有也能加角标——在注释气泡里涂黑注释文字中的生词点「➕ 选词加角标」，它会变成一个贴在气泡里的小角标（灰色虚线=待解释），点角标可钻进去看/编辑，「← 返回」回到上一条；随「批量解释」一起让 AI 讲解（AI 会参考它所在的那条注释文字）；导出时嵌套解释不单独出脚注，附加在父脚注末尾，如「……。（肺的应力：肺泡壁承受的牵张力）」。上一版 v1.5.1 修复：一篇笔记里多个词条分散在不同段落时，第一个角标之后的词条（如 ARDS、PEEP）会贴不上角标的问题，现已全部正常。以下为 v1.5 功能：① 手动加的角标现在贴在您涂黑的那个确切位置（记住涂黑处前后文），不再跳到全篇第一次出现的地方；并有词边界保护，像 ARDS 不会再嵌进 ARDSNet 中间。② 注释气泡新增「🤖 让AI改写」：点词条角标后可让 AI 按要求改写解释，改写要求可以随意修改（默认是"更通俗、更简短"），改写前自动存一版历史可回退。③ 气泡里涂黑注释文字中的生词，点「➕ 选词加角标」即可把它加为本篇待解释角标（不发 AI 请求），之后随批量解释一起让 AI 讲解。上一版 v1.4 手动批量角标：读正文时涂黑一个词，点弹出菜单的「➕ 加角标」，立即立一个灰色虚线空角标（不发 AI 请求，可连加多个）；读完后点「🤖 批量解释」按钮，把所有空角标一次性发给 AI，解释自动填回各角标变实色。另有 v1.3 词条脚注注释（正文词条旁 ① 小角标，点开看大白话，导出转 Obsidian 标准脚注）与 v1.1 交互式改稿（分栏、快捷指令、5 版历史可回退）。AI 请求保持不传 temperature / response_format（兼容 kimi-k2.6）。</p>
+      <p><b>版本：</b>v1.6（2026-07-31）新功能：涂黑一大段文字 → 弹出菜单点「🔄 替换这段」→ 面板里点预设要求（可叠加多个）或自由填写/补充 → AI 只改写这一段 → 预览对照（上原文下新稿）后点「✅ 采用」才生效，改前自动存一版历史，可点「让 AI 改」里的「↩️ 回退上一版」找回原稿。上一版 v1.5.2：注释里的生词，正文没有也能加角标——在注释气泡里涂黑注释文字中的生词点「➕ 选词加角标」，它会变成一个贴在气泡里的小角标（灰色虚线=待解释），点角标可钻进去看/编辑，「← 返回」回到上一条；随「批量解释」一起让 AI 讲解（AI 会参考它所在的那条注释文字）；导出时嵌套解释不单独出脚注，附加在父脚注末尾，如「……。（肺的应力：肺泡壁承受的牵张力）」。上一版 v1.5.1 修复：一篇笔记里多个词条分散在不同段落时，第一个角标之后的词条（如 ARDS、PEEP）会贴不上角标的问题，现已全部正常。以下为 v1.5 功能：① 手动加的角标现在贴在您涂黑的那个确切位置（记住涂黑处前后文），不再跳到全篇第一次出现的地方；并有词边界保护，像 ARDS 不会再嵌进 ARDSNet 中间。② 注释气泡新增「🤖 让AI改写」：点词条角标后可让 AI 按要求改写解释，改写要求可以随意修改（默认是"更通俗、更简短"），改写前自动存一版历史可回退。③ 气泡里涂黑注释文字中的生词，点「➕ 选词加角标」即可把它加为本篇待解释角标（不发 AI 请求），之后随批量解释一起让 AI 讲解。上一版 v1.4 手动批量角标：读正文时涂黑一个词，点弹出菜单的「➕ 加角标」，立即立一个灰色虚线空角标（不发 AI 请求，可连加多个）；读完后点「🤖 批量解释」按钮，把所有空角标一次性发给 AI，解释自动填回各角标变实色。另有 v1.3 词条脚注注释（正文词条旁 ① 小角标，点开看大白话，导出转 Obsidian 标准脚注）与 v1.1 交互式改稿（分栏、快捷指令、5 版历史可回退）。AI 请求保持不传 temperature / response_format（兼容 kimi-k2.6）。</p>
       <p><b>历史版本：</b>v1.2 默认改快模型（秒级响应）+ 分步进度提示（发送→思考→解析+用时秒数）；v1.1.1 修复手机词条菜单按钮；v1.1.2 AI 请求加 180 秒超时；v1.0.2 修复 AI 调用 400 报错</p>
       <p><b>数据安全：</b>所有笔记和 API Key 只保存在您本机浏览器（localStorage），不上传到任何服务器；清除浏览器数据会丢失笔记，请定期导出备份。</p>
       <p><b>如何导入 Obsidian：</b></p>
@@ -1582,33 +1668,53 @@ btnRevert.addEventListener('click', function(){
 /* ---------- 选中词条浮出菜单 ---------- */
 var selMenuTerm = '';
 var selMenuAnchor = null; // v1.5 涂黑处前后文
-function hideSelMenu(){ selMenu.style.display = 'none'; selMenuTerm = ''; selMenuAnchor = null; }
-function selectionInDetail(){
+var selMenuPreCtx = '', selMenuPostCtx = ''; // v1.6 选区起点前/终点后 ~20 字（替换定位用）
+function hideSelMenu(){ selMenu.style.display = 'none'; selMenuTerm = ''; selMenuAnchor = null;
+  selMenuPreCtx = ''; selMenuPostCtx = ''; }
+function selectionInDetail(maxLen){
   var sel = window.getSelection();
   if(!sel || sel.isCollapsed || sel.rangeCount === 0) return null;
   var text = sel.toString().replace(/^\s+|\s+$/g,'');
-  if(!text || text.length > 30) return null;
+  if(!text || text.length > (maxLen || 30)) return null;
   var range = sel.getRangeAt(0);
   var container = range.commonAncestorContainer;
   var node = container.nodeType === 1 ? container : container.parentNode;
   if(!node || !detailBody.contains(node)) return null;
   if(viewDetail.classList.contains('hidden')) return null;
   // v1.5 记录涂黑处前后各 ~15 字上下文，角标贴回这个确切位置
-  var anchor = null;
+  // v1.6 另记 ~20 字 preCtx/postCtx，供「替换这段」在正文里精确找回该段
+  var anchor = null, preCtx = '', postCtx = '';
   try{
     var sc = range.startContainer, ec = range.endContainer;
     var pre = '', post = '';
-    if(sc && sc.nodeType === 3) pre = sc.nodeValue.slice(Math.max(0, range.startOffset - 15), range.startOffset);
-    if(ec && ec.nodeType === 3) post = ec.nodeValue.slice(range.endOffset, range.endOffset + 15);
+    if(sc && sc.nodeType === 3){
+      pre = sc.nodeValue.slice(Math.max(0, range.startOffset - 15), range.startOffset);
+      preCtx = sc.nodeValue.slice(Math.max(0, range.startOffset - 20), range.startOffset);
+    }
+    if(ec && ec.nodeType === 3){
+      post = ec.nodeValue.slice(range.endOffset, range.endOffset + 15);
+      postCtx = ec.nodeValue.slice(range.endOffset, range.endOffset + 20);
+    }
     if(pre || post) anchor = { pre: pre, post: post };
   }catch(e){}
-  return { text: text, rect: range.getBoundingClientRect(), anchor: anchor };
+  return { text: text, rect: range.getBoundingClientRect(), anchor: anchor, preCtx: preCtx, postCtx: postCtx };
 }
 function showSelMenu(){
-  var info = selectionInDetail();
+  /* v1.6：选区最长放到 1500 字；超过 30 字的大段只显示「替换这段」按钮 */
+  var info = selectionInDetail(1500);
   if(!info){ hideSelMenu(); return; }
   selMenuTerm = info.text;
   selMenuAnchor = info.anchor || null;
+  selMenuPreCtx = info.preCtx || '';
+  selMenuPostCtx = info.postCtx || '';
+  var longSel = info.text.length > 30;
+  var btns = selMenu.getElementsByTagName('button');
+  var seps = selMenu.getElementsByClassName('sep');
+  for(var bi = 0; bi < btns.length; bi++){
+    var act = btns[bi].getAttribute('data-act');
+    btns[bi].style.display = (longSel && act !== 'replace') ? 'none' : '';
+  }
+  for(var si = 0; si < seps.length; si++) seps[si].style.display = longSel ? 'none' : '';
   selMenu.style.display = 'block';
   var mw = selMenu.offsetWidth, mh = selMenu.offsetHeight;
   var left = info.rect.left + (info.rect.width - mw) / 2;
@@ -1623,7 +1729,7 @@ var selTimer = null;
 document.addEventListener('selectionchange', function(){
   if(selTimer) clearTimeout(selTimer);
   selTimer = setTimeout(function(){
-    var info = selectionInDetail();
+    var info = selectionInDetail(1500); // v1.6 大段涂黑（<=1500字）也要弹菜单（只显示替换这段）
     if(info) showSelMenu(); else hideSelMenu();
   }, 260);
 });
@@ -1644,8 +1750,16 @@ document.addEventListener('mousedown', function(e){
 });
 function runSelAction(b){
   var act = b.getAttribute('data-act'), term = selMenuTerm, anchor = selMenuAnchor;
+  var preCtx = selMenuPreCtx, postCtx = selMenuPostCtx; // v1.6 先取出，hideSelMenu 会清空
   hideSelMenu();
   if(!term) return;
+  if(act === 'replace'){
+    // v1.6：涂黑一大段 → 打开替换面板，记录 selText + 前后 ~20 字定位上下文
+    openReplacePanel({ selText: term, preCtx: preCtx, postCtx: postCtx, noteId: currentNoteId });
+    var sel0 = window.getSelection();
+    if(sel0) sel0.removeAllRanges();
+    return;
+  }
   if(act === 'explain'){
     // v1.3：直接生成脚注角标（正文不加长），不再走改稿面板
     var note = getNoteById(currentNoteId);
@@ -1711,6 +1825,193 @@ selMenu.addEventListener('touchend', function(e){
   var b = el ? findMenuBtn(el) : null;
   if(b) runSelAction(b);
 }, { passive: false });
+
+/* ==================== v1.6 段落替换（涂黑一大段 → AI 只替换这一段） ==================== */
+var replacePanel = $('replacePanel'), rpEditView = $('rpEditView'), rpPreviewView = $('rpPreviewView'),
+    rpOrig = $('rpOrig'), rpOld = $('rpOld'), rpNew = $('rpNew'),
+    rpInput = $('rpInput'), rpLoading = $('rpLoading'), rpMsg = $('rpMsg'), rpMsg2 = $('rpMsg2'),
+    rpSend = $('rpSend');
+var replaceCtx = null; // { selText, preCtx, postCtx, noteId, newText }
+var RP_DEFAULT_PROMPT = '把这段文字改写得更简洁通顺，保留医学事实准确：';
+/* 预设快捷要求（复用 QUICK_CMDS 模式：点击只把文字追加进提示词框，不立即发送，可叠加） */
+var RP_QUICKS = [
+  '✂️ 压缩到一半，保留关键数字',
+  '📋 改写得更有条理（分点列出）',
+  '🗣 说人话（像跟实习医生讲）',
+  '🔢 保留所有数值和单位不变',
+  '📖 补充机制解释但保持篇幅'
+];
+(function(){
+  var row = $('rpQbtnRow'), html = '';
+  for(var i = 0; i < RP_QUICKS.length; i++){
+    html += '<button type="button" class="qbtn" data-rq="'+i+'">'+RP_QUICKS[i]+'</button>';
+  }
+  row.innerHTML = html;
+  row.addEventListener('click', function(e){
+    var b = e.target;
+    while(b && b !== row){
+      if(b.getAttribute && b.getAttribute('data-rq') !== null){
+        var cmd = RP_QUICKS[+b.getAttribute('data-rq')];
+        var v = rpInput.value.replace(/\s+$/,'');
+        rpInput.value = (v ? v + '；' : '') + cmd; // 追加叠加，不发送
+        rpInput.focus();
+        return;
+      }
+      b = b.parentNode;
+    }
+  });
+})();
+function openReplacePanel(ctx){
+  replaceCtx = ctx;
+  rpOrig.textContent = ctx.selText;
+  rpInput.value = RP_DEFAULT_PROMPT;
+  rpMsg.className = 'msg'; rpMsg.textContent = '';
+  rpMsg2.className = 'msg'; rpMsg2.textContent = '';
+  rpLoading.style.display = 'none';
+  rpSend.disabled = false;
+  rpEditView.classList.remove('hidden');
+  rpPreviewView.classList.add('hidden');
+  replacePanel.classList.remove('hidden');
+}
+function closeReplacePanel(){
+  replacePanel.classList.add('hidden');
+  replaceCtx = null;
+}
+/* 用 preCtx/postCtx 在正文里精确找回该段；找不到精确上下文退化为 selText 第一次出现处 */
+function locateReplaceSpan(content, ctx){
+  var sel = ctx.selText;
+  if(ctx.preCtx || ctx.postCtx){
+    var i = 0;
+    while(true){
+      i = content.indexOf(sel, i);
+      if(i < 0) break;
+      var ok = true;
+      if(ctx.preCtx){
+        var seg = content.slice(Math.max(0, i - ctx.preCtx.length), i);
+        if(ctx.preCtx.slice(ctx.preCtx.length - seg.length) !== seg) ok = false;
+      }
+      if(ok && ctx.postCtx){
+        var seg2 = content.slice(i + sel.length, i + sel.length + ctx.postCtx.length);
+        if(ctx.postCtx.slice(0, seg2.length) !== seg2) ok = false;
+      }
+      if(ok) return i;
+      i++;
+    }
+  }
+  return content.indexOf(sel);
+}
+/* v1.6 段落替换 AI：提示词 + 要改写的段落 + 前后 ~300 字上下文 + 硬性要求，
+   只回改写后的这一段纯文本。不传 temperature / response_format（兼容 kimi-k2.6）。 */
+function callReplaceAI(userReq, selText, ctxText, onOk, onErr, st){
+  var key = (localStorage.getItem(LS_KEY) || '').trim();
+  if(!key){ onErr('还没有填写 API Key。请先返回首页在「API 设置」里保存 Key。'); return; }
+  var sys = '你是一位资深的重症医学（ICU）教学编辑。用户会给你一段被涂黑选中的笔记文字、' +
+    '它前后的正文上下文，以及一条改写要求。请严格按改写要求只改写这一段。';
+  var usr = '【改写要求】\n' + userReq +
+    '\n\n【要改写的段落】\n' + selText +
+    '\n\n【上下文】（仅供理解前后衔接，不要改写它）\n' + ctxText +
+    '\n\n硬性要求：只返回改写后的这一段正文，不要解释、不要多余文字、' +
+    '保留原文的 markdown 标记（**加粗**、[[双链]] 等）。';
+  var payload = { model: modelSel.value, messages: [ {role:'system',content:sys}, {role:'user',content:usr} ] };
+  if(st) st.set('① 正在把改写要求发送给 Kimi 服务器…');
+  fetchWithTimeout('https://api.moonshot.cn/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+    body: JSON.stringify(payload)
+  }).then(function(resp){
+    if(!resp.ok){
+      return resp.text().then(function(t){
+        var tip = '请求失败（HTTP ' + resp.status + '）。';
+        if(resp.status === 401) tip = 'API Key 无效或已过期，请检查 Key。';
+        else if(resp.status === 429) tip = '请求太频繁或额度不足，请稍后再试。';
+        else if(resp.status >= 500) tip = 'Kimi 服务器暂时繁忙，请稍后再试。';
+        if(t){ var s = t.replace(/\s+/g,' ').slice(0,150); tip += '（服务器说：' + s + '）'; }
+        throw new Error(tip);
+      });
+    }
+    if(st) st.set('② Kimi 已收到，AI 正在改写这一段…');
+    return resp.json();
+  }).then(function(data){
+    if(st) st.set('③ 回复已送达，正在整理新稿…');
+    var text = '';
+    try{ text = data.choices[0].message.content; }catch(e){}
+    text = String(text || '').replace(/^\s+|\s+$/g, '').replace(/^["「『]+|["」』]+$/g, '');
+    if(!text) throw new Error('AI 返回内容为空，请重试。');
+    if(st) st.stop();
+    onOk(text);
+  }).catch(function(err){
+    if(st) st.stop();
+    var m = (err && err.message) ? err.message : '网络连接失败，请检查网络后重试。';
+    if(/Failed to fetch|NetworkError|Load failed/i.test(m)) m = '网络连接失败（请求没到达 Kimi 或中途断线）。请检查网络后重试。';
+    onErr(m);
+  });
+}
+/* 发送改写：成功后进入对照视图 */
+rpSend.addEventListener('click', function(){
+  if(!replaceCtx) return;
+  var note = getNoteById(replaceCtx.noteId);
+  if(!note){ closeReplacePanel(); return; }
+  var userReq = rpInput.value.replace(/^\s+|\s+$/g,'');
+  if(!userReq) userReq = RP_DEFAULT_PROMPT;
+  // 取该段前后各 ~300 字正文作上下文（仅供 AI 理解衔接）
+  var content = note.content || '';
+  var idx = locateReplaceSpan(content, replaceCtx);
+  var ctxText;
+  if(idx >= 0){
+    ctxText = '……' + content.slice(Math.max(0, idx - 300), idx) +
+      '【此处为被改写段落】' +
+      content.slice(idx + replaceCtx.selText.length, idx + replaceCtx.selText.length + 300) + '……';
+  }else{
+    ctxText = content.slice(0, 600);
+  }
+  rpMsg.className = 'msg'; rpMsg.textContent = '';
+  rpLoading.style.display = 'block';
+  rpSend.disabled = true;
+  callReplaceAI(userReq, replaceCtx.selText, ctxText, function(newText){
+    rpLoading.style.display = 'none';
+    rpSend.disabled = false;
+    replaceCtx.newText = newText;
+    rpOld.textContent = replaceCtx.selText;
+    rpNew.textContent = newText;
+    rpMsg2.className = 'msg'; rpMsg2.textContent = '';
+    rpEditView.classList.add('hidden');
+    rpPreviewView.classList.remove('hidden');
+  }, function(errMsg){
+    rpLoading.style.display = 'none';
+    rpSend.disabled = false;
+    showMsg(rpMsg, errMsg, 'err');
+  }, stageWatch(rpLoading));
+});
+/* ✅ 采用：精确定位后只替换这一段，前后不动；存历史可回退 */
+$('rpAdopt').addEventListener('click', function(){
+  if(!replaceCtx || !replaceCtx.newText) return;
+  var note = getNoteById(replaceCtx.noteId);
+  if(!note){ closeReplacePanel(); return; }
+  var content = note.content || '';
+  var idx = locateReplaceSpan(content, replaceCtx);
+  if(idx < 0){
+    showMsg(rpMsg2, '⚠️ 在正文里找不到这段原文了（可能刚被改动），未做替换。', 'err');
+    return;
+  }
+  pushHistory(note); // 快照含 annots/parent/anchor（snapshotAnnots），可回退
+  note.content = content.slice(0, idx) + replaceCtx.newText + content.slice(idx + replaceCtx.selText.length);
+  note.updatedAt = Date.now();
+  persistNote(note);
+  rerenderDetail(note); // 重渲染 + applyAnnotBadges 自动重扫角标（annots 保留不删）
+  refreshRevertBtn();
+  closeReplacePanel();
+  toast.style.display = 'block';
+  toastLoading.innerHTML = '✅ 已替换，可点「让 AI 改」里的回退找回原稿';
+  setTimeout(function(){ toast.style.display = 'none'; }, 4500);
+});
+/* 🔄 再改一次：回到提示词编辑视图，保留原提示词可改 */
+$('rpRetry').addEventListener('click', function(){
+  rpPreviewView.classList.add('hidden');
+  rpEditView.classList.remove('hidden');
+  rpInput.focus();
+});
+$('rpCancel').addEventListener('click', closeReplacePanel);
+$('rpCancel2').addEventListener('click', closeReplacePanel);
 
 /* 「另开一篇」：复用 [[wikilink]] 生成流程；成功后把当前笔记首个该词条替换为 [[X]] */
 function createNoteFromTerm(term, srcId){
