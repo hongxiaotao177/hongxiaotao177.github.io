@@ -17,6 +17,10 @@
          （touchstart 被 preventDefault 后浏览器不再合成 click，动作改由 touchend 直接触发）
    v1.1.2 2026-07-31 修复：AI 请求加 180 秒超时（fetchWithTimeout + AbortController），
          防止 kimi-k2.6 思考型模型偶发长考/连接挂住时页面无限转圈；加载提示改为 30~90 秒预期
+   v1.2  2026-07-31 体验改进：
+         - 默认模型改为 moonshot-v1-8k（秒级响应），kimi-k2.6 保留为"思考型·深但慢"备选
+         - AI 请求分步进度提示（①发送中→②AI思考中→③回复解析中）+ 实时已用时秒数（stageWatch）
+         - 网络失败提示更明确（请求未到达/中途断线的区分与建议）
          - AI 生成学习笔记（Kimi / Moonshot API，模型可选）
          - 极简 Markdown 渲染（标题/粗体/列表/段落），HTML 转义防注入
          - [[双链]] 与反链（被提到）区
@@ -169,9 +173,10 @@
       <input type="password" id="apiKey" placeholder="请输入 Moonshot API Key，如 sk-..." autocomplete="off">
       <label for="modelSel">模型</label>
       <select id="modelSel">
-        <option value="kimi-k2.6" selected>kimi-k2.6（默认）</option>
-        <option value="moonshot-v1-32k">moonshot-v1-32k</option>
-        <option value="moonshot-v1-128k">moonshot-v1-128k</option>
+        <option value="moonshot-v1-8k" selected>moonshot-v1-8k（默认，最快，几秒出结果）</option>
+        <option value="moonshot-v1-32k">moonshot-v1-32k（快，长文更稳）</option>
+        <option value="moonshot-v1-128k">moonshot-v1-128k（快，超长文用）</option>
+        <option value="kimi-k2.6">kimi-k2.6（思考型，深但慢，30~90秒）</option>
       </select>
       <div class="btn-row">
         <button class="btn" id="btnSaveKey">保存 Key</button>
@@ -243,7 +248,7 @@
     <summary>📋 关于 / 版本说明</summary>
     <div class="inner">
       <p><b>版本：</b>v1.1（2026-07-31）新增「交互式改稿」：详情页点「✏️ 让 AI 改」可上下分栏改稿（快捷指令 + 自由要求），每篇保留最近 5 版历史可回退；在正文里选中一个词（1~30 字）会浮出菜单，可「解释这个词条」「另开一篇」或填入要求框。AI 请求保持不传 temperature / response_format（兼容 kimi-k2.6）。</p>
-      <p><b>历史版本：</b>v1.1.1 修复手机端词条菜单按钮点击无效；v1.1.2 AI 请求加 180 秒超时（防止思考型模型偶发长考时页面一直转圈）；v1.0.2 修复 AI 调用 400 报错</p>
+      <p><b>历史版本：</b>v1.2 默认改快模型（秒级响应）+ 分步进度提示（发送→思考→解析+用时秒数）；v1.1.1 修复手机词条菜单按钮；v1.1.2 AI 请求加 180 秒超时；v1.0.2 修复 AI 调用 400 报错</p>
       <p><b>数据安全：</b>所有笔记和 API Key 只保存在您本机浏览器（localStorage），不上传到任何服务器；清除浏览器数据会丢失笔记，请定期导出备份。</p>
       <p><b>如何导入 Obsidian：</b></p>
       <ol>
@@ -359,7 +364,20 @@ function fetchWithTimeout(url, options, timeoutMs){
   });
 }
 
-function callAI(topic, onOk, onErr){
+/* v1.2 分步进度：让使用者知道请求走到哪一步（连接→思考→接收→解析），并显示已用时 */
+function stageWatch(loadingEl){
+  var t0 = Date.now(), timer = null, stage = '';
+  function render(){
+    var s = Math.floor((Date.now() - t0) / 1000);
+    loadingEl.innerHTML = '<span class="spinner"></span>' + stage + '（已用时 ' + s + ' 秒）';
+  }
+  return {
+    set: function(txt){ stage = txt; if(!timer){ timer = setInterval(render, 1000); } render(); },
+    stop: function(){ if(timer){ clearInterval(timer); timer = null; } }
+  };
+}
+
+function callAI(topic, onOk, onErr, st){
   var key = (localStorage.getItem(LS_KEY) || '').trim();
   if(!key){ onErr('还没有填写 API Key。请先在上方「API 设置」里输入并保存 Key。'); return; }
   var model = modelSel.value;
@@ -379,6 +397,7 @@ function callAI(topic, onOk, onErr){
   // v1.0.1：去掉 response_format（kimi-k2.6 对该参数会返回 HTTP 400）；
   // v1.0.2：去掉 temperature（kimi-k2.6 只允许 temperature=1，传其他值报 HTTP 400）；
   // JSON 由提示词约束 + parseAIJson 容错提取（正则取首尾大括号），实测可靠。
+  if(st) st.set('① 正在把要求发送给 Kimi 服务器…');
   fetchWithTimeout('https://api.moonshot.cn/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
@@ -395,8 +414,10 @@ function callAI(topic, onOk, onErr){
         throw new Error(tip);
       });
     }
+    if(st) st.set('② Kimi 已收到，AI 正在思考…');
     return resp.json();
   }).then(function(data){
+    if(st) st.set('③ 回复已送达，正在整理成笔记…');
     var text = '';
     try{ text = data.choices[0].message.content; }catch(e){}
     if(!text) throw new Error('AI 返回内容为空，请重试。');
@@ -405,10 +426,12 @@ function callAI(topic, onOk, onErr){
       throw new Error('AI 返回格式不对，请再点一次重试。');
     }
     if(!Array.isArray(parsed.links)) parsed.links = [];
+    if(st) st.stop();
     onOk(parsed);
   }).catch(function(err){
+    if(st) st.stop();
     var m = (err && err.message) ? err.message : '网络连接失败，请检查网络后重试。';
-    if(/Failed to fetch|NetworkError|Load failed/i.test(m)) m = '网络连接失败，请检查网络后重试。';
+    if(/Failed to fetch|NetworkError|Load failed/i.test(m)) m = '网络连接失败（请求没到达 Kimi 或中途断线）。请检查网络后重试；若在用快模型仍频繁出现，试试切换 WiFi/流量。';
     onErr(m);
   });
 }
@@ -459,7 +482,7 @@ function generateNote(topic, done){
   }, function(errMsg){
     showMsg(genMsg, errMsg + '（可再点一次「AI 帮我学」重试）', 'err');
     done(errMsg);
-  });
+  }, stageWatch(genLoading));
 }
 
 /* ==================== 列表页 ==================== */
@@ -666,7 +689,7 @@ function refreshRevertBtn(){
 btnRevise.addEventListener('click', function(){ setReviseOpen(!isReviseOpen()); });
 
 /* 改稿 AI 调用：原笔记全文 + 用户要求 → 同格式 JSON（不传 temperature/response_format） */
-function callReviseAI(note, instruction, onOk, onErr){
+function callReviseAI(note, instruction, onOk, onErr, st){
   var key = (localStorage.getItem(LS_KEY) || '').trim();
   if(!key){ onErr('还没有填写 API Key。请先返回首页在「API 设置」里保存 Key。'); return; }
   var payload = {
@@ -683,6 +706,7 @@ function callReviseAI(note, instruction, onOk, onErr){
         '\n\n【修改要求】\n' + instruction }
     ]
   };
+  if(st) st.set('① 正在把要求发送给 Kimi 服务器…');
   fetchWithTimeout('https://api.moonshot.cn/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
@@ -698,18 +722,22 @@ function callReviseAI(note, instruction, onOk, onErr){
         throw new Error(tip);
       });
     }
+    if(st) st.set('② Kimi 已收到，AI 正在思考修改…');
     return resp.json();
   }).then(function(data){
+    if(st) st.set('③ 回复已送达，正在应用修改…');
     var text = '';
     try{ text = data.choices[0].message.content; }catch(e){}
     if(!text) throw new Error('AI 返回内容为空，请重试。');
     var parsed = parseAIJson(text);
     if(!parsed || !parsed.content) throw new Error('AI 返回格式不对，请再点一次重试。');
     if(!Array.isArray(parsed.links)) parsed.links = [];
+    if(st) st.stop();
     onOk(parsed);
   }).catch(function(err){
+    if(st) st.stop();
     var m = (err && err.message) ? err.message : '网络连接失败，请检查网络后重试。';
-    if(/Failed to fetch|NetworkError|Load failed/i.test(m)) m = '网络连接失败，请检查网络后重试。';
+    if(/Failed to fetch|NetworkError|Load failed/i.test(m)) m = '网络连接失败（请求没到达 Kimi 或中途断线）。请检查网络后重试；若在用快模型仍频繁出现，试试切换 WiFi/流量。';
     onErr(m);
   });
 }
@@ -744,7 +772,7 @@ btnDoRevise.addEventListener('click', function(){
     reviseLoading.style.display = 'none';
     btnDoRevise.disabled = false;
     showMsg(reviseMsg, errMsg, 'err');
-  });
+  }, stageWatch(reviseLoading));
 });
 
 btnRevert.addEventListener('click', function(){
@@ -896,7 +924,7 @@ function createNoteFromTerm(term, srcId){
   }, function(errMsg){
     reviseLoading.style.display = 'none';
     showMsg(reviseMsg, errMsg, 'err');
-  });
+  }, stageWatch(reviseLoading));
 }
 
 /* ==================== API Key 设置 ==================== */
