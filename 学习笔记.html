@@ -17,6 +17,13 @@
          （touchstart 被 preventDefault 后浏览器不再合成 click，动作改由 touchend 直接触发）
    v1.1.2 2026-07-31 修复：AI 请求加 180 秒超时（fetchWithTimeout + AbortController），
          防止 kimi-k2.6 思考型模型偶发长考/连接挂住时页面无限转圈；加载提示改为 30~90 秒预期
+   v1.3  2026-07-31 词条脚注注释：
+         - 「解释这个词条」/「📖 解释生词」不再把解释塞进正文，改为词条旁 ① 小角标，
+           点角标弹气泡看解释（气泡内可删除该条注释）；正文一个字不加长
+         - note.annots=[{term,note}] 存储；改稿历史/回退包含 annots
+         - 导出 Markdown 转 Obsidian 原生脚注 [^n]：正文词条后角标，文末定义列表
+         - 渲染器补单星号 *斜体*
+         - 注释 AI 调用带分步进度浮层（toast）
    v1.2  2026-07-31 体验改进：
          - 默认模型改为 moonshot-v1-8k（秒级响应），kimi-k2.6 保留为"思考型·深但慢"备选
          - AI 请求分步进度提示（①发送中→②AI思考中→③回复解析中）+ 实时已用时秒数（stageWatch）
@@ -115,6 +122,18 @@
   .backlinks { margin-top: 20px; border-top: 1px dashed #e5ddd0; padding-top: 14px; }
   .backlinks h3 { font-size: 17px; color: #7a6f60; margin: 0 0 8px; }
   .backlink-item { display: inline-block; background: #f5efe4; color: #6a5b47; border-radius: 10px; padding: 8px 14px; margin: 4px 6px 4px 0; font-size: 16px; cursor: pointer; }
+
+  /* v1.3 词条注释角标与气泡 */
+  .annot-badge { display: inline-block; min-width: 17px; height: 17px; line-height: 17px; text-align: center;
+    background: #c9a877; color: #fff; border-radius: 50%; font-size: 11px; font-weight: 600;
+    margin-left: 2px; padding: 0 3px; cursor: pointer; vertical-align: super; }
+  #annotPop { display: none; position: absolute; z-index: 60; max-width: 300px; background: #fffdf8;
+    border: 1px solid #e5d9c4; border-radius: 12px; box-shadow: 0 4px 18px rgba(80,60,30,.18);
+    padding: 12px 14px; font-size: 15px; line-height: 1.7; color: #4a3f33; }
+  #annotPop .pop-del { margin-top: 8px; font-size: 12px; color: #b0906a; text-decoration: underline; cursor: pointer; text-align: right; }
+  #toast { position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%); z-index: 70;
+    background: rgba(255,253,248,.97); border: 1px solid #e5d9c4; border-radius: 12px;
+    box-shadow: 0 4px 18px rgba(80,60,30,.18); padding: 12px 18px; font-size: 15px; color: #4a3f33; }
 
   .loading { text-align: center; color: #9a8f80; padding: 14px 0; display: none; font-size: 16px; }
   .spinner { display: inline-block; width: 18px; height: 18px; border: 3px solid #e5ddd0; border-top-color: #c9a877; border-radius: 50%; vertical-align: -3px; margin-right: 8px; animation: spin 0.9s linear infinite; }
@@ -243,11 +262,15 @@
     <button type="button" data-act="fill">✂️ 填入要求框</button>
   </div>
 
+  <!-- v1.3 词条注释气泡 + 进度浮层 -->
+  <div id="annotPop"></div>
+  <div id="toast" style="display:none;"><div class="loading" id="toastLoading" style="display:block;padding:0;"></div></div>
+
   <!-- ===== 关于 / 版本说明 ===== -->
   <details class="about">
     <summary>📋 关于 / 版本说明</summary>
     <div class="inner">
-      <p><b>版本：</b>v1.1（2026-07-31）新增「交互式改稿」：详情页点「✏️ 让 AI 改」可上下分栏改稿（快捷指令 + 自由要求），每篇保留最近 5 版历史可回退；在正文里选中一个词（1~30 字）会浮出菜单，可「解释这个词条」「另开一篇」或填入要求框。AI 请求保持不传 temperature / response_format（兼容 kimi-k2.6）。</p>
+      <p><b>版本：</b>v1.3（2026-07-31）词条脚注注释：选中词点「解释这个词条」或用「📖 解释生词」，正文词条旁出现 ① 小角标，点开看大白话解释，正文不再加长；导出时自动转为 Obsidian 标准脚注。另有 v1.1 交互式改稿（分栏、快捷指令、5 版历史可回退）。AI 请求保持不传 temperature / response_format（兼容 kimi-k2.6）。</p>
       <p><b>历史版本：</b>v1.2 默认改快模型（秒级响应）+ 分步进度提示（发送→思考→解析+用时秒数）；v1.1.1 修复手机词条菜单按钮；v1.1.2 AI 请求加 180 秒超时；v1.0.2 修复 AI 调用 400 报错</p>
       <p><b>数据安全：</b>所有笔记和 API Key 只保存在您本机浏览器（localStorage），不上传到任何服务器；清除浏览器数据会丢失笔记，请定期导出备份。</p>
       <p><b>如何导入 Obsidian：</b></p>
@@ -318,8 +341,9 @@ function escapeHtml(s){
                   .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 function renderInline(escapedLine){
-  // 先 **粗体**，再把 [[X]] 换成可点链接（X 内容已在转义后的文本上匹配，再转义一次以防引号）
+  // 先 **粗体**，再 *斜体*（v1.3 补），最后把 [[X]] 换成可点链接
   var s = escapedLine.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  s = s.replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
   s = s.replace(/\[\[([^\[\]]+)\]\]/g, function(m, name){
     return '<a href="javascript:void(0)" class="wikilink" data-link="'+name.replace(/"/g,'&quot;')+'">'+name+'</a>';
   });
@@ -530,6 +554,98 @@ function buildContentWithLinks(note){
   return md;
 }
 
+/* ==================== v1.3 词条脚注注释 ====================
+   数据：note.annots = [{term, note}]（note 为 <=60 字大白话解释）
+   渲染：正文第一处词条旁加可点小角标，点击弹出气泡，正文不增加文字
+   导出：转为 Obsidian 原生脚注 [^n]（见 buildMarkdown） */
+function getAnnots(note){ return Array.isArray(note && note.annots) ? note.annots : []; }
+
+function applyAnnotBadges(note){
+  var annots = getAnnots(note);
+  if(!annots.length) return;
+  var used = {};
+  var walker = document.createTreeWalker(detailBody, NodeFilter.SHOW_TEXT, {
+    acceptNode: function(n){
+      if(!n.nodeValue || !n.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+      var p = n.parentNode;
+      while(p && p !== detailBody){
+        if(p.classList && (p.classList.contains('wikilink') || p.classList.contains('annot-term'))) return NodeFilter.FILTER_REJECT;
+        p = p.parentNode;
+      }
+      return NodeFilter.FILTER_ACCEPT;
+    }
+  });
+  var nodes = [], n0;
+  while((n0 = walker.nextNode())) nodes.push(n0);
+  for(var a = 0; a < annots.length; a++){
+    var term = annots[a].term;
+    if(!term || used[term]) continue;
+    for(var k = 0; k < nodes.length; k++){
+      var txt = nodes[k].nodeValue, idx = txt.indexOf(term);
+      if(idx < 0) continue;
+      // 切开文本节点：前段 + 词条(带角标) + 后段
+      var after = nodes[k].splitText(idx);
+      after.splitText(term.length);
+      var span = document.createElement('span');
+      span.className = 'annot-term';
+      span.textContent = term;
+      var badge = document.createElement('sup');
+      badge.className = 'annot-badge';
+      badge.setAttribute('data-i', a);
+      badge.textContent = (a + 1);
+      span.appendChild(badge);
+      nodes[k].parentNode.replaceChild(span, after);
+      // 更新节点列表（后段文本仍可被后续词条匹配）
+      nodes[k+1] = span.nextSibling;
+      used[term] = true;
+      break;
+    }
+  }
+}
+
+/* 角标气泡 */
+var annotPop = $('annotPop');
+detailBody.addEventListener('click', function(e){
+  var b = e.target;
+  if(b.classList && b.classList.contains('annot-badge')){
+    e.stopPropagation();
+    var note = getNoteById(currentNoteId);
+    var annots = getAnnots(note);
+    var i = +b.getAttribute('data-i');
+    var a = annots[i];
+    if(!a) return;
+    annotPop.innerHTML = '<b>' + escapeHtml(a.term) + '</b>：' + escapeHtml(a.note) +
+      '<div class="pop-del" data-i="' + i + '">删除这条注释</div>';
+    var r = b.getBoundingClientRect();
+    annotPop.style.display = 'block';
+    var pw = annotPop.offsetWidth, ph = annotPop.offsetHeight;
+    var left = Math.max(8, Math.min(r.left + window.scrollX - pw/2 + r.width/2, window.scrollX + document.documentElement.clientWidth - pw - 8));
+    var top = r.bottom + window.scrollY + 6;
+    if(top + ph > window.scrollY + document.documentElement.clientHeight - 8) top = r.top + window.scrollY - ph - 6;
+    annotPop.style.left = left + 'px';
+    annotPop.style.top = top + 'px';
+    return;
+  }
+  var del = e.target;
+  if(del.classList && del.classList.contains('pop-del')){
+    var note2 = getNoteById(currentNoteId);
+    if(note2 && Array.isArray(note2.annots)){
+      note2.annots.splice(+del.getAttribute('data-i'), 1);
+      note2.updatedAt = Date.now();
+      persistNote(note2);
+      detailBody.innerHTML = renderMarkdown(buildContentWithLinks(note2));
+      applyAnnotBadges(note2);
+      renderBacklinks(note2);
+    }
+    annotPop.style.display = 'none';
+    return;
+  }
+  annotPop.style.display = 'none';
+});
+document.addEventListener('touchend', function(e){
+  if(annotPop.style.display === 'block' && !annotPop.contains(e.target)) annotPop.style.display = 'none';
+}, { passive: true });
+
 function openDetail(id){
   var note = getNoteById(id);
   if(!note){ renderList(); return; }
@@ -537,6 +653,7 @@ function openDetail(id){
   detailTitle.textContent = note.title;
   detailTime.textContent = '创建 '+fmtTime(note.createdAt)+' · 更新 '+fmtTime(note.updatedAt);
   detailBody.innerHTML = renderMarkdown(buildContentWithLinks(note));
+  applyAnnotBadges(note);
   renderBacklinks(note);
   setReviseOpen(false);
   hideSelMenu();
@@ -632,17 +749,96 @@ function persistNote(note){
   for(var i=0;i<notes.length;i++) if(notes[i].id === note.id){ notes[i] = note; break; }
   return saveNotes(notes);
 }
+/* v1.3 词条注释 AI：单词条或批量生词，返回解释（正文不动，解释进 annots 角标） */
+function callAnnotAI(note, term, onOk, onErr, st){
+  var key = (localStorage.getItem(LS_KEY) || '').trim();
+  if(!key){ onErr('还没有填写 API Key。请先返回首页在「API 设置」里保存 Key。'); return; }
+  var sys, usr;
+  if(term){
+    sys = '你是一位资深的重症医学（ICU）教学专家。用户正在读一篇医学笔记，划选了一个词想让你解释。' +
+      '请严格只输出一个 JSON 对象（不要输出其他任何文字）：{"term":"该词","note":"解释"}\n' +
+      '要求：note 用大白话解释该词在这篇笔记语境下的含义，60 字以内，先给一句话定义，必要时补半句临床意义；不要重复笔记原文的长段内容。';
+    usr = '笔记标题：《' + note.title + '》\n笔记全文：\n' + (note.content || '') + '\n\n请解释这个词：' + term;
+  }else{
+    sys = '你是一位资深的重症医学（ICU）教学专家。请从用户给的医学笔记中挑出 5~8 个最难懂的专业术语，逐一用大白话注释。' +
+      '请严格只输出一个 JSON 对象（不要输出其他任何文字）：{"annots":[{"term":"术语","note":"解释"}]}\n' +
+      '要求：term 必须是笔记原文中出现过的原词（一字不差）；note 60 字以内，一句话定义为主。';
+    usr = '笔记标题：《' + note.title + '》\n笔记全文：\n' + (note.content || '');
+  }
+  var payload = { model: modelSel.value, messages: [ {role:'system',content:sys}, {role:'user',content:usr} ] };
+  if(st) st.set('① 正在把要求发送给 Kimi 服务器…');
+  fetchWithTimeout('https://api.moonshot.cn/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+    body: JSON.stringify(payload)
+  }).then(function(resp){
+    if(!resp.ok){
+      return resp.text().then(function(t){
+        var tip = '请求失败（HTTP ' + resp.status + '）。';
+        if(resp.status === 401) tip = 'API Key 无效或已过期，请检查 Key。';
+        else if(resp.status === 429) tip = '请求太频繁或额度不足，请稍后再试。';
+        else if(resp.status >= 500) tip = 'Kimi 服务器暂时繁忙，请稍后再试。';
+        if(t){ var s = t.replace(/\s+/g,' ').slice(0,150); tip += '（服务器说：' + s + '）'; }
+        throw new Error(tip);
+      });
+    }
+    if(st) st.set('② Kimi 已收到，AI 正在思考解释…');
+    return resp.json();
+  }).then(function(data){
+    if(st) st.set('③ 回复已送达，正在加注释…');
+    var text = '';
+    try{ text = data.choices[0].message.content; }catch(e){}
+    if(!text) throw new Error('AI 返回内容为空，请重试。');
+    var parsed = parseAIJson(text);
+    if(!parsed) throw new Error('AI 返回格式不对，请再点一次重试。');
+    if(st) st.stop();
+    onOk(parsed);
+  }).catch(function(err){
+    if(st) st.stop();
+    var m = (err && err.message) ? err.message : '网络连接失败，请检查网络后重试。';
+    if(/Failed to fetch|NetworkError|Load failed/i.test(m)) m = '网络连接失败（请求没到达 Kimi 或中途断线）。请检查网络后重试。';
+    onErr(m);
+  });
+}
+
+/* 合并注释结果到笔记并刷新（toast 进度浮层） */
+var toast = $('toast'), toastLoading = $('toastLoading');
+function mergeAnnots(note, parsed, doneMsg){
+  if(!Array.isArray(note.annots)) note.annots = [];
+  var added = 0;
+  var list = parsed.annots ? parsed.annots : (parsed.term ? [parsed] : []);
+  for(var i = 0; i < list.length; i++){
+    var t = (list[i].term || '').trim(), n = (list[i].note || '').trim();
+    if(!t || !n) continue;
+    if((note.content || '').indexOf(t) < 0) continue; // 只收原文里真实存在的词
+    var found = false;
+    for(var j = 0; j < note.annots.length; j++){
+      if(note.annots[j].term === t){ note.annots[j].note = n; found = true; break; }
+    }
+    if(!found){ note.annots.push({term: t, note: n}); added++; }
+  }
+  note.updatedAt = Date.now();
+  persistNote(note);
+  detailBody.innerHTML = renderMarkdown(buildContentWithLinks(note));
+  applyAnnotBadges(note);
+  renderBacklinks(note);
+  toastLoading.innerHTML = '✅ ' + doneMsg + '（正文词条旁的 ① 小角标，点开看解释）';
+  setTimeout(function(){ toast.style.display = 'none'; }, 4000);
+}
+
 /* 改稿历史：最多 5 版 */
 function pushHistory(note){
   if(!Array.isArray(note.history)) note.history = [];
-  note.history.push({ content: note.content, links: (note.links || []).slice(), updatedAt: note.updatedAt });
+  note.history.push({ content: note.content, links: (note.links || []).slice(),
+                      annots: Array.isArray(note.annots) ? note.annots.map(function(a){return {term:a.term,note:a.note};}) : [],
+                      updatedAt: note.updatedAt });
   while(note.history.length > 5) note.history.shift();
 }
 /* 快捷指令按钮（SPEC v1.1 §2） */
 var QUICK_CMDS = [
   ['✂️ 太啰嗦', '把笔记精简到一半篇幅，只保留核心干货'],
   ['📋 没条理', '重新梳理结构：分级标题+列表，逻辑递进，层级清晰'],
-  ['📖 解释生词', '找出文中最难懂的 5~8 个专业术语，在首次出现处用括号加大白话注释'],
+  ['📖 解释生词', 'ANNOT_BATCH'], // v1.3：此按钮直接批量加脚注角标，不进要求框
   ['🔬 更深入', '增加机制细节与循证依据，深度面向 ICU 主治医生'],
   ['🗣 说人话', '用比喻和临床场景重写，实习医生也能看懂'],
   ['❓ 出考题', '根据本篇内容在文末出 3~5 道自测题并附答案']
@@ -657,7 +853,21 @@ var QUICK_CMDS = [
     var b = e.target;
     while(b && b !== row){
       if(b.getAttribute && b.getAttribute('data-cmd') !== null){
-        reviseInput.value = QUICK_CMDS[+b.getAttribute('data-cmd')][1];
+        var cmd = QUICK_CMDS[+b.getAttribute('data-cmd')][1];
+        if(cmd === 'ANNOT_BATCH'){
+          // v1.3 批量解释生词 → 脚注角标
+          var note = getNoteById(currentNoteId);
+          if(!note) return;
+          toast.style.display = 'block';
+          callAnnotAI(note, null, function(parsed){
+            mergeAnnots(note, parsed, '已给难懂术语加上注释');
+          }, function(errMsg){
+            toastLoading.innerHTML = '⚠️ ' + errMsg;
+            setTimeout(function(){ toast.style.display = 'none'; }, 5000);
+          }, stageWatch(toastLoading));
+          return;
+        }
+        reviseInput.value = cmd;
         reviseInput.focus();
         return;
       }
@@ -762,6 +972,7 @@ btnDoRevise.addEventListener('click', function(){
       detailTitle.textContent = note.title;
       detailTime.textContent = '创建 '+fmtTime(note.createdAt)+' · 更新 '+fmtTime(note.updatedAt);
       detailBody.innerHTML = renderMarkdown(buildContentWithLinks(note));
+      applyAnnotBadges(note);
       renderBacklinks(note);
       reviseInput.value = '';
       setReviseOpen(false);
@@ -779,11 +990,14 @@ btnRevert.addEventListener('click', function(){
   var note = getNoteById(currentNoteId);
   if(!note || !Array.isArray(note.history) || note.history.length === 0) return;
   // 回退也视为一次修改：当前版压入历史，再弹出上一版
-  note.history.push({ content: note.content, links: (note.links || []).slice(), updatedAt: note.updatedAt });
+  note.history.push({ content: note.content, links: (note.links || []).slice(),
+                      annots: Array.isArray(note.annots) ? note.annots.map(function(a){return {term:a.term,note:a.note};}) : [],
+                      updatedAt: note.updatedAt });
   var prev = note.history.splice(note.history.length - 2, 1)[0];
   while(note.history.length > 5) note.history.shift();
   note.content = prev.content;
   note.links = prev.links;
+  note.annots = Array.isArray(prev.annots) ? prev.annots : [];
   note.updatedAt = Date.now();
   if(persistNote(note)){
     detailTime.textContent = '创建 '+fmtTime(note.createdAt)+' · 更新 '+fmtTime(note.updatedAt);
@@ -851,9 +1065,16 @@ function runSelAction(b){
   hideSelMenu();
   if(!term) return;
   if(act === 'explain'){
-    setReviseOpen(true);
-    reviseInput.value = '请用大白话解释"' + term + '"这个词，并在首次出现处加注释';
-    reviseInput.focus();
+    // v1.3：直接生成脚注角标（正文不加长），不再走改稿面板
+    var note = getNoteById(currentNoteId);
+    if(!note) return;
+    toast.style.display = 'block';
+    callAnnotAI(note, term, function(parsed){
+      mergeAnnots(note, parsed, '已加上「' + term + '」的注释');
+    }, function(errMsg){
+      toastLoading.innerHTML = '⚠️ ' + errMsg;
+      setTimeout(function(){ toast.style.display = 'none'; }, 5000);
+    }, stageWatch(toastLoading));
   }else if(act === 'fill'){
     setReviseOpen(true);
     reviseInput.value = term;
@@ -1053,10 +1274,23 @@ function safeFileName(title){
 }
 function buildMarkdown(note){
   var md = note.content || '';
+  // v1.3：词条注释转为 Obsidian 原生脚注 [^n]（正文只多个角标，解释在文末）
+  var annots = Array.isArray(note.annots) ? note.annots : [];
+  var defs = '', num = 0;
+  for(var i = 0; i < annots.length; i++){
+    var t = annots[i].term, n = annots[i].note;
+    if(!t || !n) continue;
+    var idx = md.indexOf(t);
+    if(idx < 0) continue; // 词条已不在正文（可能被改稿删掉）则跳过
+    num++;
+    md = md.slice(0, idx + t.length) + '[^' + num + ']' + md.slice(idx + t.length);
+    defs += '[^' + num + ']: ' + t + '：' + n + '\n';
+  }
   if(note.links && note.links.length){
     md += '\n\n## 关联\n';
-    for(var i=0;i<note.links.length;i++) md += '- [[' + note.links[i] + ']]\n';
+    for(var j=0;j<note.links.length;j++) md += '- [[' + note.links[j] + ']]\n';
   }
+  if(defs) md += '\n' + defs;
   return md;
 }
 
