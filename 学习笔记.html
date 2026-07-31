@@ -15,6 +15,8 @@
          - AI 请求仍不传 temperature / response_format（兼容 kimi-k2.6）
    v1.1.1 2026-07-31 修复：手机端词条菜单按钮点击无效
          （touchstart 被 preventDefault 后浏览器不再合成 click，动作改由 touchend 直接触发）
+   v1.1.2 2026-07-31 修复：AI 请求加 180 秒超时（fetchWithTimeout + AbortController），
+         防止 kimi-k2.6 思考型模型偶发长考/连接挂住时页面无限转圈；加载提示改为 30~90 秒预期
          - AI 生成学习笔记（Kimi / Moonshot API，模型可选）
          - 极简 Markdown 渲染（标题/粗体/列表/段落），HTML 转义防注入
          - [[双链]] 与反链（被提到）区
@@ -184,7 +186,7 @@
       <label for="topicInput">想学的主题（如：乳酸）</label>
       <input type="text" id="topicInput" placeholder="输入一个医学主题">
       <button class="btn" id="btnGen">🤖 AI 帮我学</button>
-      <div class="loading" id="genLoading"><span class="spinner"></span>AI 正在整理笔记，请稍候（约 10-30 秒）…</div>
+      <div class="loading" id="genLoading"><span class="spinner"></span>AI 正在思考整理（约 30~90 秒，请别离开本页）…</div>
       <div class="msg" id="genMsg"></div>
     </div>
 
@@ -220,7 +222,7 @@
           <button class="btn" id="btnDoRevise">🤖 按此修改</button>
           <button class="btn secondary" id="btnRevert">↩️ 回退上一版</button>
         </div>
-        <div class="loading" id="reviseLoading"><span class="spinner"></span>AI 正在按要求修改，请稍候…</div>
+        <div class="loading" id="reviseLoading"><span class="spinner"></span>AI 正在思考修改（约 30~90 秒，请别离开本页）…</div>
         <div class="msg" id="reviseMsg"></div>
       </div>
       <div style="margin-top:18px; text-align:right;">
@@ -241,7 +243,7 @@
     <summary>📋 关于 / 版本说明</summary>
     <div class="inner">
       <p><b>版本：</b>v1.1（2026-07-31）新增「交互式改稿」：详情页点「✏️ 让 AI 改」可上下分栏改稿（快捷指令 + 自由要求），每篇保留最近 5 版历史可回退；在正文里选中一个词（1~30 字）会浮出菜单，可「解释这个词条」「另开一篇」或填入要求框。AI 请求保持不传 temperature / response_format（兼容 kimi-k2.6）。</p>
-      <p><b>历史版本：</b>v1.0.2 修复 AI 调用 400 报错（response_format / temperature 兼容性）</p>
+      <p><b>历史版本：</b>v1.1.1 修复手机端词条菜单按钮点击无效；v1.1.2 AI 请求加 180 秒超时（防止思考型模型偶发长考时页面一直转圈）；v1.0.2 修复 AI 调用 400 报错</p>
       <p><b>数据安全：</b>所有笔记和 API Key 只保存在您本机浏览器（localStorage），不上传到任何服务器；清除浏览器数据会丢失笔记，请定期导出备份。</p>
       <p><b>如何导入 Obsidian：</b></p>
       <ol>
@@ -342,6 +344,21 @@ function renderMarkdown(src){
 }
 
 /* ==================== AI 调用 ==================== */
+/* v1.1.2 带超时的 fetch：kimi-k2.6 是思考型模型，偶发长考/连接挂住，
+   无超时的话页面会一直转圈像死机。180 秒无响应即中止并提示重试。 */
+function fetchWithTimeout(url, options, timeoutMs){
+  return new Promise(function(resolve, reject){
+    var ctrl = new AbortController();
+    var timer = setTimeout(function(){
+      ctrl.abort();
+      reject(new Error('等待超过 ' + Math.round(timeoutMs/1000) + ' 秒，AI 服务器这次没有回应。请点重试（通常第二次会快很多）。'));
+    }, timeoutMs || 180000);
+    options.signal = ctrl.signal;
+    fetch(url, options).then(function(r){ clearTimeout(timer); resolve(r); })
+      .catch(function(e){ clearTimeout(timer); reject(e); });
+  });
+}
+
 function callAI(topic, onOk, onErr){
   var key = (localStorage.getItem(LS_KEY) || '').trim();
   if(!key){ onErr('还没有填写 API Key。请先在上方「API 设置」里输入并保存 Key。'); return; }
@@ -362,7 +379,7 @@ function callAI(topic, onOk, onErr){
   // v1.0.1：去掉 response_format（kimi-k2.6 对该参数会返回 HTTP 400）；
   // v1.0.2：去掉 temperature（kimi-k2.6 只允许 temperature=1，传其他值报 HTTP 400）；
   // JSON 由提示词约束 + parseAIJson 容错提取（正则取首尾大括号），实测可靠。
-  fetch('https://api.moonshot.cn/v1/chat/completions', {
+  fetchWithTimeout('https://api.moonshot.cn/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
     body: JSON.stringify(payload)
@@ -666,7 +683,7 @@ function callReviseAI(note, instruction, onOk, onErr){
         '\n\n【修改要求】\n' + instruction }
     ]
   };
-  fetch('https://api.moonshot.cn/v1/chat/completions', {
+  fetchWithTimeout('https://api.moonshot.cn/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
     body: JSON.stringify(payload)
