@@ -770,7 +770,7 @@
       </ol>
       <p><b>新对话接手维护指南（给下一位 AI 看的，v2.0.1）：</b></p>
       <ol>
-        <li><b>凭据不在本文件里（本文件公开，绝不写入任何 Token/Key）。</b>新对话开始时，请用户重新提供：① GitHub fine-grained Token（权限范围=仓库 hongxiaotao177.github.io 与 xuexi-backup 的 Contents 读写；有效期至 2026-08-30，到期请用户换新，建议选 1 年期）；② Kimi API Key（仅用户本机使用，AI 无需经手）。</li>
+        <li><b>凭据不在本文件里（本文件公开，绝不写入任何 Token/Key）。</b>新对话开始时，请用户重新提供：① GitHub fine-grained Token（权限范围=仓库 hongxiaotao177.github.io 与 xuexi-backup 的 Contents 读写；有效期至 2026-08-30，到期请用户换新，建议选 1 年期）；② Kimi API Key（仅用户本机使用，AI 无需经手）。<b>用户存档位置：Token 存于坚果云「学习文件 → AI → 我设计的软件 → github token my own software.txt」（用户私库，AI 无法直接访问，请用户打开复制粘贴到对话里）。</b></li>
         <li><b>网站更新方式（模式B）：</b>本软件托管于 GitHub Pages 公开仓库 hongxiaotao177.github.io。AI 拿到 Token 后用 Contents API 直接推送：GET /repos/hongxiaotao177/hongxiaotao177.github.io/contents/学习笔记.html 取 sha → PUT 同名覆盖（commit message 写版本号+改动摘要），中文文件名需 URL 编码。推送后 2~3 分钟生效，提醒用户下拉刷新。</li>
         <li><b>交付三件套：</b>① 推送 GitHub；② 保存网站版本快照（website_version_manager，项目目录 /mnt/agents/output/app，内含 index.html+血气分析.html+学习笔记.html，需同步最新文件）；③ 把最新 HTML 文件发给用户存档。</li>
         <li><b>工作习惯：</b>先跟用户确认方案再动手；单文件 HTML 不引外部库；ES5 风格；AI 请求不传 temperature/response_format（kimi-k2.6 兼容）；手机触摸链见代码顶部「已知坑」；每改一步版本号递增并双更新（头部修改记录+本页版本说明）。</li>
