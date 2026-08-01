@@ -4,6 +4,20 @@
  学习笔记·双链版 —— 单文件 HTML 工具
 ====================================================================
  修改记录：
+   v1.7.3 2026-08-01 「替换这段」采用定位三级加固：
+         - 场景：开着替换面板时正文被回退/改稿改动，或 selText 来自渲染后选区
+           （不含 ** 等 markdown 符号、可能混入角标数字），L1 精确匹配误报"找不到原文"
+         - L1 精确：沿用原逻辑（preCtx/postCtx → selText 首次出现），命中即静默替换
+         - L2 归一化模糊：L1 失败时，note.content 与 selText 均归一化
+           （剥 **/*/[[]]/行首列表符、去角标样式数字 ①-⑳/¹²³/⁰-⁹、压缩所有空白为单空格），
+           在归一化文本里定位后经字符级映射还原回 raw content 起止下标（locateFuzzy，
+           复用 plainMapOf 的映射思路）
+         - L3 段落大意：L2 也失败时，取 selText 归一化后前 12 字 / 后 12 字分别定位，
+           两端都找到且顺序正确才界定为该区间；只一端找到即放弃（locateLoose）
+         - L2/L3 命中不直接替换：面板内弹确认条（命中区前 30 字 + 命中片段摘要 + 后 30 字，
+           灰色小字）+「是这段，替换」「不对，取消」，确认才执行；取消回对照视图不动正文；
+           确认条按钮沿用触摸链（click + touchend elementFromPoint）
+         - L2/L3 替换成功 toast 注明「已替换（模糊定位）」；全部失败维持原报错
    v1.7.2 2026-08-01 AI 信封被截断时的抢救 + 回复长度上限调大：
          - 宽容模式加「剥信封」：AI 返回了 JSON 信封但被 max_tokens 截断（JSON 不完整）
            时，parseAIJson 失败后不再把整段原始 JSON 文本（含 "title":/"content": 包装）
@@ -314,6 +328,12 @@
     background: #fdfcfa; color: #3a3a3a; outline: none; resize: vertical;
   }
   .rp-card textarea:focus { border-color: #c9a877; }
+  /* v1.7.3 模糊定位确认条 */
+  .rp-conf { margin-top: 12px; padding: 10px 12px; border: 1px solid #e8dcc8; border-radius: 10px; background: #faf7f0; }
+  .rp-conf-text {
+    font-size: 13px; color: #9a8f80; line-height: 1.7; white-space: pre-wrap;
+    word-break: break-word; margin-bottom: 10px;
+  }
 
   /* v1.7 嵌套小改条：贴选区的小输入条（不占全屏），样式对齐 #selMenu */
   #nestBar {
@@ -450,6 +470,15 @@
           <button type="button" class="btn secondary" id="rpRetry">🔄 再改一次</button>
           <button type="button" class="btn secondary" id="rpCancel2">取消</button>
         </div>
+        <!-- v1.7.3 模糊定位确认条：L2/L3 命中先请用户核对正文片段，确认才替换 -->
+        <div id="rpConfirm" class="hidden rp-conf">
+          <div class="rp-label">原文有了些变化，AI 在正文里找到的最接近位置是这里，请核对：</div>
+          <div id="rpConfText" class="rp-conf-text"></div>
+          <div class="btn-row">
+            <button type="button" class="btn" id="rpConfOk" data-rc="ok">是这段，替换</button>
+            <button type="button" class="btn secondary" id="rpConfNo" data-rc="no">不对，取消</button>
+          </div>
+        </div>
         <div class="msg" id="rpMsg2"></div>
       </div>
     </div>
@@ -474,7 +503,7 @@
   <details class="about">
     <summary>📋 关于 / 版本说明</summary>
     <div class="inner">
-      <p><b>版本：</b>v1.7.2（2026-08-01）：修复——当 AI 回信太长被中途截断时，以前会把一段露出 JSON 代码的文字收进笔记正文，现在软件会自动"剥信封"，只把真正的正文收进笔记，标题也能一起认出来；同时把 AI 回复长度上限调大，减少被截断的情况。上一版 v1.7.1（2026-08-01）：让 AI 改稿时，AI 偶尔不按约定格式回信（直接返回裸文章），以前会报「格式不对」让您重试，现在软件能智能识别裸文章并直接采用，改稿照常完成；同时把格式要求写得更醒目，降低这种情况发生的概率。上一版 v1.7（2026-08-01）：对照预览里的加粗、列表现在按真实样式显示，不再露出一堆星号；AI 新稿里哪一小段不满意，涂黑它就会弹出小条，让 AI 只改这一小段（只套一层，最后点「✅ 采用」才存历史）。另外把手机上按钮"点了没反应"的两个老坑记进了开发备忘，以后维护不会再犯。上一版 v1.6（2026-07-31）新功能：涂黑一大段文字 → 弹出菜单点「🔄 替换这段」→ 面板里点预设要求（可叠加多个）或自由填写/补充 → AI 只改写这一段 → 预览对照（上原文下新稿）后点「✅ 采用」才生效，改前自动存一版历史，可点「让 AI 改」里的「↩️ 回退上一版」找回原稿。上一版 v1.5.2：注释里的生词，正文没有也能加角标——在注释气泡里涂黑注释文字中的生词点「➕ 选词加角标」，它会变成一个贴在气泡里的小角标（灰色虚线=待解释），点角标可钻进去看/编辑，「← 返回」回到上一条；随「批量解释」一起让 AI 讲解（AI 会参考它所在的那条注释文字）；导出时嵌套解释不单独出脚注，附加在父脚注末尾，如「……。（肺的应力：肺泡壁承受的牵张力）」。上一版 v1.5.1 修复：一篇笔记里多个词条分散在不同段落时，第一个角标之后的词条（如 ARDS、PEEP）会贴不上角标的问题，现已全部正常。以下为 v1.5 功能：① 手动加的角标现在贴在您涂黑的那个确切位置（记住涂黑处前后文），不再跳到全篇第一次出现的地方；并有词边界保护，像 ARDS 不会再嵌进 ARDSNet 中间。② 注释气泡新增「🤖 让AI改写」：点词条角标后可让 AI 按要求改写解释，改写要求可以随意修改（默认是"更通俗、更简短"），改写前自动存一版历史可回退。③ 气泡里涂黑注释文字中的生词，点「➕ 选词加角标」即可把它加为本篇待解释角标（不发 AI 请求），之后随批量解释一起让 AI 讲解。上一版 v1.4 手动批量角标：读正文时涂黑一个词，点弹出菜单的「➕ 加角标」，立即立一个灰色虚线空角标（不发 AI 请求，可连加多个）；读完后点「🤖 批量解释」按钮，把所有空角标一次性发给 AI，解释自动填回各角标变实色。另有 v1.3 词条脚注注释（正文词条旁 ① 小角标，点开看大白话，导出转 Obsidian 标准脚注）与 v1.1 交互式改稿（分栏、快捷指令、5 版历史可回退）。AI 请求保持不传 temperature / response_format（兼容 kimi-k2.6）。</p>
+      <p><b>版本：</b>v1.7.3（2026-08-01）：替换这段的定位加固为三级（精确→忽略格式模糊→段落大意），模糊定位命中会先让您确认再替换，误报"找不到原文"大幅减少。上一版 v1.7.2（2026-08-01）：修复——当 AI 回信太长被中途截断时，以前会把一段露出 JSON 代码的文字收进笔记正文，现在软件会自动"剥信封"，只把真正的正文收进笔记，标题也能一起认出来；同时把 AI 回复长度上限调大，减少被截断的情况。上一版 v1.7.1（2026-08-01）：让 AI 改稿时，AI 偶尔不按约定格式回信（直接返回裸文章），以前会报「格式不对」让您重试，现在软件能智能识别裸文章并直接采用，改稿照常完成；同时把格式要求写得更醒目，降低这种情况发生的概率。上一版 v1.7（2026-08-01）：对照预览里的加粗、列表现在按真实样式显示，不再露出一堆星号；AI 新稿里哪一小段不满意，涂黑它就会弹出小条，让 AI 只改这一小段（只套一层，最后点「✅ 采用」才存历史）。另外把手机上按钮"点了没反应"的两个老坑记进了开发备忘，以后维护不会再犯。上一版 v1.6（2026-07-31）新功能：涂黑一大段文字 → 弹出菜单点「🔄 替换这段」→ 面板里点预设要求（可叠加多个）或自由填写/补充 → AI 只改写这一段 → 预览对照（上原文下新稿）后点「✅ 采用」才生效，改前自动存一版历史，可点「让 AI 改」里的「↩️ 回退上一版」找回原稿。上一版 v1.5.2：注释里的生词，正文没有也能加角标——在注释气泡里涂黑注释文字中的生词点「➕ 选词加角标」，它会变成一个贴在气泡里的小角标（灰色虚线=待解释），点角标可钻进去看/编辑，「← 返回」回到上一条；随「批量解释」一起让 AI 讲解（AI 会参考它所在的那条注释文字）；导出时嵌套解释不单独出脚注，附加在父脚注末尾，如「……。（肺的应力：肺泡壁承受的牵张力）」。上一版 v1.5.1 修复：一篇笔记里多个词条分散在不同段落时，第一个角标之后的词条（如 ARDS、PEEP）会贴不上角标的问题，现已全部正常。以下为 v1.5 功能：① 手动加的角标现在贴在您涂黑的那个确切位置（记住涂黑处前后文），不再跳到全篇第一次出现的地方；并有词边界保护，像 ARDS 不会再嵌进 ARDSNet 中间。② 注释气泡新增「🤖 让AI改写」：点词条角标后可让 AI 按要求改写解释，改写要求可以随意修改（默认是"更通俗、更简短"），改写前自动存一版历史可回退。③ 气泡里涂黑注释文字中的生词，点「➕ 选词加角标」即可把它加为本篇待解释角标（不发 AI 请求），之后随批量解释一起让 AI 讲解。上一版 v1.4 手动批量角标：读正文时涂黑一个词，点弹出菜单的「➕ 加角标」，立即立一个灰色虚线空角标（不发 AI 请求，可连加多个）；读完后点「🤖 批量解释」按钮，把所有空角标一次性发给 AI，解释自动填回各角标变实色。另有 v1.3 词条脚注注释（正文词条旁 ① 小角标，点开看大白话，导出转 Obsidian 标准脚注）与 v1.1 交互式改稿（分栏、快捷指令、5 版历史可回退）。AI 请求保持不传 temperature / response_format（兼容 kimi-k2.6）。</p>
       <p><b>历史版本：</b>v1.2 默认改快模型（秒级响应）+ 分步进度提示（发送→思考→解析+用时秒数）；v1.1.1 修复手机词条菜单按钮；v1.1.2 AI 请求加 180 秒超时；v1.0.2 修复 AI 调用 400 报错</p>
       <p><b>数据安全：</b>所有笔记和 API Key 只保存在您本机浏览器（localStorage），不上传到任何服务器；清除浏览器数据会丢失笔记，请定期导出备份。</p>
       <p><b>如何导入 Obsidian：</b></p>
@@ -2022,12 +2051,14 @@ function openReplacePanel(ctx){
   rpSend.disabled = false;
   rpEditView.classList.remove('hidden');
   rpPreviewView.classList.add('hidden');
+  if(typeof hideRpConfirm === 'function') hideRpConfirm(); // v1.7.3
   replacePanel.classList.remove('hidden');
 }
 function closeReplacePanel(){
   replacePanel.classList.add('hidden');
   replaceCtx = null;
   hideNestBar(); // v1.7
+  if(typeof hideRpConfirm === 'function') hideRpConfirm(); // v1.7.3
 }
 /* 用 preCtx/postCtx 在正文里精确找回该段；找不到精确上下文退化为 selText 第一次出现处 */
 function locateReplaceSpan(content, ctx){
@@ -2051,6 +2082,62 @@ function locateReplaceSpan(content, ctx){
     }
   }
   return content.indexOf(sel);
+}
+/* ==================== v1.7.3 三级定位：L2 归一化模糊 / L3 段落大意 ==================== */
+/* 角标样式数字（脚注圈码 ①-⑳/㉑-㉟/㊱-㊿、上标 ¹²³⁰-⁹）：渲染选区可能混入，归一化时剥掉 */
+var RP_BADGE_RE = /[①-⑳㉑-㉟㊱-㊿¹²³⁰-⁹]/;
+/* 归一化映射（仿 plainMapOf）：剥 markdown 标记（** * [[ ]] 行首列表符）+ 去角标数字 +
+   压缩所有空白为单空格；plain 每个字符经 map 记录其在 raw 里的原始下标，可映射还原 */
+function rpNormMapOf(raw){
+  var plain = '', map = [], i = 0, lineStart = true, pendingSpace = false;
+  while(i < raw.length){
+    var two = raw.substr(i, 2);
+    if(two === '**' || two === '[[' || two === ']]'){ i += 2; continue; }
+    var ch = raw.charAt(i);
+    if(ch === '*'){ i++; continue; } // 单星号斜体标记
+    if(lineStart && (ch === '-' || ch === '*') && raw.charAt(i + 1) === ' '){ i += 2; continue; }
+    lineStart = (ch === '\n');
+    if(RP_BADGE_RE.test(ch)){ i++; continue; } // 角标数字干扰：整体剥掉
+    if(/\s/.test(ch)){ if(plain.length > 0) pendingSpace = true; i++; continue; }
+    if(pendingSpace){ plain += ' '; map.push(i); pendingSpace = false; } // 空格映射到当前字符位置
+    plain += ch; map.push(i); i++;
+  }
+  return { plain: plain, map: map };
+}
+/* L2 归一化模糊：在归一化后的 content 里找归一化后的 selText，映射回 raw 起止下标 */
+function locateFuzzy(content, selText){
+  var nc = rpNormMapOf(content), ns = rpNormMapOf(selText);
+  if(!ns.plain) return null;
+  var p = nc.plain.indexOf(ns.plain);
+  if(p < 0) return null;
+  return { start: nc.map[p], end: nc.map[p + ns.plain.length - 1] + 1, level: 2 };
+}
+/* L3 段落大意：归一化后取 selText 前 12 字 / 后 12 字分别定位，
+   两端都找到且顺序正确才界定为该区间；只一端找到 → 放弃 */
+function locateLoose(content, selText){
+  var nc = rpNormMapOf(content), ns = rpNormMapOf(selText);
+  if(ns.plain.length < 2) return null;
+  var head = ns.plain.slice(0, 12), tail = ns.plain.slice(-12);
+  var hi = nc.plain.indexOf(head);
+  if(hi < 0) return null;
+  var ti = nc.plain.indexOf(tail, hi); // 从头部位置往后找，保证顺序正确
+  if(ti < 0) return null;
+  if(ti + tail.length < hi + head.length) return null; // 尾端不能落在头端之前
+  return { start: nc.map[hi], end: nc.map[ti + tail.length - 1] + 1, level: 3 };
+}
+/* v1.7.3 测试钩子：仅供自动化测试驱动定位/面板（界面不使用） */
+window.locateFuzzy = locateFuzzy; window.locateLoose = locateLoose;
+window.locateReplaceSpanEx = locateReplaceSpanEx;
+window.openReplacePanel = openReplacePanel;
+/* 三级定位总入口：L1 精确 → L2 归一化模糊 → L3 段落大意；返回 {start,end,level} 或 null */
+function locateReplaceSpanEx(content, ctx){
+  var i = locateReplaceSpan(content, ctx);
+  if(i >= 0) return { start: i, end: i + ctx.selText.length, level: 1 };
+  var f2 = locateFuzzy(content, ctx.selText);
+  if(f2) return f2;
+  var f3 = locateLoose(content, ctx.selText);
+  if(f3) return f3;
+  return null;
 }
 /* v1.6 段落替换 AI：提示词 + 要改写的段落 + 前后 ~300 字上下文 + 硬性要求，
    只回改写后的这一段纯文本。不传 temperature / response_format（兼容 kimi-k2.6）。 */
@@ -2107,12 +2194,12 @@ rpSend.addEventListener('click', function(){
   if(!userReq) userReq = RP_DEFAULT_PROMPT;
   // 取该段前后各 ~300 字正文作上下文（仅供 AI 理解衔接）
   var content = note.content || '';
-  var idx = locateReplaceSpan(content, replaceCtx);
+  var loc0 = locateReplaceSpanEx(content, replaceCtx); // v1.7.3 三级定位，取上下文更稳
   var ctxText;
-  if(idx >= 0){
-    ctxText = '……' + content.slice(Math.max(0, idx - 300), idx) +
+  if(loc0){
+    ctxText = '……' + content.slice(Math.max(0, loc0.start - 300), loc0.start) +
       '【此处为被改写段落】' +
-      content.slice(idx + replaceCtx.selText.length, idx + replaceCtx.selText.length + 300) + '……';
+      content.slice(loc0.end, loc0.end + 300) + '……';
   }else{
     ctxText = content.slice(0, 600);
   }
@@ -2136,31 +2223,99 @@ rpSend.addEventListener('click', function(){
     showMsg(rpMsg, errMsg, 'err');
   }, stageWatch(rpLoading));
 });
-/* ✅ 采用：精确定位后只替换这一段，前后不动；存历史可回退 */
+/* ✅ 采用（v1.7.3 三级定位）：L1 精确命中静默直接替换；L2/L3 模糊命中先弹确认条，
+   用户核对正文片段后点「是这段，替换」才执行；全部失败维持原报错。存历史可回退。 */
+var rpConfirm = $('rpConfirm'), rpConfText = $('rpConfText');
+var rpPendingLoc = null; // L2/L3 待确认的命中区间 {start,end,level}
+function hideRpConfirm(){
+  rpConfirm.classList.add('hidden');
+  rpPendingLoc = null;
+}
+function showRpConfirm(content, loc){
+  rpPendingLoc = loc;
+  var pre = content.slice(Math.max(0, loc.start - 30), loc.start);
+  var post = content.slice(loc.end, loc.end + 30);
+  var hit = content.slice(loc.start, loc.end);
+  if(hit.length > 40) hit = hit.slice(0, 20) + ' …… ' + hit.slice(hit.length - 20);
+  rpConfText.textContent = '……' + pre + '【' + hit + '】' + post + '……';
+  rpMsg2.className = 'msg'; rpMsg2.textContent = '';
+  rpConfirm.classList.remove('hidden');
+}
+function adoptReplaceNow(loc){
+  var note = getNoteById(replaceCtx.noteId);
+  if(!note){ closeReplacePanel(); return; }
+  var content = note.content || '';
+  pushHistory(note); // 快照含 annots/parent/anchor（snapshotAnnots），可回退
+  note.content = content.slice(0, loc.start) + replaceCtx.newText + content.slice(loc.end);
+  note.updatedAt = Date.now();
+  persistNote(note);
+  rerenderDetail(note); // 重渲染 + applyAnnotBadges 自动重扫角标（annots 保留不删）
+  refreshRevertBtn();
+  var fuzzy = (loc.level > 1);
+  closeReplacePanel();
+  toast.style.display = 'block';
+  toastLoading.innerHTML = fuzzy
+    ? '✅ 已替换（模糊定位），可点回退找回原稿'
+    : '✅ 已替换，可点「让 AI 改」里的回退找回原稿';
+  setTimeout(function(){ toast.style.display = 'none'; }, 4500);
+}
 $('rpAdopt').addEventListener('click', function(){
   if(!replaceCtx || !replaceCtx.newText) return;
   var note = getNoteById(replaceCtx.noteId);
   if(!note){ closeReplacePanel(); return; }
   var content = note.content || '';
-  var idx = locateReplaceSpan(content, replaceCtx);
-  if(idx < 0){
+  var loc = locateReplaceSpanEx(content, replaceCtx);
+  if(!loc){
+    hideRpConfirm();
     showMsg(rpMsg2, '⚠️ 在正文里找不到这段原文了（可能刚被改动），未做替换。', 'err');
     return;
   }
-  pushHistory(note); // 快照含 annots/parent/anchor（snapshotAnnots），可回退
-  note.content = content.slice(0, idx) + replaceCtx.newText + content.slice(idx + replaceCtx.selText.length);
-  note.updatedAt = Date.now();
-  persistNote(note);
-  rerenderDetail(note); // 重渲染 + applyAnnotBadges 自动重扫角标（annots 保留不删）
-  refreshRevertBtn();
-  closeReplacePanel();
-  toast.style.display = 'block';
-  toastLoading.innerHTML = '✅ 已替换，可点「让 AI 改」里的回退找回原稿';
-  setTimeout(function(){ toast.style.display = 'none'; }, 4500);
+  if(loc.level === 1){ hideRpConfirm(); adoptReplaceNow(loc); return; } // L1 静默替换
+  if(rpPendingLoc && rpPendingLoc.start === loc.start && rpPendingLoc.end === loc.end) return; // 已弹同一条确认
+  showRpConfirm(content, loc); // L2/L3 先请用户核对
 });
+function runRpConfirmAction(act){
+  if(act === 'ok'){
+    var loc = rpPendingLoc;
+    if(!loc || !replaceCtx || !replaceCtx.newText){ hideRpConfirm(); return; }
+    adoptReplaceNow(loc); // adoptReplaceNow 内 closeReplacePanel 会一并收起确认条
+  }else{
+    hideRpConfirm(); // 取消：回对照视图，正文不动
+    showMsg(rpMsg2, '已取消，正文未改动。您可以重新涂黑要替换的段落再试。', 'ok');
+  }
+}
+function findRpConfBtn(target){
+  var b = target;
+  while(b && b !== rpConfirm){
+    if(b.getAttribute && b.getAttribute('data-rc')) return b;
+    b = b.parentNode;
+  }
+  return null;
+}
+/* 确认条触摸链（沿用"已知坑①"模式）：mousedown/touchstart 只 preventDefault，
+   桌面走 click，移动端 touchend + elementFromPoint 直接触发 */
+(function(){
+  var btns = [ $('rpConfOk'), $('rpConfNo') ];
+  for(var i = 0; i < btns.length; i++){
+    btns[i].addEventListener('mousedown', menuPress);
+    btns[i].addEventListener('touchstart', menuPress, { passive: false });
+    btns[i].addEventListener('click', function(e){
+      var b = findRpConfBtn(e.target);
+      if(b) runRpConfirmAction(b.getAttribute('data-rc'));
+    });
+    btns[i].addEventListener('touchend', function(e){
+      e.preventDefault(); e.stopPropagation();
+      var t = e.changedTouches && e.changedTouches[0];
+      var el = t ? document.elementFromPoint(t.clientX, t.clientY) : e.target;
+      var b = el ? findRpConfBtn(el) : null;
+      if(b) runRpConfirmAction(b.getAttribute('data-rc'));
+    }, { passive: false });
+  }
+})();
 /* 🔄 再改一次：回到提示词编辑视图，保留原提示词可改 */
 $('rpRetry').addEventListener('click', function(){
   hideNestBar(); // v1.7
+  hideRpConfirm(); // v1.7.3
   rpPreviewView.classList.add('hidden');
   rpEditView.classList.remove('hidden');
   rpInput.focus();
