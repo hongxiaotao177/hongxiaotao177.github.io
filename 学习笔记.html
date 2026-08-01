@@ -4,11 +4,12 @@
  学习笔记·双链版 —— 单文件 HTML 工具
 ====================================================================
  修改记录：
-   v2.0.1 2026-08-01 「关于」页新增「数据存放与备份同步规矩」六条：
-         localStorage 按浏览器+打开方式各自独立；云备份=第一道保险（自动）；
+   v2.0.1 2026-08-01 「关于」页新增「数据存放与备份同步规矩」六条 +
+         「新对话接手维护指南」四条（凭据不在文件里/模式B推送法/交付三件套/
+         工作习惯），下个对话的 AI 看说明即可接手；Token 等秘密绝不写入本文件。
+         六条规矩要点：localStorage 按浏览器+打开方式各自独立；云备份=第一道保险（自动）；
          导出 ZIP=第二道保险（手动，每月）；软件本体 GitHub 永存+可存坚果云；
-         日常统一用网站版、绝不写病人信息；每次改动必更新本说明——
-         用户把软件交给 AI 维护时以该节为数据架构基准事实
+         日常统一用网站版、绝不写病人信息；每次改动必更新本说明
    v2.0  2026-08-01 「☁️ 云备份」上线：笔记自动同步到用户的 GitHub 私有仓库：
          - 首页新增「☁️ 云备份」折叠卡片（details.about 风格）：GitHub 用户名
            （预填 hongxiaotao177，存 'bg_gh_user'）+ Token（password 型，
@@ -766,6 +767,13 @@
         <li><b>软件本体备份：</b>GitHub 网站仓库（hongxiaotao177.github.io）保存所有历史版本，永不丢失；另可把 HTML 文件存一份到手机文件夹或坚果云（坚果云可设"下载目录自动同步"）。</li>
         <li><b>日常用法约定：</b>记笔记统一用<b>网站版</b>；本地 HTML 副本只做离线备用。笔记里<b>绝不写病人信息</b>（私有仓库也不行）。</li>
         <li><b>维护约定：</b>每次功能改动，必须同步更新本说明和顶部修改记录；用户把软件交给 AI 维护时，以本节为数据架构的基准事实。</li>
+      </ol>
+      <p><b>新对话接手维护指南（给下一位 AI 看的，v2.0.1）：</b></p>
+      <ol>
+        <li><b>凭据不在本文件里（本文件公开，绝不写入任何 Token/Key）。</b>新对话开始时，请用户重新提供：① GitHub fine-grained Token（权限范围=仓库 hongxiaotao177.github.io 与 xuexi-backup 的 Contents 读写；有效期至 2026-08-30，到期请用户换新，建议选 1 年期）；② Kimi API Key（仅用户本机使用，AI 无需经手）。</li>
+        <li><b>网站更新方式（模式B）：</b>本软件托管于 GitHub Pages 公开仓库 hongxiaotao177.github.io。AI 拿到 Token 后用 Contents API 直接推送：GET /repos/hongxiaotao177/hongxiaotao177.github.io/contents/学习笔记.html 取 sha → PUT 同名覆盖（commit message 写版本号+改动摘要），中文文件名需 URL 编码。推送后 2~3 分钟生效，提醒用户下拉刷新。</li>
+        <li><b>交付三件套：</b>① 推送 GitHub；② 保存网站版本快照（website_version_manager，项目目录 /mnt/agents/output/app，内含 index.html+血气分析.html+学习笔记.html，需同步最新文件）；③ 把最新 HTML 文件发给用户存档。</li>
+        <li><b>工作习惯：</b>先跟用户确认方案再动手；单文件 HTML 不引外部库；ES5 风格；AI 请求不传 temperature/response_format（kimi-k2.6 兼容）；手机触摸链见代码顶部「已知坑」；每改一步版本号递增并双更新（头部修改记录+本页版本说明）。</li>
       </ol>
       <p><b>如何导入 Obsidian：</b></p>
       <ol>
