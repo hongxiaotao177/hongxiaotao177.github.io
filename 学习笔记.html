@@ -4,6 +4,31 @@
  学习笔记·双链版 —— 单文件 HTML 工具
 ====================================================================
  修改记录：
+   v1.8  2026-08-01 「🏷 折成标签」：大段文字涂黑 → 折叠成小胶囊标签：
+         - #selMenu 大段涂黑（>30字）时除「🔄 替换这段」再加「🏷 折成标签」（小段不显示）；
+           打开折叠面板（复用 replacePanel 居中卡片模式）：前 100 字预览 + 标签名输入框
+           （预填选中文字前 8 字）+「🤖 让AI起名」（AI 概括 ≤10 字标签名，纯文本返回，
+           走 stageWatch；callAnnotAI 风格，不传 temperature/response_format）+「✅ 折起来」「取消」
+         - 存储格式关键决策：note.content 里直接存 Obsidian 原生 callout 语法（存储即导出格式，
+           buildMarkdown 无需特殊处理，导出原样保留）：
+             > [!note]- 标签名
+             > 第一行原文（每行前缀 "> "，空行变 ">"）
+         - 渲染管线：renderMarkdown 识别连续 "> [!note]- 名称" 开头的引用块（在 escapeHtml
+           之后的转义文本上识别块结构，块内文字再走 renderInline），渲染为原生
+           <details class="fold-chip"><summary>▶ 名称</summary>…（移动端自带点开/收起，
+           summary 蓝灰胶囊样式）+ 块尾「📤 释放这段」小按钮
+         - 折起来用 v1.7.3 locateReplaceSpanEx 三级定位（L1 静默，L2/L3 走面板内确认条
+           #fpConfirm，复用 rpConfirm 风格与触摸链）；命中区间向两端扩展到整行边界
+           （callout 必须从行首开始才是合法语法，且整行折叠与释放的整行还原严格对称，
+           一字不差还原），替换后 pushHistory + persistNote +
+           rerenderDetail → toast「✅ 已折成标签，点一下就能展开」
+         - 释放这段：点按钮弹贴按钮的确认条 #relConfirm（「把这标签里的文字还原回正文？」
+           确定/取消，沿用"已知坑①"触摸链），确定后按 data-fold 编号找回 content 里第 N 个
+           callout 块，每行去掉 "> " 前缀还原为原文 → pushHistory + persistNote +
+           rerenderDetail → toast「已还原为普通文字」
+         - 兼容：fold 内文字照常参与 applyAnnotBadges 贴标（文本节点在 detailBody 内即可，
+           <details> 内 TreeWalker 正常）；改稿/替换 prompt 补"保留 > [!note]- 折叠块结构"；
+           折叠面板打开时正文 #selMenu 不弹（选区非 detailBody）
    v1.7.3 2026-08-01 「替换这段」采用定位三级加固：
          - 场景：开着替换面板时正文被回退/改稿改动，或 selText 来自渲染后选区
            （不含 ** 等 markdown 符号、可能混入角标数字），L1 精确匹配误报"找不到原文"
@@ -335,6 +360,51 @@
     word-break: break-word; margin-bottom: 10px;
   }
 
+  /* v1.8 折成标签：callout 折叠块渲染为可点开的胶囊 */
+  .fold-chip {
+    margin: 10px 0; border: 1px solid #d5dde8; border-radius: 12px;
+    background: #f4f7fb; overflow: hidden;
+  }
+  .fold-chip > summary {
+    display: inline-block; cursor: pointer; list-style: none;
+    margin: 6px 8px; padding: 6px 14px; border-radius: 20px;
+    background: #e6edf6; color: #4a5a70; font-size: 15px; font-weight: bold;
+    -webkit-appearance: none; user-select: none; -webkit-user-select: none;
+  }
+  .fold-chip > summary::-webkit-details-marker { display: none; }
+  .fold-chip > summary:active { background: #d6e1f0; }
+  .fold-chip .fold-body {
+    padding: 4px 14px 12px; font-size: 15px; line-height: 1.7;
+    color: #3a3a3a; word-break: break-word;
+  }
+  .fold-release {
+    display: block; margin-top: 10px; background: #f5efe4; color: #6a5b47;
+    border: 1px solid #e8dcc8; border-radius: 20px; font-size: 14px;
+    padding: 6px 14px; cursor: pointer; -webkit-appearance: none; font-family: inherit;
+  }
+  .fold-release:active { background: #ecdfc9; }
+  /* v1.8 折成标签面板（复用 replacePanel 居中卡片模式，样式类共用 rp-*） */
+  #foldPanel {
+    position: fixed; inset: 0; z-index: 80;
+    background: rgba(60,48,32,.35);
+    display: flex; align-items: center; justify-content: center;
+    padding: 12px;
+  }
+  #foldPanel input {
+    width: 100%; font-size: 16px; /* 防 iOS 聚焦缩放 */
+    padding: 12px 14px; border: 1px solid #e5ddd0; border-radius: 12px;
+    background: #fdfcfa; color: #3a3a3a; outline: none; font-family: inherit;
+  }
+  #foldPanel input:focus { border-color: #c9a877; }
+  /* v1.8 释放确认条：贴在释放按钮旁的小确认卡（样式对齐 rp-conf） */
+  #relConfirm {
+    position: fixed; z-index: 9999; display: none;
+    background: #faf7f0; border: 1px solid #e8dcc8; border-radius: 12px;
+    box-shadow: 0 4px 18px rgba(90,70,50,.22); padding: 12px 14px;
+    width: 300px; max-width: calc(100vw - 16px);
+  }
+  #relConfirm .rel-text { font-size: 15px; color: #6a5b47; margin-bottom: 10px; line-height: 1.6; }
+
   /* v1.7 嵌套小改条：贴选区的小输入条（不占全屏），样式对齐 #selMenu */
   #nestBar {
     position: fixed; z-index: 9999; display: none;
@@ -438,7 +508,8 @@
     <button type="button" data-act="mark">➕ 加角标</button><span class="sep"></span>
     <button type="button" data-act="newnote">📄 另开一篇</button><span class="sep"></span>
     <button type="button" data-act="fill">✂️ 填入要求框</button><span class="sep"></span>
-    <button type="button" data-act="replace">🔄 替换这段</button>
+    <button type="button" data-act="replace">🔄 替换这段</button><span class="sep"></span>
+    <button type="button" data-act="fold">🏷 折成标签</button>
   </div>
 
   <!-- v1.6 段落替换面板（涂黑一大段 → 自定义提示词 → AI 只替换这一段） -->
@@ -484,6 +555,44 @@
     </div>
   </div>
 
+  <!-- v1.8 折成标签面板（涂黑一大段 → 折叠成小胶囊标签；复用 replacePanel 居中卡片模式） -->
+  <div id="foldPanel" class="hidden">
+    <div class="rp-card">
+      <h3>🏷 折成标签</h3>
+      <div class="rp-label">您涂黑的这段（前 100 字预览）：</div>
+      <div class="rp-orig" id="fpPreview"></div>
+      <div class="rp-label">给这个标签起个名字（点一下标签就能展开全文）：</div>
+      <input type="text" id="fpName" placeholder="标签名，如：血流动力学监测细节">
+      <div class="btn-row" style="margin-top:10px;">
+        <button type="button" class="btn secondary" id="fpAi">🤖 让AI起名</button>
+      </div>
+      <div class="btn-row">
+        <button type="button" class="btn" id="fpOk">✅ 折起来</button>
+        <button type="button" class="btn secondary" id="fpCancel">取消</button>
+      </div>
+      <div class="loading" id="fpLoading"><span class="spinner"></span>AI 正在想一个贴切的标签名…</div>
+      <div class="msg" id="fpMsg"></div>
+      <!-- v1.8 模糊定位确认条：L2/L3 命中先请用户核对正文片段，确认才折叠（复用 rpConfirm 风格） -->
+      <div id="fpConfirm" class="hidden rp-conf">
+        <div class="rp-label">原文有了些变化，在正文里找到的最接近位置是这里，请核对：</div>
+        <div id="fpConfText" class="rp-conf-text"></div>
+        <div class="btn-row">
+          <button type="button" class="btn" id="fpConfOk" data-fc="ok">是这段，折起来</button>
+          <button type="button" class="btn secondary" id="fpConfNo" data-fc="no">不对，取消</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- v1.8 释放确认条：点「📤 释放这段」后贴在按钮旁的小确认卡 -->
+  <div id="relConfirm">
+    <div class="rel-text">把这标签里的文字还原回正文？</div>
+    <div class="btn-row" style="margin:0;">
+      <button type="button" class="btn" id="relConfOk" data-rel="ok">确定</button>
+      <button type="button" class="btn secondary" id="relConfNo" data-rel="no">取消</button>
+    </div>
+  </div>
+
   <!-- v1.7 嵌套小改条：对照视图新稿里涂黑一小段 → 贴选区小输入条（只套一层） -->
   <div id="nestBar">
     <input type="text" id="nestInput" placeholder="这段怎么改？如：再简短些/换个说法">
@@ -503,7 +612,7 @@
   <details class="about">
     <summary>📋 关于 / 版本说明</summary>
     <div class="inner">
-      <p><b>版本：</b>v1.7.3（2026-08-01）：替换这段的定位加固为三级（精确→忽略格式模糊→段落大意），模糊定位命中会先让您确认再替换，误报"找不到原文"大幅减少。上一版 v1.7.2（2026-08-01）：修复——当 AI 回信太长被中途截断时，以前会把一段露出 JSON 代码的文字收进笔记正文，现在软件会自动"剥信封"，只把真正的正文收进笔记，标题也能一起认出来；同时把 AI 回复长度上限调大，减少被截断的情况。上一版 v1.7.1（2026-08-01）：让 AI 改稿时，AI 偶尔不按约定格式回信（直接返回裸文章），以前会报「格式不对」让您重试，现在软件能智能识别裸文章并直接采用，改稿照常完成；同时把格式要求写得更醒目，降低这种情况发生的概率。上一版 v1.7（2026-08-01）：对照预览里的加粗、列表现在按真实样式显示，不再露出一堆星号；AI 新稿里哪一小段不满意，涂黑它就会弹出小条，让 AI 只改这一小段（只套一层，最后点「✅ 采用」才存历史）。另外把手机上按钮"点了没反应"的两个老坑记进了开发备忘，以后维护不会再犯。上一版 v1.6（2026-07-31）新功能：涂黑一大段文字 → 弹出菜单点「🔄 替换这段」→ 面板里点预设要求（可叠加多个）或自由填写/补充 → AI 只改写这一段 → 预览对照（上原文下新稿）后点「✅ 采用」才生效，改前自动存一版历史，可点「让 AI 改」里的「↩️ 回退上一版」找回原稿。上一版 v1.5.2：注释里的生词，正文没有也能加角标——在注释气泡里涂黑注释文字中的生词点「➕ 选词加角标」，它会变成一个贴在气泡里的小角标（灰色虚线=待解释），点角标可钻进去看/编辑，「← 返回」回到上一条；随「批量解释」一起让 AI 讲解（AI 会参考它所在的那条注释文字）；导出时嵌套解释不单独出脚注，附加在父脚注末尾，如「……。（肺的应力：肺泡壁承受的牵张力）」。上一版 v1.5.1 修复：一篇笔记里多个词条分散在不同段落时，第一个角标之后的词条（如 ARDS、PEEP）会贴不上角标的问题，现已全部正常。以下为 v1.5 功能：① 手动加的角标现在贴在您涂黑的那个确切位置（记住涂黑处前后文），不再跳到全篇第一次出现的地方；并有词边界保护，像 ARDS 不会再嵌进 ARDSNet 中间。② 注释气泡新增「🤖 让AI改写」：点词条角标后可让 AI 按要求改写解释，改写要求可以随意修改（默认是"更通俗、更简短"），改写前自动存一版历史可回退。③ 气泡里涂黑注释文字中的生词，点「➕ 选词加角标」即可把它加为本篇待解释角标（不发 AI 请求），之后随批量解释一起让 AI 讲解。上一版 v1.4 手动批量角标：读正文时涂黑一个词，点弹出菜单的「➕ 加角标」，立即立一个灰色虚线空角标（不发 AI 请求，可连加多个）；读完后点「🤖 批量解释」按钮，把所有空角标一次性发给 AI，解释自动填回各角标变实色。另有 v1.3 词条脚注注释（正文词条旁 ① 小角标，点开看大白话，导出转 Obsidian 标准脚注）与 v1.1 交互式改稿（分栏、快捷指令、5 版历史可回退）。AI 请求保持不传 temperature / response_format（兼容 kimi-k2.6）。</p>
+      <p><b>版本：</b>v1.8（2026-08-01）：大段文字涂黑 → 弹出菜单新增「🏷 折成标签」，可把太长但有用的段落折叠成一个小胶囊标签（可自己起名，也可点「🤖 让AI起名」让 AI 概括），点一下标签就展开全文，标签里点「📤 释放这段」可还原回正文；导出到 Obsidian 就是原生 callout 折叠块，默认收起，一字不丢。上一版 v1.7.3（2026-08-01）：替换这段的定位加固为三级（精确→忽略格式模糊→段落大意），模糊定位命中会先让您确认再替换，误报"找不到原文"大幅减少。上一版 v1.7.2（2026-08-01）：修复——当 AI 回信太长被中途截断时，以前会把一段露出 JSON 代码的文字收进笔记正文，现在软件会自动"剥信封"，只把真正的正文收进笔记，标题也能一起认出来；同时把 AI 回复长度上限调大，减少被截断的情况。上一版 v1.7.1（2026-08-01）：让 AI 改稿时，AI 偶尔不按约定格式回信（直接返回裸文章），以前会报「格式不对」让您重试，现在软件能智能识别裸文章并直接采用，改稿照常完成；同时把格式要求写得更醒目，降低这种情况发生的概率。上一版 v1.7（2026-08-01）：对照预览里的加粗、列表现在按真实样式显示，不再露出一堆星号；AI 新稿里哪一小段不满意，涂黑它就会弹出小条，让 AI 只改这一小段（只套一层，最后点「✅ 采用」才存历史）。另外把手机上按钮"点了没反应"的两个老坑记进了开发备忘，以后维护不会再犯。上一版 v1.6（2026-07-31）新功能：涂黑一大段文字 → 弹出菜单点「🔄 替换这段」→ 面板里点预设要求（可叠加多个）或自由填写/补充 → AI 只改写这一段 → 预览对照（上原文下新稿）后点「✅ 采用」才生效，改前自动存一版历史，可点「让 AI 改」里的「↩️ 回退上一版」找回原稿。上一版 v1.5.2：注释里的生词，正文没有也能加角标——在注释气泡里涂黑注释文字中的生词点「➕ 选词加角标」，它会变成一个贴在气泡里的小角标（灰色虚线=待解释），点角标可钻进去看/编辑，「← 返回」回到上一条；随「批量解释」一起让 AI 讲解（AI 会参考它所在的那条注释文字）；导出时嵌套解释不单独出脚注，附加在父脚注末尾，如「……。（肺的应力：肺泡壁承受的牵张力）」。上一版 v1.5.1 修复：一篇笔记里多个词条分散在不同段落时，第一个角标之后的词条（如 ARDS、PEEP）会贴不上角标的问题，现已全部正常。以下为 v1.5 功能：① 手动加的角标现在贴在您涂黑的那个确切位置（记住涂黑处前后文），不再跳到全篇第一次出现的地方；并有词边界保护，像 ARDS 不会再嵌进 ARDSNet 中间。② 注释气泡新增「🤖 让AI改写」：点词条角标后可让 AI 按要求改写解释，改写要求可以随意修改（默认是"更通俗、更简短"），改写前自动存一版历史可回退。③ 气泡里涂黑注释文字中的生词，点「➕ 选词加角标」即可把它加为本篇待解释角标（不发 AI 请求），之后随批量解释一起让 AI 讲解。上一版 v1.4 手动批量角标：读正文时涂黑一个词，点弹出菜单的「➕ 加角标」，立即立一个灰色虚线空角标（不发 AI 请求，可连加多个）；读完后点「🤖 批量解释」按钮，把所有空角标一次性发给 AI，解释自动填回各角标变实色。另有 v1.3 词条脚注注释（正文词条旁 ① 小角标，点开看大白话，导出转 Obsidian 标准脚注）与 v1.1 交互式改稿（分栏、快捷指令、5 版历史可回退）。AI 请求保持不传 temperature / response_format（兼容 kimi-k2.6）。</p>
       <p><b>历史版本：</b>v1.2 默认改快模型（秒级响应）+ 分步进度提示（发送→思考→解析+用时秒数）；v1.1.1 修复手机词条菜单按钮；v1.1.2 AI 请求加 180 秒超时；v1.0.2 修复 AI 调用 400 报错</p>
       <p><b>数据安全：</b>所有笔记和 API Key 只保存在您本机浏览器（localStorage），不上传到任何服务器；清除浏览器数据会丢失笔记，请定期导出备份。</p>
       <p><b>如何导入 Obsidian：</b></p>
@@ -586,6 +695,7 @@ function renderMarkdown(src){
   var esc = escapeHtml(src || '');
   var lines = esc.split(/\r?\n/);
   var html = '', inList = false, para = [];
+  var foldIdx = -1; // v1.8：给每个折叠块编号（对应 note.content 里 callout 块的出现顺序，释放时用）
   function flushPara(){
     if(para.length){ html += '<p>' + para.map(renderInline).join('<br>') + '</p>'; para = []; }
   }
@@ -595,6 +705,31 @@ function renderMarkdown(src){
     var t = line.replace(/^\s+|\s+$/g,'');
     if(t === ''){ flushPara(); closeList(); continue; }
     var m;
+    /* v1.8「折成标签」：识别 Obsidian callout 折叠块（转义后的 > 是 &gt;）。
+       先识别块结构，块内文字已 escape 过，再走 renderInline（粗体/斜体/[[双链]]）；
+       渲染为原生 <details> 胶囊（移动端自带点开/收起）。 */
+    if((m = t.match(/^&gt;\s*\[!note\]-\s*(.*)$/))){
+      flushPara(); closeList();
+      foldIdx++;
+      var fbody = [];
+      while(i + 1 < lines.length){
+        var nt = lines[i + 1].replace(/^\s+|\s+$/g,'');
+        var qm = nt.match(/^&gt;\s?(.*)$/);
+        if(!qm) break;
+        fbody.push(qm[1]);
+        i++;
+      }
+      /* 块内每行 renderInline 后拼 <br>；连续的引用空行（qm[1]===''）只作分隔，不额外留空 */
+      var bh = '';
+      for(var bi = 0; bi < fbody.length; bi++){
+        if(fbody[bi] === '' && bh === '') continue; // 块首空行跳过
+        bh += (bh === '' ? '' : '<br>') + renderInline(fbody[bi]);
+      }
+      html += '<details class="fold-chip" data-fold="'+foldIdx+'"><summary>▶ '+renderInline(m[1])+'</summary>' +
+        '<div class="fold-body">'+bh+
+        '<button type="button" class="fold-release" data-fold="'+foldIdx+'">📤 释放这段</button></div></details>';
+      continue;
+    }
     if((m = t.match(/^###\s+(.*)$/))){ flushPara(); closeList(); html += '<h3>'+renderInline(m[1])+'</h3>'; continue; }
     if((m = t.match(/^##\s+(.*)$/))){ flushPara(); closeList(); html += '<h2>'+renderInline(m[1])+'</h2>'; continue; }
     if((m = t.match(/^#\s+(.*)$/))){ flushPara(); closeList(); html += '<h1>'+renderInline(m[1])+'</h1>'; continue; }
@@ -1729,6 +1864,7 @@ function callReviseAI(note, instruction, onOk, onErr, st){
         '请严格按照修改要求改写这篇笔记，并严格只输出一个 JSON 对象（不要输出其他任何文字），格式如下：\n' +
         '{"title":"原标题","content":"修改后的 Markdown 正文","links":["相关主题1","相关主题2"]}\n' +
         '要求：title 必须保持原标题不变；content 沿用 # / ## / ### 标题、**粗体**、- 列表的笔记风格；' +
+        '如果正文里有 "> [!note]-" 开头的折叠块（callout），必须原样保留它的结构（每行 > 前缀），不要拆开或改写；' +
         'links 给出 5-8 个最相关的医学主题名词（可按修改后内容更新，只给名词本身）。\n' +
         '【再次强调】必须只返回 JSON，不要返回任何其他文字、不要用 markdown 围栏。' },
       { role: 'user', content:
@@ -1892,7 +2028,13 @@ function showSelMenu(){
   var seps = selMenu.getElementsByClassName('sep');
   for(var bi = 0; bi < btns.length; bi++){
     var act = btns[bi].getAttribute('data-act');
-    btns[bi].style.display = (longSel && act !== 'replace') ? 'none' : '';
+    /* v1.6：大段涂黑（>30字）只显示「替换这段」；v1.8：再加「🏷 折成标签」。
+       小段（<=30字）不显示替换/折标签，只显示词条类按钮。 */
+    if(act === 'replace' || act === 'fold'){
+      btns[bi].style.display = longSel ? '' : 'none';
+    }else{
+      btns[bi].style.display = longSel ? 'none' : '';
+    }
   }
   for(var si = 0; si < seps.length; si++) seps[si].style.display = longSel ? 'none' : '';
   selMenu.style.display = 'block';
@@ -1938,6 +2080,13 @@ function runSelAction(b){
     openReplacePanel({ selText: term, preCtx: preCtx, postCtx: postCtx, noteId: currentNoteId });
     var sel0 = window.getSelection();
     if(sel0) sel0.removeAllRanges();
+    return;
+  }
+  if(act === 'fold'){
+    // v1.8：涂黑一大段 → 打开折成标签面板（复用 replacePanel 居中卡片模式）
+    openFoldPanel({ selText: term, preCtx: preCtx, postCtx: postCtx, noteId: currentNoteId });
+    var selF = window.getSelection();
+    if(selF) selF.removeAllRanges();
     return;
   }
   if(act === 'explain'){
@@ -2150,7 +2299,7 @@ function callReplaceAI(userReq, selText, ctxText, onOk, onErr, st){
     '\n\n【要改写的段落】\n' + selText +
     '\n\n【上下文】（仅供理解前后衔接，不要改写它）\n' + ctxText +
     '\n\n硬性要求：只返回改写后的这一段正文，不要解释、不要多余文字、' +
-    '保留原文的 markdown 标记（**加粗**、[[双链]] 等）。';
+    '保留原文的 markdown 标记（**加粗**、[[双链]] 等），保留 > [!note]- 折叠块结构（每行 > 前缀）。';
   var payload = { model: modelSel.value, messages: [ {role:'system',content:sys}, {role:'user',content:usr} ] };
   if(st) st.set('① 正在把改写要求发送给 Kimi 服务器…');
   fetchWithTimeout('https://api.moonshot.cn/v1/chat/completions', {
@@ -2322,6 +2471,304 @@ $('rpRetry').addEventListener('click', function(){
 });
 $('rpCancel').addEventListener('click', closeReplacePanel);
 $('rpCancel2').addEventListener('click', closeReplacePanel);
+
+/* ==================== v1.8 折成标签（涂黑一大段 → 折叠成可点开的小胶囊；存 Obsidian 原生 callout） ==================== */
+/* 存储格式关键决策：note.content 里直接存 Obsidian callout 语法（存储即导出格式，
+   buildMarkdown 无需特殊处理，导出原样保留）：
+     > [!note]- 标签名
+     > 第一行原文
+     > 第二行原文
+   （每行前缀 "> "；空行变 ">"） */
+var foldPanel = $('foldPanel'), fpPreview = $('fpPreview'), fpName = $('fpName'),
+    fpAi = $('fpAi'), fpOk = $('fpOk'), fpCancel = $('fpCancel'),
+    fpLoading = $('fpLoading'), fpMsg = $('fpMsg'),
+    fpConfirm = $('fpConfirm'), fpConfText = $('fpConfText');
+var foldCtx = null;      // { selText, preCtx, postCtx, noteId }
+var fpPendingLoc = null; // L2/L3 待确认命中区间
+function openFoldPanel(ctx){
+  foldCtx = ctx;
+  var pv = ctx.selText;
+  if(pv.length > 100) pv = pv.slice(0, 100) + ' ……';
+  fpPreview.textContent = pv;
+  fpName.value = ctx.selText.replace(/\s+/g, '').slice(0, 8); // 预填选中文字前 8 个字
+  fpMsg.className = 'msg'; fpMsg.textContent = '';
+  fpLoading.style.display = 'none';
+  fpOk.disabled = false; fpAi.disabled = false;
+  hideFpConfirm();
+  foldPanel.classList.remove('hidden');
+}
+function closeFoldPanel(){
+  foldPanel.classList.add('hidden');
+  foldCtx = null;
+  hideFpConfirm();
+}
+/* 选中段 raw 文本 → callout 语法块（每行前缀 "> "，空行变 ">"，末尾补一空行与正文隔开） */
+function buildFoldCallout(name, rawText){
+  var lines = String(rawText).split(/\r?\n/), out = '> [!note]- ' + name + '\n';
+  for(var i = 0; i < lines.length; i++){
+    out += (lines[i] === '' ? '>' : '> ' + lines[i]) + '\n';
+  }
+  return out.replace(/\n$/, '');
+}
+function hideFpConfirm(){ fpConfirm.classList.add('hidden'); fpPendingLoc = null; }
+function showFpConfirm(content, loc){
+  fpPendingLoc = loc;
+  var pre = content.slice(Math.max(0, loc.start - 30), loc.start);
+  var post = content.slice(loc.end, loc.end + 30);
+  var hit = content.slice(loc.start, loc.end);
+  if(hit.length > 40) hit = hit.slice(0, 20) + ' …… ' + hit.slice(hit.length - 20);
+  fpConfText.textContent = '……' + pre + '【' + hit + '】' + post + '……';
+  fpMsg.className = 'msg'; fpMsg.textContent = '';
+  fpConfirm.classList.remove('hidden');
+}
+/* 执行折叠：命中区间 raw 文本 → callout 块替换；pushHistory + persistNote + rerenderDetail。
+   命中区间向两端扩展到整行边界（callout 必须从行首开始才是合法 Obsidian 语法，
+   且整行折叠与「释放这段」的整行还原严格对称，可一字不差还原原文） */
+function doFoldNow(loc){
+  var note = getNoteById(foldCtx.noteId);
+  if(!note){ closeFoldPanel(); return; }
+  var content = note.content || '';
+  var name = fpName.value.replace(/^\s+|\s+$/g, '');
+  if(!name) name = foldCtx.selText.replace(/\s+/g, '').slice(0, 8) || '折叠笔记';
+  var s = content.lastIndexOf('\n', Math.max(0, loc.start - 1)) + 1; // 行首
+  var e2 = content.indexOf('\n', loc.end);
+  var e = (e2 < 0) ? content.length : e2; // 行尾（不含换行符）
+  var raw = content.slice(s, e); // 用 raw（含 ** 标记）折叠，渲染不丢格式
+  loc = { start: s, end: e, level: loc.level };
+  pushHistory(note); // 快照含 annots，可回退
+  note.content = content.slice(0, loc.start) + buildFoldCallout(name, raw) + content.slice(loc.end);
+  note.updatedAt = Date.now();
+  persistNote(note);
+  rerenderDetail(note); // 重渲染出 <details> 胶囊 + applyAnnotBadges 自动重扫角标
+  refreshRevertBtn();
+  closeFoldPanel();
+  toast.style.display = 'block';
+  toastLoading.innerHTML = '✅ 已折成标签，点一下就能展开';
+  setTimeout(function(){ toast.style.display = 'none'; }, 4000);
+}
+fpOk.addEventListener('click', function(){
+  if(!foldCtx) return;
+  var note = getNoteById(foldCtx.noteId);
+  if(!note){ closeFoldPanel(); return; }
+  var content = note.content || '';
+  var loc = locateReplaceSpanEx(content, foldCtx); // v1.7.3 三级定位
+  if(!loc){
+    hideFpConfirm();
+    showMsg(fpMsg, '⚠️ 在正文里找不到这段原文了（可能刚被改动），未做折叠。', 'err');
+    return;
+  }
+  if(loc.level === 1){ hideFpConfirm(); doFoldNow(loc); return; } // L1 静默折叠
+  if(fpPendingLoc && fpPendingLoc.start === loc.start && fpPendingLoc.end === loc.end) return;
+  showFpConfirm(content, loc); // L2/L3 先请用户核对
+});
+fpCancel.addEventListener('click', closeFoldPanel);
+function runFpConfirmAction(act){
+  if(act === 'ok'){
+    var loc = fpPendingLoc;
+    if(!loc || !foldCtx){ hideFpConfirm(); return; }
+    doFoldNow(loc);
+  }else{
+    hideFpConfirm();
+    showMsg(fpMsg, '已取消，正文未改动。您可以重新涂黑要折叠的段落再试。', 'ok');
+  }
+}
+function findFpConfBtn(target){
+  var b = target;
+  while(b && b !== fpConfirm){
+    if(b.getAttribute && b.getAttribute('data-fc')) return b;
+    b = b.parentNode;
+  }
+  return null;
+}
+/* 确认条触摸链（沿用"已知坑①"模式，同 rpConfirm） */
+(function(){
+  var btns = [ $('fpConfOk'), $('fpConfNo') ];
+  for(var i = 0; i < btns.length; i++){
+    btns[i].addEventListener('mousedown', menuPress);
+    btns[i].addEventListener('touchstart', menuPress, { passive: false });
+    btns[i].addEventListener('click', function(e){
+      var b = findFpConfBtn(e.target);
+      if(b) runFpConfirmAction(b.getAttribute('data-fc'));
+    });
+    btns[i].addEventListener('touchend', function(e){
+      e.preventDefault(); e.stopPropagation();
+      var t = e.changedTouches && e.changedTouches[0];
+      var el = t ? document.elementFromPoint(t.clientX, t.clientY) : e.target;
+      var b = el ? findFpConfBtn(el) : null;
+      if(b) runFpConfirmAction(b.getAttribute('data-fc'));
+    }, { passive: false });
+  }
+})();
+/* v1.8「🤖 让AI起名」：AI 用选中文字概括 ≤10 字标签名，纯文本返回；
+   复用 callAnnotAI 风格（不传 temperature / response_format），走 stageWatch。 */
+function callFoldNameAI(selText, onOk, onErr, st){
+  var key = (localStorage.getItem(LS_KEY) || '').trim();
+  if(!key){ onErr('还没有填写 API Key。请先返回首页在「API 设置」里保存 Key。'); return; }
+  var sys = '你是一位资深的重症医学（ICU）教学编辑。用户会给你一段笔记文字，' +
+    '请你为这段文字起一个简短贴切的标签名。';
+  var usr = '【这段文字】\n' + selText +
+    '\n\n硬性要求：只返回标签名本身，不超过 10 个字，不要解释、不要引号、不要多余文字。';
+  var payload = { model: modelSel.value, messages: [ {role:'system',content:sys}, {role:'user',content:usr} ] };
+  if(st) st.set('① 正在把这段文字发送给 Kimi 服务器…');
+  fetchWithTimeout('https://api.moonshot.cn/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+    body: JSON.stringify(payload)
+  }).then(function(resp){
+    if(!resp.ok){
+      return resp.text().then(function(t){
+        var tip = '请求失败（HTTP ' + resp.status + '）。';
+        if(resp.status === 401) tip = 'API Key 无效或已过期，请检查 Key。';
+        else if(resp.status === 429) tip = '请求太频繁或额度不足，请稍后再试。';
+        else if(resp.status >= 500) tip = 'Kimi 服务器暂时繁忙，请稍后再试。';
+        if(t){ var s = t.replace(/\s+/g,' ').slice(0,150); tip += '（服务器说：' + s + '）'; }
+        throw new Error(tip);
+      });
+    }
+    if(st) st.set('② Kimi 已收到，AI 正在想标签名…');
+    return resp.json();
+  }).then(function(data){
+    if(st) st.set('③ 回复已送达，正在填入标签名…');
+    var text = '';
+    try{ text = data.choices[0].message.content; }catch(e){}
+    text = String(text || '').replace(/^\s+|\s+$/g, '').replace(/^["「『『#>\-*\s]+|["」』\s]+$/g, '');
+    if(!text) throw new Error('AI 返回内容为空，请重试。');
+    if(text.length > 12) text = text.slice(0, 12); // 兜底：标签名别太长
+    if(st) st.stop();
+    onOk(text);
+  }).catch(function(err){
+    if(st) st.stop();
+    var m = (err && err.message) ? err.message : '网络连接失败，请检查网络后重试。';
+    if(/Failed to fetch|NetworkError|Load failed/i.test(m)) m = '网络连接失败（请求没到达 Kimi 或中途断线）。请检查网络后重试。';
+    onErr(m);
+  });
+}
+fpAi.addEventListener('click', function(){
+  if(!foldCtx) return;
+  fpMsg.className = 'msg'; fpMsg.textContent = '';
+  fpLoading.style.display = 'block';
+  fpAi.disabled = true;
+  callFoldNameAI(foldCtx.selText, function(name){
+    fpLoading.style.display = 'none';
+    fpAi.disabled = false;
+    fpName.value = name;
+    fpName.focus();
+  }, function(errMsg){
+    fpLoading.style.display = 'none';
+    fpAi.disabled = false;
+    showMsg(fpMsg, errMsg, 'err');
+  }, stageWatch(fpLoading));
+});
+/* ---------- v1.8「📤 释放这段」：把 callout 块还原为去掉 "> " 前缀的原文 ---------- */
+var relConfirm = $('relConfirm');
+var relPendingFold = -1; // 待确认释放的折叠块编号（对应 note.content 里第 N 个 callout 块）
+function hideRelConfirm(){ relConfirm.style.display = 'none'; relPendingFold = -1; }
+function showRelConfirm(foldIdx, rect){
+  relPendingFold = foldIdx;
+  relConfirm.style.display = 'block';
+  var cw = relConfirm.offsetWidth, ch = relConfirm.offsetHeight;
+  var left = Math.max(8, Math.min(rect.left, window.innerWidth - cw - 8));
+  var top = rect.bottom + 8;
+  if(top + ch > window.innerHeight - 8) top = Math.max(8, rect.top - ch - 8);
+  relConfirm.style.left = left + 'px';
+  relConfirm.style.top = top + 'px';
+}
+/* 把 note.content 里第 foldIdx 个 callout 折叠块还原为原文（每行去 "> " 前缀） */
+function releaseFold(note, foldIdx){
+  var content = note.content || '';
+  var lines = content.split('\n'), cur = -1, start = -1, end = -1;
+  for(var i = 0; i < lines.length; i++){
+    if(/^\s*>\s*\[!note\]-\s*/.test(lines[i])){
+      cur++;
+      if(cur === foldIdx){
+        start = i;
+        end = i + 1;
+        while(end < lines.length && /^\s*>/.test(lines[end])) end++;
+        break;
+      }
+    }
+  }
+  if(start < 0) return null;
+  var body = lines.slice(start + 1, end).map(function(l){
+    return l.replace(/^\s*>\s?/, ''); // 去引用前缀；空引用行 ">" 变空行
+  });
+  var before = lines.slice(0, start), after = lines.slice(end);
+  var newLines = before.concat(body, after);
+  return { content: newLines.join('\n') };
+}
+function doReleaseNow(){
+  var idx = relPendingFold;
+  hideRelConfirm();
+  if(idx < 0) return;
+  var note = getNoteById(currentNoteId);
+  if(!note) return;
+  var r = releaseFold(note, idx);
+  if(!r){
+    toast.style.display = 'block';
+    toastLoading.innerHTML = '⚠️ 在正文里找不到这个折叠块了（可能刚被改动），未做还原。';
+    setTimeout(function(){ toast.style.display = 'none'; }, 4000);
+    return;
+  }
+  pushHistory(note); // 可回退
+  note.content = r.content;
+  note.updatedAt = Date.now();
+  persistNote(note);
+  rerenderDetail(note);
+  refreshRevertBtn();
+  toast.style.display = 'block';
+  toastLoading.innerHTML = '已还原为普通文字';
+  setTimeout(function(){ toast.style.display = 'none'; }, 3500);
+}
+/* 释放按钮：detailBody 事件委托（按钮在 <details> 内，正文无 preventDefault，原生 click 即可） */
+detailBody.addEventListener('click', function(e){
+  var b = e.target;
+  while(b && b !== detailBody){
+    if(b.classList && b.classList.contains('fold-release')){
+      showRelConfirm(+b.getAttribute('data-fold'), b.getBoundingClientRect());
+      return;
+    }
+    b = b.parentNode;
+  }
+});
+/* 确认条外点空白处收起 */
+document.addEventListener('mousedown', function(e){
+  if(relConfirm.style.display === 'block' && !relConfirm.contains(e.target)) hideRelConfirm();
+});
+function findRelConfBtn(target){
+  var b = target;
+  while(b && b !== relConfirm){
+    if(b.getAttribute && b.getAttribute('data-rel')) return b;
+    b = b.parentNode;
+  }
+  return null;
+}
+function runRelConfirmAction(act){
+  if(act === 'ok') doReleaseNow();
+  else hideRelConfirm();
+}
+/* 释放确认条触摸链（沿用"已知坑①"模式，同 rpConfirm） */
+(function(){
+  var btns = [ $('relConfOk'), $('relConfNo') ];
+  for(var i = 0; i < btns.length; i++){
+    btns[i].addEventListener('mousedown', menuPress);
+    btns[i].addEventListener('touchstart', menuPress, { passive: false });
+    btns[i].addEventListener('click', function(e){
+      var b = findRelConfBtn(e.target);
+      if(b) runRelConfirmAction(b.getAttribute('data-rel'));
+    });
+    btns[i].addEventListener('touchend', function(e){
+      e.preventDefault(); e.stopPropagation();
+      var t = e.changedTouches && e.changedTouches[0];
+      var el = t ? document.elementFromPoint(t.clientX, t.clientY) : e.target;
+      var b = el ? findRelConfBtn(el) : null;
+      if(b) runRelConfirmAction(b.getAttribute('data-rel'));
+    }, { passive: false });
+  }
+})();
+/* v1.8 测试钩子：仅供自动化测试驱动（界面不使用） */
+window.openFoldPanel = openFoldPanel;
+window.buildFoldCallout = buildFoldCallout;
+window.releaseFold = releaseFold;
 
 /* ==================== v1.7 新稿嵌套小改（对照视图里涂黑一小段 → 只改这一小段，只套一层） ==================== */
 var nestBar = $('nestBar'), nestInput = $('nestInput'),
