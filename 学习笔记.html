@@ -4,6 +4,16 @@
  学习笔记·双链版 —— 单文件 HTML 工具
 ====================================================================
  修改记录：
+   v2.1  2026-08-01 开机自检上线（模式B·本地优先配套）：打开软件 3 秒后自动
+         用云备份同一 Token 读备份仓库 version.json 与本机 SW_VERSION 比对——
+         ① GitHub 线路通不通 ② 网上有没有更新的版本 ③ 要不要下载，三种结果
+         都弹顶部 updBar 明说（最新=绿条 8 秒自收；有新版=黄条常驻 +「⬇️ 下载
+         新版到本机」按钮，fetch 仓库内软件副本→Blob→a[download]；连不上=
+         红条常驻，注明不影响使用、备份会自动重试）。云备份卡片加「🔍 自检」
+         手动按钮 + 结果行（存 'bg_gh_check'，打开先显示上次结果）。
+         发版配套：交付端每次发版须把 version.json（{version,dl,note}）和
+         软件副本（dl 指向的文件名）推到备份仓库，本文件只改 SW_VERSION。
+          cmpVer 点分版本逐段比数字；ver 文件 404=还没发布过版本信息（算线路通）
    v2.0.2 2026-08-01 「关于」页新增「GitHub 自助指南」（建仓库/上传/下载/
          换设备四节大白话编号教程，洪老师自学用，手机操作逐步写明）+
          公开/私有仓库与 Token 保管提醒
@@ -485,6 +495,25 @@
   #nestBar .btn-row { margin: 0; }
 
   .hidden { display: none !important; }
+
+  /* v2.1 开机自检：新版本提示条（固定顶部，可关闭） */
+  #updBar {
+    position: fixed; left: 10px; right: 10px; top: 10px; z-index: 999;
+    max-width: 640px; margin: 0 auto;
+    background: #fff8e8; border: 1.5px solid #e8c96a; border-radius: 12px;
+    padding: 10px 12px; box-shadow: 0 4px 14px rgba(0,0,0,.12);
+    font-size: 14px; line-height: 1.7; color: #4a3d1e;
+  }
+  #updBar.ok { background: #eef7ee; border-color: #9ec79e; color: #2e4d2e; }
+  #updBar.bad { background: #fdeeee; border-color: #d99; color: #6d2b2b; }
+  #updBar .upd-row { display: flex; gap: 8px; align-items: flex-start; }
+  #updBar .upd-body { flex: 1; white-space: pre-line; }
+  #updBar .upd-x {
+    flex: none; border: none; background: transparent; font-size: 16px;
+    color: inherit; cursor: pointer; padding: 2px 6px;
+  }
+  #updBar .btn-row { margin-top: 6px; }
+  #ghCheck { font-size: 13px; line-height: 1.8; margin-top: 8px; white-space: pre-line; }
 </style>
 </head>
 <body>
@@ -534,6 +563,17 @@
 
     <div id="noteList"></div>
 
+    <!-- v2.1 开机自检结果条（固定顶部）：线路通不通/有没有新版/要不要下载 -->
+    <div id="updBar" class="hidden">
+      <div class="upd-row">
+        <div class="upd-body" id="updText"></div>
+        <button type="button" class="upd-x" id="updClose" title="关闭">✕</button>
+      </div>
+      <div class="btn-row hidden" id="updBtnRow">
+        <button type="button" class="btn" id="updDlBtn">⬇️ 下载新版到本机</button>
+      </div>
+    </div>
+
     <!-- v2.0 云备份卡片（折叠区风格同「关于/版本说明」） -->
     <details class="about" id="ghCard" style="margin-top:14px;">
       <summary>☁️ 云备份（GitHub 私有仓库）</summary>
@@ -552,6 +592,10 @@
           <button type="button" class="btn" id="ghPushBtn">☁️ 立即备份</button>
           <button type="button" class="btn secondary" id="ghPullBtn">📥 从云端恢复</button>
         </div>
+        <div class="btn-row">
+          <button type="button" class="btn secondary" id="ghCheckBtn">🔍 自检：线路 + 新版本</button>
+        </div>
+        <div class="hint" id="ghCheck">自检：还没查过（每次打开软件会自动查一次）</div>
         <div class="loading" id="ghLoading"><span class="spinner"></span>正在连接 GitHub…</div>
         <div class="msg" id="ghMsg"></div>
         <!-- 恢复确认条（复用 rp-conf 风格）：防止误覆盖本机笔记 -->
@@ -759,7 +803,7 @@
   <details class="about">
     <summary>📋 关于 / 版本说明</summary>
     <div class="inner">
-      <p><b>版本：</b>v2.0.2（2026-08-01）：「关于」页新增「GitHub 自助指南」（建仓库/上传/下载/换设备四节大白话教程，在本页下方）。上一版 v2.0（2026-08-01）：云备份上线——笔记自动同步到您的 GitHub 私有仓库（首页「☁️ 云备份」卡片里填一次用户名、Token、仓库名即可；之后每次改动后 10 秒自动备份），换设备/清缓存后可点「📥 从云端恢复」一键找回；Token 只存在本机浏览器，不外传。上一版 v1.9（2026-08-01）：涂黑大段文字 → 弹出菜单新增「🦴 精炼成骨头」，AI 把这段提炼成 3~5 条要点（骨头）留在正文，原文自动折成一个小胶囊标签压在骨头后面；骨头不满意可涂黑单条让 AI 只改这一条，或点「🔄 再改一次」回提示词重发；标签名可自己改，也可点「🤖 让AI起名」（名字自动带「原文：」前缀）。注意：之后点标签里的「📤 释放这段」只把标签内的原文还原回正文，已提炼的骨头列表会保留。上一版 v1.8.1（2026-08-01）：标签胶囊瘦身——内外边距和字号都收紧，胶囊只占约正文一行高，不再占版面。上一版 v1.8（2026-08-01）：大段文字涂黑 → 弹出菜单新增「🏷 折成标签」，可把太长但有用的段落折叠成一个小胶囊标签（可自己起名，也可点「🤖 让AI起名」让 AI 概括），点一下标签就展开全文，标签里点「📤 释放这段」可还原回正文；导出到 Obsidian 就是原生 callout 折叠块，默认收起，一字不丢。上一版 v1.7.3（2026-08-01）：替换这段的定位加固为三级（精确→忽略格式模糊→段落大意），模糊定位命中会先让您确认再替换，误报"找不到原文"大幅减少。上一版 v1.7.2（2026-08-01）：修复——当 AI 回信太长被中途截断时，以前会把一段露出 JSON 代码的文字收进笔记正文，现在软件会自动"剥信封"，只把真正的正文收进笔记，标题也能一起认出来；同时把 AI 回复长度上限调大，减少被截断的情况。上一版 v1.7.1（2026-08-01）：让 AI 改稿时，AI 偶尔不按约定格式回信（直接返回裸文章），以前会报「格式不对」让您重试，现在软件能智能识别裸文章并直接采用，改稿照常完成；同时把格式要求写得更醒目，降低这种情况发生的概率。上一版 v1.7（2026-08-01）：对照预览里的加粗、列表现在按真实样式显示，不再露出一堆星号；AI 新稿里哪一小段不满意，涂黑它就会弹出小条，让 AI 只改这一小段（只套一层，最后点「✅ 采用」才存历史）。另外把手机上按钮"点了没反应"的两个老坑记进了开发备忘，以后维护不会再犯。上一版 v1.6（2026-07-31）新功能：涂黑一大段文字 → 弹出菜单点「🔄 替换这段」→ 面板里点预设要求（可叠加多个）或自由填写/补充 → AI 只改写这一段 → 预览对照（上原文下新稿）后点「✅ 采用」才生效，改前自动存一版历史，可点「让 AI 改」里的「↩️ 回退上一版」找回原稿。上一版 v1.5.2：注释里的生词，正文没有也能加角标——在注释气泡里涂黑注释文字中的生词点「➕ 选词加角标」，它会变成一个贴在气泡里的小角标（灰色虚线=待解释），点角标可钻进去看/编辑，「← 返回」回到上一条；随「批量解释」一起让 AI 讲解（AI 会参考它所在的那条注释文字）；导出时嵌套解释不单独出脚注，附加在父脚注末尾，如「……。（肺的应力：肺泡壁承受的牵张力）」。上一版 v1.5.1 修复：一篇笔记里多个词条分散在不同段落时，第一个角标之后的词条（如 ARDS、PEEP）会贴不上角标的问题，现已全部正常。以下为 v1.5 功能：① 手动加的角标现在贴在您涂黑的那个确切位置（记住涂黑处前后文），不再跳到全篇第一次出现的地方；并有词边界保护，像 ARDS 不会再嵌进 ARDSNet 中间。② 注释气泡新增「🤖 让AI改写」：点词条角标后可让 AI 按要求改写解释，改写要求可以随意修改（默认是"更通俗、更简短"），改写前自动存一版历史可回退。③ 气泡里涂黑注释文字中的生词，点「➕ 选词加角标」即可把它加为本篇待解释角标（不发 AI 请求），之后随批量解释一起让 AI 讲解。上一版 v1.4 手动批量角标：读正文时涂黑一个词，点弹出菜单的「➕ 加角标」，立即立一个灰色虚线空角标（不发 AI 请求，可连加多个）；读完后点「🤖 批量解释」按钮，把所有空角标一次性发给 AI，解释自动填回各角标变实色。另有 v1.3 词条脚注注释（正文词条旁 ① 小角标，点开看大白话，导出转 Obsidian 标准脚注）与 v1.1 交互式改稿（分栏、快捷指令、5 版历史可回退）。AI 请求保持不传 temperature / response_format（兼容 kimi-k2.6）。</p>
+      <p><b>版本：</b>v2.1（2026-08-01）：开机自检上线——每次打开软件会自动检查三件事并弹条告诉您：① GitHub 线路通不通 ② 网上有没有更新的版本 ③ 需不需要下载。有新版时条上有「⬇️ 下载新版到本机」按钮，点一下新版就下载到手机「下载」目录，之后打开新文件替换旧的即可；已是最新=绿条（8 秒自动收）；连不上=红条（不耽误使用，笔记都在本机，网络好了备份自动重试）。云备份卡片里也有「🔍 自检：线路 + 新版本」按钮可随时手动查。上一版 v2.0.2（2026-08-01）：「关于」页新增「GitHub 自助指南」（建仓库/上传/下载/换设备四节大白话教程，在本页下方）。上一版 v2.0（2026-08-01）：云备份上线——笔记自动同步到您的 GitHub 私有仓库（首页「☁️ 云备份」卡片里填一次用户名、Token、仓库名即可；之后每次改动后 10 秒自动备份），换设备/清缓存后可点「📥 从云端恢复」一键找回；Token 只存在本机浏览器，不外传。上一版 v1.9（2026-08-01）：涂黑大段文字 → 弹出菜单新增「🦴 精炼成骨头」，AI 把这段提炼成 3~5 条要点（骨头）留在正文，原文自动折成一个小胶囊标签压在骨头后面；骨头不满意可涂黑单条让 AI 只改这一条，或点「🔄 再改一次」回提示词重发；标签名可自己改，也可点「🤖 让AI起名」（名字自动带「原文：」前缀）。注意：之后点标签里的「📤 释放这段」只把标签内的原文还原回正文，已提炼的骨头列表会保留。上一版 v1.8.1（2026-08-01）：标签胶囊瘦身——内外边距和字号都收紧，胶囊只占约正文一行高，不再占版面。上一版 v1.8（2026-08-01）：大段文字涂黑 → 弹出菜单新增「🏷 折成标签」，可把太长但有用的段落折叠成一个小胶囊标签（可自己起名，也可点「🤖 让AI起名」让 AI 概括），点一下标签就展开全文，标签里点「📤 释放这段」可还原回正文；导出到 Obsidian 就是原生 callout 折叠块，默认收起，一字不丢。上一版 v1.7.3（2026-08-01）：替换这段的定位加固为三级（精确→忽略格式模糊→段落大意），模糊定位命中会先让您确认再替换，误报"找不到原文"大幅减少。上一版 v1.7.2（2026-08-01）：修复——当 AI 回信太长被中途截断时，以前会把一段露出 JSON 代码的文字收进笔记正文，现在软件会自动"剥信封"，只把真正的正文收进笔记，标题也能一起认出来；同时把 AI 回复长度上限调大，减少被截断的情况。上一版 v1.7.1（2026-08-01）：让 AI 改稿时，AI 偶尔不按约定格式回信（直接返回裸文章），以前会报「格式不对」让您重试，现在软件能智能识别裸文章并直接采用，改稿照常完成；同时把格式要求写得更醒目，降低这种情况发生的概率。上一版 v1.7（2026-08-01）：对照预览里的加粗、列表现在按真实样式显示，不再露出一堆星号；AI 新稿里哪一小段不满意，涂黑它就会弹出小条，让 AI 只改这一小段（只套一层，最后点「✅ 采用」才存历史）。另外把手机上按钮"点了没反应"的两个老坑记进了开发备忘，以后维护不会再犯。上一版 v1.6（2026-07-31）新功能：涂黑一大段文字 → 弹出菜单点「🔄 替换这段」→ 面板里点预设要求（可叠加多个）或自由填写/补充 → AI 只改写这一段 → 预览对照（上原文下新稿）后点「✅ 采用」才生效，改前自动存一版历史，可点「让 AI 改」里的「↩️ 回退上一版」找回原稿。上一版 v1.5.2：注释里的生词，正文没有也能加角标——在注释气泡里涂黑注释文字中的生词点「➕ 选词加角标」，它会变成一个贴在气泡里的小角标（灰色虚线=待解释），点角标可钻进去看/编辑，「← 返回」回到上一条；随「批量解释」一起让 AI 讲解（AI 会参考它所在的那条注释文字）；导出时嵌套解释不单独出脚注，附加在父脚注末尾，如「……。（肺的应力：肺泡壁承受的牵张力）」。上一版 v1.5.1 修复：一篇笔记里多个词条分散在不同段落时，第一个角标之后的词条（如 ARDS、PEEP）会贴不上角标的问题，现已全部正常。以下为 v1.5 功能：① 手动加的角标现在贴在您涂黑的那个确切位置（记住涂黑处前后文），不再跳到全篇第一次出现的地方；并有词边界保护，像 ARDS 不会再嵌进 ARDSNet 中间。② 注释气泡新增「🤖 让AI改写」：点词条角标后可让 AI 按要求改写解释，改写要求可以随意修改（默认是"更通俗、更简短"），改写前自动存一版历史可回退。③ 气泡里涂黑注释文字中的生词，点「➕ 选词加角标」即可把它加为本篇待解释角标（不发 AI 请求），之后随批量解释一起让 AI 讲解。上一版 v1.4 手动批量角标：读正文时涂黑一个词，点弹出菜单的「➕ 加角标」，立即立一个灰色虚线空角标（不发 AI 请求，可连加多个）；读完后点「🤖 批量解释」按钮，把所有空角标一次性发给 AI，解释自动填回各角标变实色。另有 v1.3 词条脚注注释（正文词条旁 ① 小角标，点开看大白话，导出转 Obsidian 标准脚注）与 v1.1 交互式改稿（分栏、快捷指令、5 版历史可回退）。AI 请求保持不传 temperature / response_format（兼容 kimi-k2.6）。</p>
       <p><b>历史版本：</b>v1.2 默认改快模型（秒级响应）+ 分步进度提示（发送→思考→解析+用时秒数）；v1.1.1 修复手机词条菜单按钮；v1.1.2 AI 请求加 180 秒超时；v1.0.2 修复 AI 调用 400 报错</p>
       <p><b>数据安全：</b>所有笔记和 API Key 只保存在您本机浏览器（localStorage），不上传到任何服务器；清除浏览器数据会丢失笔记，请定期导出备份。</p>
       <p><b>数据存放与备份同步规矩（v2.0.1 起，给洪老师和维护者共同遵守）：</b></p>
@@ -3876,6 +3920,125 @@ ghBindBtn($('ghConfNo'), function(){
   ghConfirm.classList.add('hidden');
 });
 
+/* ==================== v2.1 开机自检（线路 + 新版本 + 一键下载新版） ====================
+   原理：打开软件时（或点「🔍 自检」按钮）用云备份同一个 Token 去读备份仓库里的
+   version.json（{version, dl, note}），与本机 SW_VERSION 比对：
+   - 连通性：能读到 version.json = api.github.com 线路通（和自动备份同一条线路）
+   - 版本：网上更新 → 顶部 updBar 提示 + 「⬇️ 下载新版到本机」（fetch 仓库里的
+     软件副本 → Blob → a[download] 触发浏览器下载，用户再从下载目录打开替换旧文件）
+   - 三种结果都明说不静默：通+最新=绿条（8 秒自动收）；通+有新版=黄条常驻；
+     不通=红条常驻（只说连不上，不影响使用）
+   注意：version.json 与软件副本（dl 字段指向的文件）由交付端（AI）每次发版时
+   推到备份仓库；本文件版本号改 SW_VERSION 一处即可。 */
+var SW_VERSION = '2.1';
+var LS_GH_CHECK = 'bg_gh_check';
+var updBar = $('updBar'), updText = $('updText'), updBtnRow = $('updBtnRow'),
+    ghCheckEl = $('ghCheck');
+
+function ghVerUrl(){
+  var c = ghCfg();
+  return 'https://api.github.com/repos/' + encodeURIComponent(c.user) + '/' +
+         encodeURIComponent(c.repo) + '/contents/version.json';
+}
+/* 点分版本号比较：a>b 返回 1，a<b 返回 -1，相等 0（按段转数字逐段比） */
+function cmpVer(a, b){
+  var pa = String(a).split('.'), pb = String(b).split('.');
+  for(var i = 0; i < Math.max(pa.length, pb.length); i++){
+    var x = parseInt(pa[i] || '0', 10), y = parseInt(pb[i] || '0', 10);
+    if(x > y) return 1; if(x < y) return -1;
+  }
+  return 0;
+}
+function updShow(kind, text, showDl){
+  updBar.className = kind || '';
+  updText.textContent = text;
+  updBtnRow.classList.toggle('hidden', !showDl);
+  updBar.classList.remove('hidden');
+}
+function updHide(){ updBar.classList.add('hidden'); }
+function ghCheckRender(line){
+  ghCheckEl.textContent = line;
+  try{ localStorage.setItem(LS_GH_CHECK, line); }catch(e){}
+}
+
+/* 主流程：manual=true 时按钮触发（结果条一定显示）；自动触发时结果也显示（用户要求都通知） */
+function ghSelfCheck(manual){
+  if(!ghReady()){
+    if(manual){ showMsg(ghMsg, '请先把用户名、Token、仓库名填好并点「💾 保存设置」，才能自检。', 'err'); ghCard.open = true; }
+    return;
+  }
+  ghCheckRender('自检：正在检查…（① 连线路 ② 比版本）');
+  fetchWithTimeout(ghVerUrl(), { headers: ghHeaders() }).then(function(resp){
+    if(resp.status === 404){
+      /* 仓库能访问但还没有 version.json：线路通，只是还没发布过版本信息 */
+      ghCheckRender('自检：' + fmtTime(Date.now()) + ' ✅ 线路通（云端还没放版本信息，暂无法比对）');
+      updShow('ok', '✅ GitHub 线路通畅\n本机版本 v' + SW_VERSION + '（云端还没有版本信息可比对）\n备份功能可正常使用', false);
+      setTimeout(updHide, 8000);
+      return null;
+    }
+    if(!resp.ok) return resp.text().then(function(t){ throw new Error(ghErrText(resp.status, t)); });
+    return resp.json();
+  }).then(function(file){
+    if(!file) return;
+    var info;
+    try{ info = JSON.parse(ghB64dec(file.content || '')); }catch(e){ info = null; }
+    if(!info || !info.version){
+      ghCheckRender('自检：' + fmtTime(Date.now()) + ' ✅ 线路通（版本信息读不懂，暂无法比对）');
+      updShow('ok', '✅ GitHub 线路通畅\n本机版本 v' + SW_VERSION + '\n备份功能可正常使用', false);
+      setTimeout(updHide, 8000);
+      return;
+    }
+    if(cmpVer(info.version, SW_VERSION) > 0){
+      /* 有新版：黄条常驻 + 下载按钮（dl 指向仓库里的软件副本文件名） */
+      ghCheckRender('自检：' + fmtTime(Date.now()) + ' ✅ 线路通　🎉 网上有新版 v' + info.version + '（本机 v' + SW_VERSION + '），建议下载替换');
+      ghVerPending = info;
+      updShow('', '🎉 网上有新版 v' + info.version + '，你的是 v' + SW_VERSION + '\n' +
+        (info.note ? '新版内容：' + info.note + '\n' : '') +
+        '点下面按钮下载到本机，之后从下载目录打开新文件替换旧的', true);
+    }else{
+      ghCheckRender('自检：' + fmtTime(Date.now()) + ' ✅ 线路通　已是最新版 v' + SW_VERSION);
+      updShow('ok', '✅ GitHub 线路通畅\n已是最新版 v' + SW_VERSION + '，无需下载\n备份功能可正常使用', false);
+      setTimeout(updHide, 8000);
+    }
+  }).catch(function(e){
+    var msg = (e && e.message) ? e.message : '网络不通';
+    ghCheckRender('自检：' + fmtTime(Date.now()) + ' ❌ 连不上 GitHub（' + msg + '）——不影响使用，写好的笔记都在本机，等网络好了备份会自动重试');
+    updShow('bad', '❌ 这次没能连上 GitHub（' + msg + '）\n不影响使用：笔记照常写、照常保存在本机\n等网络好了，自动备份会自己重试；也可以稍后再点「🔍 自检」', false);
+  });
+}
+
+/* 一键下载新版：从备份仓库取 dl 文件内容 → Blob → a[download]（走 api 线路，带 Token） */
+var ghVerPending = null;
+function ghDownloadNew(){
+  if(!ghVerPending || !ghVerPending.dl){ popToast('⚠️ 云端没给下载文件，找 AI 要新版即可', 3000); return; }
+  var c = ghCfg();
+  var url = 'https://api.github.com/repos/' + encodeURIComponent(c.user) + '/' +
+            encodeURIComponent(c.repo) + '/contents/' + encodeURIComponent(ghVerPending.dl);
+  popToast('⏳ 正在下载新版…', 2000);
+  fetchWithTimeout(url, { headers: ghHeaders() }).then(function(resp){
+    if(!resp.ok) return resp.text().then(function(t){ throw new Error(ghErrText(resp.status, t)); });
+    return resp.json();
+  }).then(function(file){
+    var blob = new Blob([ghB64dec(file.content || '')], { type: 'text/html;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = '学习笔记_v' + ghVerPending.version + '.html';
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    popToast('✅ 新版已下载，到「下载」目录找新文件打开', 4000);
+  }).catch(function(e){
+    popToast('❌ 下载失败：' + ((e && e.message) || '网络不通') + '，也可找 AI 直接要文件', 4000);
+  });
+}
+ghBindBtn($('ghCheckBtn'), function(){ ghSelfCheck(true); });
+ghBindBtn($('updDlBtn'), ghDownloadNew);
+ghBindBtn($('updClose'), updHide);
+/* 上次自检结果先摆出来（打开就能看到） */
+try{
+  var lastCheck = localStorage.getItem(LS_GH_CHECK);
+  if(lastCheck) ghCheckEl.textContent = lastCheck;
+}catch(e){}
+
 /* v2.0 初始化：预填设置 + 状态行；本机空 + 配置齐全 → 自动 pull（仍走确认条防误覆盖） */
 ghUserInput.value = localStorage.getItem(LS_GH_USER) || 'hongxiaotao177';
 ghRepoInput.value = localStorage.getItem(LS_GH_REPO) || 'xuexi-backup';
@@ -3884,6 +4047,8 @@ ghStatusRender();
 if(loadNotes().length === 0 && ghReady()){
   ghPull(function(err, payload){ if(!err && payload) ghAskRestore(payload); });
 }
+/* v2.1：打开软件 3 秒后自动自检一次（配置齐全才查；结果条三种情况都明说） */
+setTimeout(function(){ if(ghReady()) ghSelfCheck(false); }, 3000);
 
 /* ==================== 初始化 ==================== */
 renderList();
