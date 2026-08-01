@@ -75,6 +75,21 @@
     v0.9.9 对抗手机芯片OCR差异（同一张图测试机过、用户机不过）：
         ①"栓→检"高频误认自动纠正 ②锚点加"日期"候选（底部三行都含）
         ③第一遍找不到自动换识别模式（PSM 6）+更高分辨率再扫4个方向
+    v0.9.11 云备份上线（与学习笔记同款，备份文件 xueqi-backup.json，含 API Key）：
+        设置区新增「☁️ 云备份」折叠卡片：GitHub 用户名（预填 hongxiaotao177，
+        存 bg_gh_user）+ Token（password，存 bg_gh_tok，只存本机不进任何提示/日志/备份内容）
+        + 备份仓库名（预填 xuexi-backup，存 bg_gh_repo）+ 💾保存设置 / ☁️立即备份 / 📥从云端恢复
+        + 状态行（存 bg_gh_last）。备份内容=本软件全部 bg_* localStorage 键快照
+        （{version:1,savedAt,app:'xueqi',data:{…}}，含 bg_apikey，API Key 是用户私人物品、
+        仓库私有、用户已知情同意；四个 bg_gh_* 配置键本身不进快照）。
+        ghPush：GET contents 取 sha（404=首次）→ PUT xueqi-backup.json，
+        base64 中文走 btoa(unescape(encodeURIComponent()))；
+        每个 bg_* 写 localStorage 的收口处挂 bgDirty()，配置齐全时 debounce 10 秒静默 push；
+        空数据不 push。恢复：GET → decodeURIComponent(escape(atob())) → 确认条
+        （N 个键/备份时间/覆盖警告）→ 确定写回 → toast；启动时本机无数据+配置齐全
+        自动 pull 弹确认条。错误翻译：401=Token 失效或没权限；404=仓库不存在或 Token
+        没勾选这个仓库；其余附服务器原文前150字。新按钮触摸链沿用学习笔记"已知坑"模式
+        （mousedown/touchstart preventDefault + touchend elementFromPoint，输入框不绑）。
     v0.9.10 记忆成功条件：每次定位成功后记住"赢的组合"（旋转方向+识别模式），
         下次拍照先按记忆直接试，命中即跳过全部扫描；失败再走完整流程并更新记忆
   说明: 单文件应用；v0.9起自动定位功能会从CDN加载Tesseract.js OCR引擎（仅首次，浏览器缓存）；
@@ -136,11 +151,21 @@
   .histItem .t { font-size:13px; color:#888; }
   .histItem .bg { font-size:14px; margin:4px 0; }
   #status { font-size:14px; color:#a05555; white-space:pre-wrap; margin:8px 0; }
+  /* v0.9.11 云备份折叠卡片（details 风格同学习笔记「关于」区） */
+  details.gh { margin:12px 0; background:#f7f9f8; border:1px solid #d8e2dc; border-radius:10px; padding:10px 14px; }
+  details.gh summary { font-size:16px; font-weight:bold; color:#4a6b5d; cursor:pointer; padding:6px 0; }
+  details.gh label { display:block; font-size:14px; color:#555; margin-top:8px; }
+  .ghMsg { font-size:14px; margin:8px 0; white-space:pre-wrap; min-height:0; }
+  .ghMsg.err { color:#a05555; }
+  .ghMsg.ok { color:#4a6b5d; }
+  #ghConfirm { border:1px solid #4a6b5d; border-radius:8px; padding:10px; margin:8px 0; background:#eef3f0; }
+  #ghConfText { font-size:15px; line-height:1.6; margin-bottom:6px; }
+  #ghToast { position:fixed; left:50%; bottom:70px; transform:translateX(-50%); background:rgba(0,0,0,.82); color:#fff; padding:10px 20px; border-radius:22px; font-size:15px; z-index:120; max-width:86%; text-align:center; }
   [hidden] { display:none !important; }
 </style>
 </head>
 <body>
-<header><span>血气分析解读助手</span><span class="ver">v0.9.10</span></header>
+<header><span>血气分析解读助手</span><span class="ver">v0.9.11</span></header>
 <main>
 
   <!-- 第1步：首页 -->
@@ -201,6 +226,32 @@
       <input type="file" id="fileImport" accept=".json,application/json" hidden>
       <p class="hint">导出文件含病人姓名和验单图片，请自己保管好（可存微信收藏/坚果云/电脑）。换手机后在新手机导入即可恢复。</p>
       <button class="btn danger" id="btnHistClear">清空全部记录</button>
+      <!-- v0.9.11 云备份折叠卡片（与学习笔记同款，备份文件 xueqi-backup.json） -->
+      <details class="gh" id="ghCard">
+        <summary>☁️ 云备份（GitHub 私有仓库，换手机不丢设置）</summary>
+        <label for="ghUser">GitHub 用户名</label>
+        <input type="text" id="ghUser" placeholder="如 hongxiaotao177" autocomplete="off">
+        <label for="ghTok">Token（个人访问令牌）</label>
+        <input type="password" id="ghTok" placeholder="ghp_ 或 github_pat_ 开头的令牌" autocomplete="off">
+        <p class="hint">Token 只存在本机浏览器，不外传；备份仓库请用私有（Private）仓库。</p>
+        <label for="ghRepo">备份仓库名（私有仓库）</label>
+        <input type="text" id="ghRepo" placeholder="如 xuexi-backup" autocomplete="off">
+        <button type="button" class="btn" id="ghSave">💾 保存设置</button>
+        <div class="row">
+          <button type="button" class="btn" id="ghPushBtn">☁️ 立即备份</button>
+          <button type="button" class="btn secondary" id="ghPullBtn">📥 从云端恢复</button>
+        </div>
+        <div class="ghMsg" id="ghMsg"></div>
+        <div id="ghConfirm" hidden>
+          <div id="ghConfText"></div>
+          <div class="row">
+            <button type="button" class="btn" id="ghConfOk">确定，覆盖本机</button>
+            <button type="button" class="btn secondary" id="ghConfNo">取消</button>
+          </div>
+        </div>
+        <p class="hint" id="ghStatus">上次备份：未备份过</p>
+        <p class="hint">备份内容=本软件的设置（含 API Key、模型、提示词等），保存到您的 GitHub 私有仓库，和学习笔记的备份互不干扰。换设备/清缓存后：填一次 Token → 点「📥 从云端恢复」即可。</p>
+      </details>
     </div>
   </section>
 
@@ -296,6 +347,7 @@
 
 ★ 如果"自动定位"提示识别引擎下载失败或一直转圈：先检查网络、换个网络（WiFi换流量）多试几次；还是不行，把这个HTML文件发回给Kimi，说一句"引擎下载失败"，它读文件开头的说明就知道原因和处理办法，会直接给您做一个不联网的离线版。
 
+v0.9.11 云备份上线（和学习笔记同款）：设置区新增「☁️ 云备份」折叠卡片，填一次 GitHub 用户名/Token/备份仓库名（xuexi-backup），之后每次改动 10 秒自动备份到您的 GitHub 私有仓库（备份文件 xueqi-backup.json，含 API Key，换手机点「📥 从云端恢复」一键搬回）；Token 只存在本机浏览器
 v0.9.10 记忆成功条件：每次定位成功后自动记住当时的方向+识别模式，下次拍照直接按记忆先试，命中就不用再扫八个方向（拍单角度固定的话，以后基本都是一次过）；记忆失败会自动走完整扫描并更新记忆
 v0.9.9 对抗不同手机识别差异：常见错字自动纠正+锚点加"日期"+第一遍失败自动换识别模式再扫一遍（成功率提升）
 v0.9.8 修复点图片不能放大；修复"检验医生"冒充右下角导致只裁出左半张表格（右侧锚点必须真的靠右，否则自动推算）
@@ -332,6 +384,7 @@ v0.1  初版：拍照→裁剪脱敏→Kimi解读→复制归档
     <button class="btn secondary" id="btnAboutBack">返回首页</button>
   </section>
 
+  <div id="ghToast" hidden></div>
 </main>
 <script>
 "use strict";
@@ -370,6 +423,7 @@ function refreshPatientBtns(){
 function getSelectedPatient(){ return localStorage.getItem("bg_curpatient") || "未命名病人"; }
 function setSelectedPatient(p){
   localStorage.setItem("bg_curpatient", p);
+  bgDirty(); /* v0.9.11：数据收口处挂自动云备份钩子 */
   $("curPatientName").textContent = p;
   renderPatientDrop();
 }
@@ -619,7 +673,7 @@ function loadLocatePref(){
   return null;
 }
 function saveLocatePref(rot, pass){
-  try{ localStorage.setItem("bg_locatepref", JSON.stringify({ rot, pass, maxSide: pass === 2 ? 1500 : 1200 })); }catch(e){}
+  try{ localStorage.setItem("bg_locatepref", JSON.stringify({ rot, pass, maxSide: pass === 2 ? 1500 : 1200 })); bgDirty(); }catch(e){}
 }
 async function autoLocate(){
   $("cropImg").src = workImg.src;
@@ -1001,6 +1055,7 @@ function initModel(){
 }
 $("btnSaveModel").onclick = () => {
   localStorage.setItem("bg_model", $("modelSelect").value);
+  bgDirty(); /* v0.9.11 自动云备份钩子 */
   initModel();
   alert("模型已保存：" + $("modelSelect").value);
 };
@@ -1084,6 +1139,7 @@ $("btnUsePreset").onclick = () => {
   if(!confirm("确定用这套内置提示词覆盖当前提示词吗？你的手动修改将丢失。")) return;
   const v = PROMPT_PRESETS[k];
   localStorage.setItem("bg_prompt", v);
+  bgDirty(); /* v0.9.11 自动云备份钩子 */
   $("promptInput").value = v;
   $("presetStatus").textContent = "已切换为：" + $("promptPreset").selectedOptions[0].textContent;
 };
@@ -1091,6 +1147,7 @@ $("btnSavePrompt").onclick = () => {
   const v = $("promptInput").value.trim();
   if(!v){ alert("提示词不能为空"); return; }
   localStorage.setItem("bg_prompt", v);
+  bgDirty(); /* v0.9.11 自动云备份钩子 */
   let key = "custom";
   for(const k in PROMPT_PRESETS){ if(PROMPT_PRESETS[k] === v){ key = k; break; } }
   $("promptPreset").value = key;
@@ -1099,6 +1156,7 @@ $("btnSavePrompt").onclick = () => {
 $("btnResetPrompt").onclick = () => {
   if(confirm("恢复默认提示词？你的修改将丢失。")){
     localStorage.removeItem("bg_prompt");
+    bgDirty(); /* v0.9.11 自动云备份钩子 */
     initPrompt();
   }
 };
@@ -1195,6 +1253,7 @@ function syncQuickSelects(){
 }
 function quickRetry(selId, mode, statusEl, btn){
   localStorage.setItem("bg_model", $(selId).value);
+  bgDirty(); /* v0.9.11 自动云备份钩子 */
   initModel();
   if(mode === "update"){
     convo = convo.slice(0, 1);  // 丢弃当前解读重问
@@ -1311,6 +1370,7 @@ $("btnSaveKey").onclick = () => {
   const v = $("apiKeyInput").value.trim();
   if(!v){ alert("请输入 API Key"); return; }
   localStorage.setItem("bg_apikey", v);
+  bgDirty(); /* v0.9.11 自动云备份钩子 */
   refreshKeyStatus();
   alert("已保存");
 };
@@ -1372,6 +1432,7 @@ function getHist(){ return histCache; }
 /* 写入：更新内存缓存+异步落盘IndexedDB（失败时退回localStorage，满了丢最旧图片） */
 function persistHist(arr){
   histCache = arr;
+  bgDirty(); /* v0.9.11 自动云备份钩子（IndexedDB 退回 localStorage 时 bg_history 也在快照内） */
   if(idb){ idbWrite(arr).catch(() => {}); return; }
   while(true){
     try{ localStorage.setItem("bg_history", JSON.stringify(arr)); return; }
@@ -1592,6 +1653,253 @@ $("fileImport").onchange = e => {
   };
   reader.readAsText(f);
 };
+
+/* ================= v0.9.11 GitHub 私有仓库云备份（与学习笔记同款，按需简化） ================= */
+/* 配置键（bg_gh_* 自身不进备份快照）；备份文件名 xueqi-backup.json，与学习笔记的 notes-backup.json 区分 */
+var LS_GH_USER = "bg_gh_user", LS_GH_TOK = "bg_gh_tok",
+    LS_GH_REPO = "bg_gh_repo", LS_GH_LAST = "bg_gh_last";
+var GH_SKIP = { bg_gh_user:1, bg_gh_tok:1, bg_gh_repo:1, bg_gh_last:1 };
+var ghSuspend = false;    /* 恢复写入时挂起自动备份，防止刚拉回的内容又立刻推回 */
+var ghAutoTimer = null;   /* debounce 句柄 */
+var ghPendingData = null; /* 确认条等待写回的云端数据 */
+
+function ghCfg(){
+  return {
+    user: (localStorage.getItem(LS_GH_USER) || "").replace(/^\s+|\s+$/g,""),
+    tok:  (localStorage.getItem(LS_GH_TOK)  || "").replace(/^\s+|\s+$/g,""),
+    repo: (localStorage.getItem(LS_GH_REPO) || "").replace(/^\s+|\s+$/g,"")
+  };
+}
+function ghReady(){ var c = ghCfg(); return !!(c.user && c.tok && c.repo); }
+function ghApiUrl(){
+  var c = ghCfg();
+  return "https://api.github.com/repos/" + encodeURIComponent(c.user) + "/" +
+         encodeURIComponent(c.repo) + "/contents/xueqi-backup.json";
+}
+function ghHeaders(){
+  return { "Authorization": "token " + ghCfg().tok, "Accept": "application/vnd.github+json" };
+}
+/* base64 必须处理中文：先 UTF-8 百分号编码再 btoa；解码反向 */
+function ghB64enc(s){ return btoa(unescape(encodeURIComponent(s))); }
+function ghB64dec(s){ return decodeURIComponent(escape(atob(String(s).replace(/\s+/g,"")))); }
+/* 带超时的 fetch（30 秒），防网络挂住一直转圈 */
+function ghFetch(url, options){
+  return new Promise(function(resolve, reject){
+    var ctrl = new AbortController();
+    var timer = setTimeout(function(){ ctrl.abort(); reject(new Error("等待超过 30 秒，网络不通，请稍后再试。")); }, 30000);
+    options = options || {};
+    options.signal = ctrl.signal;
+    fetch(url, options).then(function(r){ clearTimeout(timer); resolve(r); })
+      .catch(function(e){ clearTimeout(timer); reject(e); });
+  });
+}
+/* 错误翻译（Token 本身绝不进提示文字/日志） */
+function ghErrText(status, body){
+  if(status === 401) return "Token 失效或没权限，检查 Token";
+  if(status === 404) return "仓库不存在或 Token 没勾选这个仓库";
+  return "HTTP " + status + "：" + String(body || "").replace(/\s+/g," ").slice(0,150);
+}
+function ghToast(text, ms){
+  var t = $("ghToast");
+  t.textContent = text;
+  t.hidden = false;
+  clearTimeout(t._timer);
+  t._timer = setTimeout(function(){ t.hidden = true; }, ms || 3000);
+}
+function ghShowMsg(text, type){
+  var m = $("ghMsg");
+  m.textContent = text || "";
+  m.className = "ghMsg" + (type ? " " + type : "");
+}
+function ghSaveStatus(ok, errMsg){
+  try{
+    localStorage.setItem(LS_GH_LAST, JSON.stringify(ok
+      ? { t: Date.now(), ok: true }
+      : { t: Date.now(), ok: false, err: String(errMsg || "未知原因") }));
+  }catch(e){}
+}
+function ghStatusRender(){
+  var s = "上次备份：未备份过";
+  try{
+    var raw = localStorage.getItem(LS_GH_LAST);
+    if(raw){
+      var o = JSON.parse(raw);
+      if(o && o.ok) s = "上次备份：" + new Date(o.t).toLocaleString("zh-CN") + " ✅";
+      else if(o) s = "备份失败：" + (o.err || "未知原因");
+    }
+  }catch(e){}
+  $("ghStatus").textContent = s;
+}
+/* 备份快照 = 本软件全部 bg_* 键（含 bg_apikey；四个 bg_gh_* 配置键除外，Token 不进备份） */
+function bgSnapshot(){
+  var data = {};
+  try{
+    for(var i = 0; i < localStorage.length; i++){
+      var k = localStorage.key(i);
+      if(k && k.indexOf("bg_") === 0 && !GH_SKIP[k]) data[k] = localStorage.getItem(k);
+    }
+  }catch(e){}
+  return data;
+}
+function bgHasData(){
+  for(var k in bgSnapshot()) return true;
+  return false;
+}
+
+/* push：opts={manual, onDone(err,keyCount)}；err==="empty" 表示空数据跳过（防空备份覆盖云端好备份） */
+function ghPush(opts){
+  opts = opts || {};
+  var data = bgSnapshot();
+  var n = 0; for(var k in data) n++;
+  if(n === 0){
+    if(opts.manual) ghShowMsg("本机还没有任何数据，跳过备份（防止空备份覆盖云端）。", "err");
+    if(opts.onDone) opts.onDone("empty", 0);
+    return;
+  }
+  if(opts.manual) ghShowMsg("① 正在连接 GitHub…");
+  ghFetch(ghApiUrl(), { headers: ghHeaders() }).then(function(resp){
+    if(resp.status === 404) return null; /* 首次：云端还没有备份文件 */
+    if(!resp.ok) return resp.text().then(function(t){ throw new Error(ghErrText(resp.status, t)); });
+    return resp.json();
+  }).then(function(file){
+    if(opts.manual) ghShowMsg("② 正在上传备份…");
+    var payload = { version: 1, savedAt: new Date().toISOString(), app: "xueqi", data: data };
+    var body = {
+      message: "血气分析备份 " + new Date().toLocaleString("zh-CN"),
+      content: ghB64enc(JSON.stringify(payload))
+    };
+    if(file && file.sha) body.sha = file.sha;
+    return ghFetch(ghApiUrl(), {
+      method: "PUT", headers: ghHeaders(), body: JSON.stringify(body)
+    }).then(function(resp2){
+      if(!resp2.ok) return resp2.text().then(function(t){ throw new Error(ghErrText(resp2.status, t)); });
+      return resp2.text();
+    });
+  }).then(function(){
+    ghSaveStatus(true); ghStatusRender();
+    if(opts.onDone) opts.onDone(null, n);
+  }).catch(function(e){
+    var msg = (e && e.message) ? e.message : "网络不通，备份没成功";
+    ghSaveStatus(false, msg); ghStatusRender();
+    if(opts.onDone) opts.onDone(msg, 0);
+  });
+}
+
+/* pull：onResult(err, payload)，payload={version,savedAt,app,data} */
+function ghPull(onResult){
+  ghFetch(ghApiUrl(), { headers: ghHeaders() }).then(function(resp){
+    if(resp.status === 404){ onResult("云端还没有备份文件（第一次用请先点「☁️ 立即备份」）。"); return null; }
+    if(!resp.ok) return resp.text().then(function(t){ onResult(ghErrText(resp.status, t)); return null; });
+    return resp.json();
+  }).then(function(file){
+    if(!file) return;
+    try{
+      var payload = JSON.parse(ghB64dec(file.content || ""));
+      if(!payload || typeof payload.data !== "object" || !payload.data) throw new Error("bad");
+      onResult(null, payload);
+    }catch(e){ onResult("云端备份文件读不懂（内容可能损坏）。"); }
+  }).catch(function(e){
+    onResult((e && e.message) ? e.message : "网络不通，恢复没成功");
+  });
+}
+
+/* 恢复确认条：显示键数+备份时间+覆盖警告，确定才写回本机（取消不动） */
+function ghAskRestore(payload){
+  ghPendingData = payload.data;
+  var n = 0; for(var k in payload.data) n++;
+  var when = payload.savedAt ? new Date(payload.savedAt).toLocaleString("zh-CN") : "未知时间";
+  $("ghConfText").textContent = "云端备份包含 " + n + " 项本机数据（备份于 " + when +
+    "，含 API Key）。恢复将覆盖本机现有的同名设置，确定？";
+  $("ghCard").open = true;
+  $("ghConfirm").hidden = false;
+}
+function ghDoRestore(){
+  if(!ghPendingData) return;
+  var data = ghPendingData; ghPendingData = null;
+  $("ghConfirm").hidden = true;
+  ghSuspend = true; /* 挂起期间不触发自动备份 */
+  try{
+    for(var k in data) localStorage.setItem(k, data[k]);
+  }catch(e){}
+  ghSuspend = false;
+  /* 恢复后立即刷新界面相关显示 */
+  refreshKeyStatus();
+  initModel();
+  initPrompt();
+  syncQuickSelects();
+  $("curPatientName").textContent = getSelectedPatient();
+  renderPatientDrop();
+  var n = 0; for(var k2 in data) n++;
+  ghToast("📥 已恢复 " + n + " 项数据（含 API Key）", 3000);
+}
+
+/* 自动备份：数据写 localStorage 的收口处调用 bgDirty() 挂钩子，配置齐全时 debounce 10 秒静默 push */
+function bgDirty(){ if(!ghSuspend) scheduleGhAutoBackup(); }
+function scheduleGhAutoBackup(){
+  if(!ghReady()) return;
+  if(ghAutoTimer) clearTimeout(ghAutoTimer);
+  ghAutoTimer = setTimeout(function(){
+    ghAutoTimer = null;
+    ghPush({ manual: false, onDone: function(){} });
+  }, 10000);
+}
+
+function ghManualPush(){
+  if(!ghReady()){ ghShowMsg("请先把用户名、Token、仓库名填好并点「💾 保存设置」。", "err"); $("ghCard").open = true; return; }
+  ghPush({ manual: true, onDone: function(err, count){
+    if(err){ if(err !== "empty") ghShowMsg("备份失败：" + err, "err"); return; }
+    ghShowMsg("");
+    ghToast("✅ 已备份到云端（" + count + " 项数据）", 3000);
+  }});
+}
+function ghManualPull(){
+  if(!ghReady()){ ghShowMsg("请先把用户名、Token、仓库名填好并点「💾 保存设置」。", "err"); $("ghCard").open = true; return; }
+  ghShowMsg("正在连接 GitHub 读取云端备份…");
+  ghPull(function(err, payload){
+    if(err){ ghShowMsg("恢复失败：" + err, "err"); return; }
+    ghShowMsg("");
+    ghAskRestore(payload);
+  });
+}
+
+/* 新按钮触摸链（沿用学习笔记"已知坑"模式：mousedown/touchstart preventDefault +
+   touchend 用 elementFromPoint 找真实落点；输入框不绑） */
+function ghPress(e){ e.preventDefault(); e.stopPropagation(); }
+function ghBindBtn(el, handler){
+  el.addEventListener("mousedown", ghPress);
+  el.addEventListener("touchstart", ghPress, { passive: false });
+  el.addEventListener("click", handler);
+  el.addEventListener("touchend", function(e){
+    e.preventDefault(); e.stopPropagation();
+    var t = e.changedTouches && e.changedTouches[0];
+    var tgt = t ? document.elementFromPoint(t.clientX, t.clientY) : e.target;
+    if(tgt && (tgt === el || el.contains(tgt))) handler(e);
+  }, { passive: false });
+}
+ghBindBtn($("ghSave"), function(){
+  try{
+    localStorage.setItem(LS_GH_USER, $("ghUser").value.replace(/^\s+|\s+$/g,""));
+    localStorage.setItem(LS_GH_TOK,  $("ghTok").value.replace(/^\s+|\s+$/g,""));
+    localStorage.setItem(LS_GH_REPO, $("ghRepo").value.replace(/^\s+|\s+$/g,""));
+    ghToast("💾 已保存", 2000);
+  }catch(e){ ghShowMsg("保存失败：浏览器禁止了本地存储。", "err"); }
+});
+ghBindBtn($("ghPushBtn"), ghManualPush);
+ghBindBtn($("ghPullBtn"), ghManualPull);
+ghBindBtn($("ghConfOk"), ghDoRestore);
+ghBindBtn($("ghConfNo"), function(){
+  ghPendingData = null;
+  $("ghConfirm").hidden = true;
+});
+
+/* v0.9.11 初始化：预填设置 + 状态行；本机无数据 + 配置齐全 → 自动 pull（仍走确认条防误覆盖） */
+$("ghUser").value = localStorage.getItem(LS_GH_USER) || "hongxiaotao177";
+$("ghRepo").value = localStorage.getItem(LS_GH_REPO) || "xuexi-backup";
+$("ghTok").value = localStorage.getItem(LS_GH_TOK) || "";
+ghStatusRender();
+if(!bgHasData() && ghReady()){
+  ghPull(function(err, payload){ if(!err && payload) ghAskRestore(payload); });
+}
 
 /* ================= 启动 ================= */
 refreshKeyStatus();
