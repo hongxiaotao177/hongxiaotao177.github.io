@@ -4,6 +4,15 @@
  学习笔记·双链版 —— 单文件 HTML 工具
 ====================================================================
  修改记录：
+   v1.7.1 2026-08-01 改稿/新建的宽容解析：
+         - AI 偶发不按 JSON 信封格式、直接返回裸文章时不再报「AI 返回格式不对」：
+           先走原有容错解析（首尾大括号 JSON.parse），失败则进入宽容模式——
+           剥离 ```json/``` 围栏后，去空白长度 ≥200 且无明显错误特征
+           （不以 error/抱歉/对不起 开头、不含 "code":）即视为一篇像样的文章，
+           直接作为改稿结果采用（links 保持原有不变），pushHistory/persistNote/重渲染照常，
+           成功提示注明「已智能识别」；太短或明显报错文本则维持原报错并附原文前 150 字
+         - 改稿/新建 prompt 首尾各强调一次「必须只返回 JSON、不要用 markdown 围栏」，降低发生概率；
+           仍不传 temperature / response_format
    v1.7  2026-08-01 对照视图格式化渲染 + 新稿嵌套小改：
          - 对照视图原文/新稿改用 renderMarkdown 渲染（**加粗**、*斜体*、[[双链]]、- 列表），
            不再裸露星号；新稿纯文本仍单独存 replaceCtx.newText（rawNewText），
@@ -453,7 +462,7 @@
   <details class="about">
     <summary>📋 关于 / 版本说明</summary>
     <div class="inner">
-      <p><b>版本：</b>v1.7（2026-08-01）：对照预览里的加粗、列表现在按真实样式显示，不再露出一堆星号；AI 新稿里哪一小段不满意，涂黑它就会弹出小条，让 AI 只改这一小段（只套一层，最后点「✅ 采用」才存历史）。另外把手机上按钮"点了没反应"的两个老坑记进了开发备忘，以后维护不会再犯。上一版 v1.6（2026-07-31）新功能：涂黑一大段文字 → 弹出菜单点「🔄 替换这段」→ 面板里点预设要求（可叠加多个）或自由填写/补充 → AI 只改写这一段 → 预览对照（上原文下新稿）后点「✅ 采用」才生效，改前自动存一版历史，可点「让 AI 改」里的「↩️ 回退上一版」找回原稿。上一版 v1.5.2：注释里的生词，正文没有也能加角标——在注释气泡里涂黑注释文字中的生词点「➕ 选词加角标」，它会变成一个贴在气泡里的小角标（灰色虚线=待解释），点角标可钻进去看/编辑，「← 返回」回到上一条；随「批量解释」一起让 AI 讲解（AI 会参考它所在的那条注释文字）；导出时嵌套解释不单独出脚注，附加在父脚注末尾，如「……。（肺的应力：肺泡壁承受的牵张力）」。上一版 v1.5.1 修复：一篇笔记里多个词条分散在不同段落时，第一个角标之后的词条（如 ARDS、PEEP）会贴不上角标的问题，现已全部正常。以下为 v1.5 功能：① 手动加的角标现在贴在您涂黑的那个确切位置（记住涂黑处前后文），不再跳到全篇第一次出现的地方；并有词边界保护，像 ARDS 不会再嵌进 ARDSNet 中间。② 注释气泡新增「🤖 让AI改写」：点词条角标后可让 AI 按要求改写解释，改写要求可以随意修改（默认是"更通俗、更简短"），改写前自动存一版历史可回退。③ 气泡里涂黑注释文字中的生词，点「➕ 选词加角标」即可把它加为本篇待解释角标（不发 AI 请求），之后随批量解释一起让 AI 讲解。上一版 v1.4 手动批量角标：读正文时涂黑一个词，点弹出菜单的「➕ 加角标」，立即立一个灰色虚线空角标（不发 AI 请求，可连加多个）；读完后点「🤖 批量解释」按钮，把所有空角标一次性发给 AI，解释自动填回各角标变实色。另有 v1.3 词条脚注注释（正文词条旁 ① 小角标，点开看大白话，导出转 Obsidian 标准脚注）与 v1.1 交互式改稿（分栏、快捷指令、5 版历史可回退）。AI 请求保持不传 temperature / response_format（兼容 kimi-k2.6）。</p>
+      <p><b>版本：</b>v1.7.1（2026-08-01）：让 AI 改稿时，AI 偶尔不按约定格式回信（直接返回裸文章），以前会报「格式不对」让您重试，现在软件能智能识别裸文章并直接采用，改稿照常完成；同时把格式要求写得更醒目，降低这种情况发生的概率。上一版 v1.7（2026-08-01）：对照预览里的加粗、列表现在按真实样式显示，不再露出一堆星号；AI 新稿里哪一小段不满意，涂黑它就会弹出小条，让 AI 只改这一小段（只套一层，最后点「✅ 采用」才存历史）。另外把手机上按钮"点了没反应"的两个老坑记进了开发备忘，以后维护不会再犯。上一版 v1.6（2026-07-31）新功能：涂黑一大段文字 → 弹出菜单点「🔄 替换这段」→ 面板里点预设要求（可叠加多个）或自由填写/补充 → AI 只改写这一段 → 预览对照（上原文下新稿）后点「✅ 采用」才生效，改前自动存一版历史，可点「让 AI 改」里的「↩️ 回退上一版」找回原稿。上一版 v1.5.2：注释里的生词，正文没有也能加角标——在注释气泡里涂黑注释文字中的生词点「➕ 选词加角标」，它会变成一个贴在气泡里的小角标（灰色虚线=待解释），点角标可钻进去看/编辑，「← 返回」回到上一条；随「批量解释」一起让 AI 讲解（AI 会参考它所在的那条注释文字）；导出时嵌套解释不单独出脚注，附加在父脚注末尾，如「……。（肺的应力：肺泡壁承受的牵张力）」。上一版 v1.5.1 修复：一篇笔记里多个词条分散在不同段落时，第一个角标之后的词条（如 ARDS、PEEP）会贴不上角标的问题，现已全部正常。以下为 v1.5 功能：① 手动加的角标现在贴在您涂黑的那个确切位置（记住涂黑处前后文），不再跳到全篇第一次出现的地方；并有词边界保护，像 ARDS 不会再嵌进 ARDSNet 中间。② 注释气泡新增「🤖 让AI改写」：点词条角标后可让 AI 按要求改写解释，改写要求可以随意修改（默认是"更通俗、更简短"），改写前自动存一版历史可回退。③ 气泡里涂黑注释文字中的生词，点「➕ 选词加角标」即可把它加为本篇待解释角标（不发 AI 请求），之后随批量解释一起让 AI 讲解。上一版 v1.4 手动批量角标：读正文时涂黑一个词，点弹出菜单的「➕ 加角标」，立即立一个灰色虚线空角标（不发 AI 请求，可连加多个）；读完后点「🤖 批量解释」按钮，把所有空角标一次性发给 AI，解释自动填回各角标变实色。另有 v1.3 词条脚注注释（正文词条旁 ① 小角标，点开看大白话，导出转 Obsidian 标准脚注）与 v1.1 交互式改稿（分栏、快捷指令、5 版历史可回退）。AI 请求保持不传 temperature / response_format（兼容 kimi-k2.6）。</p>
       <p><b>历史版本：</b>v1.2 默认改快模型（秒级响应）+ 分步进度提示（发送→思考→解析+用时秒数）；v1.1.1 修复手机词条菜单按钮；v1.1.2 AI 请求加 180 秒超时；v1.0.2 修复 AI 调用 400 报错</p>
       <p><b>数据安全：</b>所有笔记和 API Key 只保存在您本机浏览器（localStorage），不上传到任何服务器；清除浏览器数据会丢失笔记，请定期导出备份。</p>
       <p><b>如何导入 Obsidian：</b></p>
@@ -592,12 +601,14 @@ function callAI(topic, onOk, onErr, st){
     model: model,
     messages: [
       { role: 'system', content:
+        '【重要】必须只返回 JSON，不要返回任何其他文字、不要用 markdown 围栏。\n' +
         '你是一位资深的重症医学（ICU）教学专家，为一位 60 岁的中文医生整理学习笔记。' +
         '请严格只输出一个 JSON 对象（不要输出其他任何文字），格式如下：\n' +
         '{"title":"主题名","content":"Markdown 正文","links":["相关主题1","相关主题2"]}\n' +
         '要求：content 为医学学习笔记风格，包含 ## 定义、## 机制、## 临床要点、## 常见误区 等小节，' +
         '总字数 800 字以内，使用 # / ## / ### 标题、**粗体**、- 列表；' +
-        'links 给出 5-8 个与本主题最相关的医学主题名词（只给名词本身）。' },
+        'links 给出 5-8 个与本主题最相关的医学主题名词（只给名词本身）。\n' +
+        '【再次强调】必须只返回 JSON，不要返回任何其他文字、不要用 markdown 围栏。' },
       { role: 'user', content: '请帮我整理主题：' + topic }
     ]
   };
@@ -629,12 +640,20 @@ function callAI(topic, onOk, onErr, st){
     try{ text = data.choices[0].message.content; }catch(e){}
     if(!text) throw new Error('AI 返回内容为空，请重试。');
     var parsed = parseAIJson(text);
-    if(!parsed || !parsed.title || !parsed.content){
-      throw new Error('AI 返回格式不对，请再点一次重试。');
+    if(parsed && parsed.title && parsed.content){
+      if(!Array.isArray(parsed.links)) parsed.links = [];
+      if(st) st.stop();
+      onOk(parsed);
+      return;
     }
-    if(!Array.isArray(parsed.links)) parsed.links = [];
-    if(st) st.stop();
-    onOk(parsed);
+    /* v1.7.1 宽容模式：AI 没装信封、直接返回裸文章 → 智能识别采用 */
+    var loose = looseArticleFrom(text);
+    if(loose){
+      if(st) st.stop();
+      onOk({ title: topic, content: loose, links: [] }, true);
+      return;
+    }
+    throw new Error(fmtParseErr(text));
   }).catch(function(err){
     if(st) st.stop();
     var m = (err && err.message) ? err.message : '网络连接失败，请检查网络后重试。';
@@ -649,6 +668,21 @@ function parseAIJson(text){
   if(i < 0 || j <= i) return null;
   var body = s.slice(i, j+1);
   try{ return JSON.parse(body); }catch(e){ return null; }
+}
+/* v1.7.1 宽容模式：AI 没按 JSON 信封、直接返回裸文章时智能识别。
+   剥离 ```json/``` 围栏后，去空白长度 ≥200 且无明显错误特征
+   （不以 error/抱歉/对不起 开头、不含 "code":）→ 返回可直接采用的正文文本，否则返回 null */
+function looseArticleFrom(text){
+  var s = String(text).replace(/```(?:json|JSON)?/g, '').replace(/^\s+|\s+$/g, '');
+  if(s.replace(/\s+/g, '').length < 200) return null;
+  if(/^(error|抱歉|对不起)/i.test(s)) return null;
+  if(s.indexOf('"code":') >= 0) return null;
+  return s;
+}
+/* v1.7.1 格式解析失败时的报错：附服务器原文前 150 字（沿用「服务器说」错误提示风格） */
+function fmtParseErr(text){
+  return 'AI 返回格式不对，请再点一次重试。（服务器说：' +
+         String(text).replace(/\s+/g, ' ').slice(0, 150) + '）';
 }
 
 /* ==================== 笔记生成流程 ==================== */
@@ -1608,14 +1642,17 @@ function callReviseAI(note, instruction, onOk, onErr, st){
     model: modelSel.value,
     messages: [
       { role: 'system', content:
+        '【重要】必须只返回 JSON，不要返回任何其他文字、不要用 markdown 围栏。\n' +
         '你是一位资深的重症医学（ICU）教学编辑。用户会给你一篇医学学习笔记（Markdown）和一条修改要求。' +
         '请严格按照修改要求改写这篇笔记，并严格只输出一个 JSON 对象（不要输出其他任何文字），格式如下：\n' +
         '{"title":"原标题","content":"修改后的 Markdown 正文","links":["相关主题1","相关主题2"]}\n' +
         '要求：title 必须保持原标题不变；content 沿用 # / ## / ### 标题、**粗体**、- 列表的笔记风格；' +
-        'links 给出 5-8 个最相关的医学主题名词（可按修改后内容更新，只给名词本身）。' },
+        'links 给出 5-8 个最相关的医学主题名词（可按修改后内容更新，只给名词本身）。\n' +
+        '【再次强调】必须只返回 JSON，不要返回任何其他文字、不要用 markdown 围栏。' },
       { role: 'user', content:
         '原标题：《' + note.title + '》\n\n【原笔记全文】\n' + (note.content || '') +
-        '\n\n【修改要求】\n' + instruction }
+        '\n\n【修改要求】\n' + instruction +
+        '\n\n【重要】必须只返回 JSON，不要返回任何其他文字、不要用 markdown 围栏。' }
     ]
   };
   if(st) st.set('① 正在把要求发送给 Kimi 服务器…');
@@ -1642,10 +1679,20 @@ function callReviseAI(note, instruction, onOk, onErr, st){
     try{ text = data.choices[0].message.content; }catch(e){}
     if(!text) throw new Error('AI 返回内容为空，请重试。');
     var parsed = parseAIJson(text);
-    if(!parsed || !parsed.content) throw new Error('AI 返回格式不对，请再点一次重试。');
-    if(!Array.isArray(parsed.links)) parsed.links = [];
-    if(st) st.stop();
-    onOk(parsed);
+    if(parsed && parsed.content){
+      if(!Array.isArray(parsed.links)) parsed.links = [];
+      if(st) st.stop();
+      onOk(parsed, false);
+      return;
+    }
+    /* v1.7.1 宽容模式：AI 没按信封格式、直接返回裸文章 → 智能识别采用（links 保持原有不变） */
+    var loose = looseArticleFrom(text);
+    if(loose){
+      if(st) st.stop();
+      onOk({ title: note.title, content: loose, links: (note.links || []).slice() }, true);
+      return;
+    }
+    throw new Error(fmtParseErr(text));
   }).catch(function(err){
     if(st) st.stop();
     var m = (err && err.message) ? err.message : '网络连接失败，请检查网络后重试。';
@@ -1662,7 +1709,7 @@ btnDoRevise.addEventListener('click', function(){
   reviseMsg.className = 'msg';
   reviseLoading.style.display = 'block';
   btnDoRevise.disabled = true;
-  callReviseAI(note, instruction, function(parsed){
+  callReviseAI(note, instruction, function(parsed, looseMode){
     reviseLoading.style.display = 'none';
     btnDoRevise.disabled = false;
     pushHistory(note);
@@ -1678,7 +1725,9 @@ btnDoRevise.addEventListener('click', function(){
       renderBacklinks(note);
       reviseInput.value = '';
       setReviseOpen(false);
-      showMsg(reviseMsg, '✅ 已按你的要求改好，旧版已存入历史（可点「让 AI 改」里的回退恢复）。', 'ok');
+      showMsg(reviseMsg, looseMode
+        ? '✅ 已按你的要求改好（AI 这次没按信封格式，已智能识别），旧版已存入历史。'
+        : '✅ 已按你的要求改好，旧版已存入历史（可点「让 AI 改」里的回退恢复）。', 'ok');
       reviseMsg.className = 'msg ok'; // 收起后仍短暂保留提示
     }
   }, function(errMsg){
