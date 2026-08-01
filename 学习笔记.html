@@ -4,6 +4,35 @@
  学习笔记·双链版 —— 单文件 HTML 工具
 ====================================================================
  修改记录：
+   v1.9  2026-08-01 「🦴 精炼成骨头」：大段文字涂黑 → AI 提炼 3~5 条骨头留正文 +
+         原文原样折成标签跟在骨头后：
+         - #selMenu 大段涂黑（>30字）时再加第三个按钮「🦴 精炼成骨头」；
+           打开骨头面板（复用 rp-card 居中卡片模式）：前 100 字原文预览 +
+           预设快捷按钮（✂️ 只要 3 条 / 🔢 保留所有数字 / 🗣 说人话 /
+           📋 按机制/临床/误区分类，点击只追加进提示词框不发送，可叠加）+
+           提示词框预填「把这段提炼成 3~5 条要点，每条一句话，保留数字和结论：」
+           +「🤖 发送」「取消」
+         - callBoneAI（callReplaceAI 风格，不传 temperature/response_format，
+           max_tokens 8000，走 stageWatch）：prompt = 用户提示词 +【要提炼的段落】
+           selText + 硬性"只返回要点列表，每行一条以 - 开头，不要其他文字"
+         - 预览视图（复用对照视图模式）：AI 骨头区 renderMarkdown 渲染不露星号
+           （raw 存 boneCtx.boneRaw）；支持涂黑小改（复用 v1.7 nestBar 机制，
+           nestTarget='bone' 只改 boneRaw，不 pushHistory）；「🔄 再改一次」
+           回提示词编辑；标签名输入框预填「原文：」+selText 前 6 字，
+           「🤖 让AI起名」复用 callFoldNameAI（返回填「原文：」+AI名，前缀不重复加）
+         - ✅ 采用：locateReplaceSpanEx 三级定位（L2/L3 走 #boneConfirm 确认条）
+           → 命中区间扩到整行边界 → 该段替换为「骨头列表 + 空行 +
+           buildFoldCallout(标签名, 原文 raw)」→ pushHistory（一次）→
+           persistNote → rerenderDetail → toast「✅ 骨头已留下，原文已折进标签」
+         - 胶囊渲染/释放/导出全沿用 v1.8 机制（存储即导出格式）。
+           注意：标签「📤 释放这段」只还原 callout 内的原文，骨头列表保留在正文
+         - 兼容：骨头预览区选区不触发正文 #selMenu（容器门控）；
+           确认条触摸链沿用"已知坑①"模式；escapeHtml 防注入；单文件无外部库
+   v1.8.1 2026-08-01 标签胶囊瘦身不占版面：
+         - .fold-chip 上下 margin 10px→4px、圆角 12px→10px；
+           summary 内边距 6px 14px→5px 12px、外边距 6px 8px→2px 6px、
+           字号 15px→13px（约 0.85em）、圆角 20px→14px、line-height 1.5，
+           胶囊行高接近正文一行；触摸目标仍 ~29px 高，可点性不降
    v1.8  2026-08-01 「🏷 折成标签」：大段文字涂黑 → 折叠成小胶囊标签：
          - #selMenu 大段涂黑（>30字）时除「🔄 替换这段」再加「🏷 折成标签」（小段不显示）；
            打开折叠面板（复用 replacePanel 居中卡片模式）：前 100 字预览 + 标签名输入框
@@ -360,15 +389,18 @@
     word-break: break-word; margin-bottom: 10px;
   }
 
-  /* v1.8 折成标签：callout 折叠块渲染为可点开的胶囊 */
+  /* v1.8 折成标签：callout 折叠块渲染为可点开的胶囊；
+     v1.8.1 胶囊瘦身：内外边距减半、字号 0.85em、上下 margin 压到最小、圆角略收，
+     胶囊行高接近正文一行（仍保持触摸目标 ~29px 高，可点性不降） */
   .fold-chip {
-    margin: 10px 0; border: 1px solid #d5dde8; border-radius: 12px;
+    margin: 4px 0; border: 1px solid #d5dde8; border-radius: 10px;
     background: #f4f7fb; overflow: hidden;
   }
   .fold-chip > summary {
     display: inline-block; cursor: pointer; list-style: none;
-    margin: 6px 8px; padding: 6px 14px; border-radius: 20px;
-    background: #e6edf6; color: #4a5a70; font-size: 15px; font-weight: bold;
+    margin: 2px 6px; padding: 5px 12px; border-radius: 14px;
+    background: #e6edf6; color: #4a5a70; font-size: 13px; font-weight: bold;
+    line-height: 1.5;
     -webkit-appearance: none; user-select: none; -webkit-user-select: none;
   }
   .fold-chip > summary::-webkit-details-marker { display: none; }
@@ -509,7 +541,8 @@
     <button type="button" data-act="newnote">📄 另开一篇</button><span class="sep"></span>
     <button type="button" data-act="fill">✂️ 填入要求框</button><span class="sep"></span>
     <button type="button" data-act="replace">🔄 替换这段</button><span class="sep"></span>
-    <button type="button" data-act="fold">🏷 折成标签</button>
+    <button type="button" data-act="fold">🏷 折成标签</button><span class="sep"></span>
+    <button type="button" data-act="bone">🦴 精炼成骨头</button>
   </div>
 
   <!-- v1.6 段落替换面板（涂黑一大段 → 自定义提示词 → AI 只替换这一段） -->
@@ -584,6 +617,55 @@
     </div>
   </div>
 
+  <!-- v1.9 精炼成骨头面板（涂黑一大段 → AI 提炼 3~5 条要点留正文 + 原文折成标签跟在骨头后；
+       复用 replacePanel 居中卡片模式，样式类共用 rp-*） -->
+  <div id="bonePanel" class="hidden">
+    <div class="rp-card">
+      <h3>🦴 精炼成骨头</h3>
+      <!-- 编辑视图：原文预览 + 快捷预设 + 提示词 -->
+      <div id="boneEditView">
+        <div class="rp-label">您涂黑的这段（前 100 字预览，原文会原样折进标签）：</div>
+        <div class="rp-orig" id="boneOrig"></div>
+        <div class="rp-label">想让 AI 怎么提炼？点下方预设可叠加，再手写补充：</div>
+        <div class="qbtn-row" id="boneQbtnRow"></div>
+        <textarea id="boneInput"></textarea>
+        <div class="btn-row">
+          <button type="button" class="btn" id="boneSend">🤖 发送</button>
+          <button type="button" class="btn secondary" id="boneCancel">取消</button>
+        </div>
+        <div class="loading" id="boneLoading"><span class="spinner"></span>AI 正在把这段提炼成骨头…</div>
+        <div class="msg" id="boneMsg"></div>
+      </div>
+      <!-- 预览视图：AI 骨头（可涂黑小改）+ 标签名 + 采用/再改/取消 -->
+      <div id="bonePreviewView" class="hidden">
+        <div class="rp-label">AI 骨头（哪一条不满意，涂黑它可让 AI 只改这一条）：</div>
+        <div class="rp-new" id="boneNew"></div>
+        <div class="btn-row">
+          <button type="button" class="btn secondary" id="boneRetry">🔄 再改一次</button>
+        </div>
+        <div class="rp-label">原文折成标签的名字（标签会跟在骨头后面）：</div>
+        <input type="text" id="boneName" placeholder="标签名，如：原文：CVP临床应用" style="width:100%;font-size:16px;padding:12px 14px;border:1px solid #e5ddd0;border-radius:12px;background:#fdfcfa;color:#3a3a3a;outline:none;font-family:inherit;">
+        <div class="btn-row" style="margin-top:10px;">
+          <button type="button" class="btn secondary" id="boneAi">🤖 让AI起名</button>
+        </div>
+        <div class="btn-row">
+          <button type="button" class="btn" id="boneAdopt">✅ 采用</button>
+          <button type="button" class="btn secondary" id="boneCancel2">取消</button>
+        </div>
+        <!-- v1.9 模糊定位确认条：L2/L3 命中先请用户核对正文片段（复用 rpConfirm 风格） -->
+        <div id="boneConfirm" class="hidden rp-conf">
+          <div class="rp-label">原文有了些变化，在正文里找到的最接近位置是这里，请核对：</div>
+          <div id="boneConfText" class="rp-conf-text"></div>
+          <div class="btn-row">
+            <button type="button" class="btn" id="boneConfOk" data-bc="ok">是这段，精炼</button>
+            <button type="button" class="btn secondary" id="boneConfNo" data-bc="no">不对，取消</button>
+          </div>
+        </div>
+        <div class="msg" id="boneMsg2"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- v1.8 释放确认条：点「📤 释放这段」后贴在按钮旁的小确认卡 -->
   <div id="relConfirm">
     <div class="rel-text">把这标签里的文字还原回正文？</div>
@@ -612,7 +694,7 @@
   <details class="about">
     <summary>📋 关于 / 版本说明</summary>
     <div class="inner">
-      <p><b>版本：</b>v1.8（2026-08-01）：大段文字涂黑 → 弹出菜单新增「🏷 折成标签」，可把太长但有用的段落折叠成一个小胶囊标签（可自己起名，也可点「🤖 让AI起名」让 AI 概括），点一下标签就展开全文，标签里点「📤 释放这段」可还原回正文；导出到 Obsidian 就是原生 callout 折叠块，默认收起，一字不丢。上一版 v1.7.3（2026-08-01）：替换这段的定位加固为三级（精确→忽略格式模糊→段落大意），模糊定位命中会先让您确认再替换，误报"找不到原文"大幅减少。上一版 v1.7.2（2026-08-01）：修复——当 AI 回信太长被中途截断时，以前会把一段露出 JSON 代码的文字收进笔记正文，现在软件会自动"剥信封"，只把真正的正文收进笔记，标题也能一起认出来；同时把 AI 回复长度上限调大，减少被截断的情况。上一版 v1.7.1（2026-08-01）：让 AI 改稿时，AI 偶尔不按约定格式回信（直接返回裸文章），以前会报「格式不对」让您重试，现在软件能智能识别裸文章并直接采用，改稿照常完成；同时把格式要求写得更醒目，降低这种情况发生的概率。上一版 v1.7（2026-08-01）：对照预览里的加粗、列表现在按真实样式显示，不再露出一堆星号；AI 新稿里哪一小段不满意，涂黑它就会弹出小条，让 AI 只改这一小段（只套一层，最后点「✅ 采用」才存历史）。另外把手机上按钮"点了没反应"的两个老坑记进了开发备忘，以后维护不会再犯。上一版 v1.6（2026-07-31）新功能：涂黑一大段文字 → 弹出菜单点「🔄 替换这段」→ 面板里点预设要求（可叠加多个）或自由填写/补充 → AI 只改写这一段 → 预览对照（上原文下新稿）后点「✅ 采用」才生效，改前自动存一版历史，可点「让 AI 改」里的「↩️ 回退上一版」找回原稿。上一版 v1.5.2：注释里的生词，正文没有也能加角标——在注释气泡里涂黑注释文字中的生词点「➕ 选词加角标」，它会变成一个贴在气泡里的小角标（灰色虚线=待解释），点角标可钻进去看/编辑，「← 返回」回到上一条；随「批量解释」一起让 AI 讲解（AI 会参考它所在的那条注释文字）；导出时嵌套解释不单独出脚注，附加在父脚注末尾，如「……。（肺的应力：肺泡壁承受的牵张力）」。上一版 v1.5.1 修复：一篇笔记里多个词条分散在不同段落时，第一个角标之后的词条（如 ARDS、PEEP）会贴不上角标的问题，现已全部正常。以下为 v1.5 功能：① 手动加的角标现在贴在您涂黑的那个确切位置（记住涂黑处前后文），不再跳到全篇第一次出现的地方；并有词边界保护，像 ARDS 不会再嵌进 ARDSNet 中间。② 注释气泡新增「🤖 让AI改写」：点词条角标后可让 AI 按要求改写解释，改写要求可以随意修改（默认是"更通俗、更简短"），改写前自动存一版历史可回退。③ 气泡里涂黑注释文字中的生词，点「➕ 选词加角标」即可把它加为本篇待解释角标（不发 AI 请求），之后随批量解释一起让 AI 讲解。上一版 v1.4 手动批量角标：读正文时涂黑一个词，点弹出菜单的「➕ 加角标」，立即立一个灰色虚线空角标（不发 AI 请求，可连加多个）；读完后点「🤖 批量解释」按钮，把所有空角标一次性发给 AI，解释自动填回各角标变实色。另有 v1.3 词条脚注注释（正文词条旁 ① 小角标，点开看大白话，导出转 Obsidian 标准脚注）与 v1.1 交互式改稿（分栏、快捷指令、5 版历史可回退）。AI 请求保持不传 temperature / response_format（兼容 kimi-k2.6）。</p>
+      <p><b>版本：</b>v1.9（2026-08-01）：涂黑大段文字 → 弹出菜单新增「🦴 精炼成骨头」，AI 把这段提炼成 3~5 条要点（骨头）留在正文，原文自动折成一个小胶囊标签压在骨头后面；骨头不满意可涂黑单条让 AI 只改这一条，或点「🔄 再改一次」回提示词重发；标签名可自己改，也可点「🤖 让AI起名」（名字自动带「原文：」前缀）。注意：之后点标签里的「📤 释放这段」只把标签内的原文还原回正文，已提炼的骨头列表会保留。上一版 v1.8.1（2026-08-01）：标签胶囊瘦身——内外边距和字号都收紧，胶囊只占约正文一行高，不再占版面。上一版 v1.8（2026-08-01）：大段文字涂黑 → 弹出菜单新增「🏷 折成标签」，可把太长但有用的段落折叠成一个小胶囊标签（可自己起名，也可点「🤖 让AI起名」让 AI 概括），点一下标签就展开全文，标签里点「📤 释放这段」可还原回正文；导出到 Obsidian 就是原生 callout 折叠块，默认收起，一字不丢。上一版 v1.7.3（2026-08-01）：替换这段的定位加固为三级（精确→忽略格式模糊→段落大意），模糊定位命中会先让您确认再替换，误报"找不到原文"大幅减少。上一版 v1.7.2（2026-08-01）：修复——当 AI 回信太长被中途截断时，以前会把一段露出 JSON 代码的文字收进笔记正文，现在软件会自动"剥信封"，只把真正的正文收进笔记，标题也能一起认出来；同时把 AI 回复长度上限调大，减少被截断的情况。上一版 v1.7.1（2026-08-01）：让 AI 改稿时，AI 偶尔不按约定格式回信（直接返回裸文章），以前会报「格式不对」让您重试，现在软件能智能识别裸文章并直接采用，改稿照常完成；同时把格式要求写得更醒目，降低这种情况发生的概率。上一版 v1.7（2026-08-01）：对照预览里的加粗、列表现在按真实样式显示，不再露出一堆星号；AI 新稿里哪一小段不满意，涂黑它就会弹出小条，让 AI 只改这一小段（只套一层，最后点「✅ 采用」才存历史）。另外把手机上按钮"点了没反应"的两个老坑记进了开发备忘，以后维护不会再犯。上一版 v1.6（2026-07-31）新功能：涂黑一大段文字 → 弹出菜单点「🔄 替换这段」→ 面板里点预设要求（可叠加多个）或自由填写/补充 → AI 只改写这一段 → 预览对照（上原文下新稿）后点「✅ 采用」才生效，改前自动存一版历史，可点「让 AI 改」里的「↩️ 回退上一版」找回原稿。上一版 v1.5.2：注释里的生词，正文没有也能加角标——在注释气泡里涂黑注释文字中的生词点「➕ 选词加角标」，它会变成一个贴在气泡里的小角标（灰色虚线=待解释），点角标可钻进去看/编辑，「← 返回」回到上一条；随「批量解释」一起让 AI 讲解（AI 会参考它所在的那条注释文字）；导出时嵌套解释不单独出脚注，附加在父脚注末尾，如「……。（肺的应力：肺泡壁承受的牵张力）」。上一版 v1.5.1 修复：一篇笔记里多个词条分散在不同段落时，第一个角标之后的词条（如 ARDS、PEEP）会贴不上角标的问题，现已全部正常。以下为 v1.5 功能：① 手动加的角标现在贴在您涂黑的那个确切位置（记住涂黑处前后文），不再跳到全篇第一次出现的地方；并有词边界保护，像 ARDS 不会再嵌进 ARDSNet 中间。② 注释气泡新增「🤖 让AI改写」：点词条角标后可让 AI 按要求改写解释，改写要求可以随意修改（默认是"更通俗、更简短"），改写前自动存一版历史可回退。③ 气泡里涂黑注释文字中的生词，点「➕ 选词加角标」即可把它加为本篇待解释角标（不发 AI 请求），之后随批量解释一起让 AI 讲解。上一版 v1.4 手动批量角标：读正文时涂黑一个词，点弹出菜单的「➕ 加角标」，立即立一个灰色虚线空角标（不发 AI 请求，可连加多个）；读完后点「🤖 批量解释」按钮，把所有空角标一次性发给 AI，解释自动填回各角标变实色。另有 v1.3 词条脚注注释（正文词条旁 ① 小角标，点开看大白话，导出转 Obsidian 标准脚注）与 v1.1 交互式改稿（分栏、快捷指令、5 版历史可回退）。AI 请求保持不传 temperature / response_format（兼容 kimi-k2.6）。</p>
       <p><b>历史版本：</b>v1.2 默认改快模型（秒级响应）+ 分步进度提示（发送→思考→解析+用时秒数）；v1.1.1 修复手机词条菜单按钮；v1.1.2 AI 请求加 180 秒超时；v1.0.2 修复 AI 调用 400 报错</p>
       <p><b>数据安全：</b>所有笔记和 API Key 只保存在您本机浏览器（localStorage），不上传到任何服务器；清除浏览器数据会丢失笔记，请定期导出备份。</p>
       <p><b>如何导入 Obsidian：</b></p>
@@ -2028,9 +2110,9 @@ function showSelMenu(){
   var seps = selMenu.getElementsByClassName('sep');
   for(var bi = 0; bi < btns.length; bi++){
     var act = btns[bi].getAttribute('data-act');
-    /* v1.6：大段涂黑（>30字）只显示「替换这段」；v1.8：再加「🏷 折成标签」。
-       小段（<=30字）不显示替换/折标签，只显示词条类按钮。 */
-    if(act === 'replace' || act === 'fold'){
+    /* v1.6：大段涂黑（>30字）只显示「替换这段」；v1.8：再加「🏷 折成标签」；
+       v1.9：再加「🦴 精炼成骨头」。小段（<=30字）不显示这三个，只显示词条类按钮。 */
+    if(act === 'replace' || act === 'fold' || act === 'bone'){
       btns[bi].style.display = longSel ? '' : 'none';
     }else{
       btns[bi].style.display = longSel ? 'none' : '';
@@ -2087,6 +2169,13 @@ function runSelAction(b){
     openFoldPanel({ selText: term, preCtx: preCtx, postCtx: postCtx, noteId: currentNoteId });
     var selF = window.getSelection();
     if(selF) selF.removeAllRanges();
+    return;
+  }
+  if(act === 'bone'){
+    // v1.9：涂黑一大段 → 打开精炼成骨头面板（AI 提炼 3~5 条要点 + 原文折标签）
+    openBonePanel({ selText: term, preCtx: preCtx, postCtx: postCtx, noteId: currentNoteId });
+    var selB = window.getSelection();
+    if(selB) selB.removeAllRanges();
     return;
   }
   if(act === 'explain'){
@@ -2770,6 +2859,272 @@ window.openFoldPanel = openFoldPanel;
 window.buildFoldCallout = buildFoldCallout;
 window.releaseFold = releaseFold;
 
+/* ==================== v1.9 精炼成骨头（涂黑一大段 → AI 提炼 3~5 条要点留正文 + 原文折成标签跟在骨头后） ==================== */
+/* 采用后 note.content 该段替换为：
+     - 骨头一
+     - 骨头二
+     - 骨头三
+
+     > [!note]- 标签名
+     > 原文每行加 "> " 前缀（复用 buildFoldCallout，一字不差）
+   骨头列表与 callout 间空一行；存储即导出格式，胶囊渲染/释放/导出全沿用 v1.8 机制。
+   注意：标签「📤 释放这段」只还原 callout 内的原文，骨头列表保留在正文。 */
+var bonePanel = $('bonePanel'), boneEditView = $('boneEditView'), bonePreviewView = $('bonePreviewView'),
+    boneOrig = $('boneOrig'), boneNew = $('boneNew'),
+    boneInput = $('boneInput'), boneLoading = $('boneLoading'), boneMsg = $('boneMsg'), boneMsg2 = $('boneMsg2'),
+    boneSend = $('boneSend'), boneName = $('boneName'), boneAi = $('boneAi'),
+    boneConfirm = $('boneConfirm'), boneConfText = $('boneConfText');
+var boneCtx = null;      // { selText, preCtx, postCtx, noteId, boneRaw }
+var bonePendingLoc = null; // L2/L3 待确认命中区间
+var boneNestUsed = false;  // 骨头预览区嵌套小改只套一层（同 v1.7 nestUsed）
+var BONE_DEFAULT_PROMPT = '把这段提炼成 3~5 条要点，每条一句话，保留数字和结论：';
+/* 预设快捷要求（复用 rp 预设模式：点击只把文字追加进提示词框，不发送，可叠加） */
+var BONE_QUICKS = [
+  '✂️ 只要 3 条',
+  '🔢 保留所有数字',
+  '🗣 说人话',
+  '📋 按机制/临床/误区分类'
+];
+(function(){
+  var row = $('boneQbtnRow'), html = '';
+  for(var i = 0; i < BONE_QUICKS.length; i++){
+    html += '<button type="button" class="qbtn" data-bq="'+i+'">'+BONE_QUICKS[i]+'</button>';
+  }
+  row.innerHTML = html;
+  row.addEventListener('click', function(e){
+    var b = e.target;
+    while(b && b !== row){
+      if(b.getAttribute && b.getAttribute('data-bq') !== null){
+        var cmd = BONE_QUICKS[+b.getAttribute('data-bq')];
+        var v = boneInput.value.replace(/\s+$/,'');
+        boneInput.value = (v ? v + '；' : '') + cmd; // 追加叠加，不发送
+        boneInput.focus();
+        return;
+      }
+      b = b.parentNode;
+    }
+  });
+})();
+function openBonePanel(ctx){
+  boneCtx = ctx;
+  var pv = ctx.selText;
+  if(pv.length > 100) pv = pv.slice(0, 100) + ' ……';
+  boneOrig.textContent = pv;
+  boneInput.value = BONE_DEFAULT_PROMPT;
+  boneMsg.className = 'msg'; boneMsg.textContent = '';
+  boneMsg2.className = 'msg'; boneMsg2.textContent = '';
+  boneLoading.style.display = 'none';
+  boneSend.disabled = false;
+  boneEditView.classList.remove('hidden');
+  bonePreviewView.classList.add('hidden');
+  hideBoneConfirm();
+  bonePanel.classList.remove('hidden');
+}
+function closeBonePanel(){
+  bonePanel.classList.add('hidden');
+  boneCtx = null;
+  boneNestUsed = false;
+  hideBoneConfirm();
+  hideNestBar(); // v1.9：骨头预览区的嵌套小改条一并收起
+}
+function hideBoneConfirm(){ boneConfirm.classList.add('hidden'); bonePendingLoc = null; }
+function showBoneConfirm(content, loc){
+  bonePendingLoc = loc;
+  var pre = content.slice(Math.max(0, loc.start - 30), loc.start);
+  var post = content.slice(loc.end, loc.end + 30);
+  var hit = content.slice(loc.start, loc.end);
+  if(hit.length > 40) hit = hit.slice(0, 20) + ' …… ' + hit.slice(hit.length - 20);
+  boneConfText.textContent = '……' + pre + '【' + hit + '】' + post + '……';
+  boneMsg2.className = 'msg'; boneMsg2.textContent = '';
+  boneConfirm.classList.remove('hidden');
+}
+/* v1.9 骨头 AI：prompt = 用户提示词 +【要提炼的段落】selText + 硬性要求"只返回要点列表，
+   每行一条以 - 开头"。callReplaceAI 风格：不传 temperature / response_format，
+   max_tokens 8000（v1.7.2 起防截断），走 stageWatch 分步进度。 */
+function callBoneAI(userReq, selText, onOk, onErr, st){
+  var key = (localStorage.getItem(LS_KEY) || '').trim();
+  if(!key){ onErr('还没有填写 API Key。请先返回首页在「API 设置」里保存 Key。'); return; }
+  var sys = '你是一位资深的重症医学（ICU）教学编辑。用户会给你一段笔记文字和一条提炼要求，' +
+    '请严格按要求把这段提炼成 3~5 条骨头（要点）。';
+  var usr = '【提炼要求】\n' + userReq +
+    '\n\n【要提炼的段落】\n' + selText +
+    '\n\n硬性要求：只返回要点列表，每行一条以 - 开头，不要其他文字。';
+  var payload = { model: modelSel.value, max_tokens: 8000,
+    messages: [ {role:'system',content:sys}, {role:'user',content:usr} ] };
+  if(st) st.set('① 正在把提炼要求发送给 Kimi 服务器…');
+  fetchWithTimeout('https://api.moonshot.cn/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+    body: JSON.stringify(payload)
+  }).then(function(resp){
+    if(!resp.ok){
+      return resp.text().then(function(t){
+        var tip = '请求失败（HTTP ' + resp.status + '）。';
+        if(resp.status === 401) tip = 'API Key 无效或已过期，请检查 Key。';
+        else if(resp.status === 429) tip = '请求太频繁或额度不足，请稍后再试。';
+        else if(resp.status >= 500) tip = 'Kimi 服务器暂时繁忙，请稍后再试。';
+        if(t){ var s = t.replace(/\s+/g,' ').slice(0,150); tip += '（服务器说：' + s + '）'; }
+        throw new Error(tip);
+      });
+    }
+    if(st) st.set('② Kimi 已收到，AI 正在提炼骨头…');
+    return resp.json();
+  }).then(function(data){
+    if(st) st.set('③ 回复已送达，正在整理骨头…');
+    var text = '';
+    try{ text = data.choices[0].message.content; }catch(e){}
+    text = String(text || '').replace(/^\s+|\s+$/g, '');
+    if(!text) throw new Error('AI 返回内容为空，请重试。');
+    if(st) st.stop();
+    onOk(text);
+  }).catch(function(err){
+    if(st) st.stop();
+    var m = (err && err.message) ? err.message : '网络连接失败，请检查网络后重试。';
+    if(/Failed to fetch|NetworkError|Load failed/i.test(m)) m = '网络连接失败（请求没到达 Kimi 或中途断线）。请检查网络后重试。';
+    onErr(m);
+  });
+}
+/* 🤖 发送：成功后进预览视图（骨头渲染走 renderMarkdown 不露星号，raw 存 boneCtx.boneRaw） */
+boneSend.addEventListener('click', function(){
+  if(!boneCtx) return;
+  var note = getNoteById(boneCtx.noteId);
+  if(!note){ closeBonePanel(); return; }
+  var userReq = boneInput.value.replace(/^\s+|\s+$/g,'');
+  if(!userReq) userReq = BONE_DEFAULT_PROMPT;
+  boneMsg.className = 'msg'; boneMsg.textContent = '';
+  boneLoading.style.display = 'block';
+  boneSend.disabled = true;
+  callBoneAI(userReq, boneCtx.selText, function(boneText){
+    boneLoading.style.display = 'none';
+    boneSend.disabled = false;
+    boneCtx.boneRaw = boneText; // raw：采用/再改/嵌套小改只操作它，渲染仅供显示
+    boneNew.innerHTML = renderMarkdown(boneText);
+    boneNestUsed = false; hideNestBar(); // 每次新出预览，允许涂黑发起一次嵌套小改
+    /* 标签名预填「原文：」+ 选中文字前 6 字（去空白） */
+    boneName.value = '原文：' + boneCtx.selText.replace(/\s+/g, '').slice(0, 6);
+    boneMsg2.className = 'msg'; boneMsg2.textContent = '';
+    hideBoneConfirm();
+    boneEditView.classList.add('hidden');
+    bonePreviewView.classList.remove('hidden');
+  }, function(errMsg){
+    boneLoading.style.display = 'none';
+    boneSend.disabled = false;
+    showMsg(boneMsg, errMsg, 'err');
+  }, stageWatch(boneLoading));
+});
+/* 🤖 让AI起名：复用 callFoldNameAI；返回后名称框填入「原文：」+AI名，已有"原文："前缀不重复加 */
+boneAi.addEventListener('click', function(){
+  if(!boneCtx) return;
+  boneMsg2.className = 'msg'; boneMsg2.textContent = '';
+  boneLoading2Show(true);
+  boneAi.disabled = true;
+  callFoldNameAI(boneCtx.selText, function(name){
+    boneLoading2Show(false);
+    boneAi.disabled = false;
+    if(name.indexOf('原文：') !== 0) name = '原文：' + name;
+    boneName.value = name;
+    boneName.focus();
+  }, function(errMsg){
+    boneLoading2Show(false);
+    boneAi.disabled = false;
+    showMsg(boneMsg2, errMsg, 'err');
+  }, stageWatch(boneLoading));
+});
+function boneLoading2Show(on){
+  if(on){ boneLoading.style.display = 'block'; }
+  else{ boneLoading.style.display = 'none'; }
+}
+/* ✅ 采用：v1.7.3 三级定位（L1 静默，L2/L3 走面板内确认条）→ 命中区间扩到整行边界，
+   该段替换为「骨头列表 + 空行 + 原文 callout」→ pushHistory（一次）→ persistNote → rerenderDetail */
+function doBoneNow(loc){
+  var note = getNoteById(boneCtx.noteId);
+  if(!note){ closeBonePanel(); return; }
+  var content = note.content || '';
+  var name = boneName.value.replace(/^\s+|\s+$/g, '');
+  if(!name) name = '原文：' + boneCtx.selText.replace(/\s+/g, '').slice(0, 6) || '原文';
+  var s = content.lastIndexOf('\n', Math.max(0, loc.start - 1)) + 1; // 行首
+  var e2 = content.indexOf('\n', loc.end);
+  var e = (e2 < 0) ? content.length : e2; // 行尾（不含换行符）
+  var raw = content.slice(s, e); // 用 raw（含 ** 标记）折进 callout，一字不差
+  var bones = String(boneCtx.boneRaw || '').replace(/^\s+|\s+$/g, '');
+  var replacement = bones + '\n\n' + buildFoldCallout(name, raw);
+  pushHistory(note); // 一次历史（嵌套小改不存），可回退
+  note.content = content.slice(0, s) + replacement + content.slice(e);
+  note.updatedAt = Date.now();
+  persistNote(note);
+  rerenderDetail(note); // 重渲染出骨头列表 + <details> 胶囊 + applyAnnotBadges 自动重扫
+  refreshRevertBtn();
+  closeBonePanel();
+  toast.style.display = 'block';
+  toastLoading.innerHTML = '✅ 骨头已留下，原文已折进标签';
+  setTimeout(function(){ toast.style.display = 'none'; }, 4000);
+}
+$('boneAdopt').addEventListener('click', function(){
+  if(!boneCtx || !boneCtx.boneRaw) return;
+  var note = getNoteById(boneCtx.noteId);
+  if(!note){ closeBonePanel(); return; }
+  var content = note.content || '';
+  var loc = locateReplaceSpanEx(content, boneCtx); // v1.7.3 三级定位
+  if(!loc){
+    hideBoneConfirm();
+    showMsg(boneMsg2, '⚠️ 在正文里找不到这段原文了（可能刚被改动），未做精炼。', 'err');
+    return;
+  }
+  if(loc.level === 1){ hideBoneConfirm(); doBoneNow(loc); return; } // L1 静默
+  if(bonePendingLoc && bonePendingLoc.start === loc.start && bonePendingLoc.end === loc.end) return;
+  showBoneConfirm(content, loc); // L2/L3 先请用户核对
+});
+function runBoneConfirmAction(act){
+  if(act === 'ok'){
+    var loc = bonePendingLoc;
+    if(!loc || !boneCtx || !boneCtx.boneRaw){ hideBoneConfirm(); return; }
+    doBoneNow(loc); // doBoneNow 内 closeBonePanel 会一并收起确认条
+  }else{
+    hideBoneConfirm();
+    showMsg(boneMsg2, '已取消，正文未改动。您可以重新涂黑要精炼的段落再试。', 'ok');
+  }
+}
+function findBoneConfBtn(target){
+  var b = target;
+  while(b && b !== boneConfirm){
+    if(b.getAttribute && b.getAttribute('data-bc')) return b;
+    b = b.parentNode;
+  }
+  return null;
+}
+/* 确认条触摸链（沿用"已知坑①"模式，同 rpConfirm/fpConfirm） */
+(function(){
+  var btns = [ $('boneConfOk'), $('boneConfNo') ];
+  for(var i = 0; i < btns.length; i++){
+    btns[i].addEventListener('mousedown', menuPress);
+    btns[i].addEventListener('touchstart', menuPress, { passive: false });
+    btns[i].addEventListener('click', function(e){
+      var b = findBoneConfBtn(e.target);
+      if(b) runBoneConfirmAction(b.getAttribute('data-bc'));
+    });
+    btns[i].addEventListener('touchend', function(e){
+      e.preventDefault(); e.stopPropagation();
+      var t = e.changedTouches && e.changedTouches[0];
+      var el = t ? document.elementFromPoint(t.clientX, t.clientY) : e.target;
+      var b = el ? findBoneConfBtn(el) : null;
+      if(b) runBoneConfirmAction(b.getAttribute('data-bc'));
+    }, { passive: false });
+  }
+})();
+/* 🔄 再改一次：回到提示词编辑视图，保留原提示词可改 */
+$('boneRetry').addEventListener('click', function(){
+  hideNestBar();
+  hideBoneConfirm();
+  bonePreviewView.classList.add('hidden');
+  boneEditView.classList.remove('hidden');
+  boneInput.focus();
+});
+$('boneCancel').addEventListener('click', closeBonePanel);
+$('boneCancel2').addEventListener('click', closeBonePanel);
+/* v1.9 测试钩子：仅供自动化测试驱动（界面不使用） */
+window.openBonePanel = openBonePanel;
+window.getBoneRaw = function(){ return boneCtx ? boneCtx.boneRaw : null; };
+
 /* ==================== v1.7 新稿嵌套小改（对照视图里涂黑一小段 → 只改这一小段，只套一层） ==================== */
 var nestBar = $('nestBar'), nestInput = $('nestInput'),
     nestLoading = $('nestLoading'), nestMsg = $('nestMsg');
@@ -2804,9 +3159,25 @@ function selectionInRpNew(){
   if(!node || !rpNew.contains(node)) return null;
   return { text: text, rect: sel.getRangeAt(0).getBoundingClientRect() };
 }
-function showNestBar(info){
+/* v1.9：骨头预览区 boneNew 里的选区（复用 nestBar 机制，只套一层 boneNestUsed） */
+function selectionInBoneNew(){
+  if(nestOpen || boneNestUsed) return null; // 只套一层门控
+  if(bonePanel.classList.contains('hidden') || bonePreviewView.classList.contains('hidden')) return null;
+  var sel = window.getSelection();
+  if(!sel || sel.isCollapsed || sel.rangeCount === 0) return null;
+  var text = sel.toString().replace(/^\s+|\s+$/g, '');
+  if(!text || text.length > 600) return null;
+  var node = sel.getRangeAt(0).commonAncestorContainer;
+  node = node.nodeType === 1 ? node : node.parentNode;
+  if(!node || !boneNew.contains(node)) return null;
+  return { text: text, rect: sel.getRangeAt(0).getBoundingClientRect() };
+}
+var nestTarget = null; // v1.9：'rp'=替换新稿 / 'bone'=骨头预览，nestSend 据此决定改哪份 raw
+function showNestBar(info, target){
   nestSel = info.text;
-  nestOpen = true; nestUsed = true; // 开过一次即锁定，防第三次改
+  nestTarget = target || 'rp';
+  nestOpen = true;
+  if(nestTarget === 'bone') boneNestUsed = true; else nestUsed = true; // 开过一次即锁定，防第三次改
   nestMsg.className = 'msg'; nestMsg.textContent = '';
   nestLoading.style.display = 'none';
   nestBar.style.display = 'block';
@@ -2819,7 +3190,7 @@ function showNestBar(info){
 }
 function hideNestBar(){
   nestBar.style.display = 'none';
-  nestOpen = false; nestSel = '';
+  nestOpen = false; nestSel = ''; nestTarget = null;
 }
 /* 嵌套小改 AI：prompt = 用户要求 +【要重写的小段】+【所在新稿前后 ~500 字】+ 硬性要求。
    不传 temperature / response_format（兼容 kimi-k2.6）；走 stageWatch 分步进度。 */
@@ -2867,10 +3238,15 @@ function callNestAI(userReq, piece, ctxText, onOk, onErr, st){
   });
 }
 function nestSend(){
-  if(!nestSel || !replaceCtx || !replaceCtx.newText) return;
+  /* v1.9：nestTarget 决定改哪份 raw——'rp' 替换新稿 replaceCtx.newText /
+     'bone' 骨头预览 boneCtx.boneRaw；两处都只改 raw 不 pushHistory */
+  var isBone = (nestTarget === 'bone');
+  if(!nestSel) return;
+  if(isBone){ if(!boneCtx || !boneCtx.boneRaw) return; }
+  else if(!replaceCtx || !replaceCtx.newText) return;
   var req = nestInput.value.replace(/^\s+|\s+$/g, '');
   if(!req){ nestInput.focus(); return; }
-  var raw = replaceCtx.newText;
+  var raw = isBone ? boneCtx.boneRaw : replaceCtx.newText;
   var pm = plainMapOf(raw);
   var pi = pm.plain.indexOf(nestSel); // 所选文字第一次出现处
   if(pi < 0){
@@ -2889,9 +3265,15 @@ function nestSend(){
   nestLoading.style.display = 'block';
   callNestAI(req, nestSel, ctxText, function(newPiece){
     nestLoading.style.display = 'none';
-    /* 在 rawNewText 里用所选文字第一次出现处替换之；不 pushHistory（只有「✅ 采用」才存） */
-    replaceCtx.newText = raw.slice(0, rawStart) + newPiece + raw.slice(rawEnd);
-    rpNew.innerHTML = renderMarkdown(replaceCtx.newText); // 重新渲染新稿区，停留在对照视图
+    /* 在 raw 里用所选文字第一次出现处替换之；不 pushHistory（只有「✅ 采用」才存） */
+    var newRaw = raw.slice(0, rawStart) + newPiece + raw.slice(rawEnd);
+    if(isBone){
+      boneCtx.boneRaw = newRaw;
+      boneNew.innerHTML = renderMarkdown(newRaw); // 重新渲染骨头预览，停留在预览视图
+    }else{
+      replaceCtx.newText = newRaw;
+      rpNew.innerHTML = renderMarkdown(newRaw); // 重新渲染新稿区，停留在对照视图
+    }
     hideNestBar();
     var sel0 = window.getSelection();
     if(sel0) sel0.removeAllRanges();
@@ -2938,7 +3320,9 @@ function findNestBtn(target){
 document.addEventListener('selectionchange', function(){
   setTimeout(function(){
     var ninfo = selectionInRpNew();
-    if(ninfo) showNestBar(ninfo);
+    if(ninfo){ showNestBar(ninfo, 'rp'); return; }
+    var binfo = selectionInBoneNew(); // v1.9：骨头预览区选区也走 nestBar
+    if(binfo) showNestBar(binfo, 'bone');
   }, 280);
 });
 
