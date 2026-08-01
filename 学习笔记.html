@@ -4,6 +4,30 @@
  学习笔记·双链版 —— 单文件 HTML 工具
 ====================================================================
  修改记录：
+   v2.0  2026-08-01 「☁️ 云备份」上线：笔记自动同步到用户的 GitHub 私有仓库：
+         - 首页新增「☁️ 云备份」折叠卡片（details.about 风格）：GitHub 用户名
+           （预填 hongxiaotao177，存 'bg_gh_user'）+ Token（password 型，
+           存 'bg_gh_tok'，只存本机不写进任何上传内容/日志/toast）+ 备份仓库名
+           （预填 xuexi-backup，存 'bg_gh_repo'）+「💾 保存设置」+
+           「☁️ 立即备份」「📥 从云端恢复」+ 状态行（存 'bg_gh_last'：
+           上次备份时间 ✅ / 未备份过 / 备份失败：原因）
+         - ghPush：GET repos/{user}/{repo}/contents/notes-backup.json 取 sha
+           （404=首次无文件）→ PUT {message:'学习笔记备份 '+时间, content:base64, sha?}；
+           payload={version:1, savedAt:ISO, notes}；base64 走
+           btoa(unescape(encodeURIComponent(json))) 保中文不乱码
+         - 自动备份：saveNotes（persistNote 的收口）成功后挂钩子，配置齐全时
+           debounce 10 秒 ghPush（静默，失败只记状态行，下次改动再试）
+         - 手动备份走 stageWatch（①连接 GitHub→②上传中→③完成），成功
+           toast「✅ 已备份到云端（N 篇笔记）」；401→Token 失效或没权限；
+           404→仓库不存在或 Token 没勾选这个仓库；其他附服务器原文前 150 字；
+           全部走 fetchWithTimeout 防挂
+         - 恢复：GET → decodeURIComponent(escape(atob(content))) → 确认条
+           （rp-conf 风格，显示 N 篇+备份时间，覆盖提示）→ 确定才写 localStorage +
+           renderList + toast「📥 已恢复 N 篇笔记」，取消不动；
+           启动时本机空 + 配置齐全 → 自动 pull 并弹同一确认条（防误覆盖）；
+           notes 为空时自动/手动都不 push（防空备份覆盖好备份）
+         - 新按钮触摸链沿用"已知坑①"模式（按钮逐个绑 mousedown/touchstart
+           preventDefault + touchend elementFromPoint；输入框不绑）
    v1.9  2026-08-01 「🦴 精炼成骨头」：大段文字涂黑 → AI 提炼 3~5 条骨头留正文 +
          原文原样折成标签跟在骨头后：
          - #selMenu 大段涂黑（>30字）时再加第三个按钮「🦴 精炼成骨头」；
@@ -500,6 +524,38 @@
     </div>
 
     <div id="noteList"></div>
+
+    <!-- v2.0 云备份卡片（折叠区风格同「关于/版本说明」） -->
+    <details class="about" id="ghCard" style="margin-top:14px;">
+      <summary>☁️ 云备份（GitHub 私有仓库）</summary>
+      <div class="inner">
+        <label for="ghUser">GitHub 用户名</label>
+        <input type="text" id="ghUser" placeholder="如 hongxiaotao177" autocomplete="off">
+        <label for="ghTok">Token（个人访问令牌）</label>
+        <input type="password" id="ghTok" placeholder="ghp_ 或 github_pat_ 开头的令牌" autocomplete="off">
+        <div class="hint">Token 只存在本机浏览器，不外传。</div>
+        <label for="ghRepo">备份仓库名（私有仓库）</label>
+        <input type="text" id="ghRepo" placeholder="如 xuexi-backup" autocomplete="off">
+        <div class="btn-row" style="margin-top:10px;">
+          <button type="button" class="btn" id="ghSave">💾 保存设置</button>
+        </div>
+        <div class="btn-row">
+          <button type="button" class="btn" id="ghPushBtn">☁️ 立即备份</button>
+          <button type="button" class="btn secondary" id="ghPullBtn">📥 从云端恢复</button>
+        </div>
+        <div class="loading" id="ghLoading"><span class="spinner"></span>正在连接 GitHub…</div>
+        <div class="msg" id="ghMsg"></div>
+        <!-- 恢复确认条（复用 rp-conf 风格）：防止误覆盖本机笔记 -->
+        <div id="ghConfirm" class="hidden rp-conf">
+          <div id="ghConfText" class="rp-conf-text"></div>
+          <div class="btn-row">
+            <button type="button" class="btn" id="ghConfOk">确定，覆盖本机</button>
+            <button type="button" class="btn secondary" id="ghConfNo">取消</button>
+          </div>
+        </div>
+        <div class="hint" id="ghStatus" style="margin-top:8px;">上次备份：未备份过</div>
+      </div>
+    </details>
   </div>
 
   <!-- ===== 视图：笔记详情 ===== -->
@@ -694,7 +750,7 @@
   <details class="about">
     <summary>📋 关于 / 版本说明</summary>
     <div class="inner">
-      <p><b>版本：</b>v1.9（2026-08-01）：涂黑大段文字 → 弹出菜单新增「🦴 精炼成骨头」，AI 把这段提炼成 3~5 条要点（骨头）留在正文，原文自动折成一个小胶囊标签压在骨头后面；骨头不满意可涂黑单条让 AI 只改这一条，或点「🔄 再改一次」回提示词重发；标签名可自己改，也可点「🤖 让AI起名」（名字自动带「原文：」前缀）。注意：之后点标签里的「📤 释放这段」只把标签内的原文还原回正文，已提炼的骨头列表会保留。上一版 v1.8.1（2026-08-01）：标签胶囊瘦身——内外边距和字号都收紧，胶囊只占约正文一行高，不再占版面。上一版 v1.8（2026-08-01）：大段文字涂黑 → 弹出菜单新增「🏷 折成标签」，可把太长但有用的段落折叠成一个小胶囊标签（可自己起名，也可点「🤖 让AI起名」让 AI 概括），点一下标签就展开全文，标签里点「📤 释放这段」可还原回正文；导出到 Obsidian 就是原生 callout 折叠块，默认收起，一字不丢。上一版 v1.7.3（2026-08-01）：替换这段的定位加固为三级（精确→忽略格式模糊→段落大意），模糊定位命中会先让您确认再替换，误报"找不到原文"大幅减少。上一版 v1.7.2（2026-08-01）：修复——当 AI 回信太长被中途截断时，以前会把一段露出 JSON 代码的文字收进笔记正文，现在软件会自动"剥信封"，只把真正的正文收进笔记，标题也能一起认出来；同时把 AI 回复长度上限调大，减少被截断的情况。上一版 v1.7.1（2026-08-01）：让 AI 改稿时，AI 偶尔不按约定格式回信（直接返回裸文章），以前会报「格式不对」让您重试，现在软件能智能识别裸文章并直接采用，改稿照常完成；同时把格式要求写得更醒目，降低这种情况发生的概率。上一版 v1.7（2026-08-01）：对照预览里的加粗、列表现在按真实样式显示，不再露出一堆星号；AI 新稿里哪一小段不满意，涂黑它就会弹出小条，让 AI 只改这一小段（只套一层，最后点「✅ 采用」才存历史）。另外把手机上按钮"点了没反应"的两个老坑记进了开发备忘，以后维护不会再犯。上一版 v1.6（2026-07-31）新功能：涂黑一大段文字 → 弹出菜单点「🔄 替换这段」→ 面板里点预设要求（可叠加多个）或自由填写/补充 → AI 只改写这一段 → 预览对照（上原文下新稿）后点「✅ 采用」才生效，改前自动存一版历史，可点「让 AI 改」里的「↩️ 回退上一版」找回原稿。上一版 v1.5.2：注释里的生词，正文没有也能加角标——在注释气泡里涂黑注释文字中的生词点「➕ 选词加角标」，它会变成一个贴在气泡里的小角标（灰色虚线=待解释），点角标可钻进去看/编辑，「← 返回」回到上一条；随「批量解释」一起让 AI 讲解（AI 会参考它所在的那条注释文字）；导出时嵌套解释不单独出脚注，附加在父脚注末尾，如「……。（肺的应力：肺泡壁承受的牵张力）」。上一版 v1.5.1 修复：一篇笔记里多个词条分散在不同段落时，第一个角标之后的词条（如 ARDS、PEEP）会贴不上角标的问题，现已全部正常。以下为 v1.5 功能：① 手动加的角标现在贴在您涂黑的那个确切位置（记住涂黑处前后文），不再跳到全篇第一次出现的地方；并有词边界保护，像 ARDS 不会再嵌进 ARDSNet 中间。② 注释气泡新增「🤖 让AI改写」：点词条角标后可让 AI 按要求改写解释，改写要求可以随意修改（默认是"更通俗、更简短"），改写前自动存一版历史可回退。③ 气泡里涂黑注释文字中的生词，点「➕ 选词加角标」即可把它加为本篇待解释角标（不发 AI 请求），之后随批量解释一起让 AI 讲解。上一版 v1.4 手动批量角标：读正文时涂黑一个词，点弹出菜单的「➕ 加角标」，立即立一个灰色虚线空角标（不发 AI 请求，可连加多个）；读完后点「🤖 批量解释」按钮，把所有空角标一次性发给 AI，解释自动填回各角标变实色。另有 v1.3 词条脚注注释（正文词条旁 ① 小角标，点开看大白话，导出转 Obsidian 标准脚注）与 v1.1 交互式改稿（分栏、快捷指令、5 版历史可回退）。AI 请求保持不传 temperature / response_format（兼容 kimi-k2.6）。</p>
+      <p><b>版本：</b>v2.0（2026-08-01）：云备份上线——笔记自动同步到您的 GitHub 私有仓库（首页「☁️ 云备份」卡片里填一次用户名、Token、仓库名即可；之后每次改动后 10 秒自动备份），换设备/清缓存后可点「📥 从云端恢复」一键找回；Token 只存在本机浏览器，不外传。上一版 v1.9（2026-08-01）：涂黑大段文字 → 弹出菜单新增「🦴 精炼成骨头」，AI 把这段提炼成 3~5 条要点（骨头）留在正文，原文自动折成一个小胶囊标签压在骨头后面；骨头不满意可涂黑单条让 AI 只改这一条，或点「🔄 再改一次」回提示词重发；标签名可自己改，也可点「🤖 让AI起名」（名字自动带「原文：」前缀）。注意：之后点标签里的「📤 释放这段」只把标签内的原文还原回正文，已提炼的骨头列表会保留。上一版 v1.8.1（2026-08-01）：标签胶囊瘦身——内外边距和字号都收紧，胶囊只占约正文一行高，不再占版面。上一版 v1.8（2026-08-01）：大段文字涂黑 → 弹出菜单新增「🏷 折成标签」，可把太长但有用的段落折叠成一个小胶囊标签（可自己起名，也可点「🤖 让AI起名」让 AI 概括），点一下标签就展开全文，标签里点「📤 释放这段」可还原回正文；导出到 Obsidian 就是原生 callout 折叠块，默认收起，一字不丢。上一版 v1.7.3（2026-08-01）：替换这段的定位加固为三级（精确→忽略格式模糊→段落大意），模糊定位命中会先让您确认再替换，误报"找不到原文"大幅减少。上一版 v1.7.2（2026-08-01）：修复——当 AI 回信太长被中途截断时，以前会把一段露出 JSON 代码的文字收进笔记正文，现在软件会自动"剥信封"，只把真正的正文收进笔记，标题也能一起认出来；同时把 AI 回复长度上限调大，减少被截断的情况。上一版 v1.7.1（2026-08-01）：让 AI 改稿时，AI 偶尔不按约定格式回信（直接返回裸文章），以前会报「格式不对」让您重试，现在软件能智能识别裸文章并直接采用，改稿照常完成；同时把格式要求写得更醒目，降低这种情况发生的概率。上一版 v1.7（2026-08-01）：对照预览里的加粗、列表现在按真实样式显示，不再露出一堆星号；AI 新稿里哪一小段不满意，涂黑它就会弹出小条，让 AI 只改这一小段（只套一层，最后点「✅ 采用」才存历史）。另外把手机上按钮"点了没反应"的两个老坑记进了开发备忘，以后维护不会再犯。上一版 v1.6（2026-07-31）新功能：涂黑一大段文字 → 弹出菜单点「🔄 替换这段」→ 面板里点预设要求（可叠加多个）或自由填写/补充 → AI 只改写这一段 → 预览对照（上原文下新稿）后点「✅ 采用」才生效，改前自动存一版历史，可点「让 AI 改」里的「↩️ 回退上一版」找回原稿。上一版 v1.5.2：注释里的生词，正文没有也能加角标——在注释气泡里涂黑注释文字中的生词点「➕ 选词加角标」，它会变成一个贴在气泡里的小角标（灰色虚线=待解释），点角标可钻进去看/编辑，「← 返回」回到上一条；随「批量解释」一起让 AI 讲解（AI 会参考它所在的那条注释文字）；导出时嵌套解释不单独出脚注，附加在父脚注末尾，如「……。（肺的应力：肺泡壁承受的牵张力）」。上一版 v1.5.1 修复：一篇笔记里多个词条分散在不同段落时，第一个角标之后的词条（如 ARDS、PEEP）会贴不上角标的问题，现已全部正常。以下为 v1.5 功能：① 手动加的角标现在贴在您涂黑的那个确切位置（记住涂黑处前后文），不再跳到全篇第一次出现的地方；并有词边界保护，像 ARDS 不会再嵌进 ARDSNet 中间。② 注释气泡新增「🤖 让AI改写」：点词条角标后可让 AI 按要求改写解释，改写要求可以随意修改（默认是"更通俗、更简短"），改写前自动存一版历史可回退。③ 气泡里涂黑注释文字中的生词，点「➕ 选词加角标」即可把它加为本篇待解释角标（不发 AI 请求），之后随批量解释一起让 AI 讲解。上一版 v1.4 手动批量角标：读正文时涂黑一个词，点弹出菜单的「➕ 加角标」，立即立一个灰色虚线空角标（不发 AI 请求，可连加多个）；读完后点「🤖 批量解释」按钮，把所有空角标一次性发给 AI，解释自动填回各角标变实色。另有 v1.3 词条脚注注释（正文词条旁 ① 小角标，点开看大白话，导出转 Obsidian 标准脚注）与 v1.1 交互式改稿（分栏、快捷指令、5 版历史可回退）。AI 请求保持不传 temperature / response_format（兼容 kimi-k2.6）。</p>
       <p><b>历史版本：</b>v1.2 默认改快模型（秒级响应）+ 分步进度提示（发送→思考→解析+用时秒数）；v1.1.1 修复手机词条菜单按钮；v1.1.2 AI 请求加 180 秒超时；v1.0.2 修复 AI 调用 400 报错</p>
       <p><b>数据安全：</b>所有笔记和 API Key 只保存在您本机浏览器（localStorage），不上传到任何服务器；清除浏览器数据会丢失笔记，请定期导出备份。</p>
       <p><b>如何导入 Obsidian：</b></p>
@@ -725,8 +781,10 @@ function loadNotes(){
   }catch(e){ return []; }
 }
 function saveNotes(notes){
-  try{ localStorage.setItem(LS_NOTES, JSON.stringify(notes)); return true; }
+  try{ localStorage.setItem(LS_NOTES, JSON.stringify(notes)); }
   catch(e){ showMsg(genMsg, '保存失败：本机存储空间不足或被禁用。', 'err'); return false; }
+  if(!ghSuspend) scheduleGhAutoBackup(); /* v2.0：改动收口处挂钩子，10 秒后自动云备份 */
+  return true;
 }
 function findNote(title){
   var notes = loadNotes();
@@ -3564,6 +3622,209 @@ $('btnExport').addEventListener('click', function(){
     showMsg(exportMsg, '导出失败：' + e.message, 'err');
   }
 });
+
+/* ==================== v2.0 GitHub 私有仓库云备份 ==================== */
+var LS_GH_USER = 'bg_gh_user', LS_GH_TOK = 'bg_gh_tok',
+    LS_GH_REPO = 'bg_gh_repo', LS_GH_LAST = 'bg_gh_last';
+var ghCard = $('ghCard'), ghUserInput = $('ghUser'), ghTokInput = $('ghTok'),
+    ghRepoInput = $('ghRepo'), ghMsg = $('ghMsg'), ghStatus = $('ghStatus'),
+    ghLoading = $('ghLoading'), ghConfirm = $('ghConfirm'), ghConfText = $('ghConfText');
+var ghSuspend = false;   /* 恢复写入时挂起自动备份，防止刚拉回的内容又立刻推回 */
+var ghAutoTimer = null;  /* debounce 句柄 */
+var ghPendingNotes = null; /* 确认条等待恢复的云端笔记 */
+
+function ghCfg(){
+  return {
+    user: (localStorage.getItem(LS_GH_USER) || '').replace(/^\s+|\s+$/g,''),
+    tok:  (localStorage.getItem(LS_GH_TOK)  || '').replace(/^\s+|\s+$/g,''),
+    repo: (localStorage.getItem(LS_GH_REPO) || '').replace(/^\s+|\s+$/g,'')
+  };
+}
+function ghReady(){ var c = ghCfg(); return !!(c.user && c.tok && c.repo); }
+function ghApiUrl(){
+  var c = ghCfg();
+  return 'https://api.github.com/repos/' + encodeURIComponent(c.user) + '/' +
+         encodeURIComponent(c.repo) + '/contents/notes-backup.json';
+}
+function ghHeaders(){
+  return { 'Authorization': 'token ' + ghCfg().tok, 'Accept': 'application/vnd.github+json' };
+}
+/* base64 必须处理中文：先 UTF-8 百分号编码再 btoa；解码反向 */
+function ghB64enc(s){ return btoa(unescape(encodeURIComponent(s))); }
+function ghB64dec(s){ return decodeURIComponent(escape(atob(String(s).replace(/\s+/g,'')))); }
+/* 错误翻译（Token 本身绝不进提示文字） */
+function ghErrText(status, body){
+  if(status === 401) return 'Token 失效或没权限，检查 Token';
+  if(status === 404) return '仓库不存在或 Token 没勾选这个仓库';
+  return 'HTTP ' + status + '：' + String(body || '').replace(/\s+/g,' ').slice(0,150);
+}
+function ghSaveStatus(ok, errMsg){
+  try{
+    localStorage.setItem(LS_GH_LAST, JSON.stringify(ok
+      ? { t: Date.now(), ok: true }
+      : { t: Date.now(), ok: false, err: String(errMsg || '未知原因') }));
+  }catch(e){}
+}
+function ghStatusRender(){
+  var s = '上次备份：未备份过';
+  try{
+    var raw = localStorage.getItem(LS_GH_LAST);
+    if(raw){
+      var o = JSON.parse(raw);
+      if(o && o.ok) s = '上次备份：' + fmtTime(o.t) + ' ✅';
+      else if(o) s = '备份失败：' + (o.err || '未知原因');
+    }
+  }catch(e){}
+  ghStatus.textContent = s;
+}
+
+/* push：opts={manual, st(stageWatch|null), onDone(err,count)}；err==='empty' 表示空笔记跳过 */
+function ghPush(opts){
+  opts = opts || {};
+  var notes = loadNotes();
+  /* notes 为空不 push：防止空备份覆盖云端好备份（自动/手动都检查） */
+  if(notes.length === 0){
+    if(opts.manual) showMsg(ghMsg, '本机还没有笔记，跳过备份（防止空备份覆盖云端）。', 'err');
+    if(opts.onDone) opts.onDone('empty', 0);
+    return;
+  }
+  if(opts.st) opts.st.set('① 正在连接 GitHub…');
+  fetchWithTimeout(ghApiUrl(), { headers: ghHeaders() }).then(function(resp){
+    if(resp.status === 404) return null; /* 首次：云端还没有备份文件 */
+    if(!resp.ok) return resp.text().then(function(t){ throw new Error(ghErrText(resp.status, t)); });
+    return resp.json();
+  }).then(function(file){
+    if(opts.st) opts.st.set('② 正在上传备份…');
+    var payload = { version: 1, savedAt: new Date().toISOString(), notes: notes };
+    var body = {
+      message: '学习笔记备份 ' + fmtTime(Date.now()),
+      content: ghB64enc(JSON.stringify(payload))
+    };
+    if(file && file.sha) body.sha = file.sha;
+    return fetchWithTimeout(ghApiUrl(), {
+      method: 'PUT', headers: ghHeaders(), body: JSON.stringify(body)
+    }).then(function(resp2){
+      if(!resp2.ok) return resp2.text().then(function(t){ throw new Error(ghErrText(resp2.status, t)); });
+      return resp2.text();
+    });
+  }).then(function(){
+    if(opts.st) opts.st.set('③ 备份完成');
+    ghSaveStatus(true); ghStatusRender();
+    if(opts.onDone) opts.onDone(null, notes.length);
+  }).catch(function(e){
+    var msg = (e && e.message) ? e.message : '网络不通，备份没成功';
+    ghSaveStatus(false, msg); ghStatusRender();
+    if(opts.onDone) opts.onDone(msg, 0);
+  });
+}
+
+/* pull：onResult(err, payload)，payload={version,savedAt,notes} */
+function ghPull(onResult){
+  fetchWithTimeout(ghApiUrl(), { headers: ghHeaders() }).then(function(resp){
+    if(resp.status === 404){ onResult('云端还没有备份文件（第一次用请先点「☁️ 立即备份」）。'); return null; }
+    if(!resp.ok) return resp.text().then(function(t){ onResult(ghErrText(resp.status, t)); return null; });
+    return resp.json();
+  }).then(function(file){
+    if(!file) return;
+    try{
+      var payload = JSON.parse(ghB64dec(file.content || ''));
+      if(!payload || !Array.isArray(payload.notes)) throw new Error('bad');
+      onResult(null, payload);
+    }catch(e){ onResult('云端备份文件读不懂（内容可能损坏）。'); }
+  }).catch(function(e){
+    onResult((e && e.message) ? e.message : '网络不通，恢复没成功');
+  });
+}
+
+/* 恢复确认条：显示云端篇数+备份时间，确定才覆盖本机（取消不动） */
+function ghAskRestore(payload){
+  ghPendingNotes = payload.notes;
+  var when = payload.savedAt ? fmtTime(payload.savedAt) : '未知时间';
+  ghConfText.textContent = '云端有 ' + payload.notes.length + ' 篇笔记（备份于 ' + when +
+    '）。恢复将覆盖本机现有笔记，确定？';
+  ghCard.open = true;
+  ghConfirm.classList.remove('hidden');
+}
+function ghDoRestore(){
+  if(!ghPendingNotes) return;
+  var notes = ghPendingNotes; ghPendingNotes = null;
+  ghConfirm.classList.add('hidden');
+  ghSuspend = true;
+  saveNotes(notes); /* 挂起期间不触发自动备份 */
+  ghSuspend = false;
+  renderList();
+  popToast('📥 已恢复 ' + notes.length + ' 篇笔记', 3000);
+}
+
+/* 自动备份：配置齐全时 debounce 10 秒静默 push；失败只记状态行，下次改动再试 */
+function scheduleGhAutoBackup(){
+  if(!ghReady()) return;
+  if(ghAutoTimer) clearTimeout(ghAutoTimer);
+  ghAutoTimer = setTimeout(function(){
+    ghAutoTimer = null;
+    ghPush({ manual: false, onDone: function(){} });
+  }, 10000);
+}
+
+function ghManualPush(){
+  if(!ghReady()){ showMsg(ghMsg, '请先把用户名、Token、仓库名填好并点「💾 保存设置」。', 'err'); ghCard.open = true; return; }
+  ghMsg.className = 'msg'; ghMsg.textContent = '';
+  ghLoading.style.display = 'block';
+  var st = stageWatch(ghLoading);
+  ghPush({ manual: true, st: st, onDone: function(err, count){
+    st.stop(); ghLoading.style.display = 'none';
+    if(err){ if(err !== 'empty') showMsg(ghMsg, '备份失败：' + err, 'err'); return; }
+    popToast('✅ 已备份到云端（' + count + ' 篇笔记）', 3000);
+  }});
+}
+function ghManualPull(){
+  if(!ghReady()){ showMsg(ghMsg, '请先把用户名、Token、仓库名填好并点「💾 保存设置」。', 'err'); ghCard.open = true; return; }
+  ghMsg.className = 'msg'; ghMsg.textContent = '';
+  ghLoading.style.display = 'block';
+  ghLoading.innerHTML = '<span class="spinner"></span>正在连接 GitHub 读取云端备份…';
+  ghPull(function(err, payload){
+    ghLoading.style.display = 'none';
+    if(err){ showMsg(ghMsg, '恢复失败：' + err, 'err'); return; }
+    ghAskRestore(payload);
+  });
+}
+
+/* 新按钮触摸链（沿用"已知坑①"模式：按钮逐个绑，输入框不绑） */
+function ghBindBtn(el, handler){
+  el.addEventListener('mousedown', menuPress);
+  el.addEventListener('touchstart', menuPress, { passive: false });
+  el.addEventListener('click', handler);
+  el.addEventListener('touchend', function(e){
+    e.preventDefault(); e.stopPropagation();
+    var t = e.changedTouches && e.changedTouches[0];
+    var tgt = t ? document.elementFromPoint(t.clientX, t.clientY) : e.target;
+    if(tgt && (tgt === el || el.contains(tgt))) handler(e);
+  }, { passive: false });
+}
+ghBindBtn($('ghSave'), function(){
+  try{
+    localStorage.setItem(LS_GH_USER, ghUserInput.value.replace(/^\s+|\s+$/g,''));
+    localStorage.setItem(LS_GH_TOK,  ghTokInput.value.replace(/^\s+|\s+$/g,''));
+    localStorage.setItem(LS_GH_REPO, ghRepoInput.value.replace(/^\s+|\s+$/g,''));
+    popToast('💾 已保存', 2000);
+  }catch(e){ showMsg(ghMsg, '保存失败：浏览器禁止了本地存储。', 'err'); }
+});
+ghBindBtn($('ghPushBtn'), ghManualPush);
+ghBindBtn($('ghPullBtn'), ghManualPull);
+ghBindBtn($('ghConfOk'), ghDoRestore);
+ghBindBtn($('ghConfNo'), function(){
+  ghPendingNotes = null;
+  ghConfirm.classList.add('hidden');
+});
+
+/* v2.0 初始化：预填设置 + 状态行；本机空 + 配置齐全 → 自动 pull（仍走确认条防误覆盖） */
+ghUserInput.value = localStorage.getItem(LS_GH_USER) || 'hongxiaotao177';
+ghRepoInput.value = localStorage.getItem(LS_GH_REPO) || 'xuexi-backup';
+ghTokInput.value = localStorage.getItem(LS_GH_TOK) || '';
+ghStatusRender();
+if(loadNotes().length === 0 && ghReady()){
+  ghPull(function(err, payload){ if(!err && payload) ghAskRestore(payload); });
+}
 
 /* ==================== 初始化 ==================== */
 renderList();
