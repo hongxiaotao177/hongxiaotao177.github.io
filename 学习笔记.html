@@ -4,6 +4,18 @@
  学习笔记·双链版 —— 单文件 HTML 工具
 ====================================================================
  修改记录：
+   v1.7.2 2026-08-01 AI 信封被截断时的抢救 + 回复长度上限调大：
+         - 宽容模式加「剥信封」：AI 返回了 JSON 信封但被 max_tokens 截断（JSON 不完整）
+           时，parseAIJson 失败后不再把整段原始 JSON 文本（含 "title":/"content": 包装）
+           当裸文章收进正文。新增 salvageJsonish(text)：文本以 { 开头且含 "content" 时，
+           先用 /"content"\s*:\s*"([\s\S]*?)"\s*[,}]/ 完整匹配；失败（截断无收尾）则用
+           /"content"\s*:\s*"([\s\S]*)$/ 抠到文末并去掉末尾可能的 `"`/`",` 残尾；
+           抠出的 content 做 JSON 字符串反转义（\\\\ 先占位 → \n/\t/\" → 还原 \\）；
+           同时抠 "title" 作为标题（抠不到用原标题/主题词）；抢救结果再走 ≥200 字等
+           既有校验，通过则采用抢救出的正文。文本不以 { 开头 → 维持 v1.7.1 裸文章原逻辑
+         - callAI / callReviseAI 请求加 max_tokens: 8000，减少长文被截断的概率
+         - looseArticleFrom 返回值改为 {content, title?}，两个调用处同步适配；
+           改稿流程在抢救到标题时同步更新笔记标题
    v1.7.1 2026-08-01 改稿/新建的宽容解析：
          - AI 偶发不按 JSON 信封格式、直接返回裸文章时不再报「AI 返回格式不对」：
            先走原有容错解析（首尾大括号 JSON.parse），失败则进入宽容模式——
@@ -462,7 +474,7 @@
   <details class="about">
     <summary>📋 关于 / 版本说明</summary>
     <div class="inner">
-      <p><b>版本：</b>v1.7.1（2026-08-01）：让 AI 改稿时，AI 偶尔不按约定格式回信（直接返回裸文章），以前会报「格式不对」让您重试，现在软件能智能识别裸文章并直接采用，改稿照常完成；同时把格式要求写得更醒目，降低这种情况发生的概率。上一版 v1.7（2026-08-01）：对照预览里的加粗、列表现在按真实样式显示，不再露出一堆星号；AI 新稿里哪一小段不满意，涂黑它就会弹出小条，让 AI 只改这一小段（只套一层，最后点「✅ 采用」才存历史）。另外把手机上按钮"点了没反应"的两个老坑记进了开发备忘，以后维护不会再犯。上一版 v1.6（2026-07-31）新功能：涂黑一大段文字 → 弹出菜单点「🔄 替换这段」→ 面板里点预设要求（可叠加多个）或自由填写/补充 → AI 只改写这一段 → 预览对照（上原文下新稿）后点「✅ 采用」才生效，改前自动存一版历史，可点「让 AI 改」里的「↩️ 回退上一版」找回原稿。上一版 v1.5.2：注释里的生词，正文没有也能加角标——在注释气泡里涂黑注释文字中的生词点「➕ 选词加角标」，它会变成一个贴在气泡里的小角标（灰色虚线=待解释），点角标可钻进去看/编辑，「← 返回」回到上一条；随「批量解释」一起让 AI 讲解（AI 会参考它所在的那条注释文字）；导出时嵌套解释不单独出脚注，附加在父脚注末尾，如「……。（肺的应力：肺泡壁承受的牵张力）」。上一版 v1.5.1 修复：一篇笔记里多个词条分散在不同段落时，第一个角标之后的词条（如 ARDS、PEEP）会贴不上角标的问题，现已全部正常。以下为 v1.5 功能：① 手动加的角标现在贴在您涂黑的那个确切位置（记住涂黑处前后文），不再跳到全篇第一次出现的地方；并有词边界保护，像 ARDS 不会再嵌进 ARDSNet 中间。② 注释气泡新增「🤖 让AI改写」：点词条角标后可让 AI 按要求改写解释，改写要求可以随意修改（默认是"更通俗、更简短"），改写前自动存一版历史可回退。③ 气泡里涂黑注释文字中的生词，点「➕ 选词加角标」即可把它加为本篇待解释角标（不发 AI 请求），之后随批量解释一起让 AI 讲解。上一版 v1.4 手动批量角标：读正文时涂黑一个词，点弹出菜单的「➕ 加角标」，立即立一个灰色虚线空角标（不发 AI 请求，可连加多个）；读完后点「🤖 批量解释」按钮，把所有空角标一次性发给 AI，解释自动填回各角标变实色。另有 v1.3 词条脚注注释（正文词条旁 ① 小角标，点开看大白话，导出转 Obsidian 标准脚注）与 v1.1 交互式改稿（分栏、快捷指令、5 版历史可回退）。AI 请求保持不传 temperature / response_format（兼容 kimi-k2.6）。</p>
+      <p><b>版本：</b>v1.7.2（2026-08-01）：修复——当 AI 回信太长被中途截断时，以前会把一段露出 JSON 代码的文字收进笔记正文，现在软件会自动"剥信封"，只把真正的正文收进笔记，标题也能一起认出来；同时把 AI 回复长度上限调大，减少被截断的情况。上一版 v1.7.1（2026-08-01）：让 AI 改稿时，AI 偶尔不按约定格式回信（直接返回裸文章），以前会报「格式不对」让您重试，现在软件能智能识别裸文章并直接采用，改稿照常完成；同时把格式要求写得更醒目，降低这种情况发生的概率。上一版 v1.7（2026-08-01）：对照预览里的加粗、列表现在按真实样式显示，不再露出一堆星号；AI 新稿里哪一小段不满意，涂黑它就会弹出小条，让 AI 只改这一小段（只套一层，最后点「✅ 采用」才存历史）。另外把手机上按钮"点了没反应"的两个老坑记进了开发备忘，以后维护不会再犯。上一版 v1.6（2026-07-31）新功能：涂黑一大段文字 → 弹出菜单点「🔄 替换这段」→ 面板里点预设要求（可叠加多个）或自由填写/补充 → AI 只改写这一段 → 预览对照（上原文下新稿）后点「✅ 采用」才生效，改前自动存一版历史，可点「让 AI 改」里的「↩️ 回退上一版」找回原稿。上一版 v1.5.2：注释里的生词，正文没有也能加角标——在注释气泡里涂黑注释文字中的生词点「➕ 选词加角标」，它会变成一个贴在气泡里的小角标（灰色虚线=待解释），点角标可钻进去看/编辑，「← 返回」回到上一条；随「批量解释」一起让 AI 讲解（AI 会参考它所在的那条注释文字）；导出时嵌套解释不单独出脚注，附加在父脚注末尾，如「……。（肺的应力：肺泡壁承受的牵张力）」。上一版 v1.5.1 修复：一篇笔记里多个词条分散在不同段落时，第一个角标之后的词条（如 ARDS、PEEP）会贴不上角标的问题，现已全部正常。以下为 v1.5 功能：① 手动加的角标现在贴在您涂黑的那个确切位置（记住涂黑处前后文），不再跳到全篇第一次出现的地方；并有词边界保护，像 ARDS 不会再嵌进 ARDSNet 中间。② 注释气泡新增「🤖 让AI改写」：点词条角标后可让 AI 按要求改写解释，改写要求可以随意修改（默认是"更通俗、更简短"），改写前自动存一版历史可回退。③ 气泡里涂黑注释文字中的生词，点「➕ 选词加角标」即可把它加为本篇待解释角标（不发 AI 请求），之后随批量解释一起让 AI 讲解。上一版 v1.4 手动批量角标：读正文时涂黑一个词，点弹出菜单的「➕ 加角标」，立即立一个灰色虚线空角标（不发 AI 请求，可连加多个）；读完后点「🤖 批量解释」按钮，把所有空角标一次性发给 AI，解释自动填回各角标变实色。另有 v1.3 词条脚注注释（正文词条旁 ① 小角标，点开看大白话，导出转 Obsidian 标准脚注）与 v1.1 交互式改稿（分栏、快捷指令、5 版历史可回退）。AI 请求保持不传 temperature / response_format（兼容 kimi-k2.6）。</p>
       <p><b>历史版本：</b>v1.2 默认改快模型（秒级响应）+ 分步进度提示（发送→思考→解析+用时秒数）；v1.1.1 修复手机词条菜单按钮；v1.1.2 AI 请求加 180 秒超时；v1.0.2 修复 AI 调用 400 报错</p>
       <p><b>数据安全：</b>所有笔记和 API Key 只保存在您本机浏览器（localStorage），不上传到任何服务器；清除浏览器数据会丢失笔记，请定期导出备份。</p>
       <p><b>如何导入 Obsidian：</b></p>
@@ -599,6 +611,7 @@ function callAI(topic, onOk, onErr, st){
   var model = modelSel.value;
   var payload = {
     model: model,
+    max_tokens: 8000, /* v1.7.2：调大回复长度上限，减少长文被截断 */
     messages: [
       { role: 'system', content:
         '【重要】必须只返回 JSON，不要返回任何其他文字、不要用 markdown 围栏。\n' +
@@ -646,11 +659,11 @@ function callAI(topic, onOk, onErr, st){
       onOk(parsed);
       return;
     }
-    /* v1.7.1 宽容模式：AI 没装信封、直接返回裸文章 → 智能识别采用 */
+    /* v1.7.1/v1.7.2 宽容模式：裸文章或截断 JSON 残件 → 智能识别采用（抢救到标题则用抢救标题） */
     var loose = looseArticleFrom(text);
     if(loose){
       if(st) st.stop();
-      onOk({ title: topic, content: loose, links: [] }, true);
+      onOk({ title: loose.title || topic, content: loose.content, links: [] }, true);
       return;
     }
     throw new Error(fmtParseErr(text));
@@ -669,15 +682,54 @@ function parseAIJson(text){
   var body = s.slice(i, j+1);
   try{ return JSON.parse(body); }catch(e){ return null; }
 }
+/* v1.7.2 JSON 残件抢救：AI 返回了 JSON 信封但被 max_tokens 截断（或首尾略脏）时，
+   从残件里抠出 content 正文与 title。返回 { title?, content } 或 null。
+   - 完整匹配：/"content"\s*:\s*"([\s\S]*?)"\s*[,}]/
+   - 截断兜底：/"content"\s*:\s*"([\s\S]*)$/ 抠到文末，再去掉末尾可能的 `"` / `",` 残尾
+   - 抠出的 content 做 JSON 字符串反转义：\\ 先占位 → \n \t \" → 还原 \ */
+function salvageJsonish(text){
+  var s = String(text).replace(/^\s+|\s+$/g, '');
+  if(s.charAt(0) !== '{' || s.indexOf('"content"') < 0) return null;
+  var raw = null;
+  var m = s.match(/"content"\s*:\s*"([\s\S]*?)"\s*[,}]/);
+  if(m){ raw = m[1]; }
+  else{
+    var m2 = s.match(/"content"\s*:\s*"([\s\S]*)$/);
+    if(!m2) return null;
+    raw = m2[1].replace(/"\s*,?\s*$/, ''); /* 去掉截断残尾可能的 `"` 或 `",` */
+  }
+  var content = raw
+    .replace(/\\\\/g, '\u0000')   /* 先占位，避免 \\n 被当成 \n */
+    .replace(/\\n/g, '\n')
+    .replace(/\\t/g, '\t')
+    .replace(/\\"/g, '"')
+    .replace(/\\\//g, '/')
+    .replace(/\u0000/g, '\\');        /* 还原真正的反斜杠 */
+  var out = { content: content };
+  var mt = s.match(/"title"\s*:\s*"([^"]*)"/);
+  if(mt && mt[1]) out.title = mt[1];
+  return out;
+}
 /* v1.7.1 宽容模式：AI 没按 JSON 信封、直接返回裸文章时智能识别。
-   剥离 ```json/``` 围栏后，去空白长度 ≥200 且无明显错误特征
-   （不以 error/抱歉/对不起 开头、不含 "code":）→ 返回可直接采用的正文文本，否则返回 null */
+   v1.7.2：剥离围栏后先「剥信封」——以 { 开头且含 "content" 的 JSON 残件走 salvageJsonish 抢救，
+   抢救出的正文再做既有校验；其余维持裸文章原逻辑。
+   校验：去空白长度 ≥200 且无明显错误特征（不以 error/抱歉/对不起 开头、不含 "code":）。
+   返回 { content, title? } 或 null（title 仅抢救到时有）。 */
 function looseArticleFrom(text){
   var s = String(text).replace(/```(?:json|JSON)?/g, '').replace(/^\s+|\s+$/g, '');
+  if(s.charAt(0) === '{' && s.indexOf('"content"') >= 0){
+    var sv = salvageJsonish(s);
+    if(!sv) return null;
+    var c = sv.content;
+    if(c.replace(/\s+/g, '').length < 200) return null;
+    if(/^(error|抱歉|对不起)/i.test(c)) return null;
+    if(c.indexOf('"code":') >= 0) return null;
+    return sv;
+  }
   if(s.replace(/\s+/g, '').length < 200) return null;
   if(/^(error|抱歉|对不起)/i.test(s)) return null;
   if(s.indexOf('"code":') >= 0) return null;
-  return s;
+  return { content: s };
 }
 /* v1.7.1 格式解析失败时的报错：附服务器原文前 150 字（沿用「服务器说」错误提示风格） */
 function fmtParseErr(text){
@@ -1640,6 +1692,7 @@ function callReviseAI(note, instruction, onOk, onErr, st){
   if(!key){ onErr('还没有填写 API Key。请先返回首页在「API 设置」里保存 Key。'); return; }
   var payload = {
     model: modelSel.value,
+    max_tokens: 8000, /* v1.7.2：调大回复长度上限，减少长文被截断 */
     messages: [
       { role: 'system', content:
         '【重要】必须只返回 JSON，不要返回任何其他文字、不要用 markdown 围栏。\n' +
@@ -1685,11 +1738,11 @@ function callReviseAI(note, instruction, onOk, onErr, st){
       onOk(parsed, false);
       return;
     }
-    /* v1.7.1 宽容模式：AI 没按信封格式、直接返回裸文章 → 智能识别采用（links 保持原有不变） */
+    /* v1.7.1/v1.7.2 宽容模式：裸文章或截断 JSON 残件 → 智能识别采用（links 保持原有不变；抢救到标题则用之） */
     var loose = looseArticleFrom(text);
     if(loose){
       if(st) st.stop();
-      onOk({ title: note.title, content: loose, links: (note.links || []).slice() }, true);
+      onOk({ title: loose.title || note.title, content: loose.content, links: (note.links || []).slice() }, true);
       return;
     }
     throw new Error(fmtParseErr(text));
@@ -1713,6 +1766,8 @@ btnDoRevise.addEventListener('click', function(){
     reviseLoading.style.display = 'none';
     btnDoRevise.disabled = false;
     pushHistory(note);
+    /* v1.7.2：抢救模式抠到标题则同步更新（正常 JSON 改稿 title 恒为原标题，不受影响） */
+    if(parsed.title && parsed.title !== note.title) note.title = parsed.title;
     note.content = parsed.content;
     note.links = parsed.links;
     note.updatedAt = Date.now();
