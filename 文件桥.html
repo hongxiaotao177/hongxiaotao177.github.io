@@ -4,6 +4,14 @@
  文件桥 —— AI 与手机文件夹之间的桥（单文件 HTML，第三个协同软件）
 ====================================================================
  修改记录：
+   v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗三节大白话——
+         ①取Kimi API Key（platform.moonshot.cn→API Key管理→新建，sk-开头，
+         创建时只完整显示一次，学习笔记/习题学习的AI设置里填）
+         ②取GitHub Token（先找坚果云存档；真要新建：github.com→头像→
+         Settings→Developer settings→Personal access tokens→Fine-grained
+         tokens→勾两个仓库+Contents读写+建议1年期；2026-08-30到期提醒）
+         ③文件桥用法（首用向导/传给AI/收AI文件/打包搬家/换新手机四步/
+         自检更新/只认Chrome三条纪律）
    v1.0  2026-08-02 初版（用户确认的"收发室大爷"方案）：
          - 文件夹授权：Chrome File System Access API（showDirectoryPicker），
            目录句柄存 IndexedDB（'bridge-db'/'kv'/'dir'），首次授权后免再问；
@@ -58,7 +66,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>文件桥 v1.0</title>
+<title>文件桥 v1.0.1</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #faf7f2; color: #3a3632; }
@@ -101,12 +109,24 @@
   .modal .opt:active { background: #f5efe4; }
   .modal .opt small { color: #9a8f80; }
   .log { font-size: 13px; color: #9a8f80; line-height: 1.8; white-space: pre-line; margin-top: 6px; max-height: 160px; overflow-y: auto; }
+  /* v1.0.1 使用说明弹窗 */
+  .help-sec { margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px dashed #eee4d4; }
+  .help-sec:last-of-type { border-bottom: none; }
+  .help-sec h4 { font-size: 15px; color: #6a5b47; margin-bottom: 6px; }
+  .help-sec p { font-size: 14px; line-height: 1.8; margin: 3px 0; }
   .gh-lab { display:block; margin-top: 6px; }
 </style>
 </head>
 <body>
-<header>📂 文件桥<span class="ver">v1.0</span></header>
+<header>📂 文件桥<span class="ver">v1.0.1</span></header>
 <div class="page">
+
+  <!-- 使用说明入口 -->
+  <div class="card" style="padding:10px 16px;">
+    <div class="btn-row" style="margin:0;">
+      <button class="ghost" id="btnHelp">❓ 使用说明（取Kimi Key / 取GitHub Token / 文件桥用法）</button>
+    </div>
+  </div>
 
   <!-- 开机向导卡：缺啥提醒啥 -->
   <div class="card hidden" id="wizard">
@@ -184,6 +204,49 @@
   </div>
 </div>
 
+<!-- 使用说明弹窗（v1.0.1） -->
+<div class="mask hidden" id="helpMask">
+  <div class="modal" style="max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch;">
+    <h3>❓ 使用说明</h3>
+
+    <div class="help-sec">
+      <h4>一、怎么取 Kimi API Key（学习笔记/习题学习里的AI都靠它）</h4>
+      <p>1. 浏览器打开网址：<b>platform.moonshot.cn</b></p>
+      <p>2. 登录（手机号验证码即可）</p>
+      <p>3. 点左侧「API Key 管理」→「新建 API Key」</p>
+      <p>4. 复制 sk- 开头那串 → 打开学习笔记/习题学习 → 填进「API 设置」保存</p>
+      <p class="hint">提醒：Key 只在创建时完整显示一次，丢了就再新建一个；这个Key要充钱才够用，几块钱能用很久。</p>
+    </div>
+
+    <div class="help-sec">
+      <h4>二、怎么取 GitHub Token（云备份/文件桥都靠它）</h4>
+      <p><b>先找旧的：</b>你已经有一个了！存在 坚果云 → 学习文件 → AI → 我设计的软件 → github token my own software.txt，复制粘贴就行，不用重新建。</p>
+      <p><b>真要新建：</b></p>
+      <p>1. 浏览器打开网址：<b>github.com</b> 并登录（打不开就多试几次或换时段）</p>
+      <p>2. 点右上角头像 →「Settings」→ 拉到最底「Developer settings」</p>
+      <p>3.「Personal access tokens」→「Fine-grained tokens」→「Generate new token」</p>
+      <p>4. 起个名字，有效期建议选1年；「Repository access」选 Only select repositories → 勾 hongxiaotao177.github.io 和 xuexi-backup 两个；Permissions 里 Contents 选 Read and write</p>
+      <p>5. 点 Generate → 复制 github_pat_ 开头那串 → 存进坚果云那个txt，再填进各软件的云设置</p>
+      <p class="hint">提醒：Token 2026-08-30 到期，到期前AI会提醒你换新的（建议选1年期）。</p>
+    </div>
+
+    <div class="help-sec">
+      <h4>三、文件桥怎么用（AI 和文件夹之间的收发室）</h4>
+      <p><b>第一次用：</b>打开软件 → 向导卡领着走：① 授权「医学软件」文件夹（Chrome问一次点允许）② 填Token保存。齐了向导卡自动消失。</p>
+      <p><b>你 → AI：</b>把文件丢进文件夹 → 文件桥里找到它 → 点「⬆️ 传给AI」→ 到对话里告诉AI文件名。AI读完会清掉中转，不占仓库。</p>
+      <p><b>AI → 你：</b>AI说要给你文件 → 打开文件桥 → 点「📥 检查AI发来的文件」→ 文件自动存进文件夹。</p>
+      <p><b>打包搬家：</b>「📦 打包这个文件夹」→ 给自己（带随行配置卡，新手机一键导入Token，包别发别人）/ 给别人（干净软件）。</p>
+      <p><b>换新手机：</b>解压包 → Chrome打开文件桥 → 授权文件夹 → 发现随行配置卡点一键导入 → 另外两个软件各点「从云端恢复」→ 完事。</p>
+      <p><b>自检与更新：</b>每次打开自动检查线路和新版；有新版点「⬇️ 下载整套软件」，三个软件一起换新。</p>
+      <p class="hint">注意：只认 Chrome；文件夹授权只认你亲手点"允许"；Token存在浏览器里，换浏览器要重填。</p>
+    </div>
+
+    <div class="btn-row">
+      <button class="ghost" id="helpClose">关闭</button>
+    </div>
+  </div>
+</div>
+
 <!-- 打包弹窗 -->
 <div class="mask hidden" id="packMask">
   <div class="modal">
@@ -226,7 +289,7 @@ function fmtTime(t){ return new Date(t).toLocaleString(); }
 
 /* ==================== GitHub 通信（移植学习笔记/习题学习同套） ==================== */
 var BR_GH_USER = 'br_gh_user', BR_GH_TOK = 'br_gh_tok', BR_GH_REPO = 'br_gh_repo', BR_GH_CHECK = 'br_gh_check';
-var SW_VERSION = '1.0';
+var SW_VERSION = '1.0.1';
 var ghVerPending = null;
 
 function ghCfg(){
@@ -858,6 +921,10 @@ $('updDlBtn').addEventListener('click', ghDownloadNew);
 $('updClose').addEventListener('click', updHide);
 $('updCfgYes').addEventListener('click', importCfg);
 $('updCfgNo').addEventListener('click', updHide);
+/* v1.0.1 使用说明弹窗 */
+$('btnHelp').addEventListener('click', function(){ $('helpMask').classList.remove('hidden'); });
+$('helpClose').addEventListener('click', function(){ $('helpMask').classList.add('hidden'); });
+$('helpMask').addEventListener('click', function(e){ if(e.target === this) this.classList.add('hidden'); });
 
 fillGhInputs();
 try{
