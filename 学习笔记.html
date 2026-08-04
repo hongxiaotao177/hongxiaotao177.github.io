@@ -4,6 +4,14 @@
  学习笔记·双链版 —— 单文件 HTML 工具
 ====================================================================
  修改记录：
+   v2.4.0 2026-08-03 文献库一期上线：首页「📄 文献库」卡片——导入PDF（可多选）→pdf.js提取
+         文字（首次联网拉组件，之后缓存离线可用）→AI自动起中文标题+归类（无Key降级为
+         文件名+未分类，不阻塞）→类目分组列表+搜索+阅读页（改标题/类目、复制全文、删除）。
+         提取文字存IndexedDB(lit-db/papers)；目录元数据存localStorage 'bijiben_lit_v1'
+         并随 notes-backup.json 的 payload.litMeta 云备份/恢复；PDF原件不进云备份
+         （坚果云「医学文献」文件夹按文件名检索，用户拍板2026-08-02）。
+         已知坑：扫描图片版PDF读不出文字会明确提示跳过；pdf.js用3.11.174 legacy版
+         （最后一个非module版），worker用Blob URL加载以便缓存复用。
    v2.3.0 2026-08-03 手写笔记上线（不依赖AI）：首页「✍️ 自己手写」建空白笔记；
          详情页「✏️ 自己写/改」进手写模式（标题+正文直接打字，支持markdown记号），
          保存即入库并触发自动云备份。全程不发任何AI请求。
@@ -687,6 +695,17 @@
       <div class="msg" id="genMsg"></div>
     </div>
 
+    <!-- v2.4 文献库（一期）：导入PDF→提取文字→AI自动归类起名→分类列表/搜索/看文字 -->
+    <div class="card" id="litCard">
+      <h2>📄 文献库</h2>
+      <button class="btn" id="btnLitImport">📥 导入PDF文献（可多选）</button>
+      <input type="file" id="litFile" accept="application/pdf,.pdf" multiple style="display:none;">
+      <div id="litProg"></div>
+      <input type="text" id="litSearch" placeholder="🔍 搜索文献标题/文件名…" style="margin-top:10px;">
+      <div id="litList"></div>
+      <div class="hint">这里只存提取出来的文字（进云备份）；PDF原件请放坚果云「医学文献」文件夹，按文件名就能找到。没填API Key也能导入，只是自动归类会变成「未分类」。</div>
+    </div>
+
     <div class="card note-card">
       <h2>📚 我的笔记库</h2>
       <input type="text" id="searchInput" placeholder="🔍 搜索标题…">
@@ -790,6 +809,28 @@
       </div>
       <div style="margin-top:18px; text-align:right;">
         <button class="btn danger" id="btnDelete">🗑 删除本篇</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- v2.4 文献阅读页（一期：看提取的文字、改标题/类目、删除） -->
+  <div id="viewLit" class="hidden">
+    <button class="btn secondary" id="btnLitBack">← 返回文献库</button>
+    <div class="card" style="margin-top:12px;">
+      <label for="litTitleIn">文献标题</label>
+      <input type="text" id="litTitleIn">
+      <label for="litCatIn" style="margin-top:8px;">类目</label>
+      <input type="text" id="litCatIn" list="litCatList">
+      <datalist id="litCatList"></datalist>
+      <div class="hint" id="litMetaLine" style="margin-top:6px;"></div>
+      <div class="btn-row" style="margin-top:10px;">
+        <button class="btn" id="btnLitSave">💾 保存标题/类目</button>
+        <button class="btn secondary" id="btnLitCopy">📋 复制全文</button>
+      </div>
+      <div class="msg" id="litMsg"></div>
+      <div id="litTextView" style="white-space:pre-wrap; font-size:16px; line-height:1.7; margin-top:12px; max-height:60vh; overflow-y:auto; background:#fbf7ef; border:1px solid #e5d9c3; border-radius:10px; padding:12px;"></div>
+      <div style="margin-top:18px; text-align:right;">
+        <button class="btn danger" id="btnLitDel">🗑 删除这篇文献</button>
       </div>
     </div>
   </div>
@@ -992,7 +1033,7 @@
   <details class="about">
     <summary>📋 关于 / 版本说明</summary>
     <div class="inner">
-      <p><b>版本：</b>v2.3.0（2026-08-03）：手写笔记上线——首页「✍️ 自己手写（空白笔记，不用AI）」一键建空白笔记，进去直接打字写；详情页新增「✍️ 自己写/改」，任何一篇笔记（包括AI写的）都能随时进入手写模式，改标题、改正文，点「💾 保存手写内容」即入库并自动云备份。全程不发任何AI请求，没网、没Key也能写。上一版 v2.2.2（2026-08-02）：「⬇️ 下载整套软件」升级为三件套——学习笔记+习题学习+文件桥（新成员，AI 和手机文件夹之间的桥），一次下载全拿齐。上一版 v2.2.1（2026-08-02）：纯文档版——说明里记下"数据备份和软件发布共用一个仓库（xuexi-backup），不再建新仓库"的决定，功能与 v2.2 完全一致。上一版 v2.2（2026-08-02）：出复习题上线——详情页新增「📝 出复习题」（整篇出题），涂黑一大段文字的弹出菜单新增「📝 就出这段出题」（段落出题）。题数可选1~10道（默认5），出题要求可自己改；AI 出好后可预览修改，点「📤 发送到习题学习」，打开习题学习软件会自动弹出导入窗（两个软件要用同一个浏览器打开才收得到；收不到就点「📋 复制题目txt」去那边粘贴导入）。云备份卡片新增「⬇️ 下载整套软件」：学习笔记+习题学习两个最新版一起下载到手机（浏览器首次可能问"允许下载多个文件"，点允许；想自己选保存位置：Chrome 设置→下载内容→打开「询问保存位置」）。上一版 v2.1.1（2026-08-01）：纯文档版——把「软件查新（版本自检）的完整设计思路+测试踩坑记录」写进了代码顶部的开发备忘（含发版清单六步、移植到其他软件的方法），以后新对话的 AI 看说明就能照着做，不用反复试。功能与 v2.1 完全一致。上一版 v2.1（2026-08-01）：开机自检上线——每次打开软件会自动检查三件事并弹条告诉您：① GitHub 线路通不通 ② 网上有没有更新的版本 ③ 需不需要下载。有新版时条上有「⬇️ 下载新版到本机」按钮，点一下新版就下载到手机「下载」目录，之后打开新文件替换旧的即可；已是最新=绿条（8 秒自动收）；连不上=红条（不耽误使用，笔记都在本机，网络好了备份自动重试）。云备份卡片里也有「🔍 自检：线路 + 新版本」按钮可随时手动查。上一版 v2.0.2（2026-08-01）：「关于」页新增「GitHub 自助指南」（建仓库/上传/下载/换设备四节大白话教程，在本页下方）。上一版 v2.0（2026-08-01）：云备份上线——笔记自动同步到您的 GitHub 私有仓库（首页「☁️ 云备份」卡片里填一次用户名、Token、仓库名即可；之后每次改动后 10 秒自动备份），换设备/清缓存后可点「📥 从云端恢复」一键找回；Token 只存在本机浏览器，不外传。上一版 v1.9（2026-08-01）：涂黑大段文字 → 弹出菜单新增「🦴 精炼成骨头」，AI 把这段提炼成 3~5 条要点（骨头）留在正文，原文自动折成一个小胶囊标签压在骨头后面；骨头不满意可涂黑单条让 AI 只改这一条，或点「🔄 再改一次」回提示词重发；标签名可自己改，也可点「🤖 让AI起名」（名字自动带「原文：」前缀）。注意：之后点标签里的「📤 释放这段」只把标签内的原文还原回正文，已提炼的骨头列表会保留。上一版 v1.8.1（2026-08-01）：标签胶囊瘦身——内外边距和字号都收紧，胶囊只占约正文一行高，不再占版面。上一版 v1.8（2026-08-01）：大段文字涂黑 → 弹出菜单新增「🏷 折成标签」，可把太长但有用的段落折叠成一个小胶囊标签（可自己起名，也可点「🤖 让AI起名」让 AI 概括），点一下标签就展开全文，标签里点「📤 释放这段」可还原回正文；导出到 Obsidian 就是原生 callout 折叠块，默认收起，一字不丢。上一版 v1.7.3（2026-08-01）：替换这段的定位加固为三级（精确→忽略格式模糊→段落大意），模糊定位命中会先让您确认再替换，误报"找不到原文"大幅减少。上一版 v1.7.2（2026-08-01）：修复——当 AI 回信太长被中途截断时，以前会把一段露出 JSON 代码的文字收进笔记正文，现在软件会自动"剥信封"，只把真正的正文收进笔记，标题也能一起认出来；同时把 AI 回复长度上限调大，减少被截断的情况。上一版 v1.7.1（2026-08-01）：让 AI 改稿时，AI 偶尔不按约定格式回信（直接返回裸文章），以前会报「格式不对」让您重试，现在软件能智能识别裸文章并直接采用，改稿照常完成；同时把格式要求写得更醒目，降低这种情况发生的概率。上一版 v1.7（2026-08-01）：对照预览里的加粗、列表现在按真实样式显示，不再露出一堆星号；AI 新稿里哪一小段不满意，涂黑它就会弹出小条，让 AI 只改这一小段（只套一层，最后点「✅ 采用」才存历史）。另外把手机上按钮"点了没反应"的两个老坑记进了开发备忘，以后维护不会再犯。上一版 v1.6（2026-07-31）新功能：涂黑一大段文字 → 弹出菜单点「🔄 替换这段」→ 面板里点预设要求（可叠加多个）或自由填写/补充 → AI 只改写这一段 → 预览对照（上原文下新稿）后点「✅ 采用」才生效，改前自动存一版历史，可点「让 AI 改」里的「↩️ 回退上一版」找回原稿。上一版 v1.5.2：注释里的生词，正文没有也能加角标——在注释气泡里涂黑注释文字中的生词点「➕ 选词加角标」，它会变成一个贴在气泡里的小角标（灰色虚线=待解释），点角标可钻进去看/编辑，「← 返回」回到上一条；随「批量解释」一起让 AI 讲解（AI 会参考它所在的那条注释文字）；导出时嵌套解释不单独出脚注，附加在父脚注末尾，如「……。（肺的应力：肺泡壁承受的牵张力）」。上一版 v1.5.1 修复：一篇笔记里多个词条分散在不同段落时，第一个角标之后的词条（如 ARDS、PEEP）会贴不上角标的问题，现已全部正常。以下为 v1.5 功能：① 手动加的角标现在贴在您涂黑的那个确切位置（记住涂黑处前后文），不再跳到全篇第一次出现的地方；并有词边界保护，像 ARDS 不会再嵌进 ARDSNet 中间。② 注释气泡新增「🤖 让AI改写」：点词条角标后可让 AI 按要求改写解释，改写要求可以随意修改（默认是"更通俗、更简短"），改写前自动存一版历史可回退。③ 气泡里涂黑注释文字中的生词，点「➕ 选词加角标」即可把它加为本篇待解释角标（不发 AI 请求），之后随批量解释一起让 AI 讲解。上一版 v1.4 手动批量角标：读正文时涂黑一个词，点弹出菜单的「➕ 加角标」，立即立一个灰色虚线空角标（不发 AI 请求，可连加多个）；读完后点「🤖 批量解释」按钮，把所有空角标一次性发给 AI，解释自动填回各角标变实色。另有 v1.3 词条脚注注释（正文词条旁 ① 小角标，点开看大白话，导出转 Obsidian 标准脚注）与 v1.1 交互式改稿（分栏、快捷指令、5 版历史可回退）。AI 请求保持不传 temperature / response_format（兼容 kimi-k2.6）。</p>
+      <p><b>版本：</b>v2.4.0（2026-08-03）：文献库一期上线——首页新增「📄 文献库」：点「📥 导入PDF文献」可多选导入，软件自动提取文字、让AI起中文标题并归类；列表按类目分组、可搜索；点文献名可看全文、改标题/类目、复制全文、删除。没填API Key也能导入（自动归入「未分类」）。注意：这里只存提取的文字（会云备份）；PDF原件请放坚果云「医学文献」文件夹，按文件名就能找到；扫描图片版PDF读不出文字，会提示跳过。第一次导入需要联网加载一次PDF阅读组件，之后离线可用。上一版 v2.3.0（2026-08-03）：手写笔记上线——首页「✍️ 自己手写（空白笔记，不用AI）」一键建空白笔记，进去直接打字写；详情页新增「✍️ 自己写/改」，任何一篇笔记（包括AI写的）都能随时进入手写模式，改标题、改正文，点「💾 保存手写内容」即入库并自动云备份。全程不发任何AI请求，没网、没Key也能写。上一版 v2.2.2（2026-08-02）：「⬇️ 下载整套软件」升级为三件套——学习笔记+习题学习+文件桥（新成员，AI 和手机文件夹之间的桥），一次下载全拿齐。上一版 v2.2.1（2026-08-02）：纯文档版——说明里记下"数据备份和软件发布共用一个仓库（xuexi-backup），不再建新仓库"的决定，功能与 v2.2 完全一致。上一版 v2.2（2026-08-02）：出复习题上线——详情页新增「📝 出复习题」（整篇出题），涂黑一大段文字的弹出菜单新增「📝 就出这段出题」（段落出题）。题数可选1~10道（默认5），出题要求可自己改；AI 出好后可预览修改，点「📤 发送到习题学习」，打开习题学习软件会自动弹出导入窗（两个软件要用同一个浏览器打开才收得到；收不到就点「📋 复制题目txt」去那边粘贴导入）。云备份卡片新增「⬇️ 下载整套软件」：学习笔记+习题学习两个最新版一起下载到手机（浏览器首次可能问"允许下载多个文件"，点允许；想自己选保存位置：Chrome 设置→下载内容→打开「询问保存位置」）。上一版 v2.1.1（2026-08-01）：纯文档版——把「软件查新（版本自检）的完整设计思路+测试踩坑记录」写进了代码顶部的开发备忘（含发版清单六步、移植到其他软件的方法），以后新对话的 AI 看说明就能照着做，不用反复试。功能与 v2.1 完全一致。上一版 v2.1（2026-08-01）：开机自检上线——每次打开软件会自动检查三件事并弹条告诉您：① GitHub 线路通不通 ② 网上有没有更新的版本 ③ 需不需要下载。有新版时条上有「⬇️ 下载新版到本机」按钮，点一下新版就下载到手机「下载」目录，之后打开新文件替换旧的即可；已是最新=绿条（8 秒自动收）；连不上=红条（不耽误使用，笔记都在本机，网络好了备份自动重试）。云备份卡片里也有「🔍 自检：线路 + 新版本」按钮可随时手动查。上一版 v2.0.2（2026-08-01）：「关于」页新增「GitHub 自助指南」（建仓库/上传/下载/换设备四节大白话教程，在本页下方）。上一版 v2.0（2026-08-01）：云备份上线——笔记自动同步到您的 GitHub 私有仓库（首页「☁️ 云备份」卡片里填一次用户名、Token、仓库名即可；之后每次改动后 10 秒自动备份），换设备/清缓存后可点「📥 从云端恢复」一键找回；Token 只存在本机浏览器，不外传。上一版 v1.9（2026-08-01）：涂黑大段文字 → 弹出菜单新增「🦴 精炼成骨头」，AI 把这段提炼成 3~5 条要点（骨头）留在正文，原文自动折成一个小胶囊标签压在骨头后面；骨头不满意可涂黑单条让 AI 只改这一条，或点「🔄 再改一次」回提示词重发；标签名可自己改，也可点「🤖 让AI起名」（名字自动带「原文：」前缀）。注意：之后点标签里的「📤 释放这段」只把标签内的原文还原回正文，已提炼的骨头列表会保留。上一版 v1.8.1（2026-08-01）：标签胶囊瘦身——内外边距和字号都收紧，胶囊只占约正文一行高，不再占版面。上一版 v1.8（2026-08-01）：大段文字涂黑 → 弹出菜单新增「🏷 折成标签」，可把太长但有用的段落折叠成一个小胶囊标签（可自己起名，也可点「🤖 让AI起名」让 AI 概括），点一下标签就展开全文，标签里点「📤 释放这段」可还原回正文；导出到 Obsidian 就是原生 callout 折叠块，默认收起，一字不丢。上一版 v1.7.3（2026-08-01）：替换这段的定位加固为三级（精确→忽略格式模糊→段落大意），模糊定位命中会先让您确认再替换，误报"找不到原文"大幅减少。上一版 v1.7.2（2026-08-01）：修复——当 AI 回信太长被中途截断时，以前会把一段露出 JSON 代码的文字收进笔记正文，现在软件会自动"剥信封"，只把真正的正文收进笔记，标题也能一起认出来；同时把 AI 回复长度上限调大，减少被截断的情况。上一版 v1.7.1（2026-08-01）：让 AI 改稿时，AI 偶尔不按约定格式回信（直接返回裸文章），以前会报「格式不对」让您重试，现在软件能智能识别裸文章并直接采用，改稿照常完成；同时把格式要求写得更醒目，降低这种情况发生的概率。上一版 v1.7（2026-08-01）：对照预览里的加粗、列表现在按真实样式显示，不再露出一堆星号；AI 新稿里哪一小段不满意，涂黑它就会弹出小条，让 AI 只改这一小段（只套一层，最后点「✅ 采用」才存历史）。另外把手机上按钮"点了没反应"的两个老坑记进了开发备忘，以后维护不会再犯。上一版 v1.6（2026-07-31）新功能：涂黑一大段文字 → 弹出菜单点「🔄 替换这段」→ 面板里点预设要求（可叠加多个）或自由填写/补充 → AI 只改写这一段 → 预览对照（上原文下新稿）后点「✅ 采用」才生效，改前自动存一版历史，可点「让 AI 改」里的「↩️ 回退上一版」找回原稿。上一版 v1.5.2：注释里的生词，正文没有也能加角标——在注释气泡里涂黑注释文字中的生词点「➕ 选词加角标」，它会变成一个贴在气泡里的小角标（灰色虚线=待解释），点角标可钻进去看/编辑，「← 返回」回到上一条；随「批量解释」一起让 AI 讲解（AI 会参考它所在的那条注释文字）；导出时嵌套解释不单独出脚注，附加在父脚注末尾，如「……。（肺的应力：肺泡壁承受的牵张力）」。上一版 v1.5.1 修复：一篇笔记里多个词条分散在不同段落时，第一个角标之后的词条（如 ARDS、PEEP）会贴不上角标的问题，现已全部正常。以下为 v1.5 功能：① 手动加的角标现在贴在您涂黑的那个确切位置（记住涂黑处前后文），不再跳到全篇第一次出现的地方；并有词边界保护，像 ARDS 不会再嵌进 ARDSNet 中间。② 注释气泡新增「🤖 让AI改写」：点词条角标后可让 AI 按要求改写解释，改写要求可以随意修改（默认是"更通俗、更简短"），改写前自动存一版历史可回退。③ 气泡里涂黑注释文字中的生词，点「➕ 选词加角标」即可把它加为本篇待解释角标（不发 AI 请求），之后随批量解释一起让 AI 讲解。上一版 v1.4 手动批量角标：读正文时涂黑一个词，点弹出菜单的「➕ 加角标」，立即立一个灰色虚线空角标（不发 AI 请求，可连加多个）；读完后点「🤖 批量解释」按钮，把所有空角标一次性发给 AI，解释自动填回各角标变实色。另有 v1.3 词条脚注注释（正文词条旁 ① 小角标，点开看大白话，导出转 Obsidian 标准脚注）与 v1.1 交互式改稿（分栏、快捷指令、5 版历史可回退）。AI 请求保持不传 temperature / response_format（兼容 kimi-k2.6）。</p>
       <p><b>历史版本：</b>v1.2 默认改快模型（秒级响应）+ 分步进度提示（发送→思考→解析+用时秒数）；v1.1.1 修复手机词条菜单按钮；v1.1.2 AI 请求加 180 秒超时；v1.0.2 修复 AI 调用 400 报错</p>
       <p><b>数据安全：</b>所有笔记和 API Key 只保存在您本机浏览器（localStorage），不上传到任何服务器；清除浏览器数据会丢失笔记，请定期导出备份。</p>
       <p><b>数据存放与备份同步规矩（v2.0.1 起，给洪老师和维护者共同遵守）：</b></p>
@@ -2352,6 +2393,291 @@ $('btnBlank').addEventListener('click', function(){
   setHandOpen(true);
   popToast('📝 空白笔记建好了，起个标题直接写', 2600);
 });
+
+/* ==================== v2.4 文献库（一期） ==================== */
+/* 设计：提取的文字存 IndexedDB（可能很大）；目录元数据（标题/类目/文件名/页数/字数）
+   存 localStorage 'bijiben_lit_v1'，并随 notes-backup.json 一起云备份（payload.litMeta）。
+   PDF 原件不进云备份——存坚果云「医学文献」文件夹，按文件名检索（用户拍板 2026-08-02）。
+   pdf.js 首次从 CDN 拉取后缓存进 IndexedDB（kv 仓），之后离线也能提取文字。 */
+var LIT_LS = 'bijiben_lit_v1';
+var PDFJS_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+var PDFJS_WORKER_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+function loadLitMeta(){
+  try{ var v = JSON.parse(localStorage.getItem(LIT_LS) || '[]'); return Array.isArray(v) ? v : []; }
+  catch(e){ return []; }
+}
+function saveLitMeta(list){ localStorage.setItem(LIT_LS, JSON.stringify(list)); }
+
+/* IndexedDB（lit-db）：papers={id,text}；kv=pdf.js缓存等杂项 */
+function litDbOpen(){
+  return new Promise(function(res, rej){
+    var rq = indexedDB.open('lit-db', 1);
+    rq.onupgradeneeded = function(){
+      var db = rq.result;
+      if(!db.objectStoreNames.contains('papers')) db.createObjectStore('papers', { keyPath: 'id' });
+      if(!db.objectStoreNames.contains('kv')) db.createObjectStore('kv');
+    };
+    rq.onsuccess = function(){ res(rq.result); };
+    rq.onerror = function(){ rej(rq.error); };
+  });
+}
+function litIdbPut(store, val, key){
+  return litDbOpen().then(function(db){
+    return new Promise(function(res, rej){
+      var tx = db.transaction(store, 'readwrite');
+      var rq = key !== undefined ? tx.objectStore(store).put(val, key) : tx.objectStore(store).put(val);
+      rq.onsuccess = function(){ res(); }; rq.onerror = function(){ rej(rq.error); };
+    });
+  });
+}
+function litIdbGet(store, key){
+  return litDbOpen().then(function(db){
+    return new Promise(function(res, rej){
+      var rq = db.transaction(store, 'readonly').objectStore(store).get(key);
+      rq.onsuccess = function(){ res(rq.result); }; rq.onerror = function(){ rej(rq.error); };
+    });
+  });
+}
+function litIdbDel(store, key){
+  return litDbOpen().then(function(db){
+    return new Promise(function(res, rej){
+      var rq = db.transaction(store, 'readwrite').objectStore(store).delete(key);
+      rq.onsuccess = function(){ res(); }; rq.onerror = function(){ rej(rq.error); };
+    });
+  });
+}
+
+/* pdf.js 加载：内存→IndexedDB缓存→CDN；worker 用 Blob URL（缓存的代码文本也能用） */
+var _pdfjsReady = null;
+function pdfjsEnsure(){
+  if(_pdfjsReady) return _pdfjsReady;
+  _pdfjsReady = litIdbGet('kv', 'pdfjs').then(function(cached){
+    if(cached && cached.lib && cached.worker){
+      var s = document.createElement('script'); s.textContent = cached.lib; document.head.appendChild(s);
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(new Blob([cached.worker], { type: 'text/javascript' }));
+      return;
+    }
+    return Promise.all([fetch(PDFJS_URL), fetch(PDFJS_WORKER_URL)]).then(function(rs){
+      if(!rs[0].ok || !rs[1].ok) throw new Error('pdf.js 下载失败');
+      return Promise.all([rs[0].text(), rs[1].text()]);
+    }).then(function(txts){
+      var s = document.createElement('script'); s.textContent = txts[0]; document.head.appendChild(s);
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(new Blob([txts[1]], { type: 'text/javascript' }));
+      litIdbPut('kv', { lib: txts[0], worker: txts[1], t: Date.now() }, 'pdfjs').catch(function(){});
+    });
+  }).catch(function(e){
+    _pdfjsReady = null; /* 失败允许重试 */
+    throw new Error('第一次导入需要联网加载PDF阅读组件，请网络好时再试一次。');
+  });
+  return _pdfjsReady;
+}
+
+/* 提取PDF全部文字（逐页拼，页间换行） */
+function pdfExtractText(buf){
+  return pdfjsEnsure().then(function(){
+    return window.pdfjsLib.getDocument({ data: buf }).promise;
+  }).then(function(doc){
+    var n = doc.numPages, parts = [];
+    var p = Promise.resolve();
+    for(var i = 1; i <= n; i++){
+      (function(pg){
+        p = p.then(function(){
+          return doc.getPage(pg).then(function(page){
+            return page.getTextContent().then(function(tc){
+              var line = tc.items.map(function(it){ return it.str; }).join(' ');
+              parts.push(line);
+            });
+          });
+        });
+      })(i);
+    }
+    return p.then(function(){ return { pages: n, text: parts.join('\n') }; });
+  });
+}
+
+/* AI 自动归类起名：发前3000字，回严格JSON {title,category}；任何失败都不阻塞导入 */
+function callLitClassify(head, filename, cats, onOk){
+  var fallback = { title: filename.replace(/\.pdf$/i, ''), category: '未分类' };
+  var key = (localStorage.getItem(LS_KEY) || '').trim();
+  if(!key){ onOk(fallback); return; }
+  var payload = {
+    model: modelSel.value,
+    messages: [
+      { role: 'system', content: '你是医学文献整理助手。根据文献开头文字，用中文回答：①给文献起一个准确简短的中文标题（含研究主题，20字内）②归入一个类目。' +
+        (cats.length ? '优先从现有类目里选：' + cats.join('、') + '；都不合适才新建一个简短类目名（2~6字）。' : '起一个简短的类目名（2~6字），如：呼吸、循环、感染、营养。') +
+        '只返回一个JSON对象：{"title":"…","category":"…"}，不要markdown围栏，不要任何解释。' },
+      { role: 'user', content: '文件名：' + filename + '\n\n文献开头：\n' + head }
+    ],
+    max_tokens: 1000
+  };
+  fetchWithTimeout('https://api.moonshot.cn/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+    body: JSON.stringify(payload)
+  }).then(function(resp){
+    if(!resp.ok) throw new Error('bad');
+    return resp.json();
+  }).then(function(data){
+    var txt = data.choices[0].message.content || '';
+    txt = txt.replace(/```json|```/g, '');
+    var m = txt.match(/\{[\s\S]*\}/);
+    var obj = m ? JSON.parse(m[0]) : null;
+    if(!obj || !obj.title) throw new Error('bad');
+    onOk({ title: String(obj.title).slice(0, 60), category: String(obj.category || '未分类').slice(0, 20) });
+  }).catch(function(){ onOk(fallback); });
+}
+
+/* 导入流程：逐文件 提取→归类→入库，进度逐行显示 */
+function litProgLine(text, done){
+  var div = document.createElement('div');
+  div.className = 'hint';
+  div.style.marginTop = '6px';
+  div.textContent = text;
+  $('litProg').appendChild(div);
+  return div;
+}
+function litImportFiles(files){
+  var list = [];
+  for(var i = 0; i < files.length; i++){
+    if(/\.pdf$/i.test(files[i].name) || files[i].type === 'application/pdf') list.push(files[i]);
+  }
+  if(list.length === 0){ popToast('请选择 PDF 文件', 2200); return; }
+  $('btnLitImport').disabled = true;
+  var idx = 0;
+  function next(){
+    if(idx >= list.length){
+      $('btnLitImport').disabled = false;
+      $('litFile').value = '';
+      renderLitList();
+      popToast('📄 文献导入完成（' + list.length + ' 篇）', 3000);
+      return;
+    }
+    var f = list[idx]; idx++;
+    var line = litProgLine('⏳ ' + f.name + '：正在提取文字…（' + idx + '/' + list.length + '）');
+    f.arrayBuffer().then(function(buf){
+      return pdfExtractText(buf);
+    }).then(function(r){
+      var text = (r.text || '').replace(/\s+\n/g, '\n').trim();
+      if(text.length < 50) throw new Error('这篇PDF读不出文字（可能是扫描图片版），暂不支持。');
+      line.textContent = '⏳ ' + f.name + '：AI 正在起名归类…（' + idx + '/' + list.length + '）';
+      return new Promise(function(res){
+        var cats = loadLitMeta().map(function(m){ return m.category; })
+          .filter(function(v, i, a){ return v && a.indexOf(v) === i; });
+        callLitClassify(text.slice(0, 3000), f.name, cats, function(cls){
+          res({ text: text, pages: r.pages, cls: cls });
+        });
+      });
+    }).then(function(r){
+      var id = uid();
+      return litIdbPut('papers', { id: id, text: r.text }).then(function(){
+        var meta = loadLitMeta();
+        meta.unshift({ id: id, title: r.cls.title, category: r.cls.category,
+          filename: f.name, pages: r.pages, chars: r.text.length, t: Date.now() });
+        saveLitMeta(meta);
+        line.textContent = '✅ ' + f.name + ' → 「' + r.cls.title + '」（' + r.cls.category + '）';
+      });
+    }).catch(function(e){
+      line.textContent = '❌ ' + f.name + '：' + ((e && e.message) || '导入失败，跳过');
+    }).then(function(){ next(); });
+  }
+  next();
+}
+
+/* 文献库列表：按类目分组 + 搜索 */
+function renderLitList(){
+  var kw = ($('litSearch').value || '').replace(/^\s+|\s+$/g, '').toLowerCase();
+  var meta = loadLitMeta();
+  if(kw) meta = meta.filter(function(m){
+    return (m.title || '').toLowerCase().indexOf(kw) >= 0 || (m.filename || '').toLowerCase().indexOf(kw) >= 0;
+  });
+  var box = $('litList');
+  if(meta.length === 0){
+    box.innerHTML = '<div class="hint" style="margin-top:10px;">' + (kw ? '没有搜到相关文献。' : '还没有文献，点上方「📥 导入PDF文献」开始。') + '</div>';
+    return;
+  }
+  var groups = {};
+  meta.forEach(function(m){ var c = m.category || '未分类'; (groups[c] = groups[c] || []).push(m); });
+  var cats = Object.keys(groups).sort(function(a, b){
+    if(a === '未分类') return 1; if(b === '未分类') return -1; return a.localeCompare(b, 'zh');
+  });
+  var html = '';
+  cats.forEach(function(c){
+    html += '<div style="margin-top:12px; font-weight:bold; color:#6b5638;">📂 ' + escapeHtml(c) + '（' + groups[c].length + '）</div>';
+    groups[c].forEach(function(m){
+      html += '<div class="note-item lit-item" data-id="' + m.id + '" style="cursor:pointer;">' +
+        '<h3>' + escapeHtml(m.title) + '</h3>' +
+        '<p class="excerpt">' + escapeHtml(m.filename) + ' · ' + (m.pages || '?') + '页 · ' +
+        Math.round((m.chars || 0) / 1000) + '千字 · ' + fmtTime(m.t) + '</p></div>';
+    });
+  });
+  box.innerHTML = html;
+}
+
+/* 文献阅读页 */
+var currentLitId = null;
+function openLit(id){
+  var meta = loadLitMeta().filter(function(m){ return m.id === id; })[0];
+  if(!meta){ renderLitList(); return; }
+  currentLitId = id;
+  $('litTitleIn').value = meta.title;
+  $('litCatIn').value = meta.category || '未分类';
+  $('litMetaLine').textContent = meta.filename + ' · ' + (meta.pages || '?') + '页 · ' + fmtTime(meta.t);
+  $('litMsg').className = 'msg';
+  $('litTextView').textContent = '（正在读取文字…）';
+  var cats = loadLitMeta().map(function(m){ return m.category; }).filter(function(v, i, a){ return v && a.indexOf(v) === i; });
+  $('litCatList').innerHTML = cats.map(function(c){ return '<option value="' + escapeHtml(c) + '">'; }).join('');
+  viewHome.classList.add('hidden');
+  $('viewLit').classList.remove('hidden');
+  window.scrollTo(0, 0);
+  litIdbGet('papers', id).then(function(r){
+    $('litTextView').textContent = (r && r.text) ? r.text : '（本机没有这篇的文字——可能是从云端恢复的目录，重新导入同名PDF即可）';
+  });
+}
+
+$('btnLitImport').addEventListener('click', function(){ $('litFile').click(); });
+$('litFile').addEventListener('change', function(){ litImportFiles($('litFile').files); });
+$('litSearch').addEventListener('input', renderLitList);
+$('litList').addEventListener('click', function(e){
+  var el = e.target;
+  while(el && el !== $('litList')){
+    if(el.getAttribute && el.getAttribute('data-id')){ openLit(el.getAttribute('data-id')); return; }
+    el = el.parentNode;
+  }
+});
+$('btnLitBack').addEventListener('click', function(){
+  $('viewLit').classList.add('hidden');
+  viewHome.classList.remove('hidden');
+  renderLitList();
+});
+$('btnLitSave').addEventListener('click', function(){
+  var t = $('litTitleIn').value.replace(/^\s+|\s+$/g, '');
+  var c = $('litCatIn').value.replace(/^\s+|\s+$/g, '') || '未分类';
+  if(!t){ showMsg($('litMsg'), '标题不能为空。', 'err'); return; }
+  var meta = loadLitMeta();
+  for(var i = 0; i < meta.length; i++){
+    if(meta[i].id === currentLitId){ meta[i].title = t; meta[i].category = c; }
+  }
+  saveLitMeta(meta);
+  showMsg($('litMsg'), '✅ 已保存。', 'ok');
+});
+$('btnLitCopy').addEventListener('click', function(){
+  var txt = $('litTextView').textContent || '';
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(function(){ popToast('📋 全文已复制', 2000); });
+  }else{ popToast('请长按文字手动选择复制', 2500); }
+});
+$('btnLitDel').addEventListener('click', function(){
+  if(!confirm('删除这篇文献？（只删提取的文字和目录，坚果云里的PDF原件不受影响）')) return;
+  var meta = loadLitMeta().filter(function(m){ return m.id !== currentLitId; });
+  saveLitMeta(meta);
+  litIdbDel('papers', currentLitId).catch(function(){});
+  $('viewLit').classList.add('hidden');
+  viewHome.classList.remove('hidden');
+  renderLitList();
+  popToast('🗑 已删除', 2000);
+});
+renderLitList();
 
 /* 改稿 AI 调用：原笔记全文 + 用户要求 → 同格式 JSON（不传 temperature/response_format） */
 function callReviseAI(note, instruction, onOk, onErr, st){
@@ -4252,7 +4578,9 @@ function ghPush(opts){
     return resp.json();
   }).then(function(file){
     if(opts.st) opts.st.set('② 正在上传备份…');
-    var payload = { version: 1, savedAt: new Date().toISOString(), notes: notes };
+    /* v2.4：文献目录（标题/类目/文件名等元数据，不含提取的文字）随笔记一起备份 */
+    var payload = { version: 2, savedAt: new Date().toISOString(), notes: notes,
+                    litMeta: (typeof loadLitMeta === 'function') ? loadLitMeta() : [] };
     var body = {
       message: '学习笔记备份 ' + fmtTime(Date.now()),
       content: ghB64enc(JSON.stringify(payload))
@@ -4294,11 +4622,14 @@ function ghPull(onResult){
 }
 
 /* 恢复确认条：显示云端篇数+备份时间，确定才覆盖本机（取消不动） */
+var ghPendingLitMeta = null;
 function ghAskRestore(payload){
   ghPendingNotes = payload.notes;
+  ghPendingLitMeta = Array.isArray(payload.litMeta) ? payload.litMeta : null;
   var when = payload.savedAt ? fmtTime(payload.savedAt) : '未知时间';
-  ghConfText.textContent = '云端有 ' + payload.notes.length + ' 篇笔记（备份于 ' + when +
-    '）。恢复将覆盖本机现有笔记，确定？';
+  var litPart = ghPendingLitMeta && ghPendingLitMeta.length ? '，另有文献目录 ' + ghPendingLitMeta.length + ' 条' : '';
+  ghConfText.textContent = '云端有 ' + payload.notes.length + ' 篇笔记' + litPart + '（备份于 ' + when +
+    '）。恢复将覆盖本机现有笔记和文献目录，确定？';
   ghCard.open = true;
   ghConfirm.classList.remove('hidden');
 }
@@ -4308,8 +4639,11 @@ function ghDoRestore(){
   ghConfirm.classList.add('hidden');
   ghSuspend = true;
   saveNotes(notes); /* 挂起期间不触发自动备份 */
+  if(ghPendingLitMeta && typeof saveLitMeta === 'function'){ saveLitMeta(ghPendingLitMeta); }
+  ghPendingLitMeta = null;
   ghSuspend = false;
   renderList();
+  if(typeof renderLitList === 'function') renderLitList();
   popToast('📥 已恢复 ' + notes.length + ' 篇笔记', 3000);
 }
 
@@ -4384,7 +4718,7 @@ ghBindBtn($('ghConfNo'), function(){
      不通=红条常驻（只说连不上，不影响使用）
    注意：version.json 与软件副本（dl 字段指向的文件）由交付端（AI）每次发版时
    推到备份仓库；本文件版本号改 SW_VERSION 一处即可。 */
-var SW_VERSION = '2.3.0';
+var SW_VERSION = '2.4.0';
 var LS_GH_CHECK = 'bg_gh_check';
 var updBar = $('updBar'), updText = $('updText'), updBtnRow = $('updBtnRow'),
     ghCheckEl = $('ghCheck');
