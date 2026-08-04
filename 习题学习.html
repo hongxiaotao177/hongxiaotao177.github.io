@@ -369,6 +369,9 @@ v1.4 (2026-08-02) 学习笔记协同 + GitHub云备份 + 开机自检 + 下载�
   修改结果：Playwright 端到端测试通过（收件箱导入/云备份推拉/自检三态/
   下载整套/旧功能回归），见交付记录。
 
+v1.4.2 (2026-08-04) AI设置新增「💰 查额度」：GET /v1/users/me/balance 显示真实余额；
+  401=Key无效；提示两套账（Kimi会员≠API开放平台）不相通。（与学习笔记 v2.6.0 同款）
+
 v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.html
   （新成员「文件桥 v1.0」，AI与手机文件夹之间的桥；仓库协议新增 transit/
   中转 + bridge-inbox.json / bridge-outbox.json，详见文件桥.html 代码顶部）。
@@ -427,7 +430,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>习题学习 v1.4.1</title>
+<title>习题学习 v1.4.2</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f2f4f8; color: #222; }
@@ -501,7 +504,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 
 <script id="embedded-data" type="application/json">null</script>
 
-<header>📖 习题学习<span class="ver">v1.4.1</span></header>
+<header>📖 习题学习<span class="ver">v1.4.2</span></header>
 
 <!-- ========== 首页 ========== -->
 <div id="page-home" class="page">
@@ -733,8 +736,10 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
     <div style="font-size:13px;color:#888;margin-bottom:8px">key存在本软件数据里，只在本机使用；导出分身时可选择不带。</div>
     <div class="btn-row">
       <button onclick="saveAiKey()">保存</button>
+      <button class="ghost" onclick="checkAiBalance()">💰 查额度</button>
       <button class="ghost" onclick="closeAiKey()">取消</button>
     </div>
+    <div id="aikey-bal" style="font-size:13px;color:#2c6e9e;margin-top:6px"></div>
   </div>
 </div>
 
@@ -1567,6 +1572,21 @@ function saveAiKey() {
   store.ai = { key: k, model: document.getElementById("aimodel-input").value.trim() || "kimi-k2.5" };
   saveStore(); closeAiKey(); toast("AI设置已保存");
 }
+/* v1.4.2 查额度：直接问 Kimi 开放平台真实余额（GET /v1/users/me/balance） */
+async function checkAiBalance() {
+  var el = document.getElementById("aikey-bal");
+  var k = (store.ai && store.ai.key) || document.getElementById("aikey-input").value.trim();
+  if (!k) { el.textContent = "请先保存 Key 或把 Key 贴在①里"; return; }
+  el.textContent = "正在问平台…";
+  try {
+    var r = await fetch("https://api.moonshot.cn/v1/users/me/balance", { headers: { "Authorization": "Bearer " + k } });
+    if (r.status === 401) { el.textContent = "Key 无效或已过期（401），请重新生成"; return; }
+    if (!r.ok) { el.textContent = "查询失败（HTTP " + r.status + "），稍后再试"; return; }
+    var b = (await r.json()).data || {};
+    if (typeof b.available_balance !== "number") { el.textContent = "平台回答没看懂"; return; }
+    el.textContent = "💰 可用余额约 " + b.available_balance.toFixed(2) + " 元。钱不对：看看是不是充到 Kimi 会员那边了（两套账，不相通）";
+  } catch (e) { el.textContent = "网络不通，查询失败"; }
+}
 function needKey() { if (store.ai && store.ai.key) return true; openAiKey(); toast("请先设置API key"); return false; }
 function aiModel() { return (store.ai && store.ai.model) || "kimi-k2.5"; }
 async function callAI(sysPrompt, userText) {
@@ -1842,7 +1862,7 @@ function toast(msg) {
    完整设计思路与协同协议见学习笔记.html 代码顶部（两边以那份为准）。 */
 var XT_GH_USER = "xt_gh_user", XT_GH_TOK = "xt_gh_tok", XT_GH_REPO = "xt_gh_repo",
     XT_GH_LAST = "xt_gh_last", XT_GH_CHECK = "xt_gh_check";
-var SW_VERSION = "1.4.1";
+var SW_VERSION = "1.4.2";
 var ghSuspend = false, ghAutoTimer = null, ghVerPending = null;
 
 function ghCfg() {
