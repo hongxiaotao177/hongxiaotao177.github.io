@@ -369,6 +369,10 @@ v1.4 (2026-08-02) 学习笔记协同 + GitHub云备份 + 开机自检 + 下载�
   修改结果：Playwright 端到端测试通过（收件箱导入/云备份推拉/自检三态/
   下载整套/旧功能回归），见交付记录。
 
+v1.4.3 (2026-08-05) 壳APP适配：检测到套壳App（window.LearnShell）时，
+  「下载新版/下载整套」改为自更新（写进APP内部目录，重启APP生效），
+  授权文件夹里同时存一份备份；浏览器里一切照旧。
+
 v1.4.2 (2026-08-04) AI设置新增「💰 查额度」：GET /v1/users/me/balance 显示真实余额；
   401=Key无效；提示两套账（Kimi会员≠API开放平台）不相通。（与学习笔记 v2.6.0 同款）
 
@@ -430,7 +434,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>习题学习 v1.4.2</title>
+<title>习题学习 v1.4.3</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f2f4f8; color: #222; }
@@ -504,7 +508,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 
 <script id="embedded-data" type="application/json">null</script>
 
-<header>📖 习题学习<span class="ver">v1.4.2</span></header>
+<header>📖 习题学习<span class="ver">v1.4.3</span></header>
 
 <!-- ========== 首页 ========== -->
 <div id="page-home" class="page">
@@ -1862,7 +1866,7 @@ function toast(msg) {
    完整设计思路与协同协议见学习笔记.html 代码顶部（两边以那份为准）。 */
 var XT_GH_USER = "xt_gh_user", XT_GH_TOK = "xt_gh_tok", XT_GH_REPO = "xt_gh_repo",
     XT_GH_LAST = "xt_gh_last", XT_GH_CHECK = "xt_gh_check";
-var SW_VERSION = "1.4.2";
+var SW_VERSION = "1.4.3";
 var ghSuspend = false, ghAutoTimer = null, ghVerPending = null;
 
 function ghCfg() {
@@ -2078,6 +2082,13 @@ function ghDlFile(dlName, saveAs, onDone) {
     if (!resp.ok) return resp.text().then(function (t) { throw new Error(ghErrText(resp.status, t)); });
     return resp.json();
   }).then(function (file) {
+    if (window.LearnShell) {
+      /* 壳APP：自更新（写进APP内部www目录，重启生效）+ 授权文件夹里再存一份备份 */
+      var b64html = ghB64enc(ghB64dec(file.content || ""));
+      var okSelf = window.LearnShell.applyUpdate(saveAs, b64html);
+      try { if (window.LearnShell.folderSet()) window.LearnShell.writeFile(saveAs, b64html); } catch (e) {}
+      if (okSelf) { onDone(null); return; }
+    }
     var blob = new Blob([ghB64dec(file.content || "")], { type: "text/html;charset=utf-8" });
     var a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -2090,9 +2101,9 @@ function ghDlFile(dlName, saveAs, onDone) {
 function ghDownloadNew() {
   if (!ghVerPending || !ghVerPending.dl) { toast("⚠️ 云端没给下载文件，找 AI 要新版即可"); return; }
   toast("⏳ 正在下载新版…");
-  ghDlFile(ghVerPending.dl, "习题学习_v" + ghVerPending.version + ".html", function (err) {
+  ghDlFile(ghVerPending.dl, window.LearnShell ? "习题学习.html" : ("习题学习_v" + ghVerPending.version + ".html"), function (err) {
     if (err) { toast("❌ 下载失败：" + err + "，也可找 AI 直接要文件"); return; }
-    toast("✅ 新版已下载，到「下载」目录找新文件打开");
+    toast(window.LearnShell ? "✅ 新版已装好，重启APP生效（文件夹里也存了一份）" : "✅ 新版已下载，到「下载」目录找新文件打开");
   });
 }
 function ghDownloadAll() {
@@ -2108,7 +2119,7 @@ function ghDownloadAll() {
           toast("⏳ 正在下载 文件桥…（3/3）");
           ghDlFile("software-bridge.html", "文件桥.html", function (err3) {
             if (err3) { toast("❌ 文件桥下载失败：" + err3 + "（前两个已下载）"); return; }
-            toast("✅ 三个软件都已下载，到下载列表里找");
+            toast(window.LearnShell ? "✅ 三个软件都已装好，重启APP生效（文件夹里也各存了一份）" : "✅ 三个软件都已下载，到下载列表里找");
           });
         }, 900);
       });
