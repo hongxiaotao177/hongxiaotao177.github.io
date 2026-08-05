@@ -369,6 +369,10 @@ v1.4 (2026-08-02) 学习笔记协同 + GitHub云备份 + 开机自检 + 下载�
   修改结果：Playwright 端到端测试通过（收件箱导入/云备份推拉/自检三态/
   下载整套/旧功能回归），见交付记录。
 
+v1.4.5 (2026-08-06) 本地备份状态+从文件夹恢复：云备份卡片新增「本地备份」
+  状态行（有没有/何时备/多少题库）和「📂 从文件夹恢复」按钮（不联网，
+  确认流程同云端恢复）。仅壳APP可用。"靠网不如靠自己"。
+
 v1.4.4 (2026-08-06) 双通道备份：壳APP里每次云备份同时写一份 xiti-backup.json
   到授权文件夹（本地保险副本，只写不读不冲突；失败静默；浏览器自动跳过）。
 
@@ -437,7 +441,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>习题学习 v1.4.4</title>
+<title>习题学习 v1.4.5</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f2f4f8; color: #222; }
@@ -511,7 +515,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 
 <script id="embedded-data" type="application/json">null</script>
 
-<header>📖 习题学习<span class="ver">v1.4.4</span></header>
+<header>📖 习题学习<span class="ver">v1.4.5</span></header>
 
 <!-- ========== 首页 ========== -->
 <div id="page-home" class="page">
@@ -560,6 +564,10 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
           <button class="ghost" onclick="ghSelfCheck(true)">🔍 自检：线路 + 新版本</button>
           <button class="ghost" onclick="ghDownloadAll()">⬇️ 下载整套软件</button>
         </div>
+        <div class="btn-row">
+          <button class="ghost" onclick="locManualPull()">📂 从文件夹恢复</button>
+        </div>
+        <div id="locStatus" style="font-size:13px;color:#888;line-height:1.8;margin-top:4px;">本地备份：读取中…</div>
         <div id="ghCheck" style="font-size:13px;color:#888;line-height:1.8;margin-top:6px;white-space:pre-line;">自检：还没查过（每次打开软件会自动查一次）</div>
         <div id="ghStatus" style="font-size:13px;color:#888;margin-top:4px;">上次备份：未备份过</div>
         <div style="font-size:12px;color:#aaa;margin-top:6px;">「下载整套」= 学习笔记 + 习题学习 + 文件桥，三个最新版一起下载（浏览器首次可能问"允许下载多个文件"，点允许）。备份含题库+学习记录+AI设置，存您自己的私有仓库。</div>
@@ -1869,7 +1877,7 @@ function toast(msg) {
    完整设计思路与协同协议见学习笔记.html 代码顶部（两边以那份为准）。 */
 var XT_GH_USER = "xt_gh_user", XT_GH_TOK = "xt_gh_tok", XT_GH_REPO = "xt_gh_repo",
     XT_GH_LAST = "xt_gh_last", XT_GH_CHECK = "xt_gh_check";
-var SW_VERSION = "1.4.4";
+var SW_VERSION = "1.4.5";
 var ghSuspend = false, ghAutoTimer = null, ghVerPending = null;
 
 function ghCfg() {
@@ -1964,6 +1972,7 @@ function ghPush(onDone) {
     });
   }).then(function () {
     ghSaveStatus(true); ghStatusRender();
+    if (typeof locStatusRender === "function") locStatusRender(); /* v1.4.5 本地备份状态同步刷新 */
     if (onDone) onDone(null, totalQ);
   }).catch(function (e) {
     var msg = (e && e.message) ? e.message : "网络不通，备份没成功";
@@ -1987,10 +1996,10 @@ function ghPull(onResult) {
     onResult((e && e.message) ? e.message : "网络不通，恢复没成功");
   });
 }
-function ghAskRestore(payload) {
+function ghAskRestore(payload, srcLabel) {
   var when = payload.savedAt ? new Date(payload.savedAt).toLocaleString() : "未知时间";
   var n = payload.store.banks.length;
-  if (!confirm("云端有 " + n + " 个题库（备份于 " + when + "）。恢复将覆盖本机现有题库和学习记录，确定吗？")) return;
+  if (!confirm((srcLabel || "云端") + "有 " + n + " 个题库（备份于 " + when + "）。恢复将覆盖本机现有题库和学习记录，确定吗？")) return;
   ghSuspend = true;
   store = payload.store;
   saveStore(); /* 挂起期间不触发自动备份 */
@@ -1999,6 +2008,47 @@ function ghAskRestore(payload) {
   if (currentMode === "root") updateRootPanel();
   if (currentMode === "shift") updateShiftPanel();
   toast("📥 已恢复 " + n + " 个题库");
+}
+/* ==================== v1.4.5 本地备份：状态 + 从文件夹恢复 ====================
+   双通道备份的另一半：壳APP里云备份会同时写 xiti-backup.json 到授权文件夹。
+   打开软件亮出本地备份状态；「从文件夹恢复」不联网，确认流程同云端恢复。 */
+function locBackupAvailable() {
+  return !!(window.LearnShell && window.LearnShell.folderSet && window.LearnShell.folderSet());
+}
+function locStatusRender() {
+  var el = document.getElementById("locStatus");
+  if (!el) return;
+  if (!locBackupAvailable()) {
+    el.textContent = "本地备份：只在壳APP里可用（装好壳APP并授权文件夹后，每次云备份会同时存一份到文件夹）";
+    return;
+  }
+  try {
+    var list = JSON.parse(window.LearnShell.listFiles() || "[]");
+    var hit = null;
+    for (var i = 0; i < list.length; i++) { if (list[i].name === "xiti-backup.json") { hit = list[i]; break; } }
+    if (!hit) { el.textContent = "本地备份：📭 文件夹里还没有（点「☁️ 立即备份」一次就会同时存进文件夹）"; return; }
+    var extra = "";
+    try {
+      var b64 = window.LearnShell.readFile("xiti-backup.json");
+      if (b64) {
+        var data = JSON.parse(ghB64dec(b64));
+        var banks = data.store && Array.isArray(data.store.banks) ? data.store.banks.length : "?";
+        extra = "，" + (data.savedAt ? new Date(data.savedAt).toLocaleString() : "时间未知") + "，共 " + banks + " 个题库";
+      }
+    } catch (e) { extra = "（内容读不出来，可能不是本软件写的）"; }
+    el.textContent = "本地备份：✅ 文件夹里有" + extra;
+  } catch (e) {
+    el.textContent = "本地备份：状态读不出来（" + ((e && e.message) || e) + "）";
+  }
+}
+function locManualPull() {
+  if (!locBackupAvailable()) { toast("本地备份只在壳APP里可用"); return; }
+  var b64 = window.LearnShell.readFile("xiti-backup.json");
+  if (!b64) { toast("📭 文件夹里还没有本地备份"); return; }
+  var payload;
+  try { payload = JSON.parse(ghB64dec(b64)); } catch (e) { payload = null; }
+  if (!payload || !payload.store) { toast("本地备份文件读不懂"); return; }
+  ghAskRestore(payload, "本地文件夹备份");
 }
 function ghManualPush() {
   if (!ghReady()) { toast("请先填好用户名、Token、仓库名并保存设置"); document.getElementById("ghCard").open = true; return; }
@@ -2171,6 +2221,7 @@ function ghInit() {
   ghCheckInbox();
   /* 打开 3 秒后自动自检一次（配置齐全才查） */
   setTimeout(function () { if (ghReady()) ghSelfCheck(false); }, 3000);
+  locStatusRender(); /* v1.4.5 打开软件就亮出本地备份状态 */
 }
 
 /* ================= 初始化 ================= */
