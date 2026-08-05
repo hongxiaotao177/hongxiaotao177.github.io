@@ -4,6 +4,11 @@
  文件桥 —— AI 与手机文件夹之间的桥（单文件 HTML，第三个协同软件）
 ====================================================================
  修改记录：
+   v1.1.0 (2026-08-05) 壳APP直连模式：在套壳App（学习套装）里检测到
+  window.LearnShell 就走原生桥——授权文件夹用安卓 SAF 持久授权（装APP时授一次，
+  永不 stale，没有浏览器 MediaStore 写禁忌）；收发/打包/下载整套全部直连文件夹；
+  「下载整套/下载新版」在壳里 = 自更新（写进APP内部www目录，重启APP生效）+文件夹
+  里再存一份备份。浏览器里一切照旧（v1.0.5 下载兜底不变）。
    v1.0.5 (2026-08-05) 浏览器下载兜底+防死循环：华为机型SAF写授权文件夹必 stale
   （读正常写不行），v1.0.3 自动重授权变死循环反复弹选择器。改法：写文件夹失败
   →a[download] 浏览器下载兜底（落「下载」目录，文件不丢、中转照清）；自动重授权
@@ -85,7 +90,7 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>文件桥 v1.0.5</title>
+<title>文件桥 v1.1.0</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #faf7f2; color: #3a3632; }
@@ -137,7 +142,7 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
 </style>
 </head>
 <body>
-<header>📂 文件桥<span class="ver">v1.0.5</span></header>
+<header>📂 文件桥<span class="ver">v1.1.0</span></header>
 <div class="page">
 
   <!-- 使用说明入口 -->
@@ -308,7 +313,7 @@ function fmtTime(t){ return new Date(t).toLocaleString(); }
 
 /* ==================== GitHub 通信（移植学习笔记/习题学习同套） ==================== */
 var BR_GH_USER = 'br_gh_user', BR_GH_TOK = 'br_gh_tok', BR_GH_REPO = 'br_gh_repo', BR_GH_CHECK = 'br_gh_check';
-var SW_VERSION = '1.0.5';
+var SW_VERSION = '1.1.0';
 var ghVerPending = null;
 
 function ghCfg(){
@@ -446,6 +451,22 @@ function idbGet(key){
   });
 }
 function dirSupported(){ return typeof window.showDirectoryPicker === 'function'; }
+
+/* ==================== v1.1.0 壳APP直连模式 ====================
+   套壳App注入 window.LearnShell（原生SAF持久授权，装壳时授一次，不会 stale）。
+   inShell 时文件夹读写全走桥；dirHandle 体系只在浏览器模式用。 */
+var inShell = !!window.LearnShell;
+function u8ToB64(u8){
+  var bin = '';
+  for(var i = 0; i < u8.length; i += 8192) bin += String.fromCharCode.apply(null, u8.subarray(i, i + 8192));
+  return btoa(bin);
+}
+function dirOk(){ return inShell ? window.LearnShell.folderSet() : !!dirHandle; }
+window.__shellFolderPicked = function(name){
+  if(name){ ioLog('📁 壳APP已授权文件夹：' + name); toast('✅ 已授权文件夹：' + name, 3000); }
+  else toast('已取消授权', 2500);
+  if(typeof refreshAll === 'function') refreshAll();
+};
 /* v1.0.2 文件夹"钥匙过期"检测：授权后文件夹被别的应用（坚果云同步/文件管理器）
    动过，File System Access 句柄缓存失效，报 NotModifiedError（state cached...）。
    统一处理：作废句柄→向导弹出请用户重新授权。（洪医生 2026-08-05 实测踩坑） */
@@ -477,6 +498,11 @@ function browserDownload(bytes, name){
    对策：①写之前先删同名旧文件（上次失败留下的0B空壳本身是脏状态源）
    ②拿全新文件句柄立刻一口气写完 ③撞上 stale 用新句柄再试一次 */
 function dirWriteFile(name, bytes){
+  if(inShell){
+    return Promise.resolve().then(function(){
+      if(!window.LearnShell.writeFile(name, u8ToB64(bytes))) throw new Error('壳APP写文件夹失败，请重新授权文件夹');
+    });
+  }
   function writeOnce(){
     return dirHandle.getFileHandle(name, { create: true }).then(function(fh){
       return fh.createWritable();
@@ -522,6 +548,7 @@ function dirReauthRetry(retryFn){
   });
 }
 function dirAuth(){
+  if(inShell){ window.LearnShell.pickFolder(); return; }
   if(!dirSupported()){ toast('这个浏览器不支持文件夹授权，请用 Chrome 打开', 4000); return; }
   window.showDirectoryPicker({ mode: 'readwrite' }).then(function(h){
     dirHandle = h;
@@ -536,6 +563,7 @@ function dirAuth(){
 }
 /* 启动时取回句柄并确认权限（权限可能要用户手势才能要回来，静默失败就提示去授权） */
 function dirRestore(){
+  if(inShell) return Promise.resolve();
   return idbGet('dir').then(function(h){
     if(!h) return;
     dirHandle = h;
@@ -551,6 +579,26 @@ function dirRestore(){
 function fmtDate(t){ return new Date(t).toLocaleString(); }
 function refreshFiles(){
   var box = $('fileList');
+  if(inShell){
+    if(!window.LearnShell.folderSet()){ box.innerHTML=''; $('dirStatus').textContent='还没授权文件夹'; return Promise.resolve(); }
+    $('dirStatus').textContent = '已授权：' + window.LearnShell.folderName() + '（壳APP直连，点🔄可刷新）';
+    var slist = [];
+    try{ slist = JSON.parse(window.LearnShell.listFiles() || '[]'); }catch(e){}
+    slist.sort(function(a, b){ return b.t - a.t; });
+    if(!slist.length){ box.innerHTML = '<div class="hint">文件夹是空的</div>'; return Promise.resolve(); }
+    box.innerHTML = '';
+    slist.forEach(function(fi){
+      var row = document.createElement('div');
+      row.className = 'file-item';
+      var nm = document.createElement('div'); nm.className = 'file-name'; nm.textContent = fi.name;
+      var sz = document.createElement('div'); sz.className = 'file-size'; sz.textContent = fmtSize(fi.size);
+      var btn = document.createElement('button'); btn.textContent = '⬆️ 传给AI';
+      btn.addEventListener('click', function(){ uploadFile(fi); });
+      row.appendChild(nm); row.appendChild(sz); row.appendChild(btn);
+      box.appendChild(row);
+    });
+    return Promise.resolve();
+  }
   if(!dirHandle){ box.innerHTML = ''; $('dirStatus').textContent = '还没授权文件夹'; return; }
   $('dirStatus').textContent = '已授权：' + dirHandle.name + '（点🔄可刷新）';
   var items = [];
@@ -600,9 +648,13 @@ function uploadFile(fi){
   if(!ghReady()){ toast('请先在「☁️ 云设置」里填好并保存', 3500); return; }
   toast('⏳ 正在传「' + fi.name + '」…', 2500);
   var tName = 'transit/' + fi.name;
-  fi.handle.getFile().then(function(file){
-    return blobToB64(file);
-  }).then(function(b64){
+  var headP = inShell
+    ? Promise.resolve(window.LearnShell.readFile(fi.name)).then(function(b64){
+        if(!b64) throw new Error('文件夹里读不到「' + fi.name + '」');
+        return b64;
+      })
+    : fi.handle.getFile().then(function(file){ return blobToB64(file); });
+  headP.then(function(b64){
     return ghPutFile(tName, b64, '文件桥上传 ' + fi.name);
   }).then(function(){
     return ghReadJson('bridge-inbox.json').then(function(r){
@@ -614,7 +666,7 @@ function uploadFile(fi){
     ioLog('⬆️ 已传「' + fi.name + '」（' + fmtSize(fi.size) + '）——跟 AI 说一声文件名它就能读到');
     toast('✅ 已传给AI中转站，跟AI说一声文件名', 4000);
   }).catch(function(e){
-    if(dirStaleErr(e)){ dirReauthRetry(function(){ uploadFile(fi); }); return; } /* v1.0.3 */
+    if(!inShell && dirStaleErr(e)){ dirReauthRetry(function(){ uploadFile(fi); }); return; } /* v1.0.3 */
     ioLog('❌ 传「' + fi.name + '」失败：' + ((e && e.message) || e));
     toast('❌ 上传失败：' + ((e && e.message) || '网络不通'), 4000);
   });
@@ -623,7 +675,7 @@ function uploadFile(fi){
 /* ==================== 收AI文件（outbox 任务单 → 写进文件夹 → 删中转 → 标done） ==================== */
 function receiveFiles(_raOnce){
   if(!ghReady()){ toast('请先在「☁️ 云设置」里填好并保存', 3500); return; }
-  if(!dirHandle){ toast('请先授权文件夹，文件才有地方放', 3500); return; }
+  if(!dirOk()){ toast('请先授权文件夹，文件才有地方放', 3500); return; }
   toast('📥 正在检查AI发来的文件…', 2500);
   var box;
   ghReadJson('bridge-outbox.json').then(function(r){
@@ -669,7 +721,7 @@ function receiveFiles(_raOnce){
     });
   }).catch(function(e){
     /* v1.0.5 防死循环：自动重授权每次点击只试一次，再 stale 就转手动引导 */
-    if(dirStaleErr(e)){
+    if(!inShell && dirStaleErr(e)){
       if(!_raOnce){ dirReauthRetry(function(){ receiveFiles(true); }); }
       else dirStaleHandle();
       return;
@@ -752,6 +804,24 @@ var packLogEl = $('packLog');
 function packLog(line){ packLogEl.textContent = (packLogEl.textContent ? packLogEl.textContent + '\n' : '') + line; }
 function collectFolderFiles(includeBig){
   /* 收集文件夹里的 .html 软件（必装）；includeBig 时装上非 .html 大文件（文献等） */
+  if(inShell){
+    var slist = [];
+    try{ slist = JSON.parse(window.LearnShell.listFiles() || '[]'); }catch(e){}
+    var items = [];
+    slist.forEach(function(it){
+      if(/\.html?$/i.test(it.name) || includeBig){
+        items.push(Promise.resolve({
+          name: it.name,
+          file: { size: it.size, arrayBuffer: function(){
+            var b64 = window.LearnShell.readFile(it.name);
+            if(!b64) return Promise.reject(new Error('读不到「' + it.name + '」'));
+            return Promise.resolve(ghB64decBin(b64).buffer);
+          } }
+        }));
+      }
+    });
+    return Promise.all(items);
+  }
   var items = [];
   var it = dirHandle.values();
   function pump(){
@@ -767,7 +837,7 @@ function collectFolderFiles(includeBig){
   return pump().then(function(){ return Promise.all(items); });
 }
 function doPack(forSelf){
-  if(!dirHandle){ toast('请先授权文件夹', 3000); return; }
+  if(!dirOk()){ toast('请先授权文件夹', 3000); return; }
   packLogEl.textContent = '';
   packLog('正在收集文件…');
   var includeBig = $('packBig').checked;
@@ -792,10 +862,21 @@ function doPack(forSelf){
         packLog('  装入 config.json（随行配置卡）');
       }
       var zip = buildZip(entries);
+      var zipName = (forSelf ? '医学软件包_给自己_' : '医学软件包_给别人_') +
+        new Date().getFullYear() + String(new Date().getMonth() + 1) + String(new Date().getDate()) + '.zip';
+      if(inShell){
+        if(window.LearnShell.writeFile(zipName, u8ToB64(zip))){
+          packLog('✅ 已存进文件夹：' + zipName);
+          toast('✅ 打包完成，已存进文件夹：' + zipName, 4000);
+        }else{
+          packLog('❌ 壳APP写文件夹失败');
+          toast('❌ 写文件夹失败，请重新授权', 4000);
+        }
+        return;
+      }
       var a = document.createElement('a');
       a.href = URL.createObjectURL(new Blob([zip], { type: 'application/zip' }));
-      a.download = (forSelf ? '医学软件包_给自己_' : '医学软件包_给别人_') +
-        new Date().getFullYear() + String(new Date().getMonth() + 1) + String(new Date().getDate()) + '.zip';
+      a.download = zipName;
       document.body.appendChild(a); a.click();
       setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
       packLog('✅ 打包完成，共 ' + entries.length + ' 个文件（' + fmtSize(zip.length) + '），已开始下载');
@@ -923,6 +1004,16 @@ function ghDlFile(dlName, saveAs, onDone){
     if(!resp.ok) return resp.text().then(function(t){ throw new Error(ghErrText(resp.status, t)); });
     return resp.json();
   }).then(function(file){
+    if(inShell){
+      /* 壳APP：写进APP内部www目录（自更新，重启生效）+ 文件夹里再存一份备份 */
+      var b64html = ghB64enc(ghB64dec(file.content || ''));
+      var okSelf = window.LearnShell.applyUpdate(saveAs, b64html);
+      var okDir = window.LearnShell.folderSet() ? window.LearnShell.writeFile(saveAs, b64html) : false;
+      if(okSelf){ onDone(null); }
+      else if(okDir){ onDone(null); }
+      else onDone('壳APP自更新失败');
+      return;
+    }
     var blob = new Blob([ghB64dec(file.content || '')], { type: 'text/html;charset=utf-8' });
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -937,7 +1028,7 @@ function ghDownloadNew(){
   toast('⏳ 正在下载新版…', 2000);
   ghDlFile(ghVerPending.dl, '文件桥_v' + ghVerPending.version + '.html', function(err){
     if(err){ toast('❌ 下载失败：' + err, 4000); return; }
-    toast('✅ 新版已下载，到下载列表里找', 3500);
+    toast(inShell ? '✅ 新版已装好，重启APP生效（文件夹里也存了一份）' : '✅ 新版已下载，到下载列表里找', 4000);
   });
 }
 /* 三件套连下：学习笔记 → 习题学习 → 文件桥 */
@@ -954,7 +1045,7 @@ function ghDownloadAll(){
           toast('⏳ 正在下载 文件桥…（3/3）', 2000);
           ghDlFile('software-bridge.html', '文件桥.html', function(err3){
             if(err3){ toast('❌ 文件桥下载失败：' + err3 + '（前两个已下载）', 4000); return; }
-            toast('✅ 三个软件都已下载，到下载列表里找', 4500);
+            toast(inShell ? '✅ 三个软件都已装好，重启APP生效（文件夹里也各存了一份）' : '✅ 三个软件都已下载，到下载列表里找', 4500);
           });
         }, 900);
       });
@@ -965,8 +1056,9 @@ function ghDownloadAll(){
 /* ==================== 向导卡（缺啥提醒啥） ==================== */
 function updWizard(){
   var steps = [];
-  if(!dirHandle){
-    steps.push({ text: '① 授权「医学软件」文件夹（Chrome 会问一次，点允许）', btn: '📁 去授权', fn: dirAuth });
+  if(!dirOk()){
+    steps.push({ text: inShell ? '① 授权「医学软件」文件夹（壳APP弹系统授权窗，选一次永久有效）'
+                                : '① 授权「医学软件」文件夹（Chrome 会问一次，点允许）', btn: '📁 去授权', fn: dirAuth });
   }
   if(!ghReady()){
     steps.push({ text: '② 填 Token 并保存（坚果云：学习文件→AI→我设计的软件→github token my own software.txt）', btn: '去填', fn: function(){
@@ -1017,7 +1109,7 @@ $('btnAuth').addEventListener('click', dirAuth);
 $('btnRefresh').addEventListener('click', refreshAll);
 $('btnRecv').addEventListener('click', receiveFiles);
 $('btnPack').addEventListener('click', function(){
-  if(!dirHandle){ toast('请先授权文件夹', 3000); return; }
+  if(!dirOk()){ toast('请先授权文件夹', 3000); return; }
   packLogEl.textContent = '';
   $('packMask').classList.remove('hidden');
 });
