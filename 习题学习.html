@@ -369,6 +369,10 @@ v1.4 (2026-08-02) 学习笔记协同 + GitHub云备份 + 开机自检 + 下载�
   修改结果：Playwright 端到端测试通过（收件箱导入/云备份推拉/自检三态/
   下载整套/旧功能回归），见交付记录。
 
+v1.4.6 (2026-08-06) 对账：文件夹备份与云端备份互相印证。每次备份写
+  backup-meta-xiti.json（时间+指纹+题库数，几十字节）到两边；打开软件4秒
+  自动对账、自检顺手对账、备份完顺手对账。不一致明说哪边新+该用哪个恢复按钮。
+
 v1.4.5 (2026-08-06) 本地备份状态+从文件夹恢复：云备份卡片新增「本地备份」
   状态行（有没有/何时备/多少题库）和「📂 从文件夹恢复」按钮（不联网，
   确认流程同云端恢复）。仅壳APP可用。"靠网不如靠自己"。
@@ -441,7 +445,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>习题学习 v1.4.5</title>
+<title>习题学习 v1.4.6</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f2f4f8; color: #222; }
@@ -515,7 +519,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 
 <script id="embedded-data" type="application/json">null</script>
 
-<header>📖 习题学习<span class="ver">v1.4.5</span></header>
+<header>📖 习题学习<span class="ver">v1.4.6</span></header>
 
 <!-- ========== 首页 ========== -->
 <div id="page-home" class="page">
@@ -561,13 +565,14 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
           <button class="ghost" onclick="ghManualPull()">📥 从云端恢复</button>
         </div>
         <div class="btn-row">
-          <button class="ghost" onclick="ghSelfCheck(true)">🔍 自检：线路 + 新版本</button>
+          <button class="ghost" onclick="ghSelfCheck(true); locReconcile(true);">🔍 自检：线路 + 新版本</button>
           <button class="ghost" onclick="ghDownloadAll()">⬇️ 下载整套软件</button>
         </div>
         <div class="btn-row">
           <button class="ghost" onclick="locManualPull()">📂 从文件夹恢复</button>
         </div>
         <div id="locStatus" style="font-size:13px;color:#888;line-height:1.8;margin-top:4px;">本地备份：读取中…</div>
+        <div id="recStatus" style="font-size:13px;color:#888;line-height:1.8;margin-top:2px;">对账：还没查过</div>
         <div id="ghCheck" style="font-size:13px;color:#888;line-height:1.8;margin-top:6px;white-space:pre-line;">自检：还没查过（每次打开软件会自动查一次）</div>
         <div id="ghStatus" style="font-size:13px;color:#888;margin-top:4px;">上次备份：未备份过</div>
         <div style="font-size:12px;color:#aaa;margin-top:6px;">「下载整套」= 学习笔记 + 习题学习 + 文件桥，三个最新版一起下载（浏览器首次可能问"允许下载多个文件"，点允许）。备份含题库+学习记录+AI设置，存您自己的私有仓库。</div>
@@ -1877,7 +1882,7 @@ function toast(msg) {
    完整设计思路与协同协议见学习笔记.html 代码顶部（两边以那份为准）。 */
 var XT_GH_USER = "xt_gh_user", XT_GH_TOK = "xt_gh_tok", XT_GH_REPO = "xt_gh_repo",
     XT_GH_LAST = "xt_gh_last", XT_GH_CHECK = "xt_gh_check";
-var SW_VERSION = "1.4.5";
+var SW_VERSION = "1.4.6";
 var ghSuspend = false, ghAutoTimer = null, ghVerPending = null;
 
 function ghCfg() {
@@ -1909,6 +1914,12 @@ function ghFetch(url, opts) {
 }
 function ghB64enc(s) { return btoa(unescape(encodeURIComponent(s))); }
 function ghB64dec(s) { return decodeURIComponent(escape(atob(String(s).replace(/\s+/g, "")))); }
+/* v1.4.6 内容指纹：FNV-1a 32位，对账用 */
+function strHash(s) {
+  var h = 0x811c9dc5;
+  for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = (h * 0x01000193) >>> 0; }
+  return ("0000000" + h.toString(16)).slice(-8);
+}
 function ghErrText(status, body) {
   if (status === 401) return "Token 失效或没权限，检查 Token";
   if (status === 404) return "仓库不存在或 Token 没勾选这个仓库";
@@ -1943,6 +1954,7 @@ function ghStatusRender() {
 }
 /* push：备份内容=整个 store（题库+进度+AI设置，含api key，私库自用） */
 function ghPush(onDone) {
+  var metaJson = null; /* v1.4.6 对账元信息 */
   var totalQ = 0;
   (store.banks || []).forEach(function (b) { totalQ += (b.questions || []).length; });
   if (!store.banks || store.banks.length === 0 || totalQ === 0) {
@@ -1958,9 +1970,11 @@ function ghPush(onDone) {
     var payloadStr = JSON.stringify(payload);
     /* v1.4.4 双通道备份：壳APP里同时写一份到授权文件夹（本地保险副本）。
        只写不读、失败静默不拖累云备份；浏览器里自动跳过。 */
+    metaJson = JSON.stringify({ savedAt: payload.savedAt, hash: strHash(payloadStr), count: (store.banks || []).length });
     try {
       if (window.LearnShell && window.LearnShell.folderSet && window.LearnShell.folderSet()) {
         window.LearnShell.writeFile("xiti-backup.json", ghB64enc(payloadStr));
+        window.LearnShell.writeFile("backup-meta-xiti.json", ghB64enc(metaJson)); /* v1.4.6 文件夹侧对账元信息 */
       }
     } catch (e) {}
     var body = { message: "习题学习备份 " + new Date().toLocaleString(), content: ghB64enc(payloadStr) };
@@ -1973,6 +1987,18 @@ function ghPush(onDone) {
   }).then(function () {
     ghSaveStatus(true); ghStatusRender();
     if (typeof locStatusRender === "function") locStatusRender(); /* v1.4.5 本地备份状态同步刷新 */
+    /* v1.4.6 云端对账元信息（几KB）；失败静默，不影响备份本身 */
+    if (metaJson) {
+      ghFetch(ghFileUrl("backup-meta-xiti.json"), { headers: ghHeaders() }).then(function (r) {
+        if (r.status === 404 || !r.ok) return null;
+        return r.json();
+      }).then(function (f) {
+        var body = { message: "对账元信息", content: ghB64enc(metaJson) };
+        if (f && f.sha) body.sha = f.sha;
+        return ghFetch(ghFileUrl("backup-meta-xiti.json"), { method: "PUT", headers: ghHeaders(), body: JSON.stringify(body) });
+      }).catch(function () {});
+    }
+    if (typeof locReconcile === "function") locReconcile(false); /* 备份完顺手对账 */
     if (onDone) onDone(null, totalQ);
   }).catch(function (e) {
     var msg = (e && e.message) ? e.message : "网络不通，备份没成功";
@@ -2049,6 +2075,72 @@ function locManualPull() {
   try { payload = JSON.parse(ghB64dec(b64)); } catch (e) { payload = null; }
   if (!payload || !payload.store) { toast("本地备份文件读不懂"); return; }
   ghAskRestore(payload, "本地文件夹备份");
+}
+/* v1.4.6 对账：文件夹备份 vs 云端备份，互相印证。
+   判断标准 = 时间顺序（savedAt新的为准）+ 内容指纹（strHash，防"同时刻但写坏"）。
+   元信息只有几十字节：文件夹侧免费读，云端侧只下一个几KB小文件。 */
+function locReconcile(manual) {
+  var el = document.getElementById("recStatus");
+  if (!el) return;
+  if (!locBackupAvailable()) {
+    el.textContent = "对账：只在壳APP里可用（需要文件夹里的本地备份来对照）";
+    return;
+  }
+  if (!ghReady()) {
+    el.textContent = "对账：先填好云设置，才能和云端对照";
+    return;
+  }
+  var loc = null;
+  try {
+    var mb64 = window.LearnShell.readFile("backup-meta-xiti.json");
+    if (mb64) loc = JSON.parse(ghB64dec(mb64));
+  } catch (e) {}
+  if (!loc) {
+    var b64 = window.LearnShell.readFile("xiti-backup.json");
+    if (b64) {
+      try {
+        var raw = ghB64dec(b64);
+        var data = JSON.parse(raw);
+        loc = { savedAt: data.savedAt, hash: strHash(raw), count: data.store && Array.isArray(data.store.banks) ? data.store.banks.length : 0 };
+      } catch (e) {}
+    }
+  }
+  if (!loc) { el.textContent = "对账：📭 文件夹里还没有备份，先备份一次"; return; }
+  var locWhen = loc.savedAt ? new Date(loc.savedAt).toLocaleString() : "时间未知";
+  el.textContent = "对账：正在和云端对照…（本地 " + locWhen + "）";
+  ghFetch(ghFileUrl("backup-meta-xiti.json"), { headers: ghHeaders() }).then(function (resp) {
+    if (resp.status === 404) {
+      /* 旧版备份没有元信息：整个取回来算一次（只此一回） */
+      return ghFetch(ghFileUrl("xiti-backup.json"), { headers: ghHeaders() }).then(function (r2) {
+        if (!r2.ok) throw new Error("云端备份读不到");
+        return r2.json().then(function (file) {
+          var raw = ghB64dec(file.content || "");
+          var data = JSON.parse(raw);
+          return { savedAt: data.savedAt, hash: strHash(raw), count: data.store && Array.isArray(data.store.banks) ? data.store.banks.length : 0 };
+        });
+      });
+    }
+    if (!resp.ok) return resp.text().then(function (t) { throw new Error(ghErrText(resp.status, t)); });
+    return resp.json().then(function (file) { return JSON.parse(ghB64dec(file.content || "")); });
+  }).then(function (rem) {
+    if (!rem || !rem.hash) { el.textContent = "对账：云端元信息读不懂，建议点「☁️ 立即备份」刷新一次"; return; }
+    var remWhen = rem.savedAt ? new Date(rem.savedAt).toLocaleString() : "时间未知";
+    if (loc.hash === rem.hash) {
+      el.textContent = "对账：✅ 两边一致（" + locWhen + "，" + loc.count + " 个题库，指纹相符）";
+      if (manual) toast("✅ 对账通过：文件夹和云端备份一致");
+    } else {
+      var lt = loc.savedAt ? new Date(loc.savedAt).getTime() : 0;
+      var rt = rem.savedAt ? new Date(rem.savedAt).getTime() : 0;
+      var tip;
+      if (lt > rt) tip = "📂 文件夹的更新（" + locWhen + "），☁️ 云端旧（" + remWhen + "）——要恢复就用「从文件夹恢复」";
+      else if (rt > lt) tip = "☁️ 云端的更新（" + remWhen + "），📂 文件夹旧（" + locWhen + "）——要恢复就用「从云端恢复」，并建议再备份一次让两边齐平";
+      else tip = "⚠️ 时间相同但内容指纹不符（可能有一次写入中途出错）——建议点「☁️ 立即备份」重写两边";
+      el.textContent = "对账：⚠️ 两边不一致！" + tip;
+      if (manual) toast("⚠️ 对账发现两边不一致，看状态行说明");
+    }
+  }).catch(function (e) {
+    el.textContent = "对账：云端连不上（" + ((e && e.message) || "网络不通") + "）——本地备份 " + locWhen + " 在手，不影响使用";
+  });
 }
 function ghManualPush() {
   if (!ghReady()) { toast("请先填好用户名、Token、仓库名并保存设置"); document.getElementById("ghCard").open = true; return; }
@@ -2222,6 +2314,8 @@ function ghInit() {
   /* 打开 3 秒后自动自检一次（配置齐全才查） */
   setTimeout(function () { if (ghReady()) ghSelfCheck(false); }, 3000);
   locStatusRender(); /* v1.4.5 打开软件就亮出本地备份状态 */
+  /* v1.4.6 打开软件 4 秒后自动对账一次（壳APP+云配置齐全才查） */
+  setTimeout(function () { if (locBackupAvailable() && ghReady()) locReconcile(false); }, 4000);
 }
 
 /* ================= 初始化 ================= */
