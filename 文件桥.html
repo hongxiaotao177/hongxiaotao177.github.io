@@ -4,7 +4,12 @@
  文件桥 —— AI 与手机文件夹之间的桥（单文件 HTML，第三个协同软件）
 ====================================================================
  修改记录：
-   v1.0.3 (2026-08-05) 钥匙过期自动重授权：收发文件遇 NotModifiedError 时，
+   v1.0.4 (2026-08-05) 写盘加固（dirWriteFile）：先删同名旧文件（0B空壳是脏状态源）
+  →全新句柄立刻写完；撞 NotModifiedError 用新句柄再试一次。根因查明：安卓媒体
+  扫描器（MediaStore）会立刻"摸"根目录新文件改档案致句柄快照失效，与坚果云无关
+  （洪医生文件夹在根目录123456789下、地址栏 content://media）。建议：桥文件夹
+  放 Download/ 子目录（扫描器巡逻少）。
+v1.0.3 (2026-08-05) 钥匙过期自动重授权：收发文件遇 NotModifiedError 时，
   借按钮点击的用户手势窗口自动弹系统选择器重新授权并重试（dirReauthRetry），
   手势失效/用户取消才回退手动引导。背景：坚果云同步目录被后台频繁触碰，
   句柄重新授权后几秒又 stale——长期建议授权非坚果云同步的文件夹。
@@ -76,7 +81,7 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>文件桥 v1.0.3</title>
+<title>文件桥 v1.0.4</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #faf7f2; color: #3a3632; }
@@ -128,7 +133,7 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
 </style>
 </head>
 <body>
-<header>📂 文件桥<span class="ver">v1.0.3</span></header>
+<header>📂 文件桥<span class="ver">v1.0.4</span></header>
 <div class="page">
 
   <!-- 使用说明入口 -->
@@ -299,7 +304,7 @@ function fmtTime(t){ return new Date(t).toLocaleString(); }
 
 /* ==================== GitHub 通信（移植学习笔记/习题学习同套） ==================== */
 var BR_GH_USER = 'br_gh_user', BR_GH_TOK = 'br_gh_tok', BR_GH_REPO = 'br_gh_repo', BR_GH_CHECK = 'br_gh_check';
-var SW_VERSION = '1.0.3';
+var SW_VERSION = '1.0.4';
 var ghVerPending = null;
 
 function ghCfg(){
@@ -450,6 +455,34 @@ function dirStaleHandle(){
   toast('🔑 文件夹钥匙过期了，请重新授权：点「📂 授权文件夹」再选一次', 5000);
   if(typeof refreshAll === 'function') refreshAll();
 }
+/* v1.0.4 写盘加固：安卓媒体扫描器（MediaStore）会立刻"摸"新文件改档案，
+   句柄快照对不上就报 NotModifiedError——根目录文件夹是巡逻重点（洪医生实测：
+   文件夹在根目录123456789下、无坚果云，仍反复 stale；地址栏 content://media 为证）。
+   对策：①写之前先删同名旧文件（上次失败留下的0B空壳本身是脏状态源）
+   ②拿全新文件句柄立刻一口气写完 ③撞上 stale 用新句柄再试一次 */
+function dirWriteFile(name, bytes){
+  function writeOnce(){
+    return dirHandle.getFileHandle(name, { create: true }).then(function(fh){
+      return fh.createWritable();
+    }).then(function(w){
+      return w.write(new Blob([bytes])).then(function(){ return w.close(); });
+    });
+  }
+  function removeOld(){
+    return dirHandle.removeEntry(name).catch(function(){});
+  }
+  return removeOld().then(writeOnce).catch(function(e){
+    if(!dirStaleErr(e)) throw e;
+    /* 媒体扫描器抢先了：再删再写，全程用最新句柄 */
+    return removeOld().then(function(){
+      return dirHandle.getFileHandle(name, { create: true });
+    }).then(function(fh){
+      return fh.createWritable();
+    }).then(function(w){
+      return w.write(new Blob([bytes])).then(function(){ return w.close(); });
+    });
+  });
+}
 /* v1.0.3 钥匙过期自动重授权+重试：收发按钮点击的用户手势窗口（约几秒）内
    可直接弹系统选择器，不用用户再找按钮；手势失效/用户取消再回退手动引导。
    背景：坚果云同步目录会被后台频繁触碰，句柄几秒内就 stale（洪医生 2026-08-05 实测）。 */
@@ -591,11 +624,7 @@ function receiveFiles(){
           if(!resp.ok) return resp.text().then(function(t){ throw new Error(ghErrText(resp.status, t)); });
           return resp.json().then(function(file){
             var bytes = ghB64decBin(file.content || '');
-            return dirHandle.getFileHandle(d.saveAs, { create: true }).then(function(fh){
-              return fh.createWritable();
-            }).then(function(w){
-              return w.write(new Blob([bytes])).then(function(){ return w.close(); });
-            }).then(function(){
+            return dirWriteFile(d.saveAs, bytes).then(function(){
               got++;
               d.done = true;
               ioLog('📥 已收「' + d.saveAs + '」（' + fmtSize(bytes.length) + '）' + (d.note ? '——' + d.note : ''));
