@@ -4,7 +4,12 @@
  文件桥 —— AI 与手机文件夹之间的桥（单文件 HTML，第三个协同软件）
 ====================================================================
  修改记录：
-   v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗三节大白话——
+   v1.0.2 (2026-08-05) 修复：授权后文件夹被别的应用动过（坚果云同步/文件管理器），
+  File System Access 句柄缓存失效报 NotModifiedError（"state cached in an interface
+  object..."），收发文件直接失败且英文报错吓人。现统一识别→作废句柄→向导弹出
+  引导重新授权（dirStaleErr/dirStaleHandle，接收/上传/列表三处捕获）。
+  洪医生实测踩坑：接收AI文件时报此错。
+v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗三节大白话——
          ①取Kimi API Key（platform.moonshot.cn→API Key管理→新建，sk-开头，
          创建时只完整显示一次，学习笔记/习题学习的AI设置里填）
          ②取GitHub Token（先找坚果云存档；真要新建：github.com→头像→
@@ -289,7 +294,7 @@ function fmtTime(t){ return new Date(t).toLocaleString(); }
 
 /* ==================== GitHub 通信（移植学习笔记/习题学习同套） ==================== */
 var BR_GH_USER = 'br_gh_user', BR_GH_TOK = 'br_gh_tok', BR_GH_REPO = 'br_gh_repo', BR_GH_CHECK = 'br_gh_check';
-var SW_VERSION = '1.0.1';
+var SW_VERSION = '1.0.2';
 var ghVerPending = null;
 
 function ghCfg(){
@@ -427,6 +432,19 @@ function idbGet(key){
   });
 }
 function dirSupported(){ return typeof window.showDirectoryPicker === 'function'; }
+/* v1.0.2 文件夹"钥匙过期"检测：授权后文件夹被别的应用（坚果云同步/文件管理器）
+   动过，File System Access 句柄缓存失效，报 NotModifiedError（state cached...）。
+   统一处理：作废句柄→向导弹出请用户重新授权。（洪医生 2026-08-05 实测踩坑） */
+function dirStaleErr(e){
+  return !!e && (e.name === 'NotModifiedError' ||
+    /state cached|had changed since it was read/i.test(e.message || ''));
+}
+function dirStaleHandle(){
+  dirHandle = null;
+  ioLog('🔑 文件夹钥匙过期了（文件夹被别的应用动过），请点「📂 授权文件夹」重新授权一次，再重试');
+  toast('🔑 文件夹钥匙过期了，请重新授权：点「📂 授权文件夹」再选一次', 5000);
+  if(typeof refreshAll === 'function') refreshAll();
+}
 function dirAuth(){
   if(!dirSupported()){ toast('这个浏览器不支持文件夹授权，请用 Chrome 打开', 4000); return; }
   window.showDirectoryPicker({ mode: 'readwrite' }).then(function(h){
@@ -491,6 +509,7 @@ function refreshFiles(){
       box.appendChild(row);
     });
   }).catch(function(e){
+    if(dirStaleErr(e)){ dirStaleHandle(); return; } /* v1.0.2 */
     box.innerHTML = '<div class="hint">读取文件夹失败：' + ((e && e.message) || e) + '，试试重新授权</div>';
   });
 }
@@ -519,6 +538,7 @@ function uploadFile(fi){
     ioLog('⬆️ 已传「' + fi.name + '」（' + fmtSize(fi.size) + '）——跟 AI 说一声文件名它就能读到');
     toast('✅ 已传给AI中转站，跟AI说一声文件名', 4000);
   }).catch(function(e){
+    if(dirStaleErr(e)){ dirStaleHandle(); return; } /* v1.0.2 */
     ioLog('❌ 传「' + fi.name + '」失败：' + ((e && e.message) || e));
     toast('❌ 上传失败：' + ((e && e.message) || '网络不通'), 4000);
   });
@@ -564,6 +584,7 @@ function receiveFiles(){
       if(got){ toast('✅ 收到 ' + got + ' 个文件，已存进文件夹', 3500); refreshFiles(); }
     });
   }).catch(function(e){
+    if(dirStaleErr(e)){ dirStaleHandle(); return; } /* v1.0.2 钥匙过期→引导重新授权 */
     ioLog('❌ 接收失败：' + ((e && e.message) || e));
     toast('❌ 接收失败：' + ((e && e.message) || '网络不通'), 4000);
   });
