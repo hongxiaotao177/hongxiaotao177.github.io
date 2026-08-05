@@ -4,7 +4,11 @@
  文件桥 —— AI 与手机文件夹之间的桥（单文件 HTML，第三个协同软件）
 ====================================================================
  修改记录：
-   v1.0.4 (2026-08-05) 写盘加固（dirWriteFile）：先删同名旧文件（0B空壳是脏状态源）
+   v1.0.5 (2026-08-05) 浏览器下载兜底+防死循环：华为机型SAF写授权文件夹必 stale
+  （读正常写不行），v1.0.3 自动重授权变死循环反复弹选择器。改法：写文件夹失败
+  →a[download] 浏览器下载兜底（落「下载」目录，文件不丢、中转照清）；自动重授权
+  每次点击限一次（receiveFiles(_raOnce)），再失败转手动引导。
+v1.0.4 (2026-08-05) 写盘加固（dirWriteFile）：先删同名旧文件（0B空壳是脏状态源）
   →全新句柄立刻写完；撞 NotModifiedError 用新句柄再试一次。根因查明：安卓媒体
   扫描器（MediaStore）会立刻"摸"根目录新文件改档案致句柄快照失效，与坚果云无关
   （洪医生文件夹在根目录123456789下、地址栏 content://media）。建议：桥文件夹
@@ -81,7 +85,7 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>文件桥 v1.0.4</title>
+<title>文件桥 v1.0.5</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #faf7f2; color: #3a3632; }
@@ -133,7 +137,7 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
 </style>
 </head>
 <body>
-<header>📂 文件桥<span class="ver">v1.0.4</span></header>
+<header>📂 文件桥<span class="ver">v1.0.5</span></header>
 <div class="page">
 
   <!-- 使用说明入口 -->
@@ -304,7 +308,7 @@ function fmtTime(t){ return new Date(t).toLocaleString(); }
 
 /* ==================== GitHub 通信（移植学习笔记/习题学习同套） ==================== */
 var BR_GH_USER = 'br_gh_user', BR_GH_TOK = 'br_gh_tok', BR_GH_REPO = 'br_gh_repo', BR_GH_CHECK = 'br_gh_check';
-var SW_VERSION = '1.0.4';
+var SW_VERSION = '1.0.5';
 var ghVerPending = null;
 
 function ghCfg(){
@@ -454,6 +458,18 @@ function dirStaleHandle(){
   ioLog('🔑 文件夹钥匙过期了（文件夹被别的应用动过），请点「📂 授权文件夹」重新授权一次，再重试');
   toast('🔑 文件夹钥匙过期了，请重新授权：点「📂 授权文件夹」再选一次', 5000);
   if(typeof refreshAll === 'function') refreshAll();
+}
+/* v1.0.5 浏览器下载兜底：部分机型（洪医生华为）SAF写授权文件夹就是过不去——
+   读没问题、写必 stale，重授权也一样，自动重试会变死循环反复弹选择器。
+   改法：写文件夹失败→直接走 a[download] 浏览器下载（落到「下载」目录，
+   这条路与"下载整套"同款，从来稳定），文件照样不丢，中转站照清。 */
+function browserDownload(bytes, name){
+  var blob = new Blob([bytes]);
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 2000);
 }
 /* v1.0.4 写盘加固：安卓媒体扫描器（MediaStore）会立刻"摸"新文件改档案，
    句柄快照对不上就报 NotModifiedError——根目录文件夹是巡逻重点（洪医生实测：
@@ -605,7 +621,7 @@ function uploadFile(fi){
 }
 
 /* ==================== 收AI文件（outbox 任务单 → 写进文件夹 → 删中转 → 标done） ==================== */
-function receiveFiles(){
+function receiveFiles(_raOnce){
   if(!ghReady()){ toast('请先在「☁️ 云设置」里填好并保存', 3500); return; }
   if(!dirHandle){ toast('请先授权文件夹，文件才有地方放', 3500); return; }
   toast('📥 正在检查AI发来的文件…', 2500);
@@ -629,6 +645,13 @@ function receiveFiles(){
               d.done = true;
               ioLog('📥 已收「' + d.saveAs + '」（' + fmtSize(bytes.length) + '）' + (d.note ? '——' + d.note : ''));
               return ghDeleteFile(d.file, '文件桥已收 ' + d.saveAs); /* 传完就删 */
+            }).catch(function(we){
+              /* v1.0.5 写不进授权文件夹 → 浏览器下载兜底，文件不丢 */
+              browserDownload(bytes, d.saveAs);
+              got++;
+              d.done = true; d.viaDownload = true;
+              ioLog('📥 已收「' + d.saveAs + '」——授权文件夹写不进，已改为浏览器下载，去「下载」目录找' + (d.note ? '——' + d.note : ''));
+              return ghDeleteFile(d.file, '文件桥已收(下载兜底) ' + d.saveAs);
             });
           });
         });
@@ -637,10 +660,20 @@ function receiveFiles(){
     return chain.then(function(){
       return ghWriteJson('bridge-outbox.json', box.data, box.sha, '文件桥回执');
     }).then(function(){
-      if(got){ toast('✅ 收到 ' + got + ' 个文件，已存进文件夹', 3500); refreshFiles(); }
+      if(got){
+        var anyDl = pend.some(function(d){ return d.viaDownload; });
+        toast(anyDl ? ('✅ 收到 ' + got + ' 个文件，部分经浏览器下载到「下载」目录')
+                    : ('✅ 收到 ' + got + ' 个文件，已存进文件夹'), 4000);
+        refreshFiles();
+      }
     });
   }).catch(function(e){
-    if(dirStaleErr(e)){ dirReauthRetry(receiveFiles); return; } /* v1.0.3 自动重授权+重试 */
+    /* v1.0.5 防死循环：自动重授权每次点击只试一次，再 stale 就转手动引导 */
+    if(dirStaleErr(e)){
+      if(!_raOnce){ dirReauthRetry(function(){ receiveFiles(true); }); }
+      else dirStaleHandle();
+      return;
+    }
     ioLog('❌ 接收失败：' + ((e && e.message) || e));
     toast('❌ 接收失败：' + ((e && e.message) || '网络不通'), 4000);
   });
