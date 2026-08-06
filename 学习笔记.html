@@ -396,6 +396,7 @@
    - 完全自包含，无任何外部 CDN/库；唯一网络请求为 api.moonshot.cn
    - 数据仅保存在本机浏览器 localStorage
 ====================================================================
+    v2.6.7 2026-08-06 公共钱罐hx_*：GitHub Token/仓库名/API Key 四个软件+主界面一处填处处有（空的自动抄公共的）。踩坑：当初各软件各起存钱罐名（bg_/xt_/br_），同源也互相看不见，Token要填好几遍。
 -->
 <html lang="zh-CN">
 <head>
@@ -5217,7 +5218,20 @@ ghBindBtn($('ghConfNo'), function(){
      不通=红条常驻（只说连不上，不影响使用）
    注意：version.json 与软件副本（dl 字段指向的文件）由交付端（AI）每次发版时
    推到备份仓库；本文件版本号改 SW_VERSION 一处即可。 */
-var SW_VERSION = '2.6.6';
+var SW_VERSION = '2.6.7';
+/* v2.6.7 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
+(function(){
+  var HX_MAP=[["bg_gh_user", "hx_gh_user"], ["bg_gh_tok", "hx_gh_tok"], ["bg_gh_repo", "hx_gh_repo"], ["bg_apikey", "hx_apikey"]];
+  function hxSync(){
+    for(var i=0;i<HX_MAP.length;i++){
+      var own=localStorage.getItem(HX_MAP[i][0]), sh=localStorage.getItem(HX_MAP[i][1]);
+      if(own && own!==sh) localStorage.setItem(HX_MAP[i][1], own);
+      else if(!own && sh) localStorage.setItem(HX_MAP[i][0], sh);
+    }
+  }
+  hxSync(); setInterval(hxSync, 2000);
+})();
+
 var LS_GH_CHECK = 'bg_gh_check';
 var updBar = $('updBar'), updText = $('updText'), updBtnRow = $('updBtnRow'),
     ghCheckEl = $('ghCheck');
