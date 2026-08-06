@@ -442,12 +442,13 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 - 间隔重复（熟悉的题隔几天再现）
 - 老.doc支持、选择题(A/B/C/D)题型
 ================================================================================
+    v1.4.8 2026-08-06 公共钱罐hx_*：GitHub Token/仓库名与其他软件共享，一处填处处有。
 -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>习题学习 v1.4.7</title>
+<title>习题学习 v1.4.8</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f2f4f8; color: #222; }
@@ -521,7 +522,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 
 <script id="embedded-data" type="application/json">null</script>
 
-<header>📖 习题学习<span class="ver">v1.4.7</span></header>
+<header>📖 习题学习<span class="ver">v1.4.8</span></header>
 
 <!-- ========== 首页 ========== -->
 <div id="page-home" class="page">
@@ -1884,7 +1885,20 @@ function toast(msg) {
    完整设计思路与协同协议见学习笔记.html 代码顶部（两边以那份为准）。 */
 var XT_GH_USER = "xt_gh_user", XT_GH_TOK = "xt_gh_tok", XT_GH_REPO = "xt_gh_repo",
     XT_GH_LAST = "xt_gh_last", XT_GH_CHECK = "xt_gh_check";
-var SW_VERSION = "1.4.7";
+var SW_VERSION = "1.4.8";
+/* v1.4.8 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
+(function(){
+  var HX_MAP=[["xt_gh_user", "hx_gh_user"], ["xt_gh_tok", "hx_gh_tok"], ["xt_gh_repo", "hx_gh_repo"]];
+  function hxSync(){
+    for(var i=0;i<HX_MAP.length;i++){
+      var own=localStorage.getItem(HX_MAP[i][0]), sh=localStorage.getItem(HX_MAP[i][1]);
+      if(own && own!==sh) localStorage.setItem(HX_MAP[i][1], own);
+      else if(!own && sh) localStorage.setItem(HX_MAP[i][0], sh);
+    }
+  }
+  hxSync(); setInterval(hxSync, 2000);
+})();
+
 var ghSuspend = false, ghAutoTimer = null, ghVerPending = null;
 
 function ghCfg() {
