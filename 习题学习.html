@@ -442,6 +442,9 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 - 间隔重复（熟悉的题隔几天再现）
 - 老.doc支持、选择题(A/B/C/D)题型
 ================================================================================
+    v1.4.10 2026-08-06 「问AI」的 key/模型接入公共钱罐：store.ai.key↔hx_apikey、
+    store.ai.model↔hx_aimodel 双向同步（hxAiSync 2秒轮询+保存时立即写）。
+    从此习题学习填一次key，PPT工坊等全家软件直接能用，不再"请先设置API key"。
     v1.4.9 2026-08-06 「⬇️ 下载整套软件」加第5步 PPT工坊（software-ppt.html→PPT工坊.html），
     计数改 1/5~5/5；PPT工坊 v0.1.1 入编第五位成员。
     v1.4.8 2026-08-06 公共钱罐hx_*：GitHub Token/仓库名与其他软件共享，一处填处处有。
@@ -451,7 +454,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>习题学习 v1.4.9</title>
+<title>习题学习 v1.4.10</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f2f4f8; color: #222; }
@@ -525,7 +528,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 
 <script id="embedded-data" type="application/json">null</script>
 
-<header>📖 习题学习<span class="ver">v1.4.9</span></header>
+<header>📖 习题学习<span class="ver">v1.4.10</span></header>
 
 <!-- ========== 首页 ========== -->
 <div id="page-home" class="page">
@@ -1596,7 +1599,9 @@ function saveAiKey() {
   var k = document.getElementById("aikey-input").value.trim();
   if (!k) { toast("key输入框是空的，请确认粘贴在「① API key」框里"); return; }
   store.ai = { key: k, model: document.getElementById("aimodel-input").value.trim() || "kimi-k2.5" };
-  saveStore(); closeAiKey(); toast("AI设置已保存");
+  saveStore();
+  try{ localStorage.setItem("hx_apikey", k); localStorage.setItem("hx_aimodel", store.ai.model); }catch(e){}
+  closeAiKey(); toast("AI设置已保存（已写进公共钱罐，全家软件都能用）");
 }
 /* v1.4.2 查额度：直接问 Kimi 开放平台真实余额（GET /v1/users/me/balance） */
 async function checkAiBalance() {
@@ -1888,7 +1893,7 @@ function toast(msg) {
    完整设计思路与协同协议见学习笔记.html 代码顶部（两边以那份为准）。 */
 var XT_GH_USER = "xt_gh_user", XT_GH_TOK = "xt_gh_tok", XT_GH_REPO = "xt_gh_repo",
     XT_GH_LAST = "xt_gh_last", XT_GH_CHECK = "xt_gh_check";
-var SW_VERSION = "1.4.9";
+var SW_VERSION = "1.4.10";
 /* v1.4.8 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["xt_gh_user", "hx_gh_user"], ["xt_gh_tok", "hx_gh_tok"], ["xt_gh_repo", "hx_gh_repo"]];
@@ -1900,6 +1905,21 @@ var SW_VERSION = "1.4.9";
     }
   }
   hxSync(); setInterval(hxSync, 2000);
+  /* v1.4.10 「问AI」的 key/模型 也进公共钱罐：store.ai.key ↔ hx_apikey、store.ai.model ↔ hx_aimodel
+     （自己的有就写公共的；自己空、公共有就抄过来——习题学习填一次，PPT工坊等全家都能用） */
+  function hxAiSync(){
+    try{
+      if(typeof store==="undefined" || !store) return;
+      if(!store.ai) store.ai={};
+      var sh=localStorage.getItem("hx_apikey")||"";
+      var shm=localStorage.getItem("hx_aimodel")||"";
+      if(store.ai.key && store.ai.key!==sh) localStorage.setItem("hx_apikey", store.ai.key);
+      else if(!store.ai.key && sh){ store.ai.key=sh; if(typeof saveStore==="function") saveStore(); }
+      if(store.ai.model && store.ai.model!==shm) localStorage.setItem("hx_aimodel", store.ai.model);
+      else if(!store.ai.model && shm){ store.ai.model=shm; if(typeof saveStore==="function") saveStore(); }
+    }catch(e){}
+  }
+  hxAiSync(); setInterval(hxAiSync, 2000);
 })();
 /* 主界面刷新：壳里打开软件时顺带检查套装主界面(index.html)有没有新版，有就换新（解决主界面自己不会更新的鸡生蛋问题） */
 function hxIndexRefresh(){
