@@ -118,6 +118,7 @@
     源码"（shim+worker.min.js），识别库走worker内fetch拦截返回Response，双计算核心按worker
     点名的文件名现场eval；createWorker必须传 workerBlobURL:false（否则blob跨worker被同源
     策略拦截）；素材从unpkg下载后要验证完整性（jsdelivr经常截断）。其余代码两版完全相同。
+     v0.10.2 2026-08-06 公共钱罐hx_*：GitHub Token/仓库名/API Key 四个软件+主界面一处填处处有（空的自动抄公共的）。踩坑：各软件存钱罐名不一（bg_/xt_/br_），同源也互通不了。
 -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
@@ -175,7 +176,7 @@
 </style>
 </head>
 <body>
-<header><span>血气分析解读助手</span><span class="ver">v0.10.1</span></header>
+<header><span>血气分析解读助手</span><span class="ver">v0.10.2</span></header>
 <main>
 
   <!-- 第1步：首页 -->
@@ -1950,7 +1951,20 @@ ghBindBtn($("ghConfNo"), function(){
    与学习笔记/习题学习/文件桥同款：读 version-xueqi.json 比对版本；
    壳APP里下载新版 = applyUpdate 自更新（重启生效）+ 授权文件夹存备份；
    浏览器里 = 普通下载。 */
-var SW_VERSION = "0.10.1";
+var SW_VERSION = "0.10.2";
+/* v0.10.2 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
+(function(){
+  var HX_MAP=[["bg_gh_user", "hx_gh_user"], ["bg_gh_tok", "hx_gh_tok"], ["bg_gh_repo", "hx_gh_repo"], ["bg_apikey", "hx_apikey"]];
+  function hxSync(){
+    for(var i=0;i<HX_MAP.length;i++){
+      var own=localStorage.getItem(HX_MAP[i][0]), sh=localStorage.getItem(HX_MAP[i][1]);
+      if(own && own!==sh) localStorage.setItem(HX_MAP[i][1], own);
+      else if(!own && sh) localStorage.setItem(HX_MAP[i][0], sh);
+    }
+  }
+  hxSync(); setInterval(hxSync, 2000);
+})();
+
 var ghVerPending = null;
 function cmpVer(a, b){
   var pa = String(a).split("."), pb = String(b).split(".");
