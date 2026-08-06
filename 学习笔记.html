@@ -396,7 +396,11 @@
    - 完全自包含，无任何外部 CDN/库；唯一网络请求为 api.moonshot.cn
    - 数据仅保存在本机浏览器 localStorage
 ====================================================================
-    v2.6.7 2026-08-06 公共钱罐hx_*：GitHub Token/仓库名/API Key 四个软件+主界面一处填处处有（空的自动抄公共的）。踩坑：当初各软件各起存钱罐名（bg_/xt_/br_），同源也互相看不见，Token要填好几遍。
+    v2.6.8 2026-08-06 「📊 生成PPT大纲」上线：详情页新按钮（btnQuiz旁），整篇笔记→AI按Markdown
+         规矩写大纲（#封面/##分页/-要点/|表格|/!!大数字/>金句/```chart图表）→预览可改
+         →「📤 发送到PPT工坊」走 ppt_inbox 邮路（照抄 xitixuexi_inbox 协议）。
+         PPT工坊 v0.1.0 入编第五位成员。
+   v2.6.7 2026-08-06 公共钱罐hx_*：GitHub Token/仓库名/API Key 四个软件+主界面一处填处处有（空的自动抄公共的）。踩坑：当初各软件各起存钱罐名（bg_/xt_/br_），同源也互相看不见，Token要填好几遍。
     同版补充：主界面刷新hxIndexRefresh——壳里打开任一软件顺带把套装主界面(index.html)也换新，主界面从此也能自动更新。
 -->
 <html lang="zh-CN">
@@ -643,13 +647,15 @@
   }
   #foldPanel input:focus { border-color: #c9a877; }
   /* v2.2 出题面板（复用 rp-* 卡片样式）+ 补齐 bonePanel 遮罩定位（v1.9 遗漏，行为不变） */
-  #quizPanel, #bonePanel {
+  #quizPanel, #bonePanel, #pptPanel {
     position: fixed; inset: 0; z-index: 80;
     background: rgba(60,48,32,.35);
     display: flex; align-items: center; justify-content: center;
     padding: 12px;
   }
-  #quizPanel.hidden, #bonePanel.hidden { display: none !important; }
+  #quizPanel.hidden, #bonePanel.hidden, #pptPanel.hidden { display: none !important; }
+  /* v2.6.8 PPT面板：大纲预览框高一点 */
+  #pptText { min-height: 260px; }
   #quizPanel select {
     width: 100%; font-size: 16px; padding: 12px 14px; margin-bottom: 8px;
     border: 1px solid #e5ddd0; border-radius: 12px;
@@ -835,6 +841,7 @@
         <button class="btn secondary" id="btnHandEdit" style="margin-top:16px;">✍️ 自己写/改</button>
         <button class="btn secondary" id="btnRevise" style="margin-top:16px;">✏️ 让 AI 改</button>
         <button class="btn secondary" id="btnQuiz" style="margin-top:16px;">📝 出复习题</button>
+        <button class="btn secondary" id="btnPpt" style="margin-top:16px;">📊 生成PPT大纲</button>
         <button class="btn secondary" id="btnBatchAnnot" style="margin-top:16px; display:none;">🤖 批量解释</button>
       </div>
       <!-- v2.3 手写模式面板：标题+正文直接打字，不发AI请求 -->
@@ -1072,6 +1079,41 @@
         </div>
         <div class="msg" id="quizMsg2"></div>
         <div class="hint" style="margin-top:8px;">📤 发送后，打开「习题学习」软件会自动弹出导入窗（两个软件要用同一个浏览器打开才收得到）；收不到就用「📋 复制」去那边粘贴导入。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- v2.6.8 生成PPT大纲面板（整篇笔记→AI按Markdown规矩写大纲→发送到PPT工坊） -->
+  <div id="pptPanel" class="hidden">
+    <div class="rp-card">
+      <h3>📊 生成PPT大纲</h3>
+      <!-- 编辑视图：范围预览 + 提示词 -->
+      <div id="pptEditView">
+        <div class="rp-label" id="pptScopeLabel">大纲范围：</div>
+        <div class="rp-orig" id="pptOrig"></div>
+        <div class="rp-label">对大纲的要求（可自己改）：</div>
+        <textarea id="pptInput"></textarea>
+        <div class="btn-row">
+          <button type="button" class="btn" id="pptSend">🤖 生成大纲</button>
+          <button type="button" class="btn secondary" id="pptCancel">取消</button>
+        </div>
+        <div class="loading" id="pptLoading"><span class="spinner"></span>AI 正在写大纲…</div>
+        <div class="msg" id="pptMsg"></div>
+      </div>
+      <!-- 预览视图：大纲md（可改）+ 发送/复制/重来/完成 -->
+      <div id="pptPreviewView" class="hidden">
+        <div class="rp-label">大纲预览（Markdown 格式，可直接改；## 是一页，|表格|、!!大数字、>金句、```chart 都认）：</div>
+        <textarea id="pptText"></textarea>
+        <div class="btn-row">
+          <button type="button" class="btn" id="pptToGongfang">📤 发送到PPT工坊</button>
+          <button type="button" class="btn secondary" id="pptCopy">📋 复制大纲md</button>
+        </div>
+        <div class="btn-row">
+          <button type="button" class="btn secondary" id="pptRetry">🔄 重新生成</button>
+          <button type="button" class="btn secondary" id="pptDone">✅ 完成</button>
+        </div>
+        <div class="msg" id="pptMsg2"></div>
+        <div class="hint" style="margin-top:8px;">📤 发送后，打开「PPT工坊」软件会自动收下这份大纲（两个软件要用同一个浏览器打开才收得到）；收不到就用「📋 复制」去那边粘贴。</div>
       </div>
     </div>
   </div>
@@ -4392,6 +4434,163 @@ ghBindBtn($('btnQuiz'), function(){
 /* 测试钩子：仅供自动化测试驱动 */
 window.openQuizPanel = openQuizPanel;
 window.quizParseCount = quizParseCount;
+/* ==================== v2.6.8 生成PPT大纲（整篇笔记→AI写Markdown大纲→发送到PPT工坊） ==================== */
+var pptPanel = $('pptPanel'), pptScopeLabel = $('pptScopeLabel'), pptOrig = $('pptOrig'),
+    pptInput = $('pptInput'), pptLoading = $('pptLoading'), pptMsg = $('pptMsg'),
+    pptText = $('pptText'), pptMsg2 = $('pptMsg2'),
+    pptEditView = $('pptEditView'), pptPreviewView = $('pptPreviewView');
+var pptCtx = null; /* {sourceText, scopeLabel, bankTitle} */
+var PPT_DEFAULT_PROMPT = '把这篇笔记整理成一份讲课用的PPT大纲。先提炼核心框架，每一页一个主题，要点简洁；对比内容用表格；关键数据用大数字；结尾金句总结。';
+var PPT_MD_RULES = '【PPT大纲 Markdown 格式硬性要求】\n' +
+  '- 第一行 "# 标题" 是封面页；每个 "## 标题" 开始新的一页；\n' +
+  '- 页内 "- " 开头是要点；\n' +
+  '- 对比内容用表格："|列1|列2|" 每行一条，第一行是表头（有没有 |---| 分隔线都行）；\n' +
+  '- "!! 大数字 说明" 显示超大数字（如：!! 60% 治愈成功率）；\n' +
+  '- "> 文字" 是金句页；\n' +
+  '- 图表用 ```chart 围栏包一行 JSON：{"type":"bar或pie或line","title":"标题","labels":["甲","乙"],"values":[1,2]}；\n' +
+  '- 只输出大纲本身，不要解释、不要客套话。页数 6~12 页。';
+
+function openPptPanel(ctx){
+  pptCtx = ctx;
+  pptScopeLabel.textContent = '大纲范围：' + ctx.scopeLabel;
+  pptOrig.textContent = ctx.sourceText.length > 100 ? ctx.sourceText.slice(0, 100) + '……' : ctx.sourceText;
+  pptInput.value = PPT_DEFAULT_PROMPT;
+  pptMsg.className = 'msg'; pptMsg.textContent = '';
+  pptMsg2.className = 'msg'; pptMsg2.textContent = '';
+  pptLoading.style.display = 'none';
+  pptPreviewView.classList.add('hidden');
+  pptEditView.classList.remove('hidden');
+  pptPanel.classList.remove('hidden');
+}
+function closePptPanel(){ pptPanel.classList.add('hidden'); pptCtx = null; }
+
+/* AI 返回剥壳：去掉 ```markdown 围栏和开场白 */
+function pptExtract(text){
+  var t = String(text || '');
+  var m = t.match(/```(?:markdown|md)?\s*([\s\S]*?)```/);
+  if(m) t = m[1];
+  t = t.replace(/^\s+|\s+$/g, '');
+  return t;
+}
+
+function callPptAI(userPrompt, sourceText, onOk, onErr, st){
+  var key = (localStorage.getItem(LS_KEY) || '').trim();
+  if(!key){ onErr('还没有填写 API Key。请先返回首页在「API 设置」里保存 Key。'); return; }
+  var sys = '你是一位资深的重症医学（ICU）讲课助手，帮助医生把笔记整理成PPT大纲。';
+  var usr = '【笔记内容】\n' + sourceText + '\n\n' +
+    '请把上面的笔记整理成一份PPT大纲。\n' + PPT_MD_RULES + '\n' +
+    '【对大纲的要求】' + userPrompt;
+  var payload = { model: modelSel.value, max_tokens: 8000,
+    messages: [ {role:'system',content:sys}, {role:'user',content:usr} ] };
+  if(st) st.set('① 正在把笔记发给 Kimi 服务器…');
+  fetchWithTimeout('https://api.moonshot.cn/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+    body: JSON.stringify(payload)
+  }).then(function(resp){
+    if(!resp.ok){
+      return resp.text().then(function(t){
+        var tip = '请求失败（HTTP ' + resp.status + '）。';
+        if(resp.status === 401) tip = 'API Key 无效或已过期，请检查 Key。';
+        else if(resp.status === 429) tip = '请求太频繁或额度不足，请稍后再试。';
+        else if(resp.status >= 500) tip = 'Kimi 服务器暂时繁忙，请稍后再试。';
+        if(t){ var sv = t.replace(/\s+/g,' ').slice(0,150); tip += '（服务器说：' + sv + '）'; }
+        throw new Error(tip);
+      });
+    }
+    if(st) st.set('② Kimi 已收到，AI 正在写大纲…');
+    return resp.json();
+  }).then(function(data){
+    if(st) st.set('③ 大纲已生成，正在整理…');
+    var text = '';
+    try{
+      var c = data.choices[0].message.content;
+      /* content 可能是分段数组，拼接 */
+      if(typeof c === 'string') text = c;
+      else if(c && c.length){ for(var i=0;i<c.length;i++){ if(c[i] && c[i].text) text += c[i].text; } }
+    }catch(e){}
+    text = pptExtract(text);
+    if(text.indexOf('##') < 0) throw new Error('AI 返回的格式认不出大纲（点「🔄 重新生成」再试一次，一般会好）。');
+    if(st) st.stop();
+    onOk(text);
+  }).catch(function(err){
+    if(st) st.stop();
+    var m = (err && err.message) ? err.message : '网络连接失败，请检查网络后重试。';
+    if(/Failed to fetch|NetworkError|Load failed/i.test(m)) m = '网络连接失败（请求没到达 Kimi 或中途断线）。请检查网络后重试。';
+    onErr(m);
+  });
+}
+
+function pptSend(){
+  if(!pptCtx) return;
+  pptMsg.className = 'msg'; pptMsg.textContent = '';
+  pptLoading.style.display = 'block';
+  var st = stageWatch(pptLoading);
+  callPptAI(pptInput.value, pptCtx.sourceText,
+    function(text){
+      pptLoading.style.display = 'none';
+      pptText.value = text;
+      pptEditView.classList.add('hidden');
+      pptPreviewView.classList.remove('hidden');
+    },
+    function(errMsg){
+      pptLoading.style.display = 'none';
+      showMsg(pptMsg, errMsg, 'err');
+    }, st);
+}
+/* 发送到PPT工坊收件箱（含用户改过的最新md） */
+function pptSendToGongfang(){
+  var text = pptText.value.replace(/^\s+|\s+$/g, '');
+  if(!text || text.indexOf('##') < 0){ showMsg(pptMsg2, '大纲里至少要有一页（## 开头），请检查格式。', 'err'); return; }
+  try{
+    localStorage.setItem('ppt_inbox', JSON.stringify({
+      title: pptCtx ? pptCtx.bankTitle : '学习笔记大纲',
+      text: text, from: '学习笔记', t: Date.now()
+    }));
+    popToast('📤 大纲已发送——现在去打开「PPT工坊」，会自动收下这份大纲', 4500);
+  }catch(e){
+    showMsg(pptMsg2, '写入收件箱失败：浏览器禁止了本地存储。', 'err');
+  }
+}
+function pptCopyTxt(){
+  var text = pptText.value;
+  function fallback(){
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); popToast('📋 已复制，去PPT工坊粘贴', 3500); }
+    catch(e){ showMsg(pptMsg2, '复制失败，请长按大纲框手动全选复制。', 'err'); }
+    document.body.removeChild(ta);
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(function(){
+      popToast('📋 已复制，去PPT工坊粘贴', 3500);
+    }, fallback);
+  }else fallback();
+}
+/* 按钮绑定（沿用 ghBindBtn 通用触摸链） */
+ghBindBtn($('pptSend'), pptSend);
+ghBindBtn($('pptCancel'), closePptPanel);
+ghBindBtn($('pptToGongfang'), pptSendToGongfang);
+ghBindBtn($('pptCopy'), pptCopyTxt);
+ghBindBtn($('pptRetry'), function(){
+  pptPreviewView.classList.add('hidden');
+  pptEditView.classList.remove('hidden');
+});
+ghBindBtn($('pptDone'), closePptPanel);
+/* 详情页整篇生成PPT大纲按钮 */
+ghBindBtn($('btnPpt'), function(){
+  var note = getNoteById(currentNoteId);
+  if(!note) return;
+  openPptPanel({
+    sourceText: note.content,
+    scopeLabel: '整篇笔记「' + (note.title || '无题') + '」（' + note.content.length + ' 字）',
+    bankTitle: (note.title || '学习笔记') + 'PPT大纲'
+  });
+});
+/* 测试钩子：仅供自动化测试驱动 */
+window.openPptPanel = openPptPanel;
+
 
 /* ==================== v1.7 新稿嵌套小改（对照视图里涂黑一小段 → 只改这一小段，只套一层） ==================== */
 var nestBar = $('nestBar'), nestInput = $('nestInput'),
@@ -5219,7 +5418,7 @@ ghBindBtn($('ghConfNo'), function(){
      不通=红条常驻（只说连不上，不影响使用）
    注意：version.json 与软件副本（dl 字段指向的文件）由交付端（AI）每次发版时
    推到备份仓库；本文件版本号改 SW_VERSION 一处即可。 */
-var SW_VERSION = '2.6.7';
+var SW_VERSION = '2.6.8';
 /* v2.6.7 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["bg_gh_user", "hx_gh_user"], ["bg_gh_tok", "hx_gh_tok"], ["bg_gh_repo", "hx_gh_repo"], ["bg_apikey", "hx_apikey"]];
