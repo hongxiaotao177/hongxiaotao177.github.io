@@ -75,6 +75,9 @@
     v0.9.9 对抗手机芯片OCR差异（同一张图测试机过、用户机不过）：
         ①"栓→检"高频误认自动纠正 ②锚点加"日期"候选（底部三行都含）
         ③第一遍找不到自动换识别模式（PSM 6）+更高分辨率再扫4个方向
+    v0.10.1 升级流水线入编：云备份卡片新增「🔍 自检」「⬇️ 下载新版」
+        （读 version-xueqi.json；壳APP里自更新+文件夹备份，浏览器普通下载）；
+        同时被三个兄弟软件的「下载整套」收编为第四件。
     v0.10.0 呼吸机屏幕分析上线：首页新增「🫁 呼吸机屏幕分析」——拍呼吸机
         控制界面（无需脱敏），AI读出通气模式/全部设定参数/全部监测值+波形
         形态（人机同步、呼气归零、双触发等），给出初步分析；内置呼吸机操作
@@ -172,7 +175,7 @@
 </style>
 </head>
 <body>
-<header><span>血气分析解读助手</span><span class="ver">v0.10.0</span></header>
+<header><span>血气分析解读助手</span><span class="ver">v0.10.1</span></header>
 <main>
 
   <!-- 第1步：首页 -->
@@ -257,6 +260,11 @@
             <button type="button" class="btn secondary" id="ghConfNo">取消</button>
           </div>
         </div>
+        <div class="row">
+          <button type="button" class="btn secondary" id="ghCheckBtn">🔍 自检：线路 + 新版本</button>
+          <button type="button" class="btn secondary" id="ghDlBtn" hidden>⬇️ 下载新版</button>
+        </div>
+        <p class="hint" id="ghCheck">自检：还没查过（打开软件会自动查一次）</p>
         <p class="hint" id="ghStatus">上次备份：未备份过</p>
         <p class="hint">备份内容=本软件的设置（含 API Key、模型、提示词等），保存到您的 GitHub 私有仓库，和学习笔记的备份互不干扰。换设备/清缓存后：填一次 Token → 点「📥 从云端恢复」即可。</p>
       </details>
@@ -1937,6 +1945,79 @@ ghBindBtn($("ghConfNo"), function(){
   ghPendingData = null;
   $("ghConfirm").hidden = true;
 });
+
+/* ==================== v0.10.1 自检 + 下载新版（四件套编制） ====================
+   与学习笔记/习题学习/文件桥同款：读 version-xueqi.json 比对版本；
+   壳APP里下载新版 = applyUpdate 自更新（重启生效）+ 授权文件夹存备份；
+   浏览器里 = 普通下载。 */
+var SW_VERSION = "0.10.1";
+var ghVerPending = null;
+function cmpVer(a, b){
+  var pa = String(a).split("."), pb = String(b).split(".");
+  for(var i = 0; i < 3; i++){
+    var na = parseInt(pa[i] || "0", 10), nb = parseInt(pb[i] || "0", 10);
+    if(na !== nb) return na - nb;
+  }
+  return 0;
+}
+function ghFileUrl(name){
+  var c = ghCfg();
+  return "https://api.github.com/repos/" + encodeURIComponent(c.user) + "/" +
+         encodeURIComponent(c.repo) + "/contents/" + encodeURIComponent(name);
+}
+function ghSelfCheck(manual){
+  if(!ghReady()){ if(manual) ghShowMsg("请先填好用户名、Token、仓库名并保存。", "err"); return; }
+  if(manual) $("ghCheck").textContent = "自检：正在查…";
+  ghFetch(ghFileUrl("version-xueqi.json"), { headers: ghHeaders() }).then(function(resp){
+    if(resp.status === 404){ $("ghCheck").textContent = "自检：" + new Date().toLocaleTimeString() + " ✅ 线路通（云端还没有版本信息）"; return null; }
+    if(!resp.ok) return resp.text().then(function(t){ throw new Error(ghErrText(resp.status, t)); });
+    return resp.json();
+  }).then(function(file){
+    if(!file) return;
+    var info;
+    try{ info = JSON.parse(ghB64dec(file.content || "")); }catch(e){ info = null; }
+    if(!info || !info.version){ $("ghCheck").textContent = "自检：✅ 线路通（版本信息读不懂）"; return; }
+    if(cmpVer(info.version, SW_VERSION) > 0){
+      ghVerPending = info;
+      $("ghCheck").textContent = "自检：✅ 线路通　🎉 网上有新版 v" + info.version + "（本机 v" + SW_VERSION + "）" + (info.note ? "——" + info.note : "");
+      $("ghDlBtn").hidden = false;
+      ghToast("🎉 有新版 v" + info.version + "，点「⬇️ 下载新版」", 4500);
+    }else{
+      $("ghCheck").textContent = "自检：" + new Date().toLocaleTimeString() + " ✅ 线路通　已是最新版 v" + SW_VERSION;
+      $("ghDlBtn").hidden = true;
+    }
+  }).catch(function(e){
+    $("ghCheck").textContent = "自检：❌ 连不上 GitHub（" + ((e && e.message) || "网络不通") + "）";
+  });
+}
+$("ghCheckBtn").onclick = function(){ ghSelfCheck(true); };
+$("ghDlBtn").onclick = function(){
+  if(!ghVerPending || !ghVerPending.dl){ ghToast("云端没给下载文件，找 AI 要新版即可"); return; }
+  ghToast("⏳ 正在下载新版…", 2000);
+  ghFetch(ghFileUrl(ghVerPending.dl), { headers: ghHeaders() }).then(function(resp){
+    if(!resp.ok) return resp.text().then(function(t){ throw new Error(ghErrText(resp.status, t)); });
+    return resp.json();
+  }).then(function(file){
+    if(window.LearnShell){
+      /* 壳APP：自更新 + 授权文件夹存备份 */
+      var b64html = ghB64enc(ghB64dec(file.content || ""));
+      var okSelf = window.LearnShell.applyUpdate("血气分析.html", b64html);
+      try{ if(window.LearnShell.folderSet()) window.LearnShell.writeFile("血气分析_v" + ghVerPending.version + ".html", b64html); }catch(e){}
+      if(okSelf){ ghToast("✅ 新版已装好，重启APP生效（文件夹里也存了一份）", 4500); return; }
+    }
+    var blob = new Blob([ghB64dec(file.content || "")], { type: "text/html;charset=utf-8" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "血气分析_v" + ghVerPending.version + ".html";
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    ghToast("✅ 新版已下载，到「下载」目录找新文件打开", 4000);
+  }).catch(function(e){
+    ghToast("❌ 下载失败：" + ((e && e.message) || "网络不通"), 4000);
+  });
+};
+/* 打开软件 3 秒后自动自检一次（配置齐全才查） */
+setTimeout(function(){ if(ghReady()) ghSelfCheck(false); }, 3000);
 
 /* v0.9.11 初始化：预填设置 + 状态行；本机无数据 + 配置齐全 → 自动 pull（仍走确认条防误覆盖） */
 $("ghUser").value = localStorage.getItem(LS_GH_USER) || "hongxiaotao177";
