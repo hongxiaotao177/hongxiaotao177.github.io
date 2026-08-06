@@ -12,6 +12,7 @@
       4) 壳里打开时隐藏「壳APP下载」卡片（都已经在壳里了）。
       5) Token/仓库名读公共钱罐 hx_*（各软件 bg_/xt_/br_ 开头的也能认）。
       踩坑：iPad/浏览器规矩网页换不了自己，自动更新只在壳APP里跑；浏览器打开只是静态菜单。
+    v1.1.3 2026-08-06 习题学习升1.4.10（问AI的key/模型接入公共钱罐hx_apikey/hx_aimodel）。
     v1.1.2 2026-08-06 PPT工坊入编第五位成员：SUITE注册表+CUR加ppt(0.1.1)，学习记录区
       加PPT工坊卡片；其余成员版本号同步（笔记2.6.8/习题1.4.9/文件桥1.1.3）。
     v1.1.1 2026-08-06 壳APP卡片换v1.0.4链接（壳补了JS对话框弹窗，修习题恢复无效）。
@@ -88,7 +89,7 @@
   <a class="card" href="习题学习.html">
     <h2>📖 习题学习</h2>
     <div class="desc">碎片时间刷题：导入/粘贴题库，复习时标记陌生/一般/熟悉，导出错题。能自动接收「学习笔记」发来的复习题；题库和学习记录自动云备份。</div>
-    <div class="meta"><span class="tag">网页工具</span><span class="tag" id="tagXiti">v1.4.9</span></div>
+    <div class="meta"><span class="tag">网页工具</span><span class="tag" id="tagXiti">v1.4.10</span></div>
   </a>
 
   <a class="card" href="文件桥.html">
@@ -123,7 +124,7 @@
 <script>
 /* ==================== 套装主界面自检器官（v1.1.0） ==================== */
 /* 本界面对应的四个软件当前内装版本（每次发版跟着改） */
-var CUR = { notes:"2.6.8", xiti:"1.4.9", bridge:"1.1.3", xueqi:"0.10.2", ppt:"0.1.1" };
+var CUR = { notes:"2.6.8", xiti:"1.4.10", bridge:"1.1.3", xueqi:"0.10.2", ppt:"0.1.1" };
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
 try{ var _sv=JSON.parse(localStorage.getItem("hx_suite_ver")||"{}"); Object.keys(_sv).forEach(function(k){ if(_sv[k]) CUR[k]=_sv[k]; }); }catch(e){}
 /* key: [云端软件文件, 壳内文件名, 云端版本文件, 标签id] */
