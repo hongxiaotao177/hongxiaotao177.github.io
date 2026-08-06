@@ -369,6 +369,8 @@ v1.4 (2026-08-02) 学习笔记协同 + GitHub云备份 + 开机自检 + 下载�
   修改结果：Playwright 端到端测试通过（收件箱导入/云备份推拉/自检三态/
   下载整套/旧功能回归），见交付记录。
 
+v1.4.7 (2026-08-06) 「下载整套」三件套→四件套：血气分析入编（software-xueqi.html）。
+
 v1.4.6 (2026-08-06) 对账：文件夹备份与云端备份互相印证。每次备份写
   backup-meta-xiti.json（时间+指纹+题库数，几十字节）到两边；打开软件4秒
   自动对账、自检顺手对账、备份完顺手对账。不一致明说哪边新+该用哪个恢复按钮。
@@ -445,7 +447,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>习题学习 v1.4.6</title>
+<title>习题学习 v1.4.7</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f2f4f8; color: #222; }
@@ -519,7 +521,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 
 <script id="embedded-data" type="application/json">null</script>
 
-<header>📖 习题学习<span class="ver">v1.4.6</span></header>
+<header>📖 习题学习<span class="ver">v1.4.7</span></header>
 
 <!-- ========== 首页 ========== -->
 <div id="page-home" class="page">
@@ -575,7 +577,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
         <div id="recStatus" style="font-size:13px;color:#888;line-height:1.8;margin-top:2px;">对账：还没查过</div>
         <div id="ghCheck" style="font-size:13px;color:#888;line-height:1.8;margin-top:6px;white-space:pre-line;">自检：还没查过（每次打开软件会自动查一次）</div>
         <div id="ghStatus" style="font-size:13px;color:#888;margin-top:4px;">上次备份：未备份过</div>
-        <div style="font-size:12px;color:#aaa;margin-top:6px;">「下载整套」= 学习笔记 + 习题学习 + 文件桥，三个最新版一起下载（浏览器首次可能问"允许下载多个文件"，点允许）。备份含题库+学习记录+AI设置，存您自己的私有仓库。</div>
+        <div style="font-size:12px;color:#aaa;margin-top:6px;">「下载整套」= 学习笔记 + 习题学习 + 文件桥 + 血气分析，四个最新版一起下载（浏览器首次可能问"允许下载多个文件"，点允许）。备份含题库+学习记录+AI设置，存您自己的私有仓库。</div>
       </div>
     </details>
   </div>
@@ -1882,7 +1884,7 @@ function toast(msg) {
    完整设计思路与协同协议见学习笔记.html 代码顶部（两边以那份为准）。 */
 var XT_GH_USER = "xt_gh_user", XT_GH_TOK = "xt_gh_tok", XT_GH_REPO = "xt_gh_repo",
     XT_GH_LAST = "xt_gh_last", XT_GH_CHECK = "xt_gh_check";
-var SW_VERSION = "1.4.6";
+var SW_VERSION = "1.4.7";
 var ghSuspend = false, ghAutoTimer = null, ghVerPending = null;
 
 function ghCfg() {
@@ -2272,7 +2274,13 @@ function ghDownloadAll() {
           toast("⏳ 正在下载 文件桥…（3/3）");
           ghDlFile("software-bridge.html", "文件桥.html", function (err3) {
             if (err3) { toast("❌ 文件桥下载失败：" + err3 + "（前两个已下载）"); return; }
-            toast(window.LearnShell ? "✅ 三个软件都已装好，重启APP生效（文件夹里也各存了一份）" : "✅ 三个软件都已下载，到下载列表里找");
+            setTimeout(function () {
+              toast("⏳ 正在下载 血气分析…（4/4）");
+              ghDlFile("software-xueqi.html", "血气分析.html", function (err4) {
+                if (err4) { toast("❌ 血气分析下载失败：" + err4 + "（前三个已下载）"); return; }
+                toast(window.LearnShell ? "✅ 四个软件都已装好，重启APP生效（文件夹里也各存了一份）" : "✅ 四个软件都已下载，到下载列表里找");
+              });
+            }, 900);
           });
         }, 900);
       });
