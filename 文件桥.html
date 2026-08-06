@@ -86,12 +86,13 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
       （queryPermission/requestPermission 兜底，仍要用户手势）
    ④ 手机没有"批命令"——打包/搬家功能必须做成软件内按钮（本卡已做）
 ====================================================================
+    v1.1.2 (2026-08-06) 公共钱罐hx_*：GitHub Token/仓库名与其他软件共享，一处填处处有。
 -->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>文件桥 v1.1.1</title>
+<title>文件桥 v1.1.2</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #faf7f2; color: #3a3632; }
@@ -143,7 +144,7 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
 </style>
 </head>
 <body>
-<header>📂 文件桥<span class="ver">v1.1.1</span></header>
+<header>📂 文件桥<span class="ver">v1.1.2</span></header>
 <div class="page">
 
   <!-- 使用说明入口 -->
@@ -314,7 +315,20 @@ function fmtTime(t){ return new Date(t).toLocaleString(); }
 
 /* ==================== GitHub 通信（移植学习笔记/习题学习同套） ==================== */
 var BR_GH_USER = 'br_gh_user', BR_GH_TOK = 'br_gh_tok', BR_GH_REPO = 'br_gh_repo', BR_GH_CHECK = 'br_gh_check';
-var SW_VERSION = '1.1.1';
+var SW_VERSION = '1.1.2';
+/* v1.1.2 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
+(function(){
+  var HX_MAP=[["br_gh_user", "hx_gh_user"], ["br_gh_tok", "hx_gh_tok"], ["br_gh_repo", "hx_gh_repo"]];
+  function hxSync(){
+    for(var i=0;i<HX_MAP.length;i++){
+      var own=localStorage.getItem(HX_MAP[i][0]), sh=localStorage.getItem(HX_MAP[i][1]);
+      if(own && own!==sh) localStorage.setItem(HX_MAP[i][1], own);
+      else if(!own && sh) localStorage.setItem(HX_MAP[i][0], sh);
+    }
+  }
+  hxSync(); setInterval(hxSync, 2000);
+})();
+
 var ghVerPending = null;
 
 function ghCfg(){
