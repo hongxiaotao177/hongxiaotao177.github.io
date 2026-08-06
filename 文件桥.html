@@ -86,6 +86,7 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
       （queryPermission/requestPermission 兜底，仍要用户手势）
    ④ 手机没有"批命令"——打包/搬家功能必须做成软件内按钮（本卡已做）
 ====================================================================
+    v1.1.3 (2026-08-06) 「⬇️ 下载整套软件」加第5步 PPT工坊（software-ppt.html→PPT工坊.html），计数改 1/5~5/5。
     v1.1.2 (2026-08-06) 公共钱罐hx_*：GitHub Token/仓库名与其他软件共享，一处填处处有。
     同版补充：主界面刷新hxIndexRefresh——壳里打开任一软件顺带把套装主界面(index.html)也换新，主界面从此也能自动更新。
 -->
@@ -93,7 +94,7 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>文件桥 v1.1.2</title>
+<title>文件桥 v1.1.3</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #faf7f2; color: #3a3632; }
@@ -145,7 +146,7 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
 </style>
 </head>
 <body>
-<header>📂 文件桥<span class="ver">v1.1.2</span></header>
+<header>📂 文件桥<span class="ver">v1.1.3</span></header>
 <div class="page">
 
   <!-- 使用说明入口 -->
@@ -316,7 +317,7 @@ function fmtTime(t){ return new Date(t).toLocaleString(); }
 
 /* ==================== GitHub 通信（移植学习笔记/习题学习同套） ==================== */
 var BR_GH_USER = 'br_gh_user', BR_GH_TOK = 'br_gh_tok', BR_GH_REPO = 'br_gh_repo', BR_GH_CHECK = 'br_gh_check';
-var SW_VERSION = '1.1.2';
+var SW_VERSION = '1.1.3';
 /* v1.1.2 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["br_gh_user", "hx_gh_user"], ["br_gh_tok", "hx_gh_tok"], ["br_gh_repo", "hx_gh_repo"]];
@@ -1071,22 +1072,28 @@ function ghDownloadNew(){
 /* 三件套连下：学习笔记 → 习题学习 → 文件桥 */
 function ghDownloadAll(){
   if(!ghReady()){ toast('请先在「☁️ 云设置」里填好并保存', 3500); return; }
-  toast('⏳ 正在下载 学习笔记…（1/3）', 2000);
+  toast('⏳ 正在下载 学习笔记…（1/5）', 2000);
   ghDlFile('software-notes.html', '学习笔记.html', function(err1){
     if(err1){ toast('❌ 学习笔记下载失败：' + err1, 4000); return; }
     setTimeout(function(){
-      toast('⏳ 正在下载 习题学习…（2/3）', 2000);
+      toast('⏳ 正在下载 习题学习…（2/5）', 2000);
       ghDlFile('software-xiti.html', '习题学习.html', function(err2){
         if(err2){ toast('❌ 习题学习下载失败：' + err2 + '（学习笔记已下载）', 4000); return; }
         setTimeout(function(){
-          toast('⏳ 正在下载 文件桥…（3/3）', 2000);
+          toast('⏳ 正在下载 文件桥…（3/5）', 2000);
           ghDlFile('software-bridge.html', '文件桥.html', function(err3){
             if(err3){ toast('❌ 文件桥下载失败：' + err3 + '（前两个已下载）', 4000); return; }
             setTimeout(function(){
-              toast('⏳ 正在下载 血气分析…（4/4）', 2000);
+              toast('⏳ 正在下载 血气分析…（4/5）', 2000);
               ghDlFile('software-xueqi.html', '血气分析.html', function(err4){
                 if(err4){ toast('❌ 血气分析下载失败：' + err4 + '（前三个已下载）', 4000); return; }
-                toast(inShell ? '✅ 四个软件都已装好，重启APP生效（文件夹里也各存了一份）' : '✅ 四个软件都已下载，到下载列表里找', 4500);
+                setTimeout(function(){
+                  toast('⏳ 正在下载 PPT工坊…（5/5）', 2000);
+                  ghDlFile('software-ppt.html', 'PPT工坊.html', function(err5){
+                    if(err5){ toast('❌ PPT工坊下载失败：' + err5 + '（前四个已下载）', 4000); return; }
+                    toast(inShell ? '✅ 五个软件都已装好，重启APP生效（文件夹里也各存了一份）' : '✅ 五个软件都已下载，到下载列表里找', 4500);
+                  });
+                }, 900);
               });
             }, 900);
           });
