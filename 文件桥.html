@@ -4,6 +4,7 @@
  文件桥 —— AI 与手机文件夹之间的桥（单文件 HTML，第三个协同软件）
 ====================================================================
  修改记录：
+   v1.1.1 (2026-08-06)「下载整套」三件套→四件套：血气分析入编（software-xueqi.html）。
    v1.1.0 (2026-08-05) 壳APP直连模式：在套壳App（学习套装）里检测到
   window.LearnShell 就走原生桥——授权文件夹用安卓 SAF 持久授权（装APP时授一次，
   永不 stale，没有浏览器 MediaStore 写禁忌）；收发/打包/下载整套全部直连文件夹；
@@ -90,7 +91,7 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>文件桥 v1.1.0</title>
+<title>文件桥 v1.1.1</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #faf7f2; color: #3a3632; }
@@ -142,7 +143,7 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
 </style>
 </head>
 <body>
-<header>📂 文件桥<span class="ver">v1.1.0</span></header>
+<header>📂 文件桥<span class="ver">v1.1.1</span></header>
 <div class="page">
 
   <!-- 使用说明入口 -->
@@ -207,7 +208,7 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
       <button class="ghost" id="ghDlAllBtn">⬇️ 下载整套软件</button>
     </div>
     <div class="hint" id="ghCheck">自检：还没查过（每次打开会自动查一次）</div>
-    <div class="hint">「下载整套」= 学习笔记 + 习题学习 + 文件桥，三个最新版一起下载（浏览器首次可能问"允许下载多个文件"，点允许）。</div>
+    <div class="hint">「下载整套」= 学习笔记 + 习题学习 + 文件桥 + 血气分析，四个最新版一起下载（浏览器首次可能问"允许下载多个文件"，点允许）。</div>
   </div>
 
   <div class="hint" style="text-align:center;padding:8px 0 20px;">文件桥 v1.0 · AI 与文件夹之间的桥 · 只认 Chrome</div>
@@ -313,7 +314,7 @@ function fmtTime(t){ return new Date(t).toLocaleString(); }
 
 /* ==================== GitHub 通信（移植学习笔记/习题学习同套） ==================== */
 var BR_GH_USER = 'br_gh_user', BR_GH_TOK = 'br_gh_tok', BR_GH_REPO = 'br_gh_repo', BR_GH_CHECK = 'br_gh_check';
-var SW_VERSION = '1.1.0';
+var SW_VERSION = '1.1.1';
 var ghVerPending = null;
 
 function ghCfg(){
@@ -987,7 +988,7 @@ function ghSelfCheck(manual){
       ghVerPending = info;
       updShow('', '🎉 网上有新版 v' + info.version + '，你的是 v' + SW_VERSION + '\n' +
         (info.note ? '新版内容：' + info.note + '\n' : '') +
-        '点下面按钮下载到本机（或点「⬇️ 下载整套软件」三个一起换）', true);
+        '点下面按钮下载到本机（或点「⬇️ 下载整套软件」四个一起换）', true);
     }else{
       ghCheckRender('自检：' + fmtTime(Date.now()) + ' ✅ 线路通　已是最新版 v' + SW_VERSION);
       updShow('ok', '✅ GitHub 线路通畅\n已是最新版 v' + SW_VERSION + '，无需下载', false);
@@ -1045,7 +1046,13 @@ function ghDownloadAll(){
           toast('⏳ 正在下载 文件桥…（3/3）', 2000);
           ghDlFile('software-bridge.html', '文件桥.html', function(err3){
             if(err3){ toast('❌ 文件桥下载失败：' + err3 + '（前两个已下载）', 4000); return; }
-            toast(inShell ? '✅ 三个软件都已装好，重启APP生效（文件夹里也各存了一份）' : '✅ 三个软件都已下载，到下载列表里找', 4500);
+            setTimeout(function(){
+              toast('⏳ 正在下载 血气分析…（4/4）', 2000);
+              ghDlFile('software-xueqi.html', '血气分析.html', function(err4){
+                if(err4){ toast('❌ 血气分析下载失败：' + err4 + '（前三个已下载）', 4000); return; }
+                toast(inShell ? '✅ 四个软件都已装好，重启APP生效（文件夹里也各存了一份）' : '✅ 四个软件都已下载，到下载列表里找', 4500);
+              });
+            }, 900);
           });
         }, 900);
       });
