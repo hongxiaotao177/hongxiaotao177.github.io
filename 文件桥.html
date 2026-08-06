@@ -87,6 +87,7 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
    ④ 手机没有"批命令"——打包/搬家功能必须做成软件内按钮（本卡已做）
 ====================================================================
     v1.1.2 (2026-08-06) 公共钱罐hx_*：GitHub Token/仓库名与其他软件共享，一处填处处有。
+    同版补充：主界面刷新hxIndexRefresh——壳里打开任一软件顺带把套装主界面(index.html)也换新，主界面从此也能自动更新。
 -->
 <html lang="zh-CN">
 <head>
@@ -328,6 +329,27 @@ var SW_VERSION = '1.1.2';
   }
   hxSync(); setInterval(hxSync, 2000);
 })();
+/* 主界面刷新：壳里打开软件时顺带检查套装主界面(index.html)有没有新版，有就换新（解决主界面自己不会更新的鸡生蛋问题） */
+function hxIndexRefresh(){
+  if(!window.LearnShell || !window.LearnShell.applyUpdate) return;
+  if(typeof ghCfg!=="function" || typeof cmpVer!=="function") return;
+  var c=ghCfg(); if(!(c.user && c.tok && c.repo)) return;
+  var H={"Authorization":"token "+c.tok, "Accept":"application/vnd.github+json"};
+  var _base="https://api.github.com/repos/"+encodeURIComponent(c.user)+"/"+encodeURIComponent(c.repo)+"/contents/";
+  fetch(_base+encodeURIComponent("version-index.json"), { headers: H }).then(function(r){ if(!r.ok) return null; return r.json(); }).then(function(vf){
+    if(!vf) return;
+    var info; try{ info=JSON.parse(ghB64dec(vf.content||"")); }catch(e){ return; }
+    var cur=localStorage.getItem("hx_index_ver")||"1.0.0";
+    if(!info || !info.version || cmpVer(info.version, cur)<=0) return;
+    fetch(_base+encodeURIComponent("index.html"), { headers: H }).then(function(r){ if(!r.ok) return null; return r.json(); }).then(function(sf){
+      if(!sf) return;
+      var b64=ghB64enc(ghB64dec(sf.content||""));
+      try{ if(window.LearnShell.applyUpdate("index.html", b64)) localStorage.setItem("hx_index_ver", info.version); }catch(e){}
+    });
+  }).catch(function(){});
+}
+setTimeout(hxIndexRefresh, 6000);
+
 
 var ghVerPending = null;
 
