@@ -75,6 +75,13 @@
     v0.9.9 对抗手机芯片OCR差异（同一张图测试机过、用户机不过）：
         ①"栓→检"高频误认自动纠正 ②锚点加"日期"候选（底部三行都含）
         ③第一遍找不到自动换识别模式（PSM 6）+更高分辨率再扫4个方向
+    v0.10.0 呼吸机屏幕分析上线：首页新增「🫁 呼吸机屏幕分析」——拍呼吸机
+        控制界面（无需脱敏），AI读出通气模式/全部设定参数/全部监测值+波形
+        形态（人机同步、呼气归零、双触发等），给出初步分析；内置呼吸机操作
+        档案（首个型号：迈瑞SV650，草稿v1欢迎纠正），AI按型号指导"按哪个键
+        做哪种检测"（吸气保持/呼气保持/工具菜单），用户做完检测拍照补充，
+        AI结合前文继续分析（回合制）。记录独立存IndexedDB（ventHistory），
+        可回看继续追问。（洪医生设计，ICU一线需求）
     v0.9.11 云备份上线（与学习笔记同款，备份文件 xueqi-backup.json，含 API Key）：
         设置区新增「☁️ 云备份」折叠卡片：GitHub 用户名（预填 hongxiaotao177，
         存 bg_gh_user）+ Token（password，存 bg_gh_tok，只存本机不进任何提示/日志/备份内容）
@@ -165,7 +172,7 @@
 </style>
 </head>
 <body>
-<header><span>血气分析解读助手</span><span class="ver">v0.9.11</span></header>
+<header><span>血气分析解读助手</span><span class="ver">v0.10.0</span></header>
 <main>
 
   <!-- 第1步：首页 -->
@@ -184,6 +191,7 @@
         <button class="btn secondary" id="btnAlbum">🖼 相册</button>
       </div>
       <button class="btn secondary" id="btnViewRecords">📄 查看这个病人的记录</button>
+      <button class="btn secondary" id="btnVent" style="margin-top:8px;border-color:#4a6b5d;color:#4a6b5d;font-weight:bold;">🫁 呼吸机屏幕分析（拍照→AI读数+波形分析→指导做检测）</button>
       <input type="file" id="fileCamera" accept="image/*" capture="environment" hidden>
       <input type="file" id="fileAlbum" accept="image/*" hidden>
       <p class="hint">拍照/查看都针对上方选中的病人；软件会裁掉含姓名/住院号的抬头和底部签名行，只把检验结果表格发给AI解读。</p>
@@ -384,13 +392,51 @@ v0.1  初版：拍照→裁剪脱敏→Kimi解读→复制归档
     <button class="btn secondary" id="btnAboutBack">返回首页</button>
   </section>
 
+  <!-- v0.10.0 呼吸机屏幕分析 -->
+  <section id="ventPage" hidden>
+    <div class="card">
+      <b>🫁 呼吸机屏幕分析</b>
+      <p class="hint">拍呼吸机控制界面（屏幕没有病人信息，不用脱敏，整屏发出）。AI会读出设定和监测值、看波形，并按机型指导您做进一步检测。</p>
+      <b>呼吸机型号</b>
+      <select id="ventModel" style="width:100%;padding:12px;font-size:16px;border:1px solid #ccc;border-radius:8px;margin:6px 0;">
+        <option value="sv650">迈瑞 Mindray SV650（内置操作档案）</option>
+        <option value="generic">其他/通用（无操作档案，只分析）</option>
+      </select>
+      <input type="text" id="ventBg" placeholder="病人背景（可选）：床号+一句话病情，如 5床 重症肺炎ARDS" style="width:100%;font-size:16px;padding:10px 12px;margin:4px 0 8px;border:1px solid #ccc;border-radius:8px;">
+      <div class="row">
+        <button class="btn" id="ventBtnCamera">📷 拍呼吸机屏幕</button>
+        <button class="btn secondary" id="ventBtnAlbum">🖼 相册</button>
+      </div>
+      <input type="file" id="ventFileCamera" accept="image/*" capture="environment" hidden>
+      <input type="file" id="ventFileAlbum" accept="image/*" hidden>
+      <div id="ventShots" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;"></div>
+      <button class="btn" id="ventBtnSend" disabled style="margin-top:8px;">🚀 发给AI分析</button>
+      <p id="ventStatus" style="font-size:14px;color:#a05555;white-space:pre-wrap;margin:8px 0;"></p>
+    </div>
+    <div class="card" id="ventResultCard" hidden>
+      <p class="hint" id="ventArchiveInfo"></p>
+      <div id="ventResultBox"></div>
+      <div class="row" style="margin-top:8px;">
+        <button class="btn secondary" id="ventBtnAddShot">📷 按AI指导做完检测，拍检测界面补充</button>
+      </div>
+      <textarea id="ventFollowInput" placeholder="追问：比如 这个病人现在能试脱机吗？" style="width:100%;min-height:70px;font-size:15px;margin-top:8px;"></textarea>
+      <button class="btn" id="ventBtnFollow">发送追问</button>
+      <p id="ventFollowStatus" style="font-size:14px;color:#a05555;white-space:pre-wrap;margin:8px 0;"></p>
+    </div>
+    <div class="card">
+      <button class="btn secondary" id="ventBtnRecords">📄 呼吸机分析记录</button>
+      <div id="ventRecordsList" style="margin-top:8px;"></div>
+    </div>
+    <button class="btn secondary" id="ventBtnBack">返回首页</button>
+  </section>
+
   <div id="ghToast" hidden></div>
 </main>
 <script>
 "use strict";
 /* ================= 状态与工具 ================= */
 const $ = id => document.getElementById(id);
-const sections = ["step1","step2","step3","step4","histDetailPage","aboutPage"];
+const sections = ["step1","step2","step3","step4","histDetailPage","aboutPage","ventPage"];
 function show(id){ sections.forEach(s => $(s).hidden = (s !== id)); }
 
 let workImg = new Image();      // 当前处理中的图片（可能已旋转）
@@ -1908,6 +1954,258 @@ $("curPatientName").textContent = getSelectedPatient();
 initPrompt();
 initModel();
 syncQuickSelects();
+
+/* ==================== v0.10.0 呼吸机屏幕分析 ====================
+   回合制：拍主界面→AI读数+波形+初步分析→按机型档案指导做检测→
+   用户做完拍检测界面补充→AI结合前文继续。记录独立存 idb「ventHistory」。 */
+const VENT_PROFILES = {
+  sv650: {
+    name: "迈瑞 Mindray SV650",
+    text: "【迈瑞SV650操作档案·草稿v1（洪医生校正中）】\n" +
+      "1) 测平台压Pplat：做吸气保持——屏幕右栏点「工具」，找「吸气保持」（部分界面在波形下方工具条），按住3秒至读数稳定，保持界面会显示平台压。\n" +
+      "2) 测内源性PEEP（PEEPi）/总PEEP：做呼气保持——「工具」里的「呼气保持」，按住至呼气末暂停，显示总PEEP，减去设定PEEP即PEEPi。\n" +
+      "3) 呼吸力学检测（P0.1、NIF最大吸气负压、RSBI浅快呼吸指数等）：点屏幕右栏「工具」键进入工具菜单选对应项目，按提示操作，结果界面拍照。\n" +
+      "4) 看监测值/趋势：顶部「监测值」页签；要大字显示点「大字体」。\n" +
+      "5) 看报警回顾：右上角「报警」键。\n" +
+      "注意：若档案与真机菜单位置不符，以真机为准并在追问中告诉AI实际路径，AI会记住本次说法。"
+  },
+  generic: {
+    name: "通用呼吸机",
+    text: "【通用原则】吸气保持测平台压、呼气保持测内源性PEEP、呼吸力学菜单测P0.1/NIF/RSBI，具体按键位置请用户自己找，做完把结果界面拍照发来。"
+  }
+};
+const VENT_PROMPT = [
+  "你是ICU呼吸治疗专家，在看一张呼吸机控制界面的照片。{背景}",
+  "请严格按以下结构回复（用大白话+专业术语对照，禁止使用LaTeX公式，计算列普通算式）：",
+  "一、屏幕读数：①品牌型号与通气模式 ②全部设定参数（氧浓度/压力/频率/吸呼比/PEEP等，逐项列出）③全部监测值（峰压/平台压/平均压/潮气量/频率/分钟通气量等，逐项列出；读不出的标⚠️无法识别）",
+  "二、波形解读：描述压力-时间、流量-时间、容量-时间曲线形态，重点判断：①人机是否同步（有无无效触发/双触发/流速饥渴）②流量曲线呼气支是否回到零（回不到零提示内源性PEEP）③有无明显漏气或分泌物迹象。波形只能定性，说清这是筛查不是精确测量。",
+  "三、初步分析：通气/氧合支持力度评估，肺保护通气是否达标（结合TVe/IBW或潮气量），目前参数的风险点和需要警惕的地方。",
+  "四、下一步建议：结合下面的操作档案，告诉用户接下来该做哪个检测、按哪个键（一步步写清，老人也能照着做），做完拍检测界面照片发回来继续分析。如果信息已够，就直接给调整建议。",
+  "{档案}"
+].join("\n");
+
+let ventConvo = [];       // 呼吸机对话链（含图片）
+let ventShots = [];       // 待首次发送的照片 dataURL 数组
+let ventRecIndex = -1;    // 当前查看的记录下标（-1=未保存）
+let ventLastText = "";
+
+function ventCompress(file){
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => {
+      const sc = Math.min(1, 1400 / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.naturalWidth * sc); c.height = Math.round(img.naturalHeight * sc);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(img.src);
+      res(c.toDataURL("image/jpeg", 0.85));
+    };
+    img.onerror = rej;
+    img.src = URL.createObjectURL(file);
+  });
+}
+function ventRenderShots(){
+  $("ventShots").innerHTML = "";
+  ventShots.forEach((d, i) => {
+    const w = document.createElement("div");
+    w.style.cssText = "position:relative;width:90px;";
+    const im = document.createElement("img");
+    im.src = d; im.style.cssText = "width:90px;height:64px;object-fit:cover;border-radius:6px;border:1px solid #ccc;";
+    const del = document.createElement("span");
+    del.textContent = "✕";
+    del.style.cssText = "position:absolute;top:-6px;right:-6px;background:#a05555;color:#fff;border-radius:10px;width:20px;height:20px;font-size:12px;text-align:center;line-height:20px;cursor:pointer;";
+    del.onclick = () => { ventShots.splice(i, 1); ventRenderShots(); };
+    w.appendChild(im); w.appendChild(del);
+    $("ventShots").appendChild(w);
+  });
+  $("ventBtnSend").disabled = ventShots.length === 0;
+}
+function ventPickImage(file){
+  if(!file) return;
+  ventCompress(file).then(d => { ventShots.push(d); ventRenderShots(); })
+    .catch(() => { $("ventStatus").textContent = "图片读不出来，换一张试试"; });
+}
+$("ventBtnCamera").onclick = () => $("ventFileCamera").click();
+$("ventBtnAlbum").onclick = () => $("ventFileAlbum").click();
+$("ventFileCamera").onchange = e => { ventPickImage(e.target.files[0]); e.target.value = ""; };
+$("ventFileAlbum").onchange = e => { ventPickImage(e.target.files[0]); e.target.value = ""; };
+
+async function ventCallAI(key){
+  const resp = await fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type":"application/json", "Authorization":"Bearer " + key },
+    body: JSON.stringify({ model: getModel(), messages: ventConvo, max_tokens: 4096 })
+  });
+  const data = await resp.json();
+  if(!resp.ok) throw new Error("调用失败 HTTP " + resp.status + "：" + JSON.stringify(data).slice(0, 300));
+  const msg = data.choices[0].message;
+  let c = msg.content;
+  if(Array.isArray(c)) c = c.map(p => typeof p === "string" ? p : (p && p.text ? p.text : "")).join("");
+  if(!c && msg.reasoning_content) c = "⚠️ 模型只返回了思考过程，建议换 moonshot-v1-128k-vision-preview 重试。\n\n" + msg.reasoning_content.slice(0, 600);
+  if(!c) throw new Error("AI返回了空内容");
+  return c;
+}
+function ventRenderConvo(){
+  let html = "";
+  for(let i = 1; i < ventConvo.length; i++){
+    const m = ventConvo[i];
+    if(m.role === "user"){
+      let label = "补充";
+      if(typeof m.content === "string") label = m.content;
+      else if(Array.isArray(m.content)) label = (m.content.find(p => p.type === "text") || {}).text || "补充照片";
+      const imgs = Array.isArray(m.content) ? m.content.filter(p => p.type === "image_url") : [];
+      html += "<div style='background:#eef3f0;border-radius:8px;padding:10px;margin:10px 0 4px;'><b>🧑 补充/追问：</b>" + String(label).replace(/</g,"&lt;") + "</div>";
+      imgs.forEach(p => { html += "<img src='" + p.image_url.url + "' style='max-width:100%;border-radius:8px;margin:4px 0;'>"; });
+    }else{
+      html += "<div style='border-left:3px solid #4a6b5d;padding-left:10px;margin:4px 0 10px;'>" + renderMD(m.content) + "</div>";
+    }
+  }
+  $("ventResultBox").innerHTML = html;
+}
+
+/* 记录存取：idb kv 仓，键 ventHistory */
+function ventIdbRead(){
+  return new Promise((res, rej) => {
+    const q = idb.transaction("kv", "readonly").objectStore("kv").get("ventHistory");
+    q.onsuccess = () => res(q.result || []);
+    q.onerror = () => rej(q.error);
+  });
+}
+function ventIdbWrite(arr){
+  return new Promise((res, rej) => {
+    const q = idb.transaction("kv", "readwrite").objectStore("kv").put(arr, "ventHistory");
+    q.onsuccess = () => res();
+    q.onerror = () => rej(q.error);
+  });
+}
+function ventSaveRecord(){
+  ventIdbRead().then(arr => {
+    arr.unshift({
+      time: new Date().toLocaleString("zh-CN"),
+      model: VENT_PROFILES[$("ventModel").value].name,
+      bg: $("ventBg").value.trim(),
+      text: ventLastText,
+      convo: ventConvo.map(m => ({ role: m.role, content: m.content }))
+    });
+    while(arr.length > 100) arr.pop();
+    return ventIdbWrite(arr).then(() => { ventRecIndex = 0; ventRenderRecords(); });
+  }).catch(() => {});
+}
+function ventRenderRecords(){
+  ventIdbRead().then(arr => {
+    const box = $("ventRecordsList");
+    if(!arr.length){ box.innerHTML = "<p class='hint'>还没有记录</p>"; return; }
+    box.innerHTML = "";
+    arr.slice(0, 30).forEach((it, i) => {
+      const row = document.createElement("div");
+      row.style.cssText = "border:1px solid #d8e2dc;border-radius:8px;padding:8px 10px;margin:6px 0;font-size:14px;cursor:pointer;";
+      row.innerHTML = "<b>" + (it.bg || "未标病人") + "</b>　" + it.time + "　<span style='color:#888;'>" + (it.model || "") + "</span>";
+      row.onclick = () => ventOpenRecord(i);
+      box.appendChild(row);
+    });
+  }).catch(() => {});
+}
+function ventOpenRecord(i){
+  ventIdbRead().then(arr => {
+    const it = arr[i];
+    if(!it) return;
+    ventRecIndex = i;
+    ventConvo = [{ role:"user", content:[{ type:"text", text:"（历史记录首轮，含照片）" }] }].concat(it.convo.slice(1));
+    /* 完整恢复首轮（含图片） */
+    ventConvo = it.convo.map(m => ({ role: m.role, content: m.content }));
+    ventLastText = it.text || "";
+    $("ventResultCard").hidden = false;
+    $("ventArchiveInfo").textContent = "📂 查看历史记录：" + (it.bg || "未标病人") + "（" + it.time + "），可继续追问";
+    ventRenderConvo();
+    $("ventResultCard").scrollIntoView({ block: "start" });
+  }).catch(() => {});
+}
+$("ventBtnRecords").onclick = () => {
+  const box = $("ventRecordsList");
+  box.innerHTML = box.innerHTML ? "" : "";
+  ventRenderRecords();
+};
+
+$("ventBtnSend").onclick = async () => {
+  const key = localStorage.getItem("bg_apikey") || "";
+  if(!key){ $("ventStatus").textContent = "请先在首页「设置」里填好并保存 API Key。"; return; }
+  if(!ventShots.length){ $("ventStatus").textContent = "请先拍呼吸机屏幕。"; return; }
+  const profile = VENT_PROFILES[$("ventModel").value] || VENT_PROFILES.generic;
+  const bg = $("ventBg").value.trim();
+  const prompt = VENT_PROMPT
+    .replace("{背景}", bg ? "病人背景：" + bg + "。" : "（未提供病人背景）")
+    .replace("{档案}", profile.text);
+  const content = [{ type: "text", text: prompt }];
+  ventShots.forEach(d => content.push({ type: "image_url", image_url: { url: d } }));
+  ventConvo = [{ role: "user", content: content }];
+  $("ventBtnSend").disabled = true;
+  $("ventStatus").textContent = "正在发给AI分析（" + getModel() + "），约10-90秒，请保持屏幕亮着…";
+  try{
+    ventLastText = await ventCallAI(key);
+    ventConvo.push({ role: "assistant", content: ventLastText });
+    $("ventResultCard").hidden = false;
+    ventRenderConvo();
+    $("ventStatus").textContent = "";
+    ventShots = []; ventRenderShots();
+    ventSaveRecord();
+    $("ventArchiveInfo").textContent = "✅ 已自动存入呼吸机分析记录";
+    $("ventResultCard").scrollIntoView({ block: "start" });
+  }catch(err){
+    $("ventStatus").textContent = err.message + "\n\n如反复 Failed to fetch：保持屏幕亮着别切后台，或回首页设置换 128k-vision 快速模型。";
+  }finally{
+    $("ventBtnSend").disabled = false;
+  }
+};
+
+/* 补充照片（做完检测拍检测界面） */
+$("ventBtnAddShot").onclick = () => {
+  const inp = document.createElement("input");
+  inp.type = "file"; inp.accept = "image/*"; inp.capture = "environment";
+  inp.onchange = e => {
+    const f = e.target.files[0];
+    if(!f) return;
+    ventCompress(f).then(d => {
+      ventConvo.push({ role: "user", content: [
+        { type: "text", text: "这是按您的指导做完检测后拍的屏幕照片，请读出检测结果并结合前面的分析继续。" },
+        { type: "image_url", image_url: { url: d } }
+      ]});
+      ventContinue();
+    }).catch(() => { $("ventFollowStatus").textContent = "图片读不出来，换一张试试"; });
+  };
+  inp.click();
+};
+/* 追问 */
+$("ventBtnFollow").onclick = () => {
+  const q = $("ventFollowInput").value.trim();
+  if(!q){ $("ventFollowStatus").textContent = "请先输入追问内容"; return; }
+  ventConvo.push({ role: "user", content: q });
+  $("ventFollowInput").value = "";
+  ventContinue();
+};
+async function ventContinue(){
+  const key = localStorage.getItem("bg_apikey") || "";
+  $("ventFollowStatus").textContent = "AI思考中…";
+  try{
+    ventLastText = await ventCallAI(key);
+    ventConvo.push({ role: "assistant", content: ventLastText });
+    ventRenderConvo();
+    $("ventFollowStatus").textContent = "";
+    /* 更新记录 */
+    ventIdbRead().then(arr => {
+      if(ventRecIndex >= 0 && arr[ventRecIndex]){
+        arr[ventRecIndex].text = ventLastText;
+        arr[ventRecIndex].convo = ventConvo.map(m => ({ role: m.role, content: m.content }));
+        return ventIdbWrite(arr);
+      }
+    }).catch(() => {});
+  }catch(err){
+    $("ventFollowStatus").textContent = err.message;
+  }
+}
+
+$("btnVent").onclick = () => { show("ventPage"); };
+$("ventBtnBack").onclick = () => show("step1");
+
 show("step1");
 </script>
 <!-- 全屏看图：检查脱敏效果用 -->
