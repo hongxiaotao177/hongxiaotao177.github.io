@@ -13,6 +13,10 @@
       5) Token/仓库名读公共钱罐 hx_*（各软件 bg_/xt_/br_ 开头的也能认）。
       踩坑：iPad/浏览器规矩网页换不了自己，自动更新只在壳APP里跑；浏览器打开只是静态菜单。
     同版根因修复：CUR.ppt误写0.1.1，主界面以为已装而跳过下载，老壳永远装不上PPT工坊——CUR含义=壳里内装版本，未装填"0"。
+    v1.2.0 2026-08-06 坚果云↔仓库shared同步官+「🗄️ 仓库文件柜」：
+      新盖旧/只增不删/PDF与>4MB不进仓库；台账shared-meta.json；壳里打开主界面5秒后自动同步
+      （6小时节流）；超7天没同步成亮黄条；文件柜列清单点取件（iPad主力入口，浏览器直接下载）。
+      踩坑补记：①初版调ghHeaders()却忘了定义（测试抓到ReferenceError）；②台账没记录的两边都有文件→以坚果云为主上传；③仓库清单里的shared-meta.json台账自己不能当文件下载。
     v1.1.6 2026-08-06 PPT工坊升0.2.0（双链[[]]文件跳转+导出内嵌影子副本）。
     v1.1.5 2026-08-06 假记忆防御：旧版曾把"ppt已装"写进hx_suite_ver（实物没装），光信版本记忆永远跳过下载；现在版本不新也要fetch敲门，404照样下载。
     v1.1.4 2026-08-06 踩坑修复：壳里新成员没下载完时点卡片撞404——listFiles核对，没装齐的卡片加「⏳正在安装」并拦点击。
@@ -108,6 +112,22 @@
     <div class="meta"><span class="tag">网页工具</span><span class="tag" id="tagPpt">v0.2.0</span></div>
   </a>
 
+  <div class="section-title">文件柜</div>
+
+  <a class="card" id="cabCard" href="javascript:void(0)">
+    <h2>🗄️ 仓库文件柜</h2>
+    <div class="desc">坚果云文件夹和仓库 shared 区的"对账窗口"：列出仓库里的共享文件，点哪个取哪个（iPad 从这里拿文件）；安卓壳里自动同步两边（新盖旧、只增不删、PDF不进仓库）。</div>
+    <div class="meta"><span class="tag">网页工具</span><span class="tag" id="tagCab">点我打开</span></div>
+  </a>
+  <div class="card" id="cabPanel" style="display:none;">
+    <div class="desc" id="cabLine">正在读仓库文件清单…</div>
+    <div id="cabList" style="margin-top:10px;"></div>
+    <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
+      <button class="tag" style="padding:10px 14px; border:none; cursor:pointer;" id="cabRefresh">🔄 刷新清单</button>
+      <button class="tag" style="padding:10px 14px; border:none; cursor:pointer; display:none;" id="cabSync">⇅ 立即同步（壳）</button>
+    </div>
+  </div>
+
   <a class="card" id="apkCard" href="https://github.com/hongxiaotao177/xuexi-backup/releases/download/shell-v1.0.5/LearnShell-v1.0.5.apk">
     <h2>📱 学习套装·壳APP（推荐）</h2>
     <div class="desc">把五个软件装进一个APP：文件夹授权一次永久有效；打开主界面就自动更新，不用管。点我下载安装包（华为提示"未知来源"点允许即可）。iPad不适用。</div>
@@ -190,6 +210,7 @@ function ghCfg(){
     repo: pick(["hx_gh_repo","bg_gh_repo","xt_gh_repo","br_gh_repo"])
   };
 }
+function ghHeaders(){ var c=ghCfg(); return {"Authorization":"token "+c.tok, "Accept":"application/vnd.github+json"}; }
 
 (function(){
   if(!window.LearnShell) return;  /* 浏览器/iPad：网页换不了自己，只做静态菜单 */
@@ -256,6 +277,168 @@ function ghCfg(){
   }
   step(0);
 })();
+
+/* ==================== v1.2.0 坚果云↔仓库shared 同步官 + 仓库文件柜 ====================
+   规矩（洪医生拍板）：新盖旧（比修改时间）、只增不删（删除不传播）、PDF和大文件(>4MB)不进仓库；
+   同步只在壳里打开主界面时跑（6小时内不重复）；台账 shared-meta.json 记每件的时间；
+   自检：超过7天没同步成→黄条提醒。iPad走文件柜直接取仓库文件。 */
+var SYNC_LS='hx_sync_state';
+function syncStateGet(){ try{ return JSON.parse(localStorage.getItem(SYNC_LS)||'{}'); }catch(e){ return {}; } }
+function syncStateSet(p){ var s=syncStateGet(); for(var k in p) s[k]=p[k]; try{ localStorage.setItem(SYNC_LS, JSON.stringify(s)); }catch(e){} }
+function syncSkip(name, size){
+  if(/\.pdf$/i.test(name)) return 'PDF不进仓库（坚果云自己同步，iPad看影子副本）';
+  if(size>4*1024*1024) return '超过4MB不进仓库';
+  return null;
+}
+function syncShared(manual){
+  if(!window.LearnShell || !window.LearnShell.folderSet || !window.LearnShell.folderSet()){ if(manual) updMsg('⚠️ 同步只在壳APP里、且授权文件夹之后才能跑'); return; }
+  var c=ghCfg(); if(!(c.user&&c.tok&&c.repo)){ if(manual) updMsg('⚠️ 还没填Token，同步跑不了'); return; }
+  var st=syncStateGet();
+  if(!manual && st.okT && (Date.now()-st.okT)<6*3600*1000) return;  /* 6小时内刚同步过 */
+  var base='https://api.github.com/repos/'+encodeURIComponent(c.user)+'/'+encodeURIComponent(c.repo)+'/contents/';
+  var H=ghHeaders();
+  updMsg('⇅ 正在同步：点名文件夹和仓库shared区…');
+  var folderFiles=[], repoFiles=[], meta={files:{}};
+  Promise.resolve().then(function(){
+    try{ folderFiles=JSON.parse(window.LearnShell.listFiles()||'[]'); }catch(e){ folderFiles=[]; }
+    return fetch(base+encodeURIComponent('shared'),{headers:H}).then(function(r){
+      if(r.status===404) return [];
+      if(!r.ok) throw new Error('仓库清单读不到 HTTP '+r.status);
+      return r.json();
+    });
+  }).then(function(list){
+    repoFiles=(list||[]).filter(function(f){ return f.type==='file'; });
+    return fetch(base+encodeURIComponent('shared-meta.json'),{headers:H}).then(function(r){
+      if(!r.ok) return;
+      return r.json().then(function(j){ try{ meta=JSON.parse(u8dec(j.content||'')); }catch(e){} });
+    });
+  }).then(function(){
+    /* 对账 */
+    var plan=[], skipped=[];
+    var repoByName={}; repoFiles.forEach(function(f){ repoByName[f.name]=f; });
+    var folderByName={}; folderFiles.forEach(function(f){ var n=f.name||f; folderByName[n]=(f.t||0); });
+    folderFiles.forEach(function(f){
+      var n=f.name||f, t=f.t||0, size=f.size||0;
+      if(n==='shared-meta.json') return;
+      var sk=syncSkip(n, size); if(sk){ skipped.push(n+'（'+sk+'）'); return; }
+      var rf=repoByName[n];
+      if(!rf){ plan.push({act:'up', name:n, t:t}); }
+      else{
+        var mt=(meta.files[n]&&meta.files[n].t)||0;
+        if(mt===0) plan.push({act:'up', name:n, t:t});  /* 台账没记录：坚果云是主，以上传为准 */
+        else if(t>mt+2000) plan.push({act:'up', name:n, t:t});
+        else if(mt>t+2000) plan.push({act:'down', name:n, t:mt});
+      }
+    });
+    repoFiles.forEach(function(f){
+      if(f.name==='shared-meta.json') return;
+      if(!folderByName[f.name] && !syncSkip(f.name, f.size||0)) plan.push({act:'down', name:f.name, t:(meta.files[f.name]&&meta.files[f.name].t)||Date.now()});
+    });
+    /* 执行（逐个来，失败不拖累） */
+    var done={up:0, down:0, fail:0};
+    var seq=Promise.resolve();
+    plan.forEach(function(it){
+      seq=seq.then(function(){
+        if(it.act==='up'){
+          var b64=window.LearnShell.readFile(it.name);
+          if(!b64){ done.fail++; return; }
+          return fetch(base+encodeURIComponent('shared/'+it.name),{headers:H}).then(function(r){ return r.ok? r.json(): null; }).then(function(j){
+            var body={message:'sync '+it.name, content:b64.replace(/\s+/g,'')};
+            if(j&&j.sha) body.sha=j.sha;
+            return fetch(base+encodeURIComponent('shared/'+it.name),{method:'PUT',headers:H,body:JSON.stringify(body)}).then(function(r2){
+              if(r2.ok){ done.up++; meta.files[it.name]={t:it.t}; } else done.fail++;
+            });
+          });
+        }else{
+          return fetch(base+encodeURIComponent('shared/'+it.name),{headers:H}).then(function(r){
+            if(!r.ok){ done.fail++; return; }
+            return r.json().then(function(j){
+              try{ if(window.LearnShell.writeFile(it.name, j.content)){ done.down++; meta.files[it.name]={t:it.t}; } else done.fail++; }catch(e){ done.fail++; }
+            });
+          });
+        }
+      }).catch(function(){ done.fail++; });
+    });
+    return seq.then(function(){
+      /* 写台账到仓库（内容变了才写） */
+      var metaStr=JSON.stringify(meta);
+      return fetch(base+encodeURIComponent('shared-meta.json'),{headers:H}).then(function(r){ return r.ok? r.json(): null; }).then(function(j){
+        var old=''; if(j&&j.content){ try{ old=u8dec(j.content); }catch(e){} }
+        if(old===metaStr) return;
+        var body={message:'sync meta', content:u8enc(metaStr)};
+        if(j&&j.sha) body.sha=j.sha;
+        return fetch(base+encodeURIComponent('shared-meta.json'),{method:'PUT',headers:H,body:JSON.stringify(body)});
+      }).then(function(){
+        syncStateSet({okT:Date.now(), up:done.up, down:done.down});
+        var msg='✅ 同步完成：上传'+done.up+'件、下载'+done.down+'件'+(done.fail?'、失败'+done.fail+'件（下次再试）':'');
+        if(skipped.length) msg+='；跳过'+skipped.length+'件：'+skipped.slice(0,3).join('、')+(skipped.length>3?'等':'');
+        updMsg(msg);
+      });
+    });
+  }).catch(function(e){
+    updMsg('⚠️ 同步没跑成：'+((e&&e.message)||'网络不通')+'——不影响使用，下次打开再试');
+  });
+}
+/* 自检：壳里且超7天没同步成→黄条 */
+(function(){
+  if(!window.LearnShell) return;
+  var st=syncStateGet();
+  if(!st.okT || (Date.now()-st.okT)>7*24*3600*1000){
+    setTimeout(function(){ updMsg('⚠️ 坚果云↔仓库 已经'+(st.okT? Math.floor((Date.now()-st.okT)/86400000)+'天':'从没')+'没同步成了——打开「🗄️ 仓库文件柜」点「立即同步」'); }, 9000);
+  }
+  setTimeout(function(){ syncShared(false); }, 5000);  /* 打开主界面5秒后自动同步（不抢更新队列） */
+})();
+
+/* ---- 仓库文件柜（任何设备可用，iPad主力） ---- */
+function cabLoad(){
+  var line=document.getElementById('cabLine'), list=document.getElementById('cabList');
+  var c=ghCfg();
+  if(!(c.user&&c.tok&&c.repo)){ line.textContent='还没填Token——随便打开一个软件（如学习笔记）在云设置里填一次，全家通用。'; return; }
+  line.textContent='正在读仓库文件清单…';
+  fetch('https://api.github.com/repos/'+encodeURIComponent(c.user)+'/'+encodeURIComponent(c.repo)+'/contents/'+encodeURIComponent('shared'),{headers:ghHeaders()}).then(function(r){
+    if(r.status===404){ line.textContent='文件柜还是空的。把文件放进坚果云授权文件夹（PDF除外），手机壳打开主界面就会自动上架。'; list.innerHTML=''; return null; }
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    return r.json();
+  }).then(function(files){
+    if(!files) return;
+    if(!files.length){ line.textContent='文件柜还是空的。'; list.innerHTML=''; return; }
+    line.textContent='共 '+files.length+' 件（点名字取件）：';
+    list.innerHTML='';
+    files.forEach(function(f){
+      var d=document.createElement('div');
+      d.style.cssText='padding:10px 4px; border-bottom:1px solid #eee5d8; cursor:pointer;';
+      d.textContent='📄 '+f.name+'（'+(f.size>1048576? (f.size/1048576).toFixed(1)+'MB' : Math.round(f.size/1024)+'KB')+'）';
+      d.onclick=function(){ cabDownload(f.name); };
+      list.appendChild(d);
+    });
+  }).catch(function(e){ line.textContent='清单读不到：'+((e&&e.message)||'网络不通'); });
+}
+function cabDownload(name){
+  var c=ghCfg();
+  fetch('https://api.github.com/repos/'+encodeURIComponent(c.user)+'/'+encodeURIComponent(c.repo)+'/contents/'+encodeURIComponent('shared/'+name),{headers:ghHeaders()}).then(function(r){
+    if(!r.ok) throw new Error('HTTP '+r.status); return r.json();
+  }).then(function(j){
+    if(window.LearnShell && window.LearnShell.folderSet && window.LearnShell.folderSet()){
+      try{ window.LearnShell.writeFile(name, j.content); updMsg('✅ '+name+' 已收进您的文件夹'); return; }catch(e){}
+    }
+    /* 浏览器/iPad：直接下载 */
+    var s=atob((j.content||'').replace(/\s+/g,'')), b=new Uint8Array(s.length);
+    for(var i=0;i<s.length;i++) b[i]=s.charCodeAt(i);
+    var a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([b])); a.download=name;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    updMsg('✅ '+name+' 已开始下载（到下载列表里找）');
+  }).catch(function(e){ updMsg('⚠️ 取件失败：'+((e&&e.message)||'网络不通')); });
+}
+document.getElementById('cabCard').addEventListener('click', function(){
+  var p=document.getElementById('cabPanel');
+  p.style.display=(p.style.display==='none')?'block':'none';
+  if(p.style.display==='block'){
+    if(window.LearnShell) document.getElementById('cabSync').style.display='inline-block';
+    cabLoad();
+  }
+});
+document.getElementById('cabRefresh').addEventListener('click', cabLoad);
+document.getElementById('cabSync').addEventListener('click', function(){ syncShared(true); });
 </script>
 
 </body>
