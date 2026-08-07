@@ -3,13 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PPT工坊 v0.3.0</title>
+<title>PPT工坊 v0.4.0</title>
 <!--
   PPT工坊 —— 红小涛学习套装第五位成员
   工作流：学习笔记整理知识点 → AI生成Markdown大纲 → 内部邮路(ppt_inbox)寄到本软件
           → 大纲编辑页改稿 → 一键生成HTML幻灯片 → 横屏播放 → 每页可AI重做/换版式
           → 导出单个HTML（微信发别人，浏览器打开即放映）
   修改记录：
+    v0.4.0 2026-08-07 链接某段升级成洪老师方案：涂黑观点→点链接某段→AI拿观点读文献正文，
+      摘出最相关的1~2段原文+一句大白话"这段凭啥支持"；您过目可改才插入。文献库没正文就老实
+      退回端总结（老样子）。没涂黑就点也退回老样子。
     v0.3.0 2026-08-06 涂黑编辑上线（照学习笔记涂黑弹菜单思路）：
       - 大纲页涂黑一段→底部浮小编辑条：✏️自己改 / 🤖AI改 / 📎链接文献（涂黑字变显示文字）
         / 📎链接某段（选文献→摘一段→插入链接，摘录存项目linkNotes，导出时优先当影子副本）
@@ -140,7 +143,7 @@
 </head>
 <body>
 
-<header>📊 PPT工坊<span class="ver">v0.3.0</span></header>
+<header>📊 PPT工坊<span class="ver">v0.4.0</span></header>
 
 <div class="page" id="homePage">
 
@@ -287,7 +290,7 @@
 
 <script>
 "use strict";
-var SW_VERSION = "0.3.0";
+var SW_VERSION = "0.4.0";
 /* 公共钱罐：API key/GitHub配置 一处填处处有（与其他软件共享 hx_*） */
 (function(){
   var HX_MAP=[["hx_apikey","hx_apikey"],["hx_gh_user","hx_gh_user"],["hx_gh_tok","hx_gh_tok"],["hx_gh_repo","hx_gh_repo"]];
@@ -1106,8 +1109,10 @@ $('selAi').onclick=function(){
 /* 文献选择窗：mode 'link'=插[[文件]]；'part'=摘一段插[[文件|标签]]并存linkNotes */
 var litMode='link', litTarget=null;  /* litTarget: 'outline' 或 'page'（单页编辑窗的textarea） */
 function litTargetTa(){ return litTarget==='page'? $('peText') : $('outlineText'); }
+var litViewpoint='';  /* 点开选择窗那一刻涂黑的观点（part模式AI按它找段落） */
 function openLitPicker(mode, target){
   litMode=mode; litTarget=target||'outline';
+  litViewpoint=(litTarget==='outline')? outlineSel().text : litTargetTa().value.substring(litTargetTa().selectionStart, litTargetTa().selectionEnd);
   var meta=[]; try{ meta=JSON.parse(localStorage.getItem('bijiben_lit_v1')||'[]'); }catch(e){}
   var el=$('litList'); el.innerHTML='';
   if(!meta.length){ el.innerHTML='<div class="hint" style="padding:10px">文献库是空的——先去「学习笔记」的文献库导入PDF。</div>'; }
@@ -1134,14 +1139,34 @@ function litPicked(m){
     toast('✅ 链接已插入：'+m.filename);
     return;
   }
-  /* part 模式：第二步摘一段 */
+  /* part 模式：第二步摘一段（v0.4.0 涂黑了观点→AI读文献按观点找段落；否则老样子端总结） */
   litTextGet(m.id).then(function(full){
-    var src=m.summary || (full? full.slice(0,3000) : '') || '';
-    $('litModalTitle').textContent='📎 第二步：留下要给别人看的这段（可改），点「插入链接」';
     var el=$('litList');
     el.innerHTML='';
-    var ta=document.createElement('textarea'); ta.id='litPartText'; ta.value=src;
-    el.appendChild(ta);
+    var ta=document.createElement('textarea'); ta.id='litPartText';
+    if(litViewpoint && full){
+      /* 您的方案：AI拿涂黑的观点读文献正文，找最相关的段落+一句大白话 */
+      $('litModalTitle').textContent='📎 第二步：🤖 AI正在按您的观点读这篇文献…';
+      ta.value='（AI正在读文献，找跟「'+litViewpoint.slice(0,30)+'」最相关的段落…）';
+      el.appendChild(ta);
+      callAI('您是ICU医生的文献助教。医生在大纲里涂黑了一个观点，请从文献正文里找最能支持（或回答）这个观点的1~2段原文。',
+        '【医生涂黑的观点】\n'+litViewpoint+'\n\n【文献正文（可能截断）】\n'+full.slice(0,6000)+
+        '\n\n请输出：\n第一段：从原文摘出的最相关段落（尽量用原文句子，可以连着摘1~2段）\n第二段：一句大白话「这段凭啥支持这个观点」\n只输出这两段，不要标题、不要解释。',
+        function(text){
+          var mm=text.match(/```(?:markdown)?\s*([\s\S]*?)```/); if(mm) text=mm[1];
+          ta.value=text.replace(/^\s+|\s+$/g,'');
+          $('litModalTitle').textContent='📎 第二步：AI找好了，您过目（可改），点「插入链接」';
+        },
+        function(err){
+          ta.value=m.summary || full.slice(0,3000);
+          $('litModalTitle').textContent='📎 AI没读成（'+err+'），老办法：自己挑一段';
+        });
+    }else{
+      if(litViewpoint && !full) toast('这篇文章文献库里没正文，AI读不了，给您端总结');
+      $('litModalTitle').textContent='📎 第二步：留下要给别人看的这段（可改），点「插入链接」';
+      ta.value=m.summary || (full? full.slice(0,3000) : '') || '';
+      el.appendChild(ta);
+    }
     var b=document.createElement('button'); b.textContent='✅ 插入链接'; b.style.marginTop='10px';
     b.onclick=function(){
       var excerpt=ta.value.replace(/^\s+|\s+$/g,'');
