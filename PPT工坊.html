@@ -3,13 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PPT工坊 v0.2.0</title>
+<title>PPT工坊 v0.3.0</title>
 <!--
   PPT工坊 —— 红小涛学习套装第五位成员
   工作流：学习笔记整理知识点 → AI生成Markdown大纲 → 内部邮路(ppt_inbox)寄到本软件
           → 大纲编辑页改稿 → 一键生成HTML幻灯片 → 横屏播放 → 每页可AI重做/换版式
           → 导出单个HTML（微信发别人，浏览器打开即放映）
   修改记录：
+    v0.3.0 2026-08-06 涂黑编辑上线（照学习笔记涂黑弹菜单思路）：
+      - 大纲页涂黑一段→底部浮小编辑条：✏️自己改 / 🤖AI改 / 📎链接文献（涂黑字变显示文字）
+        / 📎链接某段（选文献→摘一段→插入链接，摘录存项目linkNotes，导出时优先当影子副本）
+      - 生成后每页加「✏️ 编辑」：手动改字 / AI改 / 插链接，改完保存只动这一页
+      - findExcerpt 顺序改：您摘的段落 > 文献库AI总结 > 全文节选
     v0.2.0 2026-08-06 双链文件跳转上线：
       - 大纲里写 [[文件名.pdf]] 或 [[文件名|显示文字]]（Obsidian规矩：编辑见括号，放映/导出
         括号不露，显示为下划线链接）——标题/要点/表格/段落/金句都认
@@ -119,11 +124,23 @@
   #fileViewer iframe { width:100%; height:66vh; border:none; background:#fff; }
   #fileViewer pre { white-space:pre-wrap; word-break:break-word; font-family:inherit; margin:0; }
   #fileViewer .fv-src { font-size:12px; color:#a89f93; margin-top:8px; line-height:1.5; }
+  /* v0.3.0 涂黑编辑条（大纲页涂黑一段就浮出来） */
+  #selBar { position:fixed; left:50%; bottom:14px; transform:translateX(-50%); z-index:85;
+    background:#3a3632; border-radius:12px; padding:6px; display:flex; gap:4px; box-shadow:0 4px 14px rgba(0,0,0,.3); }
+  #selBar.hidden { display:none !important; }
+  #selBar button { background:#5b7f5e; color:#fff; border:none; border-radius:8px; padding:9px 10px; font-size:13px; cursor:pointer; }
+  #selBar button.ghost2 { background:#6a6258; }
+  /* 文献选择窗 / 单页编辑窗（复用fv骨架） */
+  .mini-modal { position:fixed; inset:0; z-index:96; background:rgba(40,34,26,.55); display:flex; align-items:center; justify-content:center; padding:10px; }
+  .mini-modal.hidden { display:none !important; }
+  .mini-modal .mm-card { background:#fffdf8; border-radius:14px; width:100%; max-width:640px; max-height:86vh; overflow:auto; padding:14px; }
+  .mini-modal .mm-item { padding:11px 6px; border-bottom:1px solid #eee5d8; cursor:pointer; font-size:15px; }
+  .mini-modal textarea { width:100%; min-height:200px; font-size:15px; padding:10px; border:1px solid #e5ddd0; border-radius:10px; box-sizing:border-box; }
 </style>
 </head>
 <body>
 
-<header>📊 PPT工坊<span class="ver">v0.2.0</span></header>
+<header>📊 PPT工坊<span class="ver">v0.3.0</span></header>
 
 <div class="page" id="homePage">
 
@@ -186,8 +203,9 @@
     <div class="hint">
       <b>#</b> 开头=封面标题　<b>##</b> 开头=新的一页　<b>-</b> 开头=要点　
       <b>| 表 | 格 |</b>=对比表　<b>!!</b> 开头=大数字页　<b>&gt;</b> 开头=金句页　
-      ```chart 包住的 {JSON} =图表页（柱bar/饼pie/折线line）
+      ```chart 包住的 {JSON} =图表页（柱bar/饼pie/折线line）　<b>[[文件名]]</b>=链接指南（放映可点开）
     </div>
+    <div class="hint" style="color:#b3742a;">✍️ 涂黑大纲里的一段字，会弹出小编辑条：自己改 / AI改 / 链接文献 / 链接文献某段</div>
     <textarea id="outlineText" placeholder="# 我的题目&#10;&#10;## 第一页&#10;- 要点一&#10;- 要点二&#10;&#10;## 对比&#10;| 项目 | A方案 | B方案 |&#10;| 优点 | … | … |"></textarea>
     <div class="btn-row">
       <button id="btnAiDraft">🤖 AI起草/重写大纲</button>
@@ -235,9 +253,41 @@
   </div>
 </div>
 
+<!-- v0.3.0 涂黑编辑条 -->
+<div id="selBar" class="hidden">
+  <button id="selEdit">✏️ 自己改</button>
+  <button id="selAi">🤖 AI改</button>
+  <button id="selLinkLit">📎 链接文献</button>
+  <button id="selLinkPart" class="ghost2">📎 链接某段</button>
+</div>
+
+<!-- v0.3.0 文献选择窗 -->
+<div id="litModal" class="mini-modal hidden">
+  <div class="mm-card">
+    <h3 id="litModalTitle">📎 选一篇文献</h3>
+    <div id="litList"></div>
+    <div class="btn-row"><button class="ghost" id="litCancel">取消</button></div>
+  </div>
+</div>
+
+<!-- v0.3.0 单页编辑窗 -->
+<div id="pageEditModal" class="mini-modal hidden">
+  <div class="mm-card">
+    <h3 id="peTitle">✏️ 编辑本页</h3>
+    <textarea id="peText"></textarea>
+    <div class="btn-row">
+      <button id="peSave">✅ 保存</button>
+      <button class="ghost" id="peAi">🤖 AI改</button>
+      <button class="ghost" id="peLink">📎 链接文献</button>
+      <button class="ghost" id="peCancel">取消</button>
+    </div>
+    <div class="msg" id="peMsg"></div>
+  </div>
+</div>
+
 <script>
 "use strict";
-var SW_VERSION = "0.2.0";
+var SW_VERSION = "0.3.0";
 /* 公共钱罐：API key/GitHub配置 一处填处处有（与其他软件共享 hx_*） */
 (function(){
   var HX_MAP=[["hx_apikey","hx_apikey"],["hx_gh_user","hx_gh_user"],["hx_gh_tok","hx_gh_tok"],["hx_gh_repo","hx_gh_repo"]];
@@ -781,6 +831,7 @@ function renderProjects(){
 function openProject(id){
   curId=id;
   var p=curProj(); if(!p) return;
+  outlineLinks=p.linkNotes||{};  /* v0.3.0 */
   if(p.outline){ $('outlineText').value=p.outline; showPage('editPage'); showMsg($('editMsg'),'改完大纲点「🎬 生成PPT」，或直接','ok'); }
   renderSlidesIfReady();
 }
@@ -793,6 +844,7 @@ function buildFromOutline(){
   if(!p){ p={id:newId(), title:'', outline:'', slides:[], t:Date.now()}; store.projects.push(p); curId=p.id; }
   p.outline=md;
   p.slides=pages;
+  p.linkNotes=outlineLinks;  /* v0.3.0 摘录跟着项目走 */
   p.title=pages[0]&&pages[0].cls==='cover'?pages[0].title:(pages[0].title||'无题');
   p.t=Date.now();
   saveStore(); renderSlides(); showPage('slidesPage');
@@ -811,6 +863,7 @@ function renderSlides(){
       '<div class="slide-preview">'+esc(prev)+'</div>';
     var ops=document.createElement('div'); ops.className='slide-ops';
     var bRegen=document.createElement('button'); bRegen.textContent='🔄 AI重做本页'; bRegen.onclick=function(){ aiRegenPage(i); };
+    var bEdit=document.createElement('button'); bEdit.textContent='✏️ 编辑'; bEdit.className='ghost'; bEdit.onclick=function(){ peOpen(i); };
     var sel=document.createElement('select');
     sel.innerHTML='<option value="auto">版式：自动</option><option value="bullets">要点</option><option value="table">表格</option><option value="big">大数字</option><option value="quote">金句</option><option value="cover">封面</option>';
     sel.value=s.cls||'auto';
@@ -818,7 +871,7 @@ function renderSlides(){
     var bUp=document.createElement('button'); bUp.className='ghost'; bUp.textContent='↑'; bUp.onclick=function(){ if(i>0){ p.slides.splice(i-1,0,p.slides.splice(i,1)[0]); saveStore(); renderSlides(); } };
     var bDn=document.createElement('button'); bDn.className='ghost'; bDn.textContent='↓'; bDn.onclick=function(){ if(i<p.slides.length-1){ p.slides.splice(i+1,0,p.slides.splice(i,1)[0]); saveStore(); renderSlides(); } };
     var bDel=document.createElement('button'); bDel.className='danger'; bDel.textContent='删'; bDel.onclick=function(){ if(confirm('删第'+(i+1)+'页？')){ p.slides.splice(i,1); saveStore(); renderSlides(); } };
-    ops.appendChild(bRegen); ops.appendChild(sel); ops.appendChild(bUp); ops.appendChild(bDn); ops.appendChild(bDel);
+    ops.appendChild(bRegen); ops.appendChild(bEdit); ops.appendChild(sel); ops.appendChild(bUp); ops.appendChild(bDn); ops.appendChild(bDel);
     d.appendChild(ops);
     el.appendChild(d);
   });
@@ -960,6 +1013,8 @@ function litTextGet(id){
   });
 }
 function findExcerpt(name){
+  var cp=(typeof curProj==='function')? curProj():null;  /* v0.3.0 您摘的段落优先 */
+  if(cp && cp.linkNotes && cp.linkNotes[name]) return Promise.resolve({text:cp.linkNotes[name], src:'您亲手摘的段落'});
   var m=litFindByFilename(name);
   if(m && m.summary) return Promise.resolve({text:m.summary, src:'学习笔记文献库·AI总结'});
   if(m) return litTextGet(m.id).then(function(t){
@@ -1002,6 +1057,140 @@ async function openLinkedFile(name){
   }catch(e){}
   fvShowText(name, '', '四条路都没取到「'+name+'」：①授权文件夹 ②浏览器文件夹 ③仓库shared区 ④学习笔记文献库。把文件放进其中一处再来点。');
 }
+
+/* ==================== v0.3.0 涂黑编辑（大纲页）+ 单页编辑窗 ====================
+   照学习笔记的涂黑弹菜单思路：大纲涂黑一段→底部浮出小编辑条（自己改/AI改/链接文献/链接某段）；
+   生成后每页「✏️ 编辑本页」→手动改/AI改/插链接。摘的段落存进项目 linkNotes，
+   导出时优先当影子副本内嵌（openLinkedFile兜底也先看它）。 */
+var outlineLinks={};  /* 当前大纲页对应的 linkNotes（{文件名:摘录}），生成时并给项目 */
+
+function outlineSel(){
+  var ta=$('outlineText'), s=ta.selectionStart, e=ta.selectionEnd;
+  return {s:s, e:e, text:(e>s)? ta.value.substring(s,e) : ''};
+}
+function selBarRefresh(){
+  var sel=outlineSel();
+  if(sel.text.length>0) $('selBar').classList.remove('hidden');
+  else $('selBar').classList.add('hidden');
+}
+['mouseup','keyup','touchend','select'].forEach(function(ev){
+  $('outlineText').addEventListener(ev, function(){ setTimeout(selBarRefresh, 50); });
+});
+document.addEventListener('click', function(e){
+  if(e.target===$('outlineText') || (e.target.closest && e.target.closest('#selBar'))) return;
+  $('selBar').classList.add('hidden');
+});
+function outlineReplace(newText){
+  var ta=$('outlineText'), sel=outlineSel();
+  ta.value=ta.value.slice(0,sel.s)+newText+ta.value.slice(sel.e);
+  $('selBar').classList.add('hidden');
+}
+$('selEdit').onclick=function(){
+  var sel=outlineSel(); if(!sel.text) return;
+  var t=prompt('改成什么？', sel.text);
+  if(t===null) return;
+  outlineReplace(t);
+};
+$('selAi').onclick=function(){
+  var sel=outlineSel(); if(!sel.text) return;
+  var ask=prompt('对这段的要求？（如：更简洁 / 改成对比表 / 扩成三条要点）','');
+  if(ask===null) return;
+  toast('🤖 AI正在改这段…');
+  callAI('您是ICU教学PPT大纲的段落编辑助手。',
+    '把下面这段PPT大纲文字改一改。要求：'+ask+'\n只输出改后的这段文字本身（保留Markdown记号），不要解释。\n\n【原文】\n'+sel.text,
+    function(text){
+      var m=text.match(/```(?:markdown)?\s*([\s\S]*?)```/); if(m) text=m[1];
+      outlineReplace(text.replace(/^\s+|\s+$/g,'')); toast('✅ 改好了');
+    }, function(err){ toast('⚠️ '+err); });
+};
+/* 文献选择窗：mode 'link'=插[[文件]]；'part'=摘一段插[[文件|标签]]并存linkNotes */
+var litMode='link', litTarget=null;  /* litTarget: 'outline' 或 'page'（单页编辑窗的textarea） */
+function litTargetTa(){ return litTarget==='page'? $('peText') : $('outlineText'); }
+function openLitPicker(mode, target){
+  litMode=mode; litTarget=target||'outline';
+  var meta=[]; try{ meta=JSON.parse(localStorage.getItem('bijiben_lit_v1')||'[]'); }catch(e){}
+  var el=$('litList'); el.innerHTML='';
+  if(!meta.length){ el.innerHTML='<div class="hint" style="padding:10px">文献库是空的——先去「学习笔记」的文献库导入PDF。</div>'; }
+  meta.forEach(function(m){
+    var d=document.createElement('div'); d.className='mm-item';
+    d.textContent='📄 '+(m.title||m.filename)+(m.category? '（'+m.category+'）':'');
+    d.onclick=function(){ litPicked(m); };
+    el.appendChild(d);
+  });
+  $('litModalTitle').textContent = mode==='part'? '📎 第一步：选一篇文献，再摘一段' : '📎 选一篇文献做链接';
+  $('litModal').classList.remove('hidden');
+}
+function litInsert(text){
+  var ta=litTargetTa();
+  var s=ta.selectionStart, e=ta.selectionEnd;
+  ta.value=ta.value.slice(0,s)+text+ta.value.slice(e);
+  $('litModal').classList.add('hidden');
+  $('selBar').classList.add('hidden');
+}
+function litPicked(m){
+  if(litMode==='link'){
+    var sel=(litTarget==='outline')? outlineSel().text : litTargetTa().value.substring(litTargetTa().selectionStart, litTargetTa().selectionEnd);
+    litInsert(sel? ('[['+m.filename+'|'+sel+']]') : ('[['+m.filename+']]'));
+    toast('✅ 链接已插入：'+m.filename);
+    return;
+  }
+  /* part 模式：第二步摘一段 */
+  litTextGet(m.id).then(function(full){
+    var src=m.summary || (full? full.slice(0,3000) : '') || '';
+    $('litModalTitle').textContent='📎 第二步：留下要给别人看的这段（可改），点「插入链接」';
+    var el=$('litList');
+    el.innerHTML='';
+    var ta=document.createElement('textarea'); ta.id='litPartText'; ta.value=src;
+    el.appendChild(ta);
+    var b=document.createElement('button'); b.textContent='✅ 插入链接'; b.style.marginTop='10px';
+    b.onclick=function(){
+      var excerpt=ta.value.replace(/^\s+|\s+$/g,'');
+      if(!excerpt){ toast('摘要是空的'); return; }
+      var label=prompt('链接上显示什么字？', m.title||m.filename);
+      if(label===null) return;
+      outlineLinks[m.filename]=excerpt;
+      litInsert('[['+m.filename+'|'+label+']]');
+      toast('✅ 已插入，摘录已存（导出时别人点开看到的就是这段）');
+    };
+    el.appendChild(b);
+  });
+}
+$('litCancel').onclick=function(){ $('litModal').classList.add('hidden'); };
+$('selLinkLit').onclick=function(){ openLitPicker('link','outline'); };
+$('selLinkPart').onclick=function(){ openLitPicker('part','outline'); };
+
+/* ---- 单页编辑窗 ---- */
+var peIdx=null;
+function peOpen(i){
+  var p=curProj(); if(!p) return;
+  peIdx=i;
+  $('peTitle').textContent='✏️ 编辑第'+(i+1)+'页';
+  $('peText').value=pageToMd(p.slides[i]);
+  $('peMsg').className='msg'; $('peMsg').textContent='';
+  $('pageEditModal').classList.remove('hidden');
+}
+$('peSave').onclick=function(){
+  var p=curProj(); if(!p||peIdx===null) return;
+  var pages=parseOutline($('peText').value);
+  if(!pages.length){ $('peMsg').textContent='认不出这一页（至少留个##标题或要点）'; $('peMsg').className='msg err'; return; }
+  pages[0].cls=p.slides[peIdx].cls;
+  p.slides[peIdx]=pages[0]; p.t=Date.now(); saveStore(); renderSlides();
+  $('pageEditModal').classList.add('hidden'); toast('✅ 第'+(peIdx+1)+'页已保存');
+};
+$('peAi').onclick=function(){
+  var ask=prompt('这页怎么改？（如：要点再精简 / 加个对比表）','');
+  if(ask===null) return;
+  $('peMsg').textContent='🤖 AI正在改…'; $('peMsg').className='msg';
+  callAI('您是ICU教学PPT的单页编辑助手。',
+    '【本页现状】\n'+$('peText').value+'\n【要求】'+ask+'\n\n只输出改后的这一页（Markdown），不要解释。'+MD_RULES,
+    function(text){
+      var m=text.match(/```(?:markdown)?\s*([\s\S]*?)```/); if(m) text=m[1];
+      $('peText').value=text.replace(/^\s+|\s+$/g,'');
+      $('peMsg').textContent='✅ AI改好了，检查后点「保存」';
+    }, function(err){ $('peMsg').textContent=err; $('peMsg').className='msg err'; });
+};
+$('peLink').onclick=function(){ openLitPicker('link','page'); };
+$('peCancel').onclick=function(){ $('pageEditModal').classList.add('hidden'); peIdx=null; };
 
 /* ==================== 导出单个HTML（自带播放器） ==================== */
 async function exportHTML(){
@@ -1068,7 +1257,7 @@ function checkInbox(){
   $('inboxAccept').onclick=function(){
     localStorage.removeItem('ppt_inbox');
     $('inboxCard').style.display='none';
-    var p={id:newId(), title:d.title||'来自学习笔记', outline:d.text, slides:[], t:Date.now()};
+    var p={id:newId(), title:d.title||'来自学习笔记', outline:d.text, slides:[], linkNotes:{}, t:Date.now()};
     store.projects.push(p); curId=p.id; saveStore();
     $('outlineText').value=d.text;
     showPage('editPage');
@@ -1078,8 +1267,9 @@ function checkInbox(){
 }
 /* ==================== 事件绑定 + 初始化 ==================== */
 $('btnNew').onclick=function(){
-  var p={id:newId(), title:'', outline:'', slides:[], t:Date.now()};
+  var p={id:newId(), title:'', outline:'', slides:[], linkNotes:{}, t:Date.now()};
   store.projects.push(p); curId=p.id; saveStore();
+  outlineLinks={};  /* v0.3.0 */
   $('outlineText').value='';
   showPage('editPage');
   showMsg($('editMsg'),'贴Markdown大纲，或点「🤖 AI起草/重写大纲」给个主题让AI写','ok');
