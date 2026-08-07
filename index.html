@@ -13,6 +13,7 @@
       5) Token/仓库名读公共钱罐 hx_*（各软件 bg_/xt_/br_ 开头的也能认）。
       踩坑：iPad/浏览器规矩网页换不了自己，自动更新只在壳APP里跑；浏览器打开只是静态菜单。
     同版根因修复：CUR.ppt误写0.1.1，主界面以为已装而跳过下载，老壳永远装不上PPT工坊——CUR含义=壳里内装版本，未装填"0"。
+    v1.1.5 2026-08-06 假记忆防御：旧版曾把"ppt已装"写进hx_suite_ver（实物没装），光信版本记忆永远跳过下载；现在版本不新也要fetch敲门，404照样下载。
     v1.1.4 2026-08-06 踩坑修复：壳里新成员没下载完时点卡片撞404——listFiles核对，没装齐的卡片加「⏳正在安装」并拦点击。
     v1.1.3 2026-08-06 习题学习升1.4.10（问AI的key/模型接入公共钱罐hx_apikey/hx_aimodel）。
     v1.1.2 2026-08-06 PPT工坊入编第五位成员：SUITE注册表+CUR加ppt(0.1.1)，学习记录区
@@ -205,24 +206,38 @@ function ghCfg(){
       return r.json();
     });
   }
+  /* v1.1.5 踩坑：旧版把"ppt已装0.1.1"的假记忆写进了 hx_suite_ver（其实从没装上），
+     光看版本记忆会永远跳过下载。所以现在"版本不用更新"还要再敲一下文件的门：
+     壳里 fetch 本地文件，404=没装→照样下载（记忆不可信，实物为准） */
+  function reallyMissing(localName, cb){
+    fetch(encodeURI(localName), { cache: "no-store" }).then(function(r){ cb(!r.ok); })
+      .catch(function(){ cb(false); });  /* 探不动就不折腾，按没缺处理 */
+  }
+  function dl(k, info, remote, localName, next){
+    fetchJson(info.dl||remote).then(function(sf){
+      var html=u8dec(sf.content||"");
+      var b64=u8enc(html);
+      var ok=false;
+      try{ ok=window.LearnShell.applyUpdate(localName, b64); }catch(e){}
+      try{ if(window.LearnShell.folderSet()) window.LearnShell.writeFile(localName.replace(".html","")+"_v"+info.version+".html", b64); }catch(e){}
+      if(ok){ CUR[k]=info.version; try{ localStorage.setItem("hx_suite_ver", JSON.stringify(CUR)); }catch(e){} updated.push(localName.replace(".html","")+"→v"+info.version); }
+      else{ failed.push(localName); }
+      next();
+    }).catch(function(e){ failed.push(localName); next(); });
+  }
   function step(i){
     if(i>=keys.length){ finish(); return; }
     var k=keys[i], remote=SUITE[k][0], localName=SUITE[k][1], verFile=SUITE[k][2];
     fetchJson(verFile).then(function(vf){
       var info;
       try{ info=JSON.parse(u8dec(vf.content||"")); }catch(e){ info=null; }
-      if(!info || !info.version || cmpVer(info.version, CUR[k])<=0){ step(i+1); return; }
-      /* 有新版：下载→换新→文件夹存备份 */
-      fetchJson(info.dl||remote).then(function(sf){
-        var html=u8dec(sf.content||"");
-        var b64=u8enc(html);
-        var ok=false;
-        try{ ok=window.LearnShell.applyUpdate(localName, b64); }catch(e){}
-        try{ if(window.LearnShell.folderSet()) window.LearnShell.writeFile(localName.replace(".html","")+"_v"+info.version+".html", b64); }catch(e){}
-        if(ok){ CUR[k]=info.version; try{ localStorage.setItem("hx_suite_ver", JSON.stringify(CUR)); }catch(e){} updated.push(localName.replace(".html","")+"→v"+info.version); }
-        else{ failed.push(localName); }
-        step(i+1);
-      }).catch(function(e){ failed.push(localName); step(i+1); });
+      if(!info || !info.version){ step(i+1); return; }
+      if(cmpVer(info.version, CUR[k])>0){ dl(k, info, remote, localName, function(){ step(i+1); }); return; }
+      /* 版本看着不新，再敲一下文件的门（v1.1.5 假记忆防御） */
+      reallyMissing(localName, function(missing){
+        if(missing) dl(k, info, remote, localName, function(){ step(i+1); });
+        else step(i+1);
+      });
     }).catch(function(e){ step(i+1); });  /* 单个版本文件读不到不拖累别人 */
   }
   function finish(){
