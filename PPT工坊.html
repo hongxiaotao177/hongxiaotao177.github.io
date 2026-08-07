@@ -3,13 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PPT工坊 v0.1.1</title>
+<title>PPT工坊 v0.2.0</title>
 <!--
   PPT工坊 —— 红小涛学习套装第五位成员
   工作流：学习笔记整理知识点 → AI生成Markdown大纲 → 内部邮路(ppt_inbox)寄到本软件
           → 大纲编辑页改稿 → 一键生成HTML幻灯片 → 横屏播放 → 每页可AI重做/换版式
           → 导出单个HTML（微信发别人，浏览器打开即放映）
   修改记录：
+    v0.2.0 2026-08-06 双链文件跳转上线：
+      - 大纲里写 [[文件名.pdf]] 或 [[文件名|显示文字]]（Obsidian规矩：编辑见括号，放映/导出
+        括号不露，显示为下划线链接）——标题/要点/表格/段落/金句都认
+      - 放映点链接→文件查看器四路取件：①壳授权文件夹 ②浏览器文件夹（借文件桥句柄）
+        ③仓库shared区（iPad能走）④学习笔记文献库影子副本（AI总结/全文节选）
+      - 导出HTML自动给每个链接内嵌影子副本（几KB文本）：发给别人点链接也能看内容，
+        不用联网不用仓库——上课发人是课件，自己留着是笔记本（洪医生双用途设计）
+      - 顺手修：SW_VERSION停留在0.1.0（v0.1.1改版本时引号写法没匹配上），现归位
     v0.1.1 2026-08-06 踩坑修复：chart 围栏同一行写法兼容——AI 常把 JSON 直接写在
       ```chart 后面同一行，旧解析器会丢掉它（t9测试抓到）；现支持同行JSON、同行开
       关围栏两种写法。标题同步改 v0.1.1。
@@ -99,11 +107,23 @@
   #playerBar button { font-size:13px; padding:6px 12px; background:rgba(255,255,255,.14); }
   .chart-box { flex:1; display:flex; align-items:center; justify-content:center; }
   .chart-title { text-align:center; font-size:1em; color:#8a8178; margin-bottom:.4em; }
+  /* v0.2.0 双链[[]]：放映/导出时括号不露，显示为下划线链接（Obsidian规矩） */
+  .plnk { color:#2f5f8f; text-decoration:underline; cursor:pointer; }
+  /* 文件查看器（工坊与导出的HTML共用样式，导出时随<style>一起带走） */
+  #fileViewer { position:fixed; inset:0; z-index:110; /* 要比播放器(z100)还高，放映中点链接才打得开 */ background:rgba(40,34,26,.55); display:flex; align-items:center; justify-content:center; padding:10px; }
+  #fileViewer.hidden { display:none !important; }
+  #fileViewer .fv-card { background:#fffdf8; border-radius:14px; width:100%; max-width:760px; max-height:88vh; display:flex; flex-direction:column; padding:14px; }
+  #fileViewer .fv-head { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  #fileViewer .fv-title { flex:1; font-size:15px; font-weight:600; color:#3a3632; word-break:break-all; }
+  #fileViewer .fv-body { flex:1; overflow:auto; font-size:15px; line-height:1.7; color:#3a3632; }
+  #fileViewer iframe { width:100%; height:66vh; border:none; background:#fff; }
+  #fileViewer pre { white-space:pre-wrap; word-break:break-word; font-family:inherit; margin:0; }
+  #fileViewer .fv-src { font-size:12px; color:#a89f93; margin-top:8px; line-height:1.5; }
 </style>
 </head>
 <body>
 
-<header>📊 PPT工坊<span class="ver">v0.1.0</span></header>
+<header>📊 PPT工坊<span class="ver">v0.2.0</span></header>
 
 <div class="page" id="homePage">
 
@@ -206,9 +226,18 @@
   </div>
 </div>
 
+<!-- v0.2.0 链接文件查看器（[[文件]]点击后在这里看） -->
+<div id="fileViewer" class="hidden">
+  <div class="fv-card">
+    <div class="fv-head"><div class="fv-title" id="fvTitle"></div><button class="ghost" id="fvClose">✕ 关闭</button></div>
+    <div class="fv-body" id="fvBody"></div>
+    <div class="fv-src" id="fvSrc"></div>
+  </div>
+</div>
+
 <script>
 "use strict";
-var SW_VERSION = "0.1.0";
+var SW_VERSION = "0.2.0";
 /* 公共钱罐：API key/GitHub配置 一处填处处有（与其他软件共享 hx_*） */
 (function(){
   var HX_MAP=[["hx_apikey","hx_apikey"],["hx_gh_user","hx_gh_user"],["hx_gh_tok","hx_gh_tok"],["hx_gh_repo","hx_gh_repo"]];
@@ -590,27 +619,34 @@ function chartSVG(ch){
   return s;
 }
 /* ==================== 单页渲染HTML（播放器/导出共用） ==================== */
+/* v0.2.0 双链：[[文件名]] 或 [[文件名|显示文字]] → 下划线链接（括号不露） */
+function linkify(escaped){
+  return String(escaped||"").replace(/\[\[([^\[\]|]+)(?:\|([^\[\]]+))?\]\]/g, function(m,f,t){
+    var fn=f.replace(/^\s+|\s+$/g,""), label=t? t.replace(/^\s+|\s+$/g,"") : fn;
+    return '<a class="plnk" data-f="'+encodeURIComponent(fn)+'">'+label+'</a>';
+  });
+}
 function slideHTML(p){
   var kind=pageKind(p);
   if(kind==="cover"){
-    return '<div class="slide-page sp-cover"><h1>'+esc(p.title)+'</h1>'+(p.para?'<div class="sp-sub">'+esc(p.para)+'</div>':'')+'</div>';
+    return '<div class="slide-page sp-cover"><h1>'+linkify(esc(p.title))+'</h1>'+(p.para?'<div class="sp-sub">'+linkify(esc(p.para))+'</div>':'')+'</div>';
   }
   var h='<div class="slide-page">';
-  if(p.title) h+='<h2>'+esc(p.title)+'</h2>';
+  if(p.title) h+='<h2>'+linkify(esc(p.title))+'</h2>';
   if(kind==="big"){
     h+='<div class="sp-big"><div class="n">'+esc(p.big)+'</div><div class="t">'+esc(p.bigText||"")+'</div></div>';
   }else if(kind==="quote"){
-    h+='<div class="sp-quote"><div class="q">'+esc(p.quote)+'</div></div>';
+    h+='<div class="sp-quote"><div class="q">'+linkify(esc(p.quote))+'</div></div>';
   }else{
-    if(p.bullets.length){ h+='<ul>'; p.bullets.forEach(function(b){ h+='<li>'+esc(b)+'</li>'; }); h+='</ul>'; }
+    if(p.bullets.length){ h+='<ul>'; p.bullets.forEach(function(b){ h+='<li>'+linkify(esc(b))+'</li>'; }); h+='</ul>'; }
     if(p.table){
-      h+='<table><tr>'; p.table.headers.forEach(function(c){ h+='<th>'+esc(c)+'</th>'; }); h+='</tr>';
-      p.table.rows.forEach(function(r){ h+='<tr>'; r.forEach(function(c){ h+='<td>'+esc(c)+'</td>'; }); h+='</tr>'; });
+      h+='<table><tr>'; p.table.headers.forEach(function(c){ h+='<th>'+linkify(esc(c))+'</th>'; }); h+='</tr>';
+      p.table.rows.forEach(function(r){ h+='<tr>'; r.forEach(function(c){ h+='<td>'+linkify(esc(c))+'</td>'; }); h+='</tr>'; });
       h+='</table>';
     }
     if(p.chart) h+='<div class="chart-box"><div style="width:92%"><div class="chart-title">'+esc(p.chart.title||"")+'</div>'+chartSVG(p.chart)+'</div></div>';
-    if(p.quote) h+='<div class="sp-quote" style="flex:0"><div class="q" style="font-size:1.05em">'+esc(p.quote)+'</div></div>';
-    if(p.para) h+='<div class="sp-para">'+esc(p.para).replace(/\n/g,"<br>")+'</div>';
+    if(p.quote) h+='<div class="sp-quote" style="flex:0"><div class="q" style="font-size:1.05em">'+linkify(esc(p.quote))+'</div></div>';
+    if(p.para) h+='<div class="sp-para">'+linkify(esc(p.para)).replace(/\n/g,"<br>")+'</div>';
   }
   h+='</div>';
   return h;
@@ -651,6 +687,7 @@ var MD_RULES=
 '- 对比表：用 | 表头 | 表头 | 画（第二行不要分隔线也认得），适合对比的内容优先用表\n'+
 '- 大数字页：行首「!! 数字 说明文字」（如 !! 95% 五年生存率）\n'+
 '- 金句页：行首「> 」\n'+
+'- 引用指南/文献：[[文件名.pdf]]（放映时显示成下划线链接，可点开看；如 [[ARDS柏林指南.pdf]]）\n'+
 '- 图表页：用 ```chart 包住一行JSON，如 ```chart {"type":"bar","title":"标题","labels":["A","B"],"values":[3,5]} ``` （type可选bar柱/pie饼/line折线；只有真有数字对比时才用）\n'+
 '- 只输出Markdown本身，不要任何解释。页数8~15页。';
 function aiDraftOutline(){
@@ -824,6 +861,9 @@ $('player').addEventListener('touchend',function(e){
 });
 $('player').addEventListener('click',function(e){
   if(e.target.tagName==='BUTTON') return;
+  /* v0.2.0 点到[[链接]]：进文件查看器，不翻页 */
+  var a=e.target.closest? e.target.closest('.plnk'):null;
+  if(a){ openLinkedFile(decodeURIComponent(a.getAttribute('data-f')||'')); return; }
   var x=e.clientX;
   if(x<window.innerWidth*0.35){ pvIdx--; } else if(x>window.innerWidth*0.65){ pvIdx++; }
   renderStage();
@@ -834,25 +874,176 @@ $('pvExit').onclick=stopPlay;
 </script>
 <script>
 "use strict";
+/* ==================== v0.2.0 链接文件查看器 ====================
+   点[[链接]]取文件四条路，按顺序试：
+   ①壳APP授权文件夹（LearnShell.readFile）②浏览器授权文件夹（借文件桥的bridge-db句柄，同源IndexedDB共享）
+   ③仓库共享区 shared/<文件名>（iPad也能走这条）④影子副本（学习笔记文献库的AI总结/全文节选） */
+function fvOpen(name){
+  $('fvTitle').textContent='📎 '+name;
+  $('fvBody').innerHTML='<div style="color:#a89f93">正在取文件…</div>';
+  $('fvSrc').textContent='';
+  $('fileViewer').classList.remove('hidden');
+}
+function fvClose(){ $('fileViewer').classList.add('hidden'); $('fvBody').innerHTML=''; }
+$('fvClose').onclick=fvClose;
+function fvShowBlob(blob,name){
+  fvOpen(name);
+  if(/\.(txt|md|csv)$/i.test(name)){
+    var rd=new FileReader();
+    rd.onload=function(){ $('fvBody').innerHTML='<pre>'+esc(rd.result||'')+'</pre>'; };
+    rd.readAsText(blob);
+  }else{
+    var url=URL.createObjectURL(blob);
+    $('fvBody').innerHTML='<iframe src="'+url+'"></iframe>';
+  }
+  $('fvSrc').textContent='📄 完整文件原件';
+}
+function fvShowText(name, text, src){
+  fvOpen(name);
+  $('fvBody').innerHTML=text? '<pre>'+esc(text)+'</pre>' : '<div style="color:#a89f93">（没有内容）</div>';
+  $('fvSrc').textContent=src||'';
+}
+function b64ToBlob(b64,mime){
+  var s=atob(String(b64||'').replace(/\s+/g,'')), b=new Uint8Array(s.length);
+  for(var i=0;i<s.length;i++) b[i]=s.charCodeAt(i);
+  return new Blob([b],{type:mime||'application/octet-stream'});
+}
+function mimeOf(name){
+  if(/\.pdf$/i.test(name)) return 'application/pdf';
+  if(/\.png$/i.test(name)) return 'image/png';
+  if(/\.jpe?g$/i.test(name)) return 'image/jpeg';
+  if(/\.gif$/i.test(name)) return 'image/gif';
+  if(/\.(txt|md|csv)$/i.test(name)) return 'text/plain';
+  return 'application/octet-stream';
+}
+/* 借文件桥的文件夹句柄（同源 IndexedDB 'bridge-db'/'kv'/'dir'） */
+function bridgeDirHandle(){
+  return new Promise(function(res){
+    try{
+      var rq=indexedDB.open('bridge-db',1);
+      rq.onerror=function(){ res(null); };
+      rq.onupgradeneeded=function(){ rq.transaction.abort(); res(null); };
+      rq.onsuccess=function(){
+        var db=rq.result;
+        try{
+          var g=db.transaction('kv','readonly').objectStore('kv').get('dir');
+          g.onsuccess=function(){ res(g.result||null); };
+          g.onerror=function(){ res(null); };
+        }catch(e){ res(null); }
+      };
+    }catch(e){ res(null); }
+  });
+}
+/* 影子副本：学习笔记文献库（bijiben_lit_v1 元数据 + lit-db/papers 全文） */
+function litFindByFilename(name){
+  try{
+    var meta=JSON.parse(localStorage.getItem('bijiben_lit_v1')||'[]');
+    for(var i=0;i<meta.length;i++){ if(meta[i].filename===name) return meta[i]; }
+  }catch(e){}
+  return null;
+}
+function litTextGet(id){
+  return new Promise(function(res){
+    try{
+      var rq=indexedDB.open('lit-db',1);
+      rq.onerror=function(){ res(null); };
+      rq.onupgradeneeded=function(){ rq.transaction.abort(); res(null); };
+      rq.onsuccess=function(){
+        var db=rq.result;
+        try{
+          var g=db.transaction('papers','readonly').objectStore('papers').get(id);
+          g.onsuccess=function(){ res(g.result? g.result.text : null); };
+          g.onerror=function(){ res(null); };
+        }catch(e){ res(null); }
+      };
+    }catch(e){ res(null); }
+  });
+}
+function findExcerpt(name){
+  var m=litFindByFilename(name);
+  if(m && m.summary) return Promise.resolve({text:m.summary, src:'学习笔记文献库·AI总结'});
+  if(m) return litTextGet(m.id).then(function(t){
+    return t? {text:t.slice(0,2000)+(t.length>2000?'\n……（节选前2000字）':''), src:'学习笔记文献库·全文节选'} : null;
+  });
+  return Promise.resolve(null);
+}
+async function openLinkedFile(name){
+  fvOpen(name);
+  /* ①壳APP授权文件夹 */
+  try{
+    if(window.LearnShell && window.LearnShell.folderSet && window.LearnShell.folderSet()){
+      var b64=window.LearnShell.readFile(name);
+      if(b64){ fvShowBlob(b64ToBlob(b64, mimeOf(name)), name); return; }
+    }
+  }catch(e){}
+  /* ②浏览器授权文件夹（文件桥句柄） */
+  try{
+    var h=await bridgeDirHandle();
+    if(h){
+      if(h.queryPermission && (await h.queryPermission({mode:'read'}))!=='granted'){
+        if(h.requestPermission) await h.requestPermission({mode:'read'});
+      }
+      var fh=await h.getFileHandle(name);
+      var file=await fh.getFile();
+      fvShowBlob(file, name); return;
+    }
+  }catch(e){}
+  /* ③仓库共享区 shared/ */
+  try{
+    if(ghReady()){
+      var r=await ghFetch(ghFileUrl('shared/'+name), {headers:ghHeaders()});
+      if(r.ok){ var j=await r.json(); fvShowBlob(b64ToBlob(j.content||'', mimeOf(name)), name); return; }
+    }
+  }catch(e){}
+  /* ④影子副本 */
+  try{
+    var ex=await findExcerpt(name);
+    if(ex){ fvShowText(name, ex.text, '没取到原件，先给您看「'+ex.src+'」。要看完整文件：把 '+name+' 放进授权文件夹或仓库 shared 区。'); return; }
+  }catch(e){}
+  fvShowText(name, '', '四条路都没取到「'+name+'」：①授权文件夹 ②浏览器文件夹 ③仓库shared区 ④学习笔记文献库。把文件放进其中一处再来点。');
+}
+
 /* ==================== 导出单个HTML（自带播放器） ==================== */
-function exportHTML(){
+async function exportHTML(){
   var p=curProj(); if(!p||!p.slides.length){ toast('先生成PPT'); return; }
+  /* v0.2.0 抓所有[[]]链接的文件名，给每个链接内嵌"影子副本"（文献库AI总结/全文节选），
+     发给别人点开链接也能看到内容——HTML自己带着，不用联网 */
+  var linkNames=[], seen={};
+  function scan(t){ if(!t) return; var m, re=/\[\[([^\[\]|]+)(?:\|[^\[\]]+)?\]\]/g;
+    while((m=re.exec(t))){ var n=m[1].replace(/^\s+|\s+$/g,""); if(!seen[n]){ seen[n]=1; linkNames.push(n); } } }
+  p.slides.forEach(function(s){
+    scan(s.title); scan(s.para); scan(s.quote);
+    (s.bullets||[]).forEach(scan);
+    if(s.table){ (s.table.headers||[]).forEach(scan); (s.table.rows||[]).forEach(function(r){ r.forEach(scan); }); }
+  });
+  var LINKS={};
+  if(linkNames.length){
+    toast('⏳ 正在给 '+linkNames.length+' 个链接准备内嵌摘要…');
+    for(var li=0;li<linkNames.length;li++){
+      try{ var ex=await findExcerpt(linkNames[li]); if(ex && ex.text) LINKS[linkNames[li]]=ex.text; }catch(e){}
+    }
+  }
   var css=document.querySelector('style').textContent;
   var slidesJson=JSON.stringify(p.slides).replace(/<\/script>/gi,'<\\/script>');
-  var fn=slideHTML.toString(), fn2=chartSVG.toString(), fn3=esc.toString(), fn4=pageKind.toString();
+  var linksJson=JSON.stringify(LINKS).replace(/<\/script>/gi,'<\\/script>');
+  var fn=slideHTML.toString(), fn2=chartSVG.toString(), fn3=esc.toString(), fn4=pageKind.toString(), fn5=linkify.toString();
   var doc='<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">'+
     '<meta name="viewport" content="width=device-width, initial-scale=1.0">'+
     '<title>'+esc(p.title||'PPT')+'</title><style>'+css+'</style></head><body>'+
     '<div id="player" style="display:flex"><div id="stage"></div>'+
     '<div id="playerBar"><button onclick="pv(-1)">← 上一页</button><span id="pvNo"></span>'+
     '<button onclick="pv(1)">下一页 →</button></div></div>'+
+    '<div id="fileViewer" class="hidden"><div class="fv-card"><div class="fv-head"><div class="fv-title" id="fvTitle"></div><button onclick="fvClose2()">✕ 关闭</button></div><div class="fv-body" id="fvBody"></div><div class="fv-src" id="fvSrc"></div></div></div>'+
     '<script>var slides='+slidesJson+';var pvIdx=0;'+
-    'var esc='+fn3+';var pageKind='+fn4+';var chartSVG='+fn2+';var slideHTML='+fn+';'+
+    'var PPT_LINKS='+linksJson+';'+
+    'var esc='+fn3+';var pageKind='+fn4+';var chartSVG='+fn2+';var linkify='+fn5+';var slideHTML='+fn+';'+
+    'function fvClose2(){document.getElementById("fileViewer").classList.add("hidden");}'+
+    'function fvLink(name){document.getElementById("fvTitle").textContent="📎 "+name;var txt=PPT_LINKS[name];var b=document.getElementById("fvBody");if(txt){b.innerHTML="<pre>"+esc(txt)+"</pre>";document.getElementById("fvSrc").textContent="内嵌摘要（导出时自动抓取），这份HTML自己带着，不用联网";}else{b.innerHTML="<div style=color:#a89f93>这份HTML没有内嵌该文件的摘要</div>";document.getElementById("fvSrc").textContent="";}document.getElementById("fileViewer").classList.remove("hidden");}'+
     'function fit(){var st=document.getElementById("stage");var w=innerWidth,h=innerHeight;var sw=w,sh=w*9/16;if(sh>h){sh=h;sw=h*16/9;}st.style.width=sw+"px";st.style.height=sh+"px";st.style.fontSize=(sh/22)+"px";}'+
     'function render(){pvIdx=Math.max(0,Math.min(pvIdx,slides.length-1));document.getElementById("stage").innerHTML=slideHTML(slides[pvIdx]);document.getElementById("pvNo").textContent=(pvIdx+1)+"/"+slides.length;}'+
     'function pv(d){pvIdx+=d;render();}onresize=function(){fit();render();};'+
     'document.addEventListener("keydown",function(e){if(e.key==="ArrowRight"||e.key===" ")pv(1);else if(e.key==="ArrowLeft")pv(-1);});'+
-    'document.getElementById("player").addEventListener("click",function(e){if(e.target.tagName==="BUTTON")return;var x=e.clientX;if(x<innerWidth*0.35)pv(-1);else if(x>innerWidth*0.65)pv(1);});'+
+    'document.getElementById("player").addEventListener("click",function(e){if(e.target.tagName==="BUTTON")return;var a=e.target.closest?e.target.closest(".plnk"):null;if(a){fvLink(decodeURIComponent(a.getAttribute("data-f")||""));return;}var x=e.clientX;if(x<innerWidth*0.35)pv(-1);else if(x>innerWidth*0.65)pv(1);});'+
     'var tx=null;document.addEventListener("touchstart",function(e){tx=e.touches[0].clientX});document.addEventListener("touchend",function(e){if(tx===null)return;var dx=e.changedTouches[0].clientX-tx;tx=null;if(dx<-40)pv(1);else if(dx>40)pv(-1);});'+
     'fit();render();'+
     '</'+'script></body></html>';
