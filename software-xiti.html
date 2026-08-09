@@ -442,6 +442,10 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 - 间隔重复（熟悉的题隔几天再现）
 - 老.doc支持、选择题(A/B/C/D)题型
 ================================================================================
+    v1.5.1 2026-08-09 修v1.5.0排版坑：题库卡片加了第4个按钮「粘贴出题」后，
+    手机端flex一行放不下，中间名字统计被挤成一竖条字。现象→根因→修法：
+    现象=题库名/统计逐字竖排；根因=.bank-item不换行，按钮不缩，挤bank-info；
+    修法=.bank-item加flex-wrap:wrap、.bank-info改flex:1 1 55%，按钮自动掉第二行。
     v1.5.0 2026-08-09 粘贴出题三升级：
     ①题库卡片「🤖 AI出题」旁新增「📋 粘贴出题」，确认窗默认并入当前库；
     ②解析器格式放宽：题号认（1）/①②③/1)/第1题，答案行认 答案:/【答案】/A:/参考答案: 等；
@@ -461,7 +465,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>习题学习 v1.5.0</title>
+<title>习题学习 v1.5.1</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f2f4f8; color: #222; }
@@ -482,9 +486,10 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
   button.active { background: #1a4d6e; }
   .btn-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
   .card { background: #fff; border-radius: 10px; padding: 14px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
-  .bank-item { display: flex; align-items: center; gap: 10px; }
+  /* v1.5.1：卡片允许换行，按钮多了自动掉到第二行（v1.5.0加第4个按钮把手机端名字统计挤成竖条的病根） */
+  .bank-item { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .bank-item input[type=checkbox] { width: 22px; height: 22px; flex-shrink: 0; }
-  .bank-info { flex: 1; min-width: 0; }
+  .bank-info { flex: 1 1 55%; min-width: 0; }
   .bank-name { font-size: 16px; font-weight: bold; word-break: break-all; }
   .bank-stats { font-size: 13px; color: #666; margin-top: 4px; }
   .tag { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 12px; margin-right: 4px; }
@@ -535,7 +540,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 
 <script id="embedded-data" type="application/json">null</script>
 
-<header>📖 习题学习<span class="ver">v1.5.0</span></header>
+<header>📖 习题学习<span class="ver">v1.5.1</span></header>
 
 <!-- ========== 首页 ========== -->
 <div id="page-home" class="page">
@@ -1971,7 +1976,7 @@ function toast(msg) {
    完整设计思路与协同协议见学习笔记.html 代码顶部（两边以那份为准）。 */
 var XT_GH_USER = "xt_gh_user", XT_GH_TOK = "xt_gh_tok", XT_GH_REPO = "xt_gh_repo",
     XT_GH_LAST = "xt_gh_last", XT_GH_CHECK = "xt_gh_check";
-var SW_VERSION = "1.5.0";
+var SW_VERSION = "1.5.1";
 /* v1.4.8 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["xt_gh_user", "hx_gh_user"], ["xt_gh_tok", "hx_gh_tok"], ["xt_gh_repo", "hx_gh_repo"]];
