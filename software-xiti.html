@@ -442,6 +442,11 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 - 间隔重复（熟悉的题隔几天再现）
 - 老.doc支持、选择题(A/B/C/D)题型
 ================================================================================
+    v1.6.2 2026-08-09 定标改走常驻按钮（根治vivo手机浏览器浮动按钮不显示）：
+    现象=涂黑词后「➕ 定标」浮动按钮始终不出现（排除系统菜单遮挡，用户上下滑动验证）；
+    根因=部分国产安卓浏览器对 selectionchange/touchend 选区事件支持不全，浮动按钮方案不可靠；
+    修法=答案区按钮排+注释展开区各加常驻「📍 定标选中词」按钮，涂黑后点它即定标；
+    浮动按钮保留（桌面端方便），没涂黑就点常驻按钮会toast提示先涂黑。
     v1.6.1 2026-08-09 注释两处补短板：
     ①注释展开新增「✏️ 改这条」手动编辑（以前只能AI整理或绕去修改本题窗）；
     ②注释框里涂黑词也能定标（选区检测补note-area）；
@@ -478,7 +483,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>习题学习 v1.6.1</title>
+<title>习题学习 v1.6.2</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f2f4f8; color: #222; }
@@ -556,7 +561,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 
 <script id="embedded-data" type="application/json">null</script>
 
-<header>📖 习题学习<span class="ver">v1.6.1</span></header>
+<header>📖 习题学习<span class="ver">v1.6.2</span></header>
 
 <!-- ========== 首页 ========== -->
 <div id="page-home" class="page">
@@ -1496,7 +1501,7 @@ function reveal() {
     if (notes[i]) html += "<button class=\"ghost\" style=\"margin:8px 6px 0 0;font-size:13px;padding:6px 10px\" onclick=\"toggleNote(" + i + ")\">📎 注释" + (i + 1) + "</button>";
   }
   html += "<div id=\"note-area\"></div>"
-    + "<div style=\"text-align:right;margin-top:8px\"><button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"openEdit()\">✏️ 修改本题</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"openAiNote()\">🤖 问AI</button></div>";
+    + "<div style=\"text-align:right;margin-top:8px\"><button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"addMarkFromSelection()\">📍 定标选中词</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"openEdit()\">✏️ 修改本题</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"openAiNote()\">🤖 问AI</button></div>";
   document.getElementById("a-area").innerHTML = html;
   document.getElementById("mark-row").classList.remove("hidden");
 }
@@ -1509,7 +1514,7 @@ function revealShift() {
     if (notes[i]) html += "<button class=\"ghost\" style=\"margin:8px 6px 0 0;font-size:13px;padding:6px 10px\" onclick=\"toggleNote(" + i + ")\">📎 注释" + (i + 1) + "</button>";
   }
   html += "<div id=\"note-area\"></div>"
-    + "<div style=\"text-align:right;margin-top:8px\"><button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"openEdit()\">✏️ 修改本题</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"openAiNote()\">🤖 问AI</button></div>";
+    + "<div style=\"text-align:right;margin-top:8px\"><button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"addMarkFromSelection()\">📍 定标选中词</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"openEdit()\">✏️ 修改本题</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"openAiNote()\">🤖 问AI</button></div>";
   document.getElementById("a-area").innerHTML = html;
   document.getElementById("mark-row").classList.remove("hidden");
 }
@@ -1518,7 +1523,7 @@ function toggleNote(ni) {
   var area = document.getElementById("note-area");
   if (area.getAttribute("data-open") === String(ni)) { area.innerHTML = ""; area.setAttribute("data-open", ""); return; }
   area.innerHTML = "<div class=\"a-text\" style=\"color:#5a4a1f;background:#fdf8ec;border-radius:8px;padding:12px\">" + esc(it.n[ni]) + "</div>"
-    + "<div style=\"text-align:right;margin-top:6px\"><button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"noteManualEdit(" + ni + ")\">✏️ 改这条</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"aiRewriteNote(" + ni + ")\">🤖 让AI整理这条注释</button></div>";
+    + "<div style=\"text-align:right;margin-top:6px\"><button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"addMarkFromSelection()\">📍 定标选中词</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"noteManualEdit(" + ni + ")\">✏️ 改这条</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"aiRewriteNote(" + ni + ")\">🤖 让AI整理这条注释</button></div>";
   area.setAttribute("data-open", String(ni));
 }
 /* v1.6.1：注释手动编辑（以前只能AI整理或进修改本题窗，太绕） */
@@ -1641,7 +1646,8 @@ document.addEventListener("mouseup", function () { setTimeout(maybeShowMkBtn, 60
 function addMarkFromSelection() {
   var sel = window.getSelection();
   var term = sel ? sel.toString().trim() : "";
-  if (!term) { hideMkBtn(); return; }
+  /* v1.6.2：没涂黑就点常驻按钮时给句明白话（浮动按钮在安卓被系统菜单盖住，改走常驻按钮） */
+  if (!term) { toast("先用手指涂黑要定标的词，再点「📍 定标选中词」"); hideMkBtn(); return; }
   var it = curList()[session.pos];
   it.mk = it.mk || [];
   if (it.mk.indexOf(term) < 0) it.mk.push(term);
@@ -2137,7 +2143,7 @@ function toast(msg) {
    完整设计思路与协同协议见学习笔记.html 代码顶部（两边以那份为准）。 */
 var XT_GH_USER = "xt_gh_user", XT_GH_TOK = "xt_gh_tok", XT_GH_REPO = "xt_gh_repo",
     XT_GH_LAST = "xt_gh_last", XT_GH_CHECK = "xt_gh_check";
-var SW_VERSION = "1.6.1";
+var SW_VERSION = "1.6.2";
 /* v1.4.8 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["xt_gh_user", "hx_gh_user"], ["xt_gh_tok", "hx_gh_tok"], ["xt_gh_repo", "hx_gh_repo"]];
