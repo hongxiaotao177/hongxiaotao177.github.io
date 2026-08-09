@@ -442,6 +442,11 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 - 间隔重复（熟悉的题隔几天再现）
 - 老.doc支持、选择题(A/B/C/D)题型
 ================================================================================
+    v1.6.1 2026-08-09 注释两处补短板：
+    ①注释展开新增「✏️ 改这条」手动编辑（以前只能AI整理或绕去修改本题窗）；
+    ②注释框里涂黑词也能定标（选区检测补note-area）；
+    坑：定标浮动按钮放选区下方，被安卓系统"复制/分享"菜单整个盖住→挪到选区上方44px，
+    并补mouseup监听（桌面端划词也能出按钮）。
     v1.6.0 2026-08-09 定标→集体形成注释 + 注释编辑器升级：
     ①学习页涂黑题目/答案里的词→浮动「➕ 定标」按钮→词进 it.mk（虚线下划线显示），
       可连标多个；「🤖 集体形成注释」一次AI请求给所有定标词写大白话解释，
@@ -473,7 +478,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>习题学习 v1.6.0</title>
+<title>习题学习 v1.6.1</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f2f4f8; color: #222; }
@@ -551,7 +556,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 
 <script id="embedded-data" type="application/json">null</script>
 
-<header>📖 习题学习<span class="ver">v1.6.0</span></header>
+<header>📖 习题学习<span class="ver">v1.6.1</span></header>
 
 <!-- ========== 首页 ========== -->
 <div id="page-home" class="page">
@@ -1513,8 +1518,26 @@ function toggleNote(ni) {
   var area = document.getElementById("note-area");
   if (area.getAttribute("data-open") === String(ni)) { area.innerHTML = ""; area.setAttribute("data-open", ""); return; }
   area.innerHTML = "<div class=\"a-text\" style=\"color:#5a4a1f;background:#fdf8ec;border-radius:8px;padding:12px\">" + esc(it.n[ni]) + "</div>"
-    + "<div style=\"text-align:right;margin-top:6px\"><button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"aiRewriteNote(" + ni + ")\">🤖 让AI整理这条注释</button></div>";
+    + "<div style=\"text-align:right;margin-top:6px\"><button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"noteManualEdit(" + ni + ")\">✏️ 改这条</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"aiRewriteNote(" + ni + ")\">🤖 让AI整理这条注释</button></div>";
   area.setAttribute("data-open", String(ni));
+}
+/* v1.6.1：注释手动编辑（以前只能AI整理或进修改本题窗，太绕） */
+function noteManualEdit(ni) {
+  var it = curList()[session.pos];
+  var area = document.getElementById("note-area");
+  area.setAttribute("data-open", "");
+  area.innerHTML = "<textarea id=\"note-edit-ta\" style=\"min-height:120px;margin-bottom:6px\">" + esc(it.n[ni]) + "</textarea>"
+    + "<div style=\"text-align:right\"><button style=\"font-size:13px;padding:6px 10px\" onclick=\"noteManualSave(" + ni + ")\">💾 保存</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"toggleNote(" + ni + ")\">取消</button></div>";
+}
+function noteManualSave(ni) {
+  var it = curList()[session.pos];
+  var v = document.getElementById("note-edit-ta").value.trim();
+  if (!v) { toast("注释不能为空（要删注释请用「修改本题」）"); return; }
+  it.n[ni] = v;
+  store.banks.forEach(function (b) { if (b.id === it.bankId) { b.questions[it.idx].n = it.n; } });
+  saveStore();
+  toggleNote(ni);
+  toast("注释已保存");
 }
 /* v1.3：让AI整理某条注释（补丁5：要求可自定义，默认预填），满意后替换 */
 function aiRewriteNote(ni) {
@@ -1602,16 +1625,19 @@ function maybeShowMkBtn() {
   var studyPage = document.getElementById("page-study");
   if (!studyPage || studyPage.classList.contains("hidden")) { hideMkBtn(); return; }
   var node = sel.anchorNode && sel.anchorNode.parentElement;
-  if (!node || !(node.closest("#q-text") || node.closest("#a-area"))) { hideMkBtn(); return; }
+  /* v1.6.1：注释框（note-area）里涂黑也能定标 */
+  if (!node || !(node.closest("#q-text") || node.closest("#a-area") || node.closest("#note-area"))) { hideMkBtn(); return; }
   try {
     var r = sel.getRangeAt(0).getBoundingClientRect();
     mkBtn.style.left = Math.max(6, Math.min(r.left, window.innerWidth - 110)) + "px";
-    mkBtn.style.top = (r.bottom + 6) + "px";
+    /* v1.6.1坑：按钮放选区下方会被系统"复制/分享"菜单整个盖住 → 挪到选区上方 */
+    mkBtn.style.top = Math.max(6, r.top - 44) + "px";
     mkBtn.style.display = "";
   } catch (e) { hideMkBtn(); }
 }
 document.addEventListener("selectionchange", function () { setTimeout(maybeShowMkBtn, 60); });
 document.addEventListener("touchend", function () { setTimeout(maybeShowMkBtn, 120); });
+document.addEventListener("mouseup", function () { setTimeout(maybeShowMkBtn, 60); });
 function addMarkFromSelection() {
   var sel = window.getSelection();
   var term = sel ? sel.toString().trim() : "";
@@ -2111,7 +2137,7 @@ function toast(msg) {
    完整设计思路与协同协议见学习笔记.html 代码顶部（两边以那份为准）。 */
 var XT_GH_USER = "xt_gh_user", XT_GH_TOK = "xt_gh_tok", XT_GH_REPO = "xt_gh_repo",
     XT_GH_LAST = "xt_gh_last", XT_GH_CHECK = "xt_gh_check";
-var SW_VERSION = "1.6.0";
+var SW_VERSION = "1.6.1";
 /* v1.4.8 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["xt_gh_user", "hx_gh_user"], ["xt_gh_tok", "hx_gh_tok"], ["xt_gh_repo", "hx_gh_repo"]];
