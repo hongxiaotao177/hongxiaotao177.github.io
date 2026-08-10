@@ -1,0 +1,2669 @@
+<!DOCTYPE html>
+<!--
+================================================================================
+习题学习工具 设计说明书（交接文档）
+================================================================================
+★ v1.0 定版说明（2026-07-27）
+本版是"浏览器单文件时代"的阶段性最终版，功能完整、问题清零，可长期
+放心使用。版本号从v0.x正式升为v1.0，表示第一个成熟里程碑。
+下一步进化方向已写入"六、下一步计划"：打包成手机App+电脑exe，
+实现坚果云双端无缝同步——那将是v2.0的起点。本文件内的完整修改
+记录（v0.1→v1.0）即进化史，接手者从记录可读懂每一步为什么这样改。
+================================================================================
+【致下一位接手者（AI或开发者）】
+本文件是自包含单HTML应用，所有设计决策、踩过的坑、数据结构都写在这里。
+用户会把这个文件提交给没有历史记忆的AI继续开发。请先读完本说明再动手。
+
+--------------------------------------------------------------------------------
+一、项目背景与用户
+--------------------------------------------------------------------------------
+- 用户：临床医生，约60岁，零基础编程，主要在安卓手机上使用（夸克/Chrome浏览器）。
+- 用途：把医学复习题（Word/txt，"题目+答案"格式）导入手机，碎片时间刷题，
+  标记掌握程度（陌生/一般/熟悉），追踪进度，导出错题。
+- 新增v0.12：医学英语词根学习 + 交班英语学习，内置Kimi提示词生成。
+- 协作模式：用户提出需求 → AI先沟通确认方案（得到"确认"后才可写代码）
+  → 改完自测 → 交付。用户极重视"先确认再动手"，违反过会被批评。
+
+--------------------------------------------------------------------------------
+二、硬性开发规则（用户明确要求，必须遵守）
+--------------------------------------------------------------------------------
+1. 写/改代码前必须先沟通确认，用户说"确认"后才能动手。
+2. 最小改动原则："宁愿没有也不要改变太大"。只改列出的问题，不重构、不优化、
+   不改格式、不改变量名；发现必须改动其他地方时，停下来向用户说明。
+3. 每次修改升版本号，并在本注释区追加修改记录。
+4. 保持单文件HTML，完全离线可用，不依赖CDN/外部文件。
+5. 改完必须自测（可用node抽取本文件中的函数做逻辑测试），自测通过再交付。
+6. 每改一步都要更新本说明文件：写明改了什么、修改是否成功、
+   成功/不成功的原因是什么（v0.6起执行）。
+
+--------------------------------------------------------------------------------
+三、功能与数据结构
+--------------------------------------------------------------------------------
+功能：
+- 导入习题：文件导入（txt/md/docx）+ 粘贴导入；导入前弹确认窗，可改库名，
+  可选"新建题库"或"并入已有题库"（v0.5新增）。
+- 题库列表：勾选多个题库聚合复习；显示 陌生/一般/熟悉/未学 统计；可删除。
+- 复习页：看题→显示答案→标记 陌生(1)/一般(2)/熟悉(3)；筛选（全部/陌生/
+  一般/熟悉/陌生+一般/未学）；可打乱顺序。
+- 导出错题：陌生+一般 导出为txt。
+- 导出分身：把 store（题库+进度）嵌入 <script id="embedded-data"> 生成新HTML
+  下载，用于备份/分享/换设备；打开分身且localStorage为空时自动载入内嵌数据。
+- v0.12新增：三模式切换（普通题库/词根学习/交班英语）
+  · 词根模式：自动提取所有题库中的词根（xxx- / hepat(o)- / (nephr)- 等），
+    实时显示已学词根清单，一键生成Kimi提示词（第一次给格式，后续附带已学词根）。
+  · 交班模式：方向切换（中→英/英→中/混合），翻转卡片式学习，
+    一键生成Kimi提示词（附带已学中文句子清单防重复）。
+
+数据结构（localStorage键：xitixuexi_v01）：
+  store = {
+    banks: [{ id:"b<时间戳>_<随机>", name:"库名", type:"normal|root|shift", questions:[{q:"题",a:"答",n:[注释]}] }],
+    progress: { "bankId::题目下标": {l:1|2|3, t:时间戳} }
+  }
+  type字段：normal=普通题库, root=词根学习, shift=交班英语
+  旧题库无type字段自动视为normal，兼容不丢数据。
+
+题目解析规则（parseQuestions）：
+- 题目行：以"数字."开头（兼容"1. 1."双重编号，剥两次）
+- 答案行：以"答："或"答案："开头，可跨多行，直到下一题或分隔线(===/---/***)
+- Word(.docx)：内嵌 tiny-inflate + 自写zip/xml提取（docxToText），
+  从 word/document.xml 按 </w:p> 分段取纯文本后走同一解析器。
+- v0.12新增：交班英语格式 Q:中文 A:英文（或反过来），与普通格式共存。
+
+--------------------------------------------------------------------------------
+四、版本历史（含踩过的坑）
+--------------------------------------------------------------------------------
+v0.1 (2026-07-24) 初版：导入/题库/复习/导出错题/导出分身。
+v0.2 (2026-07-24) 用户嫌Word转txt麻烦 → 内嵌离线docx读取器。
+  坑：解析器把文件末尾"======"分隔线吞进最后一题答案 → 加分隔线截断规则。
+v0.3 (2026-07-24) 用户报告夸克里点导入按钮无反应。
+  诊断：粘贴导入正常=JS没问题，问题在JS触发file input被拦。
+  修复：button onclick→label for 直连；加 window.onerror 全局错误弹提示。
+v0.4 (2026-07-24) Chrome里按钮仍无反应。
+  修复：input[type=file] 透明覆盖在按钮上（.file-btn），手指直点系统原件，
+  彻底绕过JS触发。实测导入成功。教训：安卓WebView类浏览器对
+  JS/programmatic click file input 拦截严格，覆盖法最稳。
+v0.5 (2026-07-24) 用户重复导入同一文件自动建成两个库，要求导入前先问。
+  修复：统一弹确认窗（import-modal），可改库名、选新建或并入已有库。
+v0.5.1 (2026-07-24) 仅新增本设计说明注释，无功能改动。
+v0.6 (2026-07-24) 新增Obsidian笔记格式支持（用户四选一只选此项）。
+  改了什么：parseQuestions加一条规则，识别 "- **术语**：解释" 列表行，
+  自动转为 Q="什么是术语？" A="解释"；[[双链]]取内文、**加粗**符号剥除；
+  冒号可缺省（兼容 "- **青霉素类**（如氨苄西林）" 这类写法）。
+  修改结果：成功。原因：用真实文件（鲍曼不动杆菌.md）实测，10个术语全部
+  正确转为10题、无缺题缺答；老格式（数字.题+答：）回归测试40题无影响。
+  注意：该规则只匹配"列表项+加粗术语开头"的行，普通笔记段落不会误转。
+v0.7 (2026-07-25) 新增"修改本题"功能。
+  背景：①用户发现部分答案有缺陷要求可修改；②曾讨论自动备份/打包方案
+  （编号v0.7候选），后用户自行发现"固定文件+固定位置+固定浏览器"即可
+  靠localStorage稳定保存进度，备份方案取消（降级为可选增强），本版本号
+  让给题目编辑功能。
+  改了什么：学习页显示答案后出现"✏️ 修改本题"按钮→编辑窗（题目+答案）
+  →保存写回store；空题/空答拦截；原掌握度标记保留。
+  修改结果：成功。原因：DOM桩模拟完整流程——编辑窗正确读取原内容、
+  store写回成功、进度标记(2)保留、空答案被拦截，全部符合设计。
+v0.8 (2026-07-25) 新增"注释"功能。
+  需求：答案要短（保证学习效果），补充内容收进可收起的注释。
+  改了什么：题目数据结构加可选字段 n:[注释1,注释2,注释3]（旧数据无此字段
+  兼容）；学习页答案下方按非空注释显示"📎注释N"按钮，点开展开/再点收起；
+  注释填写在"修改本题"窗内（3个框可留空，尾部空注释自动剔除，中间空位
+  保留以维持编号）；导出错题txt附带注释。
+  修改结果：成功。原因：模拟测试六项全过——无注释不出按钮、编辑窗读写
+  正常、尾部空注释剔除、按非空注释出按钮、点开展开、再点收起。
+v0.9 (2026-07-25) 编辑窗输入框焦点放大。
+  需求：注释编辑框固定太小，长内容不好编辑；用户要求光标点入哪个框、
+  哪个框放大到近全屏（占约85%屏幕），配右上角"✕ 收起"按钮。
+  改了什么：纯界面层——CSS加 textarea.ta-full 全屏样式+#ta-close按钮；
+  JS给5个编辑框（题/答/注释1-3）挂focus事件：点入即放大、互斥缩回；
+  点收起或保存/取消时复位。不碰任何数据逻辑。
+  修改结果：成功。原因：模拟测试——点入放大、切换互斥、收起复位，
+  三项行为全符合设计。
+v0.9.1 (2026-07-25) 修复注释重启后"丢失"。
+  失败原因（如实记录）：v0.8的疏漏——startStudy组装题目时只复制了q、a
+  两个字段，漏了n（注释）。注释其实存在localStorage里，但复习页读不到；
+  此时若再保存修改，空注释框会覆盖清空已存注释，造成真丢失。属开发者
+  （AI）责任，非用户操作问题。
+  改了什么：startStudy的items.push一行补上 n: q.n（仅此一行）。
+  修改结果：成功。原因：模拟"存注释→重启→开始复习"全流程，注释按钮
+  正常显示、内容正常读出。
+  教训：新增字段时必须检查所有数据出入口（组装/导入/导出/编辑）。
+v0.10 (2026-07-25) 新增时间筛选。
+  需求：标记时记日期，复习可按"程度+时间"双条件筛选（如"一般"近7天）。
+  改了什么：①进度记录由纯数字升级为 {l:程度,t:时间戳}，getLevel兼容旧
+  数字数据（旧题视为无日期，不进"近X天"）；②学习页顶部加第二个下拉
+  （不限/近3/7/14/30天），与程度下拉叠加生效；③"只看未学"忽略时间。
+  修改结果：成功。原因：六项模拟测试全过（旧数据兼容、一般+不限3题、
+  一般+近3天正确排除旧数据、近7天、全部+近3天、未学忽略时间）。
+  插曲：编辑工具曾报告成功但实际未写入（filteredItems替换漏应用），
+  靠测试发现后重做——证明"改完必自测"规则的必要性。
+v0.11 (2026-07-25) 新增合并题库。
+  需求：题库越积越多，需要把多个旧库合成一个新库，新库名可改。
+  改了什么：首页加"🗃 合并勾选的题库"按钮→弹窗列出将合并的库与合计
+  题数→新库名可改（默认"合并题库"）→"合并后删除原题库"勾选默认开。
+  进度（程度+日期）逐题迁移到新库；选删除时旧库及其进度键一并清理。
+  修改结果：成功。原因：模拟测试——勾选识别正确、合计题数正确、三题
+  进度（含旧数字格式）全部迁移、旧库删除且未勾选的库保留、旧进度键
+  清理干净。
+v0.12 (2026-07-26) 新增医学英语词根学习 + 交班英语学习。
+  需求：①词根学习需要延续性，自动提取已学词根生成Kimi提示词；
+  ②交班英语需要中↔英翻转学习，同样需要Kimi提示词生成。
+  改了什么：
+  ①顶部增加三模式标签切换（普通/词根/交班），模式状态存sessionStorage。
+  ②导入确认窗和粘贴导入窗增加"题库类型"下拉（普通/词根/交班）。
+  ③parseQuestions增加Q:/A:交班英语格式识别，与普通格式共存。
+  ④词根模式首页：实时扫描所有题库提取词根（正则匹配多种格式），
+    显示已学词根清单，一键生成Kimi提示词（第一次只给格式，后续
+    自动附带已学词根清单+格式）。提示词自动复制到剪贴板。
+  ⑤交班模式首页：方向切换按钮（中→英/英→中/混合），显示已学
+    句子数，一键生成Kimi提示词（附带已学中文句子清单防重复）。
+  ⑥学习页：交班题根据方向先显示中文或英文，点击翻转显示另一边；
+    普通/词根题保持原有逻辑不变。
+  ⑦数据兼容：旧题库无type字段自动视为"normal"，进度不丢失。
+  修改结果：待用户实测验证。
+v0.12.1 (2026-07-26) 修复导出分身下载失败问题 + 补全三模式导出按钮。
+  改了什么：
+  ① exportClone改为弹窗式：先尝试自动下载，同时弹窗显示可见下载链接+复制代码按钮，
+    三层保障（自动下载/手动链接/复制代码）确保用户能拿到文件。
+  ② 词根/交班面板补加「导出分身」按钮（v0.12遗漏）。
+  ③ downloadText延长URL.revokeObjectURL到30秒，给用户足够时间手动点击。
+  修改结果：待用户实测验证。
+v0.12.2 (2026-07-27) 修复"开始学习"跨模式混题库问题。
+  问题：词根/交班模式点"开始学习"，startStudy()收集的是整个页面所有
+  .bank-check勾选框（含隐藏的普通面板），导致普通题库（如耐药题）被混入学习。
+  改了什么：startStudy内增加一行判断——只收集type与currentMode一致的题库。
+  未动其他任何逻辑/格式/变量名。
+  修改结果：node逻辑测试通过（三模式各自只收对应题库），待用户实测验证。
+v0.12.3 (2026-07-27) 结构性修复"开始学习"串库问题（v0.12.2用户实测仍串）。
+  v0.12.2不足：只加了类型过滤，但勾选框仍是全页面扫描，且若题库导入时
+  类型存错（如词根库存成normal），学习内容仍会与用户期望不符。
+  改了什么：startStudy改为只扫描当前面板的题库列表容器
+  （normal→bank-list / root→bank-list-root / shift→bank-list-shift），
+  用户在当前标签页看到什么、勾选什么，就学什么——所见即所学，
+  从结构上杜绝跨模式串库。v0.12.2的类型过滤保留作双重保险。
+  注意：若某题库出现在错误的标签页（如词根库出现在"普通题库"页），
+  说明该库导入时类型选错了，删除后从正确面板的入口重新导入即可。
+  修改结果：jsdom模拟浏览器全流程测试通过（三模式各自只学当前面板
+  勾选的题库，隐藏面板的勾选不再影响），待用户实测验证。
+v0.12.4 (2026-07-27) 全场景标明题库类型 + 库名必填。
+  需求：所有库都要标明类型（普通库之前无标签），学习中、导出错题也要
+  带类型；普通库以后会有多种内容，库名必须有意义。
+  改了什么：
+  ① 题库列表：普通库增加"普通"标签（新增.tag.normal样式一行）。
+  ② 学习页顶部：显示"类型 ｜ 库名 ｜ 第x/n题"。
+  ③ 导出错题txt：标题改为"【类型｜库名】错题n道"。
+  ④ 新建题库时库名必填：粘贴导入不再自动生成"粘贴题库N"，
+    确认窗库名为空时提示"请填写库名再导入"且不关闭弹窗；
+    文件导入仍自动填文件名（可直接确认或改名）。
+  修改结果：jsdom模拟浏览器测试通过（三处类型标签正确显示、
+  空库名被拦截、有库名正常导入），待用户实测验证。
+v0.12.5 (2026-07-27) 修复"学完一个库再学其他，显示不跳转"问题。
+  根因：题目列表缓存变量view在startStudy时未清空。再次开始学习时
+  数据是新的，但显示函数curList()仍沿用上一轮缓存的旧题——之前
+  测试只验证了数据未验证屏幕实际显示，故漏检。
+  改了什么：startStudy内加一行 view = null; 每次开始学习强制刷新缓存。
+  修改结果：jsdom模拟浏览器测试通过——这次直接读取屏幕上q-text
+  实际显示的题目文字验证：学完词根→再学普通→再学交班，显示内容
+  均正确跳转，待用户实测验证。
+v0.12.6 (2026-07-27) 修复交班英语答案区不显示注释按钮。
+  根因：交班英语用独立的显示函数revealShift()，v0.12新增时漏写
+  注释按钮代码（普通/词根库共用的reveal()本来就有）。注释数据
+  本身能正常编辑和保存，只是学习时不显示入口。
+  改了什么：revealShift()补加注释按钮+note-area（与reveal()同逻辑）。
+  修改结果：jsdom模拟浏览器测试通过（三种库显示答案后注释按钮
+  都在、点开能看注释内容、交班中→英/英→中两方向均正常），
+  待用户实测验证。
+v0.12.7 (2026-07-27) 新增"从分身恢复"，解决换版本丢学习记录问题。
+  背景：题库与进度存在浏览器localStorage，文件本身不含数据；换新版
+  本后若重新导入题目，题库随机编号(b+时间戳)改变，旧进度挂不上→
+  历史"被清空"。用户把所有版本放同一文件夹，希望低成本迁移。
+  改了什么：
+  ① 三个面板"导出分身"旁各加一个"📥 从分身恢复"按钮；
+  ② 新增restoreFromClone()：弹文件选择器读取分身HTML；
+    restoreFromText()：用正则提取embedded-data的JSON，校验后覆盖
+    store并保存刷新（恢复前confirm确认，空文件/格式错有提示）；
+  ③ 空题库提示语加一行"换版本升级请点从分身恢复"。
+  升级流程：旧版本点"导出分身"→打开新版本→点"从分身恢复"→
+  选中刚才的分身文件，题库+学习记录完整搬回。
+  注意：普通版本文件不含数据，只有"导出分身"生成的文件能用于恢复。
+  修改结果：jsdom模拟浏览器测试通过（分身文件→恢复，题库/进度
+  完整还原；空数据文件/非分身文件均被正确拦截提示），待用户实测验证。
+v1.1 定版 (2026-07-27) 新增学习页关键词筛选 + 确立定版命名规则。
+  需求：复习某个库时只想看某类题（如耐药菌库里只看铜绿假单胞菌），
+  原筛选只有陌生/一般/熟悉/未学，无法按内容筛。
+  改了什么：
+  ① 学习页工具栏下加一行：关键词输入框+筛选+清除按钮
+    （回车或点筛选生效，匹配题目或答案，不分大小写）；
+  ② filteredItems()加关键词判断（在原掌握度/时间筛选基础上叠加）；
+  ③ 新增clearKw()；startStudy()开始新一轮时自动清空关键词。
+  不影响学习记录（进度按题库编号+题号存，筛选只是显示层）。
+  命名规则确立：稳定版一律"习题学习_vX.X_定版.html"，序号递增，
+  本版为v1.1定版。
+  修改结果：jsdom模拟浏览器测试通过（输入"铜绿"只出含铜绿的题、
+  清除后恢复全部、与陌生/熟悉筛选叠加正常、关键词大小写不敏感），
+  待用户实测验证。
+v1.2 定版 (2026-07-29) 引入Kimi API：库内AI出题 + 题内AI问答存注释。
+  可行性已实测：api.moonshot.cn的CORS预检放行本地HTML（Origin:null），
+  浏览器可直连，无需等App版。成本：K2.5模型每次问答不到1分钱。
+  改了什么：
+  ① AI设置弹窗：填API key+模型（默认kimi-k2.5），存store.ai；
+    无key时使用AI功能自动弹设置窗。
+  ② callAI()：POST /v1/chat/completions，401/非200有中文提示。
+  ③ 功能A（题库卡片加"🤖 AI出题"）：库内提问→看回答→"形成5道题目"
+    （AI按软件题目格式输出→复用parseQuestions解析）→预览→"并入本库"，
+    走与粘贴导入相同的concat入库，不影响已有进度。
+  ④ 功能B（学习页答案区加"🤖 问AI"）：带本题内容作上下文提问→
+    "存入本题注释"（复用现有注释结构，上限3条；交班/普通/词根均可用）。
+  ⑤ 导出分身：检测到key时弹确认"带/不带"（用户明确否决了双按钮方案，
+    采用单按钮+导出时询问；不带仅剔key，其余数据照走）。
+  安全约定：key只用于本机调用，分享分身时选"不带"。
+  修改结果：jsdom模拟浏览器测试通过（mock fetch走通：设置key→库内
+  提问→出题→解析→并入库；题内提问→存注释→答案区出现新注释按钮；
+  导出分身带/不带key两种结果正确；无key时正确弹设置窗拦截）。
+  测试中修复一处bug：aiCommitQuestions先closeAi（清空aiLastQA）再
+  读其长度导致报错，已改为先取数量再关窗——再次验证"改完必自测"。
+  真实API连通性待用户填入自己的key后实测验证。
+v1.2补丁 (2026-07-29) 修复"填了key仍提示请填写key"。
+  用户实测：粘贴key点保存，提示"请填写API key"。排查：代码逻辑
+  无误，原因是密码框(type=password)在手机上①粘贴受限②显示圆点
+  用户无法确认贴没贴上③两个输入框上下相邻易贴错框。
+  改了什么：key框改type=text（可见内容）；两个框加①②序号标签；
+  key框下加"已输入X位"实时计数（openAiKey时也同步）；空框保存的
+  提示语改为明确指引。
+  修改结果：jsdom测试通过（粘贴计数正确、保存成功、开窗回显计数）。
+v1.2补丁2 (2026-07-29) 修复AI调用报HTTP 400。
+  用户实测：key保存成功、请求发出，但返回HTTP 400。排查确认：
+  模型名kimi-k2.5正确、余额充足，根因是callAI里设了temperature:0.3，
+  而kimi-k2.5模型只允许temperature=1（官方限制），其余值直接报400。
+  改了什么：temperature改为1（一字之差）。
+  教训：第三方API的参数限制要以官方文档/实测为准，不能凭习惯写。
+  修改结果：用户实测通过（AI能正常返回答案）。
+v1.2补丁3 (2026-07-29) 修复"题内问AI答案无法填充到注释"。
+  用户实测：AI回答正常返回，点"存入本题注释"后答案区看不到注释。
+  根因：学习中的题目是startStudy时复制的快照（items），原本无注释
+  的题（n字段缺失）存注释时q.n=[]是新建数组，快照里的n仍是旧值，
+  reveal()读快照→不显示新注释按钮。数据其实已存进store（重新学习
+  可见），只是当场不显示，用户观感=失败。之前测试用"已有注释的题"
+  （n是数组引用，push即同步）恰好漏测此情形。
+  改了什么：aiCommitNote存注释后加一行 it.n = q.n 同步快照。
+  教训：测试用例要覆盖"字段缺失"的旧数据形态，不能只测理想数据。
+  修改结果：jsdom复现了用户问题→修复→两种情形（原本无注释/已有
+  注释）均通过，待用户实测验证。
+v1.2补丁4 (2026-07-29) AI出题数量可选1-10道（默认5）。
+  需求：原"形成5道题目"写死5道，用户要求可选1-10。
+  改了什么：① AI回答后按钮区加数量下拉（1-10默认5）+「形成题目」；
+  ② aiMakeQuestions从下拉读数量拼入提示词，存入aiLastQA.qn；
+  ③ 出题后按钮区重建时下拉保留并回显当前数量，「重新出题」可换数量。
+  修改结果：jsdom测试通过（选3道→提示词含"出3道"→并入3题；
+  重新出题沿用量并可改；默认5不变），待用户实测验证。
+v1.3 定版 (2026-07-29) AI三件套：注释整理 + 回答整理 + 后台运行。
+  需求（用户讨论后确认）：
+  ① 已有注释太复杂→发给AI重新整理，满意后替换原注释；
+  ② 问AI的回答在"存入注释"前可先整理（更简洁/更通俗/分点列出）；
+  ③ 问AI不必干等：可切后台继续刷题，回答好了右下角浮气泡，点开
+    照常"存入注释/整理/丢弃"；答案钉在提问时那道题，不错存到当前题。
+  改了什么：
+  ① toggleNote注释区加"🤖 让AI整理这条注释"→aiRewriteNote（150字内
+    精简，保留要点）→"替换原注释/取消"；替换后同步store与学习快照。
+  ② aiSend回答后两种模式的按钮区都加"整理回答"三按钮→aiRewrite，
+    可连点多次直到满意再存；bank模式按钮区抽出buildBankActions复用。
+  ③ aiSend等待期间出现"⏳ 后台等待，继续学习"→aiGoBackground挂起
+    （任务信息存aiCur/aiBg）；回答到达若已挂后台→aiBgResult+右下角
+    浮气泡showAiBubble→点击aiShowBg重开弹窗（恢复mode/target）。
+    openAiNote时即锁定题目到aiNoteTarget；aiCommitNote改为按锁定题
+    目写入（学习页若还停在原题则刷新答案区，否则只存数据并提示）。
+    限制：同一时间只跑一个AI任务（有任务时aiSend拦截提示）；挂后台
+    期间退出/刷新页面该次回答丢失（用户已知情接受）。
+  修改结果：jsdom模拟浏览器测试通过（注释整理替换/取消；回答三风格
+  整理；后台挂起→继续刷题→气泡弹出→点开存到"当初提问的题"而
+  非当前题；前台流程不回归），待用户实测验证。
+v1.3补丁5 (2026-07-29) 注释整理的要求可自定义。
+  需求：原"让AI整理这条注释"提示词写死（简洁150字内），用户想自己
+  提要求（如"翻译成大白话""只保留药名剂量"）。
+  改了什么：点整理后先出要求输入框（预填默认要求可改）→「开始整理」
+  →结果页除"替换/取消"外加"换个要求"（回到要求框重来）。
+  aiRewriteNote拆为两函数（aiRewriteNote出要求框/aiRwSend执行）。
+  修改结果：jsdom测试通过（默认要求直接整理、自定义要求正确拼入
+  提示词、换个要求可回退重来、替换/取消正常），待用户实测验证。
+v1.3补丁6 (2026-07-29) 后台完成改为自动弹出 + 标明是哪道题。
+  用户反馈：① 后台结束后只是右下角小气泡，注意不到，对话框不会
+  自己跳出来；② 弹出后不知道这条答案是当初哪道题的。
+  改了什么：① 删除气泡机制，后台回答到达直接自动弹出对话框
+  （回到用户最初要求的设计）；② 弹出框上下文显示"当初提问的
+  题目：「原题内容」+ 你的问题"，存入按钮文字改为"存入这道题
+  （当初提问那道）的注释"；③ 相关提示语同步更新。
+  修改结果：jsdom测试通过（挂后台→刷题→回答到达自动弹出→
+  上下文含原题内容→存注释钉在原题），待用户实测验证。
+v1.3补丁7 (2026-07-29) 后台任务从单任务升级为队列（最多3个并发）。
+  用户要求多任务。设计：aiBg/aiBgResult单变量→aiBgTasks/aiBgResults
+  数组；谁先完成先弹谁的框，处理完（存/关闭）一个closeAi自动接弹
+  下一个（标题显示"还剩N条待处理"）；挂满3个再提问拦截提示；
+  完成时若正在看其他框则排队不抢屏。不跳转问题已验证保持。
+  修改结果：jsdom测试通过（3任务并发→按完成顺序连弹→队列计数
+  正确→第4个被拦截→注释各自钉对题→屏幕不跳转），待用户实测验证。
+
+v1.4 (2026-08-02) 学习笔记协同 + GitHub云备份 + 开机自检 + 下载整套。
+  背景：进入"双软件协同+本地优先（模式B）"时代——学习笔记 v2.2 负责
+  出题，本软件负责答题；两个软件都下载到手机同一浏览器使用，数据各自
+  自动备份到用户的 GitHub 私有仓库（xuexi-backup）。
+  ① 收件箱自动导入：启动时检查 localStorage['xitixuexi_inbox']
+    （学习笔记出题后写入：{title,text,from,t}）→ parseQuestions 解析
+    → 走现成的 enqueueImport 弹导入确认窗（可改库名/新建/并入）→ 删键。
+    解析到0题时保留键并 toast 提醒（下次打开再试或去那边复制txt）。
+    前提：两个软件同一浏览器App+同一打开方式（localStorage按origin记账）。
+  ② GitHub云备份（移植自学习笔记 v2.0，键名 xt_gh_*）：普通面板新增
+    「☁️ 云备份」折叠卡片：用户名/Token/仓库名（预填 hongxiaotao177 /
+    xuexi-backup）+ 保存设置 + 立即备份/从云端恢复（恢复走 confirm 防误
+    覆盖）+ 状态行；备份内容=整个 store（题库+进度+AI设置，含api key，
+    私库自用）→ xiti-backup.json；自动备份挂在 saveStore 收口 debounce
+    10秒；ghSuspend 防恢复回推；base64 走 unescape/encodeURIComponent
+    保中文；401/404 错误翻译；Token 不进提示文字。
+  ③ 开机自检（移植自学习笔记 v2.1）：SW_VERSION='1.4'，打开3秒后读
+    备份仓库 version-xiti.json 比对——线路通+最新=绿条8秒自收；有新版=
+    黄条常驻+「⬇️ 下载新版到本机」（拉 software-xiti.html）；连不上=
+    红条常驻注明不影响使用。结果行存 xt_gh_check 打开先显示上次。
+  ④ 「⬇️ 下载整套软件」（ghDownloadAll）：依次拉 software-notes.html
+    + software-xiti.html 两个副本，间隔900ms 两个 a[download]（浏览器
+    首次可能问"允许多个文件"）。下载进浏览器默认目录，网页无权选目录
+    （想自选：Chrome设置→下载内容→打开"询问保存位置"）。
+  ★ 双软件协同协议完整版写在学习笔记.html 代码顶部「双软件协同协议」节
+    （收件箱格式/仓库4文件/发版清单6步），两边以那份为准，新对话必读。
+  修改结果：Playwright 端到端测试通过（收件箱导入/云备份推拉/自检三态/
+  下载整套/旧功能回归），见交付记录。
+
+v1.4.7 (2026-08-06) 「下载整套」三件套→四件套：血气分析入编（software-xueqi.html）。
+
+v1.4.6 (2026-08-06) 对账：文件夹备份与云端备份互相印证。每次备份写
+  backup-meta-xiti.json（时间+指纹+题库数，几十字节）到两边；打开软件4秒
+  自动对账、自检顺手对账、备份完顺手对账。不一致明说哪边新+该用哪个恢复按钮。
+
+v1.4.5 (2026-08-06) 本地备份状态+从文件夹恢复：云备份卡片新增「本地备份」
+  状态行（有没有/何时备/多少题库）和「📂 从文件夹恢复」按钮（不联网，
+  确认流程同云端恢复）。仅壳APP可用。"靠网不如靠自己"。
+
+v1.4.4 (2026-08-06) 双通道备份：壳APP里每次云备份同时写一份 xiti-backup.json
+  到授权文件夹（本地保险副本，只写不读不冲突；失败静默；浏览器自动跳过）。
+
+v1.4.3 (2026-08-05) 壳APP适配：检测到套壳App（window.LearnShell）时，
+  「下载新版/下载整套」改为自更新（写进APP内部目录，重启APP生效），
+  授权文件夹里同时存一份备份；浏览器里一切照旧。
+
+v1.4.2 (2026-08-04) AI设置新增「💰 查额度」：GET /v1/users/me/balance 显示真实余额；
+  401=Key无效；提示两套账（Kimi会员≠API开放平台）不相通。（与学习笔记 v2.6.0 同款）
+
+v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.html
+  （新成员「文件桥 v1.0」，AI与手机文件夹之间的桥；仓库协议新增 transit/
+  中转 + bridge-inbox.json / bridge-outbox.json，详见文件桥.html 代码顶部）。
+  其余功能与 v1.4 完全一致。页头标题同步 v1.4.1。
+
+--------------------------------------------------------------------------------
+五、已知限制（勿当bug修）
+--------------------------------------------------------------------------------
+1. "记住手机文件夹、列出里面文件"只有安卓Chrome/Edge支持（File System Access
+   API），夸克/微信/Kimi内置浏览器不支持——这是浏览器限制，用户已知情。
+2. 只支持.docx，不支持老式.doc（二进制格式，解析器体积不划算）。
+3. 进度存localStorage，清浏览器数据会丢 → 已提供"导出分身"备份，用户已知情。
+4. iPhone/iPad Safari未适配（用户明确表示暂不管苹果）。
+5. 词根自动提取基于正则，格式不标准可能漏提 → 用户说"发现重复跳过去就行"。
+
+--------------------------------------------------------------------------------
+六、下一步计划（2026-07-27与用户商定，下次开工从这里继续）
+--------------------------------------------------------------------------------
+【目标】做成安卓手机App，实现坚果云直连同步，解决跨机器学习记录互通。
+
+【为什么走App路线（已验证的结论，勿再走弯路）】
+1. 浏览器直连坚果云WebDAV已被实测否决（2026-07-27，坚果云连接测试
+   工具v0.1，第1步上传即被CORS跨域拦截）。App联网不受跨域限制，
+   WebDAV直连在App里可行。
+2. 坚果云Chrome插件（floccus类）只做书签同步且手机浏览器装不了
+   插件，此路不通（已查证）。
+3. 借助第三方同步App（FolderSync）被用户否决：不愿每台机器多装软件。
+4. App额外好处：可读写手机文件夹、数据不怕浏览器清理、桌面图标直开。
+
+【实施步骤（已与用户确认）】
+① 把v0.12.7改造为"App版"：加入坚果云WebDAV直连（"上传到坚果云"/
+  "从坚果云恢复"两按钮），用HBuilderX的plus.network接口（无跨域限制）；
+  保持单文件结构，电脑浏览器打开照样能用（浏览器里同步按钮降级为
+  现有的分身导出/恢复）。
+② 用户电脑装HBuilderX（DCloud免费工具）→云打包生成APK→手机安装。
+③ 手机实测坚果云同步（上传→另一设备恢复→接力学习）。
+④ 电脑端维持现状：浏览器打开HTML+坚果云客户端同步文件夹，云端汇合。
+
+【用户已备好的条件】
+- 已有坚果云账号（WebDAV），应用密码已生成过一次（测试工具用过）。
+- 所有版本文件集中放在手机同一文件夹管理。
+
+【搁置的备选（若App打包走不通再回来）】
+- FolderSync双向同步文件夹方案（步骤已讨论过）。
+- 分身文件名加时分避免同日覆盖（几行代码，可顺手并入App版）。
+
+--------------------------------------------------------------------------------
+七、远期候选（用户提出再动）
+--------------------------------------------------------------------------------
+- 记住文件夹直接读取（仅Chrome/Edge，showDirectoryPicker，句柄存IndexedDB）
+- 间隔重复（熟悉的题隔几天再现）
+- 老.doc支持、选择题(A/B/C/D)题型
+================================================================================
+    v1.6.3 2026-08-10 问AI后台存注释失败的根治：
+    现象=后台回答弹出后点「📎 存入这道题注释」，回原题看注释没有形成；
+    根因=aiCommitNote残留旧版"注释满3条就拒存"上限（v1.6注释已改动态列表不限条数），
+    命中上限只弹一句toast、不关框也不存，用户以为已存；
+    修法=删除note/bank两处的3条上限。
+    v1.6.2 2026-08-09 定标改走常驻按钮（根治vivo手机浏览器浮动按钮不显示）：
+    现象=涂黑词后「➕ 定标」浮动按钮始终不出现（排除系统菜单遮挡，用户上下滑动验证）；
+    根因=部分国产安卓浏览器对 selectionchange/touchend 选区事件支持不全，浮动按钮方案不可靠；
+    修法=答案区按钮排+注释展开区各加常驻「📍 定标选中词」按钮，涂黑后点它即定标；
+    浮动按钮保留（桌面端方便），没涂黑就点常驻按钮会toast提示先涂黑。
+    v1.6.1 2026-08-09 注释两处补短板：
+    ①注释展开新增「✏️ 改这条」手动编辑（以前只能AI整理或绕去修改本题窗）；
+    ②注释框里涂黑词也能定标（选区检测补note-area）；
+    坑：定标浮动按钮放选区下方，被安卓系统"复制/分享"菜单整个盖住→挪到选区上方44px，
+    并补mouseup监听（桌面端划词也能出按钮）。
+    v1.6.0 2026-08-09 定标→集体形成注释 + 注释编辑器升级：
+    ①学习页涂黑题目/答案里的词→浮动「➕ 定标」按钮→词进 it.mk（虚线下划线显示），
+      可连标多个；「🤖 集体形成注释」一次AI请求给所有定标词写大白话解释，
+      自动追加成本题📎注释；没解释到的词留着下次再形成；可一键清除；
+    ②修改本题窗：3个固定注释框→动态列表（每条可改/🗑删/➕加一条，不限条数），
+      点入放大功能用focusin代理保留；旧数据（含中间空位）原样显示兼容；
+    ③startStudy的session条目带mk字段，定标同步回题库（syncMkToBank）随云备份。
+    用户拍板：定标词用下划线显示（手机上清楚）。
+    v1.5.1 2026-08-09 修v1.5.0排版坑：题库卡片加了第4个按钮「粘贴出题」后，
+    手机端flex一行放不下，中间名字统计被挤成一竖条字。现象→根因→修法：
+    现象=题库名/统计逐字竖排；根因=.bank-item不换行，按钮不缩，挤bank-info；
+    修法=.bank-item加flex-wrap:wrap、.bank-info改flex:1 1 55%，按钮自动掉第二行。
+    v1.5.0 2026-08-09 粘贴出题三升级：
+    ①题库卡片「🤖 AI出题」旁新增「📋 粘贴出题」，确认窗默认并入当前库；
+    ②解析器格式放宽：题号认（1）/①②③/1)/第1题，答案行认 答案:/【答案】/A:/参考答案: 等；
+    ③顶部粘贴导入和题库粘贴出题，解析到0题时都弹窗问「要不要AI帮忙整理」，
+      点是→Kimi把内容重排成标准格式→再解析→走正常确认窗（可自由选并入哪个库）；
+    ④导入确认窗「并入哪个库」下拉移到最上方并放大字号
+      （原来藏在库名输入框下面，用户一直没发现能并入老库）。
+    v1.4.10 2026-08-06 「问AI」的 key/模型接入公共钱罐：store.ai.key↔hx_apikey、
+    store.ai.model↔hx_aimodel 双向同步（hxAiSync 2秒轮询+保存时立即写）。
+    从此习题学习填一次key，PPT工坊等全家软件直接能用，不再"请先设置API key"。
+    v1.4.9 2026-08-06 「⬇️ 下载整套软件」加第5步 PPT工坊（software-ppt.html→PPT工坊.html），
+    计数改 1/5~5/5；PPT工坊 v0.1.1 入编第五位成员。
+    v1.4.8 2026-08-06 公共钱罐hx_*：GitHub Token/仓库名与其他软件共享，一处填处处有。
+    同版补充：主界面刷新hxIndexRefresh——壳里打开任一软件顺带把套装主界面(index.html)也换新，主界面从此也能自动更新。
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>习题学习 v1.6.3</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f2f4f8; color: #222; }
+  header { background: #2c6e9e; color: #fff; padding: 14px 16px; font-size: 18px; font-weight: bold; position: sticky; top: 0; z-index: 10; }
+  header .ver { font-size: 12px; font-weight: normal; opacity: .8; margin-left: 8px; }
+  .page { padding: 14px; max-width: 760px; margin: 0 auto; }
+  .hidden { display: none !important; }
+  /* v1.4 开机自检结果条（固定顶部，可关闭；三态：黄=有新版/绿=最新/红=连不上） */
+  #updBar { position: fixed; left: 10px; right: 10px; top: 10px; z-index: 999; max-width: 640px; margin: 0 auto; background: #fff8e8; border: 1.5px solid #e8c96a; border-radius: 12px; padding: 10px 12px; box-shadow: 0 4px 14px rgba(0,0,0,.12); font-size: 14px; line-height: 1.7; color: #4a3d1e; }
+  #updBar.ok { background: #eef7ee; border-color: #9ec79e; color: #2e4d2e; }
+  #updBar.bad { background: #fdeeee; border-color: #d99; color: #6d2b2b; }
+  button, label.btn { font-size: 16px; border: none; border-radius: 8px; padding: 10px 14px; cursor: pointer; background: #2c6e9e; color: #fff; display: inline-block; }
+  .file-btn { position: relative; overflow: hidden; }
+  .file-btn input[type=file] { position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 0; }
+  button:active { opacity: .85; }
+  button.ghost { background: #e4e9f0; color: #333; }
+  button.danger { background: #c0534f; }
+  button.active { background: #1a4d6e; }
+  .btn-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+  .card { background: #fff; border-radius: 10px; padding: 14px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  /* v1.5.1：卡片允许换行，按钮多了自动掉到第二行（v1.5.0加第4个按钮把手机端名字统计挤成竖条的病根） */
+  .bank-item { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .bank-item input[type=checkbox] { width: 22px; height: 22px; flex-shrink: 0; }
+  .bank-info { flex: 1 1 55%; min-width: 0; }
+  .bank-name { font-size: 16px; font-weight: bold; word-break: break-all; }
+  .bank-stats { font-size: 13px; color: #666; margin-top: 4px; }
+  .tag { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 12px; margin-right: 4px; }
+  .tag.s { background: #fde2e1; color: #c0534f; }
+  .tag.y { background: #fdf3d8; color: #a07a1f; }
+  .tag.s2 { background: #e1f3e4; color: #2e7d32; }
+  .tag.root { background: #e8e0f7; color: #5e35b1; }
+  .tag.normal { background: #e3f0fa; color: #2c6e9e; }
+  .tag.shift { background: #e0f2f1; color: #00695c; }
+  textarea { width: 100%; min-height: 140px; font-size: 15px; padding: 8px; border: 1px solid #ccc; border-radius: 8px; }
+  input[type=text] { width: 100%; font-size: 15px; padding: 8px; border: 1px solid #ccc; border-radius: 8px; }
+  select { font-size: 16px; padding: 8px; border-radius: 8px; border: 1px solid #ccc; }
+  /* 模式标签 */
+  .mode-tabs { display: flex; gap: 4px; margin-bottom: 12px; }
+  .mode-tabs button { flex: 1; padding: 10px 0; font-size: 15px; }
+  /* 学习页 */
+  .q-card { background: #fff; border-radius: 12px; padding: 20px 16px; box-shadow: 0 1px 4px rgba(0,0,0,.1); }
+  .q-meta { font-size: 13px; color: #888; margin-bottom: 10px; }
+  .q-text { font-size: 18px; line-height: 1.7; font-weight: bold; white-space: pre-wrap; }
+  .a-text { font-size: 16px; line-height: 1.7; margin-top: 14px; padding-top: 14px; border-top: 1px dashed #ccc; white-space: pre-wrap; color: #1a4d2e; }
+  /* v1.6 定标：待解释词虚线下划线；浮动定标按钮 */
+  .mk { text-decoration: underline dashed #c9a227; text-underline-offset: 3px; }
+  #mk-btn { position: fixed; z-index: 95; display: none; box-shadow: 0 2px 10px rgba(0,0,0,.2); }
+  .a-cover { margin-top: 14px; text-align: center; }
+  .mark-row { display: flex; gap: 8px; margin-top: 16px; }
+  .mark-row button { flex: 1; padding: 14px 0; font-size: 17px; }
+  .btn-ms { background: #c0534f; }
+  .btn-yb { background: #d29a26; }
+  .btn-sx { background: #2e7d32; }
+  .nav-row { display: flex; justify-content: space-between; margin-top: 14px; }
+  .progress-outer { height: 8px; background: #dde3ea; border-radius: 4px; overflow: hidden; margin: 10px 0; }
+  .progress-inner { height: 100%; background: #2c6e9e; width: 0; transition: width .2s; }
+  .stat-line { font-size: 14px; color: #555; }
+  .toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+  .empty-tip { text-align: center; color: #888; padding: 40px 0; font-size: 15px; line-height: 2; }
+  .modal-mask { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 100; display: flex; align-items: flex-end; }
+  .modal { background: #fff; width: 100%; max-height: 85vh; overflow-y: auto; border-radius: 14px 14px 0 0; padding: 16px; }
+  .modal h3 { margin-bottom: 10px; font-size: 17px; }
+  .toast { position: fixed; left: 50%; bottom: 60px; transform: translateX(-50%); background: rgba(0,0,0,.75); color: #fff; padding: 8px 16px; border-radius: 20px; font-size: 14px; z-index: 200; }
+  /* 编辑框焦点放大 */
+  textarea.ta-full { position: fixed; left: 4vw; top: 6vh; width: 92vw; height: 82vh; min-height: 0; z-index: 300; box-shadow: 0 4px 24px rgba(0,0,0,.35); font-size: 17px; background: #fff; }
+  #ta-close { position: fixed; right: 6vw; top: 8vh; z-index: 301; padding: 6px 12px; font-size: 14px; background: #c0534f; }
+  /* 词根/交班专属 */
+  .root-list { background: #f8f6fc; border-radius: 8px; padding: 10px 12px; font-size: 14px; color: #5e35b1; line-height: 1.8; word-break: break-all; }
+  .shift-dir { display: flex; gap: 6px; margin-bottom: 10px; }
+  .shift-dir button { flex: 1; padding: 8px 0; font-size: 14px; }
+  .prompt-box { background: #f0f4f8; border-radius: 8px; padding: 12px; font-size: 13px; color: #333; white-space: pre-wrap; line-height: 1.6; max-height: 300px; overflow-y: auto; }
+</style>
+</head>
+<body>
+
+<script id="embedded-data" type="application/json">null</script>
+
+<header>📖 习题学习<span class="ver">v1.6.3</span></header>
+
+<!-- ========== 首页 ========== -->
+<div id="page-home" class="page">
+  <!-- 模式切换标签 -->
+  <div class="mode-tabs">
+    <button id="tab-normal" class="active" onclick="setMode('normal')">普通题库</button>
+    <button id="tab-root" onclick="setMode('root')">词根学习</button>
+    <button id="tab-shift" onclick="setMode('shift')">交班英语</button>
+  </div>
+
+  <!-- 普通题库面板 -->
+  <div id="panel-normal">
+    <div class="btn-row">
+      <label class="btn file-btn">📂 导入习题文件<input type="file" id="file-input" accept=".txt,.md,.text,.docx,.doc,.rtf" multiple></label>
+      <button class="ghost" onclick="openPaste()">📋 粘贴导入</button>
+    </div>
+    <div class="btn-row">
+      <button id="btn-start" onclick="startStudy()">▶ 复习勾选的题库</button>
+      <button class="ghost" onclick="openMerge()">🗃 合并勾选的题库</button>
+      <button class="ghost" onclick="exportWrong()">📤 导出错题</button>
+    </div>
+    <div class="btn-row">
+      <button class="ghost" onclick="exportClone()">💾 导出分身</button>
+      <button class="ghost" onclick="restoreFromClone()">📥 从分身恢复</button>
+    </div>
+    <div id="bank-list"></div>
+
+    <!-- v1.4 云备份卡片（GitHub 私有仓库；与学习笔记同一仓库，文件名 xiti-backup.json） -->
+    <details class="card" id="ghCard" style="margin-top:14px;">
+      <summary style="font-weight:bold;cursor:pointer;padding:4px 0;">☁️ 云备份（GitHub 私有仓库）</summary>
+      <div style="margin-top:10px;">
+        <label style="font-size:13px;color:#888;">GitHub 用户名</label>
+        <input type="text" id="ghUser" placeholder="如 hongxiaotao177" autocomplete="off" style="width:100%;font-size:16px;padding:10px 12px;margin:4px 0 8px;border:1px solid #ccc;border-radius:8px;">
+        <label style="font-size:13px;color:#888;">Token（个人访问令牌，只存本机浏览器，不外传）</label>
+        <input type="password" id="ghTok" placeholder="github_pat_ 开头的令牌" autocomplete="off" style="width:100%;font-size:16px;padding:10px 12px;margin:4px 0 8px;border:1px solid #ccc;border-radius:8px;">
+        <label style="font-size:13px;color:#888;">备份仓库名（私有仓库）</label>
+        <input type="text" id="ghRepo" placeholder="如 xuexi-backup" autocomplete="off" style="width:100%;font-size:16px;padding:10px 12px;margin:4px 0 8px;border:1px solid #ccc;border-radius:8px;">
+        <div class="btn-row">
+          <button onclick="ghSaveCfg()">💾 保存设置</button>
+        </div>
+        <div class="btn-row">
+          <button onclick="ghManualPush()">☁️ 立即备份</button>
+          <button class="ghost" onclick="ghManualPull()">📥 从云端恢复</button>
+        </div>
+        <div class="btn-row">
+          <button class="ghost" onclick="ghSelfCheck(true); locReconcile(true);">🔍 自检：线路 + 新版本</button>
+          <button class="ghost" onclick="ghDownloadAll()">⬇️ 下载整套软件</button>
+        </div>
+        <div class="btn-row">
+          <button class="ghost" onclick="locManualPull()">📂 从文件夹恢复</button>
+        </div>
+        <div id="locStatus" style="font-size:13px;color:#888;line-height:1.8;margin-top:4px;">本地备份：读取中…</div>
+        <div id="recStatus" style="font-size:13px;color:#888;line-height:1.8;margin-top:2px;">对账：还没查过</div>
+        <div id="ghCheck" style="font-size:13px;color:#888;line-height:1.8;margin-top:6px;white-space:pre-line;">自检：还没查过（每次打开软件会自动查一次）</div>
+        <div id="ghStatus" style="font-size:13px;color:#888;margin-top:4px;">上次备份：未备份过</div>
+        <div style="font-size:12px;color:#aaa;margin-top:6px;">「下载整套」= 学习笔记 + 习题学习 + 文件桥 + 血气分析，四个最新版一起下载（浏览器首次可能问"允许下载多个文件"，点允许）。备份含题库+学习记录+AI设置，存您自己的私有仓库。</div>
+      </div>
+    </details>
+  </div>
+
+  <!-- v1.4 开机自检结果条（固定顶部，可关闭） -->
+  <div id="updBar" class="hidden">
+    <div style="display:flex;gap:8px;align-items:flex-start;">
+      <div id="updText" style="flex:1;white-space:pre-line;"></div>
+      <button id="updClose" onclick="updHide()" style="border:none;background:transparent;font-size:16px;color:inherit;cursor:pointer;padding:2px 6px;" title="关闭">✕</button>
+    </div>
+    <div class="btn-row hidden" id="updBtnRow" style="margin-top:6px;">
+      <button onclick="ghDownloadNew()">⬇️ 下载新版到本机</button>
+    </div>
+  </div>
+
+  <!-- 词根学习面板 -->
+  <div id="panel-root" class="hidden">
+    <div class="btn-row">
+      <label class="btn file-btn">📂 导入词根题<input type="file" id="file-input-root" accept=".txt,.md,.text,.docx,.doc,.rtf" multiple></label>
+      <button class="ghost" onclick="openPasteRoot()">📋 粘贴导入词根</button>
+      <button class="ghost" onclick="startStudy()">▶ 开始词根学习</button>
+      <button class="ghost" onclick="exportClone()">💾 导出分身</button>
+      <button class="ghost" onclick="restoreFromClone()">📥 从分身恢复</button>
+    </div>
+    <div class="card">
+      <div style="font-weight:bold;margin-bottom:8px">📋 已学词根清单（自动提取）</div>
+      <div id="root-list" class="root-list">暂无词根数据，请先导入词根题库</div>
+    </div>
+    <div class="card">
+      <div style="font-weight:bold;margin-bottom:8px">🤖 生成Kimi提示词</div>
+      <div id="root-prompt" class="prompt-box">点击下方按钮生成提示词，自动复制到剪贴板</div>
+      <div class="btn-row" style="margin-top:10px">
+        <button onclick="genRootPrompt()">📋 生成并复制提示词</button>
+      </div>
+    </div>
+    <div id="bank-list-root"></div>
+  </div>
+
+  <!-- 交班英语面板 -->
+  <div id="panel-shift" class="hidden">
+    <div class="btn-row">
+      <label class="btn file-btn">📂 导入交班题<input type="file" id="file-input-shift" accept=".txt,.md,.text,.docx,.doc,.rtf" multiple></label>
+      <button class="ghost" onclick="openPasteShift()">📋 粘贴导入交班</button>
+      <button class="ghost" onclick="startStudy()">▶ 开始交班学习</button>
+      <button class="ghost" onclick="exportClone()">💾 导出分身</button>
+      <button class="ghost" onclick="restoreFromClone()">📥 从分身恢复</button>
+    </div>
+    <div class="card">
+      <div style="font-weight:bold;margin-bottom:8px">🔄 学习方向</div>
+      <div class="shift-dir">
+        <button id="dir-zh" class="active" onclick="setShiftDir('zh')">中→英</button>
+        <button id="dir-en" onclick="setShiftDir('en')">英→中</button>
+        <button id="dir-mix" onclick="setShiftDir('mix')">混合</button>
+      </div>
+      <div style="font-size:14px;color:#666">已学交班句子：<span id="shift-count">0</span> 句</div>
+    </div>
+    <div class="card">
+      <div style="font-weight:bold;margin-bottom:8px">🤖 生成Kimi提示词</div>
+      <div id="shift-prompt" class="prompt-box">点击下方按钮生成提示词，自动复制到剪贴板</div>
+      <div class="btn-row" style="margin-top:10px">
+        <button onclick="genShiftPrompt()">📋 生成并复制提示词</button>
+      </div>
+    </div>
+    <div id="bank-list-shift"></div>
+  </div>
+</div>
+
+<!-- ========== 学习页 ========== -->
+<div id="page-study" class="page hidden">
+  <div class="toolbar">
+    <button class="ghost" onclick="goHome()">← 返回</button>
+    <select id="filter-select" onchange="applyFilter()">
+      <option value="all">全部题</option>
+      <option value="ms">只看陌生</option>
+      <option value="ms_yb">陌生+一般</option>
+      <option value="yb">只看一般</option>
+      <option value="sx">只看熟悉</option>
+      <option value="new">只看未学</option>
+    </select>
+    <select id="time-select" onchange="applyFilter()">
+      <option value="0">不限时间</option>
+      <option value="3">近3天</option>
+      <option value="7">近7天</option>
+      <option value="14">近14天</option>
+      <option value="30">近30天</option>
+    </select>
+    <button class="ghost" onclick="shuffle()">🔀 打乱</button>
+  </div>
+  <div class="toolbar">
+    <input type="text" id="kw-input" placeholder="🔍 关键词筛选（如：铜绿）" style="flex:1;padding:8px 10px;font-size:15px;border:1px solid #ccc;border-radius:8px" onkeydown="if(event.key==='Enter')applyFilter()">
+    <button class="ghost" onclick="applyFilter()">筛选</button>
+    <button class="ghost" onclick="clearKw()">清除</button>
+  </div>
+  <div class="progress-outer"><div id="progress-inner" class="progress-inner"></div></div>
+  <div class="stat-line" id="stat-line"></div>
+  <div style="height:10px"></div>
+  <div class="q-card" id="q-card">
+    <div class="q-meta" id="q-meta"></div>
+    <div class="q-text" id="q-text"></div>
+    <div id="a-area"></div>
+    <div class="mark-row hidden" id="mark-row">
+      <button class="btn-ms" onclick="mark(1)">陌生</button>
+      <button class="btn-yb" onclick="mark(2)">一般</button>
+      <button class="btn-sx" onclick="mark(3)">熟悉</button>
+    </div>
+  </div>
+  <div class="nav-row">
+    <button class="ghost" onclick="prevQ()">← 上一题</button>
+    <button class="ghost" onclick="nextQ()">下一题 →</button>
+  </div>
+</div>
+
+<!-- ========== 弹窗 ========== -->
+<!-- 导入确认 -->
+<div id="import-modal" class="modal-mask hidden" onclick="if(event.target===this)cancelImport()">
+  <div class="modal">
+    <h3>确认导入</h3>
+    <div id="imp-info" style="font-size:14px;color:#666;margin-bottom:8px"></div>
+    <!-- v1.5.0：并入哪个库的下拉移到最上方并放大（原来藏在库名框下面，用户没发现能并入老库） -->
+    <select id="imp-dest" style="width:100%;margin-bottom:8px;font-size:16px;padding:10px"></select>
+    <input type="text" id="imp-name" placeholder="题库名称（并入老库时不用填）" style="margin-bottom:8px">
+    <select id="imp-type" style="width:100%;margin-bottom:8px">
+      <option value="normal">普通题库</option>
+      <option value="root">词根学习</option>
+      <option value="shift">交班英语</option>
+    </select>
+    <div class="btn-row">
+      <button onclick="confirmImport()">确认导入</button>
+      <button class="ghost" onclick="cancelImport()">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- 粘贴导入 -->
+<div id="paste-modal" class="modal-mask hidden" onclick="if(event.target===this)closePaste()">
+  <div class="modal">
+    <h3 id="paste-title">粘贴导入习题</h3>
+    <input type="hidden" id="paste-dest" value="-1">
+    <input type="text" id="paste-name" placeholder="题库名称" style="margin-bottom:8px">
+    <select id="paste-type" style="width:100%;margin-bottom:8px">
+      <option value="normal">普通题库</option>
+      <option value="root">词根学习</option>
+      <option value="shift">交班英语</option>
+    </select>
+    <textarea id="paste-text" placeholder="把题目文字粘贴到这里。格式很宽松：1. / （1）/ ① / 第1题 都行，答案行写 答：或 答案：或 A: 都行；实在认不出会问你要不要AI帮忙整理。"></textarea>
+    <div class="btn-row">
+      <button onclick="doPasteImport()">确认导入</button>
+      <button class="ghost" onclick="closePaste()">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- v1.5.0 AI帮忙识别格式 -->
+<div id="aihelp-modal" class="modal-mask hidden">
+  <div class="modal">
+    <h3>🤔 认不出格式</h3>
+    <div id="aihelp-info" style="font-size:14px;color:#666;margin-bottom:10px;line-height:1.6">这段内容的格式软件认不出来。<br>要不要让AI帮忙整理成标准格式？（用您存的Kimi key，费一点点额度）</div>
+    <div class="btn-row">
+      <button id="aihelp-yes" onclick="aiHelpYes()">🤖 要，AI帮忙</button>
+      <button class="ghost" onclick="closeAiHelp()">不要</button>
+    </div>
+  </div>
+</div>
+
+<!-- 修改本题 -->
+<div id="edit-modal" class="modal-mask hidden" onclick="if(event.target===this)closeEdit()">
+  <div class="modal">
+    <h3>修改本题</h3>
+    <textarea id="edit-q" placeholder="题目" style="min-height:80px;margin-bottom:8px"></textarea>
+    <textarea id="edit-a" placeholder="答案" style="min-height:120px"></textarea>
+    <div style="font-size:13px;color:#888;margin:8px 0 4px">注释（每条可改可删，不限条数）：</div>
+    <!-- v1.6：3个固定框→动态列表 -->
+    <div id="edit-notes"></div>
+    <button class="ghost" style="font-size:13px;padding:6px 10px;margin-bottom:6px" onclick="editAddNote()">➕ 加一条注释</button>
+    <div class="btn-row">
+      <button onclick="saveEdit()">保存</button>
+      <button class="ghost" onclick="closeEdit()">取消</button>
+    </div>
+  </div>
+  <button id="ta-close" class="hidden" onclick="taClose()">✕ 收起</button>
+</div>
+
+<!-- v1.2 AI设置 -->
+<div id="aikey-modal" class="modal-mask hidden" onclick="if(event.target===this)closeAiKey()">
+  <div class="modal">
+    <h3>🤖 AI设置</h3>
+    <div style="font-size:13px;color:#888;margin-bottom:2px">① API key（贴这里）：</div>
+    <input type="text" id="aikey-input" placeholder="Kimi API key（platform.moonshot.cn 获取）" style="margin-bottom:2px" oninput="document.getElementById('aikey-count').textContent='已输入 '+this.value.trim().length+' 位'">
+    <div id="aikey-count" style="font-size:13px;color:#2c6e9e;margin-bottom:8px">已输入 0 位</div>
+    <div style="font-size:13px;color:#888;margin-bottom:2px">② 模型（一般不用动）：</div>
+    <input type="text" id="aimodel-input" placeholder="模型（默认 kimi-k2.5，便宜够用）" style="margin-bottom:8px">
+    <div style="font-size:13px;color:#888;margin-bottom:8px">key存在本软件数据里，只在本机使用；导出分身时可选择不带。</div>
+    <div class="btn-row">
+      <button onclick="saveAiKey()">保存</button>
+      <button class="ghost" onclick="checkAiBalance()">💰 查额度</button>
+      <button class="ghost" onclick="closeAiKey()">取消</button>
+    </div>
+    <div id="aikey-bal" style="font-size:13px;color:#2c6e9e;margin-top:6px"></div>
+  </div>
+</div>
+
+<!-- v1.2 AI问答 -->
+<div id="ai-modal" class="modal-mask hidden" onclick="if(event.target===this)closeAi()">
+  <div class="modal">
+    <h3 id="ai-title">🤖 问AI</h3>
+    <div id="ai-context" style="font-size:13px;color:#888;margin-bottom:6px;max-height:60px;overflow:auto"></div>
+    <textarea id="ai-query" placeholder="输入你的问题" style="min-height:60px;margin-bottom:8px"></textarea>
+    <div class="btn-row" style="margin-bottom:8px">
+      <button id="ai-send-btn" onclick="aiSend()">发送</button>
+      <button class="ghost" onclick="openAiKey()">⚙ 设置</button>
+      <button class="ghost" onclick="closeAi()">关闭</button>
+    </div>
+    <div id="ai-result" style="font-size:14px;line-height:1.7;max-height:260px;overflow:auto;background:#f5f7fa;border-radius:8px;padding:10px;white-space:pre-wrap">回答会显示在这里</div>
+    <div class="btn-row" id="ai-actions" style="margin-top:8px"></div>
+  </div>
+</div>
+
+<!-- 合并题库 -->
+<div id="merge-modal" class="modal-mask hidden" onclick="if(event.target===this)closeMerge()">
+  <div class="modal">
+    <h3>合并题库</h3>
+    <div id="merge-info" style="font-size:14px;color:#666;margin-bottom:8px;white-space:pre-wrap"></div>
+    <input type="text" id="merge-name" placeholder="新题库名称" style="margin-bottom:8px">
+    <label style="font-size:15px;display:block;margin-bottom:8px"><input type="checkbox" id="merge-del" checked> 合并后删除原题库</label>
+    <div class="btn-row">
+      <button onclick="confirmMerge()">确认合并</button>
+      <button class="ghost" onclick="closeMerge()">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 内嵌docx读取器 ========== -->
+<script>
+var TINF_OK = 0, TINF_DATA_ERROR = -3;
+function Tree() { this.table = new Uint16Array(16); this.trans = new Uint16Array(288); }
+function Data(source, dest) {
+  this.source = source; this.sourceIndex = 0; this.tag = 0; this.bitcount = 0;
+  this.dest = dest; this.destLen = 0; this.ltree = new Tree(); this.dtree = new Tree();
+}
+var sltree = new Tree(), sdtree = new Tree();
+var length_bits = new Uint8Array(30), length_base = new Uint16Array(30);
+var dist_bits = new Uint8Array(30), dist_base = new Uint16Array(30);
+var clcidx = new Uint8Array([16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15]);
+var code_tree = new Tree(); var lengths = new Uint8Array(288 + 32);
+var offs = new Uint16Array(16);
+function tinf_build_bits_base(bits, base, delta, first) {
+  for (var i = 0; i < delta; ++i) bits[i] = 0;
+  for (i = 0; i < 30 - delta; ++i) bits[i + delta] = i / delta | 0;
+  for (var sum = first, i = 0; i < 30; ++i) { base[i] = sum; sum += 1 << bits[i]; }
+}
+function tinf_build_fixed_trees(lt, dt) {
+  for (var i = 0; i < 7; ++i) lt.table[i] = 0;
+  lt.table[7] = 24; lt.table[8] = 152; lt.table[9] = 112;
+  for (i = 0; i < 24; ++i) lt.trans[i] = 256 + i;
+  for (i = 0; i < 144; ++i) lt.trans[24 + i] = i;
+  for (i = 0; i < 8; ++i) lt.trans[24 + 144 + i] = 280 + i;
+  for (i = 0; i < 112; ++i) lt.trans[24 + 144 + 8 + i] = 144 + i;
+  for (i = 0; i < 5; ++i) dt.table[i] = 0;
+  dt.table[5] = 32;
+  for (i = 0; i < 32; ++i) dt.trans[i] = i;
+}
+function tinf_build_tree(t, lengths, off, num) {
+  for (var i = 0; i < 16; ++i) t.table[i] = 0;
+  for (i = 0; i < num; ++i) t.table[lengths[off + i]]++;
+  t.table[0] = 0;
+  for (var sum = 0, i = 0; i < 16; ++i) { offs[i] = sum; sum += t.table[i]; }
+  for (i = 0; i < num; ++i) { if (lengths[off + i]) t.trans[offs[lengths[off + i]]++] = i; }
+}
+function tinf_getbit(d) { if (!d.bitcount--) { d.tag = d.source[d.sourceIndex++]; d.bitcount = 7; } var bit = d.tag & 1; d.tag >>>= 1; return bit; }
+function tinf_read_bits(d, num, base) {
+  if (!num) return base;
+  while (d.bitcount < 24) { d.tag |= d.source[d.sourceIndex++] << d.bitcount; d.bitcount += 8; }
+  var val = d.tag & (0xffff >>> (16 - num)); d.tag >>>= num; d.bitcount -= num; return val + base;
+}
+function tinf_decode_symbol(d, t) {
+  while (d.bitcount < 24) { d.tag |= d.source[d.sourceIndex++] << d.bitcount; d.bitcount += 8; }
+  var sum = 0, cur = 0, len = 0, tag = d.tag;
+  do { cur = 2 * cur + (tag & 1); tag >>>= 1; ++len; sum += t.table[len]; cur -= t.table[len]; } while (cur >= 0);
+  d.tag = tag; d.bitcount -= len; return t.trans[sum + cur];
+}
+function tinf_decode_trees(d, lt, dt) {
+  var hlit = tinf_read_bits(d, 5, 257), hdist = tinf_read_bits(d, 5, 1), hclen = tinf_read_bits(d, 4, 4);
+  for (var i = 0; i < 19; ++i) lengths[i] = 0;
+  for (i = 0; i < hclen; ++i) lengths[clcidx[i]] = tinf_read_bits(d, 3, 0);
+  tinf_build_tree(code_tree, lengths, 0, 19);
+  for (var num = 0; num < hlit + hdist;) {
+    var sym = tinf_decode_symbol(d, code_tree);
+    switch (sym) {
+      case 16: var prev = lengths[num - 1]; for (var length = tinf_read_bits(d, 2, 3); length; --length) lengths[num++] = prev; break;
+      case 17: for (length = tinf_read_bits(d, 3, 3); length; --length) lengths[num++] = 0; break;
+      case 18: for (length = tinf_read_bits(d, 7, 11); length; --length) lengths[num++] = 0; break;
+      default: lengths[num++] = sym; break;
+    }
+  }
+  tinf_build_tree(lt, lengths, 0, hlit); tinf_build_tree(dt, lengths, hlit, hdist);
+}
+function tinf_inflate_block_data(d, lt, dt) {
+  while (1) {
+    var sym = tinf_decode_symbol(d, lt);
+    if (sym === 256) return TINF_OK;
+    if (sym < 256) { d.dest[d.destLen++] = sym; }
+    else {
+      sym -= 257;
+      var length = tinf_read_bits(d, length_bits[sym], length_base[sym]);
+      var dist = tinf_decode_symbol(d, dt);
+      var offs = d.destLen - tinf_read_bits(d, dist_bits[dist], dist_base[dist]);
+      for (var i = offs; i < offs + length; ++i) d.dest[d.destLen++] = d.dest[i];
+    }
+  }
+}
+function tinf_inflate_uncompressed_block(d) {
+  while (d.bitcount > 8) { d.sourceIndex--; d.bitcount -= 8; }
+  var length = d.source[d.sourceIndex + 1]; length = 256 * length + d.source[d.sourceIndex];
+  var invlength = d.source[d.sourceIndex + 3]; invlength = 256 * invlength + d.source[d.sourceIndex + 2];
+  if (length !== (~invlength & 0x0000ffff)) return TINF_DATA_ERROR;
+  d.sourceIndex += 4;
+  for (var i = length; i; --i) d.dest[d.destLen++] = d.source[d.sourceIndex++];
+  d.bitcount = 0; return TINF_OK;
+}
+function tinf_uncompress(source, dest) {
+  var d = new Data(source, dest), bfinal, btype, res;
+  do {
+    bfinal = tinf_getbit(d); btype = tinf_read_bits(d, 2, 0);
+    switch (btype) {
+      case 0: res = tinf_inflate_uncompressed_block(d); break;
+      case 1: res = tinf_inflate_block_data(d, sltree, sdtree); break;
+      case 2: tinf_decode_trees(d, d.ltree, d.dtree); res = tinf_inflate_block_data(d, d.ltree, d.dtree); break;
+      default: res = TINF_DATA_ERROR;
+    }
+    if (res !== TINF_OK) throw new Error("Data error");
+  } while (!bfinal);
+  if (d.destLen < d.dest.length) return d.dest.slice ? d.dest.slice(0, d.destLen) : d.dest.subarray(0, d.destLen);
+  return d.dest;
+}
+tinf_build_fixed_trees(sltree, sdtree);
+tinf_build_bits_base(length_bits, length_base, 4, 3);
+tinf_build_bits_base(dist_bits, dist_base, 2, 1);
+length_bits[28] = 0; length_base[28] = 258;
+
+function u16(b, o) { return b[o] | (b[o + 1] << 8); }
+function u32(b, o) { return (b[o] | (b[o + 1] << 8) | (b[o + 2] << 16) | (b[o + 3] << 24)) >>> 0; }
+function docxToText(buf) {
+  var b = new Uint8Array(buf), eocd = -1;
+  for (var i = b.length - 22; i >= 0 && i > b.length - 65558; i--) { if (u32(b, i) === 0x06054b50) { eocd = i; break; } }
+  if (eocd < 0) throw new Error("不是有效的docx(zip)文件");
+  var count = u16(b, eocd + 10), off = u32(b, eocd + 16);
+  for (var e = 0; e < count; e++) {
+    if (u32(b, off) !== 0x02014b50) break;
+    var method = u16(b, off + 10), csize = u32(b, off + 20), usize = u32(b, off + 24);
+    var nlen = u16(b, off + 28), elen = u16(b, off + 30), clen = u16(b, off + 32), lho = u32(b, off + 42);
+    var name = ""; for (var k = 0; k < nlen; k++) name += String.fromCharCode(b[off + 46 + k]);
+    if (name === "word/document.xml") {
+      var fnlen = u16(b, lho + 26), fxlen = u16(b, lho + 28), dstart = lho + 30 + fnlen + fxlen;
+      var data;
+      if (method === 0) data = b.slice(dstart, dstart + csize);
+      else { data = new Uint8Array(usize); tinf_uncompress(b.slice(dstart, dstart + csize), data); }
+      var xml = new TextDecoder("utf-8").decode(data);
+      return xmlToLines(xml);
+    }
+    off += 46 + nlen + elen + clen;
+  }
+  throw new Error("docx里找不到word/document.xml");
+}
+function xmlToLines(xml) {
+  var t = xml.replace(/<w:tab\s*\/>/g, "\t").replace(/<w:br\s*\/>/g, "\n").replace(/<\/w:p>/g, "\n").replace(/<[^>]+>/g, "");
+  return t.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, "\"").replace(/&apos;/g, "\'").replace(/&amp;/g, "&");
+}
+</script>
+
+<script>
+"use strict";
+window.onerror = function (msg, src, line) { toast("出错：" + msg + "（第" + line + "行）"); };
+
+/* ================= 数据层 ================= */
+var LS_KEY = "xitixuexi_v01";
+var store = loadStore();
+var currentMode = sessionStorage.getItem("xiti_mode") || "normal";
+var shiftDir = sessionStorage.getItem("xiti_shiftDir") || "zh";
+
+function loadStore() {
+  try {
+    var s = localStorage.getItem(LS_KEY);
+    if (s) return JSON.parse(s);
+  } catch (e) {}
+  try {
+    var emb = document.getElementById("embedded-data").textContent;
+    if (emb && emb !== "null") { var d = JSON.parse(emb); if (d && d.banks) return d; }
+  } catch (e) {}
+  return { banks: [], progress: {} };
+}
+function saveStore() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(store)); } catch (e) { toast("存储失败：" + e.message); }
+  if (!ghSuspend) scheduleGhAutoBackup(); /* v1.4：改动收口挂钩子，10秒后自动云备份 */
+}
+function pKey(bankId, idx) { return bankId + "::" + idx; }
+function getLevel(bankId, idx) {
+  var p = store.progress[pKey(bankId, idx)];
+  if (!p) return 0;
+  return typeof p === "number" ? p : p.l;
+}
+function getTime(bankId, idx) {
+  var p = store.progress[pKey(bankId, idx)];
+  return (p && p.t) || 0;
+}
+
+/* ================= 模式切换 ================= */
+function setMode(mode) {
+  currentMode = mode;
+  sessionStorage.setItem("xiti_mode", mode);
+  ["normal", "root", "shift"].forEach(function (m) {
+    document.getElementById("tab-" + m).classList.toggle("active", m === mode);
+    document.getElementById("panel-" + m).classList.toggle("hidden", m !== mode);
+  });
+  renderBanks();
+  if (mode === "root") updateRootPanel();
+  if (mode === "shift") updateShiftPanel();
+}
+function setShiftDir(dir) {
+  shiftDir = dir;
+  sessionStorage.setItem("xiti_shiftDir", dir);
+  ["zh", "en", "mix"].forEach(function (d) {
+    document.getElementById("dir-" + d).classList.toggle("active", d === dir);
+  });
+}
+
+/* ================= 解析器 ================= */
+function parseQuestions(text) {
+  var lines = text.split(/\r?\n/);
+  var qs = [];
+  var cur = null;
+  var inAnswer = false;
+  // v1.5.0 格式放宽：题号认 1. / 1) / （1）/ (1) / ①-⑳ / 第1题；答案行认 答:/答案:/【答案】/参考答案:/正确答案:/A:
+  var qRe = /^\s*(?:\d+\s*[.、．\):：]|（\s*\d+\s*）|\(\s*\d+\s*\)|[①-⑳]|第\s*\d+\s*题\s*[.、．:：]?)\s*/;
+  var aRe = /^\s*(?:【\s*答\s*案?\s*】|答\s*案?\s*[:：]|参考答案\s*[:：]|正确答案\s*[:：]|[Aa]\s*[:：])\s*/;
+  var obsRe = /^\s*[-*+]\s*\*\*(.+?)\*\*\s*[:：]?\s*(.+)/;
+  // v0.12: 交班英语 Q:/A: 格式
+  var shiftQRe = /^\s*[Qq][：:]\s*(.+)/;
+  var shiftARe = /^\s*[Aa][：:]\s*(.+)/;
+  var lastShiftQ = null;
+
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    var mObs = line.match(obsRe);
+    if (mObs) {
+      var oa = mObs[2].replace(/\[\[([^\]|]*\|)?([^\]]*)\]\]/g, "$2").replace(/\*\*/g, "").trim();
+      if (oa) { cur = { q: "什么是" + mObs[1].trim() + "？", a: oa }; qs.push(cur); inAnswer = false; }
+      continue;
+    }
+    // 交班英语 Q: A: 格式
+    var mSq = line.match(shiftQRe);
+    if (mSq) { lastShiftQ = mSq[1].trim(); continue; }
+    var mSa = line.match(shiftARe);
+    if (mSa && lastShiftQ) {
+      qs.push({ q: lastShiftQ, a: mSa[1].trim() });
+      lastShiftQ = null; continue;
+    }
+    if (qRe.test(line) && !inAnswer) {
+      var qt = line.replace(qRe, "").replace(qRe, "").trim();
+      if (qt) { cur = { q: qt, a: "" }; qs.push(cur); }
+      continue;
+    }
+    if (aRe.test(line) && cur) {
+      inAnswer = true;
+      cur.a = line.replace(aRe, "").trim();
+      continue;
+    }
+    if (qRe.test(line) && inAnswer) {
+      inAnswer = false;
+      var qt2 = line.replace(qRe, "").replace(qRe, "").trim();
+      if (qt2) { cur = { q: qt2, a: "" }; qs.push(cur); }
+      continue;
+    }
+    if (/^\s*[=-_*]{3,}\s*$/.test(line)) { inAnswer = false; continue; }
+    if (inAnswer && cur && line.trim()) {
+      cur.a += "\n" + line.trim();
+    }
+  }
+  return qs;
+}
+
+/* ================= 导入 ================= */
+function setupFileInput(id, type) {
+  document.getElementById(id).addEventListener("change", function (e) {
+    var files = e.target.files;
+    if (!files.length) return;
+    var pending = files.length, added = 0;
+    for (var i = 0; i < files.length; i++) {
+      (function (f) {
+        var reader = new FileReader();
+        reader.onload = function () {
+          var text;
+          try {
+            text = /\.docx$/i.test(f.name) ? docxToText(reader.result) : String(reader.result);
+          } catch (err) { toast("「" + f.name + "」读取失败：" + err.message); if (--pending === 0) { saveStore(); renderBanks(); } return; }
+          var qs = parseQuestions(text);
+          if (qs.length) { added++; enqueueImport(f.name.replace(/\.(txt|md|text|docx|doc|rtf)$/i, ""), qs, type); }
+          if (--pending === 0 && !added) { toast("没有解析到题目，请检查格式"); }
+        };
+        if (/\.docx$/i.test(f.name)) reader.readAsArrayBuffer(f); else reader.readAsText(f, "utf-8");
+      })(files[i]);
+    }
+    e.target.value = "";
+  });
+}
+setupFileInput("file-input", "normal");
+setupFileInput("file-input-root", "root");
+setupFileInput("file-input-shift", "shift");
+
+function openPaste() { resetPasteModal("normal", -1); }
+function openPasteRoot() { resetPasteModal("root", -1); }
+function openPasteShift() { resetPasteModal("shift", -1); }
+/* v1.5.0：题库卡片「📋 粘贴出题」——默认并入该库，隐藏库名/类型选择 */
+function openPasteBank(bi) {
+  var b = store.banks[bi];
+  resetPasteModal((b && b.type) || "normal", bi);
+  document.getElementById("paste-title").textContent = "📋 粘贴出题 ｜ 并入「" + (b ? b.name : "") + "」";
+  document.getElementById("paste-name").style.display = "none";
+  document.getElementById("paste-type").style.display = "none";
+}
+function resetPasteModal(type, dest) {
+  document.getElementById("paste-type").value = type;
+  document.getElementById("paste-dest").value = dest;
+  document.getElementById("paste-title").textContent = "粘贴导入习题";
+  document.getElementById("paste-name").style.display = "";
+  document.getElementById("paste-type").style.display = "";
+  openPasteModal();
+}
+function openPasteModal() { document.getElementById("paste-modal").classList.remove("hidden"); }
+function closePaste() { document.getElementById("paste-modal").classList.add("hidden"); }
+function doPasteImport() {
+  var name = document.getElementById("paste-name").value.trim(); // v0.12.4：不再自动生成"粘贴题库N"，库名必填（在确认窗强制）
+  var type = document.getElementById("paste-type").value;
+  var dest = +document.getElementById("paste-dest").value; // v1.5.0：>=0 表示从题库卡片进来，默认并入该库
+  var text = document.getElementById("paste-text").value;
+  var qs = parseQuestions(text);
+  // v1.5.0：认不出格式 → 弹窗问要不要AI帮忙整理
+  if (!qs.length) { pendingPaste = { name: name, type: type, dest: dest, text: text }; openAiHelp(); return; }
+  closePaste();
+  document.getElementById("paste-text").value = ""; document.getElementById("paste-name").value = ""; document.getElementById("paste-dest").value = "-1";
+  enqueueImport(name, qs, type, dest >= 0 ? dest : null);
+}
+/* ---- v1.5.0 AI帮忙整理格式 ---- */
+var pendingPaste = null;
+function openAiHelp() {
+  document.getElementById("aihelp-yes").disabled = false;
+  document.getElementById("aihelp-modal").classList.remove("hidden");
+}
+function closeAiHelp() { document.getElementById("aihelp-modal").classList.add("hidden"); pendingPaste = null; toast("已取消，请检查格式后再试"); }
+async function aiHelpYes() {
+  if (!pendingPaste) return;
+  if (!needKey()) return; // 没key就去设置窗，本窗留着
+  var btn = document.getElementById("aihelp-yes");
+  btn.disabled = true;
+  document.getElementById("aihelp-info").textContent = "AI整理中，请稍等…";
+  try {
+    var fixed = await callAI(
+      "你是习题格式整理助手。把用户给的文字整理成问答题库格式，每题两行：第一行「1. 题目」，第二行「答：答案」（答案有多行就跟在后面）。题号从1递增。只输出整理后的题目，不要任何解释、标题或多余的话。如果内容里有交班英语（中文配英文翻译），改用「Q:中文」加「A:英文」两行一题。",
+      pendingPaste.text.slice(0, 8000));
+    var qs = parseQuestions(fixed);
+    if (!qs.length) {
+      document.getElementById("aihelp-info").textContent = "AI整理后还是认不出来，这段内容可能不是问答题。请手工改成「1.题目 换行 答：答案」再试。";
+      btn.disabled = false;
+      return;
+    }
+    var p = pendingPaste;
+    pendingPaste = null;
+    document.getElementById("aihelp-modal").classList.add("hidden");
+    closePaste();
+    document.getElementById("paste-text").value = ""; document.getElementById("paste-name").value = ""; document.getElementById("paste-dest").value = "-1";
+    enqueueImport(p.name, qs, p.type, p.dest >= 0 ? p.dest : null);
+    toast("AI整理出 " + qs.length + " 题");
+  } catch (e) {
+    document.getElementById("aihelp-info").textContent = "AI整理失败：" + e.message;
+    btn.disabled = false;
+  }
+}
+
+/* ================= 导入确认窗 ================= */
+var importQueue = [];
+function enqueueImport(name, qs, type, destIdx) {
+  importQueue.push({ name: name, qs: qs, type: type || "normal", dest: (typeof destIdx === "number") ? destIdx : null });
+  if (importQueue.length === 1) showImportModal();
+}
+function showImportModal() {
+  var it = importQueue[0];
+  document.getElementById("imp-info").textContent = "解析到 " + it.qs.length + " 题";
+  document.getElementById("imp-name").value = it.name;
+  document.getElementById("imp-type").value = it.type;
+  var sel = document.getElementById("imp-dest");
+  var html = "<option value=\"-1\">新建题库</option>";
+  store.banks.forEach(function (b, i) { html += "<option value=\"" + i + "\">并入：" + esc(b.name) + "</option>"; });
+  sel.innerHTML = html;
+  if (it.dest != null && store.banks[it.dest]) sel.value = String(it.dest); // v1.5.0：题库卡片粘贴进来默认并入该库
+  document.getElementById("import-modal").classList.remove("hidden");
+}
+function confirmImport() {
+  if (!importQueue.length) return;
+  var it = importQueue[0];
+  var dest = +document.getElementById("imp-dest").value;
+  var type = document.getElementById("imp-type").value;
+  if (dest === -1) {
+    var name = document.getElementById("imp-name").value.trim();
+    if (!name) { toast("请填写库名再导入"); return; } // v0.12.4：新建题库时库名必填
+    store.banks.push({ id: "b" + Date.now() + "_" + Math.floor(Math.random() * 1e6), name: name, type: type, questions: it.qs });
+  } else if (store.banks[dest]) {
+    store.banks[dest].questions = store.banks[dest].questions.concat(it.qs);
+  }
+  saveStore(); renderBanks();
+  importQueue.shift();
+  if (importQueue.length) { showImportModal(); } else { document.getElementById("import-modal").classList.add("hidden"); }
+  toast("导入成功：" + it.qs.length + "题");
+  if (currentMode === "root") updateRootPanel();
+  if (currentMode === "shift") updateShiftPanel();
+}
+function cancelImport() { importQueue = []; document.getElementById("import-modal").classList.add("hidden"); }
+
+/* ================= 题库列表 ================= */
+function renderBanks() {
+  var modeBanks = store.banks.filter(function (b) {
+    var t = b.type || "normal";
+    if (currentMode === "normal") return t === "normal";
+    if (currentMode === "root") return t === "root";
+    if (currentMode === "shift") return t === "shift";
+    return true;
+  });
+
+  var boxId = currentMode === "normal" ? "bank-list" : (currentMode === "root" ? "bank-list-root" : "bank-list-shift");
+  var box = document.getElementById(boxId);
+  if (!modeBanks.length) {
+    box.innerHTML = "<div class=\"empty-tip\">还没有题库<br>点上方导入或粘贴<br>换版本升级请点「📥 从分身恢复」</div>";
+    return;
+  }
+  var html = "";
+  modeBanks.forEach(function (b, bi) {
+    var realIdx = store.banks.indexOf(b);
+    var c = { 1: 0, 2: 0, 3: 0 };
+    b.questions.forEach(function (_, qi) { var lv = getLevel(b.id, qi); if (c[lv] !== undefined) c[lv]++; });
+    var newN = b.questions.length - c[1] - c[2] - c[3];
+    var typeTag = "";
+    if (b.type === "root") typeTag = "<span class=\"tag root\">词根</span>";
+    else if (b.type === "shift") typeTag = "<span class=\"tag shift\">交班</span>";
+    else typeTag = "<span class=\"tag normal\">普通</span>";
+    html += "<div class=\"card bank-item\">"
+      + "<input type=\"checkbox\" class=\"bank-check\" data-bi=\"" + realIdx + "\" checked>"
+      + "<div class=\"bank-info\"><div class=\"bank-name\">" + esc(b.name) + " " + typeTag + "</div>"
+      + "<div class=\"bank-stats\">共" + b.questions.length + "题 ｜ "
+      + "<span class=\"tag s\">陌生" + c[1] + "</span><span class=\"tag y\">一般" + c[2] + "</span><span class=\"tag s2\">熟悉" + c[3] + "</span> 未学" + newN
+      + "</div></div>"
+      + "<button class=\"ghost\" style=\"padding:6px 10px;font-size:13px\" onclick=\"openAiBank(" + realIdx + ")\">🤖 AI出题</button>"
+      + "<button class=\"ghost\" style=\"padding:6px 10px;font-size:13px\" onclick=\"openPasteBank(" + realIdx + ")\">📋 粘贴出题</button>"
+      + "<button class=\"danger\" style=\"padding:6px 10px;font-size:13px\" onclick=\"delBank(" + realIdx + ")\">删除</button>"
+      + "</div>";
+  });
+  box.innerHTML = html;
+}
+
+/* ================= 词根面板 ================= */
+function extractRoots() {
+  var roots = new Set();
+  store.banks.forEach(function (b) {
+    if ((b.type || "normal") !== "root") return;
+    b.questions.forEach(function (q) {
+      var text = (q.q || "") + " " + (q.a || "");
+      // 匹配 xxx- / hepat(o)- / (nephr)- 等格式
+      var matches = text.match(/\b[a-zA-Z]+\(o\)?-\b/g);
+      if (matches) matches.forEach(function (m) { roots.add(m); });
+      matches = text.match(/\([a-zA-Z]+\)-/g);
+      if (matches) matches.forEach(function (m) { roots.add(m); });
+      matches = text.match(/\b[a-zA-Z]+-\b/g);
+      if (matches) matches.forEach(function (m) { if (!m.match(/\(o\)?-$/)) roots.add(m); });
+    });
+  });
+  return Array.from(roots).sort();
+}
+function updateRootPanel() {
+  var roots = extractRoots();
+  var listEl = document.getElementById("root-list");
+  if (roots.length) {
+    listEl.textContent = roots.join("、");
+  } else {
+    listEl.textContent = "暂无词根数据，请先导入词根题库";
+  }
+}
+function genRootPrompt() {
+  var roots = extractRoots();
+  var prompt;
+  if (roots.length === 0) {
+    prompt = "请生成20个医学英语词根学习习题。\n\n格式要求（严格按此格式，每题独立）：\n1. 词根：cardi- (心脏)\n   例词：cardiology\n   释义：心脏病学\n   例句：The patient was referred to cardiology for further evaluation.\n答：cardi- 表示心脏，cardiology 指心脏病学。\n\n2. 词根：hepat- (肝脏)\n   例词：hepatitis\n   释义：肝炎\n   例句：Hepatitis B vaccination is recommended.\n答：hepat- 表示肝脏，hepatitis 指肝炎。\n\n请继续生成20个新词根，不要重复常见词根。";
+  } else {
+    prompt = "我已经学习了以下医学英语词根，请不要重复：\n" + roots.join("、") + "\n\n请继续生成20个新的医学英语词根学习习题。\n\n格式要求（严格按此格式，每题独立）：\n1. 词根：xxx- (中文意思)\n   例词：英文单词\n   释义：中文释义\n   例句：一句医学场景英文例句\n答：词根解释。\n\n请确保不重复以上已学词根。";
+  }
+  document.getElementById("root-prompt").textContent = prompt;
+  copyToClipboard(prompt);
+  toast("提示词已复制到剪贴板");
+}
+
+/* ================= 交班面板 ================= */
+function extractShiftSentences() {
+  var sentences = [];
+  store.banks.forEach(function (b) {
+    if ((b.type || "normal") !== "shift") return;
+    b.questions.forEach(function (q) {
+      if (q.q) sentences.push(q.q);
+    });
+  });
+  return sentences;
+}
+function updateShiftPanel() {
+  var sentences = extractShiftSentences();
+  document.getElementById("shift-count").textContent = sentences.length;
+}
+function genShiftPrompt() {
+  var sentences = extractShiftSentences();
+  var prompt;
+  if (sentences.length === 0) {
+    prompt = "请生成20句ICU/病房交班常用英语句子，附中文对照。\n\n格式要求（严格按此格式）：\nQ: 患者术后第一天，生命体征平稳\nA: The patient is postoperative day 1, vital signs stable.\n\nQ: 血压偏低，需要补液\nA: Blood pressure is low, fluid resuscitation needed.\n\n请生成实用的交班场景句子。";
+  } else {
+    prompt = "我已经学习了以下交班英语句子，请不要重复：\n" + sentences.join("\n") + "\n\n请继续生成20句新的交班英语句子。\n\n格式要求（严格按此格式）：\nQ: 中文句子\nA: English sentence\n\n请确保不重复以上已学句子。";
+  }
+  document.getElementById("shift-prompt").textContent = prompt;
+  copyToClipboard(prompt);
+  toast("提示词已复制到剪贴板");
+}
+
+/* ================= 合并题库 ================= */
+var mergeTargets = [];
+function openMerge() {
+  var checks = document.querySelectorAll(".bank-check");
+  mergeTargets = [];
+  checks.forEach(function (c) { if (c.checked) mergeTargets.push(+c.dataset.bi); });
+  if (mergeTargets.length < 2) { toast("请先勾选至少两个题库"); return; }
+  var total = 0, info = "将合并以下题库：\n";
+  mergeTargets.forEach(function (bi) { var b = store.banks[bi]; total += b.questions.length; info += "· " + b.name + "（" + b.questions.length + "题）\n"; });
+  info += "合计 " + total + " 题";
+  document.getElementById("merge-info").textContent = info;
+  document.getElementById("merge-name").value = "合并题库";
+  document.getElementById("merge-modal").classList.remove("hidden");
+}
+function closeMerge() { document.getElementById("merge-modal").classList.add("hidden"); }
+function confirmMerge() {
+  var name = document.getElementById("merge-name").value.trim() || "合并题库";
+  var delOld = document.getElementById("merge-del").checked;
+  var newBank = { id: "b" + Date.now() + "_" + Math.floor(Math.random() * 1e6), name: name, type: "normal", questions: [] };
+  mergeTargets.forEach(function (bi) {
+    var b = store.banks[bi];
+    b.questions.forEach(function (q, qi) {
+      var ni = newBank.questions.length;
+      newBank.questions.push(q);
+      var p = store.progress[pKey(b.id, qi)];
+      if (p) store.progress[pKey(newBank.id, ni)] = p;
+    });
+  });
+  store.banks.push(newBank);
+  if (delOld) {
+    var delIds = {};
+    mergeTargets.forEach(function (bi) {
+      var b = store.banks[bi];
+      b.questions.forEach(function (_, qi) { delete store.progress[pKey(b.id, qi)]; });
+      delIds[b.id] = true;
+    });
+    store.banks = store.banks.filter(function (b) { return !delIds[b.id]; });
+  }
+  saveStore(); renderBanks(); closeMerge();
+  toast("合并成功：" + newBank.questions.length + "题");
+}
+
+function delBank(bi) {
+  var b = store.banks[bi];
+  if (!confirm("删除题库「" + b.name + "」？其学习进度也会删除。")) return;
+  b.questions.forEach(function (_, qi) { delete store.progress[pKey(b.id, qi)]; });
+  store.banks.splice(bi, 1);
+  saveStore(); renderBanks();
+  if (currentMode === "root") updateRootPanel();
+  if (currentMode === "shift") updateShiftPanel();
+}
+function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
+/* ================= 学习 ================= */
+var session = null;
+function startStudy() {
+  // v0.12.3修复：只扫描当前面板的题库列表，结构上保证选哪个类别就学哪一类
+  var boxId = currentMode === "normal" ? "bank-list" : (currentMode === "root" ? "bank-list-root" : "bank-list-shift");
+  var checks = document.getElementById(boxId).querySelectorAll(".bank-check");
+  var items = [];
+  checks.forEach(function (c) {
+    if (c.checked) {
+      var b = store.banks[+c.dataset.bi];
+      var bt = b.type || "normal";
+      if (bt !== currentMode) return; // v0.12.2修复：只收集当前模式的题库，避免跨模式混入
+      b.questions.forEach(function (q, qi) { items.push({ bankId: b.id, bankName: b.name, idx: qi, q: q.q, a: q.a, n: q.n, mk: q.mk, type: bt }); });
+    }
+  });
+  if (!items.length) { toast("请先勾选至少一个题库"); return; }
+  session = { items: items, pos: 0 };
+  view = null; // v0.12.5修复：清空题目列表缓存，否则再次开始学习时显示的还是上一轮的旧题
+  document.getElementById("page-home").classList.add("hidden");
+  document.getElementById("page-study").classList.remove("hidden");
+  document.getElementById("filter-select").value = "all";
+  document.getElementById("kw-input").value = ""; // v1.1：新开始一轮学习时清空关键词
+  showQ();
+}
+function filteredItems() {
+  var f = document.getElementById("filter-select").value;
+  var days = +document.getElementById("time-select").value;
+  var since = days ? Date.now() - days * 86400000 : 0;
+  return session.items.filter(function (it) {
+    var lv = getLevel(it.bankId, it.idx);
+    var ok;
+    if (f === "all") ok = true;
+    else if (f === "ms") ok = lv === 1;
+    else if (f === "yb") ok = lv === 2;
+    else if (f === "sx") ok = lv === 3;
+    else if (f === "ms_yb") ok = lv === 1 || lv === 2;
+    else ok = lv === 0;
+    if (!ok) return false;
+    if (f !== "new" && since && getTime(it.bankId, it.idx) < since) return false;
+    // v1.1新增：关键词筛选（匹配题目或答案，不分大小写）
+    var kw = document.getElementById("kw-input").value.trim().toLowerCase();
+    if (kw && (it.q || "").toLowerCase().indexOf(kw) === -1 && (it.a || "").toLowerCase().indexOf(kw) === -1) return false;
+    return true;
+  });
+}
+var view = null;
+function applyFilter() { view = null; session.pos = 0; showQ(); }
+function clearKw() { document.getElementById("kw-input").value = ""; applyFilter(); }
+function curList() {
+  if (!view) { view = filteredItems(); if (session.pos >= view.length) session.pos = 0; }
+  return view;
+}
+function shuffle() {
+  var list = curList();
+  for (var i = list.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = list[i]; list[i] = list[j]; list[j] = t; }
+  session.pos = 0; showQ(); toast("已打乱");
+}
+
+function showQ() {
+  var list = curList();
+  if (!list.length) {
+    document.getElementById("q-meta").textContent = "";
+    document.getElementById("q-text").textContent = "当前筛选条件下没有题目";
+    document.getElementById("a-area").innerHTML = "";
+    document.getElementById("mark-row").classList.add("hidden");
+    document.getElementById("stat-line").textContent = "";
+    document.getElementById("progress-inner").style.width = "0";
+    return;
+  }
+  if (session.pos >= list.length) session.pos = list.length - 1;
+  if (session.pos < 0) session.pos = 0;
+  var it = list[session.pos];
+  var lv = getLevel(it.bankId, it.idx);
+  var lvTxt = ["未学", "陌生", "一般", "熟悉"][lv];
+  var tTxt = it.type === "root" ? "词根学习" : (it.type === "shift" ? "交班英语" : "普通题库");
+  document.getElementById("q-meta").textContent = tTxt + " ｜ " + it.bankName + " ｜ 第" + (session.pos + 1) + "/" + list.length + "题 ｜ " + lvTxt;
+
+  // 交班英语：根据方向决定先显示哪边
+  if (it.type === "shift") {
+    var dir = shiftDir;
+    if (dir === "mix") dir = Math.random() < 0.5 ? "zh" : "en";
+    var showFirst = dir === "zh" ? it.q : it.a;
+    var showSecond = dir === "zh" ? it.a : it.q;
+    document.getElementById("q-text").textContent = showFirst;
+    document.getElementById("a-area").innerHTML = "<div class=\"a-cover\"><button class=\"ghost\" onclick=\"revealShift()\">👁 显示" + (dir === "zh" ? "英文" : "中文") + "</button></div>";
+    session._shiftSecond = showSecond;
+    session._shiftDir = dir;
+  } else {
+    document.getElementById("q-text").textContent = it.q;
+    document.getElementById("a-area").innerHTML = "<div class=\"a-cover\"><button class=\"ghost\" onclick=\"reveal()\">👁 显示答案</button></div>";
+  }
+  document.getElementById("mark-row").classList.add("hidden");
+  var c = { 0: 0, 1: 0, 2: 0, 3: 0 };
+  session.items.forEach(function (x) { c[getLevel(x.bankId, x.idx)]++; });
+  document.getElementById("stat-line").textContent = "总" + session.items.length + "题：陌生" + c[1] + " 一般" + c[2] + " 熟悉" + c[3] + " 未学" + c[0];
+  document.getElementById("progress-inner").style.width = ((session.pos + 1) / list.length * 100) + "%";
+}
+
+function reveal() {
+  var it = curList()[session.pos];
+  var html = "<div class=\"a-text\">" + renderAnswerHtml(it.a, it.mk) + "</div>" + mkRowHtml(it);
+  var notes = it.n || [];
+  for (var i = 0; i < notes.length; i++) {
+    if (notes[i]) html += "<button class=\"ghost\" style=\"margin:8px 6px 0 0;font-size:13px;padding:6px 10px\" onclick=\"toggleNote(" + i + ")\">📎 注释" + (i + 1) + "</button>";
+  }
+  html += "<div id=\"note-area\"></div>"
+    + "<div style=\"text-align:right;margin-top:8px\"><button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"addMarkFromSelection()\">📍 定标选中词</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"openEdit()\">✏️ 修改本题</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"openAiNote()\">🤖 问AI</button></div>";
+  document.getElementById("a-area").innerHTML = html;
+  document.getElementById("mark-row").classList.remove("hidden");
+}
+function revealShift() {
+  // v0.12.6修复：补加注释按钮（v0.12遗漏，普通/词根库的reveal()本来就有）
+  var it = curList()[session.pos];
+  var html = "<div class=\"a-text\">" + renderAnswerHtml(session._shiftSecond, it.mk) + "</div>" + mkRowHtml(it);
+  var notes = it.n || [];
+  for (var i = 0; i < notes.length; i++) {
+    if (notes[i]) html += "<button class=\"ghost\" style=\"margin:8px 6px 0 0;font-size:13px;padding:6px 10px\" onclick=\"toggleNote(" + i + ")\">📎 注释" + (i + 1) + "</button>";
+  }
+  html += "<div id=\"note-area\"></div>"
+    + "<div style=\"text-align:right;margin-top:8px\"><button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"addMarkFromSelection()\">📍 定标选中词</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"openEdit()\">✏️ 修改本题</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"openAiNote()\">🤖 问AI</button></div>";
+  document.getElementById("a-area").innerHTML = html;
+  document.getElementById("mark-row").classList.remove("hidden");
+}
+function toggleNote(ni) {
+  var it = curList()[session.pos];
+  var area = document.getElementById("note-area");
+  if (area.getAttribute("data-open") === String(ni)) { area.innerHTML = ""; area.setAttribute("data-open", ""); return; }
+  area.innerHTML = "<div class=\"a-text\" style=\"color:#5a4a1f;background:#fdf8ec;border-radius:8px;padding:12px\">" + esc(it.n[ni]) + "</div>"
+    + "<div style=\"text-align:right;margin-top:6px\"><button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"addMarkFromSelection()\">📍 定标选中词</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"noteManualEdit(" + ni + ")\">✏️ 改这条</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"aiRewriteNote(" + ni + ")\">🤖 让AI整理这条注释</button></div>";
+  area.setAttribute("data-open", String(ni));
+}
+/* v1.6.1：注释手动编辑（以前只能AI整理或进修改本题窗，太绕） */
+function noteManualEdit(ni) {
+  var it = curList()[session.pos];
+  var area = document.getElementById("note-area");
+  area.setAttribute("data-open", "");
+  area.innerHTML = "<textarea id=\"note-edit-ta\" style=\"min-height:120px;margin-bottom:6px\">" + esc(it.n[ni]) + "</textarea>"
+    + "<div style=\"text-align:right\"><button style=\"font-size:13px;padding:6px 10px\" onclick=\"noteManualSave(" + ni + ")\">💾 保存</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"toggleNote(" + ni + ")\">取消</button></div>";
+}
+function noteManualSave(ni) {
+  var it = curList()[session.pos];
+  var v = document.getElementById("note-edit-ta").value.trim();
+  if (!v) { toast("注释不能为空（要删注释请用「修改本题」）"); return; }
+  it.n[ni] = v;
+  store.banks.forEach(function (b) { if (b.id === it.bankId) { b.questions[it.idx].n = it.n; } });
+  saveStore();
+  toggleNote(ni);
+  toast("注释已保存");
+}
+/* v1.3：让AI整理某条注释（补丁5：要求可自定义，默认预填），满意后替换 */
+function aiRewriteNote(ni) {
+  if (!needKey()) return;
+  var it = curList()[session.pos];
+  aiRwTarget = { bankId: it.bankId, idx: it.idx, ni: ni, newText: null };
+  var area = document.getElementById("note-area");
+  area.setAttribute("data-open", "");
+  area.innerHTML = "<div style=\"font-size:13px;color:#888;margin-bottom:4px\">你的要求（可修改）：</div>"
+    + "<textarea id=\"airw-instr\" style=\"min-height:60px;margin-bottom:6px\">用更简洁易懂的话重新整理，保留医学要点，150字以内</textarea>"
+    + "<div style=\"text-align:right\"><button style=\"font-size:13px;padding:6px 10px\" onclick=\"aiRwSend()\">🚀 开始整理</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"aiRwCancel()\">取消</button></div>";
+}
+async function aiRwSend() {
+  if (!aiRwTarget) return;
+  var instr = document.getElementById("airw-instr").value.trim() || "用更简洁易懂的话重新整理，保留医学要点";
+  var it = curList()[session.pos];
+  var text = it.n[aiRwTarget.ni];
+  var area = document.getElementById("note-area");
+  area.innerHTML = "<div class=\"a-text\" style=\"color:#5a4a1f;background:#fdf8ec;border-radius:8px;padding:12px\">AI整理中…</div>";
+  try {
+    var ans = await callAI("你是医学文本整理助手，只输出整理后的文字。", "请按以下要求处理这条学习注释。\n要求：" + instr + "\n注释内容：" + text);
+    aiRwTarget.newText = ans;
+    area.innerHTML = "<div class=\"a-text\" style=\"color:#5a4a1f;background:#fdf8ec;border-radius:8px;padding:12px\">" + esc(ans) + "</div>"
+      + "<div style=\"text-align:right;margin-top:6px\"><button style=\"font-size:13px;padding:6px 10px\" onclick=\"aiRwCommit()\">✅ 替换原注释</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"aiRewriteNote(" + aiRwTarget.ni + ")\">🔄 换个要求</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"aiRwCancel()\">取消</button></div>";
+  } catch (e) {
+    area.innerHTML = "<div class=\"a-text\" style=\"color:#5a4a1f;background:#fdf8ec;border-radius:8px;padding:12px\">出错：" + esc(e.message) + "</div>";
+  }
+}
+function aiRwCommit() {
+  if (!aiRwTarget || !aiRwTarget.newText) return;
+  var bank = null;
+  for (var i = 0; i < store.banks.length; i++) if (store.banks[i].id === aiRwTarget.bankId) bank = store.banks[i];
+  if (!bank) { toast("找不到原题库"); return; }
+  bank.questions[aiRwTarget.idx].n[aiRwTarget.ni] = aiRwTarget.newText;
+  var it = curList()[session.pos];
+  if (it && it.bankId === aiRwTarget.bankId && it.idx === aiRwTarget.idx) it.n = bank.questions[aiRwTarget.idx].n;
+  saveStore();
+  var ni = aiRwTarget.ni; aiRwTarget = null;
+  document.getElementById("note-area").setAttribute("data-open", "");
+  toggleNote(ni);
+  toast("注释已整理替换");
+}
+function aiRwCancel() {
+  var ni = aiRwTarget ? aiRwTarget.ni : 0;
+  aiRwTarget = null;
+  document.getElementById("note-area").setAttribute("data-open", "");
+  toggleNote(ni);
+}
+
+/* ================= v1.6 定标→集体形成注释 ================= */
+/* 答案里已定标的词显示虚线下划线 */
+function renderAnswerHtml(a, mk) {
+  var html = esc(a);
+  (mk || []).forEach(function (t) {
+    var et = esc(t);
+    html = html.split(et).join("<span class=\"mk\">" + et + "</span>");
+  });
+  return html;
+}
+/* 定标状态行：已标几个词 + 集体形成 + 清除 */
+function mkRowHtml(it) {
+  var mk = it.mk || [];
+  if (!mk.length) return "";
+  return "<div style=\"margin-top:8px;font-size:13px;color:#8a6d1f;background:#fdf8ec;border-radius:8px;padding:8px\">📍 已定标 " + mk.length + " 个：" + esc(mk.join("、")) +
+    " <button style=\"font-size:13px;padding:5px 8px\" onclick=\"aiMkAll()\">🤖 集体形成注释</button>" +
+    " <button class=\"ghost\" style=\"font-size:13px;padding:5px 8px\" onclick=\"clearMk()\">清除</button></div>";
+}
+/* 涂黑选词 → 浮动「➕ 定标」按钮 */
+var mkBtn = null;
+function ensureMkBtn() {
+  if (mkBtn) return;
+  mkBtn = document.createElement("button");
+  mkBtn.id = "mk-btn";
+  mkBtn.textContent = "➕ 定标";
+  mkBtn.addEventListener("click", addMarkFromSelection);
+  document.body.appendChild(mkBtn);
+}
+function hideMkBtn() { if (mkBtn) mkBtn.style.display = "none"; }
+function maybeShowMkBtn() {
+  ensureMkBtn();
+  var sel = window.getSelection();
+  if (!sel || sel.isCollapsed) { hideMkBtn(); return; }
+  var txt = sel.toString().trim();
+  if (!txt || txt.length > 30) { hideMkBtn(); return; }
+  var studyPage = document.getElementById("page-study");
+  if (!studyPage || studyPage.classList.contains("hidden")) { hideMkBtn(); return; }
+  var node = sel.anchorNode && sel.anchorNode.parentElement;
+  /* v1.6.1：注释框（note-area）里涂黑也能定标 */
+  if (!node || !(node.closest("#q-text") || node.closest("#a-area") || node.closest("#note-area"))) { hideMkBtn(); return; }
+  try {
+    var r = sel.getRangeAt(0).getBoundingClientRect();
+    mkBtn.style.left = Math.max(6, Math.min(r.left, window.innerWidth - 110)) + "px";
+    /* v1.6.1坑：按钮放选区下方会被系统"复制/分享"菜单整个盖住 → 挪到选区上方 */
+    mkBtn.style.top = Math.max(6, r.top - 44) + "px";
+    mkBtn.style.display = "";
+  } catch (e) { hideMkBtn(); }
+}
+document.addEventListener("selectionchange", function () { setTimeout(maybeShowMkBtn, 60); });
+document.addEventListener("touchend", function () { setTimeout(maybeShowMkBtn, 120); });
+document.addEventListener("mouseup", function () { setTimeout(maybeShowMkBtn, 60); });
+function addMarkFromSelection() {
+  var sel = window.getSelection();
+  var term = sel ? sel.toString().trim() : "";
+  /* v1.6.2：没涂黑就点常驻按钮时给句明白话（浮动按钮在安卓被系统菜单盖住，改走常驻按钮） */
+  if (!term) { toast("先用手指涂黑要定标的词，再点「📍 定标选中词」"); hideMkBtn(); return; }
+  var it = curList()[session.pos];
+  it.mk = it.mk || [];
+  if (it.mk.indexOf(term) < 0) it.mk.push(term);
+  syncMkToBank(it);
+  saveStore();
+  hideMkBtn();
+  try { sel.removeAllRanges(); } catch (e) {}
+  if (it.type !== "shift") reveal(); else revealShift();
+  toast("已定标：" + term + "（本题共" + it.mk.length + "个）");
+}
+function syncMkToBank(it) {
+  store.banks.forEach(function (b) { if (b.id === it.bankId) { b.questions[it.idx].mk = it.mk; } });
+}
+function clearMk() {
+  var it = curList()[session.pos];
+  it.mk = [];
+  syncMkToBank(it);
+  saveStore();
+  if (it.type !== "shift") reveal(); else revealShift();
+}
+/* 集体形成：一次AI请求给所有定标词写注释，追加进本题注释 */
+async function aiMkAll() {
+  if (!needKey()) return;
+  var it = curList()[session.pos];
+  var mk = (it.mk || []).slice();
+  if (!mk.length) return;
+  toast("AI正在为 " + mk.length + " 个定标词写注释…");
+  try {
+    var ans = await callAI(
+      "你是重症医学教学助手。用户学习一道题时划了几个词想让你逐一解释。只返回一个JSON对象（不要markdown围栏，不要解释）：{\"annots\":[{\"term\":\"词\",\"note\":\"解释\"}]}。term必须和用户给的词一字不差原样返回；note用大白话解释这个词在这道题语境下的含义，60字以内。",
+      "题目：" + it.q + "\n答案：" + it.a + "\n\n请逐一解释这些词：" + mk.join("、"));
+    var m = ans.replace(/```json|```/g, "").match(/\{[\s\S]*\}/);
+    var obj = m ? JSON.parse(m[0]) : null;
+    if (!obj || !Array.isArray(obj.annots)) throw new Error("AI回信格式不对，请重试");
+    it.n = it.n || [];
+    var done = [];
+    obj.annots.forEach(function (a) {
+      if (a && a.term && a.note) { it.n.push(a.term + "：" + a.note); done.push(a.term); }
+    });
+    if (!done.length) throw new Error("AI没写出注释，请重试");
+    it.mk = mk.filter(function (t) { return done.indexOf(t) < 0; }); /* 没解释到的词留着下次再形成 */
+    syncMkToBank(it);
+    store.banks.forEach(function (b) { if (b.id === it.bankId) { b.questions[it.idx].n = it.n; } });
+    saveStore();
+    if (it.type !== "shift") reveal(); else revealShift();
+    toast("✅ 已形成 " + done.length + " 条注释（📎注释按钮里看）");
+  } catch (e) { toast("集体形成失败：" + e.message); }
+}
+
+/* ================= 修改本题 ================= */
+function openEdit() {
+  var it = curList()[session.pos];
+  document.getElementById("edit-q").value = it.q;
+  document.getElementById("edit-a").value = it.a;
+  /* v1.6：注释动态列表，旧数据（含中间空位）原样摆出来 */
+  editNoteRows(it.n || []);
+  document.getElementById("edit-modal").classList.remove("hidden");
+}
+/* v1.6 动态注释列表 */
+function editNoteRowHtml(v) {
+  return "<div class=\"edit-note-row\" style=\"display:flex;gap:6px;margin-bottom:6px\">"
+    + "<textarea class=\"edit-note\" placeholder=\"注释\" style=\"flex:1;min-width:0;min-height:56px\">" + esc(v || "") + "</textarea>"
+    + "<button class=\"danger\" style=\"padding:6px 8px;font-size:13px;flex-shrink:0\" onclick=\"this.parentNode.remove()\">🗑</button></div>";
+}
+function editNoteRows(notes) {
+  var html = "";
+  for (var i = 0; i < notes.length; i++) html += editNoteRowHtml(notes[i]);
+  document.getElementById("edit-notes").innerHTML = html;
+}
+function editAddNote() {
+  document.getElementById("edit-notes").insertAdjacentHTML("beforeend", editNoteRowHtml(""));
+}
+function closeEdit() { taClose(); document.getElementById("edit-modal").classList.add("hidden"); }
+function taClose() {
+  var list = document.querySelectorAll("textarea.ta-full");
+  for (var i = 0; i < list.length; i++) { list[i].classList.remove("ta-full"); list[i].blur(); }
+  document.getElementById("ta-close").classList.add("hidden");
+}
+["edit-q", "edit-a"].forEach(function (id) {
+  var ta = document.getElementById(id);
+  ta.addEventListener("focus", function () {
+    var list = document.querySelectorAll("textarea.ta-full");
+    for (var i = 0; i < list.length; i++) list[i].classList.remove("ta-full");
+    ta.classList.add("ta-full");
+    document.getElementById("ta-close").classList.remove("hidden");
+  });
+});
+/* v1.6：动态注释框同样享受"点入放大"（focusin代理，旧3个固定框已删） */
+document.getElementById("edit-notes").addEventListener("focusin", function (e) {
+  if (!e.target.classList || !e.target.classList.contains("edit-note")) return;
+  var list = document.querySelectorAll("textarea.ta-full");
+  for (var i = 0; i < list.length; i++) list[i].classList.remove("ta-full");
+  e.target.classList.add("ta-full");
+  document.getElementById("ta-close").classList.remove("hidden");
+});
+function saveEdit() {
+  var it = curList()[session.pos];
+  var nq = document.getElementById("edit-q").value.trim();
+  var na = document.getElementById("edit-a").value.trim();
+  if (!nq || !na) { toast("题目和答案都不能为空"); return; }
+  /* v1.6：注释从动态列表收集（每条可改可删，尾部空条自动剔除保持编号紧凑） */
+  var tas = document.querySelectorAll("#edit-notes .edit-note");
+  var notes = [];
+  for (var ni = 0; ni < tas.length; ni++) notes.push(tas[ni].value.trim());
+  while (notes.length && !notes[notes.length - 1]) notes.pop();
+  it.q = nq; it.a = na; it.n = notes;
+  store.banks.forEach(function (b) { if (b.id === it.bankId) { b.questions[it.idx].q = nq; b.questions[it.idx].a = na; b.questions[it.idx].n = notes; } });
+  saveStore(); taClose(); closeEdit(); showQ();
+  if (it.type !== "shift") reveal(); else revealShift();
+  toast("已保存修改");
+}
+function mark(lv) {
+  var it = curList()[session.pos];
+  store.progress[pKey(it.bankId, it.idx)] = { l: lv, t: Date.now() };
+  saveStore();
+  nextQ();
+}
+function nextQ() { var list = curList(); if (session.pos < list.length - 1) { session.pos++; } else { toast("已到最后一题"); } showQ(); }
+function prevQ() { if (session.pos > 0) { session.pos--; showQ(); } }
+function goHome() {
+  document.getElementById("page-study").classList.add("hidden");
+  document.getElementById("page-home").classList.remove("hidden");
+  renderBanks();
+}
+
+/* ================= 导出 ================= */
+function downloadText(filename, text, mime) {
+  var blob = new Blob([text], { type: mime || "text/plain;charset=utf-8" });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  try { a.click(); } catch (e) {}
+  // 延长到30秒，给用户足够时间手动点击链接
+  setTimeout(function () { URL.revokeObjectURL(url); if (a.parentNode) a.remove(); }, 30000);
+  return url;
+}
+function exportWrong() {
+  var out = [];
+  store.banks.forEach(function (b) {
+    var lines = [];
+    b.questions.forEach(function (q, qi) {
+      var lv = getLevel(b.id, qi);
+      if (lv === 1 || lv === 2) {
+        var line = (lines.length / 2 + 1) + ". " + q.q + "\n答：" + q.a;
+        (q.n || []).forEach(function (n, ni) { if (n) line += "\n注释" + (ni + 1) + "：" + n; });
+        lines.push(line);
+      }
+    });
+    if (lines.length) {
+      var btTxt = b.type === "root" ? "词根学习" : (b.type === "shift" ? "交班英语" : "普通题库");
+      out.push("【" + btTxt + "｜" + b.name + "】错题" + (lines.length) + "道\n" + lines.join("\n\n"));
+    }
+  });
+  if (!out.length) { toast("没有陌生或一般的题"); return; }
+  downloadText("错题导出_" + dateStr() + ".txt", out.join("\n\n\n"));
+}
+function exportClone() {
+  var html = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+  // v1.2：含AI key时询问是否随分身导出（不带则仅剔key，模型等其他数据照走）
+  var exportData = store;
+  if (store.ai && store.ai.key) {
+    var withKey = confirm("分身里要带上AI key吗？\n\n「确定」带上：自己备份 / 发给信得过的人\n「取消」不带：发给别人（他填自己的key）");
+    if (!withKey) { exportData = JSON.parse(JSON.stringify(store)); delete exportData.ai.key; }
+  }
+  var dataJson = JSON.stringify(exportData).replace(/<\/script>/gi, "<\\/script>");
+  html = html.replace(/(<script id=\"embedded-data\" type=\"application\/json\">)[\s\S]*?(<\/script>)/, "$1" + dataJson + "$2");
+  var filename = "习题学习_分身_" + dateStr() + ".html";
+  var url = downloadText(filename, html, "text/html;charset=utf-8");
+  // 同时显示弹窗，提供可见下载链接和复制代码兜底
+  var linkArea = document.getElementById("export-link-area");
+  linkArea.innerHTML = '<a href="' + url + '" download="' + filename + '" style="display:block;padding:12px;background:#2c6e9e;color:#fff;text-align:center;border-radius:8px;text-decoration:none;font-size:16px">📥 手动点击下载：' + filename + '</a>';
+  document.getElementById("export-modal").classList.remove("hidden");
+  session._exportCode = html;
+  toast("分身已导出，如未自动下载请点弹窗链接");
+}
+function closeExportModal() { document.getElementById("export-modal").classList.add("hidden"); }
+
+/* ================= v1.2 AI功能 ================= */
+/* key存在store.ai里（随分身走，导出时可选剔除）；API为月之暗面Kimi，已实测允许浏览器跨域直连 */
+var aiMode = null;      // "bank"=题库出题 / "note"=题内提问
+var aiBankIdx = -1;     // bank模式：目标题库下标
+var aiLastQA = null;    // 最近一次问答（形成题目用）
+var aiNoteTarget = null; // v1.3：提问时锁定的题目 {bankId,idx,type,q}
+var aiCur = null;       // v1.3：当前进行中的请求信息
+var aiBgTasks = [];     // v1.3补丁7：后台任务队列（最多3个并发）
+var aiBgResults = [];   // v1.3补丁7：后台完成待查看的结果队列
+var aiRwTarget = null;  // v1.3：注释整理的目标 {bankId,idx,ni,newText}
+function openAiKey() {
+  var k = (store.ai && store.ai.key) || "";
+  document.getElementById("aikey-input").value = k;
+  document.getElementById("aikey-count").textContent = "已输入 " + k.length + " 位";
+  document.getElementById("aimodel-input").value = (store.ai && store.ai.model) || "";
+  document.getElementById("aikey-modal").classList.remove("hidden");
+}
+function closeAiKey() { document.getElementById("aikey-modal").classList.add("hidden"); }
+function saveAiKey() {
+  var k = document.getElementById("aikey-input").value.trim();
+  if (!k) { toast("key输入框是空的，请确认粘贴在「① API key」框里"); return; }
+  store.ai = { key: k, model: document.getElementById("aimodel-input").value.trim() || "kimi-k2.5" };
+  saveStore();
+  try{ localStorage.setItem("hx_apikey", k); localStorage.setItem("hx_aimodel", store.ai.model); }catch(e){}
+  closeAiKey(); toast("AI设置已保存（已写进公共钱罐，全家软件都能用）");
+}
+/* v1.4.2 查额度：直接问 Kimi 开放平台真实余额（GET /v1/users/me/balance） */
+async function checkAiBalance() {
+  var el = document.getElementById("aikey-bal");
+  var k = (store.ai && store.ai.key) || document.getElementById("aikey-input").value.trim();
+  if (!k) { el.textContent = "请先保存 Key 或把 Key 贴在①里"; return; }
+  el.textContent = "正在问平台…";
+  try {
+    var r = await fetch("https://api.moonshot.cn/v1/users/me/balance", { headers: { "Authorization": "Bearer " + k } });
+    if (r.status === 401) { el.textContent = "Key 无效或已过期（401），请重新生成"; return; }
+    if (!r.ok) { el.textContent = "查询失败（HTTP " + r.status + "），稍后再试"; return; }
+    var b = (await r.json()).data || {};
+    if (typeof b.available_balance !== "number") { el.textContent = "平台回答没看懂"; return; }
+    el.textContent = "💰 可用余额约 " + b.available_balance.toFixed(2) + " 元。钱不对：看看是不是充到 Kimi 会员那边了（两套账，不相通）";
+  } catch (e) { el.textContent = "网络不通，查询失败"; }
+}
+function needKey() { if (store.ai && store.ai.key) return true; openAiKey(); toast("请先设置API key"); return false; }
+function aiModel() { return (store.ai && store.ai.model) || "kimi-k2.5"; }
+async function callAI(sysPrompt, userText) {
+  var r = await fetch("https://api.moonshot.cn/v1/chat/completions", {
+    method: "POST",
+    headers: { "Authorization": "Bearer " + store.ai.key, "Content-Type": "application/json" },
+    body: JSON.stringify({ model: aiModel(), temperature: 1, messages: [
+      { role: "system", content: sysPrompt },
+      { role: "user", content: userText }
+    ]})
+  });
+  if (r.status === 401) throw new Error("API key无效（401），请点「⚙ 设置」检查");
+  if (!r.ok) throw new Error("AI请求失败（HTTP " + r.status + "），可能是模型名不对或余额不足");
+  var d = await r.json();
+  return d.choices[0].message.content;
+}
+function openAiModal(title, context, ph) {
+  document.getElementById("ai-title").textContent = title;
+  document.getElementById("ai-context").textContent = context;
+  document.getElementById("ai-query").value = "";
+  document.getElementById("ai-query").placeholder = ph;
+  document.getElementById("ai-result").textContent = "回答会显示在这里";
+  document.getElementById("ai-actions").innerHTML = "";
+  document.getElementById("ai-modal").classList.remove("hidden");
+}
+function closeAi() { document.getElementById("ai-modal").classList.add("hidden"); aiMode = null; aiLastQA = null; aiShowNext(); }
+/* ---- 功能A：题库内问AI出题 ---- */
+function openAiBank(bi) {
+  if (!needKey()) return;
+  aiMode = "bank"; aiBankIdx = bi; aiLastQA = null;
+  var b = store.banks[bi];
+  openAiModal("🤖 问AI出题 ｜ " + b.name, "满意的回答可以形成题目，自动并入「" + b.name + "」", "问一个医学问题，如：铜绿假单胞菌最新治疗方案");
+}
+/* ---- 功能B：学习时就本题问AI，答案存注释 ---- */
+function openAiNote() {
+  if (!needKey()) return;
+  var it = curList()[session.pos];
+  aiMode = "note"; aiLastQA = null;
+  // v1.3：提问时锁定题目（后台运行时用户可能已刷到后面的题，答案要钉在当初这道）
+  aiNoteTarget = { bankId: it.bankId, idx: it.idx, type: it.type, q: it.q };
+  openAiModal("🤖 就本题问AI", "题目：" + it.q, "就这道题提问，如：OprD缺失具体是什么");
+}
+/* v1.3：bank模式按钮区统一生成（前台/后台完成时复用） */
+function buildBankActions(qn) {
+  var opts = "";
+  for (var oi = 1; oi <= 10; oi++) opts += "<option value=\"" + oi + "\"" + (oi === qn ? " selected" : "") + ">" + oi + "</option>";
+  return "<select id=\"ai-qn\" style=\"padding:10px;font-size:15px;border:1px solid #ccc;border-radius:8px\">" + opts + "</select><button onclick=\"aiMakeQuestions()\">📝 形成题目</button><button class=\"ghost\" onclick=\"aiCommitNote()\">📎 存为注释到题库首题</button>";
+}
+/* v1.3：回答整理快捷按钮（更简洁/更通俗/分点列出） */
+function aiRewriteBtns() {
+  return "<div style=\"margin-top:6px\"><span style=\"font-size:13px;color:#888\">整理回答：</span>"
+    + "<button class=\"ghost\" style=\"font-size:13px;padding:6px 8px\" onclick=\"aiRewrite('简洁')\">更简洁</button>"
+    + "<button class=\"ghost\" style=\"font-size:13px;padding:6px 8px\" onclick=\"aiRewrite('通俗')\">更通俗</button>"
+    + "<button class=\"ghost\" style=\"font-size:13px;padding:6px 8px\" onclick=\"aiRewrite('分点')\">分点列出</button></div>";
+}
+async function aiRewrite(style) {
+  if (!aiLastQA) return;
+  var btn = document.getElementById("ai-send-btn");
+  btn.disabled = true;
+  document.getElementById("ai-result").textContent = "AI整理中…";
+  try {
+    var instr = style === "简洁" ? "用更简洁的话重新整理，保留医学要点，100字以内"
+      : style === "通俗" ? "用更通俗易懂的话重新讲解，保留医学要点"
+      : "用分点列出的方式重新整理，每点一句话，保留医学要点";
+    var ans = await callAI("你是医学文本整理助手，只输出整理后的文字。", instr + "：\n" + aiLastQA.a);
+    aiLastQA = { q: aiLastQA.q, a: ans, qn: aiLastQA.qn, qs: aiLastQA.qs };
+    document.getElementById("ai-result").textContent = ans;
+  } catch (e) { document.getElementById("ai-result").textContent = "出错：" + e.message; }
+  btn.disabled = false;
+}
+/* v1.3：后台等待 */
+function aiGoBackground() {
+  if (!aiCur) return;
+  aiCur.bg = true;
+  aiBgTasks.push(aiCur);
+  document.getElementById("ai-modal").classList.add("hidden");
+  toast("AI在后台工作中（当前" + aiBgTasks.length + "个任务），好了会自动弹出");
+}
+/* v1.3补丁6/7：后台完成→自动弹出对话框，标明当初提问的是哪道题；
+   补丁7：支持多任务队列，处理完一个自动接下一个 */
+function aiShowNext() {
+  if (!aiBgResults.length) return;
+  if (!document.getElementById("ai-modal").classList.contains("hidden")) return; // 有框在显示就不抢
+  var r = aiBgResults.shift();
+  aiMode = r.mode; aiBankIdx = r.bankIdx; aiNoteTarget = r.noteTarget; aiLastQA = { q: r.q, a: r.a };
+  var ctx = r.mode === "note" && r.noteTarget
+    ? "当初提问的题目：「" + r.noteTarget.q + "」\n你的问题：" + r.q
+    : "你的问题：" + r.q;
+  var title = aiBgResults.length > 0 ? "🤖 AI回答（还剩" + aiBgResults.length + "条待处理）" : "🤖 AI回答（后台完成）";
+  openAiModal(title, ctx, "");
+  document.getElementById("ai-context").style.whiteSpace = "pre-wrap";
+  document.getElementById("ai-result").textContent = r.a;
+  var act = document.getElementById("ai-actions");
+  if (r.mode === "note") act.innerHTML = "<button onclick=\"aiCommitNote()\">📎 存入这道题（当初提问那道）的注释</button>" + aiRewriteBtns();
+  else act.innerHTML = buildBankActions(5) + aiRewriteBtns();
+}
+async function aiSend() {
+  var q = document.getElementById("ai-query").value.trim();
+  if (!q) { toast("请先输入问题"); return; }
+  if (aiBgTasks.length >= 3) { toast("后台已有3个任务在跑，先处理完一个再提"); return; }
+  var btn = document.getElementById("ai-send-btn");
+  btn.disabled = true;
+  document.getElementById("ai-result").textContent = "AI思考中，请稍候…";
+  var sys = aiMode === "note"
+    ? "你是临床医学专家。用户正在复习一道题，题目内容：" + (aiNoteTarget ? aiNoteTarget.q : "") + "。请围绕该题回答，简洁准确，200字以内。"
+    : "你是临床医学专家，回答简洁准确，300字以内。";
+  var task = { mode: aiMode, bankIdx: aiBankIdx, noteTarget: aiNoteTarget, q: q, sys: sys, bg: false };
+  aiCur = task;
+  document.getElementById("ai-actions").innerHTML = "<button class=\"ghost\" onclick=\"aiGoBackground()\">⏳ 后台等待，继续学习</button>";
+  try {
+    var ans = await callAI(sys, q);
+    if (task.bg) { // v1.3补丁7：后台完成→出队→进结果队列→自动弹出
+      var ti = aiBgTasks.indexOf(task); if (ti > -1) aiBgTasks.splice(ti, 1);
+      aiBgResults.push({ mode: task.mode, bankIdx: task.bankIdx, noteTarget: task.noteTarget, q: task.q, a: ans });
+      if (aiCur === task) aiCur = null;
+      aiShowNext();
+    } else {
+      aiLastQA = { q: q, a: ans };
+      document.getElementById("ai-result").textContent = ans;
+      var act = document.getElementById("ai-actions");
+      if (aiMode === "bank") act.innerHTML = buildBankActions(5) + aiRewriteBtns();
+      else act.innerHTML = "<button onclick=\"aiCommitNote()\">📎 存入本题注释</button>" + aiRewriteBtns();
+    }
+  } catch (e) {
+    if (task.bg) { var ti2 = aiBgTasks.indexOf(task); if (ti2 > -1) aiBgTasks.splice(ti2, 1); if (aiCur === task) aiCur = null; toast("后台AI出错：" + e.message); }
+    else document.getElementById("ai-result").textContent = "出错：" + e.message;
+  }
+  btn.disabled = false;
+}
+/* 功能A第二步：把回答形成题目 */
+async function aiMakeQuestions() {
+  if (!aiLastQA) return;
+  var btn = document.getElementById("ai-send-btn");
+  btn.disabled = true;
+  document.getElementById("ai-result").textContent = "AI出题中，请稍候…";
+  try {
+    // 补丁4：题数可选1-10（默认5），重新出题沿用当前选择
+    var sel = document.getElementById("ai-qn");
+    var qn = sel ? +sel.value : (aiLastQA.qn || 5);
+    aiLastQA.qn = qn;
+    var prompt = "请基于以下问答内容，出" + qn + "道复习题。\n问：" + aiLastQA.q + "\n答：" + aiLastQA.a
+      + "\n\n格式要求（严格遵守，每题独立，不要任何多余文字）：\n1. 题目文字\n答：答案文字\n\n2. 题目文字\n答：答案文字";
+    var text = await callAI("你是出题助手，只输出规定格式的题目。", prompt);
+    var qs = parseQuestions(text);
+    if (!qs.length) { document.getElementById("ai-result").textContent = "AI返回的格式解析失败，请点「形成题目」重试。原文：\n" + text; btn.disabled = false; return; }
+    aiLastQA.qs = qs;
+    document.getElementById("ai-result").textContent = "已生成" + qs.length + "题，预览：\n\n" + qs.map(function (x, i) { return (i + 1) + ". " + x.q + "\n答：" + x.a; }).join("\n\n");
+    var opts2 = "";
+    for (var oi2 = 1; oi2 <= 10; oi2++) opts2 += "<option value=\"" + oi2 + "\"" + (oi2 === qn ? " selected" : "") + ">" + oi2 + "</option>";
+    document.getElementById("ai-actions").innerHTML = "<button onclick=\"aiCommitQuestions()\">✅ 并入「" + store.banks[aiBankIdx].name + "」</button><select id=\"ai-qn\" style=\"padding:10px;font-size:15px;border:1px solid #ccc;border-radius:8px\">" + opts2 + "</select><button class=\"ghost\" onclick=\"aiMakeQuestions()\">🔄 重新出题</button>";
+  } catch (e) {
+    document.getElementById("ai-result").textContent = "出错：" + e.message;
+  }
+  btn.disabled = false;
+}
+/* 功能A第三步：题目并入题库 */
+function aiCommitQuestions() {
+  if (!aiLastQA || !aiLastQA.qs) return;
+  var n = aiLastQA.qs.length; // 先取出数量，closeAi会清空aiLastQA（测试发现的bug）
+  var b = store.banks[aiBankIdx];
+  b.questions = b.questions.concat(aiLastQA.qs);
+  saveStore(); renderBanks(); closeAi();
+  toast("已并入" + n + "题到「" + b.name + "」");
+}
+/* 功能B第二步：答案存入注释（bank模式存到题库首题仅作备用） */
+function aiCommitNote() {
+  if (!aiLastQA) return;
+  var noteText = "AI问答：" + aiLastQA.q + " → " + aiLastQA.a;
+  if (aiMode === "note") {
+    // v1.3：用提问时锁定的题目（后台运行时用户可能已刷到别的题）
+    var t = aiNoteTarget;
+    if (!t) { var it0 = curList()[session.pos]; t = { bankId: it0.bankId, idx: it0.idx, type: it0.type }; }
+    var bank = null, qi = t.idx;
+    for (var i = 0; i < store.banks.length; i++) if (store.banks[i].id === t.bankId) bank = store.banks[i];
+    if (!bank) { toast("找不到原题库"); return; }
+    var q = bank.questions[qi];
+    if (!q.n) q.n = [];
+    /* v1.6.3：注释已是动态列表不限条数，删掉旧的3条上限（上限命中时只弹toast不关框，用户以为已存） */
+    q.n.push(noteText);
+    // 若学习页还停在原题，同步快照并刷新答案区；在别的题则只存数据
+    var cur = null;
+    if (session && !document.getElementById("page-study").classList.contains("hidden")) {
+      cur = curList()[session.pos];
+      if (cur && cur.bankId === t.bankId && cur.idx === t.idx) {
+        cur.n = q.n;
+        saveStore(); closeAi();
+        if (t.type === "shift") revealShift(); else reveal();
+        toast("已存入本题注释");
+        return;
+      }
+    }
+    saveStore(); closeAi();
+    toast("已存入注释（在当初提问的那道题里）");
+  } else {
+    var b = store.banks[aiBankIdx];
+    if (!b.questions.length) { toast("题库为空，先出题再存"); return; }
+    var q0 = b.questions[0];
+    if (!q0.n) q0.n = [];
+    /* v1.6.3：同上，删掉旧的3条上限 */
+    q0.n.push(noteText);
+    saveStore(); closeAi();
+    toast("已存为首题注释");
+  }
+}
+
+/* ================= v0.12.7 从分身恢复 ================= */
+function restoreFromClone() {
+  var inp = document.createElement("input");
+  inp.type = "file";
+  inp.accept = ".html,.htm,text/html";
+  inp.onchange = function () {
+    var f = inp.files[0];
+    if (!f) return;
+    var reader = new FileReader();
+    reader.onload = function () { restoreFromText(String(reader.result)); };
+    reader.readAsText(f, "utf-8");
+  };
+  inp.click();
+}
+function restoreFromText(text) {
+  try {
+    var m = text.match(/<script id="embedded-data" type="application\/json">([\s\S]*?)<\/script>/);
+    if (!m || !m[1] || m[1].trim() === "" || m[1].trim() === "null") { toast("这个文件里没有数据，请选择「导出分身」生成的文件"); return; }
+    var d = JSON.parse(m[1]);
+    if (!d || !d.banks) { toast("文件数据格式不对，恢复失败"); return; }
+    if (!confirm("将从分身恢复「" + d.banks.length + "个题库」及全部学习记录，当前数据会被覆盖，确定吗？")) return;
+    store = d;
+    saveStore(); renderBanks();
+    if (currentMode === "root") updateRootPanel();
+    if (currentMode === "shift") updateShiftPanel();
+    toast("恢复成功：" + d.banks.length + "个题库及学习记录");
+  } catch (e) { toast("恢复失败：" + e.message); }
+}
+function copyExportCode() {
+  if (session && session._exportCode) {
+    copyToClipboard(session._exportCode);
+    toast("全部代码已复制，请粘贴到备忘录保存为.html文件");
+  }
+}
+function dateStr() {
+  var d = new Date();
+  return d.getFullYear() + String(d.getMonth() + 1).padStart(2, "0") + String(d.getDate()).padStart(2, "0");
+}
+
+/* ================= 工具 ================= */
+function copyToClipboard(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).catch(function () { fallbackCopy(text); });
+  } else {
+    fallbackCopy(text);
+  }
+}
+function fallbackCopy(text) {
+  var ta = document.createElement("textarea");
+  ta.value = text;
+  ta.style.position = "fixed"; ta.style.opacity = "0";
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand("copy"); } catch (e) {}
+  document.body.removeChild(ta);
+}
+var toastTimer = null;
+function toast(msg) {
+  var old = document.querySelector(".toast"); if (old) old.remove();
+  var t = document.createElement("div"); t.className = "toast"; t.textContent = msg;
+  document.body.appendChild(t);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { t.remove(); }, 2200);
+}
+
+/* ================= v1.4 GitHub云备份 + 开机自检 + 收件箱 + 下载整套 =================
+   移植自学习笔记 v2.0/v2.1/v2.2，键名 xt_gh_*（学习笔记用 bg_gh_*，互不干扰）。
+   完整设计思路与协同协议见学习笔记.html 代码顶部（两边以那份为准）。 */
+var XT_GH_USER = "xt_gh_user", XT_GH_TOK = "xt_gh_tok", XT_GH_REPO = "xt_gh_repo",
+    XT_GH_LAST = "xt_gh_last", XT_GH_CHECK = "xt_gh_check";
+var SW_VERSION = "1.6.3";
+/* v1.4.8 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
+(function(){
+  var HX_MAP=[["xt_gh_user", "hx_gh_user"], ["xt_gh_tok", "hx_gh_tok"], ["xt_gh_repo", "hx_gh_repo"]];
+  function hxSync(){
+    for(var i=0;i<HX_MAP.length;i++){
+      var own=localStorage.getItem(HX_MAP[i][0]), sh=localStorage.getItem(HX_MAP[i][1]);
+      if(own && own!==sh) localStorage.setItem(HX_MAP[i][1], own);
+      else if(!own && sh) localStorage.setItem(HX_MAP[i][0], sh);
+    }
+  }
+  hxSync(); setInterval(hxSync, 2000);
+  /* v1.4.10 「问AI」的 key/模型 也进公共钱罐：store.ai.key ↔ hx_apikey、store.ai.model ↔ hx_aimodel
+     （自己的有就写公共的；自己空、公共有就抄过来——习题学习填一次，PPT工坊等全家都能用） */
+  function hxAiSync(){
+    try{
+      if(typeof store==="undefined" || !store) return;
+      if(!store.ai) store.ai={};
+      var sh=localStorage.getItem("hx_apikey")||"";
+      var shm=localStorage.getItem("hx_aimodel")||"";
+      if(store.ai.key && store.ai.key!==sh) localStorage.setItem("hx_apikey", store.ai.key);
+      else if(!store.ai.key && sh){ store.ai.key=sh; if(typeof saveStore==="function") saveStore(); }
+      if(store.ai.model && store.ai.model!==shm) localStorage.setItem("hx_aimodel", store.ai.model);
+      else if(!store.ai.model && shm){ store.ai.model=shm; if(typeof saveStore==="function") saveStore(); }
+    }catch(e){}
+  }
+  hxAiSync(); setInterval(hxAiSync, 2000);
+})();
+/* 主界面刷新：壳里打开软件时顺带检查套装主界面(index.html)有没有新版，有就换新（解决主界面自己不会更新的鸡生蛋问题） */
+function hxIndexRefresh(){
+  if(!window.LearnShell || !window.LearnShell.applyUpdate) return;
+  if(typeof ghCfg!=="function" || typeof cmpVer!=="function") return;
+  var c=ghCfg(); if(!(c.user && c.tok && c.repo)) return;
+  var H={"Authorization":"token "+c.tok, "Accept":"application/vnd.github+json"};
+  var _base="https://api.github.com/repos/"+encodeURIComponent(c.user)+"/"+encodeURIComponent(c.repo)+"/contents/";
+  fetch(_base+encodeURIComponent("version-index.json"), { headers: H }).then(function(r){ if(!r.ok) return null; return r.json(); }).then(function(vf){
+    if(!vf) return;
+    var info; try{ info=JSON.parse(ghB64dec(vf.content||"")); }catch(e){ return; }
+    var cur=localStorage.getItem("hx_index_ver")||"1.0.0";
+    if(!info || !info.version || cmpVer(info.version, cur)<=0) return;
+    fetch(_base+encodeURIComponent("index.html"), { headers: H }).then(function(r){ if(!r.ok) return null; return r.json(); }).then(function(sf){
+      if(!sf) return;
+      var b64=ghB64enc(ghB64dec(sf.content||""));
+      try{ if(window.LearnShell.applyUpdate("index.html", b64)) localStorage.setItem("hx_index_ver", info.version); }catch(e){}
+    });
+  }).catch(function(){});
+}
+setTimeout(hxIndexRefresh, 6000);
+
+
+var ghSuspend = false, ghAutoTimer = null, ghVerPending = null;
+
+function ghCfg() {
+  return {
+    user: (localStorage.getItem(XT_GH_USER) || "").replace(/^\s+|\s+$/g, ""),
+    tok: (localStorage.getItem(XT_GH_TOK) || "").replace(/^\s+|\s+$/g, ""),
+    repo: (localStorage.getItem(XT_GH_REPO) || "").replace(/^\s+|\s+$/g, "")
+  };
+}
+function ghReady() { var c = ghCfg(); return !!(c.user && c.tok && c.repo); }
+function ghHeaders() { return { "Authorization": "token " + ghCfg().tok, "Accept": "application/vnd.github+json" }; }
+function ghFileUrl(name) {
+  var c = ghCfg();
+  return "https://api.github.com/repos/" + encodeURIComponent(c.user) + "/" +
+         encodeURIComponent(c.repo) + "/contents/" + encodeURIComponent(name);
+}
+/* 带超时的 fetch（本文件没有 fetchWithTimeout，用 AbortController 实现 20 秒） */
+function ghFetch(url, opts) {
+  return new Promise(function (resolve, reject) {
+    var ctrl = new AbortController();
+    var timer = setTimeout(function () { ctrl.abort(); }, 20000);
+    fetch(url, Object.assign({}, opts || {}, { signal: ctrl.signal })).then(function (r) {
+      clearTimeout(timer); resolve(r);
+    }, function (e) {
+      clearTimeout(timer);
+      reject(new Error(e && e.name === "AbortError" ? "连接超时（20秒），网络可能不通" : "网络不通，请求没到达 GitHub"));
+    });
+  });
+}
+function ghB64enc(s) { return btoa(unescape(encodeURIComponent(s))); }
+function ghB64dec(s) { return decodeURIComponent(escape(atob(String(s).replace(/\s+/g, "")))); }
+/* v1.4.6 内容指纹：FNV-1a 32位，对账用 */
+function strHash(s) {
+  var h = 0x811c9dc5;
+  for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = (h * 0x01000193) >>> 0; }
+  return ("0000000" + h.toString(16)).slice(-8);
+}
+function ghErrText(status, body) {
+  if (status === 401) return "Token 失效或没权限，检查 Token";
+  if (status === 404) return "仓库不存在或 Token 没勾选这个仓库";
+  return "HTTP " + status + "：" + String(body || "").replace(/\s+/g, " ").slice(0, 150);
+}
+function ghSaveCfg() {
+  try {
+    localStorage.setItem(XT_GH_USER, document.getElementById("ghUser").value.replace(/^\s+|\s+$/g, ""));
+    localStorage.setItem(XT_GH_TOK, document.getElementById("ghTok").value.replace(/^\s+|\s+$/g, ""));
+    localStorage.setItem(XT_GH_REPO, document.getElementById("ghRepo").value.replace(/^\s+|\s+$/g, ""));
+    toast("💾 已保存");
+  } catch (e) { toast("保存失败：浏览器禁止了本地存储"); }
+}
+function ghSaveStatus(ok, errMsg) {
+  try {
+    localStorage.setItem(XT_GH_LAST, JSON.stringify(ok
+      ? { t: Date.now(), ok: true }
+      : { t: Date.now(), ok: false, err: String(errMsg || "未知原因") }));
+  } catch (e) {}
+}
+function ghStatusRender() {
+  var s = "上次备份：未备份过";
+  try {
+    var raw = localStorage.getItem(XT_GH_LAST);
+    if (raw) {
+      var o = JSON.parse(raw);
+      if (o && o.ok) s = "上次备份：" + new Date(o.t).toLocaleString() + " ✅";
+      else if (o) s = "备份失败：" + (o.err || "未知原因");
+    }
+  } catch (e) {}
+  document.getElementById("ghStatus").textContent = s;
+}
+/* push：备份内容=整个 store（题库+进度+AI设置，含api key，私库自用） */
+function ghPush(onDone) {
+  var metaJson = null; /* v1.4.6 对账元信息 */
+  var totalQ = 0;
+  (store.banks || []).forEach(function (b) { totalQ += (b.questions || []).length; });
+  if (!store.banks || store.banks.length === 0 || totalQ === 0) {
+    if (onDone) onDone("empty", 0); /* 空题库不push：防空备份覆盖云端好备份 */
+    return;
+  }
+  ghFetch(ghFileUrl("xiti-backup.json"), { headers: ghHeaders() }).then(function (resp) {
+    if (resp.status === 404) return null;
+    if (!resp.ok) return resp.text().then(function (t) { throw new Error(ghErrText(resp.status, t)); });
+    return resp.json();
+  }).then(function (file) {
+    var payload = { version: 1, savedAt: new Date().toISOString(), store: store };
+    var payloadStr = JSON.stringify(payload);
+    /* v1.4.4 双通道备份：壳APP里同时写一份到授权文件夹（本地保险副本）。
+       只写不读、失败静默不拖累云备份；浏览器里自动跳过。 */
+    metaJson = JSON.stringify({ savedAt: payload.savedAt, hash: strHash(payloadStr), count: (store.banks || []).length });
+    try {
+      if (window.LearnShell && window.LearnShell.folderSet && window.LearnShell.folderSet()) {
+        window.LearnShell.writeFile("xiti-backup.json", ghB64enc(payloadStr));
+        window.LearnShell.writeFile("backup-meta-xiti.json", ghB64enc(metaJson)); /* v1.4.6 文件夹侧对账元信息 */
+      }
+    } catch (e) {}
+    var body = { message: "习题学习备份 " + new Date().toLocaleString(), content: ghB64enc(payloadStr) };
+    if (file && file.sha) body.sha = file.sha;
+    return ghFetch(ghFileUrl("xiti-backup.json"), {
+      method: "PUT", headers: ghHeaders(), body: JSON.stringify(body)
+    }).then(function (resp2) {
+      if (!resp2.ok) return resp2.text().then(function (t) { throw new Error(ghErrText(resp2.status, t)); });
+    });
+  }).then(function () {
+    ghSaveStatus(true); ghStatusRender();
+    if (typeof locStatusRender === "function") locStatusRender(); /* v1.4.5 本地备份状态同步刷新 */
+    /* v1.4.6 云端对账元信息（几KB）；失败静默，不影响备份本身 */
+    if (metaJson) {
+      ghFetch(ghFileUrl("backup-meta-xiti.json"), { headers: ghHeaders() }).then(function (r) {
+        if (r.status === 404 || !r.ok) return null;
+        return r.json();
+      }).then(function (f) {
+        var body = { message: "对账元信息", content: ghB64enc(metaJson) };
+        if (f && f.sha) body.sha = f.sha;
+        return ghFetch(ghFileUrl("backup-meta-xiti.json"), { method: "PUT", headers: ghHeaders(), body: JSON.stringify(body) });
+      }).catch(function () {});
+    }
+    if (typeof locReconcile === "function") locReconcile(false); /* 备份完顺手对账 */
+    if (onDone) onDone(null, totalQ);
+  }).catch(function (e) {
+    var msg = (e && e.message) ? e.message : "网络不通，备份没成功";
+    ghSaveStatus(false, msg); ghStatusRender();
+    if (onDone) onDone(msg, 0);
+  });
+}
+function ghPull(onResult) {
+  ghFetch(ghFileUrl("xiti-backup.json"), { headers: ghHeaders() }).then(function (resp) {
+    if (resp.status === 404) { onResult("云端还没有备份文件（第一次用请先点「☁️ 立即备份」）。"); return null; }
+    if (!resp.ok) return resp.text().then(function (t) { onResult(ghErrText(resp.status, t)); return null; });
+    return resp.json();
+  }).then(function (file) {
+    if (!file) return;
+    try {
+      var payload = JSON.parse(ghB64dec(file.content || ""));
+      if (!payload || !payload.store || !Array.isArray(payload.store.banks)) throw new Error("bad");
+      onResult(null, payload);
+    } catch (e) { onResult("云端备份文件读不懂（内容可能损坏）。"); }
+  }).catch(function (e) {
+    onResult((e && e.message) ? e.message : "网络不通，恢复没成功");
+  });
+}
+function ghAskRestore(payload, srcLabel) {
+  var when = payload.savedAt ? new Date(payload.savedAt).toLocaleString() : "未知时间";
+  var n = payload.store.banks.length;
+  if (!confirm((srcLabel || "云端") + "有 " + n + " 个题库（备份于 " + when + "）。恢复将覆盖本机现有题库和学习记录，确定吗？")) return;
+  ghSuspend = true;
+  store = payload.store;
+  saveStore(); /* 挂起期间不触发自动备份 */
+  ghSuspend = false;
+  renderBanks();
+  if (currentMode === "root") updateRootPanel();
+  if (currentMode === "shift") updateShiftPanel();
+  toast("📥 已恢复 " + n + " 个题库");
+}
+/* ==================== v1.4.5 本地备份：状态 + 从文件夹恢复 ====================
+   双通道备份的另一半：壳APP里云备份会同时写 xiti-backup.json 到授权文件夹。
+   打开软件亮出本地备份状态；「从文件夹恢复」不联网，确认流程同云端恢复。 */
+function locBackupAvailable() {
+  return !!(window.LearnShell && window.LearnShell.folderSet && window.LearnShell.folderSet());
+}
+function locStatusRender() {
+  var el = document.getElementById("locStatus");
+  if (!el) return;
+  if (!locBackupAvailable()) {
+    el.textContent = "本地备份：只在壳APP里可用（装好壳APP并授权文件夹后，每次云备份会同时存一份到文件夹）";
+    return;
+  }
+  try {
+    var list = JSON.parse(window.LearnShell.listFiles() || "[]");
+    var hit = null;
+    for (var i = 0; i < list.length; i++) { if (list[i].name === "xiti-backup.json") { hit = list[i]; break; } }
+    if (!hit) { el.textContent = "本地备份：📭 文件夹里还没有（点「☁️ 立即备份」一次就会同时存进文件夹）"; return; }
+    var extra = "";
+    try {
+      var b64 = window.LearnShell.readFile("xiti-backup.json");
+      if (b64) {
+        var data = JSON.parse(ghB64dec(b64));
+        var banks = data.store && Array.isArray(data.store.banks) ? data.store.banks.length : "?";
+        extra = "，" + (data.savedAt ? new Date(data.savedAt).toLocaleString() : "时间未知") + "，共 " + banks + " 个题库";
+      }
+    } catch (e) { extra = "（内容读不出来，可能不是本软件写的）"; }
+    el.textContent = "本地备份：✅ 文件夹里有" + extra;
+  } catch (e) {
+    el.textContent = "本地备份：状态读不出来（" + ((e && e.message) || e) + "）";
+  }
+}
+function locManualPull() {
+  if (!locBackupAvailable()) { toast("本地备份只在壳APP里可用"); return; }
+  var b64 = window.LearnShell.readFile("xiti-backup.json");
+  if (!b64) { toast("📭 文件夹里还没有本地备份"); return; }
+  var payload;
+  try { payload = JSON.parse(ghB64dec(b64)); } catch (e) { payload = null; }
+  if (!payload || !payload.store) { toast("本地备份文件读不懂"); return; }
+  ghAskRestore(payload, "本地文件夹备份");
+}
+/* v1.4.6 对账：文件夹备份 vs 云端备份，互相印证。
+   判断标准 = 时间顺序（savedAt新的为准）+ 内容指纹（strHash，防"同时刻但写坏"）。
+   元信息只有几十字节：文件夹侧免费读，云端侧只下一个几KB小文件。 */
+function locReconcile(manual) {
+  var el = document.getElementById("recStatus");
+  if (!el) return;
+  if (!locBackupAvailable()) {
+    el.textContent = "对账：只在壳APP里可用（需要文件夹里的本地备份来对照）";
+    return;
+  }
+  if (!ghReady()) {
+    el.textContent = "对账：先填好云设置，才能和云端对照";
+    return;
+  }
+  var loc = null;
+  try {
+    var mb64 = window.LearnShell.readFile("backup-meta-xiti.json");
+    if (mb64) loc = JSON.parse(ghB64dec(mb64));
+  } catch (e) {}
+  if (!loc) {
+    var b64 = window.LearnShell.readFile("xiti-backup.json");
+    if (b64) {
+      try {
+        var raw = ghB64dec(b64);
+        var data = JSON.parse(raw);
+        loc = { savedAt: data.savedAt, hash: strHash(raw), count: data.store && Array.isArray(data.store.banks) ? data.store.banks.length : 0 };
+      } catch (e) {}
+    }
+  }
+  if (!loc) { el.textContent = "对账：📭 文件夹里还没有备份，先备份一次"; return; }
+  var locWhen = loc.savedAt ? new Date(loc.savedAt).toLocaleString() : "时间未知";
+  el.textContent = "对账：正在和云端对照…（本地 " + locWhen + "）";
+  ghFetch(ghFileUrl("backup-meta-xiti.json"), { headers: ghHeaders() }).then(function (resp) {
+    if (resp.status === 404) {
+      /* 旧版备份没有元信息：整个取回来算一次（只此一回） */
+      return ghFetch(ghFileUrl("xiti-backup.json"), { headers: ghHeaders() }).then(function (r2) {
+        if (!r2.ok) throw new Error("云端备份读不到");
+        return r2.json().then(function (file) {
+          var raw = ghB64dec(file.content || "");
+          var data = JSON.parse(raw);
+          return { savedAt: data.savedAt, hash: strHash(raw), count: data.store && Array.isArray(data.store.banks) ? data.store.banks.length : 0 };
+        });
+      });
+    }
+    if (!resp.ok) return resp.text().then(function (t) { throw new Error(ghErrText(resp.status, t)); });
+    return resp.json().then(function (file) { return JSON.parse(ghB64dec(file.content || "")); });
+  }).then(function (rem) {
+    if (!rem || !rem.hash) { el.textContent = "对账：云端元信息读不懂，建议点「☁️ 立即备份」刷新一次"; return; }
+    var remWhen = rem.savedAt ? new Date(rem.savedAt).toLocaleString() : "时间未知";
+    if (loc.hash === rem.hash) {
+      el.textContent = "对账：✅ 两边一致（" + locWhen + "，" + loc.count + " 个题库，指纹相符）";
+      if (manual) toast("✅ 对账通过：文件夹和云端备份一致");
+    } else {
+      var lt = loc.savedAt ? new Date(loc.savedAt).getTime() : 0;
+      var rt = rem.savedAt ? new Date(rem.savedAt).getTime() : 0;
+      var tip;
+      if (lt > rt) tip = "📂 文件夹的更新（" + locWhen + "），☁️ 云端旧（" + remWhen + "）——要恢复就用「从文件夹恢复」";
+      else if (rt > lt) tip = "☁️ 云端的更新（" + remWhen + "），📂 文件夹旧（" + locWhen + "）——要恢复就用「从云端恢复」，并建议再备份一次让两边齐平";
+      else tip = "⚠️ 时间相同但内容指纹不符（可能有一次写入中途出错）——建议点「☁️ 立即备份」重写两边";
+      el.textContent = "对账：⚠️ 两边不一致！" + tip;
+      if (manual) toast("⚠️ 对账发现两边不一致，看状态行说明");
+    }
+  }).catch(function (e) {
+    el.textContent = "对账：云端连不上（" + ((e && e.message) || "网络不通") + "）——本地备份 " + locWhen + " 在手，不影响使用";
+  });
+}
+function ghManualPush() {
+  if (!ghReady()) { toast("请先填好用户名、Token、仓库名并保存设置"); document.getElementById("ghCard").open = true; return; }
+  toast("☁️ 正在备份…");
+  ghPush(function (err, count) {
+    if (err) { if (err !== "empty") toast("备份失败：" + err); else toast("本机还没有题目，跳过备份"); return; }
+    toast("✅ 已备份到云端（" + count + " 道题）");
+  });
+}
+function ghManualPull() {
+  if (!ghReady()) { toast("请先填好用户名、Token、仓库名并保存设置"); document.getElementById("ghCard").open = true; return; }
+  toast("📥 正在连接 GitHub…");
+  ghPull(function (err, payload) {
+    if (err) { toast("恢复失败：" + err); return; }
+    ghAskRestore(payload);
+  });
+}
+function scheduleGhAutoBackup() {
+  if (!ghReady()) return;
+  if (ghAutoTimer) clearTimeout(ghAutoTimer);
+  ghAutoTimer = setTimeout(function () {
+    ghAutoTimer = null;
+    ghPush(function () {});
+  }, 10000);
+}
+/* ---- 开机自检（读 version-xiti.json 比对 SW_VERSION，三态条都明说） ---- */
+function cmpVer(a, b) {
+  var pa = String(a).split("."), pb = String(b).split(".");
+  for (var i = 0; i < Math.max(pa.length, pb.length); i++) {
+    var x = parseInt(pa[i] || "0", 10), y = parseInt(pb[i] || "0", 10);
+    if (x > y) return 1; if (x < y) return -1;
+  }
+  return 0;
+}
+function updShow(kind, text, showDl) {
+  var bar = document.getElementById("updBar");
+  bar.className = kind || "";
+  document.getElementById("updText").textContent = text;
+  document.getElementById("updBtnRow").classList.toggle("hidden", !showDl);
+  bar.classList.remove("hidden");
+}
+function updHide() { document.getElementById("updBar").classList.add("hidden"); }
+function ghCheckRender(line) {
+  document.getElementById("ghCheck").textContent = line;
+  try { localStorage.setItem(XT_GH_CHECK, line); } catch (e) {}
+}
+function ghSelfCheck(manual) {
+  if (!ghReady()) {
+    if (manual) { toast("请先填好用户名、Token、仓库名并保存设置，才能自检"); document.getElementById("ghCard").open = true; }
+    return;
+  }
+  ghCheckRender("自检：正在检查…（① 连线路 ② 比版本）");
+  ghFetch(ghFileUrl("version-xiti.json"), { headers: ghHeaders() }).then(function (resp) {
+    if (resp.status === 404) {
+      ghCheckRender("自检：" + new Date().toLocaleString() + " ✅ 线路通（云端还没放版本信息，暂无法比对）");
+      updShow("ok", "✅ GitHub 线路通畅\n本机版本 v" + SW_VERSION + "（云端还没有版本信息可比对）\n备份功能可正常使用", false);
+      setTimeout(updHide, 8000);
+      return null;
+    }
+    if (!resp.ok) return resp.text().then(function (t) { throw new Error(ghErrText(resp.status, t)); });
+    return resp.json();
+  }).then(function (file) {
+    if (!file) return;
+    var info;
+    try { info = JSON.parse(ghB64dec(file.content || "")); } catch (e) { info = null; }
+    if (!info || !info.version) {
+      ghCheckRender("自检：" + new Date().toLocaleString() + " ✅ 线路通（版本信息读不懂，暂无法比对）");
+      updShow("ok", "✅ GitHub 线路通畅\n本机版本 v" + SW_VERSION + "\n备份功能可正常使用", false);
+      setTimeout(updHide, 8000);
+      return;
+    }
+    if (cmpVer(info.version, SW_VERSION) > 0) {
+      ghCheckRender("自检：" + new Date().toLocaleString() + " ✅ 线路通　🎉 网上有新版 v" + info.version + "（本机 v" + SW_VERSION + "），建议下载替换");
+      ghVerPending = info;
+      updShow("", "🎉 网上有新版 v" + info.version + "，你的是 v" + SW_VERSION + "\n" +
+        (info.note ? "新版内容：" + info.note + "\n" : "") +
+        "点下面按钮下载到本机，之后从下载目录打开新文件替换旧的（也可以点云备份卡片里「⬇️ 下载整套软件」两个一起下）", true);
+    } else {
+      ghCheckRender("自检：" + new Date().toLocaleString() + " ✅ 线路通　已是最新版 v" + SW_VERSION);
+      updShow("ok", "✅ GitHub 线路通畅\n已是最新版 v" + SW_VERSION + "，无需下载\n备份功能可正常使用", false);
+      setTimeout(updHide, 8000);
+    }
+  }).catch(function (e) {
+    var msg = (e && e.message) ? e.message : "网络不通";
+    ghCheckRender("自检：" + new Date().toLocaleString() + " ❌ 连不上 GitHub（" + msg + "）——不影响使用，题目都在本机，等网络好了备份会自动重试");
+    updShow("bad", "❌ 这次没能连上 GitHub（" + msg + "）\n不影响使用：刷题照常，数据都在本机\n等网络好了自动备份会自己重试；也可以稍后再点「🔍 自检」", false);
+  });
+}
+/* ---- 下载（单个/整套）：fetch 仓库副本 → Blob → a[download] ---- */
+function ghDlFile(dlName, saveAs, onDone) {
+  ghFetch(ghFileUrl(dlName), { headers: ghHeaders() }).then(function (resp) {
+    if (!resp.ok) return resp.text().then(function (t) { throw new Error(ghErrText(resp.status, t)); });
+    return resp.json();
+  }).then(function (file) {
+    if (window.LearnShell) {
+      /* 壳APP：自更新（写进APP内部www目录，重启生效）+ 授权文件夹里再存一份备份 */
+      var b64html = ghB64enc(ghB64dec(file.content || ""));
+      var okSelf = window.LearnShell.applyUpdate(saveAs, b64html);
+      try { if (window.LearnShell.folderSet()) window.LearnShell.writeFile(saveAs, b64html); } catch (e) {}
+      if (okSelf) { onDone(null); return; }
+    }
+    var blob = new Blob([ghB64dec(file.content || "")], { type: "text/html;charset=utf-8" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = saveAs;
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    onDone(null);
+  }).catch(function (e) { onDone((e && e.message) || "网络不通"); });
+}
+function ghDownloadNew() {
+  if (!ghVerPending || !ghVerPending.dl) { toast("⚠️ 云端没给下载文件，找 AI 要新版即可"); return; }
+  toast("⏳ 正在下载新版…");
+  ghDlFile(ghVerPending.dl, window.LearnShell ? "习题学习.html" : ("习题学习_v" + ghVerPending.version + ".html"), function (err) {
+    if (err) { toast("❌ 下载失败：" + err + "，也可找 AI 直接要文件"); return; }
+    toast(window.LearnShell ? "✅ 新版已装好，重启APP生效（文件夹里也存了一份）" : "✅ 新版已下载，到「下载」目录找新文件打开");
+  });
+}
+function ghDownloadAll() {
+  if (!ghReady()) { toast("请先填好用户名、Token、仓库名并保存设置"); document.getElementById("ghCard").open = true; return; }
+  toast("⏳ 正在下载 学习笔记…（1/5）");
+  ghDlFile("software-notes.html", "学习笔记.html", function (err1) {
+    if (err1) { toast("❌ 学习笔记下载失败：" + err1); return; }
+    setTimeout(function () {
+      toast("⏳ 正在下载 习题学习…（2/5）");
+      ghDlFile("software-xiti.html", "习题学习.html", function (err2) {
+        if (err2) { toast("❌ 习题学习下载失败：" + err2 + "（学习笔记已下载）"); return; }
+        setTimeout(function () {
+          toast("⏳ 正在下载 文件桥…（3/5）");
+          ghDlFile("software-bridge.html", "文件桥.html", function (err3) {
+            if (err3) { toast("❌ 文件桥下载失败：" + err3 + "（前两个已下载）"); return; }
+            setTimeout(function () {
+              toast("⏳ 正在下载 血气分析…（4/5）");
+              ghDlFile("software-xueqi.html", "血气分析.html", function (err4) {
+                if (err4) { toast("❌ 血气分析下载失败：" + err4 + "（前三个已下载）"); return; }
+                setTimeout(function () {
+                  toast("⏳ 正在下载 PPT工坊…（5/5）");
+                  ghDlFile("software-ppt.html", "PPT工坊.html", function (err5) {
+                    if (err5) { toast("❌ PPT工坊下载失败：" + err5 + "（前四个已下载）"); return; }
+                    toast(window.LearnShell ? "✅ 五个软件都已装好，重启APP生效（文件夹里也各存了一份）" : "✅ 五个软件都已下载，到下载列表里找");
+                  });
+                }, 900);
+              });
+            }, 900);
+          });
+        }, 900);
+      });
+    }, 900);
+  });
+}
+/* ---- 收件箱：学习笔记 v2.2+ 出好题写 'xitixuexi_inbox'，这里启动时收 ---- */
+function ghCheckInbox() {
+  var raw;
+  try { raw = localStorage.getItem("xitixuexi_inbox"); } catch (e) { return; }
+  if (!raw) return;
+  var box;
+  try { box = JSON.parse(raw); } catch (e) { box = null; }
+  if (!box || !box.text) { try { localStorage.removeItem("xitixuexi_inbox"); } catch (e) {} return; }
+  var qs = parseQuestions(box.text);
+  if (!qs.length) { toast("📮 收到学习笔记发来的题目，但没解析出来（已保留，下次打开再试）"); return; }
+  try { localStorage.removeItem("xitixuexi_inbox"); } catch (e) {}
+  toast("📮 收到学习笔记发来的 " + qs.length + " 道题");
+  enqueueImport(box.title || "学习笔记出题", qs, "normal");
+}
+/* ---- v1.4 初始化 ---- */
+function ghInit() {
+  document.getElementById("ghUser").value = localStorage.getItem(XT_GH_USER) || "hongxiaotao177";
+  document.getElementById("ghRepo").value = localStorage.getItem(XT_GH_REPO) || "xuexi-backup";
+  document.getElementById("ghTok").value = localStorage.getItem(XT_GH_TOK) || "";
+  ghStatusRender();
+  try {
+    var lastCheck = localStorage.getItem(XT_GH_CHECK);
+    if (lastCheck) document.getElementById("ghCheck").textContent = lastCheck;
+  } catch (e) {}
+  /* 本机空 + 配置齐全 → 自动 pull（confirm 防误覆盖） */
+  var totalQ = 0;
+  (store.banks || []).forEach(function (b) { totalQ += (b.questions || []).length; });
+  if (totalQ === 0 && ghReady()) {
+    ghPull(function (err, payload) { if (!err && payload) ghAskRestore(payload); });
+  }
+  /* 收件箱收题（在学习笔记发过题的前提下） */
+  ghCheckInbox();
+  /* 打开 3 秒后自动自检一次（配置齐全才查） */
+  setTimeout(function () { if (ghReady()) ghSelfCheck(false); }, 3000);
+  locStatusRender(); /* v1.4.5 打开软件就亮出本地备份状态 */
+  /* v1.4.6 打开软件 4 秒后自动对账一次（壳APP+云配置齐全才查） */
+  setTimeout(function () { if (locBackupAvailable() && ghReady()) locReconcile(false); }, 4000);
+}
+
+/* ================= 初始化 ================= */
+setMode(currentMode);
+setShiftDir(shiftDir);
+renderBanks();
+ghInit(); /* v1.4 */
+</script>
+<!-- 导出分身弹窗 -->
+<div id="export-modal" class="modal-mask hidden" onclick="if(event.target===this)closeExportModal()">
+  <div class="modal">
+    <h3>导出分身</h3>
+    <div style="font-size:14px;color:#666;margin-bottom:10px">如果自动下载没反应，请用下面任一方法：</div>
+    <div id="export-link-area" style="margin-bottom:10px"></div>
+    <div class="btn-row">
+      <button onclick="copyExportCode()">📋 复制全部代码</button>
+      <button class="ghost" onclick="closeExportModal()">关闭</button>
+    </div>
+    <div style="font-size:13px;color:#888;margin-top:8px">提示：复制代码后→粘贴到手机备忘录→保存为.html文件</div>
+  </div>
+</div>
+
+</body>
+</html>
