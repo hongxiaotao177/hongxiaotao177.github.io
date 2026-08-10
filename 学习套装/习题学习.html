@@ -442,6 +442,11 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 - 间隔重复（熟悉的题隔几天再现）
 - 老.doc支持、选择题(A/B/C/D)题型
 ================================================================================
+    v1.7.1 2026-08-10 标记全部可删：
+    ①注释展开区加「🗑 删这条」（以前只能绕去修改本题）；
+    ②修改本题窗加「🔁 清零反复学次数」（有标记才显示）；
+    定标本有清除按钮。另修：version-xiti.json 的 dl 字段 v1.5.0~v1.7.0 推送时丢失
+    导致「下载新版到本机」按钮失效，已补回（教训：版本文件必须照 {version,dl,note} 老格式）。
     v1.7.0 2026-08-10 四档+反复学：
     ①档位三升四：陌生(1)/一般(2)/中间(3)/熟悉(4)；migLv4迁移旧数据（旧熟悉3→4，
       仅跑一次，loadStore/分身恢复/云端恢复三处都挂）；
@@ -499,7 +504,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>习题学习 v1.7.0</title>
+<title>习题学习 v1.7.1</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f2f4f8; color: #222; }
@@ -579,7 +584,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 
 <script id="embedded-data" type="application/json">null</script>
 
-<header>📖 习题学习<span class="ver">v1.7.0</span></header>
+<header>📖 习题学习<span class="ver">v1.7.1</span></header>
 
 <!-- ========== 首页 ========== -->
 <div id="page-home" class="page">
@@ -838,6 +843,8 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
     <!-- v1.6：3个固定框→动态列表 -->
     <div id="edit-notes"></div>
     <button class="ghost" style="font-size:13px;padding:6px 10px;margin-bottom:6px" onclick="editAddNote()">➕ 加一条注释</button>
+    <!-- v1.7.1：本题有反复学标记时才显示清零按钮 -->
+    <button class="ghost hidden" id="rep-clear-btn" style="font-size:13px;padding:6px 10px;margin-bottom:6px" onclick="repClear()">🔁 清零反复学次数</button>
     <div class="btn-row">
       <button onclick="saveEdit()">保存</button>
       <button class="ghost" onclick="closeEdit()">取消</button>
@@ -1634,8 +1641,18 @@ function toggleNote(ni) {
   var area = document.getElementById("note-area");
   if (area.getAttribute("data-open") === String(ni)) { area.innerHTML = ""; area.setAttribute("data-open", ""); return; }
   area.innerHTML = "<div class=\"a-text\" style=\"color:#5a4a1f;background:#fdf8ec;border-radius:8px;padding:12px\">" + esc(it.n[ni]) + "</div>"
-    + "<div style=\"text-align:right;margin-top:6px\"><button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"addMarkFromSelection()\">📍 定标选中词</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"noteManualEdit(" + ni + ")\">✏️ 改这条</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"aiRewriteNote(" + ni + ")\">🤖 让AI整理这条注释</button></div>";
+    + "<div style=\"text-align:right;margin-top:6px\"><button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"addMarkFromSelection()\">📍 定标选中词</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"noteManualEdit(" + ni + ")\">✏️ 改这条</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"aiRewriteNote(" + ni + ")\">🤖 让AI整理这条注释</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px;color:#c0534f\" onclick=\"noteDelete(" + ni + ")\">🗑 删这条</button></div>";
   area.setAttribute("data-open", String(ni));
+}
+/* v1.7.1：注释可单独删除（以前只能绕去修改本题） */
+function noteDelete(ni) {
+  var it = curList()[session.pos];
+  if (!confirm("删掉注释" + (ni + 1) + "？\n\n" + (it.n[ni] || "").slice(0, 40)) || !it.n) return;
+  it.n.splice(ni, 1);
+  store.banks.forEach(function (b) { if (b.id === it.bankId) { b.questions[it.idx].n = it.n; } });
+  saveStore();
+  if (it.type !== "shift") reveal(); else revealShift();
+  toast("已删除，剩" + it.n.length + "条注释");
 }
 /* v1.6.1：注释手动编辑（以前只能AI整理或进修改本题窗，太绕） */
 function noteManualEdit(ni) {
@@ -1815,6 +1832,8 @@ function openEdit() {
   document.getElementById("edit-a").value = it.a;
   /* v1.6：注释动态列表，旧数据（含中间空位）原样摆出来 */
   editNoteRows(it.n || []);
+  /* v1.7.1：有反复学标记才显示清零按钮 */
+  document.getElementById("rep-clear-btn").classList.toggle("hidden", getRep(it.bankId, it.idx) <= 0);
   document.getElementById("edit-modal").classList.remove("hidden");
 }
 /* v1.6 动态注释列表 */
@@ -1832,6 +1851,17 @@ function editAddNote() {
   document.getElementById("edit-notes").insertAdjacentHTML("beforeend", editNoteRowHtml(""));
 }
 function closeEdit() { taClose(); document.getElementById("edit-modal").classList.add("hidden"); }
+/* v1.7.1：清零本题反复学标记（🔁×次数可删除） */
+function repClear() {
+  var it = curList()[session.pos];
+  if (!confirm("把这题的反复学标记（🔁×" + getRep(it.bankId, it.idx) + "）清零吗？档位和学习时间不受影响")) return;
+  var k = pKey(it.bankId, it.idx);
+  var p = store.progress[k];
+  if (p) { if (typeof p === "number") store.progress[k] = { l: p, t: 0, r: 0 }; else p.r = 0; }
+  saveStore();
+  document.getElementById("rep-clear-btn").classList.add("hidden");
+  toast("🔁 标记已清零");
+}
 function taClose() {
   var list = document.querySelectorAll("textarea.ta-full");
   for (var i = 0; i < list.length; i++) { list[i].classList.remove("ta-full"); list[i].blur(); }
@@ -2290,7 +2320,7 @@ function toast(msg) {
    完整设计思路与协同协议见学习笔记.html 代码顶部（两边以那份为准）。 */
 var XT_GH_USER = "xt_gh_user", XT_GH_TOK = "xt_gh_tok", XT_GH_REPO = "xt_gh_repo",
     XT_GH_LAST = "xt_gh_last", XT_GH_CHECK = "xt_gh_check";
-var SW_VERSION = "1.7.0";
+var SW_VERSION = "1.7.1";
 /* v1.4.8 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["xt_gh_user", "hx_gh_user"], ["xt_gh_tok", "hx_gh_tok"], ["xt_gh_repo", "hx_gh_repo"]];
