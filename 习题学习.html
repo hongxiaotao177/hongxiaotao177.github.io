@@ -442,6 +442,40 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 - 间隔重复（熟悉的题隔几天再现）
 - 老.doc支持、选择题(A/B/C/D)题型
 ================================================================================
+    v1.6.3 2026-08-10 问AI后台存注释失败的根治：
+    现象=后台回答弹出后点「📎 存入这道题注释」，回原题看注释没有形成；
+    根因=aiCommitNote残留旧版"注释满3条就拒存"上限（v1.6注释已改动态列表不限条数），
+    命中上限只弹一句toast、不关框也不存，用户以为已存；
+    修法=删除note/bank两处的3条上限。
+    v1.6.2 2026-08-09 定标改走常驻按钮（根治vivo手机浏览器浮动按钮不显示）：
+    现象=涂黑词后「➕ 定标」浮动按钮始终不出现（排除系统菜单遮挡，用户上下滑动验证）；
+    根因=部分国产安卓浏览器对 selectionchange/touchend 选区事件支持不全，浮动按钮方案不可靠；
+    修法=答案区按钮排+注释展开区各加常驻「📍 定标选中词」按钮，涂黑后点它即定标；
+    浮动按钮保留（桌面端方便），没涂黑就点常驻按钮会toast提示先涂黑。
+    v1.6.1 2026-08-09 注释两处补短板：
+    ①注释展开新增「✏️ 改这条」手动编辑（以前只能AI整理或绕去修改本题窗）；
+    ②注释框里涂黑词也能定标（选区检测补note-area）；
+    坑：定标浮动按钮放选区下方，被安卓系统"复制/分享"菜单整个盖住→挪到选区上方44px，
+    并补mouseup监听（桌面端划词也能出按钮）。
+    v1.6.0 2026-08-09 定标→集体形成注释 + 注释编辑器升级：
+    ①学习页涂黑题目/答案里的词→浮动「➕ 定标」按钮→词进 it.mk（虚线下划线显示），
+      可连标多个；「🤖 集体形成注释」一次AI请求给所有定标词写大白话解释，
+      自动追加成本题📎注释；没解释到的词留着下次再形成；可一键清除；
+    ②修改本题窗：3个固定注释框→动态列表（每条可改/🗑删/➕加一条，不限条数），
+      点入放大功能用focusin代理保留；旧数据（含中间空位）原样显示兼容；
+    ③startStudy的session条目带mk字段，定标同步回题库（syncMkToBank）随云备份。
+    用户拍板：定标词用下划线显示（手机上清楚）。
+    v1.5.1 2026-08-09 修v1.5.0排版坑：题库卡片加了第4个按钮「粘贴出题」后，
+    手机端flex一行放不下，中间名字统计被挤成一竖条字。现象→根因→修法：
+    现象=题库名/统计逐字竖排；根因=.bank-item不换行，按钮不缩，挤bank-info；
+    修法=.bank-item加flex-wrap:wrap、.bank-info改flex:1 1 55%，按钮自动掉第二行。
+    v1.5.0 2026-08-09 粘贴出题三升级：
+    ①题库卡片「🤖 AI出题」旁新增「📋 粘贴出题」，确认窗默认并入当前库；
+    ②解析器格式放宽：题号认（1）/①②③/1)/第1题，答案行认 答案:/【答案】/A:/参考答案: 等；
+    ③顶部粘贴导入和题库粘贴出题，解析到0题时都弹窗问「要不要AI帮忙整理」，
+      点是→Kimi把内容重排成标准格式→再解析→走正常确认窗（可自由选并入哪个库）；
+    ④导入确认窗「并入哪个库」下拉移到最上方并放大字号
+      （原来藏在库名输入框下面，用户一直没发现能并入老库）。
     v1.4.10 2026-08-06 「问AI」的 key/模型接入公共钱罐：store.ai.key↔hx_apikey、
     store.ai.model↔hx_aimodel 双向同步（hxAiSync 2秒轮询+保存时立即写）。
     从此习题学习填一次key，PPT工坊等全家软件直接能用，不再"请先设置API key"。
@@ -454,7 +488,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>习题学习 v1.4.10</title>
+<title>习题学习 v1.6.3</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f2f4f8; color: #222; }
@@ -475,9 +509,10 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
   button.active { background: #1a4d6e; }
   .btn-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
   .card { background: #fff; border-radius: 10px; padding: 14px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
-  .bank-item { display: flex; align-items: center; gap: 10px; }
+  /* v1.5.1：卡片允许换行，按钮多了自动掉到第二行（v1.5.0加第4个按钮把手机端名字统计挤成竖条的病根） */
+  .bank-item { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .bank-item input[type=checkbox] { width: 22px; height: 22px; flex-shrink: 0; }
-  .bank-info { flex: 1; min-width: 0; }
+  .bank-info { flex: 1 1 55%; min-width: 0; }
   .bank-name { font-size: 16px; font-weight: bold; word-break: break-all; }
   .bank-stats { font-size: 13px; color: #666; margin-top: 4px; }
   .tag { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 12px; margin-right: 4px; }
@@ -498,6 +533,9 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
   .q-meta { font-size: 13px; color: #888; margin-bottom: 10px; }
   .q-text { font-size: 18px; line-height: 1.7; font-weight: bold; white-space: pre-wrap; }
   .a-text { font-size: 16px; line-height: 1.7; margin-top: 14px; padding-top: 14px; border-top: 1px dashed #ccc; white-space: pre-wrap; color: #1a4d2e; }
+  /* v1.6 定标：待解释词虚线下划线；浮动定标按钮 */
+  .mk { text-decoration: underline dashed #c9a227; text-underline-offset: 3px; }
+  #mk-btn { position: fixed; z-index: 95; display: none; box-shadow: 0 2px 10px rgba(0,0,0,.2); }
   .a-cover { margin-top: 14px; text-align: center; }
   .mark-row { display: flex; gap: 8px; margin-top: 16px; }
   .mark-row button { flex: 1; padding: 14px 0; font-size: 17px; }
@@ -528,7 +566,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 
 <script id="embedded-data" type="application/json">null</script>
 
-<header>📖 习题学习<span class="ver">v1.4.10</span></header>
+<header>📖 习题学习<span class="ver">v1.6.3</span></header>
 
 <!-- ========== 首页 ========== -->
 <div id="page-home" class="page">
@@ -703,13 +741,14 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
   <div class="modal">
     <h3>确认导入</h3>
     <div id="imp-info" style="font-size:14px;color:#666;margin-bottom:8px"></div>
-    <input type="text" id="imp-name" placeholder="题库名称" style="margin-bottom:8px">
+    <!-- v1.5.0：并入哪个库的下拉移到最上方并放大（原来藏在库名框下面，用户没发现能并入老库） -->
+    <select id="imp-dest" style="width:100%;margin-bottom:8px;font-size:16px;padding:10px"></select>
+    <input type="text" id="imp-name" placeholder="题库名称（并入老库时不用填）" style="margin-bottom:8px">
     <select id="imp-type" style="width:100%;margin-bottom:8px">
       <option value="normal">普通题库</option>
       <option value="root">词根学习</option>
       <option value="shift">交班英语</option>
     </select>
-    <select id="imp-dest" style="width:100%;margin-bottom:8px"></select>
     <div class="btn-row">
       <button onclick="confirmImport()">确认导入</button>
       <button class="ghost" onclick="cancelImport()">取消</button>
@@ -720,17 +759,30 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 <!-- 粘贴导入 -->
 <div id="paste-modal" class="modal-mask hidden" onclick="if(event.target===this)closePaste()">
   <div class="modal">
-    <h3>粘贴导入习题</h3>
+    <h3 id="paste-title">粘贴导入习题</h3>
+    <input type="hidden" id="paste-dest" value="-1">
     <input type="text" id="paste-name" placeholder="题库名称" style="margin-bottom:8px">
     <select id="paste-type" style="width:100%;margin-bottom:8px">
       <option value="normal">普通题库</option>
       <option value="root">词根学习</option>
       <option value="shift">交班英语</option>
     </select>
-    <textarea id="paste-text" placeholder="把Word里的题目复制粘贴到这里。格式：数字.题目，下一行 答：答案。交班英语用 Q:中文 A:英文 格式。"></textarea>
+    <textarea id="paste-text" placeholder="把题目文字粘贴到这里。格式很宽松：1. / （1）/ ① / 第1题 都行，答案行写 答：或 答案：或 A: 都行；实在认不出会问你要不要AI帮忙整理。"></textarea>
     <div class="btn-row">
       <button onclick="doPasteImport()">确认导入</button>
       <button class="ghost" onclick="closePaste()">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- v1.5.0 AI帮忙识别格式 -->
+<div id="aihelp-modal" class="modal-mask hidden">
+  <div class="modal">
+    <h3>🤔 认不出格式</h3>
+    <div id="aihelp-info" style="font-size:14px;color:#666;margin-bottom:10px;line-height:1.6">这段内容的格式软件认不出来。<br>要不要让AI帮忙整理成标准格式？（用您存的Kimi key，费一点点额度）</div>
+    <div class="btn-row">
+      <button id="aihelp-yes" onclick="aiHelpYes()">🤖 要，AI帮忙</button>
+      <button class="ghost" onclick="closeAiHelp()">不要</button>
     </div>
   </div>
 </div>
@@ -741,10 +793,10 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
     <h3>修改本题</h3>
     <textarea id="edit-q" placeholder="题目" style="min-height:80px;margin-bottom:8px"></textarea>
     <textarea id="edit-a" placeholder="答案" style="min-height:120px"></textarea>
-    <div style="font-size:13px;color:#888;margin:8px 0 4px">注释（可留空）：</div>
-    <textarea id="edit-n1" placeholder="注释1" style="min-height:60px;margin-bottom:6px"></textarea>
-    <textarea id="edit-n2" placeholder="注释2" style="min-height:60px;margin-bottom:6px"></textarea>
-    <textarea id="edit-n3" placeholder="注释3" style="min-height:60px"></textarea>
+    <div style="font-size:13px;color:#888;margin:8px 0 4px">注释（每条可改可删，不限条数）：</div>
+    <!-- v1.6：3个固定框→动态列表 -->
+    <div id="edit-notes"></div>
+    <button class="ghost" style="font-size:13px;padding:6px 10px;margin-bottom:6px" onclick="editAddNote()">➕ 加一条注释</button>
     <div class="btn-row">
       <button onclick="saveEdit()">保存</button>
       <button class="ghost" onclick="closeEdit()">取消</button>
@@ -1002,8 +1054,9 @@ function parseQuestions(text) {
   var qs = [];
   var cur = null;
   var inAnswer = false;
-  var qRe = /^\s*\d+\s*[.、．]\s*/;
-  var aRe = /^\s*(答\s*案?\s*[:：])\s*/;
+  // v1.5.0 格式放宽：题号认 1. / 1) / （1）/ (1) / ①-⑳ / 第1题；答案行认 答:/答案:/【答案】/参考答案:/正确答案:/A:
+  var qRe = /^\s*(?:\d+\s*[.、．\):：]|（\s*\d+\s*）|\(\s*\d+\s*\)|[①-⑳]|第\s*\d+\s*题\s*[.、．:：]?)\s*/;
+  var aRe = /^\s*(?:【\s*答\s*案?\s*】|答\s*案?\s*[:：]|参考答案\s*[:：]|正确答案\s*[:：]|[Aa]\s*[:：])\s*/;
   var obsRe = /^\s*[-*+]\s*\*\*(.+?)\*\*\s*[:：]?\s*(.+)/;
   // v0.12: 交班英语 Q:/A: 格式
   var shiftQRe = /^\s*[Qq][：:]\s*(.+)/;
@@ -1078,25 +1131,79 @@ setupFileInput("file-input", "normal");
 setupFileInput("file-input-root", "root");
 setupFileInput("file-input-shift", "shift");
 
-function openPaste() { document.getElementById("paste-type").value = "normal"; openPasteModal(); }
-function openPasteRoot() { document.getElementById("paste-type").value = "root"; openPasteModal(); }
-function openPasteShift() { document.getElementById("paste-type").value = "shift"; openPasteModal(); }
+function openPaste() { resetPasteModal("normal", -1); }
+function openPasteRoot() { resetPasteModal("root", -1); }
+function openPasteShift() { resetPasteModal("shift", -1); }
+/* v1.5.0：题库卡片「📋 粘贴出题」——默认并入该库，隐藏库名/类型选择 */
+function openPasteBank(bi) {
+  var b = store.banks[bi];
+  resetPasteModal((b && b.type) || "normal", bi);
+  document.getElementById("paste-title").textContent = "📋 粘贴出题 ｜ 并入「" + (b ? b.name : "") + "」";
+  document.getElementById("paste-name").style.display = "none";
+  document.getElementById("paste-type").style.display = "none";
+}
+function resetPasteModal(type, dest) {
+  document.getElementById("paste-type").value = type;
+  document.getElementById("paste-dest").value = dest;
+  document.getElementById("paste-title").textContent = "粘贴导入习题";
+  document.getElementById("paste-name").style.display = "";
+  document.getElementById("paste-type").style.display = "";
+  openPasteModal();
+}
 function openPasteModal() { document.getElementById("paste-modal").classList.remove("hidden"); }
 function closePaste() { document.getElementById("paste-modal").classList.add("hidden"); }
 function doPasteImport() {
   var name = document.getElementById("paste-name").value.trim(); // v0.12.4：不再自动生成"粘贴题库N"，库名必填（在确认窗强制）
   var type = document.getElementById("paste-type").value;
-  var qs = parseQuestions(document.getElementById("paste-text").value);
-  if (!qs.length) { toast("没有解析到题目，请检查格式"); return; }
+  var dest = +document.getElementById("paste-dest").value; // v1.5.0：>=0 表示从题库卡片进来，默认并入该库
+  var text = document.getElementById("paste-text").value;
+  var qs = parseQuestions(text);
+  // v1.5.0：认不出格式 → 弹窗问要不要AI帮忙整理
+  if (!qs.length) { pendingPaste = { name: name, type: type, dest: dest, text: text }; openAiHelp(); return; }
   closePaste();
-  document.getElementById("paste-text").value = ""; document.getElementById("paste-name").value = "";
-  enqueueImport(name, qs, type);
+  document.getElementById("paste-text").value = ""; document.getElementById("paste-name").value = ""; document.getElementById("paste-dest").value = "-1";
+  enqueueImport(name, qs, type, dest >= 0 ? dest : null);
+}
+/* ---- v1.5.0 AI帮忙整理格式 ---- */
+var pendingPaste = null;
+function openAiHelp() {
+  document.getElementById("aihelp-yes").disabled = false;
+  document.getElementById("aihelp-modal").classList.remove("hidden");
+}
+function closeAiHelp() { document.getElementById("aihelp-modal").classList.add("hidden"); pendingPaste = null; toast("已取消，请检查格式后再试"); }
+async function aiHelpYes() {
+  if (!pendingPaste) return;
+  if (!needKey()) return; // 没key就去设置窗，本窗留着
+  var btn = document.getElementById("aihelp-yes");
+  btn.disabled = true;
+  document.getElementById("aihelp-info").textContent = "AI整理中，请稍等…";
+  try {
+    var fixed = await callAI(
+      "你是习题格式整理助手。把用户给的文字整理成问答题库格式，每题两行：第一行「1. 题目」，第二行「答：答案」（答案有多行就跟在后面）。题号从1递增。只输出整理后的题目，不要任何解释、标题或多余的话。如果内容里有交班英语（中文配英文翻译），改用「Q:中文」加「A:英文」两行一题。",
+      pendingPaste.text.slice(0, 8000));
+    var qs = parseQuestions(fixed);
+    if (!qs.length) {
+      document.getElementById("aihelp-info").textContent = "AI整理后还是认不出来，这段内容可能不是问答题。请手工改成「1.题目 换行 答：答案」再试。";
+      btn.disabled = false;
+      return;
+    }
+    var p = pendingPaste;
+    pendingPaste = null;
+    document.getElementById("aihelp-modal").classList.add("hidden");
+    closePaste();
+    document.getElementById("paste-text").value = ""; document.getElementById("paste-name").value = ""; document.getElementById("paste-dest").value = "-1";
+    enqueueImport(p.name, qs, p.type, p.dest >= 0 ? p.dest : null);
+    toast("AI整理出 " + qs.length + " 题");
+  } catch (e) {
+    document.getElementById("aihelp-info").textContent = "AI整理失败：" + e.message;
+    btn.disabled = false;
+  }
 }
 
 /* ================= 导入确认窗 ================= */
 var importQueue = [];
-function enqueueImport(name, qs, type) {
-  importQueue.push({ name: name, qs: qs, type: type || "normal" });
+function enqueueImport(name, qs, type, destIdx) {
+  importQueue.push({ name: name, qs: qs, type: type || "normal", dest: (typeof destIdx === "number") ? destIdx : null });
   if (importQueue.length === 1) showImportModal();
 }
 function showImportModal() {
@@ -1108,6 +1215,7 @@ function showImportModal() {
   var html = "<option value=\"-1\">新建题库</option>";
   store.banks.forEach(function (b, i) { html += "<option value=\"" + i + "\">并入：" + esc(b.name) + "</option>"; });
   sel.innerHTML = html;
+  if (it.dest != null && store.banks[it.dest]) sel.value = String(it.dest); // v1.5.0：题库卡片粘贴进来默认并入该库
   document.getElementById("import-modal").classList.remove("hidden");
 }
 function confirmImport() {
@@ -1164,6 +1272,7 @@ function renderBanks() {
       + "<span class=\"tag s\">陌生" + c[1] + "</span><span class=\"tag y\">一般" + c[2] + "</span><span class=\"tag s2\">熟悉" + c[3] + "</span> 未学" + newN
       + "</div></div>"
       + "<button class=\"ghost\" style=\"padding:6px 10px;font-size:13px\" onclick=\"openAiBank(" + realIdx + ")\">🤖 AI出题</button>"
+      + "<button class=\"ghost\" style=\"padding:6px 10px;font-size:13px\" onclick=\"openPasteBank(" + realIdx + ")\">📋 粘贴出题</button>"
       + "<button class=\"danger\" style=\"padding:6px 10px;font-size:13px\" onclick=\"delBank(" + realIdx + ")\">删除</button>"
       + "</div>";
   });
@@ -1303,7 +1412,7 @@ function startStudy() {
       var b = store.banks[+c.dataset.bi];
       var bt = b.type || "normal";
       if (bt !== currentMode) return; // v0.12.2修复：只收集当前模式的题库，避免跨模式混入
-      b.questions.forEach(function (q, qi) { items.push({ bankId: b.id, bankName: b.name, idx: qi, q: q.q, a: q.a, n: q.n, type: bt }); });
+      b.questions.forEach(function (q, qi) { items.push({ bankId: b.id, bankName: b.name, idx: qi, q: q.q, a: q.a, n: q.n, mk: q.mk, type: bt }); });
     }
   });
   if (!items.length) { toast("请先勾选至少一个题库"); return; }
@@ -1391,26 +1500,26 @@ function showQ() {
 
 function reveal() {
   var it = curList()[session.pos];
-  var html = "<div class=\"a-text\">" + esc(it.a) + "</div>";
+  var html = "<div class=\"a-text\">" + renderAnswerHtml(it.a, it.mk) + "</div>" + mkRowHtml(it);
   var notes = it.n || [];
   for (var i = 0; i < notes.length; i++) {
     if (notes[i]) html += "<button class=\"ghost\" style=\"margin:8px 6px 0 0;font-size:13px;padding:6px 10px\" onclick=\"toggleNote(" + i + ")\">📎 注释" + (i + 1) + "</button>";
   }
   html += "<div id=\"note-area\"></div>"
-    + "<div style=\"text-align:right;margin-top:8px\"><button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"openEdit()\">✏️ 修改本题</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"openAiNote()\">🤖 问AI</button></div>";
+    + "<div style=\"text-align:right;margin-top:8px\"><button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"addMarkFromSelection()\">📍 定标选中词</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"openEdit()\">✏️ 修改本题</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"openAiNote()\">🤖 问AI</button></div>";
   document.getElementById("a-area").innerHTML = html;
   document.getElementById("mark-row").classList.remove("hidden");
 }
 function revealShift() {
   // v0.12.6修复：补加注释按钮（v0.12遗漏，普通/词根库的reveal()本来就有）
   var it = curList()[session.pos];
-  var html = "<div class=\"a-text\">" + esc(session._shiftSecond) + "</div>";
+  var html = "<div class=\"a-text\">" + renderAnswerHtml(session._shiftSecond, it.mk) + "</div>" + mkRowHtml(it);
   var notes = it.n || [];
   for (var i = 0; i < notes.length; i++) {
     if (notes[i]) html += "<button class=\"ghost\" style=\"margin:8px 6px 0 0;font-size:13px;padding:6px 10px\" onclick=\"toggleNote(" + i + ")\">📎 注释" + (i + 1) + "</button>";
   }
   html += "<div id=\"note-area\"></div>"
-    + "<div style=\"text-align:right;margin-top:8px\"><button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"openEdit()\">✏️ 修改本题</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"openAiNote()\">🤖 问AI</button></div>";
+    + "<div style=\"text-align:right;margin-top:8px\"><button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"addMarkFromSelection()\">📍 定标选中词</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"openEdit()\">✏️ 修改本题</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"openAiNote()\">🤖 问AI</button></div>";
   document.getElementById("a-area").innerHTML = html;
   document.getElementById("mark-row").classList.remove("hidden");
 }
@@ -1419,8 +1528,26 @@ function toggleNote(ni) {
   var area = document.getElementById("note-area");
   if (area.getAttribute("data-open") === String(ni)) { area.innerHTML = ""; area.setAttribute("data-open", ""); return; }
   area.innerHTML = "<div class=\"a-text\" style=\"color:#5a4a1f;background:#fdf8ec;border-radius:8px;padding:12px\">" + esc(it.n[ni]) + "</div>"
-    + "<div style=\"text-align:right;margin-top:6px\"><button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"aiRewriteNote(" + ni + ")\">🤖 让AI整理这条注释</button></div>";
+    + "<div style=\"text-align:right;margin-top:6px\"><button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"addMarkFromSelection()\">📍 定标选中词</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"noteManualEdit(" + ni + ")\">✏️ 改这条</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"aiRewriteNote(" + ni + ")\">🤖 让AI整理这条注释</button></div>";
   area.setAttribute("data-open", String(ni));
+}
+/* v1.6.1：注释手动编辑（以前只能AI整理或进修改本题窗，太绕） */
+function noteManualEdit(ni) {
+  var it = curList()[session.pos];
+  var area = document.getElementById("note-area");
+  area.setAttribute("data-open", "");
+  area.innerHTML = "<textarea id=\"note-edit-ta\" style=\"min-height:120px;margin-bottom:6px\">" + esc(it.n[ni]) + "</textarea>"
+    + "<div style=\"text-align:right\"><button style=\"font-size:13px;padding:6px 10px\" onclick=\"noteManualSave(" + ni + ")\">💾 保存</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"toggleNote(" + ni + ")\">取消</button></div>";
+}
+function noteManualSave(ni) {
+  var it = curList()[session.pos];
+  var v = document.getElementById("note-edit-ta").value.trim();
+  if (!v) { toast("注释不能为空（要删注释请用「修改本题」）"); return; }
+  it.n[ni] = v;
+  store.banks.forEach(function (b) { if (b.id === it.bankId) { b.questions[it.idx].n = it.n; } });
+  saveStore();
+  toggleNote(ni);
+  toast("注释已保存");
 }
 /* v1.3：让AI整理某条注释（补丁5：要求可自定义，默认预填），满意后替换 */
 function aiRewriteNote(ni) {
@@ -1470,16 +1597,133 @@ function aiRwCancel() {
   toggleNote(ni);
 }
 
+/* ================= v1.6 定标→集体形成注释 ================= */
+/* 答案里已定标的词显示虚线下划线 */
+function renderAnswerHtml(a, mk) {
+  var html = esc(a);
+  (mk || []).forEach(function (t) {
+    var et = esc(t);
+    html = html.split(et).join("<span class=\"mk\">" + et + "</span>");
+  });
+  return html;
+}
+/* 定标状态行：已标几个词 + 集体形成 + 清除 */
+function mkRowHtml(it) {
+  var mk = it.mk || [];
+  if (!mk.length) return "";
+  return "<div style=\"margin-top:8px;font-size:13px;color:#8a6d1f;background:#fdf8ec;border-radius:8px;padding:8px\">📍 已定标 " + mk.length + " 个：" + esc(mk.join("、")) +
+    " <button style=\"font-size:13px;padding:5px 8px\" onclick=\"aiMkAll()\">🤖 集体形成注释</button>" +
+    " <button class=\"ghost\" style=\"font-size:13px;padding:5px 8px\" onclick=\"clearMk()\">清除</button></div>";
+}
+/* 涂黑选词 → 浮动「➕ 定标」按钮 */
+var mkBtn = null;
+function ensureMkBtn() {
+  if (mkBtn) return;
+  mkBtn = document.createElement("button");
+  mkBtn.id = "mk-btn";
+  mkBtn.textContent = "➕ 定标";
+  mkBtn.addEventListener("click", addMarkFromSelection);
+  document.body.appendChild(mkBtn);
+}
+function hideMkBtn() { if (mkBtn) mkBtn.style.display = "none"; }
+function maybeShowMkBtn() {
+  ensureMkBtn();
+  var sel = window.getSelection();
+  if (!sel || sel.isCollapsed) { hideMkBtn(); return; }
+  var txt = sel.toString().trim();
+  if (!txt || txt.length > 30) { hideMkBtn(); return; }
+  var studyPage = document.getElementById("page-study");
+  if (!studyPage || studyPage.classList.contains("hidden")) { hideMkBtn(); return; }
+  var node = sel.anchorNode && sel.anchorNode.parentElement;
+  /* v1.6.1：注释框（note-area）里涂黑也能定标 */
+  if (!node || !(node.closest("#q-text") || node.closest("#a-area") || node.closest("#note-area"))) { hideMkBtn(); return; }
+  try {
+    var r = sel.getRangeAt(0).getBoundingClientRect();
+    mkBtn.style.left = Math.max(6, Math.min(r.left, window.innerWidth - 110)) + "px";
+    /* v1.6.1坑：按钮放选区下方会被系统"复制/分享"菜单整个盖住 → 挪到选区上方 */
+    mkBtn.style.top = Math.max(6, r.top - 44) + "px";
+    mkBtn.style.display = "";
+  } catch (e) { hideMkBtn(); }
+}
+document.addEventListener("selectionchange", function () { setTimeout(maybeShowMkBtn, 60); });
+document.addEventListener("touchend", function () { setTimeout(maybeShowMkBtn, 120); });
+document.addEventListener("mouseup", function () { setTimeout(maybeShowMkBtn, 60); });
+function addMarkFromSelection() {
+  var sel = window.getSelection();
+  var term = sel ? sel.toString().trim() : "";
+  /* v1.6.2：没涂黑就点常驻按钮时给句明白话（浮动按钮在安卓被系统菜单盖住，改走常驻按钮） */
+  if (!term) { toast("先用手指涂黑要定标的词，再点「📍 定标选中词」"); hideMkBtn(); return; }
+  var it = curList()[session.pos];
+  it.mk = it.mk || [];
+  if (it.mk.indexOf(term) < 0) it.mk.push(term);
+  syncMkToBank(it);
+  saveStore();
+  hideMkBtn();
+  try { sel.removeAllRanges(); } catch (e) {}
+  if (it.type !== "shift") reveal(); else revealShift();
+  toast("已定标：" + term + "（本题共" + it.mk.length + "个）");
+}
+function syncMkToBank(it) {
+  store.banks.forEach(function (b) { if (b.id === it.bankId) { b.questions[it.idx].mk = it.mk; } });
+}
+function clearMk() {
+  var it = curList()[session.pos];
+  it.mk = [];
+  syncMkToBank(it);
+  saveStore();
+  if (it.type !== "shift") reveal(); else revealShift();
+}
+/* 集体形成：一次AI请求给所有定标词写注释，追加进本题注释 */
+async function aiMkAll() {
+  if (!needKey()) return;
+  var it = curList()[session.pos];
+  var mk = (it.mk || []).slice();
+  if (!mk.length) return;
+  toast("AI正在为 " + mk.length + " 个定标词写注释…");
+  try {
+    var ans = await callAI(
+      "你是重症医学教学助手。用户学习一道题时划了几个词想让你逐一解释。只返回一个JSON对象（不要markdown围栏，不要解释）：{\"annots\":[{\"term\":\"词\",\"note\":\"解释\"}]}。term必须和用户给的词一字不差原样返回；note用大白话解释这个词在这道题语境下的含义，60字以内。",
+      "题目：" + it.q + "\n答案：" + it.a + "\n\n请逐一解释这些词：" + mk.join("、"));
+    var m = ans.replace(/```json|```/g, "").match(/\{[\s\S]*\}/);
+    var obj = m ? JSON.parse(m[0]) : null;
+    if (!obj || !Array.isArray(obj.annots)) throw new Error("AI回信格式不对，请重试");
+    it.n = it.n || [];
+    var done = [];
+    obj.annots.forEach(function (a) {
+      if (a && a.term && a.note) { it.n.push(a.term + "：" + a.note); done.push(a.term); }
+    });
+    if (!done.length) throw new Error("AI没写出注释，请重试");
+    it.mk = mk.filter(function (t) { return done.indexOf(t) < 0; }); /* 没解释到的词留着下次再形成 */
+    syncMkToBank(it);
+    store.banks.forEach(function (b) { if (b.id === it.bankId) { b.questions[it.idx].n = it.n; } });
+    saveStore();
+    if (it.type !== "shift") reveal(); else revealShift();
+    toast("✅ 已形成 " + done.length + " 条注释（📎注释按钮里看）");
+  } catch (e) { toast("集体形成失败：" + e.message); }
+}
+
 /* ================= 修改本题 ================= */
 function openEdit() {
   var it = curList()[session.pos];
-  var notes = it.n || [];
   document.getElementById("edit-q").value = it.q;
   document.getElementById("edit-a").value = it.a;
-  document.getElementById("edit-n1").value = notes[0] || "";
-  document.getElementById("edit-n2").value = notes[1] || "";
-  document.getElementById("edit-n3").value = notes[2] || "";
+  /* v1.6：注释动态列表，旧数据（含中间空位）原样摆出来 */
+  editNoteRows(it.n || []);
   document.getElementById("edit-modal").classList.remove("hidden");
+}
+/* v1.6 动态注释列表 */
+function editNoteRowHtml(v) {
+  return "<div class=\"edit-note-row\" style=\"display:flex;gap:6px;margin-bottom:6px\">"
+    + "<textarea class=\"edit-note\" placeholder=\"注释\" style=\"flex:1;min-width:0;min-height:56px\">" + esc(v || "") + "</textarea>"
+    + "<button class=\"danger\" style=\"padding:6px 8px;font-size:13px;flex-shrink:0\" onclick=\"this.parentNode.remove()\">🗑</button></div>";
+}
+function editNoteRows(notes) {
+  var html = "";
+  for (var i = 0; i < notes.length; i++) html += editNoteRowHtml(notes[i]);
+  document.getElementById("edit-notes").innerHTML = html;
+}
+function editAddNote() {
+  document.getElementById("edit-notes").insertAdjacentHTML("beforeend", editNoteRowHtml(""));
 }
 function closeEdit() { taClose(); document.getElementById("edit-modal").classList.add("hidden"); }
 function taClose() {
@@ -1487,7 +1731,7 @@ function taClose() {
   for (var i = 0; i < list.length; i++) { list[i].classList.remove("ta-full"); list[i].blur(); }
   document.getElementById("ta-close").classList.add("hidden");
 }
-["edit-q", "edit-a", "edit-n1", "edit-n2", "edit-n3"].forEach(function (id) {
+["edit-q", "edit-a"].forEach(function (id) {
   var ta = document.getElementById(id);
   ta.addEventListener("focus", function () {
     var list = document.querySelectorAll("textarea.ta-full");
@@ -1496,12 +1740,23 @@ function taClose() {
     document.getElementById("ta-close").classList.remove("hidden");
   });
 });
+/* v1.6：动态注释框同样享受"点入放大"（focusin代理，旧3个固定框已删） */
+document.getElementById("edit-notes").addEventListener("focusin", function (e) {
+  if (!e.target.classList || !e.target.classList.contains("edit-note")) return;
+  var list = document.querySelectorAll("textarea.ta-full");
+  for (var i = 0; i < list.length; i++) list[i].classList.remove("ta-full");
+  e.target.classList.add("ta-full");
+  document.getElementById("ta-close").classList.remove("hidden");
+});
 function saveEdit() {
   var it = curList()[session.pos];
   var nq = document.getElementById("edit-q").value.trim();
   var na = document.getElementById("edit-a").value.trim();
   if (!nq || !na) { toast("题目和答案都不能为空"); return; }
-  var notes = [document.getElementById("edit-n1").value.trim(), document.getElementById("edit-n2").value.trim(), document.getElementById("edit-n3").value.trim()];
+  /* v1.6：注释从动态列表收集（每条可改可删，尾部空条自动剔除保持编号紧凑） */
+  var tas = document.querySelectorAll("#edit-notes .edit-note");
+  var notes = [];
+  for (var ni = 0; ni < tas.length; ni++) notes.push(tas[ni].value.trim());
   while (notes.length && !notes[notes.length - 1]) notes.pop();
   it.q = nq; it.a = na; it.n = notes;
   store.banks.forEach(function (b) { if (b.id === it.bankId) { b.questions[it.idx].q = nq; b.questions[it.idx].a = na; b.questions[it.idx].n = notes; } });
@@ -1795,7 +2050,7 @@ function aiCommitNote() {
     if (!bank) { toast("找不到原题库"); return; }
     var q = bank.questions[qi];
     if (!q.n) q.n = [];
-    if (q.n.length >= 3) { toast("注释已满3条，请先「修改本题」清理"); return; }
+    /* v1.6.3：注释已是动态列表不限条数，删掉旧的3条上限（上限命中时只弹toast不关框，用户以为已存） */
     q.n.push(noteText);
     // 若学习页还停在原题，同步快照并刷新答案区；在别的题则只存数据
     var cur = null;
@@ -1816,7 +2071,7 @@ function aiCommitNote() {
     if (!b.questions.length) { toast("题库为空，先出题再存"); return; }
     var q0 = b.questions[0];
     if (!q0.n) q0.n = [];
-    if (q0.n.length >= 3) { toast("首题注释已满3条"); return; }
+    /* v1.6.3：同上，删掉旧的3条上限 */
     q0.n.push(noteText);
     saveStore(); closeAi();
     toast("已存为首题注释");
@@ -1893,7 +2148,7 @@ function toast(msg) {
    完整设计思路与协同协议见学习笔记.html 代码顶部（两边以那份为准）。 */
 var XT_GH_USER = "xt_gh_user", XT_GH_TOK = "xt_gh_tok", XT_GH_REPO = "xt_gh_repo",
     XT_GH_LAST = "xt_gh_last", XT_GH_CHECK = "xt_gh_check";
-var SW_VERSION = "1.4.10";
+var SW_VERSION = "1.6.3";
 /* v1.4.8 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["xt_gh_user", "hx_gh_user"], ["xt_gh_tok", "hx_gh_tok"], ["xt_gh_repo", "hx_gh_repo"]];
