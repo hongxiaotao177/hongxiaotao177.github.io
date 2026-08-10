@@ -442,6 +442,9 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 - 间隔重复（熟悉的题隔几天再现）
 - 老.doc支持、选择题(A/B/C/D)题型
 ================================================================================
+    v1.7.2 2026-08-10 反复学按经历细分：
+    弹窗加"反复经历"三选一（不限/只抽没反复过的/只抽反复过的，对勾选档一起生效）；
+    打开弹窗时每档自动标数量（共X题，Y没反复过）；抽题逻辑统一收口到repScan()。
     v1.7.1 2026-08-10 标记全部可删：
     ①注释展开区加「🗑 删这条」（以前只能绕去修改本题）；
     ②修改本题窗加「🔁 清零反复学次数」（有标记才显示）；
@@ -504,7 +507,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>习题学习 v1.7.1</title>
+<title>习题学习 v1.7.2</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f2f4f8; color: #222; }
@@ -584,7 +587,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 
 <script id="embedded-data" type="application/json">null</script>
 
-<header>📖 习题学习<span class="ver">v1.7.1</span></header>
+<header>📖 习题学习<span class="ver">v1.7.2</span></header>
 
 <!-- ========== 首页 ========== -->
 <div id="page-home" class="page">
@@ -769,10 +772,17 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
     <div style="font-size:14px;color:#666;margin-bottom:8px">从您勾选的题库里抽题，循环刷；题升档后自动丢出本轮</div>
     <div style="font-size:15px;margin-bottom:6px">从哪几个档抽（勾1~2个）：</div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;font-size:16px">
-      <label><input type="checkbox" id="rep-lv1" checked> 陌生</label>
-      <label><input type="checkbox" id="rep-lv2" checked> 一般</label>
-      <label><input type="checkbox" id="rep-lv3"> 中间</label>
-      <label><input type="checkbox" id="rep-lv4"> 熟悉</label>
+      <label><input type="checkbox" id="rep-lv1" checked> 陌生</label><span id="rep-lab1" style="font-size:12px;color:#888"></span>
+      <label><input type="checkbox" id="rep-lv2" checked> 一般</label><span id="rep-lab2" style="font-size:12px;color:#888"></span>
+      <label><input type="checkbox" id="rep-lv3"> 中间</label><span id="rep-lab3" style="font-size:12px;color:#888"></span>
+      <label><input type="checkbox" id="rep-lv4"> 熟悉</label><span id="rep-lab4" style="font-size:12px;color:#888"></span>
+    </div>
+    <!-- v1.7.2：按反复经历再细分 -->
+    <div style="font-size:15px;margin-bottom:6px">反复经历：</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;font-size:15px">
+      <label><input type="radio" name="rep-exp" value="all" checked> 不限</label>
+      <label><input type="radio" name="rep-exp" value="none"> 只抽没反复过的</label>
+      <label><input type="radio" name="rep-exp" value="done"> 只抽反复过的</label>
     </div>
     <div style="font-size:15px;margin-bottom:6px">抽几题：</div>
     <input type="number" id="rep-n" value="10" min="1" max="100" style="width:100%;margin-bottom:10px;font-size:16px;padding:10px">
@@ -1467,13 +1477,8 @@ function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").
 /* ================= 学习 ================= */
 var session = null;
 /* ================= v1.7 反复学 ================= */
-function openRep() { document.getElementById("rep-modal").classList.remove("hidden"); }
-function startRep() {
-  var lvs = [];
-  [1, 2, 3, 4].forEach(function (lv) { if (document.getElementById("rep-lv" + lv).checked) lvs.push(lv); });
-  if (!lvs.length) { toast("先勾至少一个档"); return; }
-  var n = +document.getElementById("rep-n").value || 10;
-  /* 从勾选的题库（当前模式）里找勾选档的题 */
+/* v1.7.2：打开弹窗时给每档标数量（共X题，Y题没反复过） */
+function repScan(lvs) {
   var boxId = currentMode === "normal" ? "bank-list" : (currentMode === "root" ? "bank-list-root" : "bank-list-shift");
   var pool = [];
   document.getElementById(boxId).querySelectorAll(".bank-check").forEach(function (c) {
@@ -1482,10 +1487,37 @@ function startRep() {
     var bt = b.type || "normal";
     if (bt !== currentMode) return;
     b.questions.forEach(function (q, qi) {
-      if (lvs.indexOf(getLevel(b.id, qi)) > -1) pool.push({ bankId: b.id, bankName: b.name, idx: qi, q: q.q, a: q.a, n: q.n, mk: q.mk, type: bt });
+      if (!lvs || lvs.indexOf(getLevel(b.id, qi)) > -1) pool.push({ bankId: b.id, bankName: b.name, idx: qi, q: q.q, a: q.a, n: q.n, mk: q.mk, type: bt, lv: getLevel(b.id, qi) });
     });
   });
-  if (!pool.length) { toast("勾选的档里没有题，先去正常学习刷几题定档"); return; }
+  return pool;
+}
+function openRep() {
+  /* 标数量 */
+  var pool = repScan(null);
+  [1, 2, 3, 4].forEach(function (lv) {
+    var all = pool.filter(function (x) { return x.lv === lv; });
+    var fresh = all.filter(function (x) { return getRep(x.bankId, x.idx) === 0; });
+    document.getElementById("rep-lab" + lv).textContent = all.length ? "(" + all.length + "题，" + fresh.length + "没反复过)" : "(0题)";
+  });
+  document.getElementById("rep-modal").classList.remove("hidden");
+}
+function startRep() {
+  var lvs = [];
+  [1, 2, 3, 4].forEach(function (lv) { if (document.getElementById("rep-lv" + lv).checked) lvs.push(lv); });
+  if (!lvs.length) { toast("先勾至少一个档"); return; }
+  var n = +document.getElementById("rep-n").value || 10;
+  /* v1.7.2：反复经历筛选 */
+  var exp = "all";
+  var radios = document.getElementsByName("rep-exp");
+  for (var ri = 0; ri < radios.length; ri++) if (radios[ri].checked) exp = radios[ri].value;
+  var pool = repScan(lvs).filter(function (x) {
+    var r = getRep(x.bankId, x.idx);
+    if (exp === "none") return r === 0;
+    if (exp === "done") return r > 0;
+    return true;
+  });
+  if (!pool.length) { toast(exp === "all" ? "勾选的档里没有题，先去正常学习刷几题定档" : (exp === "none" ? "勾选的档里没有「没反复过」的题" : "勾选的档里没有「反复过」的题")); return; }
   for (var i = pool.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = pool[i]; pool[i] = pool[j]; pool[j] = t; }
   var items = pool.slice(0, n);
   session = { items: items, pos: 0, rep: { lvs: lvs } };
@@ -2320,7 +2352,7 @@ function toast(msg) {
    完整设计思路与协同协议见学习笔记.html 代码顶部（两边以那份为准）。 */
 var XT_GH_USER = "xt_gh_user", XT_GH_TOK = "xt_gh_tok", XT_GH_REPO = "xt_gh_repo",
     XT_GH_LAST = "xt_gh_last", XT_GH_CHECK = "xt_gh_check";
-var SW_VERSION = "1.7.1";
+var SW_VERSION = "1.7.2";
 /* v1.4.8 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["xt_gh_user", "hx_gh_user"], ["xt_gh_tok", "hx_gh_tok"], ["xt_gh_repo", "hx_gh_repo"]];
