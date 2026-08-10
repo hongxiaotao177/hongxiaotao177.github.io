@@ -442,6 +442,12 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 - 间隔重复（熟悉的题隔几天再现）
 - 老.doc支持、选择题(A/B/C/D)题型
 ================================================================================
+    v1.7.0 2026-08-10 四档+反复学：
+    ①档位三升四：陌生(1)/一般(2)/中间(3)/熟悉(4)；migLv4迁移旧数据（旧熟悉3→4，
+      仅跑一次，loadStore/分身恢复/云端恢复三处都挂）；
+    ②🔁反复学：勾1~2个档+抽N题（默认10）→循环刷；mark升出勾选档自动丢出本轮
+      （从session.items和view同时摘除）；刷完一遍repLoop洗牌再来；池空即完成；
+    ③反复学每刷一次progress记r+1，题目行永久显示🔁×次数（getRep）。
     v1.6.4 2026-08-10 后台存注释"存上了却看不见"的根治：
     现象=Q19后台问AI→学到Q22→弹窗存入成功→翻回Q19注释按钮还是旧条数；
     根因=aiCommitNote在"别的题"分支只写题库，没同步session.items快照
@@ -493,7 +499,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>习题学习 v1.6.4</title>
+<title>习题学习 v1.7.0</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f2f4f8; color: #222; }
@@ -524,6 +530,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
   .tag.s { background: #fde2e1; color: #c0534f; }
   .tag.y { background: #fdf3d8; color: #a07a1f; }
   .tag.s2 { background: #e1f3e4; color: #2e7d32; }
+  .tag.z { background: #ddf0ea; color: #2a7a6d; }
   .tag.root { background: #e8e0f7; color: #5e35b1; }
   .tag.normal { background: #e3f0fa; color: #2c6e9e; }
   .tag.shift { background: #e0f2f1; color: #00695c; }
@@ -547,6 +554,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
   .btn-ms { background: #c0534f; }
   .btn-yb { background: #d29a26; }
   .btn-sx { background: #2e7d32; }
+  .btn-zj { background: #2a9d8f; }
   .nav-row { display: flex; justify-content: space-between; margin-top: 14px; }
   .progress-outer { height: 8px; background: #dde3ea; border-radius: 4px; overflow: hidden; margin: 10px 0; }
   .progress-inner { height: 100%; background: #2c6e9e; width: 0; transition: width .2s; }
@@ -571,7 +579,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 
 <script id="embedded-data" type="application/json">null</script>
 
-<header>📖 习题学习<span class="ver">v1.6.4</span></header>
+<header>📖 习题学习<span class="ver">v1.7.0</span></header>
 
 <!-- ========== 首页 ========== -->
 <div id="page-home" class="page">
@@ -590,6 +598,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
     </div>
     <div class="btn-row">
       <button id="btn-start" onclick="startStudy()">▶ 复习勾选的题库</button>
+      <button class="ghost" onclick="openRep()">🔁 反复学</button>
       <button class="ghost" onclick="openMerge()">🗃 合并勾选的题库</button>
       <button class="ghost" onclick="exportWrong()">📤 导出错题</button>
     </div>
@@ -697,6 +706,11 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 
 <!-- ========== 学习页 ========== -->
 <div id="page-study" class="page hidden">
+  <!-- v1.7：反复学状态条（反复学模式才显示） -->
+  <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px" class="hidden" id="rep-bar-wrap">
+    <div id="rep-bar" style="flex:1;font-size:13px;color:#2a7a6d;background:#ddf0ea;border-radius:8px;padding:8px"></div>
+    <button class="ghost" style="font-size:13px;padding:6px 10px;white-space:nowrap" onclick="exitRep()">退出反复学</button>
+  </div>
   <div class="toolbar">
     <button class="ghost" onclick="goHome()">← 返回</button>
     <select id="filter-select" onchange="applyFilter()">
@@ -704,6 +718,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
       <option value="ms">只看陌生</option>
       <option value="ms_yb">陌生+一般</option>
       <option value="yb">只看一般</option>
+      <option value="zj">只看中间</option>
       <option value="sx">只看熟悉</option>
       <option value="new">只看未学</option>
     </select>
@@ -731,7 +746,8 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
     <div class="mark-row hidden" id="mark-row">
       <button class="btn-ms" onclick="mark(1)">陌生</button>
       <button class="btn-yb" onclick="mark(2)">一般</button>
-      <button class="btn-sx" onclick="mark(3)">熟悉</button>
+      <button class="btn-zj" onclick="mark(3)">中间</button>
+      <button class="btn-sx" onclick="mark(4)">熟悉</button>
     </div>
   </div>
   <div class="nav-row">
@@ -741,6 +757,26 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 </div>
 
 <!-- ========== 弹窗 ========== -->
+<!-- v1.7 反复学设置 -->
+<div id="rep-modal" class="modal-mask hidden" onclick="if(event.target===this)this.classList.add('hidden')">
+  <div class="modal">
+    <h3>🔁 反复学</h3>
+    <div style="font-size:14px;color:#666;margin-bottom:8px">从您勾选的题库里抽题，循环刷；题升档后自动丢出本轮</div>
+    <div style="font-size:15px;margin-bottom:6px">从哪几个档抽（勾1~2个）：</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;font-size:16px">
+      <label><input type="checkbox" id="rep-lv1" checked> 陌生</label>
+      <label><input type="checkbox" id="rep-lv2" checked> 一般</label>
+      <label><input type="checkbox" id="rep-lv3"> 中间</label>
+      <label><input type="checkbox" id="rep-lv4"> 熟悉</label>
+    </div>
+    <div style="font-size:15px;margin-bottom:6px">抽几题：</div>
+    <input type="number" id="rep-n" value="10" min="1" max="100" style="width:100%;margin-bottom:10px;font-size:16px;padding:10px">
+    <div class="btn-row">
+      <button onclick="startRep()">🚀 开始反复学</button>
+      <button class="ghost" onclick="document.getElementById('rep-modal').classList.add('hidden')">取消</button>
+    </div>
+  </div>
+</div>
 <!-- 导入确认 -->
 <div id="import-modal" class="modal-mask hidden" onclick="if(event.target===this)cancelImport()">
   <div class="modal">
@@ -1004,6 +1040,7 @@ window.onerror = function (msg, src, line) { toast("出错：" + msg + "（第" 
 /* ================= 数据层 ================= */
 var LS_KEY = "xitixuexi_v01";
 var store = loadStore();
+migLv4(); /* v1.7：旧三档数据迁移四档 */
 var currentMode = sessionStorage.getItem("xiti_mode") || "normal";
 var shiftDir = sessionStorage.getItem("xiti_shiftDir") || "zh";
 
@@ -1031,6 +1068,21 @@ function getLevel(bankId, idx) {
 function getTime(bankId, idx) {
   var p = store.progress[pKey(bankId, idx)];
   return (p && p.t) || 0;
+}
+/* v1.7：反复学次数标记（永久） */
+function getRep(bankId, idx) {
+  var p = store.progress[pKey(bankId, idx)];
+  return (p && p.r) || 0;
+}
+/* v1.7：三档→四档迁移（旧"熟悉3"升级为4，新3=中间），只跑一次 */
+function migLv4() {
+  if (!store || store.lv4) return;
+  Object.keys(store.progress || {}).forEach(function (k) {
+    var p = store.progress[k];
+    if (typeof p === "number") { if (p === 3) store.progress[k] = 4; }
+    else if (p && p.l === 3) p.l = 4;
+  });
+  store.lv4 = true;
 }
 
 /* ================= 模式切换 ================= */
@@ -1263,9 +1315,9 @@ function renderBanks() {
   var html = "";
   modeBanks.forEach(function (b, bi) {
     var realIdx = store.banks.indexOf(b);
-    var c = { 1: 0, 2: 0, 3: 0 };
+    var c = { 1: 0, 2: 0, 3: 0, 4: 0 };
     b.questions.forEach(function (_, qi) { var lv = getLevel(b.id, qi); if (c[lv] !== undefined) c[lv]++; });
-    var newN = b.questions.length - c[1] - c[2] - c[3];
+    var newN = b.questions.length - c[1] - c[2] - c[3] - c[4];
     var typeTag = "";
     if (b.type === "root") typeTag = "<span class=\"tag root\">词根</span>";
     else if (b.type === "shift") typeTag = "<span class=\"tag shift\">交班</span>";
@@ -1274,7 +1326,7 @@ function renderBanks() {
       + "<input type=\"checkbox\" class=\"bank-check\" data-bi=\"" + realIdx + "\" checked>"
       + "<div class=\"bank-info\"><div class=\"bank-name\">" + esc(b.name) + " " + typeTag + "</div>"
       + "<div class=\"bank-stats\">共" + b.questions.length + "题 ｜ "
-      + "<span class=\"tag s\">陌生" + c[1] + "</span><span class=\"tag y\">一般" + c[2] + "</span><span class=\"tag s2\">熟悉" + c[3] + "</span> 未学" + newN
+      + "<span class=\"tag s\">陌生" + c[1] + "</span><span class=\"tag y\">一般" + c[2] + "</span><span class=\"tag z\">中间" + c[3] + "</span><span class=\"tag s2\">熟悉" + c[4] + "</span> 未学" + newN
       + "</div></div>"
       + "<button class=\"ghost\" style=\"padding:6px 10px;font-size:13px\" onclick=\"openAiBank(" + realIdx + ")\">🤖 AI出题</button>"
       + "<button class=\"ghost\" style=\"padding:6px 10px;font-size:13px\" onclick=\"openPasteBank(" + realIdx + ")\">📋 粘贴出题</button>"
@@ -1407,6 +1459,45 @@ function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").
 
 /* ================= 学习 ================= */
 var session = null;
+/* ================= v1.7 反复学 ================= */
+function openRep() { document.getElementById("rep-modal").classList.remove("hidden"); }
+function startRep() {
+  var lvs = [];
+  [1, 2, 3, 4].forEach(function (lv) { if (document.getElementById("rep-lv" + lv).checked) lvs.push(lv); });
+  if (!lvs.length) { toast("先勾至少一个档"); return; }
+  var n = +document.getElementById("rep-n").value || 10;
+  /* 从勾选的题库（当前模式）里找勾选档的题 */
+  var boxId = currentMode === "normal" ? "bank-list" : (currentMode === "root" ? "bank-list-root" : "bank-list-shift");
+  var pool = [];
+  document.getElementById(boxId).querySelectorAll(".bank-check").forEach(function (c) {
+    if (!c.checked) return;
+    var b = store.banks[+c.dataset.bi];
+    var bt = b.type || "normal";
+    if (bt !== currentMode) return;
+    b.questions.forEach(function (q, qi) {
+      if (lvs.indexOf(getLevel(b.id, qi)) > -1) pool.push({ bankId: b.id, bankName: b.name, idx: qi, q: q.q, a: q.a, n: q.n, mk: q.mk, type: bt });
+    });
+  });
+  if (!pool.length) { toast("勾选的档里没有题，先去正常学习刷几题定档"); return; }
+  for (var i = pool.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = pool[i]; pool[i] = pool[j]; pool[j] = t; }
+  var items = pool.slice(0, n);
+  session = { items: items, pos: 0, rep: { lvs: lvs } };
+  view = null;
+  document.getElementById("rep-modal").classList.add("hidden");
+  document.getElementById("page-home").classList.add("hidden");
+  document.getElementById("page-study").classList.remove("hidden");
+  document.getElementById("filter-select").value = "all";
+  document.getElementById("time-select").value = "0";
+  document.getElementById("kw-input").value = "";
+  showQ();
+  toast("🔁 反复学开始：共" + items.length + "题，刷完自动循环");
+}
+function exitRep() {
+  if (session) session.rep = null;
+  document.getElementById("rep-bar-wrap").classList.add("hidden");
+  goHome();
+}
+
 function startStudy() {
   // v0.12.3修复：只扫描当前面板的题库列表，结构上保证选哪个类别就学哪一类
   var boxId = currentMode === "normal" ? "bank-list" : (currentMode === "root" ? "bank-list-root" : "bank-list-shift");
@@ -1439,7 +1530,8 @@ function filteredItems() {
     if (f === "all") ok = true;
     else if (f === "ms") ok = lv === 1;
     else if (f === "yb") ok = lv === 2;
-    else if (f === "sx") ok = lv === 3;
+    else if (f === "zj") ok = lv === 3;
+    else if (f === "sx") ok = lv === 4;
     else if (f === "ms_yb") ok = lv === 1 || lv === 2;
     else ok = lv === 0;
     if (!ok) return false;
@@ -1478,9 +1570,11 @@ function showQ() {
   if (session.pos < 0) session.pos = 0;
   var it = list[session.pos];
   var lv = getLevel(it.bankId, it.idx);
-  var lvTxt = ["未学", "陌生", "一般", "熟悉"][lv];
+  var lvTxt = ["未学", "陌生", "一般", "中间", "熟悉"][lv];
   var tTxt = it.type === "root" ? "词根学习" : (it.type === "shift" ? "交班英语" : "普通题库");
-  document.getElementById("q-meta").textContent = tTxt + " ｜ " + it.bankName + " ｜ 第" + (session.pos + 1) + "/" + list.length + "题 ｜ " + lvTxt;
+  /* v1.7：反复学过的题带🔁×次数标记（永久） */
+  var rp = getRep(it.bankId, it.idx);
+  document.getElementById("q-meta").textContent = tTxt + " ｜ " + it.bankName + " ｜ 第" + (session.pos + 1) + "/" + list.length + "题 ｜ " + lvTxt + (rp > 0 ? " ｜ 🔁×" + rp : "");
 
   // 交班英语：根据方向决定先显示哪边
   if (it.type === "shift") {
@@ -1497,9 +1591,16 @@ function showQ() {
     document.getElementById("a-area").innerHTML = "<div class=\"a-cover\"><button class=\"ghost\" onclick=\"reveal()\">👁 显示答案</button></div>";
   }
   document.getElementById("mark-row").classList.add("hidden");
-  var c = { 0: 0, 1: 0, 2: 0, 3: 0 };
+  var c = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0 };
   session.items.forEach(function (x) { c[getLevel(x.bankId, x.idx)]++; });
-  document.getElementById("stat-line").textContent = "总" + session.items.length + "题：陌生" + c[1] + " 一般" + c[2] + " 熟悉" + c[3] + " 未学" + c[0];
+  document.getElementById("stat-line").textContent = "总" + session.items.length + "题：陌生" + c[1] + " 一般" + c[2] + " 中间" + c[3] + " 熟悉" + c[4] + " 未学" + c[0];
+  /* v1.7：反复学状态条 */
+  var rbw = document.getElementById("rep-bar-wrap");
+  if (session.rep) {
+    var lvNames = ["", "陌生", "一般", "中间", "熟悉"];
+    document.getElementById("rep-bar").textContent = "🔁 反复学中（" + session.rep.lvs.map(function (x) { return lvNames[x]; }).join("＋") + "档）｜本轮剩 " + list.length + " 题，刷完自动循环";
+    rbw.classList.remove("hidden");
+  } else rbw.classList.add("hidden");
   document.getElementById("progress-inner").style.width = ((session.pos + 1) / list.length * 100) + "%";
 }
 
@@ -1771,11 +1872,38 @@ function saveEdit() {
 }
 function mark(lv) {
   var it = curList()[session.pos];
-  store.progress[pKey(it.bankId, it.idx)] = { l: lv, t: Date.now() };
+  var k = pKey(it.bankId, it.idx);
+  var old = store.progress[k];
+  var r = (old && old.r) || 0;
+  if (session.rep) r++; /* v1.7：反复学里每刷一次记一遍，永久留痕 */
+  store.progress[k] = { l: lv, t: Date.now(), r: r };
+  /* v1.7：反复学模式——升出勾选档就自动丢出本轮 */
+  if (session.rep && session.rep.lvs.indexOf(lv) < 0) {
+    var i1 = session.items.indexOf(it); if (i1 > -1) session.items.splice(i1, 1);
+    if (view) { var i2 = view.indexOf(it); if (i2 > -1) view.splice(i2, 1); }
+    saveStore();
+    if (!curList().length) { exitRep(); toast("🎉 全部升档移出，反复学完成！"); return; }
+    toast("已升档，移出反复学（剩" + curList().length + "题）");
+    if (session.pos >= curList().length) repLoop(); else showQ();
+    return;
+  }
   saveStore();
   nextQ();
 }
-function nextQ() { var list = curList(); if (session.pos < list.length - 1) { session.pos++; } else { toast("已到最后一题"); } showQ(); }
+/* v1.7：反复学刷完一遍→洗牌→再来一遍 */
+function repLoop() {
+  var list = curList();
+  for (var i = list.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = list[i]; list[i] = list[j]; list[j] = t; }
+  session.pos = 0;
+  toast("🔁 一遍刷完，洗牌再来一遍");
+  showQ();
+}
+function nextQ() {
+  var list = curList();
+  if (session.pos < list.length - 1) { session.pos++; showQ(); }
+  else if (session.rep && list.length) repLoop();
+  else { toast("已到最后一题"); showQ(); }
+}
 function prevQ() { if (session.pos > 0) { session.pos--; showQ(); } }
 function goHome() {
   document.getElementById("page-study").classList.add("hidden");
@@ -2113,6 +2241,7 @@ function restoreFromText(text) {
     if (!d || !d.banks) { toast("文件数据格式不对，恢复失败"); return; }
     if (!confirm("将从分身恢复「" + d.banks.length + "个题库」及全部学习记录，当前数据会被覆盖，确定吗？")) return;
     store = d;
+    migLv4(); /* v1.7：分身恢复的旧数据也迁移四档 */
     saveStore(); renderBanks();
     if (currentMode === "root") updateRootPanel();
     if (currentMode === "shift") updateShiftPanel();
@@ -2161,7 +2290,7 @@ function toast(msg) {
    完整设计思路与协同协议见学习笔记.html 代码顶部（两边以那份为准）。 */
 var XT_GH_USER = "xt_gh_user", XT_GH_TOK = "xt_gh_tok", XT_GH_REPO = "xt_gh_repo",
     XT_GH_LAST = "xt_gh_last", XT_GH_CHECK = "xt_gh_check";
-var SW_VERSION = "1.6.4";
+var SW_VERSION = "1.7.0";
 /* v1.4.8 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["xt_gh_user", "hx_gh_user"], ["xt_gh_tok", "hx_gh_tok"], ["xt_gh_repo", "hx_gh_repo"]];
@@ -2356,6 +2485,7 @@ function ghAskRestore(payload, srcLabel) {
   if (!confirm((srcLabel || "云端") + "有 " + n + " 个题库（备份于 " + when + "）。恢复将覆盖本机现有题库和学习记录，确定吗？")) return;
   ghSuspend = true;
   store = payload.store;
+  migLv4(); /* v1.7：云端恢复的旧数据也迁移四档 */
   saveStore(); /* 挂起期间不触发自动备份 */
   ghSuspend = false;
   renderBanks();
