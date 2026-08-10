@@ -442,6 +442,8 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 - 间隔重复（熟悉的题隔几天再现）
 - 老.doc支持、选择题(A/B/C/D)题型
 ================================================================================
+    v1.7.3 2026-08-10 学习页也放🔁反复学按钮（用户：刷题刷到一半想进反复学，
+    不该被逼退回首页）。
     v1.7.2 2026-08-10 反复学按经历细分：
     弹窗加"反复经历"三选一（不限/只抽没反复过的/只抽反复过的，对勾选档一起生效）；
     打开弹窗时每档自动标数量（共X题，Y没反复过）；抽题逻辑统一收口到repScan()。
@@ -507,7 +509,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>习题学习 v1.7.2</title>
+<title>习题学习 v1.7.3</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f2f4f8; color: #222; }
@@ -587,7 +589,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 
 <script id="embedded-data" type="application/json">null</script>
 
-<header>📖 习题学习<span class="ver">v1.7.2</span></header>
+<header>📖 习题学习<span class="ver">v1.7.3</span></header>
 
 <!-- ========== 首页 ========== -->
 <div id="page-home" class="page">
@@ -738,6 +740,8 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
       <option value="30">近30天</option>
     </select>
     <button class="ghost" onclick="shuffle()">🔀 打乱</button>
+    <!-- v1.7.3：学习页也能直接进反复学，不用退回首页 -->
+    <button class="ghost" onclick="openRep()">🔁 反复学</button>
   </div>
   <div class="toolbar">
     <input type="text" id="kw-input" placeholder="🔍 关键词筛选（如：铜绿）" style="flex:1;padding:8px 10px;font-size:15px;border:1px solid #ccc;border-radius:8px" onkeydown="if(event.key==='Enter')applyFilter()">
@@ -2352,7 +2356,7 @@ function toast(msg) {
    完整设计思路与协同协议见学习笔记.html 代码顶部（两边以那份为准）。 */
 var XT_GH_USER = "xt_gh_user", XT_GH_TOK = "xt_gh_tok", XT_GH_REPO = "xt_gh_repo",
     XT_GH_LAST = "xt_gh_last", XT_GH_CHECK = "xt_gh_check";
-var SW_VERSION = "1.7.2";
+var SW_VERSION = "1.7.3";
 /* v1.4.8 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["xt_gh_user", "hx_gh_user"], ["xt_gh_tok", "hx_gh_tok"], ["xt_gh_repo", "hx_gh_repo"]];
