@@ -86,6 +86,10 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
       （queryPermission/requestPermission 兜底，仍要用户手势）
    ④ 手机没有"批命令"——打包/搬家功能必须做成软件内按钮（本卡已做）
 ====================================================================
+    v1.1.4 (2026-08-11) 文件列表分门别类三层折叠：第1级大类（📦软件/📚文档PDF/💾备份数据/📎其他，
+         按文件名自动认，认不出进其他）、第2级软件名分组（仅📦软件类有）、第3级文件行；
+         默认全部折叠；软件组内按版本号新→旧排（无版本号的按时间排），其他类按时间新→旧排；
+         「⬆️传给AI」等原有功能不动。
     v1.1.3 (2026-08-06) 「⬇️ 下载整套软件」加第5步 PPT工坊（software-ppt.html→PPT工坊.html），计数改 1/5~5/5。
     v1.1.2 (2026-08-06) 公共钱罐hx_*：GitHub Token/仓库名与其他软件共享，一处填处处有。
     同版补充：主界面刷新hxIndexRefresh——壳里打开任一软件顺带把套装主界面(index.html)也换新，主界面从此也能自动更新。
@@ -94,7 +98,7 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>文件桥 v1.1.3</title>
+<title>文件桥 v1.1.4</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #faf7f2; color: #3a3632; }
@@ -120,6 +124,16 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
   .file-name { flex: 1; font-size: 15px; word-break: break-all; }
   .file-size { font-size: 12px; color: #b5aa9c; flex: none; }
   .file-item button { font-size: 13px; padding: 6px 10px; flex: none; }
+  /* v1.1.4 分组折叠列表 */
+  details.fgroup { border: 1px solid #eee4d4; border-radius: 10px; margin: 6px 0; background: #fffdf8; }
+  details.fgroup > summary { padding: 10px 12px; font-size: 15px; font-weight: bold; cursor: pointer; list-style: none; }
+  details.fgroup > summary::-webkit-details-marker { display: none; }
+  details.fgroup > summary::before { content: '▸ '; color: #b5aa9c; }
+  details.fgroup[open] > summary::before { content: '▾ '; }
+  details.fgroup > summary .cnt { font-weight: normal; font-size: 12px; color: #b5aa9c; margin-left: 6px; }
+  details.fgroup .fbody { padding: 0 12px 8px 12px; }
+  details.fgroup details.fgroup { margin: 4px 0 4px 10px; }
+  details.fgroup details.fgroup > summary { font-size: 14px; padding: 7px 10px; }
   /* 向导卡（缺啥提醒啥） */
   #wizard { background: #fff8e8; border: 1.5px solid #e8c96a; }
   #wizard .step { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 15px; line-height: 1.6; }
@@ -146,7 +160,7 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
 </style>
 </head>
 <body>
-<header>📂 文件桥<span class="ver">v1.1.3</span></header>
+<header>📂 文件桥<span class="ver">v1.1.4</span></header>
 <div class="page">
 
   <!-- 使用说明入口 -->
@@ -317,7 +331,7 @@ function fmtTime(t){ return new Date(t).toLocaleString(); }
 
 /* ==================== GitHub 通信（移植学习笔记/习题学习同套） ==================== */
 var BR_GH_USER = 'br_gh_user', BR_GH_TOK = 'br_gh_tok', BR_GH_REPO = 'br_gh_repo', BR_GH_CHECK = 'br_gh_check';
-var SW_VERSION = '1.1.3';
+var SW_VERSION = '1.1.4';
 /* v1.1.2 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["br_gh_user", "hx_gh_user"], ["br_gh_tok", "hx_gh_tok"], ["br_gh_repo", "hx_gh_repo"]];
@@ -615,6 +629,71 @@ function dirRestore(){
 
 /* ==================== 文件列表 ==================== */
 function fmtDate(t){ return new Date(t).toLocaleString(); }
+/* v1.1.4 分门别类：按文件名认大类，软件类再按软件名分小组，默认全折叠 */
+var FGROUP_CATS = [
+  { key:'soft', label:'📦 软件', test:function(n){ return /\.html?$/i.test(n) && /(习题学习|学习笔记|血气分析|文件桥|PPT工坊)/.test(n); } },
+  { key:'doc', label:'📚 文档PDF', test:function(n){ return /\.pdf$/i.test(n); } },
+  { key:'bak', label:'💾 备份数据', test:function(n){ return /\.json$/i.test(n); } }
+];
+function softAppName(n){
+  var apps=['习题学习','学习笔记','血气分析','文件桥','PPT工坊'];
+  for(var i=0;i<apps.length;i++) if(n.indexOf(apps[i])>=0) return apps[i];
+  return '';
+}
+function verOfName(n){ var m=n.match(/_v?(\d+)\.(\d+)\.(\d+)/i); return m ? [+m[1],+m[2],+m[3]] : null; }
+function mkFileRow(fi){
+  var row = document.createElement('div');
+  row.className = 'file-item';
+  var nm = document.createElement('div'); nm.className = 'file-name'; nm.textContent = fi.name;
+  var sz = document.createElement('div'); sz.className = 'file-size'; sz.textContent = fmtSize(fi.size);
+  var btn = document.createElement('button'); btn.textContent = '⬆️ 传给AI';
+  btn.addEventListener('click', function(){ uploadFile(fi); });
+  row.appendChild(nm); row.appendChild(sz); row.appendChild(btn);
+  return row;
+}
+function mkGroup(label, count){
+  var det = document.createElement('details'); det.className = 'fgroup';
+  var sum = document.createElement('summary'); sum.textContent = label;
+  var cnt = document.createElement('span'); cnt.className = 'cnt'; cnt.textContent = '（' + count + '个）';
+  sum.appendChild(cnt); det.appendChild(sum);
+  var body = document.createElement('div'); body.className = 'fbody'; det.appendChild(body);
+  return { det: det, body: body };
+}
+function renderGrouped(box, files){
+  FGROUP_CATS.forEach(function(cat){
+    var fs = files.filter(function(f){ return cat.test(f.name); });
+    if(!fs.length) return;
+    var g = mkGroup(cat.label, fs.length);
+    if(cat.key === 'soft'){
+      var byApp = {};
+      fs.forEach(function(f){ var a = softAppName(f.name); (byApp[a] = byApp[a] || []).push(f); });
+      Object.keys(byApp).sort().forEach(function(app){
+        var af = byApp[app];
+        af.sort(function(x, y){
+          var vx = verOfName(x.name), vy = verOfName(y.name);
+          if(vx && vy){ for(var i=0;i<3;i++){ if(vx[i]!=vy[i]) return vy[i]-vx[i]; } return 0; }
+          if(vx) return -1; if(vy) return 1;
+          return (y.t||0)-(x.t||0);
+        });
+        var g2 = mkGroup(app, af.length);
+        af.forEach(function(f){ g2.body.appendChild(mkFileRow(f)); });
+        g.body.appendChild(g2.det);
+      });
+    } else {
+      fs.sort(function(a, b){ return (b.t||0)-(a.t||0); });
+      fs.forEach(function(f){ g.body.appendChild(mkFileRow(f)); });
+    }
+    box.appendChild(g.det);
+  });
+  var rest = files.filter(function(f){ return !FGROUP_CATS.some(function(c){ return c.test(f.name); }); });
+  if(rest.length){
+    rest.sort(function(a, b){ return (b.t||0)-(a.t||0); });
+    var g = mkGroup('📎 其他', rest.length);
+    rest.forEach(function(f){ g.body.appendChild(mkFileRow(f)); });
+    box.appendChild(g.det);
+  }
+}
+
 function refreshFiles(){
   var box = $('fileList');
   if(inShell){
@@ -625,16 +704,7 @@ function refreshFiles(){
     slist.sort(function(a, b){ return b.t - a.t; });
     if(!slist.length){ box.innerHTML = '<div class="hint">文件夹是空的</div>'; return Promise.resolve(); }
     box.innerHTML = '';
-    slist.forEach(function(fi){
-      var row = document.createElement('div');
-      row.className = 'file-item';
-      var nm = document.createElement('div'); nm.className = 'file-name'; nm.textContent = fi.name;
-      var sz = document.createElement('div'); sz.className = 'file-size'; sz.textContent = fmtSize(fi.size);
-      var btn = document.createElement('button'); btn.textContent = '⬆️ 传给AI';
-      btn.addEventListener('click', function(){ uploadFile(fi); });
-      row.appendChild(nm); row.appendChild(sz); row.appendChild(btn);
-      box.appendChild(row);
-    });
+    renderGrouped(box, slist);
     return Promise.resolve();
   }
   if(!dirHandle){ box.innerHTML = ''; $('dirStatus').textContent = '还没授权文件夹'; return; }
@@ -660,16 +730,7 @@ function refreshFiles(){
     list.sort(function(a, b){ return b.t - a.t; });
     if(!list.length){ box.innerHTML = '<div class="hint">文件夹是空的</div>'; return; }
     box.innerHTML = '';
-    list.forEach(function(fi){
-      var row = document.createElement('div');
-      row.className = 'file-item';
-      var nm = document.createElement('div'); nm.className = 'file-name'; nm.textContent = fi.name;
-      var sz = document.createElement('div'); sz.className = 'file-size'; sz.textContent = fmtSize(fi.size);
-      var btn = document.createElement('button'); btn.textContent = '⬆️ 传给AI';
-      btn.addEventListener('click', function(){ uploadFile(fi); });
-      row.appendChild(nm); row.appendChild(sz); row.appendChild(btn);
-      box.appendChild(row);
-    });
+    renderGrouped(box, list);
   }).catch(function(e){
     if(dirStaleErr(e)){ dirStaleHandle(); return; } /* v1.0.2 */
     box.innerHTML = '<div class="hint">读取文件夹失败：' + ((e && e.message) || e) + '，试试重新授权</div>';
