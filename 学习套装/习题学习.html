@@ -442,6 +442,16 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 - 间隔重复（熟悉的题隔几天再现）
 - 老.doc支持、选择题(A/B/C/D)题型
 ================================================================================
+    v1.7.5 2026-08-11 词后解释（小序号）+注释里定标也画下划线：
+    ①修复：在注释里定标的词，注释展开时不画虚线下划线（renderAnswerHtml漏配）；
+    ②集体形成注释的解释不再生成注释条，直接挂到定标词后面：正文词后显示
+      可点小序号①②③（it.mn 词→解释），点序号弹窗看解释，可✏️改/🤖AI重写/
+      ✂️摘下来变回注释/🗑删；
+    ③注释展开区加「📌 挂到定标词」：把旧注释搬到指定定标词后面变词后解释
+      （noteToMn，点选代替长按拖动）；
+    ④导出错题txt带词解行（词解①词：内容，Obsidian里对号看）；
+    ⑤标记说明窗加「📖 词后解释×N」行，可一键清除（miDo('mn')）。
+    数据：题目对象新增 mn={词:解释}，随分身/云备份自动走。
     v1.7.4 2026-08-10 丢出双戳+标记说明窗+丢出题入口：
     ①反复学加「🚫 丢出本题」：不升级也丢出，盖现役戳o（repThrowOut）；
     ②丢出题任意打档=平反：o自动转历史戳oh（曾丢出×N，永久留痕）——mark()统一处理；
@@ -516,7 +526,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>习题学习 v1.7.4</title>
+<title>习题学习 v1.7.5</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f2f4f8; color: #222; }
@@ -564,6 +574,8 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
   .a-text { font-size: 16px; line-height: 1.7; margin-top: 14px; padding-top: 14px; border-top: 1px dashed #ccc; white-space: pre-wrap; color: #1a4d2e; }
   /* v1.6 定标：待解释词虚线下划线；浮动定标按钮 */
   .mk { text-decoration: underline dashed #c9a227; text-underline-offset: 3px; }
+  /* v1.7.5 词后解释序号：可点小圆圈 */
+  .mkn { font-size: 11px; color: #b06a00; cursor: pointer; vertical-align: super; padding: 0 1px; }
   #mk-btn { position: fixed; z-index: 95; display: none; box-shadow: 0 2px 10px rgba(0,0,0,.2); }
   .a-cover { margin-top: 14px; text-align: center; }
   .mark-row { display: flex; gap: 8px; margin-top: 16px; }
@@ -597,7 +609,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 
 <script id="embedded-data" type="application/json">null</script>
 
-<header>📖 习题学习<span class="ver">v1.7.4</span></header>
+<header>📖 习题学习<span class="ver">v1.7.5</span></header>
 
 <!-- ========== 首页 ========== -->
 <div id="page-home" class="page">
@@ -786,6 +798,20 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
     <div id="markinfo-body" style="font-size:14px"></div>
     <div class="btn-row" style="margin-top:10px">
       <button class="ghost" onclick="document.getElementById('markinfo-modal').classList.add('hidden')">关闭</button>
+    </div>
+  </div>
+</div>
+<!-- v1.7.5 词后解释窗（点词后小序号弹出） -->
+<div id="mknote-modal" class="modal-mask hidden" onclick="if(event.target===this)this.classList.add('hidden')">
+  <div class="modal">
+    <h3 id="mknote-title">词后解释</h3>
+    <div id="mknote-body" style="font-size:15px;line-height:1.7;white-space:pre-wrap;margin-bottom:12px"></div>
+    <div class="btn-row" style="flex-wrap:wrap;gap:6px">
+      <button class="ghost" id="mknote-edit" style="font-size:13px;padding:6px 10px">✏️ 改解释</button>
+      <button class="ghost" id="mknote-ai" style="font-size:13px;padding:6px 10px">🤖 让AI重写</button>
+      <button class="ghost" id="mknote-detach" style="font-size:13px;padding:6px 10px">✂️ 摘下来变注释</button>
+      <button class="ghost" id="mknote-del" style="font-size:13px;padding:6px 10px;color:#c0534f">🗑 删除</button>
+      <button class="ghost" style="font-size:13px;padding:6px 10px" onclick="document.getElementById('mknote-modal').classList.add('hidden')">关闭</button>
     </div>
   </div>
 </div>
@@ -1533,6 +1559,8 @@ function openMarkInfo() {
   if ((p.r || 0) > 0) rows += miRow("🔁 反复学×" + p.r, "在反复学里刷过" + p.r + "遍。", "反复学次数清零", "miDo('r')");
   var mkc = (it.mk || []).length;
   if (mkc > 0) rows += miRow("📍 定标×" + mkc, "划了" + mkc + "个词，等着点「🤖 集体形成注释」让AI解释。", "清除定标", "miDo('mk')");
+  var mnc = it.mn ? Object.keys(it.mn).length : 0;
+  if (mnc > 0) rows += miRow("📖 词后解释×" + mnc, "定标词后面的小序号，点一下看解释；也可点解释窗里的✂️摘下来变回注释。", "清除全部词后解释", "miDo('mn')");
   document.getElementById("markinfo-body").innerHTML = rows || "这题现在没有任何标记。";
   document.getElementById("markinfo-modal").classList.remove("hidden");
 }
@@ -1540,13 +1568,14 @@ function miDo(what) {
   var it = curList()[session.pos];
   var k = pKey(it.bankId, it.idx);
   var p = store.progress[k] || {};
-  var msg = { o: "取消这题的「丢出」标记？", oh: "清除这题的「曾丢出」记录？", r: "把这题的反复学次数清零？", mk: "清除这题的全部定标？" }[what];
+  var msg = { o: "取消这题的「丢出」标记？", oh: "清除这题的「曾丢出」记录？", r: "把这题的反复学次数清零？", mk: "清除这题的全部定标？", mn: "清除这题的全部词后解释？（定标下划线保留）" }[what];
   if (!confirm(msg)) return;
   if (what === "o") delete p.o;
   else if (what === "oh") p.oh = 0;
   else if (what === "r") p.r = 0;
   else if (what === "mk") { it.mk = []; syncMkToBank(it); }
-  if (what !== "mk") store.progress[k] = p;
+  else if (what === "mn") { it.mn = {}; syncMnToBank(it); }
+  if (what !== "mk" && what !== "mn") store.progress[k] = p;
   saveStore();
   document.getElementById("markinfo-modal").classList.add("hidden");
   showQ();
@@ -1763,7 +1792,7 @@ function showQ() {
 
 function reveal() {
   var it = curList()[session.pos];
-  var html = "<div class=\"a-text\">" + renderAnswerHtml(it.a, it.mk) + "</div>" + mkRowHtml(it);
+  var html = "<div class=\"a-text\">" + renderAnswerHtml(it.a, it.mk, it.mn) + "</div>" + mkRowHtml(it);
   var notes = it.n || [];
   for (var i = 0; i < notes.length; i++) {
     if (notes[i]) html += "<button class=\"ghost\" style=\"margin:8px 6px 0 0;font-size:13px;padding:6px 10px\" onclick=\"toggleNote(" + i + ")\">📎 注释" + (i + 1) + "</button>";
@@ -1776,7 +1805,7 @@ function reveal() {
 function revealShift() {
   // v0.12.6修复：补加注释按钮（v0.12遗漏，普通/词根库的reveal()本来就有）
   var it = curList()[session.pos];
-  var html = "<div class=\"a-text\">" + renderAnswerHtml(session._shiftSecond, it.mk) + "</div>" + mkRowHtml(it);
+  var html = "<div class=\"a-text\">" + renderAnswerHtml(session._shiftSecond, it.mk, it.mn) + "</div>" + mkRowHtml(it);
   var notes = it.n || [];
   for (var i = 0; i < notes.length; i++) {
     if (notes[i]) html += "<button class=\"ghost\" style=\"margin:8px 6px 0 0;font-size:13px;padding:6px 10px\" onclick=\"toggleNote(" + i + ")\">📎 注释" + (i + 1) + "</button>";
@@ -1790,8 +1819,9 @@ function toggleNote(ni) {
   var it = curList()[session.pos];
   var area = document.getElementById("note-area");
   if (area.getAttribute("data-open") === String(ni)) { area.innerHTML = ""; area.setAttribute("data-open", ""); return; }
-  area.innerHTML = "<div class=\"a-text\" style=\"color:#5a4a1f;background:#fdf8ec;border-radius:8px;padding:12px\">" + esc(it.n[ni]) + "</div>"
-    + "<div style=\"text-align:right;margin-top:6px\"><button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"addMarkFromSelection()\">📍 定标选中词</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"noteManualEdit(" + ni + ")\">✏️ 改这条</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"aiRewriteNote(" + ni + ")\">🤖 让AI整理这条注释</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px;color:#c0534f\" onclick=\"noteDelete(" + ni + ")\">🗑 删这条</button></div>";
+  /* v1.7.5修复：注释里定标的词也要画下划线（以前只答案区画，注释区漏配） */
+  area.innerHTML = "<div class=\"a-text\" style=\"color:#5a4a1f;background:#fdf8ec;border-radius:8px;padding:12px\">" + renderAnswerHtml(it.n[ni], it.mk, it.mn) + "</div>"
+    + "<div style=\"text-align:right;margin-top:6px\"><button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"addMarkFromSelection()\">📍 定标选中词</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"noteToMn(" + ni + ")\">📌 挂到定标词</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"noteManualEdit(" + ni + ")\">✏️ 改这条</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"aiRewriteNote(" + ni + ")\">🤖 让AI整理这条注释</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px;color:#c0534f\" onclick=\"noteDelete(" + ni + ")\">🗑 删这条</button></div>";
   area.setAttribute("data-open", String(ni));
 }
 /* v1.7.1：注释可单独删除（以前只能绕去修改本题） */
@@ -1871,12 +1901,21 @@ function aiRwCancel() {
 }
 
 /* ================= v1.6 定标→集体形成注释 ================= */
-/* 答案里已定标的词显示虚线下划线 */
-function renderAnswerHtml(a, mk) {
+/* 词后解释序号：①…⑩，超出用(11)样式 */
+function mnNum(i) {
+  var circ = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧", "⑨", "⑩"];
+  return i < 10 ? circ[i] : "(" + (i + 1) + ")";
+}
+/* 答案里已定标的词显示虚线下划线；有词后解释（mn）的词后面跟可点小序号 */
+function renderAnswerHtml(a, mk, mn) {
   var html = esc(a);
+  var keys = mn ? Object.keys(mn) : [];
   (mk || []).forEach(function (t) {
     var et = esc(t);
-    html = html.split(et).join("<span class=\"mk\">" + et + "</span>");
+    var rep = "<span class=\"mk\">" + et + "</span>";
+    var mi = keys.indexOf(t);
+    if (mi >= 0) rep += "<span class=\"mkn\" onclick=\"openMkNote(" + mi + ")\">" + mnNum(mi) + "</span>";
+    html = html.split(et).join(rep);
   });
   return html;
 }
@@ -1884,7 +1923,9 @@ function renderAnswerHtml(a, mk) {
 function mkRowHtml(it) {
   var mk = it.mk || [];
   if (!mk.length) return "";
+  var mnc = it.mn ? Object.keys(it.mn).length : 0;
   return "<div style=\"margin-top:8px;font-size:13px;color:#8a6d1f;background:#fdf8ec;border-radius:8px;padding:8px\">📍 已定标 " + mk.length + " 个：" + esc(mk.join("、")) +
+    (mnc ? "（" + mnc + "个已有词后解释，点词后小序号看）" : "") +
     " <button style=\"font-size:13px;padding:5px 8px\" onclick=\"aiMkAll()\">🤖 集体形成注释</button>" +
     " <button class=\"ghost\" style=\"font-size:13px;padding:5px 8px\" onclick=\"clearMk()\">清除</button></div>";
 }
@@ -1950,9 +1991,10 @@ function clearMk() {
 async function aiMkAll() {
   if (!needKey()) return;
   var it = curList()[session.pos];
-  var mk = (it.mk || []).slice();
-  if (!mk.length) return;
-  toast("AI正在为 " + mk.length + " 个定标词写注释…");
+  /* v1.7.5：已有词后解释的词跳过，只解释还没解释的 */
+  var mk = (it.mk || []).filter(function (t) { return !(it.mn && it.mn[t]); });
+  if (!mk.length) { toast("定标的词都已经有词后解释了"); return; }
+  toast("AI正在为 " + mk.length + " 个定标词写解释…");
   try {
     var ans = await callAI(
       "你是重症医学教学助手。用户学习一道题时划了几个词想让你逐一解释。只返回一个JSON对象（不要markdown围栏，不要解释）：{\"annots\":[{\"term\":\"词\",\"note\":\"解释\"}]}。term必须和用户给的词一字不差原样返回；note用大白话解释这个词在这道题语境下的含义，60字以内。",
@@ -1960,19 +2002,120 @@ async function aiMkAll() {
     var m = ans.replace(/```json|```/g, "").match(/\{[\s\S]*\}/);
     var obj = m ? JSON.parse(m[0]) : null;
     if (!obj || !Array.isArray(obj.annots)) throw new Error("AI回信格式不对，请重试");
-    it.n = it.n || [];
+    /* v1.7.5：解释不再生成注释条，直接挂到词后面（it.mn 词→解释），点小序号看 */
+    it.mn = it.mn || {};
     var done = [];
     obj.annots.forEach(function (a) {
-      if (a && a.term && a.note) { it.n.push(a.term + "：" + a.note); done.push(a.term); }
+      if (a && a.term && a.note && mk.indexOf(a.term) >= 0) { it.mn[a.term] = a.note; done.push(a.term); }
     });
     if (!done.length) throw new Error("AI没写出注释，请重试");
-    it.mk = mk.filter(function (t) { return done.indexOf(t) < 0; }); /* 没解释到的词留着下次再形成 */
-    syncMkToBank(it);
-    store.banks.forEach(function (b) { if (b.id === it.bankId) { b.questions[it.idx].n = it.n; } });
+    syncMnToBank(it);
     saveStore();
     if (it.type !== "shift") reveal(); else revealShift();
-    toast("✅ 已形成 " + done.length + " 条注释（📎注释按钮里看）");
+    toast("✅ 已形成 " + done.length + " 条词后解释（点词后面的小序号看）");
   } catch (e) { toast("集体形成失败：" + e.message); }
+}
+/* v1.7.5：词后解释（mn）同步到题库（和快照同一份引用，写bank即可） */
+function syncMnToBank(it) {
+  store.banks.forEach(function (b) { if (b.id === it.bankId) { b.questions[it.idx].mn = it.mn; } });
+}
+/* 点词后小序号：弹出解释窗（看/改/AI重写/摘下/删） */
+function openMkNote(mi) {
+  var it = curList()[session.pos];
+  var keys = it.mn ? Object.keys(it.mn) : [];
+  var term = keys[mi];
+  if (!term) return;
+  document.getElementById("mknote-title").textContent = mnNum(mi) + " " + term;
+  document.getElementById("mknote-body").textContent = it.mn[term];
+  document.getElementById("mknote-edit").setAttribute("onclick", "mnEdit(" + mi + ")");
+  document.getElementById("mknote-ai").setAttribute("onclick", "mnAi(" + mi + ")");
+  document.getElementById("mknote-detach").setAttribute("onclick", "mnDetach(" + mi + ")");
+  document.getElementById("mknote-del").setAttribute("onclick", "mnDel(" + mi + ")");
+  document.getElementById("mknote-modal").classList.remove("hidden");
+}
+function mnEdit(mi) {
+  var it = curList()[session.pos];
+  var term = Object.keys(it.mn)[mi];
+  if (!term) return;
+  var nv = prompt("改「" + term + "」的解释：", it.mn[term]);
+  if (nv === null) return;
+  nv = nv.trim();
+  if (!nv) { toast("解释不能为空（想删请点🗑）"); return; }
+  it.mn[term] = nv;
+  syncMnToBank(it); saveStore();
+  document.getElementById("mknote-modal").classList.add("hidden");
+  if (it.type !== "shift") reveal(); else revealShift();
+  toast("已改");
+}
+async function mnAi(mi) {
+  if (!needKey()) return;
+  var it = curList()[session.pos];
+  var term = Object.keys(it.mn)[mi];
+  if (!term) return;
+  toast("AI正在重写「" + term + "」的解释…");
+  try {
+    var ans = await callAI(
+      "你是重症医学教学助手。只返回一个JSON对象（不要markdown围栏，不要解释）：{\"note\":\"解释\"}。note用大白话解释这个词在这道题语境下的含义，60字以内。",
+      "题目：" + it.q + "\n答案：" + it.a + "\n\n请解释这个词：" + term);
+    var m = ans.replace(/```json|```/g, "").match(/\{[\s\S]*\}/);
+    var obj = m ? JSON.parse(m[0]) : null;
+    if (!obj || !obj.note) throw new Error("AI回信格式不对，请重试");
+    it.mn[term] = obj.note;
+    syncMnToBank(it); saveStore();
+    document.getElementById("mknote-modal").classList.add("hidden");
+    if (it.type !== "shift") reveal(); else revealShift();
+    toast("✅ 已重写");
+  } catch (e) { toast("重写失败：" + e.message); }
+}
+/* 摘下来：词后解释变回普通注释 */
+function mnDetach(mi) {
+  var it = curList()[session.pos];
+  var term = Object.keys(it.mn)[mi];
+  if (!term) return;
+  it.n = it.n || [];
+  it.n.push(term + "：" + it.mn[term]);
+  delete it.mn[term];
+  syncMnToBank(it);
+  store.banks.forEach(function (b) { if (b.id === it.bankId) { b.questions[it.idx].n = it.n; } });
+  saveStore();
+  document.getElementById("mknote-modal").classList.add("hidden");
+  if (it.type !== "shift") reveal(); else revealShift();
+  toast("已摘下来，变成注释" + it.n.length);
+}
+function mnDel(mi) {
+  var it = curList()[session.pos];
+  var term = Object.keys(it.mn)[mi];
+  if (!term) return;
+  if (!confirm("删掉「" + term + "」的词后解释？（定标下划线还在）")) return;
+  delete it.mn[term];
+  syncMnToBank(it); saveStore();
+  document.getElementById("mknote-modal").classList.add("hidden");
+  if (it.type !== "shift") reveal(); else revealShift();
+  toast("已删");
+}
+/* v1.7.5：把一条注释挂到某个定标词后面（注释→词后解释） */
+function noteToMn(ni) {
+  var it = curList()[session.pos];
+  var mk = it.mk || [];
+  if (!mk.length) { toast("这题还没定标任何词，先涂黑定标再挂"); return; }
+  var term = mk[0];
+  if (mk.length > 1) {
+    var menu = mk.map(function (t, i) { return (i + 1) + ". " + t; }).join("\n");
+    var pick = prompt("挂到哪个词后面？输入序号：\n" + menu, "1");
+    if (pick === null) return;
+    var pi = parseInt(pick, 10) - 1;
+    if (isNaN(pi) || pi < 0 || pi >= mk.length) { toast("序号不对，没挂"); return; }
+    term = mk[pi];
+  }
+  if (it.mn && it.mn[term] && !confirm("「" + term + "」已经有一句词后解释了，用这条注释盖掉它吗？")) return;
+  it.mn = it.mn || {};
+  it.mn[term] = it.n[ni];
+  it.n.splice(ni, 1);
+  syncMnToBank(it);
+  store.banks.forEach(function (b) { if (b.id === it.bankId) { b.questions[it.idx].n = it.n; } });
+  saveStore();
+  if (it.type !== "shift") reveal(); else revealShift();
+  toast("📌 已挂到「" + term + "」后面，点词后小序号看");
 }
 
 /* ================= 修改本题 ================= */
@@ -2115,6 +2258,9 @@ function exportWrong() {
       var lv = getLevel(b.id, qi);
       if (lv === 1 || lv === 2) {
         var line = (lines.length / 2 + 1) + ". " + q.q + "\n答：" + q.a;
+        /* v1.7.5：词后解释随导出走（Obsidian里用 词解①词：内容 对号） */
+        var mnks = q.mn ? Object.keys(q.mn) : [];
+        mnks.forEach(function (t, ti) { if (q.mn[t]) line += "\n词解" + mnNum(ti) + t + "：" + q.mn[t]; });
         (q.n || []).forEach(function (n, ni) { if (n) line += "\n注释" + (ni + 1) + "：" + n; });
         lines.push(line);
       }
@@ -2473,7 +2619,7 @@ function toast(msg) {
    完整设计思路与协同协议见学习笔记.html 代码顶部（两边以那份为准）。 */
 var XT_GH_USER = "xt_gh_user", XT_GH_TOK = "xt_gh_tok", XT_GH_REPO = "xt_gh_repo",
     XT_GH_LAST = "xt_gh_last", XT_GH_CHECK = "xt_gh_check";
-var SW_VERSION = "1.7.4";
+var SW_VERSION = "1.7.5";
 /* v1.4.8 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["xt_gh_user", "hx_gh_user"], ["xt_gh_tok", "hx_gh_tok"], ["xt_gh_repo", "hx_gh_repo"]];
