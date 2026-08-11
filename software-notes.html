@@ -4,6 +4,57 @@
  学习笔记·双链版 —— 单文件 HTML 工具
 ====================================================================
  修改记录：
+   v2.10.0 2026-08-11 「📚 批量取书+晚间队列」：
+        - 书架取书改多选：每本PDF带状态标（✅已切过=灰色不可勾防误选 / ⏸切到一半=勾上续切），
+          底部两按钮「⚡现在切」「🌙留到晚上切」+「☑全选新书」。
+        - 批量流水线 bklibBatchRun：一本接一本全自动（提取→指纹查重跳过→AI认书不停车→切块→
+          下一本），单本失败/扫描版跳过不卡队列，结束统一小结+写 booklib-backup.json。
+        - 续切书不需要PDF原件（segs在IndexedDB），直接 bklibCutBookAsync 续切。
+        - 晚间队列 localStorage bklib_nightq_v1：打开软件+充电中+WiFi（connection.type读不到
+          就当WiFi）三条件齐自动开工；书库卡片黄条显示队列+「▶️现在切」「🗑清空」。
+        - 🔆亮屏开关（bklib_wakelock_v1，默认开）：切片中 navigator.wakeLock 保持屏幕亮，
+          锁屏也不怕——进度在IndexedDB，下次打开自动续。
+        - 踩坑记：bklibCutNext 批次间 bklibCutting 是先false后true同步切换，轮询1.5s不会撞窗口；
+          全书IIFE内，新函数都在内部，evaluate摸不到——测试一律走按钮/DOM。
+   v2.9.1 2026-08-11 「💰 查额度」查两套账：第一行照旧查开放平台余额（GET /v1/users/me/balance）；
+         新增第二行会员额度卡片（#balVipMsg）：先试读 kimi.com 内部接口（credentials:'include'，
+         需浏览器登录着 Kimi，字段名官方没承诺、读到啥显示啥），读不到就明说"官方没开放查询门"
+         +「👉 去看会员额度」跳转按钮（方案A+B合体，洪老师拍板）。
+         踩坑：①esc() 在别的函数作用域里不是全局的，HTML转义要用全局 escapeHtml()；
+         ②.msg 默认 display:none，靠 ok/err 类才显示，自写消息要记得给类名不能只写 innerHTML。
+   v2.9.0 2026-08-11 「📖 书库」上线（照抄文献库架构，最小侵入只加不改）：
+         - 首页新增书库卡片（文献库卡片下方）：📥导入PDF书籍（系统选择器）+
+           📂从坚果云书架取书（壳里可见，复用 listFiles/readFile base64 模式）+ 🤖问AI。
+         - 导入流程：pdfExtractText 提取（复用文献库 pdf.js 缓存机制）→ 文字<500字判扫描
+           图片版，明确提示不发AI不扣钱 → 文件指纹(=文件名_大小)查重：切过的书提示"切过啦"
+           不重复花钱，切一半的打开续切 → AI认书（前3000字猜 title/author/lang，JSON剥信封；
+           无Key降级文件名兜底，可手改，切分退化为本地粗切一段一块无摘要）。
+         - 细切：本地 bklibSegment 按段落累加粗切成约2000~3000字一段 → 每段一个AI请求切成
+           "一个知识点一块"（{title,summary,text}，摘要强制中文大白话；max_tokens=8000；
+           不传 temperature/response_format）→ chunks 存 IndexedDB booklib-db。
+           进度显示"第x批/共y批"；kv prog_书id 记已切批次，断点续切；一批失败暂停不丢已切。
+         - 台账 localStorage 'bijiben_booklib_v1'（含 chunksLite=块id/批次/标题/摘要），
+           随 notes-backup.json 云备份 payload.bookLib（恢复走 ghAskRestore 同一条确认流程）；
+           切片正文只存 IndexedDB，壳里备份时另写 booklib-backup.json 到坚果云文件夹
+           （不进 GitHub 仓库，太大）。
+         - 本地免费搜索：原文+摘要一起 indexOf 匹配（英文小写化），摘要/标题命中排前面，
+           点结果直达切片页（原文+摘要）。不发AI。
+         - 🤖问AI（查书唯一花AI入口）：问题分词（中文两字一组/英文按词）对全部切片打分，
+           挑 top5 块连问题发 litAI，要求回答开头注明出自哪本书。
+         - 挂进「我的书」：切完自动建一本书（目录=每批一章"第N部分：首块标题"，章正文=
+           各块标题+摘要列表，不含原文所以备份不膨胀；fromBookLib 记来源，删书库书时连带删）。
+           章节挂现成笔记/文献用现有「📎 挂」入口即可，零适配。
+         - 新视图 viewBklibBook（目录→章节→切片列表+继续切按钮）/ viewBklibChunk（切片原文+摘要）。
+         v2.9 测试踩坑（现象→根因→修法）：
+         ①测试断言「我的书没生成」→「我的书」localStorage键是 study_books_v1，
+           不是 bijiben_* 系列 → 测试改读 study_books_v1。
+         ②page.evaluate 调 loadBookLib/ghPush 报 not defined → 全书代码包在
+           IIFE+'use strict' 里，页面侧摸不到内部函数 → 测试只走UI操作、
+           localStorage 和壳 writeFile 捕获（payload.bookLib 用壳备份通道实证）。
+         ③第二次导入"切过啦"后 #bklibSearch 不可见 → 查重命中会直接打开书页
+           （viewHome 隐藏）→ 测试先点「← 返回书库」再搜索。
+         ④壳里点「☁️ 立即备份」没写 notes-backup.json → ghPush 在笔记为0篇时
+           判 'empty' 跳过备份（防空包覆盖云端）→ 测试先建一篇空白笔记再备份。
    v2.6.6 2026-08-06 「下载整套」三件套→四件套：血气分析 v0.10.0 起进仓库
          （software-xueqi.html），第4步连带下载；壳APP里同样自更新+文件夹备份。
    v2.6.5 2026-08-06 对账：文件夹备份与云端备份互相印证。每次备份写
@@ -800,6 +851,7 @@
         <button class="btn secondary" id="btnBalance">💰 查额度</button>
       </div>
       <div class="msg" id="balMsg"></div>
+      <div class="msg" id="balVipMsg"></div>
       <div class="msg" id="keyMsg"></div>
       <div class="hint">Key 仅保存在您自己手机的浏览器里，不会上传到任何地方。</div>
     </div>
@@ -828,6 +880,53 @@
       <input type="text" id="litSearch" placeholder="🔍 搜索文献标题/文件名…" style="margin-top:10px;">
       <div id="litList"></div>
       <div class="hint">这里只存提取出来的文字（进云备份）；PDF原件的家＝坚果云授权文件夹（书架），手机/电脑壳里授权一次永久记住，原件本地+云端双备份，按文件名就能找到。壳里点「📂 从坚果云书架取文献」直接挑，不用翻系统文件选择器。没填API Key也能导入，只是自动归类会变成「未分类」。</div>
+    </div>
+
+    <!-- v2.9 📖 书库：导入整本PDF书→AI认书→一次过细切成知识点块→本地搜索/问AI/挂进我的书 -->
+    <div class="card" id="bklibCard">
+      <h2>📖 书库</h2>
+      <button class="btn" id="btnBklibImport">📥 导入PDF书籍</button>
+      <button class="btn secondary" id="btnBklibShelf" style="display:none;">📂 从坚果云书架取书</button>
+      <button class="btn secondary" id="btnBklibAsk">🤖 问AI（查书）</button>
+      <input type="file" id="bklibFile" accept="application/pdf,.pdf" style="display:none;">
+      <div id="bklibShelfList"></div>
+      <div id="bklibNightBar" class="hidden" style="margin-top:8px; padding:8px 10px; background:#fff8e8; border:1.5px solid #e8c96a; border-radius:10px;">
+        <div id="bklibNightTxt" style="font-size:14px;"></div>
+        <div class="btn-row" style="margin-top:6px;">
+          <button class="btn secondary" id="btnBklibNightNow" style="font-size:13px; padding:6px 10px;">▶️ 不等了现在就切</button>
+          <button class="btn secondary" id="btnBklibNightClear" style="font-size:13px; padding:6px 10px;">🗑 清空队列</button>
+        </div>
+      </div>
+      <label style="display:block; margin-top:8px; font-size:13px; cursor:pointer;"><input type="checkbox" id="bklibWake" checked> 🔆 切片时保持屏幕亮（插着电建议开；关掉就靠"下次打开自动续切"）</label>
+      <div id="bklibProg"></div>
+      <!-- 问AI：唯一查书花AI的入口；先本地挑块再发给AI -->
+      <div id="bklibAskBox" class="hidden" style="margin-top:10px; border-top:1px dashed #ddd3b8; padding-top:10px;">
+        <label for="bklibQ">想问书里的什么问题？</label>
+        <input type="text" id="bklibQ" placeholder="如：PEEP 怎么调？">
+        <button class="btn" id="btnBklibAskGo" style="margin-top:6px;">🤖 让AI翻书回答</button>
+        <div class="msg" id="bklibAskMsg"></div>
+        <div id="bklibA" class="hidden" style="margin-top:10px; background:#f2f0e9; border:1px solid #ddd3b8; border-radius:10px; padding:12px; font-size:15px; line-height:1.7; white-space:pre-wrap;"></div>
+      </div>
+      <!-- AI认书结果（可改），改完点开始切块 -->
+      <div id="bklibPrep" class="hidden" style="margin-top:10px; border-top:1px dashed #ddd3b8; padding-top:10px;">
+        <div class="hint">认出的书在这里，不对就直接改，改完点「开始切块」：</div>
+        <label for="bklibPTitle">书名</label>
+        <input type="text" id="bklibPTitle">
+        <label for="bklibPAuthor" style="margin-top:8px;">作者</label>
+        <input type="text" id="bklibPAuthor">
+        <label for="bklibPLang" style="margin-top:8px;">语言</label>
+        <select id="bklibPLang">
+          <option value="中文" selected>中文</option>
+          <option value="英文">英文</option>
+        </select>
+        <div class="btn-row" style="margin-top:10px;">
+          <button class="btn" id="btnBklibStart">✂️ 开始切块（一个知识点一块）</button>
+        </div>
+        <div class="msg" id="bklibPrepMsg"></div>
+      </div>
+      <input type="text" id="bklibSearch" placeholder="🔍 搜书里的内容（中英混搜）…" style="margin-top:10px;">
+      <div id="bklibList"></div>
+      <div class="hint">只支持文字版PDF；扫描图片版读不出文字会明说，不花AI的钱。切块分批进行，中途退出下次打开这本书点「继续切」接着来。切好的书会自动出现在「我的书」里。搜索是本地的，不花钱；只有点「问AI」才花一次。</div>
     </div>
 
     <!-- v2.7.2：笔记区整体折叠，首页只见「📚 我的笔记」一行，点开才是标题列表 -->
@@ -1055,6 +1154,34 @@
       <div style="margin-top:18px; text-align:right;">
         <button class="btn danger" id="btnLitDel">🗑 删除这篇文献</button>
       </div>
+    </div>
+  </div>
+
+  <!-- ===== v2.9 视图：书库·一本书（目录→章节→切片列表） ===== -->
+  <div id="viewBklibBook" class="hidden">
+    <button class="btn secondary" id="btnBklibBack">← 返回书库</button>
+    <div class="card" style="margin-top:12px;">
+      <h2 id="bklibBookTitle"></h2>
+      <div class="hint" id="bklibBookMeta" style="margin-top:4px;"></div>
+      <div id="bklibBookProg"></div>
+      <div class="btn-row" style="margin-top:8px;">
+        <button class="btn" id="btnBklibContinue" style="display:none;">▶️ 继续切（接着上次停的地方）</button>
+      </div>
+      <div id="bklibChapList" style="margin-top:10px;"></div>
+      <div style="margin-top:18px; text-align:right;">
+        <button class="btn danger" id="btnBklibDel">🗑 删除这本书</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== v2.9 视图：书库·一个切片（原文+摘要） ===== -->
+  <div id="viewBklibChunk" class="hidden">
+    <button class="btn secondary" id="btnBklibChunkBack">← 返回本书</button>
+    <div class="card" style="margin-top:12px;">
+      <h3 id="bklibChunkTitle"></h3>
+      <div class="hint" id="bklibChunkFrom" style="margin-top:4px;"></div>
+      <div id="bklibChunkSum" style="margin-top:10px; background:#f2f0e9; border:1px solid #ddd3b8; border-radius:10px; padding:12px; font-size:15px; line-height:1.7; white-space:pre-wrap;"></div>
+      <div id="bklibChunkText" style="white-space:pre-wrap; font-size:16px; line-height:1.7; margin-top:12px; max-height:60vh; overflow-y:auto; background:#fbf7ef; border:1px solid #e5d9c3; border-radius:10px; padding:12px;"></div>
     </div>
   </div>
 
@@ -1291,7 +1418,7 @@
   <details class="about">
     <summary>📋 关于 / 版本说明</summary>
     <div class="inner">
-      <p><b>版本：</b>v2.8.0（2026-08-09）：「📚 我的书」上线——把笔记串成书：AI读旧笔记拟目录（也可从别的AI粘贴目录，AI帮忙认），逐章让AI丰满或挂现成笔记/文献，每章打开就是您熟悉的笔记编辑器（涂黑改写/折标签/角标都能用）；整本可导出Word、可发到PPT工坊；书随云备份走，换机不丢。上一版 v2.7.2（2026-08-09）：首页更清爽——笔记区收成「📚 我的笔记（N篇）」一行，点它才展开笔记标题列表（每篇一行、不露内容），再点标题进去看正文。上一版 v2.7.1（2026-08-09）：笔记列表瘦身——一篇笔记只占一行（标题＋日期），不再露内容预览，点标题进去看，一屏能看好几篇。上一版 v2.7.0（2026-08-07）：立下文献存放死规矩——PDF原件的家＝坚果云授权文件夹（书架），本地+云端双备份；文献库新增「📂 从坚果云书架取文献」（壳里可见），直接列出书架里的PDF点名字就导入，不用翻系统文件选择器。上一版 v2.6.9（2026-08-06）：「📊 生成PPT大纲」上线（详情页新按钮，AI写Markdown大纲可改，一键发送到PPT工坊）；修复发送成功提示被面板盖住看不见。上一版 v2.6.6（2026-08-05）：修复——词条气泡内容太长时上面被盖住、拉不下来；现在气泡限高，内容太长就在气泡里上下滑动看。上一版 v2.6.0（2026-08-04）：文献库三期上线——读文献时多了三个AI帮手：「🤖 AI总结」（五段式大白话总结，自动保存，换设备也能看）「📝 出复习题」（就这篇文献出题，可发到习题学习）「🔍 找相关笔记」（AI从您的笔记里挑出和这篇文献相关的，点名直接跳过去）。另外「API 设置」里新增「💰 查额度」：点一下直接显示您Kimi开放平台账户的真实余额，钱到没到一眼就知道（注意：Kimi会员和API开放平台是两套账，互不相通）。上一版 v2.5.1（2026-08-04）：修复——在注释气泡里涂黑一个词点「➕ 选词加角标」时，如果这个词正文里也有（比如"继发"），以前角标会错贴到正文去、气泡里看不到；现在涂黑发生在气泡里就优先贴气泡里。上一版 v2.5.0（2026-08-04）：文献库二期上线——词条可以挂文献了。读笔记时点词条角标，气泡里多了「📎 挂文献」：点一下就把这篇文献挂到这个词条上（再点一下摘掉），挂好后气泡里会出现文献名小胶囊，点胶囊直接读文献全文，看完点「← 返回笔记」回来。文献阅读页也多了「🔗 被这些词条引用」，点词条名能跳回那篇笔记。删除某篇文献时，挂着它的词条会自动摘掉，不会留死链。上一版 v2.4.0（2026-08-03）：文献库一期上线——首页新增「📄 文献库」：点「📥 导入PDF文献」可多选导入，软件自动提取文字、让AI起中文标题并归类；列表按类目分组、可搜索；点文献名可看全文、改标题/类目、复制全文、删除。没填API Key也能导入（自动归入「未分类」）。注意：这里只存提取的文字（会云备份）；PDF原件请放坚果云「医学文献」文件夹，按文件名就能找到；扫描图片版PDF读不出文字，会提示跳过。第一次导入需要联网加载一次PDF阅读组件，之后离线可用。上一版 v2.3.0（2026-08-03）：手写笔记上线——首页「✍️ 自己手写（空白笔记，不用AI）」一键建空白笔记，进去直接打字写；详情页新增「✍️ 自己写/改」，任何一篇笔记（包括AI写的）都能随时进入手写模式，改标题、改正文，点「💾 保存手写内容」即入库并自动云备份。全程不发任何AI请求，没网、没Key也能写。上一版 v2.2.2（2026-08-02）：「⬇️ 下载整套软件」升级为三件套——学习笔记+习题学习+文件桥（新成员，AI 和手机文件夹之间的桥），一次下载全拿齐。上一版 v2.2.1（2026-08-02）：纯文档版——说明里记下"数据备份和软件发布共用一个仓库（xuexi-backup），不再建新仓库"的决定，功能与 v2.2 完全一致。上一版 v2.2（2026-08-02）：出复习题上线——详情页新增「📝 出复习题」（整篇出题），涂黑一大段文字的弹出菜单新增「📝 就出这段出题」（段落出题）。题数可选1~10道（默认5），出题要求可自己改；AI 出好后可预览修改，点「📤 发送到习题学习」，打开习题学习软件会自动弹出导入窗（两个软件要用同一个浏览器打开才收得到；收不到就点「📋 复制题目txt」去那边粘贴导入）。云备份卡片新增「⬇️ 下载整套软件」：学习笔记+习题学习两个最新版一起下载到手机（浏览器首次可能问"允许下载多个文件"，点允许；想自己选保存位置：Chrome 设置→下载内容→打开「询问保存位置」）。上一版 v2.1.1（2026-08-01）：纯文档版——把「软件查新（版本自检）的完整设计思路+测试踩坑记录」写进了代码顶部的开发备忘（含发版清单六步、移植到其他软件的方法），以后新对话的 AI 看说明就能照着做，不用反复试。功能与 v2.1 完全一致。上一版 v2.1（2026-08-01）：开机自检上线——每次打开软件会自动检查三件事并弹条告诉您：① GitHub 线路通不通 ② 网上有没有更新的版本 ③ 需不需要下载。有新版时条上有「⬇️ 下载新版到本机」按钮，点一下新版就下载到手机「下载」目录，之后打开新文件替换旧的即可；已是最新=绿条（8 秒自动收）；连不上=红条（不耽误使用，笔记都在本机，网络好了备份自动重试）。云备份卡片里也有「🔍 自检：线路 + 新版本」按钮可随时手动查。上一版 v2.0.2（2026-08-01）：「关于」页新增「GitHub 自助指南」（建仓库/上传/下载/换设备四节大白话教程，在本页下方）。上一版 v2.0（2026-08-01）：云备份上线——笔记自动同步到您的 GitHub 私有仓库（首页「☁️ 云备份」卡片里填一次用户名、Token、仓库名即可；之后每次改动后 10 秒自动备份），换设备/清缓存后可点「📥 从云端恢复」一键找回；Token 只存在本机浏览器，不外传。上一版 v1.9（2026-08-01）：涂黑大段文字 → 弹出菜单新增「🦴 精炼成骨头」，AI 把这段提炼成 3~5 条要点（骨头）留在正文，原文自动折成一个小胶囊标签压在骨头后面；骨头不满意可涂黑单条让 AI 只改这一条，或点「🔄 再改一次」回提示词重发；标签名可自己改，也可点「🤖 让AI起名」（名字自动带「原文：」前缀）。注意：之后点标签里的「📤 释放这段」只把标签内的原文还原回正文，已提炼的骨头列表会保留。上一版 v1.8.1（2026-08-01）：标签胶囊瘦身——内外边距和字号都收紧，胶囊只占约正文一行高，不再占版面。上一版 v1.8（2026-08-01）：大段文字涂黑 → 弹出菜单新增「🏷 折成标签」，可把太长但有用的段落折叠成一个小胶囊标签（可自己起名，也可点「🤖 让AI起名」让 AI 概括），点一下标签就展开全文，标签里点「📤 释放这段」可还原回正文；导出到 Obsidian 就是原生 callout 折叠块，默认收起，一字不丢。上一版 v1.7.3（2026-08-01）：替换这段的定位加固为三级（精确→忽略格式模糊→段落大意），模糊定位命中会先让您确认再替换，误报"找不到原文"大幅减少。上一版 v1.7.2（2026-08-01）：修复——当 AI 回信太长被中途截断时，以前会把一段露出 JSON 代码的文字收进笔记正文，现在软件会自动"剥信封"，只把真正的正文收进笔记，标题也能一起认出来；同时把 AI 回复长度上限调大，减少被截断的情况。上一版 v1.7.1（2026-08-01）：让 AI 改稿时，AI 偶尔不按约定格式回信（直接返回裸文章），以前会报「格式不对」让您重试，现在软件能智能识别裸文章并直接采用，改稿照常完成；同时把格式要求写得更醒目，降低这种情况发生的概率。上一版 v1.7（2026-08-01）：对照预览里的加粗、列表现在按真实样式显示，不再露出一堆星号；AI 新稿里哪一小段不满意，涂黑它就会弹出小条，让 AI 只改这一小段（只套一层，最后点「✅ 采用」才存历史）。另外把手机上按钮"点了没反应"的两个老坑记进了开发备忘，以后维护不会再犯。上一版 v1.6（2026-07-31）新功能：涂黑一大段文字 → 弹出菜单点「🔄 替换这段」→ 面板里点预设要求（可叠加多个）或自由填写/补充 → AI 只改写这一段 → 预览对照（上原文下新稿）后点「✅ 采用」才生效，改前自动存一版历史，可点「让 AI 改」里的「↩️ 回退上一版」找回原稿。上一版 v1.5.2：注释里的生词，正文没有也能加角标——在注释气泡里涂黑注释文字中的生词点「➕ 选词加角标」，它会变成一个贴在气泡里的小角标（灰色虚线=待解释），点角标可钻进去看/编辑，「← 返回」回到上一条；随「批量解释」一起让 AI 讲解（AI 会参考它所在的那条注释文字）；导出时嵌套解释不单独出脚注，附加在父脚注末尾，如「……。（肺的应力：肺泡壁承受的牵张力）」。上一版 v1.5.1 修复：一篇笔记里多个词条分散在不同段落时，第一个角标之后的词条（如 ARDS、PEEP）会贴不上角标的问题，现已全部正常。以下为 v1.5 功能：① 手动加的角标现在贴在您涂黑的那个确切位置（记住涂黑处前后文），不再跳到全篇第一次出现的地方；并有词边界保护，像 ARDS 不会再嵌进 ARDSNet 中间。② 注释气泡新增「🤖 让AI改写」：点词条角标后可让 AI 按要求改写解释，改写要求可以随意修改（默认是"更通俗、更简短"），改写前自动存一版历史可回退。③ 气泡里涂黑注释文字中的生词，点「➕ 选词加角标」即可把它加为本篇待解释角标（不发 AI 请求），之后随批量解释一起让 AI 讲解。上一版 v1.4 手动批量角标：读正文时涂黑一个词，点弹出菜单的「➕ 加角标」，立即立一个灰色虚线空角标（不发 AI 请求，可连加多个）；读完后点「🤖 批量解释」按钮，把所有空角标一次性发给 AI，解释自动填回各角标变实色。另有 v1.3 词条脚注注释（正文词条旁 ① 小角标，点开看大白话，导出转 Obsidian 标准脚注）与 v1.1 交互式改稿（分栏、快捷指令、5 版历史可回退）。AI 请求保持不传 temperature / response_format（兼容 kimi-k2.6）。</p>
+      <p><b>版本：</b>v2.10.0（2026-08-11）：「📚 批量取书+晚间队列」——书架取书改打勾多选，切过的书灰掉防误选；选中的书可「⚡现在切」（全自动一本接一本，不用人盯）或「🌙留到晚上切」（充电+WiFi时软件开着就自动开工，锁屏也不怕，进度存着下次接着切）；切片时可保持屏幕亮（默认开，可关）。<br>上一版 v2.9.1（2026-08-11）：「💰 查额度」升级查两套账——点一下出两行：第一行照旧显示开放平台真实余额（API key 花的钱）；第二行试查 Kimi 会员额度，能读到就直接显示，读不到（官方没开放查询门，不是坏了）会给「👉 去看会员额度」按钮，点一下跳到 kimi.com 自己看。上一版 v2.9.0（2026-08-11）：「📖 书库」上线——首页新增书库卡片：导入整本PDF书（网页用系统文件选择器，壳里可「📂 从坚果云书架取书」），AI自动认出书名/作者/语言（可手改，没填Key就手动填书名、本地粗切无摘要），确认后一次过细切成"一个知识点一块"（每块配一句话中文摘要，分批进行、显示第x批/共y批、中途退出可"继续切"断点续切、同一本书切过会提醒不重复花钱）；扫描图片版读不出文字会明说、不发AI不扣钱。书库顶部搜索框本地免费中英混搜（摘要命中排前面，点结果直达切片）；「🤖 问AI」是查书唯一花AI的入口：本地先挑3~5块相关原文再连问题发给AI，回答注明出自哪本书。切好的书自动出现在「我的书」里（目录=章节，可挂现成笔记/文献）。书库台账+切片摘要随云备份走（payload.bookLib），切片正文只存本机和坚果云文件夹（booklib-backup.json），不进GitHub仓库。上一版 v2.8.0（2026-08-09）：「📚 我的书」上线——把笔记串成书：AI读旧笔记拟目录（也可从别的AI粘贴目录，AI帮忙认），逐章让AI丰满或挂现成笔记/文献，每章打开就是您熟悉的笔记编辑器（涂黑改写/折标签/角标都能用）；整本可导出Word、可发到PPT工坊；书随云备份走，换机不丢。上一版 v2.7.2（2026-08-09）：首页更清爽——笔记区收成「📚 我的笔记（N篇）」一行，点它才展开笔记标题列表（每篇一行、不露内容），再点标题进去看正文。上一版 v2.7.1（2026-08-09）：笔记列表瘦身——一篇笔记只占一行（标题＋日期），不再露内容预览，点标题进去看，一屏能看好几篇。上一版 v2.7.0（2026-08-07）：立下文献存放死规矩——PDF原件的家＝坚果云授权文件夹（书架），本地+云端双备份；文献库新增「📂 从坚果云书架取文献」（壳里可见），直接列出书架里的PDF点名字就导入，不用翻系统文件选择器。上一版 v2.6.9（2026-08-06）：「📊 生成PPT大纲」上线（详情页新按钮，AI写Markdown大纲可改，一键发送到PPT工坊）；修复发送成功提示被面板盖住看不见。上一版 v2.6.6（2026-08-05）：修复——词条气泡内容太长时上面被盖住、拉不下来；现在气泡限高，内容太长就在气泡里上下滑动看。上一版 v2.6.0（2026-08-04）：文献库三期上线——读文献时多了三个AI帮手：「🤖 AI总结」（五段式大白话总结，自动保存，换设备也能看）「📝 出复习题」（就这篇文献出题，可发到习题学习）「🔍 找相关笔记」（AI从您的笔记里挑出和这篇文献相关的，点名直接跳过去）。另外「API 设置」里新增「💰 查额度」：点一下直接显示您Kimi开放平台账户的真实余额，钱到没到一眼就知道（注意：Kimi会员和API开放平台是两套账，互不相通）。上一版 v2.5.1（2026-08-04）：修复——在注释气泡里涂黑一个词点「➕ 选词加角标」时，如果这个词正文里也有（比如"继发"），以前角标会错贴到正文去、气泡里看不到；现在涂黑发生在气泡里就优先贴气泡里。上一版 v2.5.0（2026-08-04）：文献库二期上线——词条可以挂文献了。读笔记时点词条角标，气泡里多了「📎 挂文献」：点一下就把这篇文献挂到这个词条上（再点一下摘掉），挂好后气泡里会出现文献名小胶囊，点胶囊直接读文献全文，看完点「← 返回笔记」回来。文献阅读页也多了「🔗 被这些词条引用」，点词条名能跳回那篇笔记。删除某篇文献时，挂着它的词条会自动摘掉，不会留死链。上一版 v2.4.0（2026-08-03）：文献库一期上线——首页新增「📄 文献库」：点「📥 导入PDF文献」可多选导入，软件自动提取文字、让AI起中文标题并归类；列表按类目分组、可搜索；点文献名可看全文、改标题/类目、复制全文、删除。没填API Key也能导入（自动归入「未分类」）。注意：这里只存提取的文字（会云备份）；PDF原件请放坚果云「医学文献」文件夹，按文件名就能找到；扫描图片版PDF读不出文字，会提示跳过。第一次导入需要联网加载一次PDF阅读组件，之后离线可用。上一版 v2.3.0（2026-08-03）：手写笔记上线——首页「✍️ 自己手写（空白笔记，不用AI）」一键建空白笔记，进去直接打字写；详情页新增「✍️ 自己写/改」，任何一篇笔记（包括AI写的）都能随时进入手写模式，改标题、改正文，点「💾 保存手写内容」即入库并自动云备份。全程不发任何AI请求，没网、没Key也能写。上一版 v2.2.2（2026-08-02）：「⬇️ 下载整套软件」升级为三件套——学习笔记+习题学习+文件桥（新成员，AI 和手机文件夹之间的桥），一次下载全拿齐。上一版 v2.2.1（2026-08-02）：纯文档版——说明里记下"数据备份和软件发布共用一个仓库（xuexi-backup），不再建新仓库"的决定，功能与 v2.2 完全一致。上一版 v2.2（2026-08-02）：出复习题上线——详情页新增「📝 出复习题」（整篇出题），涂黑一大段文字的弹出菜单新增「📝 就出这段出题」（段落出题）。题数可选1~10道（默认5），出题要求可自己改；AI 出好后可预览修改，点「📤 发送到习题学习」，打开习题学习软件会自动弹出导入窗（两个软件要用同一个浏览器打开才收得到；收不到就点「📋 复制题目txt」去那边粘贴导入）。云备份卡片新增「⬇️ 下载整套软件」：学习笔记+习题学习两个最新版一起下载到手机（浏览器首次可能问"允许下载多个文件"，点允许；想自己选保存位置：Chrome 设置→下载内容→打开「询问保存位置」）。上一版 v2.1.1（2026-08-01）：纯文档版——把「软件查新（版本自检）的完整设计思路+测试踩坑记录」写进了代码顶部的开发备忘（含发版清单六步、移植到其他软件的方法），以后新对话的 AI 看说明就能照着做，不用反复试。功能与 v2.1 完全一致。上一版 v2.1（2026-08-01）：开机自检上线——每次打开软件会自动检查三件事并弹条告诉您：① GitHub 线路通不通 ② 网上有没有更新的版本 ③ 需不需要下载。有新版时条上有「⬇️ 下载新版到本机」按钮，点一下新版就下载到手机「下载」目录，之后打开新文件替换旧的即可；已是最新=绿条（8 秒自动收）；连不上=红条（不耽误使用，笔记都在本机，网络好了备份自动重试）。云备份卡片里也有「🔍 自检：线路 + 新版本」按钮可随时手动查。上一版 v2.0.2（2026-08-01）：「关于」页新增「GitHub 自助指南」（建仓库/上传/下载/换设备四节大白话教程，在本页下方）。上一版 v2.0（2026-08-01）：云备份上线——笔记自动同步到您的 GitHub 私有仓库（首页「☁️ 云备份」卡片里填一次用户名、Token、仓库名即可；之后每次改动后 10 秒自动备份），换设备/清缓存后可点「📥 从云端恢复」一键找回；Token 只存在本机浏览器，不外传。上一版 v1.9（2026-08-01）：涂黑大段文字 → 弹出菜单新增「🦴 精炼成骨头」，AI 把这段提炼成 3~5 条要点（骨头）留在正文，原文自动折成一个小胶囊标签压在骨头后面；骨头不满意可涂黑单条让 AI 只改这一条，或点「🔄 再改一次」回提示词重发；标签名可自己改，也可点「🤖 让AI起名」（名字自动带「原文：」前缀）。注意：之后点标签里的「📤 释放这段」只把标签内的原文还原回正文，已提炼的骨头列表会保留。上一版 v1.8.1（2026-08-01）：标签胶囊瘦身——内外边距和字号都收紧，胶囊只占约正文一行高，不再占版面。上一版 v1.8（2026-08-01）：大段文字涂黑 → 弹出菜单新增「🏷 折成标签」，可把太长但有用的段落折叠成一个小胶囊标签（可自己起名，也可点「🤖 让AI起名」让 AI 概括），点一下标签就展开全文，标签里点「📤 释放这段」可还原回正文；导出到 Obsidian 就是原生 callout 折叠块，默认收起，一字不丢。上一版 v1.7.3（2026-08-01）：替换这段的定位加固为三级（精确→忽略格式模糊→段落大意），模糊定位命中会先让您确认再替换，误报"找不到原文"大幅减少。上一版 v1.7.2（2026-08-01）：修复——当 AI 回信太长被中途截断时，以前会把一段露出 JSON 代码的文字收进笔记正文，现在软件会自动"剥信封"，只把真正的正文收进笔记，标题也能一起认出来；同时把 AI 回复长度上限调大，减少被截断的情况。上一版 v1.7.1（2026-08-01）：让 AI 改稿时，AI 偶尔不按约定格式回信（直接返回裸文章），以前会报「格式不对」让您重试，现在软件能智能识别裸文章并直接采用，改稿照常完成；同时把格式要求写得更醒目，降低这种情况发生的概率。上一版 v1.7（2026-08-01）：对照预览里的加粗、列表现在按真实样式显示，不再露出一堆星号；AI 新稿里哪一小段不满意，涂黑它就会弹出小条，让 AI 只改这一小段（只套一层，最后点「✅ 采用」才存历史）。另外把手机上按钮"点了没反应"的两个老坑记进了开发备忘，以后维护不会再犯。上一版 v1.6（2026-07-31）新功能：涂黑一大段文字 → 弹出菜单点「🔄 替换这段」→ 面板里点预设要求（可叠加多个）或自由填写/补充 → AI 只改写这一段 → 预览对照（上原文下新稿）后点「✅ 采用」才生效，改前自动存一版历史，可点「让 AI 改」里的「↩️ 回退上一版」找回原稿。上一版 v1.5.2：注释里的生词，正文没有也能加角标——在注释气泡里涂黑注释文字中的生词点「➕ 选词加角标」，它会变成一个贴在气泡里的小角标（灰色虚线=待解释），点角标可钻进去看/编辑，「← 返回」回到上一条；随「批量解释」一起让 AI 讲解（AI 会参考它所在的那条注释文字）；导出时嵌套解释不单独出脚注，附加在父脚注末尾，如「……。（肺的应力：肺泡壁承受的牵张力）」。上一版 v1.5.1 修复：一篇笔记里多个词条分散在不同段落时，第一个角标之后的词条（如 ARDS、PEEP）会贴不上角标的问题，现已全部正常。以下为 v1.5 功能：① 手动加的角标现在贴在您涂黑的那个确切位置（记住涂黑处前后文），不再跳到全篇第一次出现的地方；并有词边界保护，像 ARDS 不会再嵌进 ARDSNet 中间。② 注释气泡新增「🤖 让AI改写」：点词条角标后可让 AI 按要求改写解释，改写要求可以随意修改（默认是"更通俗、更简短"），改写前自动存一版历史可回退。③ 气泡里涂黑注释文字中的生词，点「➕ 选词加角标」即可把它加为本篇待解释角标（不发 AI 请求），之后随批量解释一起让 AI 讲解。上一版 v1.4 手动批量角标：读正文时涂黑一个词，点弹出菜单的「➕ 加角标」，立即立一个灰色虚线空角标（不发 AI 请求，可连加多个）；读完后点「🤖 批量解释」按钮，把所有空角标一次性发给 AI，解释自动填回各角标变实色。另有 v1.3 词条脚注注释（正文词条旁 ① 小角标，点开看大白话，导出转 Obsidian 标准脚注）与 v1.1 交互式改稿（分栏、快捷指令、5 版历史可回退）。AI 请求保持不传 temperature / response_format（兼容 kimi-k2.6）。</p>
       <p><b>历史版本：</b>v1.2 默认改快模型（秒级响应）+ 分步进度提示（发送→思考→解析+用时秒数）；v1.1.1 修复手机词条菜单按钮；v1.1.2 AI 请求加 180 秒超时；v1.0.2 修复 AI 调用 400 报错</p>
       <p><b>数据安全：</b>所有笔记和 API Key 只保存在您本机浏览器（localStorage），不上传到任何服务器；清除浏览器数据会丢失笔记，请定期导出备份。</p>
       <p><b>数据存放与备份同步规矩（v2.0.1 起，给洪老师和维护者共同遵守）：</b></p>
@@ -3262,6 +3389,870 @@ $('btnLitDel').addEventListener('click', function(){
 });
 renderLitList();
 
+/* ==================== v2.9 📖 书库 ==================== */
+/* 设计（照抄文献库那套，最小侵入）：
+   - 目录台账 localStorage 'bijiben_booklib_v1'：书名/作者/语言/文件指纹(=文件名_大小)/块标题+一句话摘要
+     （chunksLite，摘要小，随 notes-backup.json 云备份 payload.bookLib）。
+   - 切片正文存 IndexedDB booklib-db（太大不进 GitHub 备份）；壳里另写 booklib-backup.json 到坚果云文件夹。
+   - 断点续切：kv 'prog_书id' 记 {segTotal, done:[已切批次序号]}；kv 'segs_书id' 存本地粗分的段。
+   - AI 请求一律不传 temperature/response_format（兼容 kimi-k2.6）；JSON 回复剥信封容错。 */
+var BKLIB_LS = 'bijiben_booklib_v1';
+function loadBookLib(){
+  try{ var v = JSON.parse(localStorage.getItem(BKLIB_LS) || '[]'); return Array.isArray(v) ? v : []; }
+  catch(e){ return []; }
+}
+function saveBookLib(list){ localStorage.setItem(BKLIB_LS, JSON.stringify(list)); }
+function bklibMeta(id){
+  var l = loadBookLib();
+  for(var i = 0; i < l.length; i++) if(l[i].id === id) return l[i];
+  return null;
+}
+function bklibMetaSave(id, patch){
+  var l = loadBookLib();
+  for(var i = 0; i < l.length; i++){
+    if(l[i].id === id){ for(var k in patch) l[i][k] = patch[k]; }
+  }
+  saveBookLib(l);
+}
+
+/* IndexedDB（booklib-db）：chunks={id,bookId,ch,title,summary,text}；kv=切段/进度等杂项 */
+function bklibDbOpen(){
+  return new Promise(function(res, rej){
+    var rq = indexedDB.open('booklib-db', 1);
+    rq.onupgradeneeded = function(){
+      var db = rq.result;
+      if(!db.objectStoreNames.contains('chunks')) db.createObjectStore('chunks', { keyPath: 'id' });
+      if(!db.objectStoreNames.contains('kv')) db.createObjectStore('kv');
+    };
+    rq.onsuccess = function(){ res(rq.result); };
+    rq.onerror = function(){ rej(rq.error); };
+  });
+}
+function bklibIdbPut(store, val, key){
+  return bklibDbOpen().then(function(db){
+    return new Promise(function(res, rej){
+      var tx = db.transaction(store, 'readwrite');
+      var rq = key !== undefined ? tx.objectStore(store).put(val, key) : tx.objectStore(store).put(val);
+      rq.onsuccess = function(){ res(); }; rq.onerror = function(){ rej(rq.error); };
+    });
+  });
+}
+function bklibIdbGet(store, key){
+  return bklibDbOpen().then(function(db){
+    return new Promise(function(res, rej){
+      var rq = db.transaction(store, 'readonly').objectStore(store).get(key);
+      rq.onsuccess = function(){ res(rq.result); }; rq.onerror = function(){ rej(rq.error); };
+    });
+  });
+}
+function bklibIdbGetAll(store){
+  return bklibDbOpen().then(function(db){
+    return new Promise(function(res, rej){
+      var rq = db.transaction(store, 'readonly').objectStore(store).getAll();
+      rq.onsuccess = function(){ res(rq.result || []); }; rq.onerror = function(){ rej(rq.error); };
+    });
+  });
+}
+function bklibIdbDel(store, key){
+  return bklibDbOpen().then(function(db){
+    return new Promise(function(res, rej){
+      var rq = db.transaction(store, 'readwrite').objectStore(store).delete(key);
+      rq.onsuccess = function(){ res(); }; rq.onerror = function(){ rej(rq.error); };
+    });
+  });
+}
+
+function bklibProgLine(text){
+  var div = document.createElement('div');
+  div.className = 'hint';
+  div.style.marginTop = '6px';
+  div.textContent = text;
+  $('bklibProg').appendChild(div);
+  return div;
+}
+
+/* AI 认书：发前3000字猜书名/作者/语言；没填 Key 或任何失败都用文件名兜底，不阻塞导入 */
+function bklibRecognize(head, filename, cb){
+  var fallback = { title: filename.replace(/\.pdf$/i, ''), author: '', lang: '中文' };
+  var key = (localStorage.getItem(LS_KEY) || '').trim();
+  if(!key){ cb(fallback); return; }
+  var payload = {
+    model: modelSel.value,
+    messages: [
+      { role: 'system', content: '你是图书识别助手。根据一本书前几页的文字，猜出：①书名②作者（猜不到就留空）③语言（只答"中文"或"英文"）。只返回一个JSON对象：{"title":"…","author":"…","lang":"中文"}，不要markdown围栏，不要任何解释。' },
+      { role: 'user', content: '文件名：' + filename + '\n\n书的前几页：\n' + head }
+    ],
+    max_tokens: 500
+  };
+  fetchWithTimeout('https://api.moonshot.cn/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+    body: JSON.stringify(payload)
+  }).then(function(resp){
+    if(!resp.ok) throw new Error('bad');
+    return resp.json();
+  }).then(function(data){
+    var txt = (data.choices[0].message.content || '').replace(/```json|```/g, '');
+    var m = txt.match(/\{[\s\S]*\}/);
+    var obj = m ? JSON.parse(m[0]) : null;
+    if(!obj || !obj.title) throw new Error('bad');
+    var lang = /英/.test(String(obj.lang || '')) ? '英文' : '中文';
+    cb({ title: String(obj.title).slice(0, 80), author: String(obj.author || '').slice(0, 60), lang: lang });
+  }).catch(function(){ cb(fallback); });
+}
+
+/* 本地粗切段：按段落累加到约2000~3000字一段 */
+function bklibSegment(text){
+  var paras = text.split(/\n+/);
+  var segs = [], cur = '';
+  for(var i = 0; i < paras.length; i++){
+    var p = paras[i];
+    if(cur && cur.length + p.length > 2500){ segs.push(cur); cur = ''; }
+    cur += (cur ? '\n' : '') + p;
+    if(cur.length > 3000){ segs.push(cur); cur = ''; }
+  }
+  if(cur.replace(/^\s+|\s+$/g, '')) segs.push(cur);
+  return segs;
+}
+
+/* 一批（一段）发给AI切成知识点块；返回 [{title,summary,text}]，剥信封容错 */
+function bklibCutAI(seg, lang){
+  var key = (localStorage.getItem(LS_KEY) || '').trim();
+  var sys = '你是图书整理助手。把用户给的一段书的原文切成"一个知识点一块"：每块几百字，必须照抄原文不要改写不要漏内容；' +
+    '每块起一个简短标题和一句话摘要（摘要用中文大白话，即使原文是英文）。' +
+    '只返回一个JSON数组：[{"title":"…","summary":"…","text":"…"}]，不要markdown围栏，不要任何解释。';
+  var payload = {
+    model: modelSel.value,
+    messages: [
+      { role: 'system', content: sys },
+      { role: 'user', content: seg }
+    ],
+    max_tokens: 8000
+  };
+  return fetchWithTimeout('https://api.moonshot.cn/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+    body: JSON.stringify(payload)
+  }).then(function(resp){
+    if(!resp.ok) return resp.text().then(function(t){ throw new Error(ghErrText(resp.status, t)); });
+    return resp.json();
+  }).then(function(data){
+    var txt = (data.choices[0].message.content || '').replace(/```json|```/g, '');
+    var m = txt.match(/\[[\s\S]*\]/);
+    var arr = m ? JSON.parse(m[0]) : null;
+    if(!arr || !arr.length) throw new Error('AI 回答格式没看懂');
+    var out = [];
+    arr.forEach(function(c){
+      if(c && c.text && String(c.text).replace(/^\s+|\s+$/g, '')){
+        out.push({ title: String(c.title || '知识点').slice(0, 80),
+                   summary: String(c.summary || '').slice(0, 300),
+                   text: String(c.text) });
+      }
+    });
+    if(!out.length) throw new Error('AI 切空了');
+    return out;
+  });
+}
+
+/* 主切分循环：严格按批次顺序切，每切完一批就存进度（断点续切） */
+var bklibCutting = {}; /* bookId → true 正在切，防止重复点 */
+function bklibCutNext(bookId){
+  if(bklibCutting[bookId]) return;
+  bklibCutting[bookId] = true;
+  Promise.all([bklibIdbGet('kv', 'segs_' + bookId), bklibIdbGet('kv', 'prog_' + bookId)]).then(function(rs){
+    var segs = rs[0];
+    var prog = rs[1] || { segTotal: segs ? segs.length : 0, done: [] };
+    if(!segs || !segs.length){
+      bklibCutting[bookId] = false;
+      bklibSetProg('❌ 这本书的切段原料丢了（可能清过浏览器数据），请删掉重新导入。');
+      return;
+    }
+    if(prog.done.length >= segs.length){ bklibCutting[bookId] = false; bklibFinish(bookId); return; }
+    var idx = prog.done.length;
+    bklibSetProg('⏳ 正在切：第 ' + (idx + 1) + ' 批 / 共 ' + segs.length + ' 批（每批发一次AI，可以中途退出，下次点「继续切」）');
+    var key = (localStorage.getItem(LS_KEY) || '').trim();
+    var meta = bklibMeta(bookId);
+    var lang = meta ? meta.lang : '中文';
+    var p;
+    if(!key){
+      /* 没填 Key：本地粗切，一段算一块，无摘要，不发AI */
+      p = Promise.resolve([{ title: '第 ' + (idx + 1) + ' 部分', summary: '', text: segs[idx] }]);
+    }else{
+      p = bklibCutAI(segs[idx], lang);
+    }
+    p.then(function(chs){
+      var lite = (bklibMeta(bookId) || {}).chunksLite || [];
+      var saveP = Promise.resolve();
+      chs.forEach(function(c){
+        var cid = uid();
+        lite.push({ id: cid, ch: idx, title: c.title, summary: c.summary });
+        saveP = saveP.then(function(){
+          return bklibIdbPut('chunks', { id: cid, bookId: bookId, ch: idx, title: c.title, summary: c.summary, text: c.text });
+        });
+      });
+      return saveP.then(function(){
+        prog.done.push(idx);
+        return bklibIdbPut('kv', prog, 'prog_' + bookId);
+      }).then(function(){
+        bklibMetaSave(bookId, { chunksLite: lite });
+        bklibCutting[bookId] = false;
+        if(curBklibBookId === bookId) renderBklibBookPage();
+        bklibCutNext(bookId);
+      });
+    }).catch(function(e){
+      bklibCutting[bookId] = false;
+      bklibSetProg('❌ 第 ' + (idx + 1) + ' 批没切成：' + ((e && e.message) || '网络不通') + '。已切好的不会丢，网络好了点「继续切」。');
+      if(curBklibBookId === bookId) renderBklibBookPage();
+    });
+  }).catch(function(){ bklibCutting[bookId] = false; });
+}
+
+/* 全部切完：标记done + 自动生成一本「我的书」（目录=章节，章正文=各块标题+摘要，正文少不占备份） */
+function bklibFinish(bookId){
+  var meta = bklibMeta(bookId);
+  if(!meta) return;
+  var lite = meta.chunksLite || [];
+  if(!meta.myBookId && lite.length && typeof loadBooks === 'function'){
+    var byCh = {};
+    lite.forEach(function(c){ (byCh[c.ch] = byCh[c.ch] || []).push(c); });
+    var keys = Object.keys(byCh).sort(function(a, b){ return (+a) - (+b); });
+    var toc = [];
+    keys.forEach(function(k){
+      var ch = newChapter('第 ' + (+k + 1) + ' 部分：' + (byCh[k][0] ? byCh[k][0].title : ''));
+      ch.content = byCh[k].map(function(c){
+        return '## ' + c.title + (c.summary ? '\n' + c.summary : '');
+      }).join('\n\n');
+      toc.push(ch);
+    });
+    var books = loadBooks();
+    var nb = { id: uid(), title: meta.title, toc: toc, createdAt: Date.now(), updatedAt: Date.now(), fromBookLib: bookId };
+    books.unshift(nb);
+    saveBooks(books);
+    bklibMetaSave(bookId, { myBookId: nb.id });
+    if(typeof renderBooks === 'function') renderBooks();
+  }
+  bklibMetaSave(bookId, { done: true });
+  bklibSetProg('✅ 切完啦！这本书已在书架和「我的书」里。');
+  if(curBklibBookId === bookId) renderBklibBookPage();
+  renderBklibList();
+  popToast('📖 《' + meta.title + '》切好了', 3000);
+}
+
+function bklibSetProg(text){
+  var box = $('bklibBookProg');
+  if(box && curBklibBookId) box.innerHTML = '<div class="hint" style="margin-top:8px;">' + escapeHtml(text) + '</div>';
+  /* 首页进度区也留一行（导入时用户还在首页） */
+  bklibProgLine(text);
+}
+
+/* ---- 导入：提取文字→扫描版拦截→指纹查重→AI认书→确认面板 ---- */
+var bklibPending = null;
+function bklibImportFile(f){
+  var line = bklibProgLine('⏳ ' + f.name + '：正在提取文字…');
+  f.arrayBuffer().then(function(buf){
+    return pdfExtractText(buf);
+  }).then(function(r){
+    var text = (r.text || '').replace(/\s+\n/g, '\n').trim();
+    if(text.length < 500) throw new Error('这是扫描图片版，读不出文字（只支持文字版PDF）。没有发AI，没花钱。');
+    var fp = f.name + '_' + (f.size || 0);
+    var exist = loadBookLib().filter(function(m){ return m.fp === fp; })[0];
+    if(exist){
+      if(exist.done){ bklibProgLine('📖 「' + exist.title + '」切过啦，就在书架上，不重复花钱。'); }
+      else{ bklibProgLine('📖 「' + exist.title + '」之前切了一半，已帮您打开，点「继续切」接着来。'); }
+      openBklibBook(exist.id);
+      return null;
+    }
+    bklibPending = { text: text, filename: f.name, size: f.size || 0, fp: fp, pages: r.pages };
+    bklibRecognize(text.slice(0, 3000), f.name, function(info){
+      line.textContent = '✅ ' + f.name + '：文字提取好了（' + Math.round(text.length / 1000) + ' 千字），请确认书名后开始切块';
+      $('bklibPTitle').value = info.title;
+      $('bklibPAuthor').value = info.author;
+      $('bklibPLang').value = info.lang;
+      $('bklibPrepMsg').className = 'msg';
+      $('bklibPrep').classList.remove('hidden');
+      $('bklibPrep').scrollIntoView({ block: 'nearest' });
+    });
+  }).catch(function(e){
+    line.textContent = '❌ ' + f.name + '：' + ((e && e.message) || '导入失败');
+  });
+}
+$('btnBklibImport').addEventListener('click', function(){ $('bklibFile').click(); });
+$('bklibFile').addEventListener('change', function(){
+  var fs = $('bklibFile').files;
+  if(fs && fs.length) bklibImportFile(fs[0]);
+  $('bklibFile').value = '';
+});
+$('btnBklibStart').addEventListener('click', function(){
+  if(!bklibPending){ showMsg($('bklibPrepMsg'), '请先导入一本书。', 'err'); return; }
+  var title = $('bklibPTitle').value.replace(/^\s+|\s+$/g, '');
+  if(!title){ showMsg($('bklibPrepMsg'), '书名不能为空。', 'err'); return; }
+  var id = uid();
+  var segs = bklibSegment(bklibPending.text);
+  var meta = loadBookLib();
+  meta.unshift({ id: id, title: title,
+    author: $('bklibPAuthor').value.replace(/^\s+|\s+$/g, ''),
+    lang: $('bklibPLang').value,
+    filename: bklibPending.filename, size: bklibPending.size, fp: bklibPending.fp,
+    chars: bklibPending.text.length, pages: bklibPending.pages,
+    done: false, addedAt: Date.now(), chunksLite: [] });
+  saveBookLib(meta);
+  var pend = bklibPending;
+  bklibPending = null;
+  $('bklibPrep').classList.add('hidden');
+  Promise.all([
+    bklibIdbPut('kv', segs, 'segs_' + id),
+    bklibIdbPut('kv', { segTotal: segs.length, done: [] }, 'prog_' + id)
+  ]).then(function(){
+    openBklibBook(id);
+    renderBklibList();
+    bklibCutNext(id);
+  }).catch(function(){
+    showMsg($('bklibPrepMsg'), '存切段原料失败，请再试一次。', 'err');
+    $('bklibPrep').classList.remove('hidden');
+    bklibPending = pend;
+  });
+});
+
+/* ==================== v2.10.0 批量取书 · 晚间队列 · 自动续切 ==================== */
+var bklibBatchRunning = false;
+var BKLIB_NIGHTQ = 'bklib_nightq_v1';
+var BKLIB_WAKE = 'bklib_wakelock_v1';
+var BKLIB_REPORT = 'bklib_night_report_v1';
+
+function bklibNightQ(){ try{ return JSON.parse(localStorage.getItem(BKLIB_NIGHTQ) || '[]'); }catch(e){ return []; } }
+function bklibNightQSave(q){ localStorage.setItem(BKLIB_NIGHTQ, JSON.stringify(q)); bklibNightBarRender(); }
+
+/* 指纹查状态：done=切过 / half=切一半 / new=新书 */
+function bklibFpStatus(name, size){
+  var fp = name + '_' + (size || 0);
+  var m = loadBookLib().filter(function(x){ return x.fp === fp; })[0];
+  if(!m) return 'new';
+  return m.done ? 'done' : 'half';
+}
+
+/* 晚间队列黄条（书库卡片上） */
+function bklibNightBarRender(){
+  var bar = $('bklibNightBar'); if(!bar) return;
+  var q = bklibNightQ();
+  var half = loadBookLib().filter(function(m){ return !m.done; });
+  var txt = '';
+  if(q.length) txt += '🌙 晚上要切 ' + q.length + ' 本（' + q.join('、') + '）——充电+WiFi时打开软件就自动开工';
+  if(half.length) txt += (txt ? '<br>' : '') + '⏸ ' + half.length + ' 本切到一半，会自动续切';
+  if(!txt){
+    var rep = null;
+    try{ rep = JSON.parse(localStorage.getItem(BKLIB_REPORT) || 'null'); }catch(e){}
+    if(rep && rep.lines && rep.lines.length){
+      txt = '🏁 上次批量小结（' + fmtTime(rep.t) + '）：<br>' + rep.lines.map(escapeHtml).join('<br>');
+      bar.classList.remove('hidden');
+      $('bklibNightTxt').innerHTML = txt;
+      return;
+    }
+    bar.classList.add('hidden');
+    return;
+  }
+  bar.classList.remove('hidden');
+  $('bklibNightTxt').innerHTML = txt;
+}
+
+/* 亮屏开关 */
+var bklibWakeLockObj = null;
+function bklibWakeOn(){
+  if(localStorage.getItem(BKLIB_WAKE) === '0') return;
+  if(navigator.wakeLock && navigator.wakeLock.request){
+    navigator.wakeLock.request('screen').then(function(l){ bklibWakeLockObj = l; }).catch(function(){});
+  }
+}
+function bklibWakeOff(){ if(bklibWakeLockObj){ try{ bklibWakeLockObj.release(); }catch(e){} bklibWakeLockObj = null; } }
+document.addEventListener('visibilitychange', function(){ if(!document.hidden && bklibBatchRunning) bklibWakeOn(); });
+
+/* 壳里读文件夹里的PDF成文件对象 */
+function bklibReadShelfFile(name){
+  var b64 = window.LearnShell.readFile(name);
+  if(!b64) return null;
+  var bin = atob(b64), u8 = new Uint8Array(bin.length);
+  for(var i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+  return { name: name, type: 'application/pdf', size: u8.length,
+    arrayBuffer: function(){ return Promise.resolve(u8.buffer); } };
+}
+
+/* 把一本书切到完（复用 bklibCutNext，轮询等结果）；续切/新切通用 */
+function bklibCutBookAsync(bookId){
+  bklibCutNext(bookId);
+  return new Promise(function(resolve, reject){
+    var tm = setInterval(function(){
+      if(bklibCutting[bookId]) return;
+      clearInterval(tm);
+      var m = bklibMeta(bookId);
+      if(m && m.done) resolve();
+      else reject(new Error('切到一半停了（网络或AI问题），进度已存，下次自动续'));
+    }, 1500);
+  });
+}
+
+/* 全自动处理一本：提取→查重→认书（不停车）→切完。任何失败都 resolve 成 fail，不卡队列 */
+function bklibAutoOne(f){
+  return f.arrayBuffer().then(function(buf){
+    return pdfExtractText(buf);
+  }).then(function(r){
+    var text = (r.text || '').replace(/\s+\n/g, '\n').trim();
+    if(text.length < 500) return { status: 'fail', msg: '扫描图片版读不出文字，跳过' };
+    var fp = f.name + '_' + (f.size || 0);
+    var exist = loadBookLib().filter(function(m){ return m.fp === fp; })[0];
+    if(exist){
+      if(exist.done) return { status: 'skip', title: exist.title };
+      return bklibCutBookAsync(exist.id).then(function(){ return { status: 'done', title: exist.title }; });
+    }
+    return new Promise(function(res){
+      bklibRecognize(text.slice(0, 3000), f.name, function(info){ res(info); });
+    }).then(function(info){
+      var id = uid();
+      var segs = bklibSegment(text);
+      var meta = loadBookLib();
+      meta.unshift({ id: id, title: info.title, author: info.author, lang: info.lang,
+        filename: f.name, size: f.size || 0, fp: fp, chars: text.length, pages: r.pages,
+        done: false, addedAt: Date.now(), chunksLite: [], auto: true });
+      saveBookLib(meta);
+      return Promise.all([
+        bklibIdbPut('kv', segs, 'segs_' + id),
+        bklibIdbPut('kv', { segTotal: segs.length, done: [] }, 'prog_' + id)
+      ]).then(function(){
+        renderBklibList();
+        return bklibCutBookAsync(id);
+      }).then(function(){ return { status: 'done', title: info.title }; });
+    });
+  }).catch(function(e){
+    return { status: 'fail', msg: (e && e.message) || '失败' };
+  });
+}
+
+/* 批量流水线：items = [{name:'xx.pdf'} 或 {resumeId:'书id'}]，一本接一本 */
+function bklibBatchRun(items, source){
+  if(bklibBatchRunning){ bklibProgLine('⚠️ 正在切着呢，等这波完。'); return; }
+  if(!items.length) return;
+  bklibBatchRunning = true;
+  bklibWakeOn();
+  bklibProgLine('📚 批量切开始（' + source + '）：共 ' + items.length + ' 本');
+  var results = [];
+  var i = 0;
+  function next(){
+    if(i >= items.length){ finishAll(); return; }
+    var it = items[i]; i++;
+    bklibProgLine('⏳ 第 ' + i + ' 本 / 共 ' + items.length + ' 本：' + (it.name || '续切旧书'));
+    var p;
+    if(it.resumeId){
+      p = bklibCutBookAsync(it.resumeId).then(function(){
+        return { status: 'done', title: (bklibMeta(it.resumeId) || {}).title || it.resumeId };
+      }).catch(function(e){ return { status: 'fail', msg: (e && e.message) || '失败' }; });
+    }else{
+      var f = bklibReadShelfFile(it.name);
+      if(!f){ results.push('❌「' + it.name + '」文件夹里读不到（可能被删/改名），跳过'); next(); return; }
+      p = bklibAutoOne(f);
+    }
+    p.then(function(r){
+      if(r.status === 'done') results.push('✅「' + r.title + '」切完');
+      else if(r.status === 'skip') results.push('📖「' + r.title + '」切过啦，跳过不重复花钱');
+      else results.push('❌「' + (it.name || r.title || '?') + '」' + r.msg);
+      if(it.name){ bklibNightQSave(bklibNightQ().filter(function(n){ return n !== it.name; })); }
+      next();
+    });
+  }
+  function finishAll(){
+    bklibBatchRunning = false;
+    bklibWakeOff();
+    bklibProgLine('🏁 批量切结束，小结：');
+    results.forEach(function(l){ bklibProgLine('　' + l); });
+    localStorage.setItem(BKLIB_REPORT, JSON.stringify({ t: Date.now(), lines: results }));
+    renderBklibList();
+    bklibNightBarRender();
+    if(typeof bklibWriteFolderBackup === 'function') bklibWriteFolderBackup();
+    popToast('📚 批量切完：' + results.length + ' 本有结果了', 3500);
+  }
+  next();
+}
+
+/* 晚间自动开工判定：队列/半成品非空 + 壳里 + 充电中 + WiFi（读不到网络类型就当WiFi） */
+function bklibNightMaybe(){
+  if(bklibBatchRunning) return;
+  if(!window.LearnShell || !window.LearnShell.folderSet || !window.LearnShell.folderSet()) return;
+  var q = bklibNightQ();
+  var half = loadBookLib().filter(function(m){ return !m.done; });
+  if(!q.length && !half.length) return;
+  var go = function(charging){
+    if(!charging) return;
+    var conn = navigator.connection || {};
+    var wifi = conn.type ? (conn.type === 'wifi') : true;
+    if(!wifi) return;
+    var items = half.map(function(m){ return { resumeId: m.id }; });
+    q.forEach(function(n){ items.push({ name: n }); });
+    bklibBatchRun(items, '晚间自动');
+  };
+  if(navigator.getBattery){ navigator.getBattery().then(function(b){ go(b.charging); }).catch(function(){}); }
+}
+
+/* 壳里：书架取书（多选 + 状态标 + 现在切/晚上切） */
+(function(){
+  if(!window.LearnShell || !window.LearnShell.folderSet || !window.LearnShell.folderSet()) return;
+  $('btnBklibShelf').style.display = '';
+  $('btnBklibShelf').addEventListener('click', function(){
+    var box = $('bklibShelfList');
+    var files = [];
+    try{ files = JSON.parse(window.LearnShell.listFiles() || '[]'); }catch(e){}
+    var pdfs = files.filter(function(f){ return /\.pdf$/i.test(f.name || f); });
+    if(!pdfs.length){ box.innerHTML = '<div class="hint" style="margin-top:6px;">书架（坚果云授权文件夹）里还没有PDF——先把书转存进去。</div>'; return; }
+    box.innerHTML = '<div class="hint" style="margin-top:6px;">📚 书架里的PDF：打勾 → 点底部按钮。✅切过的灰掉防误选；⏸切一半的勾上就是续切。</div>';
+    var listDiv = document.createElement('div');
+    box.appendChild(listDiv);
+    pdfs.forEach(function(f){
+      var name = f.name || f, size = f.size || 0;
+      var st = bklibFpStatus(name, size);
+      var row = document.createElement('label');
+      row.style.cssText = 'display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px dashed #eee4d4; font-size:14px; cursor:pointer;';
+      var cb = document.createElement('input');
+      cb.type = 'checkbox'; cb.value = name; cb.setAttribute('data-st', st);
+      var nm = document.createElement('span');
+      nm.style.flex = '1'; nm.style.wordBreak = 'break-all';
+      nm.textContent = name;
+      var tag = document.createElement('span');
+      tag.style.cssText = 'flex:none; font-size:12px;';
+      if(st === 'done'){
+        cb.disabled = true; row.style.opacity = '0.45';
+        tag.textContent = '✅ 已切过'; tag.style.color = '#6a9e6a';
+      }else if(st === 'half'){
+        tag.textContent = '⏸ 切到一半'; tag.style.color = '#c08a2d';
+      }else{
+        tag.textContent = '🆕 新书'; tag.style.color = '#8a7a5a';
+      }
+      row.appendChild(cb); row.appendChild(nm); row.appendChild(tag);
+      listDiv.appendChild(row);
+      cb.addEventListener('change', updBtns);
+    });
+    var bar = document.createElement('div');
+    bar.className = 'btn-row'; bar.style.marginTop = '8px';
+    var bNow = document.createElement('button'); bNow.className = 'btn'; bNow.id = 'btnBklibCutNow';
+    var bNight = document.createElement('button'); bNight.className = 'btn secondary'; bNight.id = 'btnBklibCutNight';
+    var bAll = document.createElement('button'); bAll.className = 'btn secondary'; bAll.textContent = '☑ 全选新书';
+    bAll.style.cssText = 'font-size:13px; padding:6px 10px;';
+    bar.appendChild(bNow); bar.appendChild(bNight); bar.appendChild(bAll);
+    box.appendChild(bar);
+    function selNames(){
+      var out = [];
+      listDiv.querySelectorAll('input[type=checkbox]:checked:not(:disabled)').forEach(function(c){ out.push(c.value); });
+      return out;
+    }
+    function updBtns(){
+      var n = selNames().length;
+      bNow.textContent = '⚡ 现在切（' + n + '本）';
+      bNight.textContent = '🌙 留到晚上切（' + n + '本）';
+    }
+    updBtns();
+    bAll.addEventListener('click', function(){
+      var boxes = listDiv.querySelectorAll('input[type=checkbox]:not(:disabled)');
+      var anyUnchecked = Array.prototype.some.call(boxes, function(c){ return !c.checked; });
+      boxes.forEach(function(c){
+        if(anyUnchecked){ if(c.getAttribute('data-st') === 'new') c.checked = true; }
+        else c.checked = false;
+      });
+      updBtns();
+    });
+    bNow.addEventListener('click', function(){
+      var names = selNames();
+      if(!names.length) return;
+      box.innerHTML = '';
+      bklibBatchRun(names.map(function(n){ return { name: n }; }), '手动现在切');
+    });
+    bNight.addEventListener('click', function(){
+      var names = selNames();
+      if(!names.length) return;
+      var q = bklibNightQ();
+      names.forEach(function(n){ if(q.indexOf(n) < 0) q.push(n); });
+      bklibNightQSave(q);
+      box.innerHTML = '';
+      bklibProgLine('🌙 已排进晚间队列 ' + names.length + ' 本——晚上充电+连WiFi时打开本软件就自动切（锁屏也不怕，进度存着）。');
+    });
+  });
+
+  /* 晚间黄条按钮 */
+  $('btnBklibNightNow').addEventListener('click', function(){
+    var q = bklibNightQ();
+    var half = loadBookLib().filter(function(m){ return !m.done; });
+    var items = half.map(function(m){ return { resumeId: m.id }; });
+    q.forEach(function(n){ items.push({ name: n }); });
+    bklibBatchRun(items, '手动提前');
+  });
+  $('btnBklibNightClear').addEventListener('click', function(){
+    bklibNightQSave([]);
+    localStorage.removeItem(BKLIB_REPORT);
+    bklibNightBarRender();
+  });
+
+  /* 亮屏开关状态 */
+  $('bklibWake').checked = (localStorage.getItem(BKLIB_WAKE) !== '0');
+  $('bklibWake').addEventListener('change', function(){
+    localStorage.setItem(BKLIB_WAKE, $('bklibWake').checked ? '1' : '0');
+    if(!$('bklibWake').checked) bklibWakeOff();
+  });
+
+  bklibNightBarRender();
+  /* 打开软件后等一会儿探一次晚间条件，之后每3分钟探一次（锁屏后定时器自停，不怕费电） */
+  setTimeout(bklibNightMaybe, 10000);
+  setInterval(bklibNightMaybe, 180000);
+})();
+
+/* ---- 书架列表 / 本地搜索 ---- */
+function renderBklibList(){
+  var box = $('bklibList');
+  if(!box) return;
+  var kw = ($('bklibSearch').value || '').replace(/^\s+|\s+$/g, '');
+  if(kw){ bklibSearchRender(kw); return; }
+  var meta = loadBookLib();
+  if(!meta.length){
+    box.innerHTML = '<div class="hint" style="margin-top:10px;">书架还空着，点上方「📥 导入PDF书籍」开始。</div>';
+    return;
+  }
+  var html = '';
+  meta.forEach(function(m){
+    var cnt = (m.chunksLite || []).length;
+    html += '<div class="note-item lit-item bklib-item" data-bid="' + m.id + '" style="cursor:pointer;">' +
+      '<h3>📖 ' + escapeHtml(m.title) + (m.done ? '' : '（切到一半）') + '</h3>' +
+      '<p class="excerpt">' + escapeHtml(m.author || '作者不详') + ' · ' + (m.lang || '中文') + ' · ' +
+      cnt + ' 块 · ' + fmtTime(m.addedAt) + '</p></div>';
+  });
+  box.innerHTML = html;
+}
+/* 本地免费搜索：原文+摘要一起匹配，摘要/标题命中排前面 */
+function bklibSearchRender(kw){
+  var box = $('bklibList');
+  box.innerHTML = '<div class="hint" style="margin-top:10px;">🔍 正在本机翻书…</div>';
+  var low = kw.toLowerCase();
+  bklibIdbGetAll('chunks').then(function(all){
+    var sumHits = [], txtHits = [];
+    all.forEach(function(c){
+      var inSum = (c.title || '').toLowerCase().indexOf(low) >= 0 || (c.summary || '').toLowerCase().indexOf(low) >= 0;
+      var inTxt = (c.text || '').toLowerCase().indexOf(low) >= 0;
+      if(inSum) sumHits.push(c);
+      else if(inTxt) txtHits.push(c);
+    });
+    var hits = sumHits.concat(txtHits).slice(0, 50);
+    if(!hits.length){ box.innerHTML = '<div class="hint" style="margin-top:10px;">书里没搜到「' + escapeHtml(kw) + '」。</div>'; return; }
+    var metas = loadBookLib();
+    var html = '<div class="hint" style="margin-top:10px;">搜到 ' + (sumHits.length + txtHits.length) + ' 块，点一条直达：</div>';
+    hits.forEach(function(c){
+      var m = metas.filter(function(x){ return x.id === c.bookId; })[0];
+      html += '<div class="note-item lit-item bklib-hit" data-bid="' + c.bookId + '" data-cid="' + c.id + '" style="cursor:pointer;">' +
+        '<h3>' + escapeHtml(c.title || '知识点') + '</h3>' +
+        '<p class="excerpt">《' + escapeHtml(m ? m.title : '?') + '》 · ' + escapeHtml(c.summary || '(无摘要)') + '</p></div>';
+    });
+    box.innerHTML = html;
+  }).catch(function(){
+    box.innerHTML = '<div class="hint" style="margin-top:10px;">本机切片读不出来（可能清过浏览器数据）。</div>';
+  });
+}
+$('bklibSearch').addEventListener('input', renderBklibList);
+$('bklibList').addEventListener('click', function(e){
+  var el = e.target;
+  while(el && el !== $('bklibList')){
+    if(el.getAttribute && el.getAttribute('data-cid')){
+      openBklibChunk(el.getAttribute('data-bid'), el.getAttribute('data-cid'));
+      return;
+    }
+    if(el.getAttribute && el.getAttribute('data-bid')){
+      openBklibBook(el.getAttribute('data-bid'));
+      return;
+    }
+    el = el.parentNode;
+  }
+});
+
+/* ---- 书页：目录→章节→切片列表 ---- */
+var curBklibBookId = null;
+function openBklibBook(bookId){
+  var meta = bklibMeta(bookId);
+  if(!meta){ renderBklibList(); return; }
+  curBklibBookId = bookId;
+  viewHome.classList.add('hidden');
+  viewDetail.classList.add('hidden');
+  $('viewLit').classList.add('hidden');
+  var vb = document.getElementById('viewBook'); if(vb) vb.classList.add('hidden');
+  $('viewBklibChunk').classList.add('hidden');
+  $('viewBklibBook').classList.remove('hidden');
+  renderBklibBookPage();
+  window.scrollTo(0, 0);
+}
+function renderBklibBookPage(){
+  var meta = bklibMeta(curBklibBookId);
+  if(!meta) return;
+  $('bklibBookTitle').textContent = '📖 ' + meta.title;
+  $('bklibBookMeta').textContent = (meta.author || '作者不详') + ' · ' + (meta.lang || '中文') + ' · ' +
+    (meta.pages || '?') + '页 · ' + Math.round((meta.chars || 0) / 1000) + '千字 · ' + fmtTime(meta.addedAt);
+  var lite = meta.chunksLite || [];
+  var box = $('bklibChapList');
+  if(!lite.length){
+    box.innerHTML = '<div class="hint" style="margin-top:10px;">' + (meta.done ? '这本书没有切块。' : '还没开始切或刚切到一半，点上方「继续切」。') + '</div>';
+  }else{
+    var byCh = {};
+    lite.forEach(function(c){ (byCh[c.ch] = byCh[c.ch] || []).push(c); });
+    var keys = Object.keys(byCh).sort(function(a, b){ return (+a) - (+b); });
+    var html = '';
+    keys.forEach(function(k){
+      html += '<div style="margin-top:12px; font-weight:bold; color:#6b5638;">📂 第 ' + (+k + 1) + ' 部分（' + byCh[k].length + ' 块）</div>';
+      byCh[k].forEach(function(c){
+        html += '<div class="note-item lit-item bklib-hit" data-cid="' + c.id + '" style="cursor:pointer;">' +
+          '<h3>' + escapeHtml(c.title || '知识点') + '</h3>' +
+          (c.summary ? '<p class="excerpt">' + escapeHtml(c.summary) + '</p>' : '') + '</div>';
+      });
+    });
+    box.innerHTML = html;
+  }
+  /* 续切按钮：没切完就显示 */
+  bklibIdbGet('kv', 'prog_' + meta.id).then(function(prog){
+    var left = prog && prog.segTotal ? (prog.segTotal - (prog.done || []).length) : 0;
+    $('btnBklibContinue').style.display = (!meta.done && left > 0) ? '' : 'none';
+    if(!meta.done && prog && prog.segTotal){
+      $('bklibBookProg').innerHTML = '<div class="hint" style="margin-top:8px;">已切 ' + (prog.done || []).length + ' / ' + prog.segTotal + ' 批' +
+        (bklibCutting[meta.id] ? '（正在切…）' : '（点「继续切」接着来）') + '</div>';
+    }else if(meta.done){
+      $('bklibBookProg').innerHTML = '<div class="hint" style="margin-top:8px;">✅ 已切完，共 ' + lite.length + ' 块。</div>';
+    }
+  }).catch(function(){});
+}
+$('bklibChapList').addEventListener('click', function(e){
+  var el = e.target;
+  while(el && el !== $('bklibChapList')){
+    if(el.getAttribute && el.getAttribute('data-cid')){
+      openBklibChunk(curBklibBookId, el.getAttribute('data-cid'));
+      return;
+    }
+    el = el.parentNode;
+  }
+});
+$('btnBklibBack').addEventListener('click', function(){
+  $('viewBklibBook').classList.add('hidden');
+  viewHome.classList.remove('hidden');
+  renderBklibList();
+});
+$('btnBklibContinue').addEventListener('click', function(){
+  if(curBklibBookId) bklibCutNext(curBklibBookId);
+});
+$('btnBklibDel').addEventListener('click', function(){
+  var meta = bklibMeta(curBklibBookId);
+  if(!meta) return;
+  if(!confirm('删除《' + meta.title + '》？（切块会一起删，坚果云里的PDF原件不受影响）')) return;
+  var delId = meta.id;
+  saveBookLib(loadBookLib().filter(function(m){ return m.id !== delId; }));
+  bklibIdbGetAll('chunks').then(function(all){
+    var p = Promise.resolve();
+    all.forEach(function(c){
+      if(c.bookId === delId) p = p.then(function(){ return bklibIdbDel('chunks', c.id); });
+    });
+    return p;
+  }).then(function(){
+    return Promise.all([bklibIdbDel('kv', 'segs_' + delId), bklibIdbDel('kv', 'prog_' + delId)]);
+  }).catch(function(){}).then(function(){
+    /* 顺手删掉自动生成的那本「我的书」 */
+    if(meta.myBookId && typeof loadBooks === 'function'){
+      saveBooks(loadBooks().filter(function(b){ return b.id !== meta.myBookId; }));
+      if(typeof renderBooks === 'function') renderBooks();
+    }
+    $('viewBklibBook').classList.add('hidden');
+    viewHome.classList.remove('hidden');
+    renderBklibList();
+    popToast('🗑 已删除', 2000);
+  });
+});
+
+/* ---- 切片页：原文+摘要 ---- */
+function openBklibChunk(bookId, chunkId){
+  var meta = bklibMeta(bookId);
+  if(!meta){ renderBklibList(); return; }
+  curBklibBookId = bookId;
+  bklibIdbGet('chunks', chunkId).then(function(c){
+    if(!c){ popToast('这块的本机文字丢了（可能清过浏览器数据）', 3000); return; }
+    $('bklibChunkTitle').textContent = c.title || '知识点';
+    $('bklibChunkFrom').textContent = '出自《' + meta.title + '》';
+    $('bklibChunkSum').textContent = c.summary ? ('💡 摘要：' + c.summary) : '（这块没有摘要）';
+    $('bklibChunkText').textContent = c.text || '';
+    $('viewBklibBook').classList.add('hidden');
+    viewHome.classList.add('hidden');
+    $('viewBklibChunk').classList.remove('hidden');
+    window.scrollTo(0, 0);
+  }).catch(function(){ popToast('读不出来，请重试', 2500); });
+}
+$('btnBklibChunkBack').addEventListener('click', function(){
+  $('viewBklibChunk').classList.add('hidden');
+  openBklibBook(curBklibBookId);
+});
+
+/* ---- 🤖 问AI：本地关键词挑3~5块→连问题发给AI（查书唯一花AI的入口） ---- */
+$('btnBklibAsk').addEventListener('click', function(){
+  $('bklibAskBox').classList.toggle('hidden');
+});
+$('btnBklibAskGo').addEventListener('click', function(){
+  var q = $('bklibQ').value.replace(/^\s+|\s+$/g, '');
+  if(!q){ showMsg($('bklibAskMsg'), '先写上您想问的问题。', 'err'); return; }
+  var key = (localStorage.getItem(LS_KEY) || '').trim();
+  if(!key){ showMsg($('bklibAskMsg'), '还没有填写 API Key。请先回首页在「API 设置」里保存 Key。', 'err'); return; }
+  $('bklibAskMsg').className = 'msg';
+  $('btnBklibAskGo').disabled = true;
+  bklibIdbGetAll('chunks').then(function(all){
+    if(!all.length) throw new Error('书架还空着，先导入一本书再问。');
+    /* 关键词打分：中文按两字一组，英文按单词；标题+摘要命中权重高 */
+    var low = q.toLowerCase();
+    var toks = [];
+    low.split(/[^a-z0-9一-鿿]+/).forEach(function(w){
+      if(!w) return;
+      if(/[一-鿿]/.test(w)){
+        if(w.length <= 2) toks.push(w);
+        else for(var i = 0; i < w.length - 1; i++) toks.push(w.slice(i, i + 2));
+      }else toks.push(w);
+    });
+    if(!toks.length) toks.push(low);
+    all.forEach(function(c){
+      var head = ((c.title || '') + ' ' + (c.summary || '')).toLowerCase();
+      var body = (c.text || '').toLowerCase();
+      var sc = 0;
+      toks.forEach(function(t){
+        if(head.indexOf(t) >= 0) sc += 3;
+        if(body.indexOf(t) >= 0) sc += 1;
+      });
+      c._sc = sc;
+    });
+    var picks = all.filter(function(c){ return c._sc > 0; })
+      .sort(function(a, b){ return b._sc - a._sc; }).slice(0, 5);
+    if(!picks.length) throw new Error('书里没找到和问题相关的内容，换个问法试试。');
+    var metas = loadBookLib();
+    var ctx = picks.map(function(c, i){
+      var m = metas.filter(function(x){ return x.id === c.bookId; })[0];
+      return '【材料' + (i + 1) + '，出自《' + (m ? m.title : '?') + '》·' + (c.title || '') + '】\n' + (c.text || '');
+    }).join('\n\n');
+    litAI('你是医学问答助手。用户给了他从自己书里挑出来的几块原文。请用中文大白话回答他的问题，开头第一行先写明主要出自哪本书（用《》括起来），再分条作答；材料里没有的就明说"书里没讲到"。',
+      ctx + '\n\n【用户的问题】' + q,
+      function(txt){
+        $('btnBklibAskGo').disabled = false;
+        $('bklibA').textContent = txt;
+        $('bklibA').classList.remove('hidden');
+      },
+      function(err){
+        $('btnBklibAskGo').disabled = false;
+        showMsg($('bklibAskMsg'), err, 'err');
+      }, 4000);
+  }).catch(function(e){
+    $('btnBklibAskGo').disabled = false;
+    showMsg($('bklibAskMsg'), (e && e.message) ? e.message : '本机切片读不出来。', 'err');
+  });
+});
+
+/* 壳里：书库整包（含切片正文）写到坚果云文件夹 booklib-backup.json；不进 GitHub 仓库（太大） */
+function bklibWriteFolderBackup(){
+  var meta = loadBookLib();
+  if(!meta.length) return;
+  bklibIdbGetAll('chunks').then(function(all){
+    var s = JSON.stringify({ savedAt: new Date().toISOString(), meta: meta, chunks: all });
+    try{ window.LearnShell.writeFile('booklib-backup.json', ghB64enc(s)); }catch(e){}
+  }).catch(function(){});
+}
+
+renderBklibList();
+
 /* 改稿 AI 调用：原笔记全文 + 用户要求 → 同格式 JSON（不传 temperature/response_format） */
 function callReviseAI(note, instruction, onOk, onErr, st){
   var key = (localStorage.getItem(LS_KEY) || '').trim();
@@ -5099,11 +6090,51 @@ $('btnBalance').addEventListener('click', function(){
     if(typeof b.cash_balance === 'number') parts += '（现金 ' + b.cash_balance.toFixed(2);
     if(typeof b.voucher_balance === 'number' && typeof b.cash_balance === 'number') parts += ' + 代金券 ' + b.voucher_balance.toFixed(2) + '）';
     else if(typeof b.cash_balance === 'number') parts += '）';
-    showMsg($('balMsg'), parts + '。钱不对的话：看看是不是充到 Kimi 会员那边了（两套账，不相通）。', 'ok');
+    showMsg($('balMsg'), parts + '。这是"开放平台"账户（API key 花的钱从这里扣）。', 'ok');
+    queryVipQuota(); /* v2.9.1 顺手查会员额度 */
   }).catch(function(e){
     showMsg($('balMsg'), (e && e.message) ? e.message : '网络不通，查询失败。', 'err');
+    queryVipQuota(); /* v2.9.1 平台查失败也试试会员 */
   });
 });
+
+/* v2.9.1 查会员额度（第二行卡片）：Kimi 官方没有开放的会员查询接口，
+   先偷偷试读 kimi.com 的内部接口（需手机浏览器登录着 Kimi），
+   读不到就明说 + 给「去看会员额度」跳转按钮（方案A+B合体，洪老师拍板）。 */
+function queryVipQuota(){
+  var el = $('balVipMsg');
+  if(!el) return;
+  el.className = 'msg ok'; el.innerHTML = '👑 Kimi 会员额度：正在试着问 kimi.com…';
+  var endpoints = ['https://kimi.com/api/user', 'https://kimi.moonshot.cn/api/user'];
+  var i = 0;
+  function tryNext(){
+    if(i >= endpoints.length){ fallback(); return; }
+    var u = endpoints[i++];
+    fetchWithTimeout(u, { credentials: 'include', mode: 'cors' }).then(function(resp){
+      if(!resp.ok) throw new Error('x');
+      return resp.json();
+    }).then(function(d){
+      /* 能读到就尽量找额度字段；字段名官方没承诺，找到啥显示啥 */
+      var s = JSON.stringify(d || {});
+      var m = s.match(/"(membership|vip|level)"\s*:\s*"([^"]+)"/i) || s.match(/"(quota|balance|usage)"\s*:\s*("?[\w.,%]+"?)/i);
+      if(m){
+        el.className = 'msg ok';
+        el.innerHTML = '👑 Kimi 会员：' + escapeHtml(m[2]) + '（读自 kimi.com，仅供参考；以 kimi.com 页面为准）';
+      }else{
+        el.className = 'msg ok';
+        el.innerHTML = '👑 已连上 kimi.com（您登录着），但会员额度数字藏在页面里读不出来，点下面的按钮直接去看。' + vipBtnHtml();
+      }
+    }).catch(tryNext);
+  }
+  function fallback(){
+    el.className = 'msg ok';
+    el.innerHTML = '👑 Kimi 会员额度：官方没开放查询门，软件查不到（不是坏了）。点下面的按钮直接去看：' + vipBtnHtml();
+  }
+  function vipBtnHtml(){
+    return '<br><a class="btn secondary" style="display:inline-block;margin-top:6px;text-decoration:none;" href="https://kimi.com" target="_blank" rel="noopener">👉 去看会员额度（kimi.com）</a>';
+  }
+  tryNext();
+}
 
 /* ==================== ZIP 导出（手写 store-only + CRC32） ==================== */
 var CRC_TABLE = (function(){
@@ -5362,7 +6393,8 @@ function ghPush(opts){
        v2.8：书（目录+章正文+注释）也随包备份 */
     var payload = { version: 2, savedAt: new Date().toISOString(), notes: notes,
                     litMeta: (typeof loadLitMeta === 'function') ? loadLitMeta() : [],
-                    books: (typeof loadBooks === 'function') ? loadBooks() : [] };
+                    books: (typeof loadBooks === 'function') ? loadBooks() : [],
+                    bookLib: (typeof loadBookLib === 'function') ? loadBookLib() : [] /* v2.9 书库台账+摘要（正文在IndexedDB/坚果云） */ };
     var payloadStr = JSON.stringify(payload);
     /* v2.6.3 双通道备份：壳APP里同时写一份到授权文件夹（本地保险副本）。
        只写不读、失败静默不拖累云备份；浏览器里（写禁忌）自动跳过。 */
@@ -5371,6 +6403,7 @@ function ghPush(opts){
       if(window.LearnShell && window.LearnShell.folderSet && window.LearnShell.folderSet()){
         window.LearnShell.writeFile('notes-backup.json', ghB64enc(payloadStr));
         window.LearnShell.writeFile('backup-meta-notes.json', ghB64enc(metaJson)); /* v2.6.5 文件夹侧对账元信息 */
+        if(typeof bklibWriteFolderBackup === 'function') bklibWriteFolderBackup(); /* v2.9 书库整包写文件夹（不进GitHub） */
       }
     }catch(e){}
     var body = {
@@ -5430,15 +6463,18 @@ function ghPull(onResult){
 /* 恢复确认条：显示云端篇数+备份时间，确定才覆盖本机（取消不动） */
 var ghPendingLitMeta = null;
 var ghPendingBooks = null; /* v2.8 */
+var ghPendingBookLib = null; /* v2.9 */
 function ghAskRestore(payload, srcLabel){
   ghPendingNotes = payload.notes;
   ghPendingLitMeta = Array.isArray(payload.litMeta) ? payload.litMeta : null;
   ghPendingBooks = Array.isArray(payload.books) ? payload.books : null;
+  ghPendingBookLib = Array.isArray(payload.bookLib) ? payload.bookLib : null;
   var when = payload.savedAt ? fmtTime(payload.savedAt) : '未知时间';
   var litPart = ghPendingLitMeta && ghPendingLitMeta.length ? '，另有文献目录 ' + ghPendingLitMeta.length + ' 条' : '';
   var bookPart = ghPendingBooks && ghPendingBooks.length ? '，书 ' + ghPendingBooks.length + ' 本' : '';
-  ghConfText.textContent = (srcLabel || '云端') + '有 ' + payload.notes.length + ' 篇笔记' + litPart + bookPart + '（备份于 ' + when +
-    '）。恢复将覆盖本机现有笔记、文献目录和书，确定？';
+  var bklibPart = ghPendingBookLib && ghPendingBookLib.length ? '，书库 ' + ghPendingBookLib.length + ' 本' : '';
+  ghConfText.textContent = (srcLabel || '云端') + '有 ' + payload.notes.length + ' 篇笔记' + litPart + bookPart + bklibPart + '（备份于 ' + when +
+    '）。恢复将覆盖本机现有笔记、文献目录、书和书库目录，确定？';
   ghCard.open = true;
   ghConfirm.classList.remove('hidden');
 }
@@ -5452,10 +6488,13 @@ function ghDoRestore(){
   ghPendingLitMeta = null;
   if(ghPendingBooks && typeof saveBooks === 'function'){ saveBooks(ghPendingBooks); }
   ghPendingBooks = null;
+  if(ghPendingBookLib && typeof saveBookLib === 'function'){ saveBookLib(ghPendingBookLib); }
+  ghPendingBookLib = null;
   ghSuspend = false;
   renderList();
   if(typeof renderLitList === 'function') renderLitList();
   if(typeof renderBooks === 'function') renderBooks();
+  if(typeof renderBklibList === 'function') renderBklibList();
   popToast('📥 已恢复 ' + notes.length + ' 篇笔记', 3000);
 }
 
@@ -5642,7 +6681,7 @@ ghBindBtn($('ghConfNo'), function(){
      不通=红条常驻（只说连不上，不影响使用）
    注意：version.json 与软件副本（dl 字段指向的文件）由交付端（AI）每次发版时
    推到备份仓库；本文件版本号改 SW_VERSION 一处即可。 */
-var SW_VERSION = '2.8.0';
+var SW_VERSION = '2.10.0';
 /* v2.6.7 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["bg_gh_user", "hx_gh_user"], ["bg_gh_tok", "hx_gh_tok"], ["bg_gh_repo", "hx_gh_repo"], ["bg_apikey", "hx_apikey"]];
