@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<!--
+====================================================================
+ 文件桥 —— AI 与手机文件夹之间的桥（单文件 HTML，第三个协同软件）
+====================================================================
+ 修改记录：
+   v1.1.1 (2026-08-06)「下载整套」三件套→四件套：血气分析入编（software-xueqi.html）。
+   v1.1.0 (2026-08-05) 壳APP直连模式：在套壳App（学习套装）里检测到
+  window.LearnShell 就走原生桥——授权文件夹用安卓 SAF 持久授权（装APP时授一次，
+  永不 stale，没有浏览器 MediaStore 写禁忌）；收发/打包/下载整套全部直连文件夹；
+  「下载整套/下载新版」在壳里 = 自更新（写进APP内部www目录，重启APP生效）+文件夹
+  里再存一份备份。浏览器里一切照旧（v1.0.5 下载兜底不变）。
+   v1.0.5 (2026-08-05) 浏览器下载兜底+防死循环：华为机型SAF写授权文件夹必 stale
+  （读正常写不行），v1.0.3 自动重授权变死循环反复弹选择器。改法：写文件夹失败
+  →a[download] 浏览器下载兜底（落「下载」目录，文件不丢、中转照清）；自动重授权
+  每次点击限一次（receiveFiles(_raOnce)），再失败转手动引导。
+v1.0.4 (2026-08-05) 写盘加固（dirWriteFile）：先删同名旧文件（0B空壳是脏状态源）
+  →全新句柄立刻写完；撞 NotModifiedError 用新句柄再试一次。根因查明：安卓媒体
+  扫描器（MediaStore）会立刻"摸"根目录新文件改档案致句柄快照失效，与坚果云无关
+  （洪医生文件夹在根目录123456789下、地址栏 content://media）。建议：桥文件夹
+  放 Download/ 子目录（扫描器巡逻少）。
+v1.0.3 (2026-08-05) 钥匙过期自动重授权：收发文件遇 NotModifiedError 时，
+  借按钮点击的用户手势窗口自动弹系统选择器重新授权并重试（dirReauthRetry），
+  手势失效/用户取消才回退手动引导。背景：坚果云同步目录被后台频繁触碰，
+  句柄重新授权后几秒又 stale——长期建议授权非坚果云同步的文件夹。
+  另补：v1.0.1 页面可见版本号（title/header span）漏随版本更新，本次起同步改。
+v1.0.2 (2026-08-05) 修复：授权后文件夹被别的应用动过（坚果云同步/文件管理器），
+  File System Access 句柄缓存失效报 NotModifiedError（"state cached in an interface
+  object..."），收发文件直接失败且英文报错吓人。现统一识别→作废句柄→向导弹出
+  引导重新授权（dirStaleErr/dirStaleHandle，接收/上传/列表三处捕获）。
+  洪医生实测踩坑：接收AI文件时报此错。
+v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗三节大白话——
+         ①取Kimi API Key（platform.moonshot.cn→API Key管理→新建，sk-开头，
+         创建时只完整显示一次，学习笔记/习题学习的AI设置里填）
+         ②取GitHub Token（先找坚果云存档；真要新建：github.com→头像→
+         Settings→Developer settings→Personal access tokens→Fine-grained
+         tokens→勾两个仓库+Contents读写+建议1年期；2026-08-30到期提醒）
+         ③文件桥用法（首用向导/传给AI/收AI文件/打包搬家/换新手机四步/
+         自检更新/只认Chrome三条纪律）
+   v1.0  2026-08-02 初版（用户确认的"收发室大爷"方案）：
+         - 文件夹授权：Chrome File System Access API（showDirectoryPicker），
+           目录句柄存 IndexedDB（'bridge-db'/'kv'/'dir'），首次授权后免再问；
+           只有安卓 Chrome/Edge 支持（夸克/微信不行）——本软件只认 Chrome
+         - 列文件：列出授权文件夹内容（名称+大小+时间），每行「⬆️ 传给AI」
+         - 传给AI：文件读为 base64 → PUT 到仓库 transit/<文件名>（中转站）
+           + 登记 bridge-inbox.json {uploads:[{file,name,size,t}]}（读-改-写）；
+           AI 取走后负责删中转文件（仓库当传送带不当仓库，防撑爆）
+         - 接收AI文件：「📥 检查AI发来的文件」读 bridge-outbox.json
+           {deliveries:[{id,file,saveAs,note,t,done}]}，逐条：GET transit 文件
+           → 写进授权文件夹（getFileHandle+createWritable）→ DELETE 中转
+           → done=true → PUT outbox；全部处理完 toast 汇总
+         - 📦 打包分享：手搓无压缩 ZIP（store 法 + CRC32 表，UTF-8 文件名
+           旗标 bit11）：给自己=文件夹里的 .html 软件 + config.json
+           （随行配置卡：{gh:{user,tok,repo},t}，从本机 localStorage 抄出，
+           明文 Token 安全提醒：自用勿传/导入后可删）；给别人=只装 .html
+           软件；可选勾选"连文献等大文件一起打"（默认不选防包过大）
+         - config.json 一键导入：启动时扫授权文件夹，发现 config.json 且
+           Token 与机内不同 → 黄条"发现随行配置"→ 确定则写入三个软件的
+           配置键（br_gh_* / bg_gh_* / xt_gh_* 三份同名同值，三个软件通用）
+           + 问要不要删掉文件夹里的 config.json
+         - 开机向导卡 #wizard：缺文件夹授权/缺 Token/发现随行配置，
+           缺啥提醒啥（软件自己当小秘书），齐全自动隐藏
+         - 自检（SW_VERSION='1.0'，读 version-bridge.json，三态 updBar 同
+           学习笔记 v2.1 设计）+ 下载整套（software-notes.html /
+           software-xiti.html / software-bridge.html 三个连下，间隔 900ms）
+         - 云配置键 br_gh_user/br_gh_tok/br_gh_repo/br_gh_check；
+           Token 只存本机浏览器不进任何提示文字
+ 仓库协议（xuexi-backup，与数据备份同仓，2026-08-02 商定不改名）：
+   transit/<文件名>     中转文件（传完就删：上传后AI删 / 接收后桥删）
+   bridge-inbox.json    桥→AI 登记：{uploads:[{file,name,size,t}]}
+   bridge-outbox.json   AI→桥 任务单：{deliveries:[{id,file,saveAs,note,t,done}]}
+   version-bridge.json  版本号：{version,dl:'software-bridge.html',note}
+ AI 侧操作约定（新对话的 AI 必读）：
+   - 要给用户文件：PUT transit/<名> + 改写 bridge-outbox.json 追加
+     {id:唯一,file:'transit/<名>',saveAs:'<名>',note,t,done:false}
+   - 要取用户文件：GET bridge-inbox.json 看登记 → GET transit/<名> 读
+     → 读完 DELETE transit/<名>（保持仓库苗条）
+   - 全部用 Contents API（GET sha→PUT/DELETE），带用户 Token
+ 已知坑：
+   ① showDirectoryPicker 必须由用户手势触发（按钮点击里调），且
+      Playwright 无法自动化目录选择器——测试用 addInitScript 注入假
+      handle（结构化克隆可存 IndexedDB）
+   ② FileSystemWritableFileStream：createWritable() → write(blob) →
+      close() 才算写完；写一半关页面会留下 .crswap 临时文件
+   ③ 目录句柄存 IndexedDB 后，部分浏览器重启后权限失效需再点一次
+      （queryPermission/requestPermission 兜底，仍要用户手势）
+   ④ 手机没有"批命令"——打包/搬家功能必须做成软件内按钮（本卡已做）
+====================================================================
+    v1.1.4 (2026-08-11) 文件列表分门别类三层折叠：第1级大类（📦软件/📚文档PDF/💾备份数据/📎其他，
+         按文件名自动认，认不出进其他）、第2级软件名分组（仅📦软件类有）、第3级文件行；
+         默认全部折叠；软件组内按版本号新→旧排（无版本号的按时间排），其他类按时间新→旧排；
+         「⬆️传给AI」等原有功能不动。
+    v1.1.3 (2026-08-06) 「⬇️ 下载整套软件」加第5步 PPT工坊（software-ppt.html→PPT工坊.html），计数改 1/5~5/5。
+    v1.1.2 (2026-08-06) 公共钱罐hx_*：GitHub Token/仓库名与其他软件共享，一处填处处有。
+    同版补充：主界面刷新hxIndexRefresh——壳里打开任一软件顺带把套装主界面(index.html)也换新，主界面从此也能自动更新。
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>文件桥 v1.1.4</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #faf7f2; color: #3a3632; }
+  header { background: #6a5b47; color: #fff; padding: 14px 16px; font-size: 18px; font-weight: bold; position: sticky; top: 0; z-index: 10; }
+  header .ver { font-size: 12px; font-weight: normal; opacity: .8; margin-left: 8px; }
+  .page { padding: 14px; max-width: 640px; margin: 0 auto; }
+  .hidden { display: none !important; }
+  .card { background: #fffdf8; border: 1px solid #e8dcc8; border-radius: 14px; padding: 14px 16px; margin-bottom: 14px; }
+  .card h2 { font-size: 16px; color: #6a5b47; margin-bottom: 8px; }
+  .hint { font-size: 13px; color: #9a8f80; line-height: 1.7; margin-top: 6px; }
+  button { font-size: 16px; border: none; border-radius: 10px; padding: 10px 16px; cursor: pointer; background: #6a5b47; color: #fff; -webkit-appearance: none; font-family: inherit; }
+  button:active { opacity: .85; }
+  button.ghost { background: #f5efe4; color: #6a5b47; border: 1px solid #e8dcc8; }
+  .btn-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+  input[type=text], input[type=password] {
+    width: 100%; font-size: 16px; padding: 10px 12px; margin: 4px 0 8px;
+    border: 1px solid #e5ddd0; border-radius: 10px; background: #fdfcfa;
+    color: #3a3a3a; outline: none; font-family: inherit;
+  }
+  label { font-size: 13px; color: #9a8f80; }
+  .file-item { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px dashed #eee4d4; }
+  .file-item:last-child { border-bottom: none; }
+  .file-name { flex: 1; font-size: 15px; word-break: break-all; }
+  .file-size { font-size: 12px; color: #b5aa9c; flex: none; }
+  .file-item button { font-size: 13px; padding: 6px 10px; flex: none; }
+  /* v1.1.4 分组折叠列表 */
+  details.fgroup { border: 1px solid #eee4d4; border-radius: 10px; margin: 6px 0; background: #fffdf8; }
+  details.fgroup > summary { padding: 10px 12px; font-size: 15px; font-weight: bold; cursor: pointer; list-style: none; }
+  details.fgroup > summary::-webkit-details-marker { display: none; }
+  details.fgroup > summary::before { content: '▸ '; color: #b5aa9c; }
+  details.fgroup[open] > summary::before { content: '▾ '; }
+  details.fgroup > summary .cnt { font-weight: normal; font-size: 12px; color: #b5aa9c; margin-left: 6px; }
+  details.fgroup .fbody { padding: 0 12px 8px 12px; }
+  details.fgroup details.fgroup { margin: 4px 0 4px 10px; }
+  details.fgroup details.fgroup > summary { font-size: 14px; padding: 7px 10px; }
+  /* 向导卡（缺啥提醒啥） */
+  #wizard { background: #fff8e8; border: 1.5px solid #e8c96a; }
+  #wizard .step { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 15px; line-height: 1.6; }
+  #wizard .step button { flex: none; font-size: 14px; padding: 6px 12px; }
+  /* 自检条 */
+  #updBar { position: fixed; left: 10px; right: 10px; top: 10px; z-index: 999; max-width: 640px; margin: 0 auto; background: #fff8e8; border: 1.5px solid #e8c96a; border-radius: 12px; padding: 10px 12px; box-shadow: 0 4px 14px rgba(0,0,0,.12); font-size: 14px; line-height: 1.7; color: #4a3d1e; }
+  #updBar.ok { background: #eef7ee; border-color: #9ec79e; color: #2e4d2e; }
+  #updBar.bad { background: #fdeeee; border-color: #d99; color: #6d2b2b; }
+  #toast { position: fixed; left: 50%; bottom: 60px; transform: translateX(-50%); background: rgba(60,48,32,.92); color: #fff; padding: 10px 18px; border-radius: 20px; font-size: 14px; z-index: 1000; display: none; max-width: 86vw; text-align: center; }
+  /* 打包弹窗 */
+  .mask { position: fixed; inset: 0; background: rgba(60,48,32,.4); z-index: 500; display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .modal { background: #fffdf8; border-radius: 14px; padding: 18px; width: 100%; max-width: 420px; }
+  .modal h3 { margin-bottom: 10px; color: #6a5b47; }
+  .modal .opt { display: block; padding: 12px; border: 1.5px solid #e8dcc8; border-radius: 10px; margin-bottom: 8px; font-size: 15px; line-height: 1.6; cursor: pointer; }
+  .modal .opt:active { background: #f5efe4; }
+  .modal .opt small { color: #9a8f80; }
+  .log { font-size: 13px; color: #9a8f80; line-height: 1.8; white-space: pre-line; margin-top: 6px; max-height: 160px; overflow-y: auto; }
+  /* v1.0.1 使用说明弹窗 */
+  .help-sec { margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px dashed #eee4d4; }
+  .help-sec:last-of-type { border-bottom: none; }
+  .help-sec h4 { font-size: 15px; color: #6a5b47; margin-bottom: 6px; }
+  .help-sec p { font-size: 14px; line-height: 1.8; margin: 3px 0; }
+  .gh-lab { display:block; margin-top: 6px; }
+</style>
+</head>
+<body>
+<header>📂 文件桥<span class="ver">v1.1.4</span></header>
+<div class="page">
+
+  <!-- 使用说明入口 -->
+  <div class="card" style="padding:10px 16px;">
+    <div class="btn-row" style="margin:0;">
+      <button class="ghost" id="btnHelp">❓ 使用说明（取Kimi Key / 取GitHub Token / 文件桥用法）</button>
+    </div>
+  </div>
+
+  <!-- 开机向导卡：缺啥提醒啥 -->
+  <div class="card hidden" id="wizard">
+    <h2>🧭 设置向导（缺什么补什么）</h2>
+    <div id="wizardSteps"></div>
+    <div class="hint">补齐后本卡自动消失。Token 在坚果云：学习文件 → AI → 我设计的软件 → github token my own software.txt</div>
+  </div>
+
+  <!-- 文件夹 -->
+  <div class="card">
+    <h2>📁 我的文件夹</h2>
+    <div id="dirStatus" class="hint">还没授权文件夹</div>
+    <div class="btn-row">
+      <button id="btnAuth">📁 授权文件夹</button>
+      <button class="ghost" id="btnRefresh">🔄 刷新列表</button>
+    </div>
+    <div id="fileList"></div>
+    <div class="hint">授权「医学软件」文件夹后，这里列出里面的文件。「⬆️ 传给AI」= 文件送进 GitHub 中转站，跟 AI 说一声文件名它就能读到（读完会删掉中转，不占仓库）。</div>
+  </div>
+
+  <!-- AI 往来 -->
+  <div class="card">
+    <h2>📮 AI 往来</h2>
+    <div class="btn-row">
+      <button id="btnRecv">📥 检查AI发来的文件</button>
+    </div>
+    <div class="log" id="ioLog"></div>
+    <div class="hint">AI 要给你文件时会往仓库贴"任务单"，点这里照单收进文件夹。</div>
+  </div>
+
+  <!-- 打包分享 -->
+  <div class="card">
+    <h2>📦 打包分享</h2>
+    <div class="btn-row">
+      <button id="btnPack">📦 打包这个文件夹</button>
+    </div>
+    <div class="hint">把文件夹里的软件打成 zip：给自己用会多带一张"随行配置卡"（新手机免填Token）；给别人只装干净软件。</div>
+  </div>
+
+  <!-- 云设置 -->
+  <div class="card">
+    <h2>☁️ 云设置（GitHub）</h2>
+    <label class="gh-lab">GitHub 用户名</label>
+    <input type="text" id="ghUser" autocomplete="off">
+    <label class="gh-lab">Token（只存本机浏览器，不外传）</label>
+    <input type="password" id="ghTok" autocomplete="off">
+    <label class="gh-lab">仓库名</label>
+    <input type="text" id="ghRepo" autocomplete="off">
+    <div class="btn-row">
+      <button id="ghSave">💾 保存设置</button>
+    </div>
+    <div class="btn-row">
+      <button class="ghost" id="ghCheckBtn">🔍 自检：线路 + 新版本</button>
+      <button class="ghost" id="ghDlAllBtn">⬇️ 下载整套软件</button>
+    </div>
+    <div class="hint" id="ghCheck">自检：还没查过（每次打开会自动查一次）</div>
+    <div class="hint">「下载整套」= 学习笔记 + 习题学习 + 文件桥 + 血气分析，四个最新版一起下载（浏览器首次可能问"允许下载多个文件"，点允许）。</div>
+  </div>
+
+  <div class="hint" style="text-align:center;padding:8px 0 20px;">文件桥 v1.0 · AI 与文件夹之间的桥 · 只认 Chrome</div>
+</div>
+
+<!-- 自检/随行配置条 -->
+<div id="updBar" class="hidden">
+  <div style="display:flex;gap:8px;align-items:flex-start;">
+    <div id="updText" style="flex:1;white-space:pre-line;"></div>
+    <button id="updClose" class="ghost" style="font-size:14px;padding:4px 10px;" title="关闭">✕</button>
+  </div>
+  <div class="btn-row hidden" id="updBtnRow">
+    <button id="updDlBtn">⬇️ 下载新版到本机</button>
+  </div>
+  <div class="btn-row hidden" id="updCfgRow">
+    <button id="updCfgYes">✅ 一键导入配置</button>
+    <button class="ghost" id="updCfgNo">先不用</button>
+  </div>
+</div>
+
+<!-- 使用说明弹窗（v1.0.1） -->
+<div class="mask hidden" id="helpMask">
+  <div class="modal" style="max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch;">
+    <h3>❓ 使用说明</h3>
+
+    <div class="help-sec">
+      <h4>一、怎么取 Kimi API Key（学习笔记/习题学习里的AI都靠它）</h4>
+      <p>1. 浏览器打开网址：<b>platform.moonshot.cn</b></p>
+      <p>2. 登录（手机号验证码即可）</p>
+      <p>3. 点左侧「API Key 管理」→「新建 API Key」</p>
+      <p>4. 复制 sk- 开头那串 → 打开学习笔记/习题学习 → 填进「API 设置」保存</p>
+      <p class="hint">提醒：Key 只在创建时完整显示一次，丢了就再新建一个；这个Key要充钱才够用，几块钱能用很久。</p>
+    </div>
+
+    <div class="help-sec">
+      <h4>二、怎么取 GitHub Token（云备份/文件桥都靠它）</h4>
+      <p><b>先找旧的：</b>你已经有一个了！存在 坚果云 → 学习文件 → AI → 我设计的软件 → github token my own software.txt，复制粘贴就行，不用重新建。</p>
+      <p><b>真要新建：</b></p>
+      <p>1. 浏览器打开网址：<b>github.com</b> 并登录（打不开就多试几次或换时段）</p>
+      <p>2. 点右上角头像 →「Settings」→ 拉到最底「Developer settings」</p>
+      <p>3.「Personal access tokens」→「Fine-grained tokens」→「Generate new token」</p>
+      <p>4. 起个名字，有效期建议选1年；「Repository access」选 Only select repositories → 勾 hongxiaotao177.github.io 和 xuexi-backup 两个；Permissions 里 Contents 选 Read and write</p>
+      <p>5. 点 Generate → 复制 github_pat_ 开头那串 → 存进坚果云那个txt，再填进各软件的云设置</p>
+      <p class="hint">提醒：Token 2026-08-30 到期，到期前AI会提醒你换新的（建议选1年期）。</p>
+    </div>
+
+    <div class="help-sec">
+      <h4>三、文件桥怎么用（AI 和文件夹之间的收发室）</h4>
+      <p><b>第一次用：</b>打开软件 → 向导卡领着走：① 授权「医学软件」文件夹（Chrome问一次点允许）② 填Token保存。齐了向导卡自动消失。</p>
+      <p><b>你 → AI：</b>把文件丢进文件夹 → 文件桥里找到它 → 点「⬆️ 传给AI」→ 到对话里告诉AI文件名。AI读完会清掉中转，不占仓库。</p>
+      <p><b>AI → 你：</b>AI说要给你文件 → 打开文件桥 → 点「📥 检查AI发来的文件」→ 文件自动存进文件夹。</p>
+      <p><b>打包搬家：</b>「📦 打包这个文件夹」→ 给自己（带随行配置卡，新手机一键导入Token，包别发别人）/ 给别人（干净软件）。</p>
+      <p><b>换新手机：</b>解压包 → Chrome打开文件桥 → 授权文件夹 → 发现随行配置卡点一键导入 → 另外两个软件各点「从云端恢复」→ 完事。</p>
+      <p><b>自检与更新：</b>每次打开自动检查线路和新版；有新版点「⬇️ 下载整套软件」，三个软件一起换新。</p>
+      <p class="hint">注意：只认 Chrome；文件夹授权只认你亲手点"允许"；Token存在浏览器里，换浏览器要重填。</p>
+    </div>
+
+    <div class="btn-row">
+      <button class="ghost" id="helpClose">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 打包弹窗 -->
+<div class="mask hidden" id="packMask">
+  <div class="modal">
+    <h3>📦 打包给谁用？</h3>
+    <div class="opt" id="packSelf">👤 <b>给自己</b>（换新手机用）<br>
+      <small>软件 + 随行配置卡（含Token，新手机免填）<br>⚠️ 含Token的包千万别发给别人</small></div>
+    <div class="opt" id="packOther">🎁 <b>给别人</b><br>
+      <small>只装干净软件，不带Token不带任何设置</small></div>
+    <label style="display:block;margin:8px 0;font-size:14px;color:#6a5b47;">
+      <input type="checkbox" id="packBig"> 连文献等大文件也一起打（默认不打，防包太大）
+    </label>
+    <div class="btn-row">
+      <button class="ghost" id="packCancel">取消</button>
+    </div>
+    <div class="log" id="packLog"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+'use strict';
+(function(){
+var $ = function(id){ return document.getElementById(id); };
+
+/* ==================== 基础工具 ==================== */
+var toastTimer = null;
+function toast(msg, ms){
+  var t = $('toast');
+  t.textContent = msg; t.style.display = 'block';
+  if(toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.style.display = 'none'; }, ms || 3000);
+}
+function fmtSize(n){
+  if(n < 1024) return n + 'B';
+  if(n < 1048576) return (n/1024).toFixed(1) + 'KB';
+  return (n/1048576).toFixed(1) + 'MB';
+}
+function fmtTime(t){ return new Date(t).toLocaleString(); }
+
+/* ==================== GitHub 通信（移植学习笔记/习题学习同套） ==================== */
+var BR_GH_USER = 'br_gh_user', BR_GH_TOK = 'br_gh_tok', BR_GH_REPO = 'br_gh_repo', BR_GH_CHECK = 'br_gh_check';
+var SW_VERSION = '1.1.4';
+/* v1.1.2 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
+(function(){
+  var HX_MAP=[["br_gh_user", "hx_gh_user"], ["br_gh_tok", "hx_gh_tok"], ["br_gh_repo", "hx_gh_repo"]];
+  function hxSync(){
+    for(var i=0;i<HX_MAP.length;i++){
+      var own=localStorage.getItem(HX_MAP[i][0]), sh=localStorage.getItem(HX_MAP[i][1]);
+      if(own && own!==sh) localStorage.setItem(HX_MAP[i][1], own);
+      else if(!own && sh) localStorage.setItem(HX_MAP[i][0], sh);
+    }
+  }
+  hxSync(); setInterval(hxSync, 2000);
+})();
+/* 主界面刷新：壳里打开软件时顺带检查套装主界面(index.html)有没有新版，有就换新（解决主界面自己不会更新的鸡生蛋问题） */
+function hxIndexRefresh(){
+  if(!window.LearnShell || !window.LearnShell.applyUpdate) return;
+  if(typeof ghCfg!=="function" || typeof cmpVer!=="function") return;
+  var c=ghCfg(); if(!(c.user && c.tok && c.repo)) return;
+  var H={"Authorization":"token "+c.tok, "Accept":"application/vnd.github+json"};
+  var _base="https://api.github.com/repos/"+encodeURIComponent(c.user)+"/"+encodeURIComponent(c.repo)+"/contents/";
+  fetch(_base+encodeURIComponent("version-index.json"), { headers: H }).then(function(r){ if(!r.ok) return null; return r.json(); }).then(function(vf){
+    if(!vf) return;
+    var info; try{ info=JSON.parse(ghB64dec(vf.content||"")); }catch(e){ return; }
+    var cur=localStorage.getItem("hx_index_ver")||"1.0.0";
+    if(!info || !info.version || cmpVer(info.version, cur)<=0) return;
+    fetch(_base+encodeURIComponent("index.html"), { headers: H }).then(function(r){ if(!r.ok) return null; return r.json(); }).then(function(sf){
+      if(!sf) return;
+      var b64=ghB64enc(ghB64dec(sf.content||""));
+      try{ if(window.LearnShell.applyUpdate("index.html", b64)) localStorage.setItem("hx_index_ver", info.version); }catch(e){}
+    });
+  }).catch(function(){});
+}
+setTimeout(hxIndexRefresh, 6000);
+
+
+var ghVerPending = null;
+
+function ghCfg(){
+  return {
+    user: (localStorage.getItem(BR_GH_USER) || '').replace(/^\s+|\s+$/g,''),
+    tok:  (localStorage.getItem(BR_GH_TOK)  || '').replace(/^\s+|\s+$/g,''),
+    repo: (localStorage.getItem(BR_GH_REPO) || '').replace(/^\s+|\s+$/g,'')
+  };
+}
+function ghReady(){ var c = ghCfg(); return !!(c.user && c.tok && c.repo); }
+function ghHeaders(){ return { 'Authorization': 'token ' + ghCfg().tok, 'Accept': 'application/vnd.github+json' }; }
+function ghFileUrl(name){
+  var c = ghCfg();
+  /* 按段编码再拼 '/'（transit/中文名 这种带子目录的路径，整串 encodeURIComponent
+     会把斜杠编成 %2F，GitHub 兼容性差；分段编码最稳） */
+  var path = String(name).split('/').map(encodeURIComponent).join('/');
+  return 'https://api.github.com/repos/' + encodeURIComponent(c.user) + '/' +
+         encodeURIComponent(c.repo) + '/contents/' + path;
+}
+function ghFetch(url, opts){
+  return new Promise(function(resolve, reject){
+    var ctrl = new AbortController();
+    var timer = setTimeout(function(){ ctrl.abort(); }, 30000);
+    fetch(url, Object.assign({}, opts || {}, { signal: ctrl.signal })).then(function(r){
+      clearTimeout(timer); resolve(r);
+    }, function(e){
+      clearTimeout(timer);
+      reject(new Error(e && e.name === 'AbortError' ? '连接超时（30秒），网络可能不通' : '网络不通，请求没到达 GitHub'));
+    });
+  });
+}
+/* 文本 base64（中文安全）；二进制 base64（PDF 等） */
+function ghB64enc(s){ return btoa(unescape(encodeURIComponent(s))); }
+function ghB64dec(s){ return decodeURIComponent(escape(atob(String(s).replace(/\s+/g,'')))); }
+function ghB64decBin(s){
+  var bin = atob(String(s).replace(/\s+/g,''));
+  var arr = new Uint8Array(bin.length);
+  for(var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return arr;
+}
+function blobToB64(blob){
+  return new Promise(function(resolve, reject){
+    var fr = new FileReader();
+    fr.onload = function(){
+      var u8 = new Uint8Array(fr.result), chunks = [], step = 0x8000;
+      for(var i = 0; i < u8.length; i += step) chunks.push(String.fromCharCode.apply(null, u8.subarray(i, i + step)));
+      resolve(btoa(chunks.join('')));
+    };
+    fr.onerror = function(){ reject(new Error('文件读取失败')); };
+    fr.readAsArrayBuffer(blob);
+  });
+}
+function ghErrText(status, body){
+  if(status === 401) return 'Token 失效或没权限，检查 Token';
+  if(status === 404) return '仓库不存在或 Token 没勾选这个仓库';
+  return 'HTTP ' + status + '：' + String(body || '').replace(/\s+/g,' ').slice(0,150);
+}
+/* 读-改-写 JSON 文件（404=还没有） */
+function ghReadJson(name){
+  return ghFetch(ghFileUrl(name), { headers: ghHeaders() }).then(function(resp){
+    if(resp.status === 404) return { sha: null, data: null };
+    if(!resp.ok) return resp.text().then(function(t){ throw new Error(ghErrText(resp.status, t)); });
+    return resp.json().then(function(file){
+      var data = null;
+      try{ data = JSON.parse(ghB64dec(file.content || '')); }catch(e){}
+      return { sha: file.sha, data: data };
+    });
+  });
+}
+function ghWriteJson(name, data, sha, message){
+  var body = { message: message, content: ghB64enc(JSON.stringify(data)) };
+  if(sha) body.sha = sha;
+  return ghFetch(ghFileUrl(name), { method: 'PUT', headers: ghHeaders(), body: JSON.stringify(body) })
+    .then(function(resp){
+      if(!resp.ok) return resp.text().then(function(t){ throw new Error(ghErrText(resp.status, t)); });
+    });
+}
+function ghPutFile(name, b64, message){
+  return ghFetch(ghFileUrl(name), { headers: ghHeaders() }).then(function(resp){
+    if(resp.status === 404) return null;
+    if(!resp.ok) return resp.text().then(function(t){ throw new Error(ghErrText(resp.status, t)); });
+    return resp.json();
+  }).then(function(file){
+    var body = { message: message, content: b64 };
+    if(file && file.sha) body.sha = file.sha;
+    return ghFetch(ghFileUrl(name), { method: 'PUT', headers: ghHeaders(), body: JSON.stringify(body) })
+      .then(function(resp2){
+        if(!resp2.ok) return resp2.text().then(function(t){ throw new Error(ghErrText(resp2.status, t)); });
+      });
+  });
+}
+function ghDeleteFile(name, message){
+  return ghFetch(ghFileUrl(name), { headers: ghHeaders() }).then(function(resp){
+    if(resp.status === 404) return null;
+    if(!resp.ok) return resp.text().then(function(t){ throw new Error(ghErrText(resp.status, t)); });
+    return resp.json();
+  }).then(function(file){
+    if(!file || !file.sha) return;
+    return ghFetch(ghFileUrl(name), { method: 'DELETE', headers: ghHeaders(),
+      body: JSON.stringify({ message: message, sha: file.sha }) })
+      .then(function(resp2){
+        if(!resp2.ok) return resp2.text().then(function(t){ throw new Error(ghErrText(resp2.status, t)); });
+      });
+  });
+}
+
+/* ==================== 文件夹访问（File System Access API） ==================== */
+var dirHandle = null;
+/* 目录句柄存 IndexedDB（结构化克隆）；手搓最小 idb 封装 */
+function idbOpen(){
+  return new Promise(function(resolve, reject){
+    var req = indexedDB.open('bridge-db', 1);
+    req.onupgradeneeded = function(){ req.result.createObjectStore('kv'); };
+    req.onsuccess = function(){ resolve(req.result); };
+    req.onerror = function(){ reject(new Error('IndexedDB 打不开')); };
+  });
+}
+function idbSet(key, val){
+  return idbOpen().then(function(db){
+    return new Promise(function(resolve, reject){
+      var tx = db.transaction('kv', 'readwrite');
+      tx.objectStore('kv').put(val, key);
+      tx.oncomplete = function(){ resolve(); };
+      tx.onerror = function(){ reject(new Error('句柄存不进 IndexedDB')); };
+    });
+  });
+}
+function idbGet(key){
+  return idbOpen().then(function(db){
+    return new Promise(function(resolve, reject){
+      var req = db.transaction('kv', 'readonly').objectStore('kv').get(key);
+      req.onsuccess = function(){ resolve(req.result || null); };
+      req.onerror = function(){ reject(new Error('句柄读不出')); };
+    });
+  });
+}
+function dirSupported(){ return typeof window.showDirectoryPicker === 'function'; }
+
+/* ==================== v1.1.0 壳APP直连模式 ====================
+   套壳App注入 window.LearnShell（原生SAF持久授权，装壳时授一次，不会 stale）。
+   inShell 时文件夹读写全走桥；dirHandle 体系只在浏览器模式用。 */
+var inShell = !!window.LearnShell;
+function u8ToB64(u8){
+  var bin = '';
+  for(var i = 0; i < u8.length; i += 8192) bin += String.fromCharCode.apply(null, u8.subarray(i, i + 8192));
+  return btoa(bin);
+}
+function dirOk(){ return inShell ? window.LearnShell.folderSet() : !!dirHandle; }
+window.__shellFolderPicked = function(name){
+  if(name){ ioLog('📁 壳APP已授权文件夹：' + name); toast('✅ 已授权文件夹：' + name, 3000); }
+  else toast('已取消授权', 2500);
+  if(typeof refreshAll === 'function') refreshAll();
+};
+/* v1.0.2 文件夹"钥匙过期"检测：授权后文件夹被别的应用（坚果云同步/文件管理器）
+   动过，File System Access 句柄缓存失效，报 NotModifiedError（state cached...）。
+   统一处理：作废句柄→向导弹出请用户重新授权。（洪医生 2026-08-05 实测踩坑） */
+function dirStaleErr(e){
+  return !!e && (e.name === 'NotModifiedError' ||
+    /state cached|had changed since it was read/i.test(e.message || ''));
+}
+function dirStaleHandle(){
+  dirHandle = null;
+  ioLog('🔑 文件夹钥匙过期了（文件夹被别的应用动过），请点「📂 授权文件夹」重新授权一次，再重试');
+  toast('🔑 文件夹钥匙过期了，请重新授权：点「📂 授权文件夹」再选一次', 5000);
+  if(typeof refreshAll === 'function') refreshAll();
+}
+/* v1.0.5 浏览器下载兜底：部分机型（洪医生华为）SAF写授权文件夹就是过不去——
+   读没问题、写必 stale，重授权也一样，自动重试会变死循环反复弹选择器。
+   改法：写文件夹失败→直接走 a[download] 浏览器下载（落到「下载」目录，
+   这条路与"下载整套"同款，从来稳定），文件照样不丢，中转站照清。 */
+function browserDownload(bytes, name){
+  var blob = new Blob([bytes]);
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 2000);
+}
+/* v1.0.4 写盘加固：安卓媒体扫描器（MediaStore）会立刻"摸"新文件改档案，
+   句柄快照对不上就报 NotModifiedError——根目录文件夹是巡逻重点（洪医生实测：
+   文件夹在根目录123456789下、无坚果云，仍反复 stale；地址栏 content://media 为证）。
+   对策：①写之前先删同名旧文件（上次失败留下的0B空壳本身是脏状态源）
+   ②拿全新文件句柄立刻一口气写完 ③撞上 stale 用新句柄再试一次 */
+function dirWriteFile(name, bytes){
+  if(inShell){
+    return Promise.resolve().then(function(){
+      if(!window.LearnShell.writeFile(name, u8ToB64(bytes))) throw new Error('壳APP写文件夹失败，请重新授权文件夹');
+    });
+  }
+  function writeOnce(){
+    return dirHandle.getFileHandle(name, { create: true }).then(function(fh){
+      return fh.createWritable();
+    }).then(function(w){
+      return w.write(new Blob([bytes])).then(function(){ return w.close(); });
+    });
+  }
+  function removeOld(){
+    return dirHandle.removeEntry(name).catch(function(){});
+  }
+  return removeOld().then(writeOnce).catch(function(e){
+    if(!dirStaleErr(e)) throw e;
+    /* 媒体扫描器抢先了：再删再写，全程用最新句柄 */
+    return removeOld().then(function(){
+      return dirHandle.getFileHandle(name, { create: true });
+    }).then(function(fh){
+      return fh.createWritable();
+    }).then(function(w){
+      return w.write(new Blob([bytes])).then(function(){ return w.close(); });
+    });
+  });
+}
+/* v1.0.3 钥匙过期自动重授权+重试：收发按钮点击的用户手势窗口（约几秒）内
+   可直接弹系统选择器，不用用户再找按钮；手势失效/用户取消再回退手动引导。
+   背景：坚果云同步目录会被后台频繁触碰，句柄几秒内就 stale（洪医生 2026-08-05 实测）。 */
+var _reauthBusy = false;
+function dirReauthRetry(retryFn){
+  if(_reauthBusy) return;
+  if(!dirSupported()){ dirStaleHandle(); return; }
+  _reauthBusy = true;
+  toast('🔑 钥匙过期，马上自动弹授权窗，请重新选一次同一个文件夹', 4500);
+  window.showDirectoryPicker({ mode: 'readwrite' }).then(function(h){
+    dirHandle = h;
+    return idbSet('dir', h).catch(function(){});
+  }).then(function(){
+    _reauthBusy = false;
+    ioLog('🔑 已重新授权「' + dirHandle.name + '」，自动重试');
+    refreshAll();
+    retryFn();
+  }).catch(function(e){
+    _reauthBusy = false;
+    dirStaleHandle();
+  });
+}
+function dirAuth(){
+  if(inShell){ window.LearnShell.pickFolder(); return; }
+  if(!dirSupported()){ toast('这个浏览器不支持文件夹授权，请用 Chrome 打开', 4000); return; }
+  window.showDirectoryPicker({ mode: 'readwrite' }).then(function(h){
+    dirHandle = h;
+    return idbSet('dir', h).catch(function(){}); /* 存不上也能用本次 */
+  }).then(function(){
+    toast('✅ 已授权文件夹：' + dirHandle.name, 3000);
+    refreshAll();
+  }).catch(function(e){
+    if(e && e.name === 'AbortError') return; /* 用户自己取消 */
+    toast('授权失败：' + ((e && e.message) || '未知原因'), 4000);
+  });
+}
+/* 启动时取回句柄并确认权限（权限可能要用户手势才能要回来，静默失败就提示去授权） */
+function dirRestore(){
+  if(inShell) return Promise.resolve();
+  return idbGet('dir').then(function(h){
+    if(!h) return;
+    dirHandle = h;
+    if(h.queryPermission){
+      return h.queryPermission({ mode: 'readwrite' }).then(function(p){
+        if(p !== 'granted') dirHandle = null; /* 权限没了，向导弹出去授权 */
+      });
+    }
+  }).catch(function(){ dirHandle = null; });
+}
+
+/* ==================== 文件列表 ==================== */
+function fmtDate(t){ return new Date(t).toLocaleString(); }
+/* v1.1.4 分门别类：按文件名认大类，软件类再按软件名分小组，默认全折叠 */
+var FGROUP_CATS = [
+  { key:'soft', label:'📦 软件', test:function(n){ return /\.html?$/i.test(n) && /(习题学习|学习笔记|血气分析|文件桥|PPT工坊)/.test(n); } },
+  { key:'doc', label:'📚 文档PDF', test:function(n){ return /\.pdf$/i.test(n); } },
+  { key:'bak', label:'💾 备份数据', test:function(n){ return /\.json$/i.test(n); } }
+];
+function softAppName(n){
+  var apps=['习题学习','学习笔记','血气分析','文件桥','PPT工坊'];
+  for(var i=0;i<apps.length;i++) if(n.indexOf(apps[i])>=0) return apps[i];
+  return '';
+}
+function verOfName(n){ var m=n.match(/_v?(\d+)\.(\d+)\.(\d+)/i); return m ? [+m[1],+m[2],+m[3]] : null; }
+function mkFileRow(fi){
+  var row = document.createElement('div');
+  row.className = 'file-item';
+  var nm = document.createElement('div'); nm.className = 'file-name'; nm.textContent = fi.name;
+  var sz = document.createElement('div'); sz.className = 'file-size'; sz.textContent = fmtSize(fi.size);
+  var btn = document.createElement('button'); btn.textContent = '⬆️ 传给AI';
+  btn.addEventListener('click', function(){ uploadFile(fi); });
+  row.appendChild(nm); row.appendChild(sz); row.appendChild(btn);
+  return row;
+}
+function mkGroup(label, count){
+  var det = document.createElement('details'); det.className = 'fgroup';
+  var sum = document.createElement('summary'); sum.textContent = label;
+  var cnt = document.createElement('span'); cnt.className = 'cnt'; cnt.textContent = '（' + count + '个）';
+  sum.appendChild(cnt); det.appendChild(sum);
+  var body = document.createElement('div'); body.className = 'fbody'; det.appendChild(body);
+  return { det: det, body: body };
+}
+function renderGrouped(box, files){
+  FGROUP_CATS.forEach(function(cat){
+    var fs = files.filter(function(f){ return cat.test(f.name); });
+    if(!fs.length) return;
+    var g = mkGroup(cat.label, fs.length);
+    if(cat.key === 'soft'){
+      var byApp = {};
+      fs.forEach(function(f){ var a = softAppName(f.name); (byApp[a] = byApp[a] || []).push(f); });
+      Object.keys(byApp).sort().forEach(function(app){
+        var af = byApp[app];
+        af.sort(function(x, y){
+          var vx = verOfName(x.name), vy = verOfName(y.name);
+          if(vx && vy){ for(var i=0;i<3;i++){ if(vx[i]!=vy[i]) return vy[i]-vx[i]; } return 0; }
+          if(vx) return -1; if(vy) return 1;
+          return (y.t||0)-(x.t||0);
+        });
+        var g2 = mkGroup(app, af.length);
+        af.forEach(function(f){ g2.body.appendChild(mkFileRow(f)); });
+        g.body.appendChild(g2.det);
+      });
+    } else {
+      fs.sort(function(a, b){ return (b.t||0)-(a.t||0); });
+      fs.forEach(function(f){ g.body.appendChild(mkFileRow(f)); });
+    }
+    box.appendChild(g.det);
+  });
+  var rest = files.filter(function(f){ return !FGROUP_CATS.some(function(c){ return c.test(f.name); }); });
+  if(rest.length){
+    rest.sort(function(a, b){ return (b.t||0)-(a.t||0); });
+    var g = mkGroup('📎 其他', rest.length);
+    rest.forEach(function(f){ g.body.appendChild(mkFileRow(f)); });
+    box.appendChild(g.det);
+  }
+}
+
+function refreshFiles(){
+  var box = $('fileList');
+  if(inShell){
+    if(!window.LearnShell.folderSet()){ box.innerHTML=''; $('dirStatus').textContent='还没授权文件夹'; return Promise.resolve(); }
+    $('dirStatus').textContent = '已授权：' + window.LearnShell.folderName() + '（壳APP直连，点🔄可刷新）';
+    var slist = [];
+    try{ slist = JSON.parse(window.LearnShell.listFiles() || '[]'); }catch(e){}
+    slist.sort(function(a, b){ return b.t - a.t; });
+    if(!slist.length){ box.innerHTML = '<div class="hint">文件夹是空的</div>'; return Promise.resolve(); }
+    box.innerHTML = '';
+    renderGrouped(box, slist);
+    return Promise.resolve();
+  }
+  if(!dirHandle){ box.innerHTML = ''; $('dirStatus').textContent = '还没授权文件夹'; return; }
+  $('dirStatus').textContent = '已授权：' + dirHandle.name + '（点🔄可刷新）';
+  var items = [];
+  /* for await 兼容处理：用 values() 迭代 */
+  var it = dirHandle.values();
+  function pump(){
+    return it.next().then(function(r){
+      if(r.done) return;
+      var h = r.value;
+      if(h.kind === 'file'){
+        items.push(h.getFile().then(function(f){
+          return { name: h.name, size: f.size, t: f.lastModified, handle: h };
+        }));
+      }
+      return pump();
+    });
+  }
+  return pump().then(function(){
+    return Promise.all(items);
+  }).then(function(list){
+    list.sort(function(a, b){ return b.t - a.t; });
+    if(!list.length){ box.innerHTML = '<div class="hint">文件夹是空的</div>'; return; }
+    box.innerHTML = '';
+    renderGrouped(box, list);
+  }).catch(function(e){
+    if(dirStaleErr(e)){ dirStaleHandle(); return; } /* v1.0.2 */
+    box.innerHTML = '<div class="hint">读取文件夹失败：' + ((e && e.message) || e) + '，试试重新授权</div>';
+  });
+}
+
+/* ==================== 传给AI（仓库中转 + inbox 登记） ==================== */
+function ioLog(line){
+  var el = $('ioLog');
+  el.textContent = (el.textContent ? el.textContent + '\n' : '') + fmtTime(Date.now()) + '  ' + line;
+  el.scrollTop = el.scrollHeight;
+}
+function uploadFile(fi){
+  if(!ghReady()){ toast('请先在「☁️ 云设置」里填好并保存', 3500); return; }
+  toast('⏳ 正在传「' + fi.name + '」…', 2500);
+  var tName = 'transit/' + fi.name;
+  var headP = inShell
+    ? Promise.resolve(window.LearnShell.readFile(fi.name)).then(function(b64){
+        if(!b64) throw new Error('文件夹里读不到「' + fi.name + '」');
+        return b64;
+      })
+    : fi.handle.getFile().then(function(file){ return blobToB64(file); });
+  headP.then(function(b64){
+    return ghPutFile(tName, b64, '文件桥上传 ' + fi.name);
+  }).then(function(){
+    return ghReadJson('bridge-inbox.json').then(function(r){
+      var data = r.data && Array.isArray(r.data.uploads) ? r.data : { uploads: [] };
+      data.uploads.push({ file: tName, name: fi.name, size: fi.size, t: Date.now() });
+      return ghWriteJson('bridge-inbox.json', data, r.sha, '文件桥登记上传 ' + fi.name);
+    });
+  }).then(function(){
+    ioLog('⬆️ 已传「' + fi.name + '」（' + fmtSize(fi.size) + '）——跟 AI 说一声文件名它就能读到');
+    toast('✅ 已传给AI中转站，跟AI说一声文件名', 4000);
+  }).catch(function(e){
+    if(!inShell && dirStaleErr(e)){ dirReauthRetry(function(){ uploadFile(fi); }); return; } /* v1.0.3 */
+    ioLog('❌ 传「' + fi.name + '」失败：' + ((e && e.message) || e));
+    toast('❌ 上传失败：' + ((e && e.message) || '网络不通'), 4000);
+  });
+}
+
+/* ==================== 收AI文件（outbox 任务单 → 写进文件夹 → 删中转 → 标done） ==================== */
+function receiveFiles(_raOnce){
+  if(!ghReady()){ toast('请先在「☁️ 云设置」里填好并保存', 3500); return; }
+  if(!dirOk()){ toast('请先授权文件夹，文件才有地方放', 3500); return; }
+  toast('📥 正在检查AI发来的文件…', 2500);
+  var box;
+  ghReadJson('bridge-outbox.json').then(function(r){
+    if(!r.data || !Array.isArray(r.data.deliveries)){ ioLog('📭 没有AI发来的文件'); toast('📭 没有新文件', 2500); return null; }
+    box = r;
+    var pend = r.data.deliveries.filter(function(d){ return !d.done; });
+    if(!pend.length){ ioLog('📭 没有AI发来的新文件'); toast('📭 没有新文件', 2500); return null; }
+    var chain = Promise.resolve();
+    var got = 0;
+    pend.forEach(function(d){
+      chain = chain.then(function(){
+        return ghFetch(ghFileUrl(d.file), { headers: ghHeaders() }).then(function(resp){
+          if(resp.status === 404){ d.done = true; d.err = '中转文件没了'; ioLog('⚠️「' + d.saveAs + '」中转站里没了（可能已收过）'); return; }
+          if(!resp.ok) return resp.text().then(function(t){ throw new Error(ghErrText(resp.status, t)); });
+          return resp.json().then(function(file){
+            var bytes = ghB64decBin(file.content || '');
+            return dirWriteFile(d.saveAs, bytes).then(function(){
+              got++;
+              d.done = true;
+              ioLog('📥 已收「' + d.saveAs + '」（' + fmtSize(bytes.length) + '）' + (d.note ? '——' + d.note : ''));
+              return ghDeleteFile(d.file, '文件桥已收 ' + d.saveAs); /* 传完就删 */
+            }).catch(function(we){
+              /* v1.0.5 写不进授权文件夹 → 浏览器下载兜底，文件不丢 */
+              browserDownload(bytes, d.saveAs);
+              got++;
+              d.done = true; d.viaDownload = true;
+              ioLog('📥 已收「' + d.saveAs + '」——授权文件夹写不进，已改为浏览器下载，去「下载」目录找' + (d.note ? '——' + d.note : ''));
+              return ghDeleteFile(d.file, '文件桥已收(下载兜底) ' + d.saveAs);
+            });
+          });
+        });
+      });
+    });
+    return chain.then(function(){
+      return ghWriteJson('bridge-outbox.json', box.data, box.sha, '文件桥回执');
+    }).then(function(){
+      if(got){
+        var anyDl = pend.some(function(d){ return d.viaDownload; });
+        toast(anyDl ? ('✅ 收到 ' + got + ' 个文件，部分经浏览器下载到「下载」目录')
+                    : ('✅ 收到 ' + got + ' 个文件，已存进文件夹'), 4000);
+        refreshFiles();
+      }
+    });
+  }).catch(function(e){
+    /* v1.0.5 防死循环：自动重授权每次点击只试一次，再 stale 就转手动引导 */
+    if(!inShell && dirStaleErr(e)){
+      if(!_raOnce){ dirReauthRetry(function(){ receiveFiles(true); }); }
+      else dirStaleHandle();
+      return;
+    }
+    ioLog('❌ 接收失败：' + ((e && e.message) || e));
+    toast('❌ 接收失败：' + ((e && e.message) || '网络不通'), 4000);
+  });
+}
+
+/* ==================== 手搓 ZIP（store 无压缩 + CRC32，UTF-8 文件名） ==================== */
+var CRC_TABLE = (function(){
+  var t = new Uint32Array(256), n, c;
+  for(n = 0; n < 256; n++){
+    c = n;
+    for(var k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+function crc32(u8){
+  var c = 0xFFFFFFFF;
+  for(var i = 0; i < u8.length; i++) c = CRC_TABLE[(c ^ u8[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+function teEncode(s){ return new TextEncoder().encode(s); }
+/* entries: [{name, data(Uint8Array)}] → Uint8Array(zip) */
+function buildZip(entries){
+  var offset = 0, centrals = [], parts = [];
+  entries.forEach(function(en){
+    var nameB = teEncode(en.name), data = en.data, crc = crc32(data);
+    var lh = new DataView(new ArrayBuffer(30));
+    lh.setUint32(0, 0x04034b50, true);
+    lh.setUint16(4, 20, true);          /* version needed */
+    lh.setUint16(6, 0x0800, true);      /* flag: UTF-8 文件名 */
+    lh.setUint16(8, 0, true);           /* method: store */
+    lh.setUint16(10, 0, true); lh.setUint16(12, 0, true); /* time/date 从简 */
+    lh.setUint32(14, crc, true);
+    lh.setUint32(18, data.length, true);
+    lh.setUint32(22, data.length, true);
+    lh.setUint16(26, nameB.length, true);
+    lh.setUint16(28, 0, true);
+    parts.push(new Uint8Array(lh.buffer), nameB, data);
+    centrals.push({ nameB: nameB, crc: crc, size: data.length, off: offset });
+    offset += 30 + nameB.length + data.length;
+  });
+  var cdStart = offset, cdParts = [];
+  centrals.forEach(function(c){
+    var ch = new DataView(new ArrayBuffer(46));
+    ch.setUint32(0, 0x02014b50, true);
+    ch.setUint16(4, 20, true); ch.setUint16(6, 20, true);
+    ch.setUint16(8, 0x0800, true);
+    ch.setUint16(10, 0, true);
+    ch.setUint16(12, 0, true); ch.setUint16(14, 0, true);
+    ch.setUint32(16, c.crc, true);
+    ch.setUint32(20, c.size, true); ch.setUint32(24, c.size, true);
+    ch.setUint16(28, c.nameB.length, true);
+    ch.setUint16(30, 0, true); ch.setUint16(32, 0, true);
+    ch.setUint16(34, 0, true); ch.setUint16(36, 0, true);
+    ch.setUint32(38, 0, true);
+    ch.setUint32(42, c.off, true);
+    cdParts.push(new Uint8Array(ch.buffer), c.nameB);
+    offset += 46 + c.nameB.length;
+  });
+  var eocd = new DataView(new ArrayBuffer(22));
+  eocd.setUint32(0, 0x06054b50, true);
+  eocd.setUint16(8, centrals.length, true);
+  eocd.setUint16(10, centrals.length, true);
+  eocd.setUint32(12, offset - cdStart, true);
+  eocd.setUint32(16, cdStart, true);
+  eocd.setUint16(20, 0, true);
+  var all = parts.concat(cdParts, [new Uint8Array(eocd.buffer)]);
+  var total = 0; all.forEach(function(p){ total += p.length; });
+  var out = new Uint8Array(total), pos = 0;
+  all.forEach(function(p){ out.set(p, pos); pos += p.length; });
+  return out;
+}
+
+/* ==================== 📦 打包分享 ==================== */
+var packLogEl = $('packLog');
+function packLog(line){ packLogEl.textContent = (packLogEl.textContent ? packLogEl.textContent + '\n' : '') + line; }
+function collectFolderFiles(includeBig){
+  /* 收集文件夹里的 .html 软件（必装）；includeBig 时装上非 .html 大文件（文献等） */
+  if(inShell){
+    var slist = [];
+    try{ slist = JSON.parse(window.LearnShell.listFiles() || '[]'); }catch(e){}
+    var items = [];
+    slist.forEach(function(it){
+      if(/\.html?$/i.test(it.name) || includeBig){
+        items.push(Promise.resolve({
+          name: it.name,
+          file: { size: it.size, arrayBuffer: function(){
+            var b64 = window.LearnShell.readFile(it.name);
+            if(!b64) return Promise.reject(new Error('读不到「' + it.name + '」'));
+            return Promise.resolve(ghB64decBin(b64).buffer);
+          } }
+        }));
+      }
+    });
+    return Promise.all(items);
+  }
+  var items = [];
+  var it = dirHandle.values();
+  function pump(){
+    return it.next().then(function(r){
+      if(r.done) return;
+      var h = r.value;
+      if(h.kind === 'file' && (/\.html?$/i.test(h.name) || includeBig)){
+        items.push(h.getFile().then(function(f){ return { name: h.name, file: f }; }));
+      }
+      return pump();
+    });
+  }
+  return pump().then(function(){ return Promise.all(items); });
+}
+function doPack(forSelf){
+  if(!dirOk()){ toast('请先授权文件夹', 3000); return; }
+  packLogEl.textContent = '';
+  packLog('正在收集文件…');
+  var includeBig = $('packBig').checked;
+  collectFolderFiles(includeBig).then(function(files){
+    if(!files.length){ packLog('文件夹里没有可打的 .html 软件'); return null; }
+    var chain = Promise.resolve([]);
+    files.forEach(function(f){
+      chain = chain.then(function(entries){
+        return f.file.arrayBuffer().then(function(buf){
+          entries.push({ name: f.name, data: new Uint8Array(buf) });
+          packLog('  装入 ' + f.name + '（' + fmtSize(f.file.size) + '）');
+          return entries;
+        });
+      });
+    });
+    return chain.then(function(entries){
+      if(forSelf){
+        /* 随行配置卡：从本机 localStorage 抄出（明文Token，安全提醒已写在选项上） */
+        var cfg = { note: '随行配置卡：新手机打开文件桥会自动发现它，一键导入Token；导入后建议删除本文件。勿发给他人！',
+                    gh: ghCfg(), t: Date.now() };
+        entries.push({ name: 'config.json', data: teEncode(JSON.stringify(cfg, null, 2)) });
+        packLog('  装入 config.json（随行配置卡）');
+      }
+      var zip = buildZip(entries);
+      var zipName = (forSelf ? '医学软件包_给自己_' : '医学软件包_给别人_') +
+        new Date().getFullYear() + String(new Date().getMonth() + 1) + String(new Date().getDate()) + '.zip';
+      if(inShell){
+        if(window.LearnShell.writeFile(zipName, u8ToB64(zip))){
+          packLog('✅ 已存进文件夹：' + zipName);
+          toast('✅ 打包完成，已存进文件夹：' + zipName, 4000);
+        }else{
+          packLog('❌ 壳APP写文件夹失败');
+          toast('❌ 写文件夹失败，请重新授权', 4000);
+        }
+        return;
+      }
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([zip], { type: 'application/zip' }));
+      a.download = zipName;
+      document.body.appendChild(a); a.click();
+      setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+      packLog('✅ 打包完成，共 ' + entries.length + ' 个文件（' + fmtSize(zip.length) + '），已开始下载');
+      if(forSelf) packLog('⚠️ 这个包含Token，只能自己用，别发给别人！');
+    });
+  }).catch(function(e){
+    packLog('❌ 打包失败：' + ((e && e.message) || e));
+  });
+}
+
+/* ==================== 随行配置卡：发现 + 一键导入 ==================== */
+/* 三个软件的配置键（同名同值写三份，三个软件通用） */
+var GH_KEY_SETS = [
+  { u: 'br_gh_user', t: 'br_gh_tok', r: 'br_gh_repo' },
+  { u: 'bg_gh_user', t: 'bg_gh_tok', r: 'bg_gh_repo' },
+  { u: 'xt_gh_user', t: 'xt_gh_tok', r: 'xt_gh_repo' }
+];
+var pendingCfg = null, pendingCfgHandle = null;
+function scanConfigJson(){
+  if(!dirHandle) return Promise.resolve();
+  return dirHandle.getFileHandle('config.json').then(function(fh){
+    return fh.getFile().then(function(f){
+      return f.text().then(function(txt){
+        var cfg = null;
+        try{ cfg = JSON.parse(txt); }catch(e){}
+        if(!cfg || !cfg.gh || !cfg.gh.tok) return;
+        if(cfg.gh.tok === ghCfg().tok) return; /* 和机内一样，不用打扰 */
+        pendingCfg = cfg; pendingCfgHandle = fh;
+        updShow('', '🧳 发现随行配置卡（config.json）\n一键导入后：Token、用户名、仓库名自动填好，三个软件通用\n导入后建议把 config.json 从文件夹里删掉', false);
+        $('updCfgRow').classList.remove('hidden');
+        updWizard();
+      });
+    });
+  }).catch(function(){ /* 没有 config.json，正常 */ });
+}
+function importCfg(){
+  if(!pendingCfg) return;
+  var g = pendingCfg.gh;
+  try{
+    for(var i = 0; i < GH_KEY_SETS.length; i++){
+      if(g.user) localStorage.setItem(GH_KEY_SETS[i].u, g.user);
+      if(g.tok)  localStorage.setItem(GH_KEY_SETS[i].t, g.tok);
+      if(g.repo) localStorage.setItem(GH_KEY_SETS[i].r, g.repo);
+    }
+  }catch(e){ toast('导入失败：浏览器禁止了本地存储', 3500); return; }
+  fillGhInputs();
+  updHide();
+  toast('✅ 配置已导入，三个软件通用', 3500);
+  /* 问要不要删掉文件夹里的 config.json（明文Token不宜久留） */
+  if(pendingCfgHandle && confirm('配置已导入。要把文件夹里的 config.json 删掉吗？（里面是Token明文，建议删）')){
+    dirHandle.removeEntry('config.json').then(function(){
+      toast('🗑 config.json 已删', 3000); refreshFiles();
+    }).catch(function(){});
+  }
+  pendingCfg = null; pendingCfgHandle = null;
+  updWizard();
+}
+
+/* ==================== 自检 + 下载整套（三件套） ==================== */
+function cmpVer(a, b){
+  var pa = String(a).split('.'), pb = String(b).split('.');
+  for(var i = 0; i < Math.max(pa.length, pb.length); i++){
+    var x = parseInt(pa[i] || '0', 10), y = parseInt(pb[i] || '0', 10);
+    if(x > y) return 1; if(x < y) return -1;
+  }
+  return 0;
+}
+function updShow(kind, text, showDl){
+  var bar = $('updBar');
+  bar.className = kind || '';
+  $('updText').textContent = text;
+  $('updBtnRow').classList.toggle('hidden', !showDl);
+  $('updCfgRow').classList.add('hidden');
+  bar.classList.remove('hidden');
+}
+function updHide(){ $('updBar').classList.add('hidden'); $('updCfgRow').classList.add('hidden'); }
+function ghCheckRender(line){
+  $('ghCheck').textContent = line;
+  try{ localStorage.setItem(BR_GH_CHECK, line); }catch(e){}
+}
+function ghSelfCheck(manual){
+  if(!ghReady()){
+    if(manual) toast('请先在「☁️ 云设置」里填好并保存，才能自检', 3500);
+    return;
+  }
+  ghCheckRender('自检：正在检查…（① 连线路 ② 比版本）');
+  ghFetch(ghFileUrl('version-bridge.json'), { headers: ghHeaders() }).then(function(resp){
+    if(resp.status === 404){
+      ghCheckRender('自检：' + fmtTime(Date.now()) + ' ✅ 线路通（云端还没放版本信息，暂无法比对）');
+      updShow('ok', '✅ GitHub 线路通畅\n本机版本 v' + SW_VERSION + '（云端还没有版本信息可比对）', false);
+      setTimeout(updHide, 8000);
+      return null;
+    }
+    if(!resp.ok) return resp.text().then(function(t){ throw new Error(ghErrText(resp.status, t)); });
+    return resp.json();
+  }).then(function(file){
+    if(!file) return;
+    var info;
+    try{ info = JSON.parse(ghB64dec(file.content || '')); }catch(e){ info = null; }
+    if(!info || !info.version){
+      ghCheckRender('自检：' + fmtTime(Date.now()) + ' ✅ 线路通（版本信息读不懂）');
+      updShow('ok', '✅ GitHub 线路通畅\n本机版本 v' + SW_VERSION, false);
+      setTimeout(updHide, 8000);
+      return;
+    }
+    if(cmpVer(info.version, SW_VERSION) > 0){
+      ghCheckRender('自检：' + fmtTime(Date.now()) + ' ✅ 线路通　🎉 网上有新版 v' + info.version + '（本机 v' + SW_VERSION + '）');
+      ghVerPending = info;
+      updShow('', '🎉 网上有新版 v' + info.version + '，你的是 v' + SW_VERSION + '\n' +
+        (info.note ? '新版内容：' + info.note + '\n' : '') +
+        '点下面按钮下载到本机（或点「⬇️ 下载整套软件」四个一起换）', true);
+    }else{
+      ghCheckRender('自检：' + fmtTime(Date.now()) + ' ✅ 线路通　已是最新版 v' + SW_VERSION);
+      updShow('ok', '✅ GitHub 线路通畅\n已是最新版 v' + SW_VERSION + '，无需下载', false);
+      setTimeout(updHide, 8000);
+    }
+  }).catch(function(e){
+    var msg = (e && e.message) ? e.message : '网络不通';
+    ghCheckRender('自检：' + fmtTime(Date.now()) + ' ❌ 连不上 GitHub（' + msg + '）——不影响使用，文件都在本机');
+    updShow('bad', '❌ 这次没能连上 GitHub（' + msg + '）\n不影响使用：文件夹功能照常\n等网络好了再点「🔍 自检」', false);
+  });
+}
+function ghDlFile(dlName, saveAs, onDone){
+  ghFetch(ghFileUrl(dlName), { headers: ghHeaders() }).then(function(resp){
+    if(!resp.ok) return resp.text().then(function(t){ throw new Error(ghErrText(resp.status, t)); });
+    return resp.json();
+  }).then(function(file){
+    if(inShell){
+      /* 壳APP：写进APP内部www目录（自更新，重启生效）+ 文件夹里再存一份备份 */
+      var b64html = ghB64enc(ghB64dec(file.content || ''));
+      var okSelf = window.LearnShell.applyUpdate(saveAs, b64html);
+      var okDir = window.LearnShell.folderSet() ? window.LearnShell.writeFile(saveAs, b64html) : false;
+      if(okSelf){ onDone(null); }
+      else if(okDir){ onDone(null); }
+      else onDone('壳APP自更新失败');
+      return;
+    }
+    var blob = new Blob([ghB64dec(file.content || '')], { type: 'text/html;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = saveAs;
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    onDone(null);
+  }).catch(function(e){ onDone((e && e.message) || '网络不通'); });
+}
+function ghDownloadNew(){
+  if(!ghVerPending || !ghVerPending.dl){ toast('⚠️ 云端没给下载文件，找 AI 要新版即可', 3000); return; }
+  toast('⏳ 正在下载新版…', 2000);
+  ghDlFile(ghVerPending.dl, '文件桥_v' + ghVerPending.version + '.html', function(err){
+    if(err){ toast('❌ 下载失败：' + err, 4000); return; }
+    toast(inShell ? '✅ 新版已装好，重启APP生效（文件夹里也存了一份）' : '✅ 新版已下载，到下载列表里找', 4000);
+  });
+}
+/* 三件套连下：学习笔记 → 习题学习 → 文件桥 */
+function ghDownloadAll(){
+  if(!ghReady()){ toast('请先在「☁️ 云设置」里填好并保存', 3500); return; }
+  toast('⏳ 正在下载 学习笔记…（1/5）', 2000);
+  ghDlFile('software-notes.html', '学习笔记.html', function(err1){
+    if(err1){ toast('❌ 学习笔记下载失败：' + err1, 4000); return; }
+    setTimeout(function(){
+      toast('⏳ 正在下载 习题学习…（2/5）', 2000);
+      ghDlFile('software-xiti.html', '习题学习.html', function(err2){
+        if(err2){ toast('❌ 习题学习下载失败：' + err2 + '（学习笔记已下载）', 4000); return; }
+        setTimeout(function(){
+          toast('⏳ 正在下载 文件桥…（3/5）', 2000);
+          ghDlFile('software-bridge.html', '文件桥.html', function(err3){
+            if(err3){ toast('❌ 文件桥下载失败：' + err3 + '（前两个已下载）', 4000); return; }
+            setTimeout(function(){
+              toast('⏳ 正在下载 血气分析…（4/5）', 2000);
+              ghDlFile('software-xueqi.html', '血气分析.html', function(err4){
+                if(err4){ toast('❌ 血气分析下载失败：' + err4 + '（前三个已下载）', 4000); return; }
+                setTimeout(function(){
+                  toast('⏳ 正在下载 PPT工坊…（5/5）', 2000);
+                  ghDlFile('software-ppt.html', 'PPT工坊.html', function(err5){
+                    if(err5){ toast('❌ PPT工坊下载失败：' + err5 + '（前四个已下载）', 4000); return; }
+                    toast(inShell ? '✅ 五个软件都已装好，重启APP生效（文件夹里也各存了一份）' : '✅ 五个软件都已下载，到下载列表里找', 4500);
+                  });
+                }, 900);
+              });
+            }, 900);
+          });
+        }, 900);
+      });
+    }, 900);
+  });
+}
+
+/* ==================== 向导卡（缺啥提醒啥） ==================== */
+function updWizard(){
+  var steps = [];
+  if(!dirOk()){
+    steps.push({ text: inShell ? '① 授权「医学软件」文件夹（壳APP弹系统授权窗，选一次永久有效）'
+                                : '① 授权「医学软件」文件夹（Chrome 会问一次，点允许）', btn: '📁 去授权', fn: dirAuth });
+  }
+  if(!ghReady()){
+    steps.push({ text: '② 填 Token 并保存（坚果云：学习文件→AI→我设计的软件→github token my own software.txt）', btn: '去填', fn: function(){
+      $('ghTok').focus();
+      $('ghTok').scrollIntoView({ block: 'center' });
+    }});
+  }
+  var w = $('wizard'), box = $('wizardSteps');
+  if(!steps.length){ w.classList.add('hidden'); return; }
+  box.innerHTML = '';
+  steps.forEach(function(s){
+    var row = document.createElement('div');
+    row.className = 'step';
+    var sp = document.createElement('div'); sp.style.flex = '1'; sp.textContent = s.text;
+    var b = document.createElement('button'); b.textContent = s.btn;
+    b.addEventListener('click', s.fn);
+    row.appendChild(sp); row.appendChild(b);
+    box.appendChild(row);
+  });
+  w.classList.remove('hidden');
+}
+
+/* ==================== 云设置填写 ==================== */
+function fillGhInputs(){
+  $('ghUser').value = localStorage.getItem(BR_GH_USER) || 'hongxiaotao177';
+  $('ghRepo').value = localStorage.getItem(BR_GH_REPO) || 'xuexi-backup';
+  $('ghTok').value = localStorage.getItem(BR_GH_TOK) || '';
+}
+function ghSave(){
+  try{
+    localStorage.setItem(BR_GH_USER, $('ghUser').value.replace(/^\s+|\s+$/g,''));
+    localStorage.setItem(BR_GH_TOK,  $('ghTok').value.replace(/^\s+|\s+$/g,''));
+    localStorage.setItem(BR_GH_REPO, $('ghRepo').value.replace(/^\s+|\s+$/g,''));
+    toast('💾 已保存', 2000);
+    updWizard();
+  }catch(e){ toast('保存失败：浏览器禁止了本地存储', 3500); }
+}
+
+/* ==================== 全局刷新 ==================== */
+function refreshAll(){
+  refreshFiles();
+  updWizard();
+  scanConfigJson();
+}
+
+/* ==================== 绑定 + 初始化 ==================== */
+$('btnAuth').addEventListener('click', dirAuth);
+$('btnRefresh').addEventListener('click', refreshAll);
+$('btnRecv').addEventListener('click', receiveFiles);
+$('btnPack').addEventListener('click', function(){
+  if(!dirOk()){ toast('请先授权文件夹', 3000); return; }
+  packLogEl.textContent = '';
+  $('packMask').classList.remove('hidden');
+});
+$('packSelf').addEventListener('click', function(){ $('packMask').classList.add('hidden'); doPack(true); });
+$('packOther').addEventListener('click', function(){ $('packMask').classList.add('hidden'); doPack(false); });
+$('packCancel').addEventListener('click', function(){ $('packMask').classList.add('hidden'); });
+$('ghSave').addEventListener('click', ghSave);
+$('ghCheckBtn').addEventListener('click', function(){ ghSelfCheck(true); });
+$('ghDlAllBtn').addEventListener('click', ghDownloadAll);
+$('updDlBtn').addEventListener('click', ghDownloadNew);
+$('updClose').addEventListener('click', updHide);
+$('updCfgYes').addEventListener('click', importCfg);
+$('updCfgNo').addEventListener('click', updHide);
+/* v1.0.1 使用说明弹窗 */
+$('btnHelp').addEventListener('click', function(){ $('helpMask').classList.remove('hidden'); });
+$('helpClose').addEventListener('click', function(){ $('helpMask').classList.add('hidden'); });
+$('helpMask').addEventListener('click', function(e){ if(e.target === this) this.classList.add('hidden'); });
+
+fillGhInputs();
+try{
+  var lastCheck = localStorage.getItem(BR_GH_CHECK);
+  if(lastCheck) $('ghCheck').textContent = lastCheck;
+}catch(e){}
+dirRestore().then(function(){
+  refreshAll();
+  /* 打开 3 秒后自动自检一次（配置齐全才查） */
+  setTimeout(function(){ if(ghReady()) ghSelfCheck(false); }, 3000);
+});
+
+/* 测试钩子：仅供自动化测试驱动（界面不使用） */
+window.__bridge = {
+  buildZip: buildZip, crc32: crc32, ghSelfCheck: ghSelfCheck,
+  receiveFiles: receiveFiles, uploadFile: uploadFile, doPack: doPack,
+  importCfg: importCfg, scanConfigJson: scanConfigJson,
+  setDir: function(h){ dirHandle = h; refreshAll(); },
+  getDir: function(){ return dirHandle; },
+  ioLog: function(){ return $('ioLog').textContent; }
+};
+})();
+</script>
+</body>
+</html>
