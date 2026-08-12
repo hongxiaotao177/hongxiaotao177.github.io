@@ -86,6 +86,12 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
       （queryPermission/requestPermission 兜底，仍要用户手势）
    ④ 手机没有"批命令"——打包/搬家功能必须做成软件内按钮（本卡已做）
 ====================================================================
+    v1.2.0 (2026-08-12) 「☁️ 坚果云直通车」上线（壳APP专属，需壳≥1.1.0）：
+        坚果云WebDAV直连授权文件夹：列目录(可进子文件夹)/打勾取下来/打勾送上去，
+        不经过坚果云APP；钥匙=邮箱+应用密码(存公共钱罐hx_dav_user/hx_dav_pass)。
+        坑：网页JS直连坚果云WebDAV被CORS拦（预检无Access-Control-Allow-Origin），
+        三个动作全部走壳的JS桥davList/davDown/davUp；网页打开本卡自动隐藏。
+    v1.1.5 (2026-08-12) 「⬇️ 下载整套软件」加第6步 小涛笔记（software-xiaotao.html→小涛笔记.html），计数改 1/6~6/6。
     v1.1.4 (2026-08-11) 文件列表分门别类三层折叠：第1级大类（📦软件/📚文档PDF/💾备份数据/📎其他，
          按文件名自动认，认不出进其他）、第2级软件名分组（仅📦软件类有）、第3级文件行；
          默认全部折叠；软件组内按版本号新→旧排（无版本号的按时间排），其他类按时间新→旧排；
@@ -98,7 +104,7 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>文件桥 v1.1.4</title>
+<title>文件桥 v1.2.0</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #faf7f2; color: #3a3632; }
@@ -124,6 +130,12 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
   .file-name { flex: 1; font-size: 15px; word-break: break-all; }
   .file-size { font-size: 12px; color: #b5aa9c; flex: none; }
   .file-item button { font-size: 13px; padding: 6px 10px; flex: none; }
+  /* v1.2.0 坚果云直通车 */
+  .dav-row { padding: 8px 4px; border-bottom: 1px dashed #eee0c8; }
+  .dav-row:last-child { border-bottom: none; }
+  .dav-row .dn { font-size: 15px; color: #4a3f2a; cursor: pointer; display: block; word-break: break-all; }
+  .dav-row .ds { font-size: 12px; color: #b5a68c; }
+  .dav-row input[type=checkbox] { width: 20px; height: 20px; vertical-align: -4px; margin-right: 4px; }
   /* v1.1.4 分组折叠列表 */
   details.fgroup { border: 1px solid #eee4d4; border-radius: 10px; margin: 6px 0; background: #fffdf8; }
   details.fgroup > summary { padding: 10px 12px; font-size: 15px; font-weight: bold; cursor: pointer; list-style: none; }
@@ -160,7 +172,7 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
 </style>
 </head>
 <body>
-<header>📂 文件桥<span class="ver">v1.1.4</span></header>
+<header>📂 文件桥<span class="ver">v1.2.0</span></header>
 <div class="page">
 
   <!-- 使用说明入口 -->
@@ -199,6 +211,41 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
     <div class="hint">AI 要给你文件时会往仓库贴"任务单"，点这里照单收进文件夹。</div>
   </div>
 
+  <!-- 坚果云直通车（v1.2.0，仅壳APP里显示） -->
+  <div class="card hidden" id="davCard">
+    <h2>☁️ 坚果云直通车</h2>
+    <div id="davCfgBox">
+      <label class="gh-lab">坚果云账号（邮箱）</label>
+      <input type="text" id="davUser" autocomplete="off" placeholder="you@example.com">
+      <label class="gh-lab">应用密码（不是登录密码！坚果云网页版→账户信息→安全选项→第三方应用管理→添加）</label>
+      <input type="password" id="davPass" autocomplete="off">
+      <div class="btn-row">
+        <button id="davSave">💾 保存钥匙</button>
+        <button class="ghost" id="davTest">🔍 测试连接</button>
+      </div>
+      <div class="hint" id="davCfgHint">钥匙只存本机，套装共用。第一次用先点「测试连接」。</div>
+    </div>
+    <div id="davMain" style="display:none;">
+      <div class="btn-row" style="margin-top:6px;">
+        <button class="ghost" id="davUp2">⬆️ 上一级</button>
+        <button class="ghost" id="davRefresh">🔄 刷新</button>
+      </div>
+      <div class="hint" id="davPath" style="word-break:break-all;">/</div>
+      <div id="davList"></div>
+      <div class="btn-row">
+        <button id="davDownBtn">⬇️ 取下来（进授权文件夹）</button>
+      </div>
+      <div class="hint" id="davProg"></div>
+      <div style="border-top:1px dashed #ddd3b8; margin-top:10px; padding-top:8px;">
+        <b style="font-size:14px; color:#6a5b47;">⬆️ 送上去：授权文件夹 → 当前坚果云目录</b>
+        <div id="davUpList"></div>
+        <div class="btn-row">
+          <button id="davUpBtn">⬆️ 送上去</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- 打包分享 -->
   <div class="card">
     <h2>📦 打包分享</h2>
@@ -225,7 +272,7 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
       <button class="ghost" id="ghDlAllBtn">⬇️ 下载整套软件</button>
     </div>
     <div class="hint" id="ghCheck">自检：还没查过（每次打开会自动查一次）</div>
-    <div class="hint">「下载整套」= 学习笔记 + 习题学习 + 文件桥 + 血气分析，四个最新版一起下载（浏览器首次可能问"允许下载多个文件"，点允许）。</div>
+    <div class="hint">「下载整套」= 学习笔记 + 习题学习 + 文件桥 + 血气分析 + PPT工坊 + 小涛笔记，六个最新版一起下载（浏览器首次可能问"允许下载多个文件"，点允许）。</div>
   </div>
 
   <div class="hint" style="text-align:center;padding:8px 0 20px;">文件桥 v1.0 · AI 与文件夹之间的桥 · 只认 Chrome</div>
@@ -279,7 +326,7 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
       <p><b>AI → 你：</b>AI说要给你文件 → 打开文件桥 → 点「📥 检查AI发来的文件」→ 文件自动存进文件夹。</p>
       <p><b>打包搬家：</b>「📦 打包这个文件夹」→ 给自己（带随行配置卡，新手机一键导入Token，包别发别人）/ 给别人（干净软件）。</p>
       <p><b>换新手机：</b>解压包 → Chrome打开文件桥 → 授权文件夹 → 发现随行配置卡点一键导入 → 另外两个软件各点「从云端恢复」→ 完事。</p>
-      <p><b>自检与更新：</b>每次打开自动检查线路和新版；有新版点「⬇️ 下载整套软件」，三个软件一起换新。</p>
+      <p><b>自检与更新：</b>每次打开自动检查线路和新版；有新版点「⬇️ 下载整套软件」，六个软件一起换新。</p>
       <p class="hint">注意：只认 Chrome；文件夹授权只认你亲手点"允许"；Token存在浏览器里，换浏览器要重填。</p>
     </div>
 
@@ -331,7 +378,7 @@ function fmtTime(t){ return new Date(t).toLocaleString(); }
 
 /* ==================== GitHub 通信（移植学习笔记/习题学习同套） ==================== */
 var BR_GH_USER = 'br_gh_user', BR_GH_TOK = 'br_gh_tok', BR_GH_REPO = 'br_gh_repo', BR_GH_CHECK = 'br_gh_check';
-var SW_VERSION = '1.1.4';
+var SW_VERSION = '1.2.0';
 /* v1.1.2 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["br_gh_user", "hx_gh_user"], ["br_gh_tok", "hx_gh_tok"], ["br_gh_repo", "hx_gh_repo"]];
@@ -1133,26 +1180,32 @@ function ghDownloadNew(){
 /* 三件套连下：学习笔记 → 习题学习 → 文件桥 */
 function ghDownloadAll(){
   if(!ghReady()){ toast('请先在「☁️ 云设置」里填好并保存', 3500); return; }
-  toast('⏳ 正在下载 学习笔记…（1/5）', 2000);
+  toast('⏳ 正在下载 学习笔记…（1/6）', 2000);
   ghDlFile('software-notes.html', '学习笔记.html', function(err1){
     if(err1){ toast('❌ 学习笔记下载失败：' + err1, 4000); return; }
     setTimeout(function(){
-      toast('⏳ 正在下载 习题学习…（2/5）', 2000);
+      toast('⏳ 正在下载 习题学习…（2/6）', 2000);
       ghDlFile('software-xiti.html', '习题学习.html', function(err2){
         if(err2){ toast('❌ 习题学习下载失败：' + err2 + '（学习笔记已下载）', 4000); return; }
         setTimeout(function(){
-          toast('⏳ 正在下载 文件桥…（3/5）', 2000);
+          toast('⏳ 正在下载 文件桥…（3/6）', 2000);
           ghDlFile('software-bridge.html', '文件桥.html', function(err3){
             if(err3){ toast('❌ 文件桥下载失败：' + err3 + '（前两个已下载）', 4000); return; }
             setTimeout(function(){
-              toast('⏳ 正在下载 血气分析…（4/5）', 2000);
+              toast('⏳ 正在下载 血气分析…（4/6）', 2000);
               ghDlFile('software-xueqi.html', '血气分析.html', function(err4){
                 if(err4){ toast('❌ 血气分析下载失败：' + err4 + '（前三个已下载）', 4000); return; }
                 setTimeout(function(){
-                  toast('⏳ 正在下载 PPT工坊…（5/5）', 2000);
+                  toast('⏳ 正在下载 PPT工坊…（5/6）', 2000);
                   ghDlFile('software-ppt.html', 'PPT工坊.html', function(err5){
                     if(err5){ toast('❌ PPT工坊下载失败：' + err5 + '（前四个已下载）', 4000); return; }
-                    toast(inShell ? '✅ 五个软件都已装好，重启APP生效（文件夹里也各存了一份）' : '✅ 五个软件都已下载，到下载列表里找', 4500);
+                    setTimeout(function(){
+                      toast('⏳ 正在下载 小涛笔记…（6/6）', 2000);
+                      ghDlFile('software-xiaotao.html', '小涛笔记.html', function(err6){
+                        if(err6){ toast('❌ 小涛笔记下载失败：' + err6 + '（前五个已下载）', 4000); return; }
+                        toast(inShell ? '✅ 六个软件都已装好，重启APP生效（文件夹里也各存了一份）' : '✅ 六个软件都已下载，到下载列表里找', 4500);
+                      });
+                    }, 900);
                   });
                 }, 900);
               });
@@ -1230,6 +1283,126 @@ $('packCancel').addEventListener('click', function(){ $('packMask').classList.ad
 $('ghSave').addEventListener('click', ghSave);
 $('ghCheckBtn').addEventListener('click', function(){ ghSelfCheck(true); });
 $('ghDlAllBtn').addEventListener('click', ghDownloadAll);
+
+/* ==================== v1.2.0 坚果云直通车（壳APP专属） ==================== */
+/* 网页JS直连坚果云WebDAV会被CORS拦（实测），所以三个动作(davList/davDown/davUp)都走壳的JS桥。
+   钥匙存公共钱罐 hx_dav_user/hx_dav_pass，套装共用；密码只是"应用密码"，可随时在坚果云吊销。 */
+var davPath = '/';
+function davEsc(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function davReady(){ return window.LearnShell && typeof window.LearnShell.davList === 'function'; }
+function davUser(){ return (localStorage.getItem('hx_dav_user') || '').trim(); }
+function davPass(){ return (localStorage.getItem('hx_dav_pass') || '').trim(); }
+function davInit(){
+  if(!davReady()) return; /* 浏览器里不显示 */
+  $('davCard').classList.remove('hidden');
+  $('davUser').value = davUser();
+  $('davPass').value = davPass();
+  if(davUser() && davPass()){ $('davMain').style.display = ''; davGo('/'); }
+}
+$('davSave').addEventListener('click', function(){
+  localStorage.setItem('hx_dav_user', $('davUser').value.trim());
+  localStorage.setItem('hx_dav_pass', $('davPass').value.trim());
+  toast('💾 已保存（套装共用）', 2000);
+  if(davUser() && davPass()){ $('davMain').style.display = ''; davGo('/'); }
+});
+$('davTest').addEventListener('click', function(){
+  if(!davUser() || !davPass()){ toast('先把邮箱和应用密码填好保存', 3000); return; }
+  $('davCfgHint').textContent = '🔍 正在敲门…';
+  setTimeout(function(){
+    var r;
+    try{ r = JSON.parse(window.LearnShell.davList(davUser(), davPass(), '/')); }
+    catch(e){ $('davCfgHint').textContent = '❌ 返回看不懂：' + e.message; return; }
+    if(r && r.error){ $('davCfgHint').textContent = '❌ ' + r.error; }
+    else{ $('davCfgHint').textContent = '✅ 连接成功！根目录有 ' + r.length + ' 项'; $('davMain').style.display = ''; davGo('/'); }
+  }, 100);
+});
+function davGo(path){
+  davPath = path;
+  $('davPath').textContent = '📂 坚果云：' + path;
+  $('davProg').textContent = '正在列目录…';
+  setTimeout(function(){
+    var r;
+    try{ r = JSON.parse(window.LearnShell.davList(davUser(), davPass(), path)); }
+    catch(e){ $('davProg').textContent = '❌ ' + e.message; return; }
+    if(r && r.error){ $('davProg').textContent = '❌ ' + r.error; return; }
+    $('davProg').textContent = '';
+    var box = $('davList'); box.innerHTML = '';
+    if(!r.length){ box.innerHTML = '<div class="hint">（空文件夹）</div>'; }
+    r.sort(function(a, b){ return (b.isDir - a.isDir) || a.name.localeCompare(b.name); });
+    r.forEach(function(it){
+      var row = document.createElement('div');
+      row.className = 'dav-row';
+      if(it.isDir){
+        row.innerHTML = '<span class="dn">📁 ' + davEsc(it.name) + '/</span>';
+        row.querySelector('.dn').addEventListener('click', function(){ davGo(path + it.name + '/'); });
+      }else{
+        row.innerHTML = '<label class="dn"><input type="checkbox" class="dav-ck" data-n="' + davEsc(it.name) + '"> 📄 ' + davEsc(it.name) +
+          ' <span class="ds">' + (it.size > 1048576 ? (it.size / 1048576).toFixed(1) + 'MB' : Math.round(it.size / 1024) + 'KB') + '</span></label>';
+      }
+      box.appendChild(row);
+    });
+    davRenderUpList();
+  }, 50);
+}
+$('davUp2').addEventListener('click', function(){
+  if(davPath === '/') return;
+  var p = davPath.slice(0, -1);
+  p = p.slice(0, p.lastIndexOf('/') + 1);
+  davGo(p || '/');
+});
+$('davRefresh').addEventListener('click', function(){ davGo(davPath); });
+$('davDownBtn').addEventListener('click', function(){
+  var cks = document.querySelectorAll('.dav-ck:checked');
+  if(!cks.length){ toast('先打勾要取下来的文件', 2500); return; }
+  var names = Array.from(cks).map(function(c){ return c.getAttribute('data-n'); });
+  var i = 0;
+  function step(){
+    if(i >= names.length){
+      $('davProg').textContent = '✅ 取下来 ' + names.length + ' 个，都在授权文件夹里了';
+      toast('✅ 取件完成', 2500);
+      if(typeof refreshFiles === 'function') refreshFiles();
+      return;
+    }
+    $('davProg').textContent = '⬇️ (' + (i + 1) + '/' + names.length + ') ' + names[i] + ' …';
+    setTimeout(function(){
+      var r = window.LearnShell.davDown(davUser(), davPass(), davPath + names[i], names[i]);
+      if(r !== 'ok'){ $('davProg').textContent = '❌ ' + names[i] + '：' + r; return; }
+      i++; step();
+    }, 50);
+  }
+  step();
+});
+function davRenderUpList(){
+  /* 授权文件夹里的文件，打勾上传 */
+  var files = [];
+  try{ files = JSON.parse(window.LearnShell.listFiles() || '[]'); }catch(e){}
+  var box = $('davUpList'); box.innerHTML = '';
+  if(!files.length){ box.innerHTML = '<div class="hint">授权文件夹是空的。</div>'; return; }
+  files.forEach(function(f){
+    var row = document.createElement('div');
+    row.className = 'dav-row';
+    row.innerHTML = '<label class="dn"><input type="checkbox" class="dav-upck" data-n="' + davEsc(f.name) + '"> ' + davEsc(f.name) +
+      ' <span class="ds">' + (f.size > 1048576 ? (f.size / 1048576).toFixed(1) + 'MB' : Math.round(f.size / 1024) + 'KB') + '</span></label>';
+    box.appendChild(row);
+  });
+}
+$('davUpBtn').addEventListener('click', function(){
+  var cks = document.querySelectorAll('.dav-upck:checked');
+  if(!cks.length){ toast('先打勾要送上去的文件', 2500); return; }
+  var names = Array.from(cks).map(function(c){ return c.getAttribute('data-n'); });
+  var i = 0;
+  function step(){
+    if(i >= names.length){ $('davProg').textContent = '✅ 送上去 ' + names.length + ' 个 → 坚果云 ' + davPath; toast('✅ 上传完成', 2500); return; }
+    $('davProg').textContent = '⬆️ (' + (i + 1) + '/' + names.length + ') ' + names[i] + ' …';
+    setTimeout(function(){
+      var r = window.LearnShell.davUp(davUser(), davPass(), names[i], davPath);
+      if(r !== 'ok'){ $('davProg').textContent = '❌ ' + names[i] + '：' + r; return; }
+      i++; step();
+    }, 50);
+  }
+  step();
+});
+davInit();
 $('updDlBtn').addEventListener('click', ghDownloadNew);
 $('updClose').addEventListener('click', updHide);
 $('updCfgYes').addEventListener('click', importCfg);
