@@ -9,6 +9,16 @@
   小涛笔记（学习笔记2代）· 单文件版
 ==========================================================
   修改记录：
+   v0.3.3 2026-08-13 粗切细刀 + 超大块不许出厂 + 换快模型（洪老师定的规矩）：
+        现象：8万字的书只有23段，一段好几千字，粗切不敢从段落中间下刀
+             →一块好几千字没法读；kimi-k2.6思考型回话慢、草稿吃额度→截断退粗切。
+        根因：粗切只按段落边界切；模型喜好把思考型排第一。
+        修法：①splitParas升级——长段落从标点处再切小（≤2000字一段），
+                与云端机器人tools/cloud_slice.py刀法一字不差，取回拼装才对得上；
+             ②取回把关——粗切块超3000字或云端挂bad标记，一律拦下提示重送，
+                坏结果不进书库（"超大块不许出厂"）；
+             ③AI_PREFER把kimi-k2-0905-preview（不思考、快2~5倍）排第一，
+                kimi-k2.6退为备选，Key里没有就自动往下落。
    v0.3.2 2026-08-12 云端按钮"说人话、话长驻"（洪老师：字闪太快看不清，
         要写明成没成+什么原因）：①送云端/取回两个按钮的结果不再一闪而过
         的toast，改成挂在详情页不走的长驻话（libNote），看完自己翻页才走；
@@ -159,7 +169,7 @@
 </style>
 </head>
 <body>
-<header>📒 小涛笔记<span class="ver">v0.3.2</span></header>
+<header>📒 小涛笔记<span class="ver">v0.3.3</span></header>
 <div class="page">
 
   <div id="updBar" class="hidden">
@@ -270,7 +280,7 @@
   <details class="card">
     <summary>📋 关于 / Obsidian 搬家说明</summary>
     <div class="kv" style="margin-top:6px;">
-      <b>版本：</b>v0.3.2（2026-08-12）云端按钮说人话、话长驻（成没成+什么原因一直挂着）；v0.3.1 云端代办切片；v0.3.0 切片提速；v0.2.0 二期资料库。<br><br>
+      <b>版本：</b>v0.3.3（2026-08-13）粗切细刀+超大块不许出厂+换快模型<br><br>
       <b>⭐ 头一条铁律（Obsidian 搬家）：</b>小涛笔记里所有内容的<b>真身是标准 Markdown 文件</b>，
       全部存在 GitHub 仓库的 <b>vault/</b> 区——那就是一座现成的 Obsidian 仓库。<br>
       <b>搬家方法：</b>把仓库里 vault/ 文件夹下载到电脑/手机（或坚果云同步它），
@@ -372,7 +382,7 @@
 'use strict';
 (function(){
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.3.2';
+var SW_VERSION = '0.3.3';
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
@@ -427,7 +437,7 @@ function billRender(){ var b = bill(); $('aiBill').textContent = '调用 ' + b.c
 var AI_MODELS = ['moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k'];
 /* v0.2.7：不猜模型名了——Kimi 有"花名册"接口 /v1/models，拿 Key 去问它
    "我这把 Key 能用哪些模型"，照实回答。自愈和设置里的刷新按钮都走这里。 */
-var AI_PREFER = ['kimi-k2.6', 'kimi-k2-0905-preview', 'kimi-k2-0711-preview', 'kimi-latest',
+var AI_PREFER = ['kimi-k2-0905-preview', 'kimi-k2.6', 'kimi-k2-0711-preview', 'kimi-latest',
                  'moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k', 'moonshot-v1-auto'];
 function aiModelSort(ids){
   return ids.slice().sort(function(a, b){
@@ -1134,7 +1144,23 @@ function aiClassify(head, filename){
 
 /* --- 切片：段落编号发给AI，AI回切点，本地拼装（AI不用照抄原文，省钱又可靠） --- */
 function splitParas(text){
-  return String(text).split(/\n+/).map(function(s){ return s.trim(); }).filter(function(s){ return s.length > 1; });
+  /* v0.3.3：长段落（>2000字）从标点处再切小，粗切/AI切都不出大块头；
+     与云端机器人 tools/cloud_slice.py 的 split_paras 刀法一字不差，取回拼装才对得上 */
+  var raw = String(text).split(/\n+/).map(function(s){ return s.trim(); }).filter(function(s){ return s.length > 1; });
+  var out = [];
+  raw.forEach(function(p){
+    while(p.length > 2000){
+      var win = p.slice(0, 2000), cut = -1;
+      ['。', '！', '？', '；', ';', '.', '!', '?'].forEach(function(mk){
+        var k = win.lastIndexOf(mk); if(k > cut) cut = k;
+      });
+      if(cut < 1000) cut = 1999; /* 前1000字里找不到标点就硬切在2000字处 */
+      out.push(p.slice(0, cut + 1));
+      p = p.slice(cut + 1).trim();
+    }
+    if(p.length > 1) out.push(p);
+  });
+  return out;
 }
 function makeBatches(paras, limit){
   var batches = [], cur = [], len = 0;
@@ -1630,6 +1656,20 @@ $('btnCloudFetch').addEventListener('click', function(){
       if(data.paras && data.paras !== paras.length){
         libProg(''); $('btnCloudFetch').disabled = false;
         libNote('⚠️ 取回来的东西对不上：云端按 ' + data.paras + ' 个段落切的，本机拼出 ' + paras.length + ' 段。先点「🤖 重新AI切片」，或截图给小涛看。', 'err'); return;
+      }
+      /* v0.3.3：超大粗切块不许出厂——粗切标题带"粗切"且超3000字，或云端挂bad标记，
+         拦下不进书库，提示重新送云端（机器人细刀重切） */
+      var badCoarse = 0, maxLen = 0;
+      (data.chunks || []).forEach(function(c){
+        if(String(c.title || '').indexOf('粗切') < 0) return;
+        var t = paras.slice(c.from - 1, c.to).join('\n').length;
+        if(t > maxLen) maxLen = t;
+        if(t > 3000) badCoarse++;
+      });
+      if(data.bad || badCoarse){
+        libProg(''); $('btnCloudFetch').disabled = false;
+        libNote('❌ 机器人这本书没切好：' + (badCoarse ? '有 ' + badCoarse + ' 块粗切大块头（最大 ' + maxLen + ' 字）' : '云端标了不合格') + '。按您定的规矩不出厂——点「☁️ 送云端自动切」重新送一次，机器人会用新刀法切细。书不会丢。', 'err');
+        return;
       }
       libProg('🔧 正在拼装切块…');
       return idbDelPrefix('chunks', id + '_').then(function(){
