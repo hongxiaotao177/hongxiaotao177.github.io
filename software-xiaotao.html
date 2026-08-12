@@ -9,6 +9,9 @@
   小涛笔记（学习笔记2代）· 单文件版
 ==========================================================
   修改记录：
+   v0.2.1 2026-08-12 踩坑修复：「下载新版到本机」按钮404——v0.2.0走了
+        raw.githubusercontent.com匿名直链，私有仓库匿名必404；改走ghGetFile带Token通道，
+        壳里自更新+文件夹备份，浏览器blob下载（与学合集其他软件同款走法）。
    v0.2.0 2026-08-12 二期「📚 资料库」上线：
         - 导入PDF（多选）全自动：提取文字→AI认书定级(🟢指南/📄期刊/📘书籍/🟠AI生成·待核)
           →AI切片(段落编号发AI回切点，本地拼装原文，AI失败自动退本地粗切)→五段式总结
@@ -101,7 +104,7 @@
 </style>
 </head>
 <body>
-<header>📒 小涛笔记<span class="ver">v0.2.0</span></header>
+<header>📒 小涛笔记<span class="ver">v0.2.1</span></header>
 <div class="page">
 
   <div id="updBar" class="hidden">
@@ -200,7 +203,7 @@
   <details class="card">
     <summary>📋 关于 / Obsidian 搬家说明</summary>
     <div class="kv" style="margin-top:6px;">
-      <b>版本：</b>v0.2.0（2026-08-12）二期资料库（导入PDF全自动认书定级切片总结/问资料/切块变笔记）。<br><br>
+      <b>版本：</b>v0.2.1（2026-08-12）修"下载新版"404；v0.2.0 二期资料库（导入PDF全自动认书定级切片总结/问资料/切块变笔记）。<br><br>
       <b>⭐ 头一条铁律（Obsidian 搬家）：</b>小涛笔记里所有内容的<b>真身是标准 Markdown 文件</b>，
       全部存在 GitHub 仓库的 <b>vault/</b> 区——那就是一座现成的 Obsidian 仓库。<br>
       <b>搬家方法：</b>把仓库里 vault/ 文件夹下载到电脑/手机（或坚果云同步它），
@@ -294,7 +297,7 @@
 'use strict';
 (function(){
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.2.0';
+var SW_VERSION = '0.2.1';
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
@@ -752,11 +755,29 @@ function ghSelfCheck(manual){
 }
 $('ghCheckBtn').addEventListener('click', function(){ ghSelfCheck(true); });
 $('updClose').addEventListener('click', function(){ $('updBar').classList.add('hidden'); });
+/* v0.2.1 踩坑修复：v0.2.0的下载按钮走raw.githubusercontent.com匿名直链——
+   备份仓库是私有的，匿名访问一律404（洪老师实测）。改走ghGetFile带Token的API通道，
+   壳里=自更新(applyUpdate)+文件夹备份，浏览器=blob下载。 */
 $('updDlBtn').addEventListener('click', function(){
   var dl = window._xtDl || 'software-xiaotao.html';
-  var c = ghCfg();
-  window.open('https://raw.githubusercontent.com/' + c.user + '/' + c.repo + '/main/' + encodeURIComponent(dl), '_blank');
-  toast('新页面打开后，另存为「小涛笔记.html」换掉旧文件', 5000);
+  toast('⏳ 正在下载新版…', 3000);
+  ghGetFile(dl).then(function(s){
+    if(!s){ toast('❌ 云端没找到 ' + dl, 4000); return; }
+    var b64 = b64enc(s);
+    if(window.LearnShell && typeof window.LearnShell.applyUpdate === 'function'){
+      var ok = false;
+      try{ ok = window.LearnShell.applyUpdate('小涛笔记.html', b64); }catch(e){}
+      try{ if(window.LearnShell.folderSet && window.LearnShell.folderSet()) window.LearnShell.writeFile('小涛笔记.html', b64); }catch(e){}
+      if(ok){ toast('✅ 新版已装好，重启APP生效（文件夹里也存了一份）', 5000); return; }
+    }
+    var blob = new Blob([s], { type: 'text/html;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = '小涛笔记.html';
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    toast('✅ 已下载，到下载列表找「小涛笔记.html」换掉旧文件', 5000);
+  }).catch(function(e){ toast('❌ 下载失败：' + e.message, 4000); });
 });
 
 /* ==================== 设置加载/保存 ==================== */
