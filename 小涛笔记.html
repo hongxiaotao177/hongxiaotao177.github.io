@@ -9,6 +9,11 @@
   小涛笔记（学习笔记2代）· 单文件版
 ==========================================================
   修改记录：
+   v0.3.0 2026-08-12 切片提速+截断修复：AI接通后暴露新病根——kimi-k2.6是
+        思考型模型，2500回复额度话说到一半被截断，JSON缺腿（洪老师截图实锤
+        "Expected ':' after property name in JSON at position 949"）。修法：
+        ①切片额度2500→8000、总结1200→4000；②JSON损坏自动原样重试一次；
+        ③每批6000→15000字，批数砍掉一半多（洪老师：一天200多批太慢了）。
    v0.2.9 2026-08-12 「到底联系上没有」不再靠猜：
         ①设置里加「🩺 AI 体检」——最小请求试一把，报"✅接上了(模型xx,用时x秒)"
           或"❌没接上:原因"；②进度行带秒表"⏳…（已干 X 秒，别退出）"；
@@ -141,7 +146,7 @@
 </style>
 </head>
 <body>
-<header>📒 小涛笔记<span class="ver">v0.2.9</span></header>
+<header>📒 小涛笔记<span class="ver">v0.3.0</span></header>
 <div class="page">
 
   <div id="updBar" class="hidden">
@@ -252,7 +257,7 @@
   <details class="card">
     <summary>📋 关于 / Obsidian 搬家说明</summary>
     <div class="kv" style="margin-top:6px;">
-      <b>版本：</b>v0.2.9（2026-08-12）加"AI 体检"按钮，进度带秒表，干活不当闷葫芦；v0.2.8 认出 kimi-k2.6；v0.2.0 二期资料库。<br><br>
+      <b>版本：</b>v0.3.0（2026-08-12）切片提速一倍多+修"AI回复截断"；v0.2.9 加"AI 体检"；v0.2.0 二期资料库。<br><br>
       <b>⭐ 头一条铁律（Obsidian 搬家）：</b>小涛笔记里所有内容的<b>真身是标准 Markdown 文件</b>，
       全部存在 GitHub 仓库的 <b>vault/</b> 区——那就是一座现成的 Obsidian 仓库。<br>
       <b>搬家方法：</b>把仓库里 vault/ 文件夹下载到电脑/手机（或坚果云同步它），
@@ -352,7 +357,7 @@
 'use strict';
 (function(){
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.2.9';
+var SW_VERSION = '0.3.0';
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
@@ -1137,20 +1142,28 @@ function coarseSlice(text, startN){
 }
 function aiSliceBatch(paras, idxArr, startN){
   var numbered = idxArr.map(function(pi, k){ return '[' + (k + 1) + '] ' + paras[pi]; }).join('\n');
-  return callAI('你是切书助手。下面是编了号的段落，把它们按"一个知识点一块"分组切开，每块起中文标题和一句话大白话摘要。只回严格JSON数组 [{"from":1,"to":3,"title":"","summary":""}]（编号用上面方括号里的数字，from/to含两头，所有段落都要分到、不许跳号），不要多余的话。',
-    numbered, 2500, 90000
-  ).then(function(txt){
-    var m = txt.match(/\[[\s\S]*\]/);
-    var arr = m ? JSON.parse(m[0]) : null;
-    if(!Array.isArray(arr) || !arr.length) throw new Error('AI回格式不对');
-    var out = arr.map(function(c){
-      var from = Math.max(1, c.from | 0), to = Math.min(idxArr.length, c.to | 0);
-      if(to < from){ from = 1; to = idxArr.length; }
-      return { title: String(c.title || '未命名').slice(0, 40), summary: String(c.summary || '').slice(0, 120),
-               text: idxArr.slice(from - 1, to).map(function(pi){ return paras[pi]; }).join('\n') };
+  /* v0.3.0 病根修复：kimi-k2.6是思考型，2500额度话说到一半被截断→JSON缺腿
+     （报错"Expected ':' after property name"）。修法：额度2500→8000；
+     JSON损坏自动原样重试一次；仍不行才退粗切。 */
+  function tryOnce(){
+    return callAI('你是切书助手。下面是编了号的段落，把它们按"一个知识点一块"分组切开，每块起中文标题和一句话大白话摘要。只回严格JSON数组 [{"from":1,"to":3,"title":"","summary":""}]（编号用上面方括号里的数字，from/to含两头，所有段落都要分到、不许跳号），不要多余的话。',
+      numbered, 8000, 90000
+    ).then(function(txt){
+      var m = txt.match(/\[[\s\S]*\]/);
+      var arr = m ? JSON.parse(m[0]) : null;
+      if(!Array.isArray(arr) || !arr.length) throw new Error('AI回格式不对');
+      var out = arr.map(function(c){
+        var from = Math.max(1, c.from | 0), to = Math.min(idxArr.length, c.to | 0);
+        if(to < from){ from = 1; to = idxArr.length; }
+        return { title: String(c.title || '未命名').slice(0, 40), summary: String(c.summary || '').slice(0, 120),
+                 text: idxArr.slice(from - 1, to).map(function(pi){ return paras[pi]; }).join('\n') };
+      });
+      out._ai = true;
+      return out;
     });
-    out._ai = true;
-    return out;
+  }
+  return tryOnce().catch(function(e1){
+    return tryOnce().catch(function(){ throw e1; });   /* 重试一次，再不行抛首次原因 */
   }).catch(function(e){
     var out = coarseSlice(idxArr.map(function(pi){ return paras[pi]; }).join('\n'), startN || 1);
     out._ai = false;
@@ -1280,7 +1293,7 @@ $('btnShelfGo').addEventListener('click', function(){
 });
 function sliceLibItem(libId, text){
   var paras = splitParas(text);
-  var batches = makeBatches(paras, 6000);
+  var batches = makeBatches(paras, 15000);   /* v0.3.0：6000→15000，批数砍掉一半多 */
   var hasKey = !!(localStorage.getItem('xt_apikey') || '').trim();
   var allChunks = [];
   var anyCoarse = false;
@@ -1336,7 +1349,7 @@ function sliceLibItem(libId, text){
 }
 function libWriteBrief(libId, text){
   return callAI('你是医学资料总结助手。用中文大白话分五段总结这份资料：①这是什么 ②核心观点 ③关键数字/剂量/标准 ④临床怎么用 ⑤注意事项。markdown，段落加粗小标题开头，别客套。',
-    '【资料名】' + (getLib(libId) || {}).title + '\n【正文开头】\n' + String(text).slice(0, 4000), 1200, 60000
+    '【资料名】' + (getLib(libId) || {}).title + '\n【正文开头】\n' + String(text).slice(0, 4000), 4000, 60000
   ).then(function(brief){
     var lib = loadLib(); var it2 = lib.filter(function(x){ return x.id === libId; })[0];
     if(it2){ it2.brief = brief; it2.done = true; saveLib(lib); }
