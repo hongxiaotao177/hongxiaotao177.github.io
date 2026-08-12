@@ -9,6 +9,9 @@
   小涛笔记（学习笔记2代）· 单文件版
 ==========================================================
   修改记录：
+   v0.2.8 2026-08-12 对账落实：老软件（学习笔记）模型名单里有 kimi-k2.6，
+        洪老师存的就是它（合法好名字），是新软件下拉框不认识才落空404。
+        AI_PREFER 喜好名单把 kimi-k2.6 排最前，花名册查到它优先用。
    v0.2.7 2026-08-12 模型花名册：洪老师实测——手动选moonshot-v1-128k照样404，
         说明他这把Key可能连moonshot-v1系列都没权限，硬猜名单猜不中。改用正规做法：
         Kimi官方 /v1/models 接口拿Key问"能用哪些模型"（aiModelsFetch）。
@@ -134,7 +137,7 @@
 </style>
 </head>
 <body>
-<header>📒 小涛笔记<span class="ver">v0.2.7</span></header>
+<header>📒 小涛笔记<span class="ver">v0.2.8</span></header>
 <div class="page">
 
   <div id="updBar" class="hidden">
@@ -244,7 +247,7 @@
   <details class="card">
     <summary>📋 关于 / Obsidian 搬家说明</summary>
     <div class="kv" style="margin-top:6px;">
-      <b>版本：</b>v0.2.7（2026-08-12）模型花名册（设置里点"刷新模型名单"，直接用您Key能用的真模型）；v0.2.6 模型自愈；v0.2.0 二期资料库。<br><br>
+      <b>版本：</b>v0.2.8（2026-08-12）认出老软件的 kimi-k2.6 模型；v0.2.7 模型花名册；v0.2.0 二期资料库。<br><br>
       <b>⭐ 头一条铁律（Obsidian 搬家）：</b>小涛笔记里所有内容的<b>真身是标准 Markdown 文件</b>，
       全部存在 GitHub 仓库的 <b>vault/</b> 区——那就是一座现成的 Obsidian 仓库。<br>
       <b>搬家方法：</b>把仓库里 vault/ 文件夹下载到电脑/手机（或坚果云同步它），
@@ -344,7 +347,7 @@
 'use strict';
 (function(){
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.2.7';
+var SW_VERSION = '0.2.8';
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
@@ -399,7 +402,7 @@ function billRender(){ var b = bill(); $('aiBill').textContent = '调用 ' + b.c
 var AI_MODELS = ['moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k'];
 /* v0.2.7：不猜模型名了——Kimi 有"花名册"接口 /v1/models，拿 Key 去问它
    "我这把 Key 能用哪些模型"，照实回答。自愈和设置里的刷新按钮都走这里。 */
-var AI_PREFER = ['kimi-k2-0905-preview', 'kimi-k2-0711-preview', 'kimi-latest',
+var AI_PREFER = ['kimi-k2.6', 'kimi-k2-0905-preview', 'kimi-k2-0711-preview', 'kimi-latest',
                  'moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k', 'moonshot-v1-auto'];
 function aiModelSort(ids){
   return ids.slice().sort(function(a, b){
