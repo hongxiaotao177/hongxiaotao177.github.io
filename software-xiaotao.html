@@ -9,6 +9,11 @@
   小涛笔记（学习笔记2代）· 单文件版
 ==========================================================
   修改记录：
+   v0.2.6 2026-08-12 病根实锤：AI一直404 "Not found the model"——机器里存的
+        模型名是下拉框没有的旧值，select.value落空发空串给AI。修法（模型自愈）：
+        ①开机校验存的模型名必须在选项里，不在回默认；②callAI遇"404模型不存在"
+        自动换候选模型重试，哪个能用记住哪个并toast告知；③原因翻译补404条目。
+        （之前v0.2.3猜是超时，错——多亏v0.2.5记下原因才抓到真凶）
    v0.2.5 2026-08-12 干活不当哑巴：①进度同时亮在首页和详情页（libProgD），
         重切/重写结束必须 toast 回话——切成没切成、为什么；②AI 失败原因
         翻译成人话记下来（lastErr：超时/Key不对/限流/余额/断网），补救条上写明
@@ -123,7 +128,7 @@
 </style>
 </head>
 <body>
-<header>📒 小涛笔记<span class="ver">v0.2.5</span></header>
+<header>📒 小涛笔记<span class="ver">v0.2.6</span></header>
 <div class="page">
 
   <div id="updBar" class="hidden">
@@ -229,7 +234,7 @@
   <details class="card">
     <summary>📋 关于 / Obsidian 搬家说明</summary>
     <div class="kv" style="margin-top:6px;">
-      <b>版本：</b>v0.2.5（2026-08-12）干活有回话（详情页看进度，成败+原因明说，切片超时放宽90秒）；v0.2.4 老书也能重新切片；v0.2.0 二期资料库。<br><br>
+      <b>版本：</b>v0.2.6（2026-08-12）模型自愈（存的旧模型名认不出来会自动换能用的）；v0.2.5 干活有回话；v0.2.4 老书也能重新切片；v0.2.0 二期资料库。<br><br>
       <b>⭐ 头一条铁律（Obsidian 搬家）：</b>小涛笔记里所有内容的<b>真身是标准 Markdown 文件</b>，
       全部存在 GitHub 仓库的 <b>vault/</b> 区——那就是一座现成的 Obsidian 仓库。<br>
       <b>搬家方法：</b>把仓库里 vault/ 文件夹下载到电脑/手机（或坚果云同步它），
@@ -329,7 +334,7 @@
 'use strict';
 (function(){
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.2.5';
+var SW_VERSION = '0.2.6';
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
@@ -377,20 +382,49 @@ function billAdd(chars){ var b = bill(); b.calls++; b.chars += chars; localStora
 function billRender(){ var b = bill(); $('aiBill').textContent = '调用 ' + b.calls + ' 次 · 发出 ' + Math.round(b.chars / 1000) + ' 千字'; }
 
 /* ==================== AI ==================== */
-function callAI(sys, user, maxTok, timeoutMs){
-  var key = (localStorage.getItem('xt_apikey') || '').trim();
-  if(!key) return Promise.reject(new Error('还没填 API Key（⚙️设置里保存）'));
-  billAdd((sys || '').length + (user || '').length);
+/* v0.2.6：模型自愈。病根实录——洪老师机器里存的模型名是下拉框没有的旧值，
+   select.value 落空变成空串发给AI → 404 "Not found the model"。
+   修法：①开机校验存值必须在选项里，不在就回默认；②callAI 碰到"404模型不存在"
+   自动按候选名单换模型重试，哪个能用就记住哪个。 */
+var AI_MODELS = ['moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k'];
+function aiModelCur(){
+  var v = $('modelSel').value || localStorage.getItem('xt_aimodel') || '';
+  return AI_MODELS.indexOf(v) >= 0 ? v : AI_MODELS[0];
+}
+function callAIonce(key, model, sys, user, maxTok, timeoutMs){
   return fetchWithTimeout('https://api.moonshot.cn/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
-    body: JSON.stringify({ model: $('modelSel').value,
+    body: JSON.stringify({ model: model,
       messages: [{ role: 'system', content: sys }, { role: 'user', content: user }],
       max_tokens: maxTok || 4000 })
   }, timeoutMs || 25000).then(function(resp){
     if(!resp.ok) return resp.text().then(function(t){ throw new Error('AI 报错 ' + resp.status + '：' + t.slice(0, 120)); });
     return resp.json();
   }).then(function(d){ return d.choices[0].message.content; });
+}
+function callAI(sys, user, maxTok, timeoutMs){
+  var key = (localStorage.getItem('xt_apikey') || '').trim();
+  if(!key) return Promise.reject(new Error('还没填 API Key（⚙️设置里保存）'));
+  billAdd((sys || '').length + (user || '').length);
+  var cur = aiModelCur();
+  var cands = [cur].concat(AI_MODELS.filter(function(m){ return m !== cur; }));
+  var i = 0;
+  function attempt(){
+    var model = cands[i];
+    return callAIonce(key, model, sys, user, maxTok, timeoutMs).then(function(txt){
+      if(model !== cur){   /* 换模型才接通：记住这个能用的 */
+        hxPut('xt_aimodel', model); $('modelSel').value = model;
+        toast('🔧 原模型名不对，已自动换用 ' + model + '（设置里已记住）', 4000);
+      }
+      return txt;
+    }).catch(function(e){
+      /* 只有"404模型不存在"才换模型重试，别的错（超时/Key不对/限流）直接抛 */
+      if(String(e.message).indexOf('404') >= 0 && i < cands.length - 1){ i++; return attempt(); }
+      throw e;
+    });
+  }
+  return attempt();
 }
 
 /* ==================== Markdown 渲染 + 双链 ==================== */
@@ -815,7 +849,10 @@ $('updDlBtn').addEventListener('click', function(){
 /* ==================== 设置加载/保存 ==================== */
 function loadSettings(){
   $('apiKey').value = localStorage.getItem('xt_apikey') || '';
-  $('modelSel').value = localStorage.getItem('xt_aimodel') || 'moonshot-v1-8k';
+  /* v0.2.6：存的模型名必须在下拉框选项里，不在就回默认（否则value落空发空串给AI报404） */
+  var _savedModel = localStorage.getItem('xt_aimodel') || AI_MODELS[0];
+  if(AI_MODELS.indexOf(_savedModel) < 0){ _savedModel = AI_MODELS[0]; hxPut('xt_aimodel', _savedModel); }
+  $('modelSel').value = _savedModel;
   $('ghUser').value = localStorage.getItem('xt_gh_user') || '';
   $('ghTok').value = localStorage.getItem('xt_gh_tok') || '';
   $('ghRepo').value = localStorage.getItem('xt_gh_repo') || '';
@@ -1031,6 +1068,7 @@ function aiErrText(e){
   var m = String((e && e.message) || e || '');
   if(m.indexOf('超时') >= 0) return 'AI 太久没回话（网络太慢）';
   if(m.indexOf('401') >= 0) return 'API Key 不对（⚙️设置里检查）';
+  if(m.indexOf('404') >= 0) return '模型名不对或没权限（v0.2.6起会自动换模型重试）';
   if(m.indexOf('429') >= 0) return 'AI 太忙被限流，稍后再试';
   if(m.indexOf('402') >= 0 || m.indexOf('余额') >= 0) return 'API 余额不足';
   if(m.indexOf('Failed to fetch') >= 0 || m.indexOf('NetworkError') >= 0) return '网络断开';
