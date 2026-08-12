@@ -9,6 +9,10 @@
   小涛笔记（学习笔记2代）· 单文件版
 ==========================================================
   修改记录：
+   v0.2.2 2026-08-12 「📂 从授权文件夹取PDF」（仅壳APP显示）：
+        列出授权文件夹里的PDF打勾导入（坚果云直通车取下来的直接能切），
+        绕开系统文件选择器（个别机型WebView文件选择器不灵时的稳路）。
+        顺带重构：导入流水线统一为 importPdfCore(name,size,bufFn)，两条路共用。
    v0.2.1 2026-08-12 踩坑修复：「下载新版到本机」按钮404——v0.2.0走了
         raw.githubusercontent.com匿名直链，私有仓库匿名必404；改走ghGetFile带Token通道，
         壳里自更新+文件夹备份，浏览器blob下载（与学合集其他软件同款走法）。
@@ -104,7 +108,7 @@
 </style>
 </head>
 <body>
-<header>📒 小涛笔记<span class="ver">v0.2.1</span></header>
+<header>📒 小涛笔记<span class="ver">v0.2.2</span></header>
 <div class="page">
 
   <div id="updBar" class="hidden">
@@ -131,7 +135,14 @@
     <summary id="libSum">📚 资料库</summary>
     <div style="margin-top:4px;">
       <button class="btn" id="btnImportPdf">📥 导入PDF（可多选）</button>
+      <button class="btn secondary hidden" id="btnImportShelf">📂 从授权文件夹取PDF</button>
       <input type="file" id="pdfFile" accept="application/pdf,.pdf" multiple style="display:none;">
+    </div>
+    <!-- 授权文件夹取件面板 -->
+    <div id="shelfPanel" class="hidden" style="margin-top:8px; background:#faf6ec; border-radius:10px; padding:10px;">
+      <div class="hint">授权文件夹里的PDF（坚果云直通车取下来的也在这），打勾后点导入：</div>
+      <div id="shelfList"></div>
+      <button class="btn" id="btnShelfGo" style="margin-top:6px;">📥 导入选中的</button>
     </div>
     <div class="hint">导入后全自动：AI 认书 → 定级（🟢指南/📄期刊/📘书籍/🟠AI生成·待核）→ 切片 → 五段式总结。没填 Key 也能导入（本地粗切、手动起名）。</div>
     <div class="msg" id="libMsg"></div>
@@ -203,7 +214,7 @@
   <details class="card">
     <summary>📋 关于 / Obsidian 搬家说明</summary>
     <div class="kv" style="margin-top:6px;">
-      <b>版本：</b>v0.2.1（2026-08-12）修"下载新版"404；v0.2.0 二期资料库（导入PDF全自动认书定级切片总结/问资料/切块变笔记）。<br><br>
+      <b>版本：</b>v0.2.2（2026-08-12）加"从授权文件夹取PDF"；v0.2.1 修"下载新版"404；v0.2.0 二期资料库（导入PDF全自动认书定级切片总结/问资料/切块变笔记）。<br><br>
       <b>⭐ 头一条铁律（Obsidian 搬家）：</b>小涛笔记里所有内容的<b>真身是标准 Markdown 文件</b>，
       全部存在 GitHub 仓库的 <b>vault/</b> 区——那就是一座现成的 Obsidian 仓库。<br>
       <b>搬家方法：</b>把仓库里 vault/ 文件夹下载到电脑/手机（或坚果云同步它），
@@ -297,7 +308,7 @@
 'use strict';
 (function(){
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.2.1';
+var SW_VERSION = '0.2.2';
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
@@ -998,30 +1009,79 @@ $('pdfFile').addEventListener('change', function(){
   chain.then(function(){ libProg(''); renderLib(); });
 });
 function importOnePdf(file){
-  var fp = file.name + '_' + file.size;
+  return importPdfCore(file.name, file.size, function(){ return file.arrayBuffer(); });
+}
+/* 统一流水线：系统选择器和授权文件夹两条路都走这里 */
+function importPdfCore(name, size, bufFn){
+  var fp = name + '_' + size;
   if(loadLib().some(function(x){ return x.fp === fp; })){
-    showMsg($('libMsg'), '《' + file.name + '》导入过，跳过（防重复花钱）。', 'ok');
-    return;
+    showMsg($('libMsg'), '《' + name + '》导入过，跳过（防重复花钱）。', 'ok');
+    return Promise.resolve();
   }
-  libProg('📖 ' + file.name + '：加载PDF组件…');
-  return file.arrayBuffer().then(function(buf){
+  libProg('📖 ' + name + '：加载PDF组件…');
+  return bufFn().then(function(buf){
     return pdfExtractText(buf);
   }).then(function(r){
     var text = r.text || '';
     if(text.replace(/\s/g, '').length < 100) throw new Error('扫描图片版，读不出文字，跳过（不花钱）');
-    libProg('🤖 ' + file.name + '：AI 认书定级…');
-    return aiClassify(text.slice(0, 3000), file.name).then(function(meta){
+    libProg('🤖 ' + name + '：AI 认书定级…');
+    return aiClassify(text.slice(0, 3000), name).then(function(meta){
       return { text: text, pages: r.pages, meta: meta };
     });
   }).then(function(r){
     var item = { id: uid(), title: r.meta.title, author: r.meta.author, grade: r.meta.grade,
-                 gradeBy: r.meta.gradeBy, filename: file.name, size: file.size, fp: fp,
+                 gradeBy: r.meta.gradeBy, filename: name, size: size, fp: fp,
                  chars: r.text.length, pages: r.pages, addedAt: Date.now(),
                  brief: '', chunks: [], done: false };
     var lib = loadLib(); lib.unshift(item); saveLib(lib); renderLib();
     return idbPut('kv', r.text, 'raw_' + item.id).then(function(){ return sliceLibItem(item.id, r.text); });
   });
 }
+/* --- 从授权文件夹取PDF（v0.2.2，仅壳APP显示；绕开系统文件选择器） --- */
+function b64ToBuf(b64){
+  var bin = atob(String(b64).replace(/\s+/g, ''));
+  var bytes = new Uint8Array(bin.length);
+  for(var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes.buffer;
+}
+function shelfReady(){ return window.LearnShell && typeof window.LearnShell.listFiles === 'function'; }
+if(shelfReady()) $('btnImportShelf').classList.remove('hidden');
+$('btnImportShelf').addEventListener('click', function(){
+  var panel = $('shelfPanel');
+  panel.classList.toggle('hidden');
+  if(panel.classList.contains('hidden')) return;
+  var files = [];
+  try{ files = JSON.parse(window.LearnShell.listFiles() || '[]'); }catch(e){}
+  var pdfs = files.filter(function(f){ return /\.pdf$/i.test(f.name); });
+  var box = $('shelfList'); box.innerHTML = '';
+  if(!pdfs.length){ box.innerHTML = '<div class="hint">授权文件夹里没有PDF。先用文件桥「坚果云直通车」取下来，或从坚果云APP同步进来。</div>'; return; }
+  pdfs.forEach(function(f){
+    var row = document.createElement('div');
+    row.style.cssText = 'padding:8px 2px; border-bottom:1px dashed #eee4d4; font-size:15px;';
+    row.innerHTML = '<label><input type="checkbox" class="shelf-ck" data-n="' + esc(f.name) + '" data-s="' + f.size +
+      '" style="width:20px;height:20px;vertical-align:-4px;"> ' + esc(f.name) +
+      ' <span style="font-size:12px;color:#b5a68c;">' + (f.size > 1048576 ? (f.size / 1048576).toFixed(1) + 'MB' : Math.round(f.size / 1024) + 'KB') + '</span></label>';
+    box.appendChild(row);
+  });
+});
+$('btnShelfGo').addEventListener('click', function(){
+  var cks = document.querySelectorAll('.shelf-ck:checked');
+  if(!cks.length){ toast('先打勾要导入的PDF', 2500); return; }
+  $('shelfPanel').classList.add('hidden');
+  var items = Array.from(cks).map(function(c){ return { name: c.getAttribute('data-n'), size: parseInt(c.getAttribute('data-s') || '0') }; });
+  var chain = Promise.resolve();
+  items.forEach(function(it){
+    chain = chain.then(function(){
+      libProg('📖 ' + it.name + '：从文件夹读取…');
+      var b64 = window.LearnShell.readFile(it.name);
+      if(!b64) throw new Error('读不到文件内容');
+      return importPdfCore(it.name, it.size || b64.length, function(){ return Promise.resolve(b64ToBuf(b64)); });
+    }).catch(function(e){
+      showMsg($('libMsg'), '❌ ' + it.name + '：' + e.message, 'err');
+    });
+  });
+  chain.then(function(){ libProg(''); renderLib(); });
+});
 function sliceLibItem(libId, text){
   var paras = splitParas(text);
   var batches = makeBatches(paras, 6000);
