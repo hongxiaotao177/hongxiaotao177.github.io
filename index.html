@@ -2,6 +2,8 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录：
+    v1.3.0 2026-08-11 小涛笔记入编第六位成员：SUITE注册表+CUR加xiaotao(0，未装)，学习记录区
+      置顶新卡片；软件自检读 version-xiaotao.json（只认自己的版本文件）。
     v1.0.0 2026-07 初版：四张卡片+资料存档占位。
     v1.0.3 2026-08-04 加壳APP下载卡片。
     v1.1.0 2026-08-06 主界面装上自检器官：
@@ -88,6 +90,12 @@
 
   <div class="section-title">学习记录</div>
 
+  <a class="card" href="小涛笔记.html">
+    <h2>📒 小涛笔记 <span style="font-size:12px; color:#b08a4a;">（学习笔记2代·全新）</span></h2>
+    <div class="desc">新一代笔记：AI 是主力——输入主题 AI 备课，写完 AI 改稿；[[]] 双链+反链；所有笔记真身是 Obsidian 标准 Markdown，自动存进仓库 vault/ 区，随时零损失搬进 Obsidian；二期上资料库（文献+书统一管理、云端自动切片），三期上我的书。</div>
+    <div class="meta"><span class="tag">网页工具</span><span class="tag" id="tagXiaotao">v0.1.0</span></div>
+  </a>
+
   <a class="card" href="学习笔记.html">
     <h2>🔗 学习笔记·双链版</h2>
     <div class="desc">输入主题，AI 生成学习笔记和关联线索；[[]] 双链跳转、词条角标、AI改稿、折叠标签、一键出复习题发送到习题学习、✍️ 自己手写空白笔记（不用AI）、📄 文献库导入PDF自动归类、词条挂文献点读全文、文献AI总结/出题/找相关笔记、💰查额度；笔记自动云备份到您的 GitHub 私有仓库。</div>
@@ -148,7 +156,7 @@
 <script>
 /* ==================== 套装主界面自检器官（v1.1.0） ==================== */
 /* 本界面对应的四个软件当前内装版本（每次发版跟着改） */
-var CUR = { notes:"2.6.9", xiti:"1.4.10", bridge:"1.1.3", xueqi:"0.10.2", ppt:"0" };
+var CUR = { notes:"2.6.9", xiti:"1.4.10", bridge:"1.1.3", xueqi:"0.10.2", ppt:"0", xiaotao:"0" };
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
 try{ var _sv=JSON.parse(localStorage.getItem("hx_suite_ver")||"{}"); Object.keys(_sv).forEach(function(k){ if(_sv[k]) CUR[k]=_sv[k]; }); }catch(e){}
 /* key: [云端软件文件, 壳内文件名, 云端版本文件, 标签id] */
@@ -157,7 +165,8 @@ var SUITE = {
   xiti:   ["software-xiti.html",   "习题学习.html", "version-xiti.json",   "tagXiti"],
   bridge: ["software-bridge.html", "文件桥.html",   "version-bridge.json", "tagBridge"],
   xueqi:  ["software-xueqi.html",  "血气分析.html", "version-xueqi.json",  "tagXueqi"],
-  ppt:    ["software-ppt.html",    "PPT工坊.html",  "version-ppt.json",    "tagPpt"]
+  ppt:    ["software-ppt.html",    "PPT工坊.html",  "version-ppt.json",    "tagPpt"],
+  xiaotao:["software-xiaotao.html","小涛笔记.html", "version-xiaotao.json","tagXiaotao"]
 };
 /* 标签按 CUR 显示（永不落伍） */
 Object.keys(SUITE).forEach(function(k){
