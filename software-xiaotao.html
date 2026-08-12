@@ -9,6 +9,22 @@
   小涛笔记（学习笔记2代）· 单文件版
 ==========================================================
   修改记录：
+   v0.3.3 2026-08-13 粗切细刀 + 超大块不许出厂 + 换快模型（洪老师定的规矩）：
+        现象：8万字的书只有23段，一段好几千字，粗切不敢从段落中间下刀
+             →一块好几千字没法读；kimi-k2.6思考型回话慢、草稿吃额度→截断退粗切。
+        根因：粗切只按段落边界切；模型喜好把思考型排第一。
+        修法：①splitParas升级——长段落从标点处再切小（≤2000字一段），
+                与云端机器人tools/cloud_slice.py刀法一字不差，取回拼装才对得上；
+             ②取回把关——粗切块超3000字或云端挂bad标记，一律拦下提示重送，
+                坏结果不进书库（"超大块不许出厂"）；
+             ③AI_PREFER把kimi-k2-0905-preview（不思考、快2~5倍）排第一，
+                kimi-k2.6退为备选，Key里没有就自动往下落。
+   v0.3.2 2026-08-12 云端按钮"说人话、话长驻"（洪老师：字闪太快看不清，
+        要写明成没成+什么原因）：①送云端/取回两个按钮的结果不再一闪而过
+        的toast，改成挂在详情页不走的长驻话（libNote），看完自己翻页才走；
+        ②四种情况分明说：线路不通（ghErrText翻译：断网/令牌不对/权限不够/
+        仓库没找到）、联系上了但机器人还在切、取回拼好了几块、怪事对不上；
+        ③送上成功也长驻"上传成功，机器人接手了"。
    v0.3.1 2026-08-12 ☁️云端代办切片（洪老师："送上网应自动切"）：
         详情页补救条加「☁️ 送云端自动切」——原文推进私有仓库 todo/，
         GitHub Actions 机器人（tools/cloud_slice.py）醒来自动切，切点清单
@@ -153,7 +169,7 @@
 </style>
 </head>
 <body>
-<header>📒 小涛笔记<span class="ver">v0.3.1</span></header>
+<header>📒 小涛笔记<span class="ver">v0.3.3</span></header>
 <div class="page">
 
   <div id="updBar" class="hidden">
@@ -264,7 +280,7 @@
   <details class="card">
     <summary>📋 关于 / Obsidian 搬家说明</summary>
     <div class="kv" style="margin-top:6px;">
-      <b>版本：</b>v0.3.1（2026-08-12）☁️云端代办切片（送上网机器人自动切，取回即入库）；v0.3.0 切片提速；v0.2.0 二期资料库。<br><br>
+      <b>版本：</b>v0.3.3（2026-08-13）粗切细刀+超大块不许出厂+换快模型<br><br>
       <b>⭐ 头一条铁律（Obsidian 搬家）：</b>小涛笔记里所有内容的<b>真身是标准 Markdown 文件</b>，
       全部存在 GitHub 仓库的 <b>vault/</b> 区——那就是一座现成的 Obsidian 仓库。<br>
       <b>搬家方法：</b>把仓库里 vault/ 文件夹下载到电脑/手机（或坚果云同步它），
@@ -366,7 +382,7 @@
 'use strict';
 (function(){
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.3.1';
+var SW_VERSION = '0.3.3';
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
@@ -421,7 +437,7 @@ function billRender(){ var b = bill(); $('aiBill').textContent = '调用 ' + b.c
 var AI_MODELS = ['moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k'];
 /* v0.2.7：不猜模型名了——Kimi 有"花名册"接口 /v1/models，拿 Key 去问它
    "我这把 Key 能用哪些模型"，照实回答。自愈和设置里的刷新按钮都走这里。 */
-var AI_PREFER = ['kimi-k2.6', 'kimi-k2-0905-preview', 'kimi-k2-0711-preview', 'kimi-latest',
+var AI_PREFER = ['kimi-k2-0905-preview', 'kimi-k2.6', 'kimi-k2-0711-preview', 'kimi-latest',
                  'moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k', 'moonshot-v1-auto'];
 function aiModelSort(ids){
   return ids.slice().sort(function(a, b){
@@ -1128,7 +1144,23 @@ function aiClassify(head, filename){
 
 /* --- 切片：段落编号发给AI，AI回切点，本地拼装（AI不用照抄原文，省钱又可靠） --- */
 function splitParas(text){
-  return String(text).split(/\n+/).map(function(s){ return s.trim(); }).filter(function(s){ return s.length > 1; });
+  /* v0.3.3：长段落（>2000字）从标点处再切小，粗切/AI切都不出大块头；
+     与云端机器人 tools/cloud_slice.py 的 split_paras 刀法一字不差，取回拼装才对得上 */
+  var raw = String(text).split(/\n+/).map(function(s){ return s.trim(); }).filter(function(s){ return s.length > 1; });
+  var out = [];
+  raw.forEach(function(p){
+    while(p.length > 2000){
+      var win = p.slice(0, 2000), cut = -1;
+      ['。', '！', '？', '；', ';', '.', '!', '?'].forEach(function(mk){
+        var k = win.lastIndexOf(mk); if(k > cut) cut = k;
+      });
+      if(cut < 1000) cut = 1999; /* 前1000字里找不到标点就硬切在2000字处 */
+      out.push(p.slice(0, cut + 1));
+      p = p.slice(cut + 1).trim();
+    }
+    if(p.length > 1) out.push(p);
+  });
+  return out;
 }
 function makeBatches(paras, limit){
   var batches = [], cur = [], len = 0;
@@ -1191,6 +1223,7 @@ function libProg(t){
   if(!d) return;
   if(t){
     _progT0 = Date.now();
+    d.style.color = ''; /* v0.3.2：libNote 染过色的话还原 */
     d.textContent = '⏳ ' + t;
     d.classList.remove('hidden');
     if(_progTimer) clearInterval(_progTimer);
@@ -1211,6 +1244,25 @@ function aiErrText(e){
   if(m.indexOf('429') >= 0) return 'AI 太忙被限流，稍后再试';
   if(m.indexOf('402') >= 0 || m.indexOf('余额') >= 0) return 'API 余额不足';
   if(m.indexOf('Failed to fetch') >= 0 || m.indexOf('NetworkError') >= 0) return '网络断开';
+  return m.slice(0, 60) || '原因不明';
+}
+/* v0.3.2：长驻回话——挂在详情页不走（无秒表），用户看完自己翻页才消失 */
+function libNote(t, kind){
+  var d = $('libProgD'); if(!d) return;
+  if(_progTimer){ clearInterval(_progTimer); _progTimer = null; }
+  if(!t){ d.classList.add('hidden'); d.textContent = ''; return; }
+  d.textContent = t;
+  d.style.color = kind === 'err' ? '#b3261e' : (kind === 'ok' ? '#1a7f37' : '#8a6d1a');
+  d.classList.remove('hidden');
+}
+/* v0.3.2：GitHub 线路故障翻译成人话 */
+function ghErrText(e){
+  var m = String((e && e.message) || e || '');
+  if(m.indexOf('超时') >= 0) return '连不上 GitHub（网络太慢或断网）';
+  if(m.indexOf('401') >= 0) return 'GitHub 令牌不对或过期（⚙️设置里检查）';
+  if(m.indexOf('403') >= 0) return 'GitHub 令牌权限不够，或被限流了（过几分钟再试）';
+  if(m.indexOf('404') >= 0) return '仓库没找到（⚙️设置里检查仓库名）';
+  if(m.indexOf('Failed to fetch') >= 0 || m.indexOf('NetworkError') >= 0) return '网络断开，连不上 GitHub';
   return m.slice(0, 60) || '原因不明';
 }
 $('btnImportPdf').addEventListener('click', function(){ $('pdfFile').click(); });
@@ -1570,12 +1622,12 @@ $('btnReBrief').addEventListener('click', function(){
 /* --- v0.3.1 云端代办切片：送上去→Actions机器人自动切→取回拼装 --- */
 $('btnCloudSlice').addEventListener('click', function(){
   var id = curLibId; var x = getLib(id); if(!x) return;
-  if(!ghReady()){ toast('请先在 ⚙️设置 里配好 GitHub 云备份', 2500); return; }
+  if(!ghReady()){ libNote('❌ 还没配 GitHub 云备份——请先在 ⚙️设置 里把 GitHub 三项填好保存，再回来点。', 'err'); return; }
   if(!confirm('把《' + x.title + '》原文送上云端（您的私有仓库），机器人自动切？\n切好您再点「📥 取回切片」。')) return;
   $('btnCloudSlice').disabled = true;
   libProg('📦 正在拼回原文…');
   libFullText(id).then(function(raw){
-    if(!raw){ libProg(''); $('btnCloudSlice').disabled = false; toast('正文丢了，没法送云端', 2500); return; }
+    if(!raw){ libProg(''); $('btnCloudSlice').disabled = false; libNote('❌ 正文丢了，没法送云端。这条一直挂着——截图给小涛看。', 'err'); return; }
     libProg('☁️ 正在送上云端…');
     return ghPutFile('todo/slice_' + id + '.txt', raw, '云端代办切片：' + x.title).then(function(){
       return ghPutFile('todo/slice_' + id + '.meta.json', JSON.stringify({ id: id, title: x.title }), '切片说明');
@@ -1584,11 +1636,11 @@ $('btnCloudSlice').addEventListener('click', function(){
       if(it){ it.cloud = 'sent'; saveLib(lib); }
       libProg(''); $('btnCloudSlice').disabled = false;
       openLib(id);
-      toast('☁️ 已送上云端！机器人接手了，过几分钟点「📥 取回切片」', 4000);
+      libNote('✅ 上传成功！原文已送到云端仓库，机器人接手切了。过几分钟点「📥 取回切片」。', 'ok');
     });
   }).catch(function(e){
     libProg(''); $('btnCloudSlice').disabled = false;
-    toast('送上去失败：' + e.message, 3000);
+    libNote('❌ 没送上去：' + ghErrText(e) + '。线路修好后再点一次「☁️ 送云端自动切」就行，书不会丢。', 'err');
   });
 });
 $('btnCloudFetch').addEventListener('click', function(){
@@ -1596,13 +1648,28 @@ $('btnCloudFetch').addEventListener('click', function(){
   $('btnCloudFetch').disabled = true;
   libProg('📥 看看机器人切好没有…');
   ghGetFile('done/slice_' + id + '.json').then(function(s){
-    if(!s){ libProg(''); $('btnCloudFetch').disabled = false; toast('机器人还在切，过几分钟再点', 3000); return; }
+    if(!s){ libProg(''); $('btnCloudFetch').disabled = false;
+      libNote('☁️ 联系上了，仓库线路通畅——机器人还在切，没切完。过一会儿再点一次；厚书可能要十几二十分钟。', 'info'); return; }
     var data = JSON.parse(s);
     return libFullText(id).then(function(raw){
       var paras = splitParas(raw);
       if(data.paras && data.paras !== paras.length){
         libProg(''); $('btnCloudFetch').disabled = false;
-        toast('段落数对不上（云端' + data.paras + '/本机' + paras.length + '），先点「🤖 重新AI切片」吧', 4000); return;
+        libNote('⚠️ 取回来的东西对不上：云端按 ' + data.paras + ' 个段落切的，本机拼出 ' + paras.length + ' 段。先点「🤖 重新AI切片」，或截图给小涛看。', 'err'); return;
+      }
+      /* v0.3.3：超大粗切块不许出厂——粗切标题带"粗切"且超3000字，或云端挂bad标记，
+         拦下不进书库，提示重新送云端（机器人细刀重切） */
+      var badCoarse = 0, maxLen = 0;
+      (data.chunks || []).forEach(function(c){
+        if(String(c.title || '').indexOf('粗切') < 0) return;
+        var t = paras.slice(c.from - 1, c.to).join('\n').length;
+        if(t > maxLen) maxLen = t;
+        if(t > 3000) badCoarse++;
+      });
+      if(data.bad || badCoarse){
+        libProg(''); $('btnCloudFetch').disabled = false;
+        libNote('❌ 机器人这本书没切好：' + (badCoarse ? '有 ' + badCoarse + ' 块粗切大块头（最大 ' + maxLen + ' 字）' : '云端标了不合格') + '。按您定的规矩不出厂——点「☁️ 送云端自动切」重新送一次，机器人会用新刀法切细。书不会丢。', 'err');
+        return;
       }
       libProg('🔧 正在拼装切块…');
       return idbDelPrefix('chunks', id + '_').then(function(){
@@ -1631,12 +1698,14 @@ $('btnCloudFetch').addEventListener('click', function(){
       }).then(function(){
         libProg(''); $('btnCloudFetch').disabled = false;
         openLib(id);
-        toast(data.coarse ? '📥 取回来了（部分粗切保底，可再送一次）' : '📥 取回来了！AI 切片 ' + (data.chunks || []).length + ' 块，总结也写好了', 4000);
+        libNote(data.coarse
+          ? '📥 取回来了，但有部分批次 AI 没切成（粗切保底）。可以点「☁️ 送云端自动切」再送一次，或用着先。'
+          : '✅ 取回来了！AI 切好的 ' + (data.chunks || []).length + ' 块已拼装进书库，总结也写好了。', 'ok');
       });
     });
   }).catch(function(e){
     libProg(''); $('btnCloudFetch').disabled = false;
-    toast('取回失败：' + e.message, 3000);
+    libNote('❌ 取回失败：' + ghErrText(e) + '。线路修好后再点一次「📥 取回切片」，云端的结果还在，不会丢。', 'err');
   });
 });
 
