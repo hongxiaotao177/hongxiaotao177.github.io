@@ -9,6 +9,10 @@
   小涛笔记（学习笔记2代）· 单文件版
 ==========================================================
   修改记录：
+   v0.2.9 2026-08-12 「到底联系上没有」不再靠猜：
+        ①设置里加「🩺 AI 体检」——最小请求试一把，报"✅接上了(模型xx,用时x秒)"
+          或"❌没接上:原因"；②进度行带秒表"⏳…（已干 X 秒，别退出）"；
+        ③重切/重写点下去立刻有字（拼原文中…），按钮变"⏳ 切片中…"忙态。
    v0.2.8 2026-08-12 对账落实：老软件（学习笔记）模型名单里有 kimi-k2.6，
         洪老师存的就是它（合法好名字），是新软件下拉框不认识才落空404。
         AI_PREFER 喜好名单把 kimi-k2.6 排最前，花名册查到它优先用。
@@ -137,7 +141,7 @@
 </style>
 </head>
 <body>
-<header>📒 小涛笔记<span class="ver">v0.2.8</span></header>
+<header>📒 小涛笔记<span class="ver">v0.2.9</span></header>
 <div class="page">
 
   <div id="updBar" class="hidden">
@@ -216,6 +220,7 @@
     <div style="margin-top:8px;">
       <button class="btn" id="btnSaveKey">💾 保存 Key</button>
       <button class="btn secondary" id="btnBalance">💰 查额度</button>
+      <button class="btn secondary" id="btnAITest">🩺 AI 体检</button>
     </div>
     <div class="msg" id="keyMsg"></div>
 
@@ -247,7 +252,7 @@
   <details class="card">
     <summary>📋 关于 / Obsidian 搬家说明</summary>
     <div class="kv" style="margin-top:6px;">
-      <b>版本：</b>v0.2.8（2026-08-12）认出老软件的 kimi-k2.6 模型；v0.2.7 模型花名册；v0.2.0 二期资料库。<br><br>
+      <b>版本：</b>v0.2.9（2026-08-12）加"AI 体检"按钮，进度带秒表，干活不当闷葫芦；v0.2.8 认出 kimi-k2.6；v0.2.0 二期资料库。<br><br>
       <b>⭐ 头一条铁律（Obsidian 搬家）：</b>小涛笔记里所有内容的<b>真身是标准 Markdown 文件</b>，
       全部存在 GitHub 仓库的 <b>vault/</b> 区——那就是一座现成的 Obsidian 仓库。<br>
       <b>搬家方法：</b>把仓库里 vault/ 文件夹下载到电脑/手机（或坚果云同步它），
@@ -347,7 +352,7 @@
 'use strict';
 (function(){
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.2.8';
+var SW_VERSION = '0.2.9';
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
@@ -965,6 +970,21 @@ $('btnBalance').addEventListener('click', function(){
 $('btnBillReset').addEventListener('click', function(){
   localStorage.setItem(LS_BILL, '{"calls":0,"chars":0}'); billRender();
 });
+/* v0.2.9：🩺 AI 体检——最小的请求试一把，接上没接上、多快、用的哪个模型，一句话说清 */
+$('btnAITest').addEventListener('click', function(){
+  var key = (localStorage.getItem('xt_apikey') || '').trim();
+  if(!key){ showMsg($('keyMsg'), '先保存 Key。', 'err'); return; }
+  $('btnAITest').disabled = true;
+  showMsg($('keyMsg'), '🩺 正在联系 AI（模型 ' + aiModelCur() + '）…', 'ok');
+  var t0 = Date.now();
+  callAI('你是测试员。', '只回一个字：通', 10, 60000).then(function(){
+    $('btnAITest').disabled = false;
+    showMsg($('keyMsg'), '✅ AI 接上了！模型 ' + aiModelCur() + '，用时 ' + ((Date.now() - t0) / 1000).toFixed(1) + ' 秒', 'ok');
+  }).catch(function(e){
+    $('btnAITest').disabled = false;
+    showMsg($('keyMsg'), '❌ AI 没接上：' + aiErrText(e), 'err');
+  });
+});
 
 /* ==================== 导出（Obsidian 打包说明） ==================== */
 $('btnExportMd').addEventListener('click', function(){
@@ -1140,11 +1160,25 @@ function aiSliceBatch(paras, idxArr, startN){
 }
 
 /* --- 导入全流程（全自动：提取→认书→切片→总结） --- */
-/* v0.2.5：进度同时亮在首页和详情页（详情页干活时不能当哑巴） */
+/* v0.2.5：进度同时亮在首页和详情页（详情页干活时不能当哑巴）
+   v0.2.9：带秒表——"已干 X 秒，别退出"，它到底动不动一目了然 */
+var _progT0 = 0, _progTimer = null;
 function libProg(t){
   $('libProg').textContent = t;
   var d = $('libProgD');
-  if(d){ d.textContent = t; d.classList.toggle('hidden', !t); }
+  if(!d) return;
+  if(t){
+    _progT0 = Date.now();
+    d.textContent = '⏳ ' + t;
+    d.classList.remove('hidden');
+    if(_progTimer) clearInterval(_progTimer);
+    _progTimer = setInterval(function(){
+      d.textContent = '⏳ ' + t + '（已干 ' + Math.floor((Date.now() - _progT0) / 1000) + ' 秒，别退出）';
+    }, 1000);
+  }else{
+    d.classList.add('hidden'); d.textContent = '';
+    if(_progTimer){ clearInterval(_progTimer); _progTimer = null; }
+  }
 }
 /* v0.2.5：AI 失败原因翻译成人话，记下来给用户看 */
 function aiErrText(e){
@@ -1439,8 +1473,10 @@ $('btnReSlice').addEventListener('click', function(){
   var id = curLibId; var x = getLib(id); if(!x) return;
   if(!(localStorage.getItem('xt_apikey') || '').trim()){ toast('请先在 ⚙️设置 里填 API Key', 2500); return; }
   if(!confirm('用 AI 重新切《' + x.title + '》？旧切块会被替换。')) return;
+  libProg('正在拼回原文…');   /* v0.2.9：点下去立刻有字 */
+  $('btnReSlice').textContent = '⏳ 切片中…';
   libFullText(id).then(function(raw){
-    if(!raw){ toast('正文丢了，请删除后重新导入这份 PDF', 3000); return; }
+    if(!raw){ libProg(''); $('btnReSlice').textContent = '🤖 重新AI切片'; toast('正文丢了，请删除后重新导入这份 PDF', 3000); return; }
     $('btnReSlice').disabled = true;
     idbDelPrefix('chunks', id + '_').then(function(){
       var lib = loadLib(); var it = lib.filter(function(t){ return t.id === id; })[0];
@@ -1448,6 +1484,7 @@ $('btnReSlice').addEventListener('click', function(){
       return sliceLibItem(id, raw);
     }).then(function(){
       $('btnReSlice').disabled = false;
+      $('btnReSlice').textContent = '🤖 重新AI切片';
       libProg('');
       var it = getLib(id);
       openLib(id);
@@ -1459,6 +1496,8 @@ $('btnReSlice').addEventListener('click', function(){
       }
     }).catch(function(){
       $('btnReSlice').disabled = false;
+      $('btnReSlice').textContent = '🤖 重新AI切片';
+      libProg('');
       toast('重新切片没成功，稍后再试', 2500);
     });
   });
@@ -1467,14 +1506,17 @@ $('btnReBrief').addEventListener('click', function(){
   var id = curLibId; var x = getLib(id); if(!x) return;
   if(!(localStorage.getItem('xt_apikey') || '').trim()){ toast('请先在 ⚙️设置 里填 API Key', 2500); return; }
   $('btnReBrief').disabled = true;
+  $('btnReBrief').textContent = '⏳ 写总结中…';
+  libProg('正在拼正文…');
   libFullText(id).then(function(full){
     return String(full || '').slice(0, 4000);
   }).then(function(text){
-    if(!text){ toast('没拿到正文，没法重写总结', 2500); return; }
+    if(!text){ libProg(''); $('btnReBrief').disabled = false; $('btnReBrief').textContent = '🤖 重新生成总结'; toast('没拿到正文，没法重写总结', 2500); return; }
     libProg('📝 重新生成总结…');
     return libWriteBrief(id, text);
   }).then(function(){
     $('btnReBrief').disabled = false;
+    $('btnReBrief').textContent = '🤖 重新生成总结';
     libProg('');
     var it = getLib(id);
     openLib(id);
@@ -1486,6 +1528,7 @@ $('btnReBrief').addEventListener('click', function(){
     }
   }).catch(function(){
     $('btnReBrief').disabled = false;
+    $('btnReBrief').textContent = '🤖 重新生成总结';
     libProg('');
     toast('重写没成功，稍后再试', 2500);
   });
