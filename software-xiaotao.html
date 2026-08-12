@@ -9,6 +9,13 @@
   小涛笔记（学习笔记2代）· 单文件版
 ==========================================================
   修改记录：
+   v0.2.3 2026-08-12 踩坑修复：切块全叫"第1段/第2段"重复+"总结生成失败"——
+        病根是AI请求25秒默认超时对手机5G切书太短（6000字发上去+2500字回下来），
+        一超时就退本地粗切，粗切每批又从1编号。修法：
+        ①切片/总结类重活一律放宽到60秒（callAI加timeoutMs参数）；
+        ②粗切编号全书连着数（coarseSlice加startN参数）；
+        ③粗切过的书保留原文不删，详情页亮「🤖 重新AI切片」「🤖 重新生成总结」
+          补救条，网络好时点一下重来，不用删了重导。
    v0.2.2 2026-08-12 「📂 从授权文件夹取PDF」（仅壳APP显示）：
         列出授权文件夹里的PDF打勾导入（坚果云直通车取下来的直接能切），
         绕开系统文件选择器（个别机型WebView文件选择器不灵时的稳路）。
@@ -108,7 +115,7 @@
 </style>
 </head>
 <body>
-<header>📒 小涛笔记<span class="ver">v0.2.2</span></header>
+<header>📒 小涛笔记<span class="ver">v0.2.3</span></header>
 <div class="page">
 
   <div id="updBar" class="hidden">
@@ -214,7 +221,7 @@
   <details class="card">
     <summary>📋 关于 / Obsidian 搬家说明</summary>
     <div class="kv" style="margin-top:6px;">
-      <b>版本：</b>v0.2.2（2026-08-12）加"从授权文件夹取PDF"；v0.2.1 修"下载新版"404；v0.2.0 二期资料库（导入PDF全自动认书定级切片总结/问资料/切块变笔记）。<br><br>
+      <b>版本：</b>v0.2.3（2026-08-12）修"切块重名+总结失败"（AI放宽60秒，可重新切片/重写总结）；v0.2.2 加"从授权文件夹取PDF"；v0.2.0 二期资料库。<br><br>
       <b>⭐ 头一条铁律（Obsidian 搬家）：</b>小涛笔记里所有内容的<b>真身是标准 Markdown 文件</b>，
       全部存在 GitHub 仓库的 <b>vault/</b> 区——那就是一座现成的 Obsidian 仓库。<br>
       <b>搬家方法：</b>把仓库里 vault/ 文件夹下载到电脑/手机（或坚果云同步它），
@@ -281,6 +288,11 @@
       <span class="hint" id="libMeta" style="display:inline; margin-left:8px;"></span>
     </div>
     <div class="md-body" id="libBrief" style="font-size:15px; background:#faf6ec; border-radius:10px; padding:10px 12px;"></div>
+    <div id="libRetryBar" class="hidden" style="background:#fff8e8; border:1px solid #e8c96a; border-radius:10px; padding:8px 10px; margin-top:8px; font-size:14px;">
+      <span id="libRetryText"></span>
+      <button class="btn secondary" id="btnReSlice" style="padding:6px 10px; font-size:13px;">🤖 重新AI切片</button>
+      <button class="btn secondary" id="btnReBrief" style="padding:6px 10px; font-size:13px;">🤖 重新生成总结</button>
+    </div>
     <div style="margin-top:10px;">
       <button class="btn" id="btnLibAsk">🤖 问这份资料</button>
       <button class="btn danger" id="btnLibDel">🗑 删除</button>
@@ -308,7 +320,7 @@
 'use strict';
 (function(){
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.2.2';
+var SW_VERSION = '0.2.3';
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
@@ -356,7 +368,7 @@ function billAdd(chars){ var b = bill(); b.calls++; b.chars += chars; localStora
 function billRender(){ var b = bill(); $('aiBill').textContent = '调用 ' + b.calls + ' 次 · 发出 ' + Math.round(b.chars / 1000) + ' 千字'; }
 
 /* ==================== AI ==================== */
-function callAI(sys, user, maxTok){
+function callAI(sys, user, maxTok, timeoutMs){
   var key = (localStorage.getItem('xt_apikey') || '').trim();
   if(!key) return Promise.reject(new Error('还没填 API Key（⚙️设置里保存）'));
   billAdd((sys || '').length + (user || '').length);
@@ -366,7 +378,7 @@ function callAI(sys, user, maxTok){
     body: JSON.stringify({ model: $('modelSel').value,
       messages: [{ role: 'system', content: sys }, { role: 'user', content: user }],
       max_tokens: maxTok || 4000 })
-  }).then(function(resp){
+  }, timeoutMs || 25000).then(function(resp){
     if(!resp.ok) return resp.text().then(function(t){ throw new Error('AI 报错 ' + resp.status + '：' + t.slice(0, 120)); });
     return resp.json();
   }).then(function(d){ return d.choices[0].message.content; });
@@ -964,32 +976,36 @@ function makeBatches(paras, limit){
   if(cur.length) batches.push(cur);
   return batches;
 }
-function coarseSlice(text, baseTitle){
-  /* 本地粗切：没Key/AI失败时用，约2000字一块 */
-  var paras = splitParas(text), chunks = [], cur = '', n = 1;
+function coarseSlice(text, startN){
+  /* 本地粗切：没Key/AI失败时用，约2000字一块；startN=全书连续编号起点（v0.2.3修重名） */
+  var paras = splitParas(text), chunks = [], cur = '', n = startN || 1;
   paras.forEach(function(p){
-    if(cur.length + p.length > 2000 && cur){ chunks.push({ title: '第' + n + '段', summary: '', text: cur }); cur = ''; n++; }
+    if(cur.length + p.length > 2000 && cur){ chunks.push({ title: '第' + n + '块（本地粗切）', summary: '', text: cur }); cur = ''; n++; }
     cur += (cur ? '\n' : '') + p;
   });
-  if(cur) chunks.push({ title: '第' + n + '段', summary: '', text: cur });
+  if(cur) chunks.push({ title: '第' + n + '块（本地粗切）', summary: '', text: cur });
   return chunks;
 }
-function aiSliceBatch(paras, idxArr){
+function aiSliceBatch(paras, idxArr, startN){
   var numbered = idxArr.map(function(pi, k){ return '[' + (k + 1) + '] ' + paras[pi]; }).join('\n');
   return callAI('你是切书助手。下面是编了号的段落，把它们按"一个知识点一块"分组切开，每块起中文标题和一句话大白话摘要。只回严格JSON数组 [{"from":1,"to":3,"title":"","summary":""}]（编号用上面方括号里的数字，from/to含两头，所有段落都要分到、不许跳号），不要多余的话。',
-    numbered, 2500
+    numbered, 2500, 60000
   ).then(function(txt){
     var m = txt.match(/\[[\s\S]*\]/);
     var arr = m ? JSON.parse(m[0]) : null;
     if(!Array.isArray(arr) || !arr.length) throw new Error('AI回格式不对');
-    return arr.map(function(c){
+    var out = arr.map(function(c){
       var from = Math.max(1, c.from | 0), to = Math.min(idxArr.length, c.to | 0);
       if(to < from){ from = 1; to = idxArr.length; }
       return { title: String(c.title || '未命名').slice(0, 40), summary: String(c.summary || '').slice(0, 120),
                text: idxArr.slice(from - 1, to).map(function(pi){ return paras[pi]; }).join('\n') };
     });
+    out._ai = true;
+    return out;
   }).catch(function(){
-    return coarseSlice(idxArr.map(function(pi){ return paras[pi]; }).join('\n'), '');
+    var out = coarseSlice(idxArr.map(function(pi){ return paras[pi]; }).join('\n'), startN || 1);
+    out._ai = false;
+    return out;
   });
 }
 
@@ -1087,13 +1103,21 @@ function sliceLibItem(libId, text){
   var batches = makeBatches(paras, 6000);
   var hasKey = !!(localStorage.getItem('xt_apikey') || '').trim();
   var allChunks = [];
+  var anyCoarse = false;
   var chain = Promise.resolve();
   batches.forEach(function(idxArr, bi){
     chain = chain.then(function(){
       libProg('✂️ 《' + (getLib(libId) || {}).title + '》切片中 第' + (bi + 1) + '批/共' + batches.length + '批…');
-      var pr = hasKey ? aiSliceBatch(paras, idxArr)
-                      : Promise.resolve(coarseSlice(idxArr.map(function(pi){ return paras[pi]; }).join('\n'), ''));
+      var pr;
+      if(hasKey){
+        pr = aiSliceBatch(paras, idxArr, allChunks.length + 1);
+      }else{
+        var co = coarseSlice(idxArr.map(function(pi){ return paras[pi]; }).join('\n'), allChunks.length + 1);
+        co._ai = false;
+        pr = Promise.resolve(co);
+      }
       return pr.then(function(chs){
+        if(!chs._ai) anyCoarse = true;
         var storeChain = Promise.resolve();
         chs.forEach(function(c){
           var chNo = allChunks.length + 1;
@@ -1105,7 +1129,7 @@ function sliceLibItem(libId, text){
         return storeChain.then(function(){
           var lib = loadLib();
           var it = lib.filter(function(x){ return x.id === libId; })[0];
-          if(it){ it.chunks = allChunks.slice(); saveLib(lib); renderLib(); }
+          if(it){ it.chunks = allChunks.slice(); it.coarse = anyCoarse; saveLib(lib); renderLib(); }
         });
       });
     });
@@ -1115,23 +1139,29 @@ function sliceLibItem(libId, text){
     var it = getLib(libId); if(!it) return;
     if(hasKey){
       libProg('📝 《' + it.title + '》AI 写总结…');
-      return callAI('你是医学资料总结助手。用中文大白话分五段总结这份资料：①这是什么 ②核心观点 ③关键数字/剂量/标准 ④临床怎么用 ⑤注意事项。markdown，段落加粗小标题开头，别客套。',
-        '【资料名】' + it.title + '\n【正文开头】\n' + text.slice(0, 4000), 1200
-      ).then(function(brief){
-        var lib = loadLib(); var it2 = lib.filter(function(x){ return x.id === libId; })[0];
-        if(it2){ it2.brief = brief; it2.done = true; saveLib(lib); }
-      }).catch(function(){
-        var lib = loadLib(); var it3 = lib.filter(function(x){ return x.id === libId; })[0];
-        if(it3){ it3.brief = '（总结生成失败，不影响使用）'; it3.done = true; saveLib(lib); }
-      });
+      return libWriteBrief(libId, text);
     }else{
       var lib = loadLib(); var it4 = lib.filter(function(x){ return x.id === libId; })[0];
       if(it4){ it4.brief = '（没填 API Key，未生成 AI 总结）'; it4.done = true; saveLib(lib); }
     }
   }).then(function(){
     libProg('✅ 《' + (getLib(libId) || {}).title + '》入库完成');
+    /* v0.2.3：粗切过的书保留原文，方便网络好时「重新AI切片」；AI切成的才删原文 */
+    var it = getLib(libId);
+    if(it && it.coarse) return;
     return idbDelPrefix('kv', 'raw_' + libId).catch(function(){});
   }).then(function(){ renderLib(); });
+}
+function libWriteBrief(libId, text){
+  return callAI('你是医学资料总结助手。用中文大白话分五段总结这份资料：①这是什么 ②核心观点 ③关键数字/剂量/标准 ④临床怎么用 ⑤注意事项。markdown，段落加粗小标题开头，别客套。',
+    '【资料名】' + (getLib(libId) || {}).title + '\n【正文开头】\n' + String(text).slice(0, 4000), 1200, 60000
+  ).then(function(brief){
+    var lib = loadLib(); var it2 = lib.filter(function(x){ return x.id === libId; })[0];
+    if(it2){ it2.brief = brief; it2.done = true; saveLib(lib); }
+  }).catch(function(){
+    var lib = loadLib(); var it3 = lib.filter(function(x){ return x.id === libId; })[0];
+    if(it3){ it3.brief = '（总结生成失败，不影响使用）'; it3.done = true; saveLib(lib); }
+  });
 }
 
 /* --- 资料列表 --- */
@@ -1167,6 +1197,17 @@ function openLib(id){
   $('libGradeSel').value = x.grade;
   $('libMeta').textContent = (x.author ? x.author + ' · ' : '') + Math.round((x.chars || 0) / 10000) + '万字 · ' + (x.chunks || []).length + '块';
   $('libBrief').innerHTML = renderMd(x.brief || '（暂无总结）');
+  /* v0.2.3 补救条：粗切过/总结失败时亮出重来按钮 */
+  var needSlice = !!x.coarse;
+  var needBrief = !x.brief || x.brief.indexOf('生成失败') >= 0 || x.brief.indexOf('未生成') >= 0;
+  if(needSlice || needBrief){
+    $('libRetryBar').classList.remove('hidden');
+    $('libRetryText').textContent = needSlice ? 'AI 没切成（用的本地粗切），网络好时可以重来：' : '总结没生成，可以重来：';
+    $('btnReSlice').style.display = needSlice ? '' : 'none';
+    $('btnReBrief').style.display = needBrief ? '' : 'none';
+  }else{
+    $('libRetryBar').classList.add('hidden');
+  }
   $('libAskCard').classList.add('hidden');
   $('libAskAns').innerHTML = ''; $('btnAnsToNote').classList.add('hidden');
   var box = $('chunkList'); box.innerHTML = '';
@@ -1211,6 +1252,56 @@ $('btnLibDel').addEventListener('click', function(){
   idbDelPrefix('chunks', curLibId + '_').catch(function(){});
   showPage('home'); renderLib();
   toast('🗑 已删除', 1500);
+});
+
+/* --- v0.2.3 补救按钮：重新AI切片 / 重新生成总结 --- */
+$('btnReSlice').addEventListener('click', function(){
+  var id = curLibId; var x = getLib(id); if(!x) return;
+  if(!(localStorage.getItem('xt_apikey') || '').trim()){ toast('请先在 ⚙️设置 里填 API Key', 2500); return; }
+  if(!confirm('用 AI 重新切《' + x.title + '》？旧切块会被替换。')) return;
+  idbGet('kv', 'raw_' + id).then(function(raw){
+    if(!raw){ toast('原文没留着，请删除后重新导入这份 PDF', 3000); return; }
+    $('btnReSlice').disabled = true;
+    idbDelPrefix('chunks', id + '_').then(function(){
+      var lib = loadLib(); var it = lib.filter(function(t){ return t.id === id; })[0];
+      if(it){ it.chunks = []; it.coarse = false; it.done = false; saveLib(lib); }
+      return sliceLibItem(id, raw);
+    }).then(function(){
+      $('btnReSlice').disabled = false;
+      openLib(id); toast('✅ 重新切片完成', 2000);
+    }).catch(function(){
+      $('btnReSlice').disabled = false;
+      toast('重新切片没成功，稍后再试', 2500);
+    });
+  });
+});
+$('btnReBrief').addEventListener('click', function(){
+  var id = curLibId; var x = getLib(id); if(!x) return;
+  if(!(localStorage.getItem('xt_apikey') || '').trim()){ toast('请先在 ⚙️设置 里填 API Key', 2500); return; }
+  $('btnReBrief').disabled = true;
+  idbGet('kv', 'raw_' + id).then(function(raw){
+    if(raw) return raw;
+    /* 原文没留：拼前几个切块的正文凑4000字 */
+    var chs = (x.chunks || []).slice(0, 8), out = '', chain = Promise.resolve();
+    chs.forEach(function(c){
+      chain = chain.then(function(){
+        return idbGet('chunks', id + '_' + c.ch).then(function(d){
+          if(d && out.length < 4000) out += d.text.slice(0, 4000 - out.length);
+        });
+      });
+    });
+    return chain.then(function(){ return out; });
+  }).then(function(text){
+    if(!text){ toast('没拿到正文，没法重写总结', 2500); return; }
+    libProg('📝 重新生成总结…');
+    return libWriteBrief(id, text);
+  }).then(function(){
+    $('btnReBrief').disabled = false;
+    openLib(id); toast('✅ 总结已重写', 2000);
+  }).catch(function(){
+    $('btnReBrief').disabled = false;
+    toast('重写没成功，稍后再试', 2500);
+  });
 });
 
 /* --- 问这份资料（挑块→AI答；🟠警示+交叉对比沿用旧版规矩） --- */
