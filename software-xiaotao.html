@@ -9,6 +9,10 @@
   小涛笔记（学习笔记2代）· 单文件版
 ==========================================================
   修改记录：
+   v0.2.4 2026-08-12 补救老书：v0.2.3 只认 coarse 标记，老版本导入的书没挂标记，
+        补救条不亮「重新AI切片」。修法：切块标题查重也算没切好（libHasDupTitles）；
+        原文统一走 libFullText——优先留着的 raw_，没有就把所有切块正文按序拼回全书，
+        老书照样能重切/重写总结。
    v0.2.3 2026-08-12 踩坑修复：切块全叫"第1段/第2段"重复+"总结生成失败"——
         病根是AI请求25秒默认超时对手机5G切书太短（6000字发上去+2500字回下来），
         一超时就退本地粗切，粗切每批又从1编号。修法：
@@ -115,7 +119,7 @@
 </style>
 </head>
 <body>
-<header>📒 小涛笔记<span class="ver">v0.2.3</span></header>
+<header>📒 小涛笔记<span class="ver">v0.2.4</span></header>
 <div class="page">
 
   <div id="updBar" class="hidden">
@@ -221,7 +225,7 @@
   <details class="card">
     <summary>📋 关于 / Obsidian 搬家说明</summary>
     <div class="kv" style="margin-top:6px;">
-      <b>版本：</b>v0.2.3（2026-08-12）修"切块重名+总结失败"（AI放宽60秒，可重新切片/重写总结）；v0.2.2 加"从授权文件夹取PDF"；v0.2.0 二期资料库。<br><br>
+      <b>版本：</b>v0.2.4（2026-08-12）老书也能重新切片（切块重名自动认出来，切块正文拼回全书）；v0.2.3 修"切块重名+总结失败"；v0.2.0 二期资料库。<br><br>
       <b>⭐ 头一条铁律（Obsidian 搬家）：</b>小涛笔记里所有内容的<b>真身是标准 Markdown 文件</b>，
       全部存在 GitHub 仓库的 <b>vault/</b> 区——那就是一座现成的 Obsidian 仓库。<br>
       <b>搬家方法：</b>把仓库里 vault/ 文件夹下载到电脑/手机（或坚果云同步它），
@@ -320,7 +324,7 @@
 'use strict';
 (function(){
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.2.3';
+var SW_VERSION = '0.2.4';
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
@@ -1190,6 +1194,31 @@ $('libSearch').addEventListener('input', renderLib);
 
 /* --- 资料详情 --- */
 var curLibId = null;
+/* v0.2.4：切块标题查重（老书识别用） */
+function libHasDupTitles(x){
+  var seen = {}, dup = false;
+  (x.chunks || []).forEach(function(c){
+    var t = String(c.title || '').replace(/\s/g, '');
+    if(seen[t]) dup = true; else seen[t] = 1;
+  });
+  return dup;
+}
+/* v0.2.4：取全书原文——优先留着的 raw_，没有就把所有切块正文按序拼回来（老书的救命路） */
+function libFullText(id){
+  return idbGet('kv', 'raw_' + id).then(function(raw){
+    if(raw) return raw;
+    var x = getLib(id); if(!x) return '';
+    var out = '', chain = Promise.resolve();
+    (x.chunks || []).forEach(function(c){
+      chain = chain.then(function(){
+        return idbGet('chunks', id + '_' + c.ch).then(function(d){
+          if(d) out += (out ? '\n' : '') + d.text;
+        });
+      });
+    });
+    return chain.then(function(){ return out; });
+  });
+}
 function openLib(id){
   var x = getLib(id); if(!x) return;
   curLibId = id;
@@ -1197,12 +1226,13 @@ function openLib(id){
   $('libGradeSel').value = x.grade;
   $('libMeta').textContent = (x.author ? x.author + ' · ' : '') + Math.round((x.chars || 0) / 10000) + '万字 · ' + (x.chunks || []).length + '块';
   $('libBrief').innerHTML = renderMd(x.brief || '（暂无总结）');
-  /* v0.2.3 补救条：粗切过/总结失败时亮出重来按钮 */
-  var needSlice = !!x.coarse;
+  /* v0.2.3 补救条：粗切过/总结失败时亮出重来按钮
+     v0.2.4：老版本导入的书没有 coarse 标记——切块标题有重名（一堆"第1段"）也算没切好 */
+  var needSlice = !!x.coarse || libHasDupTitles(x);
   var needBrief = !x.brief || x.brief.indexOf('生成失败') >= 0 || x.brief.indexOf('未生成') >= 0;
   if(needSlice || needBrief){
     $('libRetryBar').classList.remove('hidden');
-    $('libRetryText').textContent = needSlice ? 'AI 没切成（用的本地粗切），网络好时可以重来：' : '总结没生成，可以重来：';
+    $('libRetryText').textContent = needSlice ? '这份资料没用 AI 切好（切块重名），网络好时可以重来：' : '总结没生成，可以重来：';
     $('btnReSlice').style.display = needSlice ? '' : 'none';
     $('btnReBrief').style.display = needBrief ? '' : 'none';
   }else{
@@ -1259,8 +1289,8 @@ $('btnReSlice').addEventListener('click', function(){
   var id = curLibId; var x = getLib(id); if(!x) return;
   if(!(localStorage.getItem('xt_apikey') || '').trim()){ toast('请先在 ⚙️设置 里填 API Key', 2500); return; }
   if(!confirm('用 AI 重新切《' + x.title + '》？旧切块会被替换。')) return;
-  idbGet('kv', 'raw_' + id).then(function(raw){
-    if(!raw){ toast('原文没留着，请删除后重新导入这份 PDF', 3000); return; }
+  libFullText(id).then(function(raw){
+    if(!raw){ toast('正文丢了，请删除后重新导入这份 PDF', 3000); return; }
     $('btnReSlice').disabled = true;
     idbDelPrefix('chunks', id + '_').then(function(){
       var lib = loadLib(); var it = lib.filter(function(t){ return t.id === id; })[0];
@@ -1279,18 +1309,8 @@ $('btnReBrief').addEventListener('click', function(){
   var id = curLibId; var x = getLib(id); if(!x) return;
   if(!(localStorage.getItem('xt_apikey') || '').trim()){ toast('请先在 ⚙️设置 里填 API Key', 2500); return; }
   $('btnReBrief').disabled = true;
-  idbGet('kv', 'raw_' + id).then(function(raw){
-    if(raw) return raw;
-    /* 原文没留：拼前几个切块的正文凑4000字 */
-    var chs = (x.chunks || []).slice(0, 8), out = '', chain = Promise.resolve();
-    chs.forEach(function(c){
-      chain = chain.then(function(){
-        return idbGet('chunks', id + '_' + c.ch).then(function(d){
-          if(d && out.length < 4000) out += d.text.slice(0, 4000 - out.length);
-        });
-      });
-    });
-    return chain.then(function(){ return out; });
+  libFullText(id).then(function(full){
+    return String(full || '').slice(0, 4000);
   }).then(function(text){
     if(!text){ toast('没拿到正文，没法重写总结', 2500); return; }
     libProg('📝 重新生成总结…');
