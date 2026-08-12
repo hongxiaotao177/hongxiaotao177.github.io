@@ -86,6 +86,7 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
       （queryPermission/requestPermission 兜底，仍要用户手势）
    ④ 手机没有"批命令"——打包/搬家功能必须做成软件内按钮（本卡已做）
 ====================================================================
+    v1.1.5 (2026-08-12) 「⬇️ 下载整套软件」加第6步 小涛笔记（software-xiaotao.html→小涛笔记.html），计数改 1/6~6/6。
     v1.1.4 (2026-08-11) 文件列表分门别类三层折叠：第1级大类（📦软件/📚文档PDF/💾备份数据/📎其他，
          按文件名自动认，认不出进其他）、第2级软件名分组（仅📦软件类有）、第3级文件行；
          默认全部折叠；软件组内按版本号新→旧排（无版本号的按时间排），其他类按时间新→旧排；
@@ -98,7 +99,7 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>文件桥 v1.1.4</title>
+<title>文件桥 v1.1.5</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #faf7f2; color: #3a3632; }
@@ -160,7 +161,7 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
 </style>
 </head>
 <body>
-<header>📂 文件桥<span class="ver">v1.1.4</span></header>
+<header>📂 文件桥<span class="ver">v1.1.5</span></header>
 <div class="page">
 
   <!-- 使用说明入口 -->
@@ -225,7 +226,7 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
       <button class="ghost" id="ghDlAllBtn">⬇️ 下载整套软件</button>
     </div>
     <div class="hint" id="ghCheck">自检：还没查过（每次打开会自动查一次）</div>
-    <div class="hint">「下载整套」= 学习笔记 + 习题学习 + 文件桥 + 血气分析，四个最新版一起下载（浏览器首次可能问"允许下载多个文件"，点允许）。</div>
+    <div class="hint">「下载整套」= 学习笔记 + 习题学习 + 文件桥 + 血气分析 + PPT工坊 + 小涛笔记，六个最新版一起下载（浏览器首次可能问"允许下载多个文件"，点允许）。</div>
   </div>
 
   <div class="hint" style="text-align:center;padding:8px 0 20px;">文件桥 v1.0 · AI 与文件夹之间的桥 · 只认 Chrome</div>
@@ -279,7 +280,7 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
       <p><b>AI → 你：</b>AI说要给你文件 → 打开文件桥 → 点「📥 检查AI发来的文件」→ 文件自动存进文件夹。</p>
       <p><b>打包搬家：</b>「📦 打包这个文件夹」→ 给自己（带随行配置卡，新手机一键导入Token，包别发别人）/ 给别人（干净软件）。</p>
       <p><b>换新手机：</b>解压包 → Chrome打开文件桥 → 授权文件夹 → 发现随行配置卡点一键导入 → 另外两个软件各点「从云端恢复」→ 完事。</p>
-      <p><b>自检与更新：</b>每次打开自动检查线路和新版；有新版点「⬇️ 下载整套软件」，三个软件一起换新。</p>
+      <p><b>自检与更新：</b>每次打开自动检查线路和新版；有新版点「⬇️ 下载整套软件」，六个软件一起换新。</p>
       <p class="hint">注意：只认 Chrome；文件夹授权只认你亲手点"允许"；Token存在浏览器里，换浏览器要重填。</p>
     </div>
 
@@ -331,7 +332,7 @@ function fmtTime(t){ return new Date(t).toLocaleString(); }
 
 /* ==================== GitHub 通信（移植学习笔记/习题学习同套） ==================== */
 var BR_GH_USER = 'br_gh_user', BR_GH_TOK = 'br_gh_tok', BR_GH_REPO = 'br_gh_repo', BR_GH_CHECK = 'br_gh_check';
-var SW_VERSION = '1.1.4';
+var SW_VERSION = '1.1.5';
 /* v1.1.2 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["br_gh_user", "hx_gh_user"], ["br_gh_tok", "hx_gh_tok"], ["br_gh_repo", "hx_gh_repo"]];
@@ -1133,26 +1134,32 @@ function ghDownloadNew(){
 /* 三件套连下：学习笔记 → 习题学习 → 文件桥 */
 function ghDownloadAll(){
   if(!ghReady()){ toast('请先在「☁️ 云设置」里填好并保存', 3500); return; }
-  toast('⏳ 正在下载 学习笔记…（1/5）', 2000);
+  toast('⏳ 正在下载 学习笔记…（1/6）', 2000);
   ghDlFile('software-notes.html', '学习笔记.html', function(err1){
     if(err1){ toast('❌ 学习笔记下载失败：' + err1, 4000); return; }
     setTimeout(function(){
-      toast('⏳ 正在下载 习题学习…（2/5）', 2000);
+      toast('⏳ 正在下载 习题学习…（2/6）', 2000);
       ghDlFile('software-xiti.html', '习题学习.html', function(err2){
         if(err2){ toast('❌ 习题学习下载失败：' + err2 + '（学习笔记已下载）', 4000); return; }
         setTimeout(function(){
-          toast('⏳ 正在下载 文件桥…（3/5）', 2000);
+          toast('⏳ 正在下载 文件桥…（3/6）', 2000);
           ghDlFile('software-bridge.html', '文件桥.html', function(err3){
             if(err3){ toast('❌ 文件桥下载失败：' + err3 + '（前两个已下载）', 4000); return; }
             setTimeout(function(){
-              toast('⏳ 正在下载 血气分析…（4/5）', 2000);
+              toast('⏳ 正在下载 血气分析…（4/6）', 2000);
               ghDlFile('software-xueqi.html', '血气分析.html', function(err4){
                 if(err4){ toast('❌ 血气分析下载失败：' + err4 + '（前三个已下载）', 4000); return; }
                 setTimeout(function(){
-                  toast('⏳ 正在下载 PPT工坊…（5/5）', 2000);
+                  toast('⏳ 正在下载 PPT工坊…（5/6）', 2000);
                   ghDlFile('software-ppt.html', 'PPT工坊.html', function(err5){
                     if(err5){ toast('❌ PPT工坊下载失败：' + err5 + '（前四个已下载）', 4000); return; }
-                    toast(inShell ? '✅ 五个软件都已装好，重启APP生效（文件夹里也各存了一份）' : '✅ 五个软件都已下载，到下载列表里找', 4500);
+                    setTimeout(function(){
+                      toast('⏳ 正在下载 小涛笔记…（6/6）', 2000);
+                      ghDlFile('software-xiaotao.html', '小涛笔记.html', function(err6){
+                        if(err6){ toast('❌ 小涛笔记下载失败：' + err6 + '（前五个已下载）', 4000); return; }
+                        toast(inShell ? '✅ 六个软件都已装好，重启APP生效（文件夹里也各存了一份）' : '✅ 六个软件都已下载，到下载列表里找', 4500);
+                      });
+                    }, 900);
                   });
                 }, 900);
               });
