@@ -9,6 +9,12 @@
   小涛笔记（学习笔记2代）· 单文件版
 ==========================================================
   修改记录：
+   v0.2.7 2026-08-12 模型花名册：洪老师实测——手动选moonshot-v1-128k照样404，
+        说明他这把Key可能连moonshot-v1系列都没权限，硬猜名单猜不中。改用正规做法：
+        Kimi官方 /v1/models 接口拿Key问"能用哪些模型"（aiModelsFetch）。
+        ①callAI遇404先查花名册，按真名单挨个试，查到能用就记住+重建下拉框；
+        ②设置里加「🔄 刷新模型名单」按钮，点一下把下拉框换成这把Key的真名单；
+        ③开机校验不再把陌生模型名强行回默认（可能是合法新模型），补进下拉框即可。
    v0.2.6 2026-08-12 病根实锤：AI一直404 "Not found the model"——机器里存的
         模型名是下拉框没有的旧值，select.value落空发空串给AI。修法（模型自愈）：
         ①开机校验存的模型名必须在选项里，不在回默认；②callAI遇"404模型不存在"
@@ -128,7 +134,7 @@
 </style>
 </head>
 <body>
-<header>📒 小涛笔记<span class="ver">v0.2.6</span></header>
+<header>📒 小涛笔记<span class="ver">v0.2.7</span></header>
 <div class="page">
 
   <div id="updBar" class="hidden">
@@ -200,6 +206,10 @@
       <option value="moonshot-v1-32k">moonshot-v1-32k（长文用）</option>
       <option value="moonshot-v1-128k">moonshot-v1-128k（整本书用）</option>
     </select>
+    <div style="margin-top:6px;">
+      <button class="btn secondary" id="btnModelsRefresh" style="padding:6px 12px; font-size:13px;">🔄 刷新模型名单</button>
+      <span id="modelsMsg" style="font-size:13px; color:#666; margin-left:6px;"></span>
+    </div>
     <div style="margin-top:8px;">
       <button class="btn" id="btnSaveKey">💾 保存 Key</button>
       <button class="btn secondary" id="btnBalance">💰 查额度</button>
@@ -234,7 +244,7 @@
   <details class="card">
     <summary>📋 关于 / Obsidian 搬家说明</summary>
     <div class="kv" style="margin-top:6px;">
-      <b>版本：</b>v0.2.6（2026-08-12）模型自愈（存的旧模型名认不出来会自动换能用的）；v0.2.5 干活有回话；v0.2.4 老书也能重新切片；v0.2.0 二期资料库。<br><br>
+      <b>版本：</b>v0.2.7（2026-08-12）模型花名册（设置里点"刷新模型名单"，直接用您Key能用的真模型）；v0.2.6 模型自愈；v0.2.0 二期资料库。<br><br>
       <b>⭐ 头一条铁律（Obsidian 搬家）：</b>小涛笔记里所有内容的<b>真身是标准 Markdown 文件</b>，
       全部存在 GitHub 仓库的 <b>vault/</b> 区——那就是一座现成的 Obsidian 仓库。<br>
       <b>搬家方法：</b>把仓库里 vault/ 文件夹下载到电脑/手机（或坚果云同步它），
@@ -334,7 +344,7 @@
 'use strict';
 (function(){
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.2.6';
+var SW_VERSION = '0.2.7';
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
@@ -387,9 +397,42 @@ function billRender(){ var b = bill(); $('aiBill').textContent = '调用 ' + b.c
    修法：①开机校验存值必须在选项里，不在就回默认；②callAI 碰到"404模型不存在"
    自动按候选名单换模型重试，哪个能用就记住哪个。 */
 var AI_MODELS = ['moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k'];
+/* v0.2.7：不猜模型名了——Kimi 有"花名册"接口 /v1/models，拿 Key 去问它
+   "我这把 Key 能用哪些模型"，照实回答。自愈和设置里的刷新按钮都走这里。 */
+var AI_PREFER = ['kimi-k2-0905-preview', 'kimi-k2-0711-preview', 'kimi-latest',
+                 'moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k', 'moonshot-v1-auto'];
+function aiModelSort(ids){
+  return ids.slice().sort(function(a, b){
+    var pa = AI_PREFER.indexOf(a), pb = AI_PREFER.indexOf(b);
+    return (pa < 0 ? 99 : pa) - (pb < 0 ? 99 : pb);
+  });
+}
+function aiModelsFetch(key){
+  return fetchWithTimeout('https://api.moonshot.cn/v1/models', {
+    headers: { 'Authorization': 'Bearer ' + key }
+  }, 15000).then(function(resp){
+    if(!resp.ok) return resp.text().then(function(t){ throw new Error('AI 报错 ' + resp.status + '：' + t.slice(0, 120)); });
+    return resp.json();
+  }).then(function(d){
+    var ids = ((d && d.data) || []).map(function(m){ return m.id; }).filter(function(id){
+      return id && /kimi|moonshot/i.test(id) && !/embed|moderation|vision/i.test(id);
+    });
+    return aiModelSort(ids);
+  });
+}
+/* 重建模型下拉框（花名册来了就用真名单），保持当前选择 */
+function modelSelSet(ids, selected){
+  var sel = $('modelSel');
+  sel.innerHTML = '';
+  ids.forEach(function(id){
+    var o = document.createElement('option');
+    o.value = id; o.textContent = id;
+    sel.appendChild(o);
+  });
+  sel.value = (selected && ids.indexOf(selected) >= 0) ? selected : ids[0];
+}
 function aiModelCur(){
-  var v = $('modelSel').value || localStorage.getItem('xt_aimodel') || '';
-  return AI_MODELS.indexOf(v) >= 0 ? v : AI_MODELS[0];
+  return $('modelSel').value || localStorage.getItem('xt_aimodel') || AI_MODELS[0];
 }
 function callAIonce(key, model, sys, user, maxTok, timeoutMs){
   return fetchWithTimeout('https://api.moonshot.cn/v1/chat/completions', {
@@ -408,20 +451,30 @@ function callAI(sys, user, maxTok, timeoutMs){
   if(!key) return Promise.reject(new Error('还没填 API Key（⚙️设置里保存）'));
   billAdd((sys || '').length + (user || '').length);
   var cur = aiModelCur();
-  var cands = [cur].concat(AI_MODELS.filter(function(m){ return m !== cur; }));
-  var i = 0;
+  var cands = [cur];
+  var i = 0, roster = null;
   function attempt(){
     var model = cands[i];
     return callAIonce(key, model, sys, user, maxTok, timeoutMs).then(function(txt){
       if(model !== cur){   /* 换模型才接通：记住这个能用的 */
-        hxPut('xt_aimodel', model); $('modelSel').value = model;
+        hxPut('xt_aimodel', model);
+        if(roster && roster.indexOf(model) >= 0) modelSelSet(roster, model);
+        else $('modelSel').value = model;
         toast('🔧 原模型名不对，已自动换用 ' + model + '（设置里已记住）', 4000);
       }
       return txt;
     }).catch(function(e){
       /* 只有"404模型不存在"才换模型重试，别的错（超时/Key不对/限流）直接抛 */
-      if(String(e.message).indexOf('404') >= 0 && i < cands.length - 1){ i++; return attempt(); }
-      throw e;
+      if(String(e.message).indexOf('404') < 0) throw e;
+      /* v0.2.7：先查花名册（这把Key到底能用哪些模型），查不到才用硬猜名单 */
+      var step = roster ? Promise.resolve(roster)
+        : aiModelsFetch(key).then(function(l){ roster = l && l.length ? l : null; return roster; })
+          .catch(function(){ return null; });
+      return step.then(function(list){
+        (list || AI_MODELS).forEach(function(m){ if(cands.indexOf(m) < 0) cands.push(m); });
+        if(i < cands.length - 1 && cands.length <= 8){ i++; return attempt(); }
+        throw e;
+      });
     });
   }
   return attempt();
@@ -849,10 +902,37 @@ $('updDlBtn').addEventListener('click', function(){
 /* ==================== 设置加载/保存 ==================== */
 function loadSettings(){
   $('apiKey').value = localStorage.getItem('xt_apikey') || '';
-  /* v0.2.6：存的模型名必须在下拉框选项里，不在就回默认（否则value落空发空串给AI报404） */
-  var _savedModel = localStorage.getItem('xt_aimodel') || AI_MODELS[0];
-  if(AI_MODELS.indexOf(_savedModel) < 0){ _savedModel = AI_MODELS[0]; hxPut('xt_aimodel', _savedModel); }
+  /* v0.2.6：存的模型名必须在下拉框选项里（否则value落空发空串给AI报404）
+     v0.2.7：不在选项里也不丢掉——先补进下拉框（可能是花名册里的合法新模型），
+     真不行还有 callAI 的花名册自愈兜底 */
+  var _savedModel = (localStorage.getItem('xt_aimodel') || '').trim() || AI_MODELS[0];
+  var _hasOpt = false;
+  for(var _oi = 0; _oi < $('modelSel').options.length; _oi++){
+    if($('modelSel').options[_oi].value === _savedModel){ _hasOpt = true; break; }
+  }
+  if(!_hasOpt){
+    var _o = document.createElement('option');
+    _o.value = _savedModel; _o.textContent = _savedModel;
+    $('modelSel').appendChild(_o);
+  }
   $('modelSel').value = _savedModel;
+  /* v0.2.7：刷新模型名单按钮——拿Key问Kimi花名册 */
+  $('btnModelsRefresh').addEventListener('click', function(){
+    var key = ($('apiKey').value || localStorage.getItem('xt_apikey') || '').trim();
+    if(!key){ $('modelsMsg').textContent = '先填 API Key'; return; }
+    $('btnModelsRefresh').disabled = true;
+    $('modelsMsg').textContent = '正在问 Kimi 花名册…';
+    aiModelsFetch(key).then(function(ids){
+      $('btnModelsRefresh').disabled = false;
+      if(!ids.length){ $('modelsMsg').textContent = '花名册是空的（这Key没模型权限？）'; return; }
+      modelSelSet(ids, localStorage.getItem('xt_aimodel'));
+      hxPut('xt_aimodel', $('modelSel').value);
+      $('modelsMsg').textContent = '✅ 查到 ' + ids.length + ' 个能用的模型，已选 ' + $('modelSel').value;
+    }).catch(function(e){
+      $('btnModelsRefresh').disabled = false;
+      $('modelsMsg').textContent = '❌ 查不到：' + e.message.slice(0, 60);
+    });
+  });
   $('ghUser').value = localStorage.getItem('xt_gh_user') || '';
   $('ghTok').value = localStorage.getItem('xt_gh_tok') || '';
   $('ghRepo').value = localStorage.getItem('xt_gh_repo') || '';
