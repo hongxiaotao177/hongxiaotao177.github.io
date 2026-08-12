@@ -1,0 +1,1733 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>小涛笔记</title>
+<!--
+==========================================================
+  小涛笔记（学习笔记2代）· 单文件版
+==========================================================
+  修改记录：
+   v0.3.2 2026-08-12 云端按钮"说人话、话长驻"（洪老师：字闪太快看不清，
+        要写明成没成+什么原因）：①送云端/取回两个按钮的结果不再一闪而过
+        的toast，改成挂在详情页不走的长驻话（libNote），看完自己翻页才走；
+        ②四种情况分明说：线路不通（ghErrText翻译：断网/令牌不对/权限不够/
+        仓库没找到）、联系上了但机器人还在切、取回拼好了几块、怪事对不上；
+        ③送上成功也长驻"上传成功，机器人接手了"。
+   v0.3.1 2026-08-12 ☁️云端代办切片（洪老师："送上网应自动切"）：
+        详情页补救条加「☁️ 送云端自动切」——原文推进私有仓库 todo/，
+        GitHub Actions 机器人（tools/cloud_slice.py）醒来自动切，切点清单
+        写回 done/；「📥 取回切片」拿回清单本机拼装入库（AI不照抄原文的老规矩）。
+        机器人批次失败退"云端粗切"保底不拖死全书；取回时校验段落数一致才拼装。
+        一次性手续：洪老师在GitHub网页加 workflow 文件（PAT没workflows权限）
+        + Secrets 里放 KIMI_API_KEY（PAT也没secrets权限，加密保险柜谁也读不出）。
+   v0.3.0 2026-08-12 切片提速+截断修复：AI接通后暴露新病根——kimi-k2.6是
+        思考型模型，2500回复额度话说到一半被截断，JSON缺腿（洪老师截图实锤
+        "Expected ':' after property name in JSON at position 949"）。修法：
+        ①切片额度2500→8000、总结1200→4000；②JSON损坏自动原样重试一次；
+        ③每批6000→15000字，批数砍掉一半多（洪老师：一天200多批太慢了）。
+   v0.2.9 2026-08-12 「到底联系上没有」不再靠猜：
+        ①设置里加「🩺 AI 体检」——最小请求试一把，报"✅接上了(模型xx,用时x秒)"
+          或"❌没接上:原因"；②进度行带秒表"⏳…（已干 X 秒，别退出）"；
+        ③重切/重写点下去立刻有字（拼原文中…），按钮变"⏳ 切片中…"忙态。
+   v0.2.8 2026-08-12 对账落实：老软件（学习笔记）模型名单里有 kimi-k2.6，
+        洪老师存的就是它（合法好名字），是新软件下拉框不认识才落空404。
+        AI_PREFER 喜好名单把 kimi-k2.6 排最前，花名册查到它优先用。
+   v0.2.7 2026-08-12 模型花名册：洪老师实测——手动选moonshot-v1-128k照样404，
+        说明他这把Key可能连moonshot-v1系列都没权限，硬猜名单猜不中。改用正规做法：
+        Kimi官方 /v1/models 接口拿Key问"能用哪些模型"（aiModelsFetch）。
+        ①callAI遇404先查花名册，按真名单挨个试，查到能用就记住+重建下拉框；
+        ②设置里加「🔄 刷新模型名单」按钮，点一下把下拉框换成这把Key的真名单；
+        ③开机校验不再把陌生模型名强行回默认（可能是合法新模型），补进下拉框即可。
+   v0.2.6 2026-08-12 病根实锤：AI一直404 "Not found the model"——机器里存的
+        模型名是下拉框没有的旧值，select.value落空发空串给AI。修法（模型自愈）：
+        ①开机校验存的模型名必须在选项里，不在回默认；②callAI遇"404模型不存在"
+        自动换候选模型重试，哪个能用记住哪个并toast告知；③原因翻译补404条目。
+        （之前v0.2.3猜是超时，错——多亏v0.2.5记下原因才抓到真凶）
+   v0.2.5 2026-08-12 干活不当哑巴：①进度同时亮在首页和详情页（libProgD），
+        重切/重写结束必须 toast 回话——切成没切成、为什么；②AI 失败原因
+        翻译成人话记下来（lastErr：超时/Key不对/限流/余额/断网），补救条上写明
+        "上次原因"；③切片单批超时 60秒→90秒（手机5G 6000字+2500字60秒仍偏紧）。
+   v0.2.4 2026-08-12 补救老书：v0.2.3 只认 coarse 标记，老版本导入的书没挂标记，
+        补救条不亮「重新AI切片」。修法：切块标题查重也算没切好（libHasDupTitles）；
+        原文统一走 libFullText——优先留着的 raw_，没有就把所有切块正文按序拼回全书，
+        老书照样能重切/重写总结。
+   v0.2.3 2026-08-12 踩坑修复：切块全叫"第1段/第2段"重复+"总结生成失败"——
+        病根是AI请求25秒默认超时对手机5G切书太短（6000字发上去+2500字回下来），
+        一超时就退本地粗切，粗切每批又从1编号。修法：
+        ①切片/总结类重活一律放宽到60秒（callAI加timeoutMs参数）；
+        ②粗切编号全书连着数（coarseSlice加startN参数）；
+        ③粗切过的书保留原文不删，详情页亮「🤖 重新AI切片」「🤖 重新生成总结」
+          补救条，网络好时点一下重来，不用删了重导。
+   v0.2.2 2026-08-12 「📂 从授权文件夹取PDF」（仅壳APP显示）：
+        列出授权文件夹里的PDF打勾导入（坚果云直通车取下来的直接能切），
+        绕开系统文件选择器（个别机型WebView文件选择器不灵时的稳路）。
+        顺带重构：导入流水线统一为 importPdfCore(name,size,bufFn)，两条路共用。
+   v0.2.1 2026-08-12 踩坑修复：「下载新版到本机」按钮404——v0.2.0走了
+        raw.githubusercontent.com匿名直链，私有仓库匿名必404；改走ghGetFile带Token通道，
+        壳里自更新+文件夹备份，浏览器blob下载（与学合集其他软件同款走法）。
+   v0.2.0 2026-08-12 二期「📚 资料库」上线：
+        - 导入PDF（多选）全自动：提取文字→AI认书定级(🟢指南/📄期刊/📘书籍/🟠AI生成·待核)
+          →AI切片(段落编号发AI回切点，本地拼装原文，AI失败自动退本地粗切)→五段式总结
+        - 扫描版读不出字会明说跳过，不花钱；指纹查重防重复导入
+        - 详情页：改级别/看总结/切块浏览/切块一键变笔记(自动挂[[资料名]]双链)/删除
+        - 「🤖 问这份资料」：问题二字组打分挑≤5块发AI，🟠级强制⚠️警示；问答可一键存笔记
+        - 笔记双链点名资料名也能跳到资料详情；云备份带上资料库+vault/资料/*.md
+   v0.1.0 2026-08-11 一期骨架上线：
+        - 首屏四块：✨新建笔记 / 📚资料库(占位·二期) / 📚我的笔记 / 📚我的书(占位·三期)
+        - ⚙️设置全部折叠收编：API Key+模型+查额度 / GitHub云设置 / 云备份恢复 / 自检 / AI账本
+        - 笔记核心：AI帮我学 / 手写 / 手写改 / AI改(可回退) / 列表一行一篇 / 标题搜索 / 删除
+        - 双链 [[标题]] 渲染+点击跳篇+反链区（被谁提到）
+        - 头一条铁律：内容真身=Obsidian格式md——每篇笔记带YAML头，
+          保存5秒后自动单篇推仓库 vault/笔记/{标题}.md；「立即备份」全量重写 vault + 索引.md
+        - 版本自检读 version-xiaotao.json（只认自己这一个版本文件，绕开旧版双版本文件坑）
+        - 公共钱罐 hx_*：GitHub/API Key/模型与其他软件一处填处处有
+==========================================================
+-->
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+         background: #f7f3ea; color: #3a3428; font-size: 16px; }
+  header { background: #6b5d43; color: #fff; padding: 14px 16px; font-size: 20px; font-weight: bold;
+           position: sticky; top: 0; z-index: 10; }
+  header .ver { font-size: 12px; font-weight: normal; opacity: .75; margin-left: 8px; }
+  .page { max-width: 640px; margin: 0 auto; padding: 14px 12px 60px; }
+  .card { background: #fffdf8; border: 1px solid #e8dfc8; border-radius: 14px;
+          padding: 14px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(90,75,50,.06); }
+  .card h2 { font-size: 17px; margin-bottom: 10px; color: #5a4f38; }
+  .btn { display: inline-block; background: #6b5d43; color: #fff; border: none; border-radius: 10px;
+         padding: 11px 18px; font-size: 15px; cursor: pointer; margin: 4px 4px 4px 0; }
+  .btn.secondary { background: #efe8d5; color: #5a4f38; }
+  .btn.danger { background: #b05a4a; }
+  .btn:active { transform: scale(.97); }
+  input[type=text], input[type=password], textarea, select {
+    width: 100%; font-size: 16px; padding: 12px 14px; border: 1.5px solid #ddd3b8;
+    border-radius: 10px; background: #fff; margin-top: 4px; outline: none; font-family: inherit; }
+  input:focus, textarea:focus { border-color: #8a7a5a; }
+  label { font-size: 13px; color: #9a8f80; display: block; margin-top: 10px; }
+  .hint { font-size: 13px; color: #9a8f80; margin-top: 8px; line-height: 1.6; }
+  .msg { display: none; margin-top: 8px; padding: 8px 10px; border-radius: 8px; font-size: 14px; line-height: 1.5; }
+  .msg.ok { display: block; background: #e9f3e6; color: #4a6b3a; }
+  .msg.err { display: block; background: #f6e6e0; color: #8a4a3a; }
+  details.card summary { font-size: 17px; font-weight: bold; color: #5a4f38; cursor: pointer; list-style: none; }
+  details.card summary::-webkit-details-marker { display: none; }
+  details.card summary::before { content: '▸ '; color: #b5aa9c; }
+  details.card[open] summary::before { content: '▾ '; }
+  details.card:not([open]) { padding-bottom: 14px; }
+  details.card > summary { margin-bottom: 0; }
+  details.card[open] > summary { margin-bottom: 10px; }
+  .note-row { padding: 10px 4px; border-bottom: 1px dashed #eee4d4; cursor: pointer;
+              display: flex; align-items: center; gap: 8px; }
+  .note-row:last-child { border-bottom: none; }
+  .note-row .t { flex: 1; font-size: 15px; word-break: break-all; }
+  .note-row .d { font-size: 12px; color: #b5aa9c; flex: none; }
+  .md-body { font-size: 16px; line-height: 1.8; }
+  .md-body h1, .md-body h2, .md-body h3 { margin: 14px 0 6px; color: #5a4f38; }
+  .md-body p { margin: 6px 0; }
+  .md-body ul, .md-body ol { margin: 6px 0 6px 22px; }
+  .md-body strong { color: #4a3f2a; }
+  .wlink { color: #7a5c2e; background: #f2ead2; border-radius: 5px; padding: 0 4px;
+           cursor: pointer; border-bottom: 1px dashed #c9b98a; }
+  .wlink.miss { color: #b08a8a; background: #f6e9e4; border-bottom-color: #d8b0a0; }
+  .bl-item { font-size: 14px; color: #7a5c2e; cursor: pointer; padding: 4px 0; }
+  #toast { position: fixed; left: 50%; bottom: 40px; transform: translateX(-50%);
+           background: #4a3f2a; color: #fff; padding: 10px 18px; border-radius: 20px;
+           font-size: 14px; display: none; z-index: 99; max-width: 86%; text-align: center; }
+  #updBar { position: sticky; top: 50px; z-index: 9; margin-bottom: 10px; }
+  .upd-row { background: #fff8e8; border: 1.5px solid #e8c96a; border-radius: 10px;
+             padding: 10px 12px; display: flex; align-items: center; gap: 8px; font-size: 14px; }
+  .upd-row.okbar { background: #e9f3e6; border-color: #a8c99a; }
+  .upd-body { flex: 1; line-height: 1.5; }
+  .upd-x { background: none; border: none; font-size: 16px; color: #9a8f80; cursor: pointer; flex: none; }
+  .hidden { display: none !important; }
+  .kv { font-size: 14px; line-height: 1.8; color: #6a5f4a; }
+  .gtag { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 8px;
+          background: #f3ede4; color: #8a7a63; flex: none; }
+  .chunk-row { padding: 9px 4px; border-bottom: 1px dashed #eee4d4; }
+  .chunk-row:last-child { border-bottom: none; }
+  .chunk-row .ct { font-size: 15px; cursor: pointer; color: #4a3f2a; }
+  .chunk-row .cs { font-size: 13px; color: #9a8f80; margin-top: 2px; line-height: 1.5; }
+  .chunk-row .cb { float: right; background: #efe8d5; border: none; border-radius: 8px;
+                   padding: 4px 10px; font-size: 13px; color: #5a4f38; cursor: pointer; }
+  .chunk-body { font-size: 14px; line-height: 1.7; background: #faf6ec; border-radius: 8px;
+                padding: 8px 10px; margin-top: 6px; white-space: pre-wrap; }
+  .lib-row { padding: 10px 4px; border-bottom: 1px dashed #eee4d4; display: flex; align-items: center; gap: 8px; }
+  .lib-row:last-child { border-bottom: none; }
+  .lib-row .t { flex: 1; font-size: 15px; cursor: pointer; word-break: break-all; }
+  .lib-row .d { font-size: 12px; color: #b5aa9c; flex: none; }
+</style>
+</head>
+<body>
+<header>📒 小涛笔记<span class="ver">v0.3.2</span></header>
+<div class="page">
+
+  <div id="updBar" class="hidden">
+    <div class="upd-row" id="updRow">
+      <div class="upd-body" id="updText"></div>
+      <button class="btn" id="updDlBtn" style="display:none; padding:6px 10px; font-size:13px;">⬇️ 下载新版到本机</button>
+      <button class="upd-x" id="updClose">✕</button>
+    </div>
+  </div>
+
+  <!-- ✨ 新建笔记 -->
+  <div class="card">
+    <h2>✨ 新建笔记</h2>
+    <input type="text" id="topicInput" placeholder="想学的主题（如：乳酸）">
+    <div style="margin-top:8px;">
+      <button class="btn" id="btnGen">🤖 AI 帮我学</button>
+      <button class="btn secondary" id="btnBlank">✍️ 自己手写</button>
+    </div>
+    <div class="msg" id="genMsg"></div>
+  </div>
+
+  <!-- 📚 资料库 -->
+  <details class="card" id="libBox">
+    <summary id="libSum">📚 资料库</summary>
+    <div style="margin-top:4px;">
+      <button class="btn" id="btnImportPdf">📥 导入PDF（可多选）</button>
+      <button class="btn secondary hidden" id="btnImportShelf">📂 从授权文件夹取PDF</button>
+      <input type="file" id="pdfFile" accept="application/pdf,.pdf" multiple style="display:none;">
+    </div>
+    <!-- 授权文件夹取件面板 -->
+    <div id="shelfPanel" class="hidden" style="margin-top:8px; background:#faf6ec; border-radius:10px; padding:10px;">
+      <div class="hint">授权文件夹里的PDF（坚果云直通车取下来的也在这），打勾后点导入：</div>
+      <div id="shelfList"></div>
+      <button class="btn" id="btnShelfGo" style="margin-top:6px;">📥 导入选中的</button>
+    </div>
+    <div class="hint">导入后全自动：AI 认书 → 定级（🟢指南/📄期刊/📘书籍/🟠AI生成·待核）→ 切片 → 五段式总结。没填 Key 也能导入（本地粗切、手动起名）。</div>
+    <div class="msg" id="libMsg"></div>
+    <div id="libProg" class="hint" style="margin-top:6px;"></div>
+    <input type="text" id="libSearch" placeholder="🔍 搜索资料名/摘要…" style="margin-top:8px;">
+    <div id="libList"></div>
+  </details>
+
+  <!-- 📚 我的笔记 -->
+  <details class="card" id="notesBox">
+    <summary id="notesSum">📚 我的笔记</summary>
+    <input type="text" id="searchInput" placeholder="🔍 搜索标题/正文…">
+    <div class="btn-row" style="margin-top:8px;">
+      <button class="btn secondary" id="btnExportMd">📦 导出全部（Obsidian打包）</button>
+    </div>
+    <div id="noteList"></div>
+  </details>
+
+  <!-- 📚 我的书（三期） -->
+  <details class="card" style="opacity:.6;">
+    <summary>📚 我的书</summary>
+    <div class="hint">三期上线：AI拟目录、逐章丰满、挂资料库切块、导Word、发PPT工坊。</div>
+  </details>
+
+  <!-- ⚙️ 设置 -->
+  <details class="card">
+    <summary>⚙️ 设置</summary>
+
+    <h2 style="margin-top:4px;">🔑 AI 设置（Kimi）</h2>
+    <label for="apiKey">API Key（套装公共钱罐，一处填处处有）</label>
+    <input type="password" id="apiKey" placeholder="sk-..." autocomplete="off">
+    <label for="modelSel">模型</label>
+    <select id="modelSel">
+      <option value="moonshot-v1-8k" selected>moonshot-v1-8k（默认，最快）</option>
+      <option value="moonshot-v1-32k">moonshot-v1-32k（长文用）</option>
+      <option value="moonshot-v1-128k">moonshot-v1-128k（整本书用）</option>
+    </select>
+    <div style="margin-top:6px;">
+      <button class="btn secondary" id="btnModelsRefresh" style="padding:6px 12px; font-size:13px;">🔄 刷新模型名单</button>
+      <span id="modelsMsg" style="font-size:13px; color:#666; margin-left:6px;"></span>
+    </div>
+    <div style="margin-top:8px;">
+      <button class="btn" id="btnSaveKey">💾 保存 Key</button>
+      <button class="btn secondary" id="btnBalance">💰 查额度</button>
+      <button class="btn secondary" id="btnAITest">🩺 AI 体检</button>
+    </div>
+    <div class="msg" id="keyMsg"></div>
+
+    <h2 style="margin-top:18px;">☁️ 云备份（GitHub 私有仓库）</h2>
+    <label for="ghUser">GitHub 用户名</label>
+    <input type="text" id="ghUser" autocomplete="off">
+    <label for="ghTok">Token（个人访问令牌）</label>
+    <input type="password" id="ghTok" autocomplete="off">
+    <label for="ghRepo">备份仓库名</label>
+    <input type="text" id="ghRepo" autocomplete="off">
+    <div style="margin-top:8px;">
+      <button class="btn" id="ghSave">💾 保存设置</button>
+      <button class="btn secondary" id="ghPushBtn">☁️ 立即备份</button>
+      <button class="btn secondary" id="ghPullBtn">📥 从云端恢复</button>
+      <button class="btn secondary" id="ghCheckBtn">🔍 自检：线路+新版本</button>
+    </div>
+    <div class="msg" id="ghMsg"></div>
+    <div class="hint">备份 = 笔记数据（xiaotao-backup.json）+ vault/ 区的 Obsidian 格式 md 真身。保存笔记5秒后也会自动单篇推 vault。</div>
+
+    <h2 style="margin-top:18px;">🤖 AI 账本</h2>
+    <div class="kv" id="aiBill">调用 0 次 · 发出 0 字</div>
+    <button class="btn secondary" id="btnBillReset" style="font-size:13px; padding:6px 10px;">🗑 账本清零</button>
+
+    <h2 style="margin-top:18px;">🤖 云端切片巡逻兵</h2>
+    <div class="kv">二期随资料库上线：每小时自动切云端工单，这里显示巡逻状态。</div>
+  </details>
+
+  <!-- 📋 关于 -->
+  <details class="card">
+    <summary>📋 关于 / Obsidian 搬家说明</summary>
+    <div class="kv" style="margin-top:6px;">
+      <b>版本：</b>v0.3.2（2026-08-12）云端按钮说人话、话长驻（成没成+什么原因一直挂着）；v0.3.1 云端代办切片；v0.3.0 切片提速；v0.2.0 二期资料库。<br><br>
+      <b>⭐ 头一条铁律（Obsidian 搬家）：</b>小涛笔记里所有内容的<b>真身是标准 Markdown 文件</b>，
+      全部存在 GitHub 仓库的 <b>vault/</b> 区——那就是一座现成的 Obsidian 仓库。<br>
+      <b>搬家方法：</b>把仓库里 vault/ 文件夹下载到电脑/手机（或坚果云同步它），
+      打开 Obsidian →「打开本地仓库」→ 选中 vault 文件夹：所有笔记、双链 [[ ]]、结构原样出现，<b>零转换零损失</b>。<br>
+      软件里的数据库只是跑得快的缓存，丢了会从 vault 自动重建；vault 才是永久家产。<br><br>
+      <b>修改记录：</b>v0.2.0 二期资料库；v0.1.0 一期骨架（新建/编辑/双链/搜索/设置/云备份/vault真身/版本自检）。
+    </div>
+  </details>
+
+</div>
+
+<!-- 笔记详情页 -->
+<div class="page hidden" id="detailPage">
+  <button class="btn secondary" id="btnBack">← 返回笔记库</button>
+  <div class="card" style="margin-top:12px;">
+    <h2 id="detailTitle"></h2>
+    <div class="md-body" id="detailBody"></div>
+    <div id="backlinksBox" style="margin-top:14px; border-top:1px dashed #ddd3b8; padding-top:8px;">
+      <b style="font-size:14px; color:#9a8f80;">🔗 被提到（反链）</b>
+      <div id="backlinks"></div>
+    </div>
+    <div style="margin-top:14px;">
+      <button class="btn secondary" id="btnHandEdit">✍️ 自己写/改</button>
+      <button class="btn secondary" id="btnAiEdit">🤖 让 AI 改</button>
+      <button class="btn secondary" id="btnRevert">↩️ 回退上一版</button>
+      <button class="btn danger" id="btnDelete">🗑 删除本篇</button>
+    </div>
+  </div>
+  <!-- 手写编辑 -->
+  <div class="card hidden" id="handCard">
+    <label for="handTitle">笔记标题</label>
+    <input type="text" id="handTitle">
+    <label for="handTa">正文（支持 # 标题、**加粗**、- 列表、[[双链]]）</label>
+    <textarea id="handTa" rows="14"></textarea>
+    <div style="margin-top:8px;">
+      <button class="btn" id="btnHandSave">💾 保存</button>
+      <button class="btn secondary" id="btnHandCancel">↩️ 放弃</button>
+    </div>
+  </div>
+  <!-- AI改 -->
+  <div class="card hidden" id="aiCard">
+    <label for="aiInst">想让 AI 怎么改？（如：精简成骨头 / 加一段鉴别诊断）</label>
+    <textarea id="aiInst" rows="3"></textarea>
+    <div style="margin-top:8px;">
+      <button class="btn" id="btnAiSend">🤖 发送修改</button>
+      <button class="btn secondary" id="btnAiCancel">取消</button>
+    </div>
+    <div class="msg" id="aiMsg"></div>
+  </div>
+</div>
+
+<!-- 资料详情页 -->
+<div class="page hidden" id="libPage">
+  <button class="btn secondary" id="btnLibBack">← 返回资料库</button>
+  <div class="card" style="margin-top:12px;">
+    <h2 id="libTitle"></h2>
+    <div style="margin:6px 0;">
+      <select id="libGradeSel" class="bklib-grade-sel" style="width:auto; display:inline-block; padding:6px 8px; font-size:14px;">
+        <option value="guide">🟢 指南（最可靠）</option>
+        <option value="journal">📄 期刊文献</option>
+        <option value="book">📘 书籍</option>
+        <option value="ai">🟠 AI生成·待核</option>
+      </select>
+      <span class="hint" id="libMeta" style="display:inline; margin-left:8px;"></span>
+    </div>
+    <div class="md-body" id="libBrief" style="font-size:15px; background:#faf6ec; border-radius:10px; padding:10px 12px;"></div>
+    <div id="libProgD" class="hidden" style="margin-top:8px; font-size:14px; color:#8a6d1a;"></div>
+    <div id="libRetryBar" class="hidden" style="background:#fff8e8; border:1px solid #e8c96a; border-radius:10px; padding:8px 10px; margin-top:8px; font-size:14px;">
+      <span id="libRetryText"></span>
+      <button class="btn secondary" id="btnReSlice" style="padding:6px 10px; font-size:13px;">🤖 重新AI切片</button>
+      <button class="btn secondary" id="btnReBrief" style="padding:6px 10px; font-size:13px;">🤖 重新生成总结</button>
+      <button class="btn secondary" id="btnCloudSlice" style="padding:6px 10px; font-size:13px;">☁️ 送云端自动切</button>
+      <button class="btn secondary" id="btnCloudFetch" style="padding:6px 10px; font-size:13px;">📥 取回切片</button>
+    </div>
+    <div style="margin-top:10px;">
+      <button class="btn" id="btnLibAsk">🤖 问这份资料</button>
+      <button class="btn danger" id="btnLibDel">🗑 删除</button>
+    </div>
+  </div>
+  <!-- 问AI面板 -->
+  <div class="card hidden" id="libAskCard">
+    <label for="libAskQ">您想问什么？</label>
+    <textarea id="libAskQ" rows="2" placeholder="如：乳酸多少要干预？"></textarea>
+    <button class="btn" id="btnLibAskGo" style="margin-top:8px;">🤖 提问</button>
+    <div class="msg" id="libAskMsg"></div>
+    <div class="md-body" id="libAskAns" style="margin-top:10px;"></div>
+    <button class="btn secondary hidden" id="btnAnsToNote" style="margin-top:8px;">📝 问答存成笔记</button>
+  </div>
+  <!-- 切块列表 -->
+  <div class="card">
+    <h2>🧩 切块（点标题看原文，点📝变笔记）</h2>
+    <div id="chunkList"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+'use strict';
+(function(){
+var $ = function(id){ return document.getElementById(id); };
+var SW_VERSION = '0.3.2';
+
+/* ==================== 基础 ==================== */
+var toastTimer = null;
+function toast(msg, ms){
+  var t = $('toast'); t.textContent = msg; t.style.display = 'block';
+  if(toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.style.display = 'none'; }, ms || 2500);
+}
+function esc(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+function fmtTime(t){ return new Date(t).toLocaleString(); }
+function showMsg(el, text, kind){ el.className = 'msg ' + kind; el.textContent = text; }
+function fetchWithTimeout(url, opts, ms){
+  return Promise.race([
+    fetch(url, opts),
+    new Promise(function(_, rej){ setTimeout(function(){ rej(new Error('网络超时')); }, ms || 25000); })
+  ]);
+}
+function strHash(s){
+  var h = 0x811c9dc5;
+  for(var i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = (h * 0x01000193) >>> 0; }
+  return h.toString(16);
+}
+
+/* ==================== 公共钱罐 hx_* ==================== */
+var HX_MAP = [['xt_gh_user','hx_gh_user'],['xt_gh_tok','hx_gh_tok'],['xt_gh_repo','hx_gh_repo'],['xt_apikey','hx_apikey'],['xt_aimodel','hx_aimodel']];
+(function(){
+  HX_MAP.forEach(function(p){
+    var own = localStorage.getItem(p[0]);
+    var shared = localStorage.getItem(p[1]);
+    if(own && own !== shared) localStorage.setItem(p[1], own);
+    else if(!own && shared) localStorage.setItem(p[0], shared);
+  });
+})();
+function hxPut(ownKey, val){ localStorage.setItem(ownKey, val); var m = HX_MAP.filter(function(p){ return p[0] === ownKey; })[0]; if(m) localStorage.setItem(m[1], val); }
+
+/* ==================== 数据层 ==================== */
+var LS_NOTES = 'xt_notes_v1';
+var LS_BILL = 'xt_aibill_v1';
+function loadNotes(){ try{ var v = JSON.parse(localStorage.getItem(LS_NOTES) || '[]'); return Array.isArray(v) ? v : []; }catch(e){ return []; } }
+function saveNotes(list){ localStorage.setItem(LS_NOTES, JSON.stringify(list)); }
+function getNote(id){ return loadNotes().filter(function(n){ return n.id === id; })[0] || null; }
+function bill(){ try{ return JSON.parse(localStorage.getItem(LS_BILL) || '{"calls":0,"chars":0}'); }catch(e){ return {calls:0,chars:0}; } }
+function billAdd(chars){ var b = bill(); b.calls++; b.chars += chars; localStorage.setItem(LS_BILL, JSON.stringify(b)); billRender(); }
+function billRender(){ var b = bill(); $('aiBill').textContent = '调用 ' + b.calls + ' 次 · 发出 ' + Math.round(b.chars / 1000) + ' 千字'; }
+
+/* ==================== AI ==================== */
+/* v0.2.6：模型自愈。病根实录——洪老师机器里存的模型名是下拉框没有的旧值，
+   select.value 落空变成空串发给AI → 404 "Not found the model"。
+   修法：①开机校验存值必须在选项里，不在就回默认；②callAI 碰到"404模型不存在"
+   自动按候选名单换模型重试，哪个能用就记住哪个。 */
+var AI_MODELS = ['moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k'];
+/* v0.2.7：不猜模型名了——Kimi 有"花名册"接口 /v1/models，拿 Key 去问它
+   "我这把 Key 能用哪些模型"，照实回答。自愈和设置里的刷新按钮都走这里。 */
+var AI_PREFER = ['kimi-k2.6', 'kimi-k2-0905-preview', 'kimi-k2-0711-preview', 'kimi-latest',
+                 'moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k', 'moonshot-v1-auto'];
+function aiModelSort(ids){
+  return ids.slice().sort(function(a, b){
+    var pa = AI_PREFER.indexOf(a), pb = AI_PREFER.indexOf(b);
+    return (pa < 0 ? 99 : pa) - (pb < 0 ? 99 : pb);
+  });
+}
+function aiModelsFetch(key){
+  return fetchWithTimeout('https://api.moonshot.cn/v1/models', {
+    headers: { 'Authorization': 'Bearer ' + key }
+  }, 15000).then(function(resp){
+    if(!resp.ok) return resp.text().then(function(t){ throw new Error('AI 报错 ' + resp.status + '：' + t.slice(0, 120)); });
+    return resp.json();
+  }).then(function(d){
+    var ids = ((d && d.data) || []).map(function(m){ return m.id; }).filter(function(id){
+      return id && /kimi|moonshot/i.test(id) && !/embed|moderation|vision/i.test(id);
+    });
+    return aiModelSort(ids);
+  });
+}
+/* 重建模型下拉框（花名册来了就用真名单），保持当前选择 */
+function modelSelSet(ids, selected){
+  var sel = $('modelSel');
+  sel.innerHTML = '';
+  ids.forEach(function(id){
+    var o = document.createElement('option');
+    o.value = id; o.textContent = id;
+    sel.appendChild(o);
+  });
+  sel.value = (selected && ids.indexOf(selected) >= 0) ? selected : ids[0];
+}
+function aiModelCur(){
+  return $('modelSel').value || localStorage.getItem('xt_aimodel') || AI_MODELS[0];
+}
+function callAIonce(key, model, sys, user, maxTok, timeoutMs){
+  return fetchWithTimeout('https://api.moonshot.cn/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+    body: JSON.stringify({ model: model,
+      messages: [{ role: 'system', content: sys }, { role: 'user', content: user }],
+      max_tokens: maxTok || 4000 })
+  }, timeoutMs || 25000).then(function(resp){
+    if(!resp.ok) return resp.text().then(function(t){ throw new Error('AI 报错 ' + resp.status + '：' + t.slice(0, 120)); });
+    return resp.json();
+  }).then(function(d){ return d.choices[0].message.content; });
+}
+function callAI(sys, user, maxTok, timeoutMs){
+  var key = (localStorage.getItem('xt_apikey') || '').trim();
+  if(!key) return Promise.reject(new Error('还没填 API Key（⚙️设置里保存）'));
+  billAdd((sys || '').length + (user || '').length);
+  var cur = aiModelCur();
+  var cands = [cur];
+  var i = 0, roster = null;
+  function attempt(){
+    var model = cands[i];
+    return callAIonce(key, model, sys, user, maxTok, timeoutMs).then(function(txt){
+      if(model !== cur){   /* 换模型才接通：记住这个能用的 */
+        hxPut('xt_aimodel', model);
+        if(roster && roster.indexOf(model) >= 0) modelSelSet(roster, model);
+        else $('modelSel').value = model;
+        toast('🔧 原模型名不对，已自动换用 ' + model + '（设置里已记住）', 4000);
+      }
+      return txt;
+    }).catch(function(e){
+      /* 只有"404模型不存在"才换模型重试，别的错（超时/Key不对/限流）直接抛 */
+      if(String(e.message).indexOf('404') < 0) throw e;
+      /* v0.2.7：先查花名册（这把Key到底能用哪些模型），查不到才用硬猜名单 */
+      var step = roster ? Promise.resolve(roster)
+        : aiModelsFetch(key).then(function(l){ roster = l && l.length ? l : null; return roster; })
+          .catch(function(){ return null; });
+      return step.then(function(list){
+        (list || AI_MODELS).forEach(function(m){ if(cands.indexOf(m) < 0) cands.push(m); });
+        if(i < cands.length - 1 && cands.length <= 8){ i++; return attempt(); }
+        throw e;
+      });
+    });
+  }
+  return attempt();
+}
+
+/* ==================== Markdown 渲染 + 双链 ==================== */
+function renderMd(text){
+  var lines = String(text || '').split('\n');
+  var html = '', inList = false;
+  function inline(s){
+    s = esc(s);
+    s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/\[\[([^\]|]+)(\|[^\]]+)?\]\]/g, function(m, t, disp){
+      var title = t.trim(), show = (disp ? disp.slice(1) : t).trim();
+      var exists = loadNotes().some(function(n){ return n.title === title; });
+      return '<span class="wlink' + (exists ? '' : ' miss') + '" data-t="' + esc(title) + '">' + esc(show) + '</span>';
+    });
+    return s;
+  }
+  lines.forEach(function(l){
+    var m;
+    if(m = l.match(/^###\s+(.*)/)){ if(inList){ html += '</ul>'; inList = false; } html += '<h3>' + inline(m[1]) + '</h3>'; }
+    else if(m = l.match(/^##\s+(.*)/)){ if(inList){ html += '</ul>'; inList = false; } html += '<h2>' + inline(m[1]) + '</h2>'; }
+    else if(m = l.match(/^#\s+(.*)/)){ if(inList){ html += '</ul>'; inList = false; } html += '<h1>' + inline(m[1]) + '</h1>'; }
+    else if(m = l.match(/^\s*[-*]\s+(.*)/)){ if(!inList){ html += '<ul>'; inList = true; } html += '<li>' + inline(m[1]) + '</li>'; }
+    else if(l.trim() === ''){ if(inList){ html += '</ul>'; inList = false; } }
+    else { if(inList){ html += '</ul>'; inList = false; } html += '<p>' + inline(l) + '</p>'; }
+  });
+  if(inList) html += '</ul>';
+  return html;
+}
+function extractLinks(text){
+  var out = [];
+  String(text || '').replace(/\[\[([^\]|]+)(\|[^\]]+)?\]\]/g, function(m, t){ out.push(t.trim()); });
+  return out;
+}
+
+/* ==================== 笔记列表 ==================== */
+function renderList(){
+  var notes = loadNotes();
+  var kw = ($('searchInput').value || '').trim().toLowerCase();
+  $('notesSum').textContent = '📚 我的笔记（' + notes.length + '篇）';
+  var box = $('noteList');
+  var list = notes.filter(function(n){
+    return !kw || n.title.toLowerCase().indexOf(kw) >= 0 || (n.content || '').toLowerCase().indexOf(kw) >= 0;
+  });
+  if(!list.length){ box.innerHTML = '<div class="hint">' + (notes.length ? '没搜到。' : '还没有笔记，点上方「AI 帮我学」开始第一篇。') + '</div>'; return; }
+  box.innerHTML = '';
+  list.forEach(function(n){
+    var row = document.createElement('div');
+    row.className = 'note-row';
+    row.innerHTML = '<div class="t">' + esc(n.title) + '</div><div class="d">' + fmtTime(n.updatedAt).slice(0, 9) + '</div>';
+    row.addEventListener('click', function(){ openDetail(n.id); });
+    box.appendChild(row);
+  });
+}
+$('searchInput').addEventListener('input', renderList);
+
+/* ==================== 笔记详情 ==================== */
+var curId = null;
+function openDetail(id){
+  var n = getNote(id);
+  if(!n) return;
+  curId = id;
+  $('detailTitle').textContent = n.title;
+  $('detailBody').innerHTML = renderMd(n.content);
+  /* 反链：谁链了我 */
+  var bl = loadNotes().filter(function(x){
+    return x.id !== id && extractLinks(x.content).indexOf(n.title) >= 0;
+  });
+  $('backlinks').innerHTML = bl.length ? '' : '<div class="hint">没有别的笔记提到这篇。</div>';
+  bl.forEach(function(x){
+    var d = document.createElement('div');
+    d.className = 'bl-item'; d.textContent = '📄 ' + x.title;
+    d.addEventListener('click', function(){ openDetail(x.id); });
+    $('backlinks').appendChild(d);
+  });
+  $('btnRevert').style.display = n.prev ? '' : 'none';
+  $('handCard').classList.add('hidden');
+  $('aiCard').classList.add('hidden');
+  showPage('detail');
+}
+/* 双链点击跳转（事件委托） */
+$('detailBody').addEventListener('click', function(e){
+  var el = e.target.closest('.wlink');
+  if(!el) return;
+  var t = el.getAttribute('data-t');
+  var n = loadNotes().filter(function(x){ return x.title === t; })[0];
+  if(n){ openDetail(n.id); return; }
+  var lb = loadLib().filter(function(x){ return x.title === t; })[0];
+  if(lb){ openLib(lb.id); return; }
+  if(confirm('「' + t + '」还不存在，新建这篇吗？')){
+    var notes = loadNotes();
+    var nn = { id: uid(), title: t, content: '# ' + t + '\n\n（待补充）', createdAt: Date.now(), updatedAt: Date.now(), fp: '' };
+    nn.fp = strHash(nn.content);
+    notes.unshift(nn); saveNotes(notes); renderList(); openDetail(nn.id); vaultQueue(nn);
+  }
+});
+function showPage(which){
+  document.querySelectorAll('.page')[0].classList.toggle('hidden', which !== 'home');
+  $('detailPage').classList.toggle('hidden', which !== 'detail');
+  $('libPage').classList.toggle('hidden', which !== 'lib');
+  window.scrollTo(0, 0);
+}
+$('btnBack').addEventListener('click', function(){ showPage('home'); renderList(); });
+
+/* ==================== 新建 ==================== */
+function makeNote(title, content){
+  var notes = loadNotes();
+  if(notes.some(function(n){ return n.title === title; })){ toast('已有同名笔记，给您打开了', 2500); openDetail(notes.filter(function(n){ return n.title === title; })[0].id); return null; }
+  var n = { id: uid(), title: title, content: content, createdAt: Date.now(), updatedAt: Date.now(), fp: strHash(content) };
+  notes.unshift(n); saveNotes(notes); renderList(); vaultQueue(n);
+  return n;
+}
+$('btnGen').addEventListener('click', function(){
+  var topic = $('topicInput').value.trim();
+  if(!topic){ showMsg($('genMsg'), '先写一个主题。', 'err'); return; }
+  $('btnGen').disabled = true;
+  showMsg($('genMsg'), '🤖 AI 正在备课（约十几秒）…', 'ok');
+  callAI('你是医学学习助手，给ICU医生讲题。用中文大白话+条目式，markdown格式（# 标题开头，## 小节，- 列表，重点**加粗**）。内容：是什么、为什么重要、要点、临床怎么用、易错点。不要客套话。',
+    '主题：' + topic, 4000
+  ).then(function(txt){
+    $('btnGen').disabled = false;
+    $('genMsg').className = 'msg';
+    var n = makeNote(topic, txt.indexOf('#') === 0 ? txt : '# ' + topic + '\n\n' + txt);
+    if(n){ $('topicInput').value = ''; openDetail(n.id); toast('✅ 备好了', 2000); }
+  }).catch(function(e){
+    $('btnGen').disabled = false;
+    showMsg($('genMsg'), e.message, 'err');
+  });
+});
+$('btnBlank').addEventListener('click', function(){
+  var topic = $('topicInput').value.trim() || '未命名笔记';
+  var n = makeNote(topic, '# ' + topic + '\n\n');
+  if(n){ $('topicInput').value = ''; openDetail(n.id); $('btnHandEdit').click(); }
+});
+
+/* ==================== 编辑 ==================== */
+$('btnHandEdit').addEventListener('click', function(){
+  var n = getNote(curId); if(!n) return;
+  $('handTitle').value = n.title;
+  $('handTa').value = n.content;
+  $('handCard').classList.remove('hidden');
+  $('aiCard').classList.add('hidden');
+  $('handCard').scrollIntoView({ block: 'start' });
+});
+$('btnHandCancel').addEventListener('click', function(){ $('handCard').classList.add('hidden'); });
+$('btnHandSave').addEventListener('click', function(){
+  var notes = loadNotes();
+  var n = notes.filter(function(x){ return x.id === curId; })[0]; if(!n) return;
+  var title = $('handTitle').value.trim();
+  if(!title){ toast('标题不能为空', 2000); return; }
+  if(title !== n.title && notes.some(function(x){ return x.title === title; })){ toast('已有同名笔记', 2500); return; }
+  n.prev = n.content;
+  n.title = title;
+  n.content = $('handTa').value;
+  n.updatedAt = Date.now();
+  n.fp = strHash(n.content);
+  saveNotes(notes);
+  $('handCard').classList.add('hidden');
+  openDetail(n.id); renderList(); vaultQueue(n);
+  toast('💾 已保存', 1500);
+});
+$('btnAiEdit').addEventListener('click', function(){
+  $('aiCard').classList.remove('hidden');
+  $('handCard').classList.add('hidden');
+  $('aiCard').scrollIntoView({ block: 'start' });
+});
+$('btnAiCancel').addEventListener('click', function(){ $('aiCard').classList.add('hidden'); });
+$('btnAiSend').addEventListener('click', function(){
+  var n = getNote(curId); if(!n) return;
+  var inst = $('aiInst').value.trim();
+  if(!inst){ showMsg($('aiMsg'), '先写想让 AI 怎么改。', 'err'); return; }
+  $('btnAiSend').disabled = true;
+  showMsg($('aiMsg'), '🤖 AI 正在改…', 'ok');
+  callAI('你是笔记修改助手。给你一篇 markdown 笔记和一句修改要求，输出改后的完整笔记（markdown，保留 [[双链]] 语法，只输出笔记本身）。',
+    '【修改要求】' + inst + '\n\n【原笔记】\n' + n.content, 6000
+  ).then(function(txt){
+    $('btnAiSend').disabled = false;
+    $('aiMsg').className = 'msg';
+    $('aiInst').value = '';
+    var notes = loadNotes();
+    var nn = notes.filter(function(x){ return x.id === curId; })[0]; if(!nn) return;
+    nn.prev = nn.content;
+    nn.content = txt;
+    nn.updatedAt = Date.now();
+    nn.fp = strHash(nn.content);
+    saveNotes(notes);
+    n = nn;
+    $('aiCard').classList.add('hidden');
+    openDetail(n.id); renderList(); vaultQueue(n);
+    toast('✅ 改好了（不满意可回退）', 2500);
+  }).catch(function(e){
+    $('btnAiSend').disabled = false;
+    showMsg($('aiMsg'), e.message, 'err');
+  });
+});
+$('btnRevert').addEventListener('click', function(){
+  var notes = loadNotes();
+  var n = notes.filter(function(x){ return x.id === curId; })[0]; if(!n || !n.prev) return;
+  var tmp = n.content;
+  n.content = n.prev; n.prev = tmp;
+  n.updatedAt = Date.now(); n.fp = strHash(n.content);
+  saveNotes(notes);
+  openDetail(n.id); renderList(); vaultQueue(n);
+  toast('↩️ 已回退', 1500);
+});
+$('btnDelete').addEventListener('click', function(){
+  var n = getNote(curId); if(!n) return;
+  if(!confirm('确定删除「' + n.title + '」？（云端 vault 文件下次备份时一并清）')) return;
+  saveNotes(loadNotes().filter(function(x){ return x.id !== curId; }));
+  vaultDelQueue(n.title);
+  showPage('home'); renderList();
+  toast('🗑 已删除', 1500);
+});
+
+/* ==================== vault（Obsidian 真身） ==================== */
+function noteToMd(n){
+  var yaml = '---\ntitle: ' + n.title + '\ncreated: ' + new Date(n.createdAt).toISOString() +
+    '\nupdated: ' + new Date(n.updatedAt).toISOString() + '\nfp: ' + n.fp + '\n---\n\n';
+  return yaml + n.content;
+}
+function safeName(t){ return String(t).replace(/[\\/:*?"<>|]/g, '_'); }
+var vaultTimer = null, vaultDirty = {}, vaultDel = [];
+function vaultQueue(n){
+  vaultDirty[n.title] = noteToMd(n);
+  if(vaultTimer) clearTimeout(vaultTimer);
+  vaultTimer = setTimeout(vaultFlush, 5000);
+}
+function vaultDelQueue(title){
+  vaultDel.push(title);
+  if(vaultTimer) clearTimeout(vaultTimer);
+  vaultTimer = setTimeout(vaultFlush, 5000);
+}
+function vaultFlush(){
+  if(!ghReady()){ return; } /* 没配 GitHub 就等下次备份 */
+  var dirty = vaultDirty; var dels = vaultDel.slice();
+  vaultDirty = {}; vaultDel = [];
+  var chain = Promise.resolve();
+  Object.keys(dirty).forEach(function(t){
+    chain = chain.then(function(){ return ghPutFile('vault/笔记/' + safeName(t) + '.md', dirty[t], 'vault 笔记 ' + t); });
+  });
+  dels.forEach(function(t){
+    chain = chain.then(function(){ return ghDelFile('vault/笔记/' + safeName(t) + '.md', 'vault 删除 ' + t); });
+  });
+  chain.then(function(){ toast('☁️ vault 已同步', 1500); }).catch(function(){ toast('☁️ vault 同步失败，下次备份补', 3000); });
+}
+
+/* ==================== GitHub ==================== */
+function ghCfg(){
+  return { user: (localStorage.getItem('xt_gh_user') || '').trim(),
+           tok: (localStorage.getItem('xt_gh_tok') || '').trim(),
+           repo: (localStorage.getItem('xt_gh_repo') || '').trim() };
+}
+function ghReady(){ var c = ghCfg(); return !!(c.user && c.tok && c.repo); }
+function ghUrl(path){
+  var c = ghCfg();
+  return 'https://api.github.com/repos/' + encodeURIComponent(c.user) + '/' + encodeURIComponent(c.repo) +
+    '/contents/' + path.split('/').map(encodeURIComponent).join('/');
+}
+function ghHeaders(){ return { 'Authorization': 'token ' + ghCfg().tok, 'Accept': 'application/vnd.github+json' }; }
+function b64enc(s){ return btoa(unescape(encodeURIComponent(s))); }
+function b64dec(s){ return decodeURIComponent(escape(atob(String(s).replace(/\s+/g, '')))); }
+function ghPutFile(path, contentStr, msg){
+  return fetchWithTimeout(ghUrl(path), { headers: ghHeaders() }).then(function(resp){
+    if(resp.status === 404) return null;
+    if(!resp.ok) throw new Error('读旧文件失败');
+    return resp.json();
+  }).then(function(old){
+    var body = { message: msg, content: b64enc(contentStr) };
+    if(old && old.sha) body.sha = old.sha;
+    return fetchWithTimeout(ghUrl(path), { method: 'PUT', headers: ghHeaders(), body: JSON.stringify(body) });
+  }).then(function(resp){
+    if(!resp.ok) return resp.text().then(function(t){ throw new Error('写入失败 ' + resp.status + '：' + t.slice(0, 100)); });
+  });
+}
+function ghGetFile(path){
+  return fetchWithTimeout(ghUrl(path), { headers: ghHeaders() }).then(function(resp){
+    if(resp.status === 404) return null;
+    if(!resp.ok) throw new Error('读取失败 ' + resp.status);
+    return resp.json();
+  }).then(function(d){ return d ? b64dec(d.content) : null; });
+}
+function ghDelFile(path, msg){
+  return fetchWithTimeout(ghUrl(path), { headers: ghHeaders() }).then(function(resp){
+    if(resp.status === 404) return null;
+    return resp.json();
+  }).then(function(d){
+    if(!d || !d.sha) return;
+    return fetchWithTimeout(ghUrl(path), { method: 'DELETE', headers: ghHeaders(),
+      body: JSON.stringify({ message: msg, sha: d.sha }) });
+  });
+}
+
+/* ==================== 云备份/恢复 ==================== */
+function libToMd(x){
+  var yaml = '---\ntitle: ' + x.title + '\nauthor: ' + (x.author || '') + '\ngrade: ' + x.grade +
+    '\nfilename: ' + x.filename + '\nadded: ' + new Date(x.addedAt).toISOString() + '\nfp: ' + x.fp + '\n---\n\n';
+  var body = '# ' + x.title + '\n\n## AI 五段式总结\n\n' + (x.brief || '（无）') + '\n\n## 切块\n\n' +
+    (x.chunks || []).map(function(c){
+      return '### ' + c.ch + '. ' + c.title + '\n> ' + (c.summary || '') + '\n\n' + (c._text || '') + '\n';
+    }).join('\n');
+  return yaml + body;
+}
+$('ghPushBtn').addEventListener('click', function(){
+  if(!ghReady()){ showMsg($('ghMsg'), '先把上面三项填好保存。', 'err'); return; }
+  var notes = loadNotes();
+  var lib = loadLib();
+  if(!notes.length && !lib.length){ showMsg($('ghMsg'), '还没有内容，跳过备份（防止空备份覆盖云端）。', 'err'); return; }
+  showMsg($('ghMsg'), '☁️ 正在备份（数据+vault 真身）…', 'ok');
+  /* 先把切块正文从 idb 收齐，嵌进备份包 */
+  var chain = Promise.resolve();
+  lib.forEach(function(x){
+    (x.chunks || []).forEach(function(c){
+      chain = chain.then(function(){
+        return idbGet('chunks', x.id + '_' + c.ch).then(function(d){ c._text = d ? d.text : ''; });
+      });
+    });
+  });
+  chain.then(function(){
+    return ghPutFile('xiaotao-backup.json', JSON.stringify({ savedAt: new Date().toISOString(), notes: notes, lib: lib }), '小涛笔记备份');
+  }).then(function(){
+    /* vault 全量重写：笔记 md + 资料 md + 索引 */
+    var chain2 = Promise.resolve();
+    notes.forEach(function(n){
+      chain2 = chain2.then(function(){ return ghPutFile('vault/笔记/' + safeName(n.title) + '.md', noteToMd(n), 'vault 笔记 ' + n.title); });
+    });
+    lib.forEach(function(x){
+      chain2 = chain2.then(function(){ return ghPutFile('vault/资料/' + safeName(x.title) + '.md', libToMd(x), 'vault 资料 ' + x.title); });
+    });
+    var idx = '# 小涛笔记 · 全库索引\n\n> 自动生成，Obsidian 里当目录用。\n\n## 笔记\n\n' +
+      notes.map(function(n){ return '- [[' + n.title + ']]（' + fmtTime(n.updatedAt).slice(0, 9) + '）'; }).join('\n') +
+      '\n\n## 资料\n\n' +
+      lib.map(function(x){ return '- [[' + x.title + ']]（' + (GRADES[x.grade] || '') + '，' + (x.chunks || []).length + '块）'; }).join('\n') + '\n';
+    chain2 = chain2.then(function(){ return ghPutFile('vault/索引.md', idx, 'vault 索引'); });
+    return chain2;
+  }).then(function(){
+    showMsg($('ghMsg'), '✅ 备份完成（' + notes.length + ' 篇笔记 + ' + lib.length + ' 份资料 + vault md 真身）', 'ok');
+  }).catch(function(e){
+    showMsg($('ghMsg'), '❌ 备份失败：' + e.message, 'err');
+  });
+});
+$('ghPullBtn').addEventListener('click', function(){
+  if(!ghReady()){ showMsg($('ghMsg'), '先把上面三项填好保存。', 'err'); return; }
+  if(!confirm('从云端恢复会覆盖本机全部笔记和资料库，确定？')) return;
+  ghGetFile('xiaotao-backup.json').then(function(s){
+    if(!s){ showMsg($('ghMsg'), '云端还没有备份。', 'err'); return; }
+    var data = JSON.parse(s);
+    if((!data.notes || !data.notes.length) && (!data.lib || !data.lib.length)){ showMsg($('ghMsg'), '云端备份是空的。', 'err'); return; }
+    saveNotes(data.notes || []);
+    var lib = data.lib || [];
+    /* 切块正文拆回 idb */
+    var chain = Promise.resolve();
+    lib.forEach(function(x){
+      (x.chunks || []).forEach(function(c){
+        chain = chain.then(function(){
+          return idbPut('chunks', { id: x.id + '_' + c.ch, text: c._text || '' }).then(function(){ delete c._text; });
+        });
+      });
+    });
+    chain.then(function(){
+      saveLib(lib);
+      renderList(); renderLib();
+      showMsg($('ghMsg'), '✅ 恢复完成（' + (data.notes || []).length + ' 篇笔记 + ' + lib.length + ' 份资料，' + (data.savedAt || '').slice(0, 10) + ' 的备份）', 'ok');
+    });
+  }).catch(function(e){ showMsg($('ghMsg'), '❌ 恢复失败：' + e.message, 'err'); });
+});
+
+/* ==================== 版本自检 ==================== */
+function cmpVer(a, b){
+  var pa = String(a).split('.'), pb = String(b).split('.');
+  for(var i = 0; i < 3; i++){ var d = (parseInt(pa[i] || '0') - parseInt(pb[i] || '0')); if(d) return d; }
+  return 0;
+}
+function updShow(kind, text, canDl){
+  var bar = $('updBar');
+  bar.classList.remove('hidden');
+  $('updRow').className = 'upd-row' + (kind === 'ok' ? ' okbar' : '');
+  $('updText').textContent = text;
+  $('updDlBtn').style.display = canDl ? '' : 'none';
+}
+function ghSelfCheck(manual){
+  if(!ghReady()){ if(manual) showMsg($('ghMsg'), '先填 GitHub 设置。', 'err'); return; }
+  ghGetFile('version-xiaotao.json').then(function(s){
+    if(!s){ updShow('ok', '✅ GitHub 线路通畅 · 本机 v' + SW_VERSION + '（云端还没有版本信息）'); setTimeout(function(){ $('updBar').classList.add('hidden'); }, 8000); return null; }
+    var info = JSON.parse(s);
+    if(cmpVer(info.version, SW_VERSION) > 0){
+      updShow('warn', '🎉 网上有新版 v' + info.version + '（本机 v' + SW_VERSION + '）：' + (info.note || ''), true);
+      window._xtDl = info.dl;
+    }else{
+      updShow('ok', '✅ 线路通畅，已是最新 v' + SW_VERSION);
+      setTimeout(function(){ $('updBar').classList.add('hidden'); }, 6000);
+    }
+  }).catch(function(e){
+    if(manual) showMsg($('ghMsg'), '❌ 自检失败：' + e.message, 'err');
+  });
+}
+$('ghCheckBtn').addEventListener('click', function(){ ghSelfCheck(true); });
+$('updClose').addEventListener('click', function(){ $('updBar').classList.add('hidden'); });
+/* v0.2.1 踩坑修复：v0.2.0的下载按钮走raw.githubusercontent.com匿名直链——
+   备份仓库是私有的，匿名访问一律404（洪老师实测）。改走ghGetFile带Token的API通道，
+   壳里=自更新(applyUpdate)+文件夹备份，浏览器=blob下载。 */
+$('updDlBtn').addEventListener('click', function(){
+  var dl = window._xtDl || 'software-xiaotao.html';
+  toast('⏳ 正在下载新版…', 3000);
+  ghGetFile(dl).then(function(s){
+    if(!s){ toast('❌ 云端没找到 ' + dl, 4000); return; }
+    var b64 = b64enc(s);
+    if(window.LearnShell && typeof window.LearnShell.applyUpdate === 'function'){
+      var ok = false;
+      try{ ok = window.LearnShell.applyUpdate('小涛笔记.html', b64); }catch(e){}
+      try{ if(window.LearnShell.folderSet && window.LearnShell.folderSet()) window.LearnShell.writeFile('小涛笔记.html', b64); }catch(e){}
+      if(ok){ toast('✅ 新版已装好，重启APP生效（文件夹里也存了一份）', 5000); return; }
+    }
+    var blob = new Blob([s], { type: 'text/html;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = '小涛笔记.html';
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    toast('✅ 已下载，到下载列表找「小涛笔记.html」换掉旧文件', 5000);
+  }).catch(function(e){ toast('❌ 下载失败：' + e.message, 4000); });
+});
+
+/* ==================== 设置加载/保存 ==================== */
+function loadSettings(){
+  $('apiKey').value = localStorage.getItem('xt_apikey') || '';
+  /* v0.2.6：存的模型名必须在下拉框选项里（否则value落空发空串给AI报404）
+     v0.2.7：不在选项里也不丢掉——先补进下拉框（可能是花名册里的合法新模型），
+     真不行还有 callAI 的花名册自愈兜底 */
+  var _savedModel = (localStorage.getItem('xt_aimodel') || '').trim() || AI_MODELS[0];
+  var _hasOpt = false;
+  for(var _oi = 0; _oi < $('modelSel').options.length; _oi++){
+    if($('modelSel').options[_oi].value === _savedModel){ _hasOpt = true; break; }
+  }
+  if(!_hasOpt){
+    var _o = document.createElement('option');
+    _o.value = _savedModel; _o.textContent = _savedModel;
+    $('modelSel').appendChild(_o);
+  }
+  $('modelSel').value = _savedModel;
+  /* v0.2.7：刷新模型名单按钮——拿Key问Kimi花名册 */
+  $('btnModelsRefresh').addEventListener('click', function(){
+    var key = ($('apiKey').value || localStorage.getItem('xt_apikey') || '').trim();
+    if(!key){ $('modelsMsg').textContent = '先填 API Key'; return; }
+    $('btnModelsRefresh').disabled = true;
+    $('modelsMsg').textContent = '正在问 Kimi 花名册…';
+    aiModelsFetch(key).then(function(ids){
+      $('btnModelsRefresh').disabled = false;
+      if(!ids.length){ $('modelsMsg').textContent = '花名册是空的（这Key没模型权限？）'; return; }
+      modelSelSet(ids, localStorage.getItem('xt_aimodel'));
+      hxPut('xt_aimodel', $('modelSel').value);
+      $('modelsMsg').textContent = '✅ 查到 ' + ids.length + ' 个能用的模型，已选 ' + $('modelSel').value;
+    }).catch(function(e){
+      $('btnModelsRefresh').disabled = false;
+      $('modelsMsg').textContent = '❌ 查不到：' + e.message.slice(0, 60);
+    });
+  });
+  $('ghUser').value = localStorage.getItem('xt_gh_user') || '';
+  $('ghTok').value = localStorage.getItem('xt_gh_tok') || '';
+  $('ghRepo').value = localStorage.getItem('xt_gh_repo') || '';
+}
+$('btnSaveKey').addEventListener('click', function(){
+  hxPut('xt_apikey', $('apiKey').value.trim());
+  hxPut('xt_aimodel', $('modelSel').value);
+  showMsg($('keyMsg'), '💾 已保存（公共钱罐，其他软件也有了）', 'ok');
+});
+$('ghSave').addEventListener('click', function(){
+  hxPut('xt_gh_user', $('ghUser').value.trim());
+  hxPut('xt_gh_tok', $('ghTok').value.trim());
+  hxPut('xt_gh_repo', $('ghRepo').value.trim());
+  showMsg($('ghMsg'), '💾 已保存', 'ok');
+});
+$('btnBalance').addEventListener('click', function(){
+  var key = (localStorage.getItem('xt_apikey') || '').trim();
+  if(!key){ showMsg($('keyMsg'), '先保存 Key。', 'err'); return; }
+  showMsg($('keyMsg'), '查询中…', 'ok');
+  fetchWithTimeout('https://api.moonshot.cn/v1/users/me/balance', { headers: { 'Authorization': 'Bearer ' + key } })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if(d && d.data && d.data.available_balance != null) showMsg($('keyMsg'), '💰 开放平台余额：¥' + Number(d.data.available_balance).toFixed(2), 'ok');
+      else showMsg($('keyMsg'), '读不到余额（返回格式变了）', 'err');
+    }).catch(function(e){ showMsg($('keyMsg'), '查询失败：' + e.message, 'err'); });
+});
+$('btnBillReset').addEventListener('click', function(){
+  localStorage.setItem(LS_BILL, '{"calls":0,"chars":0}'); billRender();
+});
+/* v0.2.9：🩺 AI 体检——最小的请求试一把，接上没接上、多快、用的哪个模型，一句话说清 */
+$('btnAITest').addEventListener('click', function(){
+  var key = (localStorage.getItem('xt_apikey') || '').trim();
+  if(!key){ showMsg($('keyMsg'), '先保存 Key。', 'err'); return; }
+  $('btnAITest').disabled = true;
+  showMsg($('keyMsg'), '🩺 正在联系 AI（模型 ' + aiModelCur() + '）…', 'ok');
+  var t0 = Date.now();
+  callAI('你是测试员。', '只回一个字：通', 10, 60000).then(function(){
+    $('btnAITest').disabled = false;
+    showMsg($('keyMsg'), '✅ AI 接上了！模型 ' + aiModelCur() + '，用时 ' + ((Date.now() - t0) / 1000).toFixed(1) + ' 秒', 'ok');
+  }).catch(function(e){
+    $('btnAITest').disabled = false;
+    showMsg($('keyMsg'), '❌ AI 没接上：' + aiErrText(e), 'err');
+  });
+});
+
+/* ==================== 导出（Obsidian 打包说明） ==================== */
+$('btnExportMd').addEventListener('click', function(){
+  var notes = loadNotes();
+  if(!notes.length){ toast('还没有笔记', 2000); return; }
+  var all = notes.map(function(n){ return '══════════ ' + n.title + ' ══════════\n\n' + noteToMd(n); }).join('\n\n');
+  var blob = new Blob([all], { type: 'text/plain;charset=utf-8' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '小涛笔记_全部_' + new Date().toISOString().slice(0, 10) + '.txt';
+  a.click();
+  toast('已导出（每篇都带 YAML 头；正式搬家推荐直接用仓库 vault/ 区，见「关于」）', 5000);
+});
+
+/* ==================== 资料库（v0.2.0 二期） ==================== */
+var LS_LIB = 'xt_lib_v1';
+var GRADES = { guide: '🟢 指南', journal: '📄 期刊', book: '📘 书籍', ai: '🟠 AI·待核' };
+function loadLib(){ try{ var v = JSON.parse(localStorage.getItem(LS_LIB) || '[]'); return Array.isArray(v) ? v : []; }catch(e){ return []; } }
+function saveLib(list){ localStorage.setItem(LS_LIB, JSON.stringify(list)); }
+function getLib(id){ return loadLib().filter(function(x){ return x.id === id; })[0] || null; }
+
+/* --- IndexedDB（切块正文 + pdf.js 缓存 + 未切完原文） --- */
+var _libDb = null;
+function libDbOpen(){
+  if(_libDb) return Promise.resolve(_libDb);
+  return new Promise(function(res, rej){
+    var rq = indexedDB.open('xt-lib-db', 1);
+    rq.onupgradeneeded = function(e){
+      var db = e.target.result;
+      if(!db.objectStoreNames.contains('chunks')) db.createObjectStore('chunks', { keyPath: 'id' });
+      if(!db.objectStoreNames.contains('kv')) db.createObjectStore('kv');
+    };
+    rq.onsuccess = function(e){ _libDb = e.target.result; res(_libDb); };
+    rq.onerror = function(){ rej(rq.error); };
+  });
+}
+function idbPut(store, val, key){
+  return libDbOpen().then(function(db){
+    return new Promise(function(res, rej){
+      var rq = db.transaction(store, 'readwrite').objectStore(store).put(key !== undefined ? val : val, key !== undefined ? key : undefined);
+      rq.onsuccess = function(){ res(); }; rq.onerror = function(){ rej(rq.error); };
+    });
+  });
+}
+function idbGet(store, key){
+  return libDbOpen().then(function(db){
+    return new Promise(function(res, rej){
+      var rq = db.transaction(store, 'readonly').objectStore(store).get(key);
+      rq.onsuccess = function(){ res(rq.result); }; rq.onerror = function(){ rej(rq.error); };
+    });
+  });
+}
+function idbDelPrefix(store, prefix){
+  return libDbOpen().then(function(db){
+    return new Promise(function(res, rej){
+      var os = db.transaction(store, 'readwrite').objectStore(store);
+      var rq = os.openCursor(IDBKeyRange.bound(prefix, prefix + '￿'));
+      rq.onsuccess = function(e){
+        var cur = e.target.result;
+        if(cur){ cur.delete(); cur.continue(); } else res();
+      };
+      rq.onerror = function(){ rej(rq.error); };
+    });
+  });
+}
+
+/* --- pdf.js 懒加载（内存→IndexedDB缓存→CDN；沿用旧版验证过的路子） --- */
+var PDFJS_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+var PDFJS_WORKER_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+var _pdfjsReady = null;
+function pdfjsEnsure(){
+  if(_pdfjsReady) return _pdfjsReady;
+  _pdfjsReady = idbGet('kv', 'pdfjs').then(function(cached){
+    if(cached && cached.lib && cached.worker){
+      var s = document.createElement('script'); s.textContent = cached.lib; document.head.appendChild(s);
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(new Blob([cached.worker], { type: 'text/javascript' }));
+      return;
+    }
+    return Promise.all([fetch(PDFJS_URL), fetch(PDFJS_WORKER_URL)]).then(function(rs){
+      if(!rs[0].ok || !rs[1].ok) throw new Error('pdf.js 下载失败');
+      return Promise.all([rs[0].text(), rs[1].text()]);
+    }).then(function(txts){
+      var s = document.createElement('script'); s.textContent = txts[0]; document.head.appendChild(s);
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(new Blob([txts[1]], { type: 'text/javascript' }));
+      idbPut('kv', { lib: txts[0], worker: txts[1], t: Date.now() }, 'pdfjs').catch(function(){});
+    });
+  }).catch(function(e){
+    _pdfjsReady = null;
+    throw new Error('第一次导入需要联网加载PDF阅读组件，请网络好时再试一次。');
+  });
+  return _pdfjsReady;
+}
+function pdfExtractText(buf){
+  return pdfjsEnsure().then(function(){
+    return window.pdfjsLib.getDocument({ data: buf }).promise;
+  }).then(function(doc){
+    var n = doc.numPages, parts = [];
+    var p = Promise.resolve();
+    for(var i = 1; i <= n; i++){
+      (function(pg){
+        p = p.then(function(){
+          return doc.getPage(pg).then(function(page){
+            return page.getTextContent().then(function(tc){
+              parts.push(tc.items.map(function(it){ return it.str; }).join(' '));
+            });
+          });
+        });
+      })(i);
+    }
+    return p.then(function(){ return { pages: n, text: parts.join('\n') }; });
+  });
+}
+
+/* --- AI 认书定级 --- */
+function aiClassify(head, filename){
+  var fallback = { title: filename.replace(/\.pdf$/i, ''), author: '', grade: 'book', gradeBy: 'manual' };
+  if(!(localStorage.getItem('xt_apikey') || '').trim()) return Promise.resolve(fallback);
+  return callAI('你是图书资料识别助手。给你一份PDF的开头，认出：书名/文献标题、作者（认不出留空）、类型——type 只能是这四个之一：指南（学会指南/共识/规范）、期刊（单篇期刊论文/综述/解读）、书籍（整本教材专著）、AI生成（明显是AI写的汇编/笔记）。只回严格JSON {"title":"","author":"","type":""}，不要任何多余的话。',
+    '【文件名】' + filename + '\n【开头】\n' + head, 800
+  ).then(function(txt){
+    var m = txt.match(/\{[\s\S]*\}/);
+    var d = m ? JSON.parse(m[0]) : {};
+    var g = { '指南': 'guide', '期刊': 'journal', '书籍': 'book', 'AI生成': 'ai' }[d.type] || 'book';
+    return { title: (d.title || fallback.title).slice(0, 60), author: d.author || '', grade: g, gradeBy: 'ai' };
+  }).catch(function(){ return fallback; });
+}
+
+/* --- 切片：段落编号发给AI，AI回切点，本地拼装（AI不用照抄原文，省钱又可靠） --- */
+function splitParas(text){
+  return String(text).split(/\n+/).map(function(s){ return s.trim(); }).filter(function(s){ return s.length > 1; });
+}
+function makeBatches(paras, limit){
+  var batches = [], cur = [], len = 0;
+  paras.forEach(function(p, i){
+    if(len + p.length > limit && cur.length){ batches.push(cur); cur = []; len = 0; }
+    cur.push(i); len += p.length;
+  });
+  if(cur.length) batches.push(cur);
+  return batches;
+}
+function coarseSlice(text, startN){
+  /* 本地粗切：没Key/AI失败时用，约2000字一块；startN=全书连续编号起点（v0.2.3修重名） */
+  var paras = splitParas(text), chunks = [], cur = '', n = startN || 1;
+  paras.forEach(function(p){
+    if(cur.length + p.length > 2000 && cur){ chunks.push({ title: '第' + n + '块（本地粗切）', summary: '', text: cur }); cur = ''; n++; }
+    cur += (cur ? '\n' : '') + p;
+  });
+  if(cur) chunks.push({ title: '第' + n + '块（本地粗切）', summary: '', text: cur });
+  return chunks;
+}
+function aiSliceBatch(paras, idxArr, startN){
+  var numbered = idxArr.map(function(pi, k){ return '[' + (k + 1) + '] ' + paras[pi]; }).join('\n');
+  /* v0.3.0 病根修复：kimi-k2.6是思考型，2500额度话说到一半被截断→JSON缺腿
+     （报错"Expected ':' after property name"）。修法：额度2500→8000；
+     JSON损坏自动原样重试一次；仍不行才退粗切。 */
+  function tryOnce(){
+    return callAI('你是切书助手。下面是编了号的段落，把它们按"一个知识点一块"分组切开，每块起中文标题和一句话大白话摘要。只回严格JSON数组 [{"from":1,"to":3,"title":"","summary":""}]（编号用上面方括号里的数字，from/to含两头，所有段落都要分到、不许跳号），不要多余的话。',
+      numbered, 8000, 90000
+    ).then(function(txt){
+      var m = txt.match(/\[[\s\S]*\]/);
+      var arr = m ? JSON.parse(m[0]) : null;
+      if(!Array.isArray(arr) || !arr.length) throw new Error('AI回格式不对');
+      var out = arr.map(function(c){
+        var from = Math.max(1, c.from | 0), to = Math.min(idxArr.length, c.to | 0);
+        if(to < from){ from = 1; to = idxArr.length; }
+        return { title: String(c.title || '未命名').slice(0, 40), summary: String(c.summary || '').slice(0, 120),
+                 text: idxArr.slice(from - 1, to).map(function(pi){ return paras[pi]; }).join('\n') };
+      });
+      out._ai = true;
+      return out;
+    });
+  }
+  return tryOnce().catch(function(e1){
+    return tryOnce().catch(function(){ throw e1; });   /* 重试一次，再不行抛首次原因 */
+  }).catch(function(e){
+    var out = coarseSlice(idxArr.map(function(pi){ return paras[pi]; }).join('\n'), startN || 1);
+    out._ai = false;
+    out._err = aiErrText(e);   /* v0.2.5：记下为什么退粗切 */
+    return out;
+  });
+}
+
+/* --- 导入全流程（全自动：提取→认书→切片→总结） --- */
+/* v0.2.5：进度同时亮在首页和详情页（详情页干活时不能当哑巴）
+   v0.2.9：带秒表——"已干 X 秒，别退出"，它到底动不动一目了然 */
+var _progT0 = 0, _progTimer = null;
+function libProg(t){
+  $('libProg').textContent = t;
+  var d = $('libProgD');
+  if(!d) return;
+  if(t){
+    _progT0 = Date.now();
+    d.style.color = ''; /* v0.3.2：libNote 染过色的话还原 */
+    d.textContent = '⏳ ' + t;
+    d.classList.remove('hidden');
+    if(_progTimer) clearInterval(_progTimer);
+    _progTimer = setInterval(function(){
+      d.textContent = '⏳ ' + t + '（已干 ' + Math.floor((Date.now() - _progT0) / 1000) + ' 秒，别退出）';
+    }, 1000);
+  }else{
+    d.classList.add('hidden'); d.textContent = '';
+    if(_progTimer){ clearInterval(_progTimer); _progTimer = null; }
+  }
+}
+/* v0.2.5：AI 失败原因翻译成人话，记下来给用户看 */
+function aiErrText(e){
+  var m = String((e && e.message) || e || '');
+  if(m.indexOf('超时') >= 0) return 'AI 太久没回话（网络太慢）';
+  if(m.indexOf('401') >= 0) return 'API Key 不对（⚙️设置里检查）';
+  if(m.indexOf('404') >= 0) return '模型名不对或没权限（v0.2.6起会自动换模型重试）';
+  if(m.indexOf('429') >= 0) return 'AI 太忙被限流，稍后再试';
+  if(m.indexOf('402') >= 0 || m.indexOf('余额') >= 0) return 'API 余额不足';
+  if(m.indexOf('Failed to fetch') >= 0 || m.indexOf('NetworkError') >= 0) return '网络断开';
+  return m.slice(0, 60) || '原因不明';
+}
+/* v0.3.2：长驻回话——挂在详情页不走（无秒表），用户看完自己翻页才消失 */
+function libNote(t, kind){
+  var d = $('libProgD'); if(!d) return;
+  if(_progTimer){ clearInterval(_progTimer); _progTimer = null; }
+  if(!t){ d.classList.add('hidden'); d.textContent = ''; return; }
+  d.textContent = t;
+  d.style.color = kind === 'err' ? '#b3261e' : (kind === 'ok' ? '#1a7f37' : '#8a6d1a');
+  d.classList.remove('hidden');
+}
+/* v0.3.2：GitHub 线路故障翻译成人话 */
+function ghErrText(e){
+  var m = String((e && e.message) || e || '');
+  if(m.indexOf('超时') >= 0) return '连不上 GitHub（网络太慢或断网）';
+  if(m.indexOf('401') >= 0) return 'GitHub 令牌不对或过期（⚙️设置里检查）';
+  if(m.indexOf('403') >= 0) return 'GitHub 令牌权限不够，或被限流了（过几分钟再试）';
+  if(m.indexOf('404') >= 0) return '仓库没找到（⚙️设置里检查仓库名）';
+  if(m.indexOf('Failed to fetch') >= 0 || m.indexOf('NetworkError') >= 0) return '网络断开，连不上 GitHub';
+  return m.slice(0, 60) || '原因不明';
+}
+$('btnImportPdf').addEventListener('click', function(){ $('pdfFile').click(); });
+$('pdfFile').addEventListener('change', function(){
+  var files = Array.from($('pdfFile').files || []);
+  $('pdfFile').value = '';
+  if(!files.length) return;
+  var chain = Promise.resolve();
+  files.forEach(function(f){
+    chain = chain.then(function(){ return importOnePdf(f); }).catch(function(e){
+      showMsg($('libMsg'), '❌ ' + f.name + '：' + e.message, 'err');
+    });
+  });
+  chain.then(function(){ libProg(''); renderLib(); });
+});
+function importOnePdf(file){
+  return importPdfCore(file.name, file.size, function(){ return file.arrayBuffer(); });
+}
+/* 统一流水线：系统选择器和授权文件夹两条路都走这里 */
+function importPdfCore(name, size, bufFn){
+  var fp = name + '_' + size;
+  if(loadLib().some(function(x){ return x.fp === fp; })){
+    showMsg($('libMsg'), '《' + name + '》导入过，跳过（防重复花钱）。', 'ok');
+    return Promise.resolve();
+  }
+  libProg('📖 ' + name + '：加载PDF组件…');
+  return bufFn().then(function(buf){
+    return pdfExtractText(buf);
+  }).then(function(r){
+    var text = r.text || '';
+    if(text.replace(/\s/g, '').length < 100) throw new Error('扫描图片版，读不出文字，跳过（不花钱）');
+    libProg('🤖 ' + name + '：AI 认书定级…');
+    return aiClassify(text.slice(0, 3000), name).then(function(meta){
+      return { text: text, pages: r.pages, meta: meta };
+    });
+  }).then(function(r){
+    var item = { id: uid(), title: r.meta.title, author: r.meta.author, grade: r.meta.grade,
+                 gradeBy: r.meta.gradeBy, filename: name, size: size, fp: fp,
+                 chars: r.text.length, pages: r.pages, addedAt: Date.now(),
+                 brief: '', chunks: [], done: false };
+    var lib = loadLib(); lib.unshift(item); saveLib(lib); renderLib();
+    return idbPut('kv', r.text, 'raw_' + item.id).then(function(){ return sliceLibItem(item.id, r.text); });
+  });
+}
+/* --- 从授权文件夹取PDF（v0.2.2，仅壳APP显示；绕开系统文件选择器） --- */
+function b64ToBuf(b64){
+  var bin = atob(String(b64).replace(/\s+/g, ''));
+  var bytes = new Uint8Array(bin.length);
+  for(var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes.buffer;
+}
+function shelfReady(){ return window.LearnShell && typeof window.LearnShell.listFiles === 'function'; }
+if(shelfReady()) $('btnImportShelf').classList.remove('hidden');
+$('btnImportShelf').addEventListener('click', function(){
+  var panel = $('shelfPanel');
+  panel.classList.toggle('hidden');
+  if(panel.classList.contains('hidden')) return;
+  var files = [];
+  try{ files = JSON.parse(window.LearnShell.listFiles() || '[]'); }catch(e){}
+  var pdfs = files.filter(function(f){ return /\.pdf$/i.test(f.name); });
+  var box = $('shelfList'); box.innerHTML = '';
+  if(!pdfs.length){ box.innerHTML = '<div class="hint">授权文件夹里没有PDF。先用文件桥「坚果云直通车」取下来，或从坚果云APP同步进来。</div>'; return; }
+  pdfs.forEach(function(f){
+    var row = document.createElement('div');
+    row.style.cssText = 'padding:8px 2px; border-bottom:1px dashed #eee4d4; font-size:15px;';
+    row.innerHTML = '<label><input type="checkbox" class="shelf-ck" data-n="' + esc(f.name) + '" data-s="' + f.size +
+      '" style="width:20px;height:20px;vertical-align:-4px;"> ' + esc(f.name) +
+      ' <span style="font-size:12px;color:#b5a68c;">' + (f.size > 1048576 ? (f.size / 1048576).toFixed(1) + 'MB' : Math.round(f.size / 1024) + 'KB') + '</span></label>';
+    box.appendChild(row);
+  });
+});
+$('btnShelfGo').addEventListener('click', function(){
+  var cks = document.querySelectorAll('.shelf-ck:checked');
+  if(!cks.length){ toast('先打勾要导入的PDF', 2500); return; }
+  $('shelfPanel').classList.add('hidden');
+  var items = Array.from(cks).map(function(c){ return { name: c.getAttribute('data-n'), size: parseInt(c.getAttribute('data-s') || '0') }; });
+  var chain = Promise.resolve();
+  items.forEach(function(it){
+    chain = chain.then(function(){
+      libProg('📖 ' + it.name + '：从文件夹读取…');
+      var b64 = window.LearnShell.readFile(it.name);
+      if(!b64) throw new Error('读不到文件内容');
+      return importPdfCore(it.name, it.size || b64.length, function(){ return Promise.resolve(b64ToBuf(b64)); });
+    }).catch(function(e){
+      showMsg($('libMsg'), '❌ ' + it.name + '：' + e.message, 'err');
+    });
+  });
+  chain.then(function(){ libProg(''); renderLib(); });
+});
+function sliceLibItem(libId, text){
+  var paras = splitParas(text);
+  var batches = makeBatches(paras, 15000);   /* v0.3.0：6000→15000，批数砍掉一半多 */
+  var hasKey = !!(localStorage.getItem('xt_apikey') || '').trim();
+  var allChunks = [];
+  var anyCoarse = false;
+  var firstErr = '';
+  var chain = Promise.resolve();
+  batches.forEach(function(idxArr, bi){
+    chain = chain.then(function(){
+      libProg('✂️ 《' + (getLib(libId) || {}).title + '》切片中 第' + (bi + 1) + '批/共' + batches.length + '批…');
+      var pr;
+      if(hasKey){
+        pr = aiSliceBatch(paras, idxArr, allChunks.length + 1);
+      }else{
+        var co = coarseSlice(idxArr.map(function(pi){ return paras[pi]; }).join('\n'), allChunks.length + 1);
+        co._ai = false;
+        pr = Promise.resolve(co);
+      }
+      return pr.then(function(chs){
+        if(!chs._ai){ anyCoarse = true; if(!firstErr && chs._err) firstErr = chs._err; }
+        var storeChain = Promise.resolve();
+        chs.forEach(function(c){
+          var chNo = allChunks.length + 1;
+          allChunks.push({ ch: chNo, title: c.title, summary: c.summary });
+          storeChain = storeChain.then(function(){
+            return idbPut('chunks', { id: libId + '_' + chNo, text: c.text });
+          });
+        });
+        return storeChain.then(function(){
+          var lib = loadLib();
+          var it = lib.filter(function(x){ return x.id === libId; })[0];
+          if(it){ it.chunks = allChunks.slice(); it.coarse = anyCoarse;
+                  it.lastErr = anyCoarse ? firstErr : ''; saveLib(lib); renderLib(); }
+        });
+      });
+    });
+  });
+  return chain.then(function(){
+    /* 切完：AI 五段式总结 */
+    var it = getLib(libId); if(!it) return;
+    if(hasKey){
+      libProg('📝 《' + it.title + '》AI 写总结…');
+      return libWriteBrief(libId, text);
+    }else{
+      var lib = loadLib(); var it4 = lib.filter(function(x){ return x.id === libId; })[0];
+      if(it4){ it4.brief = '（没填 API Key，未生成 AI 总结）'; it4.done = true; saveLib(lib); }
+    }
+  }).then(function(){
+    libProg('✅ 《' + (getLib(libId) || {}).title + '》入库完成');
+    /* v0.2.3：粗切过的书保留原文，方便网络好时「重新AI切片」；AI切成的才删原文 */
+    var it = getLib(libId);
+    if(it && it.coarse) return;
+    return idbDelPrefix('kv', 'raw_' + libId).catch(function(){});
+  }).then(function(){ renderLib(); });
+}
+function libWriteBrief(libId, text){
+  return callAI('你是医学资料总结助手。用中文大白话分五段总结这份资料：①这是什么 ②核心观点 ③关键数字/剂量/标准 ④临床怎么用 ⑤注意事项。markdown，段落加粗小标题开头，别客套。',
+    '【资料名】' + (getLib(libId) || {}).title + '\n【正文开头】\n' + String(text).slice(0, 4000), 4000, 60000
+  ).then(function(brief){
+    var lib = loadLib(); var it2 = lib.filter(function(x){ return x.id === libId; })[0];
+    if(it2){ it2.brief = brief; it2.done = true; saveLib(lib); }
+  }).catch(function(e){
+    var lib = loadLib(); var it3 = lib.filter(function(x){ return x.id === libId; })[0];
+    if(it3){ it3.brief = '（总结生成失败，不影响使用）'; it3.done = true;
+             it3.lastErr = aiErrText(e); saveLib(lib); }   /* v0.2.5：记下失败原因 */
+  });
+}
+
+/* --- 资料列表 --- */
+function renderLib(){
+  var lib = loadLib();
+  var kw = ($('libSearch').value || '').trim().toLowerCase();
+  $('libSum').textContent = '📚 资料库（' + lib.length + '份）';
+  var box = $('libList');
+  var list = lib.filter(function(x){
+    return !kw || x.title.toLowerCase().indexOf(kw) >= 0 ||
+      (x.chunks || []).some(function(c){ return (c.title + c.summary).toLowerCase().indexOf(kw) >= 0; });
+  });
+  if(!list.length){ box.innerHTML = '<div class="hint">' + (lib.length ? '没搜到。' : '还没有资料，点上方「导入PDF」。') + '</div>'; return; }
+  box.innerHTML = '';
+  list.forEach(function(x){
+    var row = document.createElement('div');
+    row.className = 'lib-row';
+    row.innerHTML = '<span class="gtag">' + (GRADES[x.grade] || '📘') + '</span>' +
+      '<div class="t">' + esc(x.title) + (x.done ? '' : ' <span style="color:#b08a4a;">（切片中/未完）</span>') + '</div>' +
+      '<div class="d">' + (x.chunks || []).length + '块</div>';
+    row.querySelector('.t').addEventListener('click', function(){ openLib(x.id); });
+    box.appendChild(row);
+  });
+}
+$('libSearch').addEventListener('input', renderLib);
+
+/* --- 资料详情 --- */
+var curLibId = null;
+/* v0.2.4：切块标题查重（老书识别用） */
+function libHasDupTitles(x){
+  var seen = {}, dup = false;
+  (x.chunks || []).forEach(function(c){
+    var t = String(c.title || '').replace(/\s/g, '');
+    if(seen[t]) dup = true; else seen[t] = 1;
+  });
+  return dup;
+}
+/* v0.2.4：取全书原文——优先留着的 raw_，没有就把所有切块正文按序拼回来（老书的救命路） */
+function libFullText(id){
+  return idbGet('kv', 'raw_' + id).then(function(raw){
+    if(raw) return raw;
+    var x = getLib(id); if(!x) return '';
+    var out = '', chain = Promise.resolve();
+    (x.chunks || []).forEach(function(c){
+      chain = chain.then(function(){
+        return idbGet('chunks', id + '_' + c.ch).then(function(d){
+          if(d) out += (out ? '\n' : '') + d.text;
+        });
+      });
+    });
+    return chain.then(function(){ return out; });
+  });
+}
+function openLib(id){
+  var x = getLib(id); if(!x) return;
+  curLibId = id;
+  $('libTitle').textContent = x.title;
+  $('libGradeSel').value = x.grade;
+  $('libMeta').textContent = (x.author ? x.author + ' · ' : '') + Math.round((x.chars || 0) / 10000) + '万字 · ' + (x.chunks || []).length + '块';
+  $('libBrief').innerHTML = renderMd(x.brief || '（暂无总结）');
+  /* v0.2.3 补救条：粗切过/总结失败时亮出重来按钮
+     v0.2.4：老版本导入的书没有 coarse 标记——切块标题有重名（一堆"第1段"）也算没切好 */
+  var needSlice = !!x.coarse || libHasDupTitles(x);
+  var needBrief = !x.brief || x.brief.indexOf('生成失败') >= 0 || x.brief.indexOf('未生成') >= 0;
+  /* v0.3.1：云端代办状态——送上去的书显示"机器人正在切"+📥取回 */
+  if(x.cloud === 'sent'){
+    $('libRetryBar').classList.remove('hidden');
+    $('libRetryText').textContent = '☁️ 已送上云端，机器人正在切（一般几分钟）。切好了点「📥 取回切片」：';
+    $('btnReSlice').style.display = 'none';
+    $('btnReBrief').style.display = 'none';
+    $('btnCloudSlice').style.display = 'none';
+    $('btnCloudFetch').style.display = '';
+  }else if(needSlice || needBrief){
+    $('libRetryBar').classList.remove('hidden');
+    /* v0.2.5：文案说准 + 带上次失败原因 */
+    var txt = needSlice
+      ? (x.coarse ? '这份资料 AI 没切成（用的本地粗切），可以重来：' : '这份资料切块重名（老版本切的），可以重来：')
+      : '总结没生成，可以重来：';
+    if(x.lastErr) txt += '（上次原因：' + x.lastErr + '）';
+    $('libRetryText').textContent = txt;
+    $('btnReSlice').style.display = needSlice ? '' : 'none';
+    $('btnReBrief').style.display = needBrief ? '' : 'none';
+    /* 云端按钮：要重切且配好了GitHub才亮 */
+    $('btnCloudSlice').style.display = (needSlice && ghReady()) ? '' : 'none';
+    $('btnCloudFetch').style.display = 'none';
+  }else{
+    $('libRetryBar').classList.add('hidden');
+  }
+  $('libAskCard').classList.add('hidden');
+  $('libAskAns').innerHTML = ''; $('btnAnsToNote').classList.add('hidden');
+  var box = $('chunkList'); box.innerHTML = '';
+  (x.chunks || []).forEach(function(c){
+    var row = document.createElement('div');
+    row.className = 'chunk-row';
+    row.innerHTML = '<button class="cb">📝 变笔记</button>' +
+      '<div class="ct">' + c.ch + '. ' + esc(c.title) + '</div>' +
+      (c.summary ? '<div class="cs">' + esc(c.summary) + '</div>' : '');
+    var bodyEl = null;
+    row.querySelector('.ct').addEventListener('click', function(){
+      if(bodyEl){ bodyEl.remove(); bodyEl = null; return; }
+      idbGet('chunks', id + '_' + c.ch).then(function(d){
+        bodyEl = document.createElement('div');
+        bodyEl.className = 'chunk-body';
+        bodyEl.textContent = d ? d.text : '（正文丢失）';
+        row.appendChild(bodyEl);
+      });
+    });
+    row.querySelector('.cb').addEventListener('click', function(){
+      idbGet('chunks', id + '_' + c.ch).then(function(d){
+        var n = makeNote(c.title, '# ' + c.title + '\n\n> 📖 来源：[[' + x.title + ']]\n\n' + (d ? d.text : ''));
+        if(n) openDetail(n.id);
+      });
+    });
+    box.appendChild(row);
+  });
+  showPage('lib');
+}
+$('btnLibBack').addEventListener('click', function(){ showPage('home'); renderLib(); });
+$('libGradeSel').addEventListener('change', function(){
+  var lib = loadLib();
+  var x = lib.filter(function(it){ return it.id === curLibId; })[0]; if(!x) return;
+  x.grade = $('libGradeSel').value; x.gradeBy = 'manual';
+  saveLib(lib); renderLib();
+  toast('级别已改：' + GRADES[x.grade], 1500);
+});
+$('btnLibDel').addEventListener('click', function(){
+  var x = getLib(curLibId); if(!x) return;
+  if(!confirm('确定删除《' + x.title + '》？（切块一起删）')) return;
+  saveLib(loadLib().filter(function(it){ return it.id !== curLibId; }));
+  idbDelPrefix('chunks', curLibId + '_').catch(function(){});
+  showPage('home'); renderLib();
+  toast('🗑 已删除', 1500);
+});
+
+/* --- v0.2.3 补救按钮：重新AI切片 / 重新生成总结 --- */
+$('btnReSlice').addEventListener('click', function(){
+  var id = curLibId; var x = getLib(id); if(!x) return;
+  if(!(localStorage.getItem('xt_apikey') || '').trim()){ toast('请先在 ⚙️设置 里填 API Key', 2500); return; }
+  if(!confirm('用 AI 重新切《' + x.title + '》？旧切块会被替换。')) return;
+  libProg('正在拼回原文…');   /* v0.2.9：点下去立刻有字 */
+  $('btnReSlice').textContent = '⏳ 切片中…';
+  libFullText(id).then(function(raw){
+    if(!raw){ libProg(''); $('btnReSlice').textContent = '🤖 重新AI切片'; toast('正文丢了，请删除后重新导入这份 PDF', 3000); return; }
+    $('btnReSlice').disabled = true;
+    idbDelPrefix('chunks', id + '_').then(function(){
+      var lib = loadLib(); var it = lib.filter(function(t){ return t.id === id; })[0];
+      if(it){ it.chunks = []; it.coarse = false; it.done = false; saveLib(lib); }
+      return sliceLibItem(id, raw);
+    }).then(function(){
+      $('btnReSlice').disabled = false;
+      $('btnReSlice').textContent = '🤖 重新AI切片';
+      libProg('');
+      var it = getLib(id);
+      openLib(id);
+      /* v0.2.5：干完必须回话——切成没切成、为什么，说清楚 */
+      if(it && it.coarse){
+        toast('AI 还是没接上，先用的本地粗切。原因：' + (it.lastErr || '不明') + '。网络好时再点一次。', 5000);
+      }else{
+        toast('✅ AI 切片完成，总结也写好了', 3000);
+      }
+    }).catch(function(){
+      $('btnReSlice').disabled = false;
+      $('btnReSlice').textContent = '🤖 重新AI切片';
+      libProg('');
+      toast('重新切片没成功，稍后再试', 2500);
+    });
+  });
+});
+$('btnReBrief').addEventListener('click', function(){
+  var id = curLibId; var x = getLib(id); if(!x) return;
+  if(!(localStorage.getItem('xt_apikey') || '').trim()){ toast('请先在 ⚙️设置 里填 API Key', 2500); return; }
+  $('btnReBrief').disabled = true;
+  $('btnReBrief').textContent = '⏳ 写总结中…';
+  libProg('正在拼正文…');
+  libFullText(id).then(function(full){
+    return String(full || '').slice(0, 4000);
+  }).then(function(text){
+    if(!text){ libProg(''); $('btnReBrief').disabled = false; $('btnReBrief').textContent = '🤖 重新生成总结'; toast('没拿到正文，没法重写总结', 2500); return; }
+    libProg('📝 重新生成总结…');
+    return libWriteBrief(id, text);
+  }).then(function(){
+    $('btnReBrief').disabled = false;
+    $('btnReBrief').textContent = '🤖 重新生成总结';
+    libProg('');
+    var it = getLib(id);
+    openLib(id);
+    /* v0.2.5：重写成败明说 */
+    if(it && it.brief && it.brief.indexOf('生成失败') >= 0){
+      toast('总结还是没写成。原因：' + (it.lastErr || '不明') + '，稍后再试。', 5000);
+    }else{
+      toast('✅ 总结已重写', 2500);
+    }
+  }).catch(function(){
+    $('btnReBrief').disabled = false;
+    $('btnReBrief').textContent = '🤖 重新生成总结';
+    libProg('');
+    toast('重写没成功，稍后再试', 2500);
+  });
+});
+
+/* --- v0.3.1 云端代办切片：送上去→Actions机器人自动切→取回拼装 --- */
+$('btnCloudSlice').addEventListener('click', function(){
+  var id = curLibId; var x = getLib(id); if(!x) return;
+  if(!ghReady()){ libNote('❌ 还没配 GitHub 云备份——请先在 ⚙️设置 里把 GitHub 三项填好保存，再回来点。', 'err'); return; }
+  if(!confirm('把《' + x.title + '》原文送上云端（您的私有仓库），机器人自动切？\n切好您再点「📥 取回切片」。')) return;
+  $('btnCloudSlice').disabled = true;
+  libProg('📦 正在拼回原文…');
+  libFullText(id).then(function(raw){
+    if(!raw){ libProg(''); $('btnCloudSlice').disabled = false; libNote('❌ 正文丢了，没法送云端。这条一直挂着——截图给小涛看。', 'err'); return; }
+    libProg('☁️ 正在送上云端…');
+    return ghPutFile('todo/slice_' + id + '.txt', raw, '云端代办切片：' + x.title).then(function(){
+      return ghPutFile('todo/slice_' + id + '.meta.json', JSON.stringify({ id: id, title: x.title }), '切片说明');
+    }).then(function(){
+      var lib = loadLib(); var it = lib.filter(function(t){ return t.id === id; })[0];
+      if(it){ it.cloud = 'sent'; saveLib(lib); }
+      libProg(''); $('btnCloudSlice').disabled = false;
+      openLib(id);
+      libNote('✅ 上传成功！原文已送到云端仓库，机器人接手切了。过几分钟点「📥 取回切片」。', 'ok');
+    });
+  }).catch(function(e){
+    libProg(''); $('btnCloudSlice').disabled = false;
+    libNote('❌ 没送上去：' + ghErrText(e) + '。线路修好后再点一次「☁️ 送云端自动切」就行，书不会丢。', 'err');
+  });
+});
+$('btnCloudFetch').addEventListener('click', function(){
+  var id = curLibId; var x = getLib(id); if(!x) return;
+  $('btnCloudFetch').disabled = true;
+  libProg('📥 看看机器人切好没有…');
+  ghGetFile('done/slice_' + id + '.json').then(function(s){
+    if(!s){ libProg(''); $('btnCloudFetch').disabled = false;
+      libNote('☁️ 联系上了，仓库线路通畅——机器人还在切，没切完。过一会儿再点一次；厚书可能要十几二十分钟。', 'info'); return; }
+    var data = JSON.parse(s);
+    return libFullText(id).then(function(raw){
+      var paras = splitParas(raw);
+      if(data.paras && data.paras !== paras.length){
+        libProg(''); $('btnCloudFetch').disabled = false;
+        libNote('⚠️ 取回来的东西对不上：云端按 ' + data.paras + ' 个段落切的，本机拼出 ' + paras.length + ' 段。先点「🤖 重新AI切片」，或截图给小涛看。', 'err'); return;
+      }
+      libProg('🔧 正在拼装切块…');
+      return idbDelPrefix('chunks', id + '_').then(function(){
+        var chain = Promise.resolve();
+        (data.chunks || []).forEach(function(c, i){
+          chain = chain.then(function(){
+            var text = paras.slice(c.from - 1, c.to).join('\n');
+            return idbPut('chunks', { id: id + '_' + (i + 1), text: text });
+          });
+        });
+        return chain.then(function(){
+          var lib = loadLib(); var it = lib.filter(function(t){ return t.id === id; })[0];
+          if(it){
+            it.chunks = data.chunks.map(function(c, i){ return { ch: i + 1, title: c.title, summary: c.summary || '' }; });
+            it.coarse = !!data.coarse;
+            if(data.brief) it.brief = data.brief;
+            it.done = true; it.cloud = '';
+            it.lastErr = data.coarse ? '云端部分批次 AI 没切成（粗切保底）' : '';
+            saveLib(lib);
+          }
+          /* 收尾：删掉云端结果文件；全AI切成的话原文也不留了 */
+          return ghDelFile('done/slice_' + id + '.json', '切片已取回').catch(function(){}).then(function(){
+            if(!data.coarse) return idbDelPrefix('kv', 'raw_' + id).catch(function(){});
+          });
+        });
+      }).then(function(){
+        libProg(''); $('btnCloudFetch').disabled = false;
+        openLib(id);
+        libNote(data.coarse
+          ? '📥 取回来了，但有部分批次 AI 没切成（粗切保底）。可以点「☁️ 送云端自动切」再送一次，或用着先。'
+          : '✅ 取回来了！AI 切好的 ' + (data.chunks || []).length + ' 块已拼装进书库，总结也写好了。', 'ok');
+      });
+    });
+  }).catch(function(e){
+    libProg(''); $('btnCloudFetch').disabled = false;
+    libNote('❌ 取回失败：' + ghErrText(e) + '。线路修好后再点一次「📥 取回切片」，云端的结果还在，不会丢。', 'err');
+  });
+});
+
+/* --- 问这份资料（挑块→AI答；🟠警示+交叉对比沿用旧版规矩） --- */
+var lastAsk = null;
+$('btnLibAsk').addEventListener('click', function(){ $('libAskCard').classList.remove('hidden'); $('libAskCard').scrollIntoView({ block: 'start' }); });
+$('btnLibAskGo').addEventListener('click', function(){
+  var x = getLib(curLibId); if(!x) return;
+  var q = $('libAskQ').value.trim();
+  if(!q){ showMsg($('libAskMsg'), '先写问题。', 'err'); return; }
+  $('btnLibAskGo').disabled = true;
+  showMsg($('libAskMsg'), '🔍 正在挑相关切块…', 'ok');
+  /* 问题二字组打分挑块 */
+  var grams = [];
+  for(var i = 0; i < q.length - 1; i++) grams.push(q.slice(i, i + 2));
+  var scored = (x.chunks || []).map(function(c){
+    var hay = c.title + ' ' + c.summary;
+    var s = 0;
+    grams.forEach(function(g){ if(hay.indexOf(g) >= 0) s++; });
+    return { c: c, s: s };
+  }).filter(function(o){ return o.s > 0; }).sort(function(a, b){ return b.s - a.s; });
+  if(!scored.length) scored = (x.chunks || []).slice(0, 3).map(function(c){ return { c: c, s: 0 }; });
+  var picks = scored.slice(0, 5);
+  var chain = Promise.resolve();
+  var texts = [];
+  picks.forEach(function(p){
+    chain = chain.then(function(){
+      return idbGet('chunks', x.id + '_' + p.c.ch).then(function(d){
+        texts.push('【切块' + p.c.ch + '·' + p.c.title + '】\n' + (d ? d.text : ''));
+      });
+    });
+  });
+  chain.then(function(){
+    showMsg($('libAskMsg'), '🤖 AI 回答中…', 'ok');
+    var warn = x.grade === 'ai' ? '注意：这份资料是"AI生成·待核"级别，回答开头必须先写一行 ⚠️ 提醒：本回答来自AI生成资料，请与正规指南核对后再用。\n' : '';
+    return callAI('你是医学问答助手。只根据给你的资料切块回答问题，切块里没有的就明说"这份资料没提到"。回答用中文大白话，末尾注明引用了哪几个切块。' + warn,
+      '【资料】《' + x.title + '》（' + (GRADES[x.grade] || '') + '）\n【问题】' + q + '\n\n' + texts.join('\n\n'), 2000);
+  }).then(function(ans){
+    $('btnLibAskGo').disabled = false;
+    $('libAskMsg').className = 'msg';
+    $('libAskAns').innerHTML = renderMd(ans);
+    $('btnAnsToNote').classList.remove('hidden');
+    lastAsk = { q: q, ans: ans, libTitle: x.title };
+  }).catch(function(e){
+    $('btnLibAskGo').disabled = false;
+    showMsg($('libAskMsg'), e.message, 'err');
+  });
+});
+$('btnAnsToNote').addEventListener('click', function(){
+  if(!lastAsk) return;
+  var t = '问：' + lastAsk.q.slice(0, 24);
+  var n = makeNote(t, '# ' + t + '\n\n> 📖 资料：[[' + lastAsk.libTitle + ']]\n\n**问：** ' + lastAsk.q + '\n\n**答：**\n' + lastAsk.ans);
+  if(n) openDetail(n.id);
+});
+
+/* ==================== 启动 ==================== */
+loadSettings();
+billRender();
+renderList();
+renderLib();
+setTimeout(function(){ ghSelfCheck(false); }, 3000);
+})();
+</script>
+</body>
+</html>
