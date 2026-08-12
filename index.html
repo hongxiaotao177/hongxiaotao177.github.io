@@ -2,6 +2,10 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录：
+    v1.3.1 2026-08-12 自检提示不写死个数：「正在检查N个软件」「N个软件都是最新版」的 N
+      改成 Object.keys(SUITE).length 自动数；壳APP卡片文案同步去写死。
+      踩坑：之前"五个"是写死文案，小涛笔记入编成六个后提示露馅——以后涉及成员数量的
+      文案一律从 SUITE 注册表现数，不许写死。
     v1.3.0 2026-08-11 小涛笔记入编第六位成员：SUITE注册表+CUR加xiaotao(0，未装)，学习记录区
       置顶新卡片；软件自检读 version-xiaotao.json（只认自己的版本文件）。
     v1.0.0 2026-07 初版：四张卡片+资料存档占位。
@@ -138,7 +142,7 @@
 
   <a class="card" id="apkCard" href="https://github.com/hongxiaotao177/xuexi-backup/releases/download/shell-v1.0.5/LearnShell-v1.0.5.apk">
     <h2>📱 学习套装·壳APP（推荐）</h2>
-    <div class="desc">把五个软件装进一个APP：文件夹授权一次永久有效；打开主界面就自动更新，不用管。点我下载安装包（华为提示"未知来源"点允许即可）。iPad不适用。</div>
+    <div class="desc">把整套软件装进一个APP（成员加了自动跟着装）：文件夹授权一次永久有效；打开主界面就自动更新，不用管。点我下载安装包（华为提示"未知来源"点允许即可）。iPad不适用。</div>
     <div class="meta"><span class="tag">APP安装包</span><span class="tag">v1.0.5</span></div>
   </a>
 
@@ -230,7 +234,7 @@ function ghHeaders(){ var c=ghCfg(); return {"Authorization":"token "+c.tok, "Ac
   var H={"Authorization":"token "+c.tok, "Accept":"application/vnd.github+json"};
   var keys=Object.keys(SUITE);
   var updated=[], failed=[];
-  updMsg("🔍 正在检查五个软件有没有新版…");
+  updMsg("🔍 正在检查" + keys.length + "个软件有没有新版…");
   function fetchJson(name){
     return fetch(base+encodeURIComponent(name), {headers:H}).then(function(r){
       if(!r.ok) throw new Error("HTTP "+r.status);
@@ -280,7 +284,7 @@ function ghHeaders(){ var c=ghCfg(); return {"Authorization":"token "+c.tok, "Ac
       updMsg("⚠️ 有新版但下载没成功："+failed.join("、")+"\n不影响使用，下次打开会再试。");
       setTimeout(function(){ document.getElementById("updLine").style.display="none"; }, 6000);
     }else{
-      updMsg("✅ 五个软件都是最新版");
+      updMsg("✅ " + keys.length + "个软件都是最新版");
       setTimeout(function(){ document.getElementById("updLine").style.display="none"; }, 2500);
     }
   }
