@@ -9,6 +9,10 @@
   小涛笔记（学习笔记2代）· 单文件版
 ==========================================================
   修改记录：
+   v0.2.5 2026-08-12 干活不当哑巴：①进度同时亮在首页和详情页（libProgD），
+        重切/重写结束必须 toast 回话——切成没切成、为什么；②AI 失败原因
+        翻译成人话记下来（lastErr：超时/Key不对/限流/余额/断网），补救条上写明
+        "上次原因"；③切片单批超时 60秒→90秒（手机5G 6000字+2500字60秒仍偏紧）。
    v0.2.4 2026-08-12 补救老书：v0.2.3 只认 coarse 标记，老版本导入的书没挂标记，
         补救条不亮「重新AI切片」。修法：切块标题查重也算没切好（libHasDupTitles）；
         原文统一走 libFullText——优先留着的 raw_，没有就把所有切块正文按序拼回全书，
@@ -119,7 +123,7 @@
 </style>
 </head>
 <body>
-<header>📒 小涛笔记<span class="ver">v0.2.4</span></header>
+<header>📒 小涛笔记<span class="ver">v0.2.5</span></header>
 <div class="page">
 
   <div id="updBar" class="hidden">
@@ -225,7 +229,7 @@
   <details class="card">
     <summary>📋 关于 / Obsidian 搬家说明</summary>
     <div class="kv" style="margin-top:6px;">
-      <b>版本：</b>v0.2.4（2026-08-12）老书也能重新切片（切块重名自动认出来，切块正文拼回全书）；v0.2.3 修"切块重名+总结失败"；v0.2.0 二期资料库。<br><br>
+      <b>版本：</b>v0.2.5（2026-08-12）干活有回话（详情页看进度，成败+原因明说，切片超时放宽90秒）；v0.2.4 老书也能重新切片；v0.2.0 二期资料库。<br><br>
       <b>⭐ 头一条铁律（Obsidian 搬家）：</b>小涛笔记里所有内容的<b>真身是标准 Markdown 文件</b>，
       全部存在 GitHub 仓库的 <b>vault/</b> 区——那就是一座现成的 Obsidian 仓库。<br>
       <b>搬家方法：</b>把仓库里 vault/ 文件夹下载到电脑/手机（或坚果云同步它），
@@ -292,6 +296,7 @@
       <span class="hint" id="libMeta" style="display:inline; margin-left:8px;"></span>
     </div>
     <div class="md-body" id="libBrief" style="font-size:15px; background:#faf6ec; border-radius:10px; padding:10px 12px;"></div>
+    <div id="libProgD" class="hidden" style="margin-top:8px; font-size:14px; color:#8a6d1a;"></div>
     <div id="libRetryBar" class="hidden" style="background:#fff8e8; border:1px solid #e8c96a; border-radius:10px; padding:8px 10px; margin-top:8px; font-size:14px;">
       <span id="libRetryText"></span>
       <button class="btn secondary" id="btnReSlice" style="padding:6px 10px; font-size:13px;">🤖 重新AI切片</button>
@@ -324,7 +329,7 @@
 'use strict';
 (function(){
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.2.4';
+var SW_VERSION = '0.2.5';
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
@@ -993,7 +998,7 @@ function coarseSlice(text, startN){
 function aiSliceBatch(paras, idxArr, startN){
   var numbered = idxArr.map(function(pi, k){ return '[' + (k + 1) + '] ' + paras[pi]; }).join('\n');
   return callAI('你是切书助手。下面是编了号的段落，把它们按"一个知识点一块"分组切开，每块起中文标题和一句话大白话摘要。只回严格JSON数组 [{"from":1,"to":3,"title":"","summary":""}]（编号用上面方括号里的数字，from/to含两头，所有段落都要分到、不许跳号），不要多余的话。',
-    numbered, 2500, 60000
+    numbered, 2500, 90000
   ).then(function(txt){
     var m = txt.match(/\[[\s\S]*\]/);
     var arr = m ? JSON.parse(m[0]) : null;
@@ -1006,15 +1011,31 @@ function aiSliceBatch(paras, idxArr, startN){
     });
     out._ai = true;
     return out;
-  }).catch(function(){
+  }).catch(function(e){
     var out = coarseSlice(idxArr.map(function(pi){ return paras[pi]; }).join('\n'), startN || 1);
     out._ai = false;
+    out._err = aiErrText(e);   /* v0.2.5：记下为什么退粗切 */
     return out;
   });
 }
 
 /* --- 导入全流程（全自动：提取→认书→切片→总结） --- */
-function libProg(t){ $('libProg').textContent = t; }
+/* v0.2.5：进度同时亮在首页和详情页（详情页干活时不能当哑巴） */
+function libProg(t){
+  $('libProg').textContent = t;
+  var d = $('libProgD');
+  if(d){ d.textContent = t; d.classList.toggle('hidden', !t); }
+}
+/* v0.2.5：AI 失败原因翻译成人话，记下来给用户看 */
+function aiErrText(e){
+  var m = String((e && e.message) || e || '');
+  if(m.indexOf('超时') >= 0) return 'AI 太久没回话（网络太慢）';
+  if(m.indexOf('401') >= 0) return 'API Key 不对（⚙️设置里检查）';
+  if(m.indexOf('429') >= 0) return 'AI 太忙被限流，稍后再试';
+  if(m.indexOf('402') >= 0 || m.indexOf('余额') >= 0) return 'API 余额不足';
+  if(m.indexOf('Failed to fetch') >= 0 || m.indexOf('NetworkError') >= 0) return '网络断开';
+  return m.slice(0, 60) || '原因不明';
+}
 $('btnImportPdf').addEventListener('click', function(){ $('pdfFile').click(); });
 $('pdfFile').addEventListener('change', function(){
   var files = Array.from($('pdfFile').files || []);
@@ -1108,6 +1129,7 @@ function sliceLibItem(libId, text){
   var hasKey = !!(localStorage.getItem('xt_apikey') || '').trim();
   var allChunks = [];
   var anyCoarse = false;
+  var firstErr = '';
   var chain = Promise.resolve();
   batches.forEach(function(idxArr, bi){
     chain = chain.then(function(){
@@ -1121,7 +1143,7 @@ function sliceLibItem(libId, text){
         pr = Promise.resolve(co);
       }
       return pr.then(function(chs){
-        if(!chs._ai) anyCoarse = true;
+        if(!chs._ai){ anyCoarse = true; if(!firstErr && chs._err) firstErr = chs._err; }
         var storeChain = Promise.resolve();
         chs.forEach(function(c){
           var chNo = allChunks.length + 1;
@@ -1133,7 +1155,8 @@ function sliceLibItem(libId, text){
         return storeChain.then(function(){
           var lib = loadLib();
           var it = lib.filter(function(x){ return x.id === libId; })[0];
-          if(it){ it.chunks = allChunks.slice(); it.coarse = anyCoarse; saveLib(lib); renderLib(); }
+          if(it){ it.chunks = allChunks.slice(); it.coarse = anyCoarse;
+                  it.lastErr = anyCoarse ? firstErr : ''; saveLib(lib); renderLib(); }
         });
       });
     });
@@ -1162,9 +1185,10 @@ function libWriteBrief(libId, text){
   ).then(function(brief){
     var lib = loadLib(); var it2 = lib.filter(function(x){ return x.id === libId; })[0];
     if(it2){ it2.brief = brief; it2.done = true; saveLib(lib); }
-  }).catch(function(){
+  }).catch(function(e){
     var lib = loadLib(); var it3 = lib.filter(function(x){ return x.id === libId; })[0];
-    if(it3){ it3.brief = '（总结生成失败，不影响使用）'; it3.done = true; saveLib(lib); }
+    if(it3){ it3.brief = '（总结生成失败，不影响使用）'; it3.done = true;
+             it3.lastErr = aiErrText(e); saveLib(lib); }   /* v0.2.5：记下失败原因 */
   });
 }
 
@@ -1232,7 +1256,12 @@ function openLib(id){
   var needBrief = !x.brief || x.brief.indexOf('生成失败') >= 0 || x.brief.indexOf('未生成') >= 0;
   if(needSlice || needBrief){
     $('libRetryBar').classList.remove('hidden');
-    $('libRetryText').textContent = needSlice ? '这份资料没用 AI 切好（切块重名），网络好时可以重来：' : '总结没生成，可以重来：';
+    /* v0.2.5：文案说准 + 带上次失败原因 */
+    var txt = needSlice
+      ? (x.coarse ? '这份资料 AI 没切成（用的本地粗切），可以重来：' : '这份资料切块重名（老版本切的），可以重来：')
+      : '总结没生成，可以重来：';
+    if(x.lastErr) txt += '（上次原因：' + x.lastErr + '）';
+    $('libRetryText').textContent = txt;
     $('btnReSlice').style.display = needSlice ? '' : 'none';
     $('btnReBrief').style.display = needBrief ? '' : 'none';
   }else{
@@ -1298,7 +1327,15 @@ $('btnReSlice').addEventListener('click', function(){
       return sliceLibItem(id, raw);
     }).then(function(){
       $('btnReSlice').disabled = false;
-      openLib(id); toast('✅ 重新切片完成', 2000);
+      libProg('');
+      var it = getLib(id);
+      openLib(id);
+      /* v0.2.5：干完必须回话——切成没切成、为什么，说清楚 */
+      if(it && it.coarse){
+        toast('AI 还是没接上，先用的本地粗切。原因：' + (it.lastErr || '不明') + '。网络好时再点一次。', 5000);
+      }else{
+        toast('✅ AI 切片完成，总结也写好了', 3000);
+      }
     }).catch(function(){
       $('btnReSlice').disabled = false;
       toast('重新切片没成功，稍后再试', 2500);
@@ -1317,9 +1354,18 @@ $('btnReBrief').addEventListener('click', function(){
     return libWriteBrief(id, text);
   }).then(function(){
     $('btnReBrief').disabled = false;
-    openLib(id); toast('✅ 总结已重写', 2000);
+    libProg('');
+    var it = getLib(id);
+    openLib(id);
+    /* v0.2.5：重写成败明说 */
+    if(it && it.brief && it.brief.indexOf('生成失败') >= 0){
+      toast('总结还是没写成。原因：' + (it.lastErr || '不明') + '，稍后再试。', 5000);
+    }else{
+      toast('✅ 总结已重写', 2500);
+    }
   }).catch(function(){
     $('btnReBrief').disabled = false;
+    libProg('');
     toast('重写没成功，稍后再试', 2500);
   });
 });
