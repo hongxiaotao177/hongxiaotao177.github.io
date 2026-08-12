@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>小涛笔记</title>
+<!--
+==========================================================
+  小涛笔记（学习笔记2代）· 单文件版
+==========================================================
+  修改记录：
+   v0.1.0 2026-08-11 一期骨架上线：
+        - 首屏四块：✨新建笔记 / 📚资料库(占位·二期) / 📚我的笔记 / 📚我的书(占位·三期)
+        - ⚙️设置全部折叠收编：API Key+模型+查额度 / GitHub云设置 / 云备份恢复 / 自检 / AI账本
+        - 笔记核心：AI帮我学 / 手写 / 手写改 / AI改(可回退) / 列表一行一篇 / 标题搜索 / 删除
+        - 双链 [[标题]] 渲染+点击跳篇+反链区（被谁提到）
+        - 头一条铁律：内容真身=Obsidian格式md——每篇笔记带YAML头，
+          保存5秒后自动单篇推仓库 vault/笔记/{标题}.md；「立即备份」全量重写 vault + 索引.md
+        - 版本自检读 version-xiaotao.json（只认自己这一个版本文件，绕开旧版双版本文件坑）
+        - 公共钱罐 hx_*：GitHub/API Key/模型与其他软件一处填处处有
+==========================================================
+-->
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+         background: #f7f3ea; color: #3a3428; font-size: 16px; }
+  header { background: #6b5d43; color: #fff; padding: 14px 16px; font-size: 20px; font-weight: bold;
+           position: sticky; top: 0; z-index: 10; }
+  header .ver { font-size: 12px; font-weight: normal; opacity: .75; margin-left: 8px; }
+  .page { max-width: 640px; margin: 0 auto; padding: 14px 12px 60px; }
+  .card { background: #fffdf8; border: 1px solid #e8dfc8; border-radius: 14px;
+          padding: 14px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(90,75,50,.06); }
+  .card h2 { font-size: 17px; margin-bottom: 10px; color: #5a4f38; }
+  .btn { display: inline-block; background: #6b5d43; color: #fff; border: none; border-radius: 10px;
+         padding: 11px 18px; font-size: 15px; cursor: pointer; margin: 4px 4px 4px 0; }
+  .btn.secondary { background: #efe8d5; color: #5a4f38; }
+  .btn.danger { background: #b05a4a; }
+  .btn:active { transform: scale(.97); }
+  input[type=text], input[type=password], textarea, select {
+    width: 100%; font-size: 16px; padding: 12px 14px; border: 1.5px solid #ddd3b8;
+    border-radius: 10px; background: #fff; margin-top: 4px; outline: none; font-family: inherit; }
+  input:focus, textarea:focus { border-color: #8a7a5a; }
+  label { font-size: 13px; color: #9a8f80; display: block; margin-top: 10px; }
+  .hint { font-size: 13px; color: #9a8f80; margin-top: 8px; line-height: 1.6; }
+  .msg { display: none; margin-top: 8px; padding: 8px 10px; border-radius: 8px; font-size: 14px; line-height: 1.5; }
+  .msg.ok { display: block; background: #e9f3e6; color: #4a6b3a; }
+  .msg.err { display: block; background: #f6e6e0; color: #8a4a3a; }
+  details.card summary { font-size: 17px; font-weight: bold; color: #5a4f38; cursor: pointer; list-style: none; }
+  details.card summary::-webkit-details-marker { display: none; }
+  details.card summary::before { content: '▸ '; color: #b5aa9c; }
+  details.card[open] summary::before { content: '▾ '; }
+  details.card:not([open]) { padding-bottom: 14px; }
+  details.card > summary { margin-bottom: 0; }
+  details.card[open] > summary { margin-bottom: 10px; }
+  .note-row { padding: 10px 4px; border-bottom: 1px dashed #eee4d4; cursor: pointer;
+              display: flex; align-items: center; gap: 8px; }
+  .note-row:last-child { border-bottom: none; }
+  .note-row .t { flex: 1; font-size: 15px; word-break: break-all; }
+  .note-row .d { font-size: 12px; color: #b5aa9c; flex: none; }
+  .md-body { font-size: 16px; line-height: 1.8; }
+  .md-body h1, .md-body h2, .md-body h3 { margin: 14px 0 6px; color: #5a4f38; }
+  .md-body p { margin: 6px 0; }
+  .md-body ul, .md-body ol { margin: 6px 0 6px 22px; }
+  .md-body strong { color: #4a3f2a; }
+  .wlink { color: #7a5c2e; background: #f2ead2; border-radius: 5px; padding: 0 4px;
+           cursor: pointer; border-bottom: 1px dashed #c9b98a; }
+  .wlink.miss { color: #b08a8a; background: #f6e9e4; border-bottom-color: #d8b0a0; }
+  .bl-item { font-size: 14px; color: #7a5c2e; cursor: pointer; padding: 4px 0; }
+  #toast { position: fixed; left: 50%; bottom: 40px; transform: translateX(-50%);
+           background: #4a3f2a; color: #fff; padding: 10px 18px; border-radius: 20px;
+           font-size: 14px; display: none; z-index: 99; max-width: 86%; text-align: center; }
+  #updBar { position: sticky; top: 50px; z-index: 9; margin-bottom: 10px; }
+  .upd-row { background: #fff8e8; border: 1.5px solid #e8c96a; border-radius: 10px;
+             padding: 10px 12px; display: flex; align-items: center; gap: 8px; font-size: 14px; }
+  .upd-row.okbar { background: #e9f3e6; border-color: #a8c99a; }
+  .upd-body { flex: 1; line-height: 1.5; }
+  .upd-x { background: none; border: none; font-size: 16px; color: #9a8f80; cursor: pointer; flex: none; }
+  .hidden { display: none !important; }
+  .kv { font-size: 14px; line-height: 1.8; color: #6a5f4a; }
+</style>
+</head>
+<body>
+<header>📒 小涛笔记<span class="ver">v0.1.0</span></header>
+<div class="page">
+
+  <div id="updBar" class="hidden">
+    <div class="upd-row" id="updRow">
+      <div class="upd-body" id="updText"></div>
+      <button class="btn" id="updDlBtn" style="display:none; padding:6px 10px; font-size:13px;">⬇️ 下载新版到本机</button>
+      <button class="upd-x" id="updClose">✕</button>
+    </div>
+  </div>
+
+  <!-- ✨ 新建笔记 -->
+  <div class="card">
+    <h2>✨ 新建笔记</h2>
+    <input type="text" id="topicInput" placeholder="想学的主题（如：乳酸）">
+    <div style="margin-top:8px;">
+      <button class="btn" id="btnGen">🤖 AI 帮我学</button>
+      <button class="btn secondary" id="btnBlank">✍️ 自己手写</button>
+    </div>
+    <div class="msg" id="genMsg"></div>
+  </div>
+
+  <!-- 📚 资料库（二期） -->
+  <div class="card" style="opacity:.6;">
+    <h2>📚 资料库</h2>
+    <div class="hint">二期上线：文献和书统一管理（导入PDF自动认书定级、AI总结、云端切片、全库问AI）。</div>
+  </div>
+
+  <!-- 📚 我的笔记 -->
+  <details class="card" id="notesBox">
+    <summary id="notesSum">📚 我的笔记</summary>
+    <input type="text" id="searchInput" placeholder="🔍 搜索标题/正文…">
+    <div class="btn-row" style="margin-top:8px;">
+      <button class="btn secondary" id="btnExportMd">📦 导出全部（Obsidian打包）</button>
+    </div>
+    <div id="noteList"></div>
+  </details>
+
+  <!-- 📚 我的书（三期） -->
+  <details class="card" style="opacity:.6;">
+    <summary>📚 我的书</summary>
+    <div class="hint">三期上线：AI拟目录、逐章丰满、挂资料库切块、导Word、发PPT工坊。</div>
+  </details>
+
+  <!-- ⚙️ 设置 -->
+  <details class="card">
+    <summary>⚙️ 设置</summary>
+
+    <h2 style="margin-top:4px;">🔑 AI 设置（Kimi）</h2>
+    <label for="apiKey">API Key（套装公共钱罐，一处填处处有）</label>
+    <input type="password" id="apiKey" placeholder="sk-..." autocomplete="off">
+    <label for="modelSel">模型</label>
+    <select id="modelSel">
+      <option value="moonshot-v1-8k" selected>moonshot-v1-8k（默认，最快）</option>
+      <option value="moonshot-v1-32k">moonshot-v1-32k（长文用）</option>
+      <option value="moonshot-v1-128k">moonshot-v1-128k（整本书用）</option>
+    </select>
+    <div style="margin-top:8px;">
+      <button class="btn" id="btnSaveKey">💾 保存 Key</button>
+      <button class="btn secondary" id="btnBalance">💰 查额度</button>
+    </div>
+    <div class="msg" id="keyMsg"></div>
+
+    <h2 style="margin-top:18px;">☁️ 云备份（GitHub 私有仓库）</h2>
+    <label for="ghUser">GitHub 用户名</label>
+    <input type="text" id="ghUser" autocomplete="off">
+    <label for="ghTok">Token（个人访问令牌）</label>
+    <input type="password" id="ghTok" autocomplete="off">
+    <label for="ghRepo">备份仓库名</label>
+    <input type="text" id="ghRepo" autocomplete="off">
+    <div style="margin-top:8px;">
+      <button class="btn" id="ghSave">💾 保存设置</button>
+      <button class="btn secondary" id="ghPushBtn">☁️ 立即备份</button>
+      <button class="btn secondary" id="ghPullBtn">📥 从云端恢复</button>
+      <button class="btn secondary" id="ghCheckBtn">🔍 自检：线路+新版本</button>
+    </div>
+    <div class="msg" id="ghMsg"></div>
+    <div class="hint">备份 = 笔记数据（xiaotao-backup.json）+ vault/ 区的 Obsidian 格式 md 真身。保存笔记5秒后也会自动单篇推 vault。</div>
+
+    <h2 style="margin-top:18px;">🤖 AI 账本</h2>
+    <div class="kv" id="aiBill">调用 0 次 · 发出 0 字</div>
+    <button class="btn secondary" id="btnBillReset" style="font-size:13px; padding:6px 10px;">🗑 账本清零</button>
+
+    <h2 style="margin-top:18px;">🤖 云端切片巡逻兵</h2>
+    <div class="kv">二期随资料库上线：每小时自动切云端工单，这里显示巡逻状态。</div>
+  </details>
+
+  <!-- 📋 关于 -->
+  <details class="card">
+    <summary>📋 关于 / Obsidian 搬家说明</summary>
+    <div class="kv" style="margin-top:6px;">
+      <b>版本：</b>v0.1.0（2026-08-11）一期骨架。<br><br>
+      <b>⭐ 头一条铁律（Obsidian 搬家）：</b>小涛笔记里所有内容的<b>真身是标准 Markdown 文件</b>，
+      全部存在 GitHub 仓库的 <b>vault/</b> 区——那就是一座现成的 Obsidian 仓库。<br>
+      <b>搬家方法：</b>把仓库里 vault/ 文件夹下载到电脑/手机（或坚果云同步它），
+      打开 Obsidian →「打开本地仓库」→ 选中 vault 文件夹：所有笔记、双链 [[ ]]、结构原样出现，<b>零转换零损失</b>。<br>
+      软件里的数据库只是跑得快的缓存，丢了会从 vault 自动重建；vault 才是永久家产。<br><br>
+      <b>修改记录：</b>v0.1.0 一期骨架（新建/编辑/双链/搜索/设置/云备份/vault真身/版本自检）。
+    </div>
+  </details>
+
+</div>
+
+<!-- 笔记详情页 -->
+<div class="page hidden" id="detailPage">
+  <button class="btn secondary" id="btnBack">← 返回笔记库</button>
+  <div class="card" style="margin-top:12px;">
+    <h2 id="detailTitle"></h2>
+    <div class="md-body" id="detailBody"></div>
+    <div id="backlinksBox" style="margin-top:14px; border-top:1px dashed #ddd3b8; padding-top:8px;">
+      <b style="font-size:14px; color:#9a8f80;">🔗 被提到（反链）</b>
+      <div id="backlinks"></div>
+    </div>
+    <div style="margin-top:14px;">
+      <button class="btn secondary" id="btnHandEdit">✍️ 自己写/改</button>
+      <button class="btn secondary" id="btnAiEdit">🤖 让 AI 改</button>
+      <button class="btn secondary" id="btnRevert">↩️ 回退上一版</button>
+      <button class="btn danger" id="btnDelete">🗑 删除本篇</button>
+    </div>
+  </div>
+  <!-- 手写编辑 -->
+  <div class="card hidden" id="handCard">
+    <label for="handTitle">笔记标题</label>
+    <input type="text" id="handTitle">
+    <label for="handTa">正文（支持 # 标题、**加粗**、- 列表、[[双链]]）</label>
+    <textarea id="handTa" rows="14"></textarea>
+    <div style="margin-top:8px;">
+      <button class="btn" id="btnHandSave">💾 保存</button>
+      <button class="btn secondary" id="btnHandCancel">↩️ 放弃</button>
+    </div>
+  </div>
+  <!-- AI改 -->
+  <div class="card hidden" id="aiCard">
+    <label for="aiInst">想让 AI 怎么改？（如：精简成骨头 / 加一段鉴别诊断）</label>
+    <textarea id="aiInst" rows="3"></textarea>
+    <div style="margin-top:8px;">
+      <button class="btn" id="btnAiSend">🤖 发送修改</button>
+      <button class="btn secondary" id="btnAiCancel">取消</button>
+    </div>
+    <div class="msg" id="aiMsg"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+'use strict';
+(function(){
+var $ = function(id){ return document.getElementById(id); };
+var SW_VERSION = '0.1.0';
+
+/* ==================== 基础 ==================== */
+var toastTimer = null;
+function toast(msg, ms){
+  var t = $('toast'); t.textContent = msg; t.style.display = 'block';
+  if(toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.style.display = 'none'; }, ms || 2500);
+}
+function esc(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+function fmtTime(t){ return new Date(t).toLocaleString(); }
+function showMsg(el, text, kind){ el.className = 'msg ' + kind; el.textContent = text; }
+function fetchWithTimeout(url, opts, ms){
+  return Promise.race([
+    fetch(url, opts),
+    new Promise(function(_, rej){ setTimeout(function(){ rej(new Error('网络超时')); }, ms || 25000); })
+  ]);
+}
+function strHash(s){
+  var h = 0x811c9dc5;
+  for(var i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = (h * 0x01000193) >>> 0; }
+  return h.toString(16);
+}
+
+/* ==================== 公共钱罐 hx_* ==================== */
+var HX_MAP = [['xt_gh_user','hx_gh_user'],['xt_gh_tok','hx_gh_tok'],['xt_gh_repo','hx_gh_repo'],['xt_apikey','hx_apikey'],['xt_aimodel','hx_aimodel']];
+(function(){
+  HX_MAP.forEach(function(p){
+    var own = localStorage.getItem(p[0]);
+    var shared = localStorage.getItem(p[1]);
+    if(own && own !== shared) localStorage.setItem(p[1], own);
+    else if(!own && shared) localStorage.setItem(p[0], shared);
+  });
+})();
+function hxPut(ownKey, val){ localStorage.setItem(ownKey, val); var m = HX_MAP.filter(function(p){ return p[0] === ownKey; })[0]; if(m) localStorage.setItem(m[1], val); }
+
+/* ==================== 数据层 ==================== */
+var LS_NOTES = 'xt_notes_v1';
+var LS_BILL = 'xt_aibill_v1';
+function loadNotes(){ try{ var v = JSON.parse(localStorage.getItem(LS_NOTES) || '[]'); return Array.isArray(v) ? v : []; }catch(e){ return []; } }
+function saveNotes(list){ localStorage.setItem(LS_NOTES, JSON.stringify(list)); }
+function getNote(id){ return loadNotes().filter(function(n){ return n.id === id; })[0] || null; }
+function bill(){ try{ return JSON.parse(localStorage.getItem(LS_BILL) || '{"calls":0,"chars":0}'); }catch(e){ return {calls:0,chars:0}; } }
+function billAdd(chars){ var b = bill(); b.calls++; b.chars += chars; localStorage.setItem(LS_BILL, JSON.stringify(b)); billRender(); }
+function billRender(){ var b = bill(); $('aiBill').textContent = '调用 ' + b.calls + ' 次 · 发出 ' + Math.round(b.chars / 1000) + ' 千字'; }
+
+/* ==================== AI ==================== */
+function callAI(sys, user, maxTok){
+  var key = (localStorage.getItem('xt_apikey') || '').trim();
+  if(!key) return Promise.reject(new Error('还没填 API Key（⚙️设置里保存）'));
+  billAdd((sys || '').length + (user || '').length);
+  return fetchWithTimeout('https://api.moonshot.cn/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+    body: JSON.stringify({ model: $('modelSel').value,
+      messages: [{ role: 'system', content: sys }, { role: 'user', content: user }],
+      max_tokens: maxTok || 4000 })
+  }).then(function(resp){
+    if(!resp.ok) return resp.text().then(function(t){ throw new Error('AI 报错 ' + resp.status + '：' + t.slice(0, 120)); });
+    return resp.json();
+  }).then(function(d){ return d.choices[0].message.content; });
+}
+
+/* ==================== Markdown 渲染 + 双链 ==================== */
+function renderMd(text){
+  var lines = String(text || '').split('\n');
+  var html = '', inList = false;
+  function inline(s){
+    s = esc(s);
+    s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/\[\[([^\]|]+)(\|[^\]]+)?\]\]/g, function(m, t, disp){
+      var title = t.trim(), show = (disp ? disp.slice(1) : t).trim();
+      var exists = loadNotes().some(function(n){ return n.title === title; });
+      return '<span class="wlink' + (exists ? '' : ' miss') + '" data-t="' + esc(title) + '">' + esc(show) + '</span>';
+    });
+    return s;
+  }
+  lines.forEach(function(l){
+    var m;
+    if(m = l.match(/^###\s+(.*)/)){ if(inList){ html += '</ul>'; inList = false; } html += '<h3>' + inline(m[1]) + '</h3>'; }
+    else if(m = l.match(/^##\s+(.*)/)){ if(inList){ html += '</ul>'; inList = false; } html += '<h2>' + inline(m[1]) + '</h2>'; }
+    else if(m = l.match(/^#\s+(.*)/)){ if(inList){ html += '</ul>'; inList = false; } html += '<h1>' + inline(m[1]) + '</h1>'; }
+    else if(m = l.match(/^\s*[-*]\s+(.*)/)){ if(!inList){ html += '<ul>'; inList = true; } html += '<li>' + inline(m[1]) + '</li>'; }
+    else if(l.trim() === ''){ if(inList){ html += '</ul>'; inList = false; } }
+    else { if(inList){ html += '</ul>'; inList = false; } html += '<p>' + inline(l) + '</p>'; }
+  });
+  if(inList) html += '</ul>';
+  return html;
+}
+function extractLinks(text){
+  var out = [];
+  String(text || '').replace(/\[\[([^\]|]+)(\|[^\]]+)?\]\]/g, function(m, t){ out.push(t.trim()); });
+  return out;
+}
+
+/* ==================== 笔记列表 ==================== */
+function renderList(){
+  var notes = loadNotes();
+  var kw = ($('searchInput').value || '').trim().toLowerCase();
+  $('notesSum').textContent = '📚 我的笔记（' + notes.length + '篇）';
+  var box = $('noteList');
+  var list = notes.filter(function(n){
+    return !kw || n.title.toLowerCase().indexOf(kw) >= 0 || (n.content || '').toLowerCase().indexOf(kw) >= 0;
+  });
+  if(!list.length){ box.innerHTML = '<div class="hint">' + (notes.length ? '没搜到。' : '还没有笔记，点上方「AI 帮我学」开始第一篇。') + '</div>'; return; }
+  box.innerHTML = '';
+  list.forEach(function(n){
+    var row = document.createElement('div');
+    row.className = 'note-row';
+    row.innerHTML = '<div class="t">' + esc(n.title) + '</div><div class="d">' + fmtTime(n.updatedAt).slice(0, 9) + '</div>';
+    row.addEventListener('click', function(){ openDetail(n.id); });
+    box.appendChild(row);
+  });
+}
+$('searchInput').addEventListener('input', renderList);
+
+/* ==================== 笔记详情 ==================== */
+var curId = null;
+function openDetail(id){
+  var n = getNote(id);
+  if(!n) return;
+  curId = id;
+  $('detailTitle').textContent = n.title;
+  $('detailBody').innerHTML = renderMd(n.content);
+  /* 反链：谁链了我 */
+  var bl = loadNotes().filter(function(x){
+    return x.id !== id && extractLinks(x.content).indexOf(n.title) >= 0;
+  });
+  $('backlinks').innerHTML = bl.length ? '' : '<div class="hint">没有别的笔记提到这篇。</div>';
+  bl.forEach(function(x){
+    var d = document.createElement('div');
+    d.className = 'bl-item'; d.textContent = '📄 ' + x.title;
+    d.addEventListener('click', function(){ openDetail(x.id); });
+    $('backlinks').appendChild(d);
+  });
+  $('btnRevert').style.display = n.prev ? '' : 'none';
+  $('handCard').classList.add('hidden');
+  $('aiCard').classList.add('hidden');
+  showPage('detail');
+}
+/* 双链点击跳转（事件委托） */
+$('detailBody').addEventListener('click', function(e){
+  var el = e.target.closest('.wlink');
+  if(!el) return;
+  var t = el.getAttribute('data-t');
+  var n = loadNotes().filter(function(x){ return x.title === t; })[0];
+  if(n) openDetail(n.id);
+  else if(confirm('「' + t + '」还不存在，新建这篇吗？')){
+    var notes = loadNotes();
+    var nn = { id: uid(), title: t, content: '# ' + t + '\n\n（待补充）', createdAt: Date.now(), updatedAt: Date.now(), fp: '' };
+    nn.fp = strHash(nn.content);
+    notes.unshift(nn); saveNotes(notes); renderList(); openDetail(nn.id); vaultQueue(nn);
+  }
+});
+function showPage(which){
+  document.querySelectorAll('.page')[0].classList.toggle('hidden', which !== 'home');
+  $('detailPage').classList.toggle('hidden', which !== 'detail');
+  window.scrollTo(0, 0);
+}
+$('btnBack').addEventListener('click', function(){ showPage('home'); renderList(); });
+
+/* ==================== 新建 ==================== */
+function makeNote(title, content){
+  var notes = loadNotes();
+  if(notes.some(function(n){ return n.title === title; })){ toast('已有同名笔记，给您打开了', 2500); openDetail(notes.filter(function(n){ return n.title === title; })[0].id); return null; }
+  var n = { id: uid(), title: title, content: content, createdAt: Date.now(), updatedAt: Date.now(), fp: strHash(content) };
+  notes.unshift(n); saveNotes(notes); renderList(); vaultQueue(n);
+  return n;
+}
+$('btnGen').addEventListener('click', function(){
+  var topic = $('topicInput').value.trim();
+  if(!topic){ showMsg($('genMsg'), '先写一个主题。', 'err'); return; }
+  $('btnGen').disabled = true;
+  showMsg($('genMsg'), '🤖 AI 正在备课（约十几秒）…', 'ok');
+  callAI('你是医学学习助手，给ICU医生讲题。用中文大白话+条目式，markdown格式（# 标题开头，## 小节，- 列表，重点**加粗**）。内容：是什么、为什么重要、要点、临床怎么用、易错点。不要客套话。',
+    '主题：' + topic, 4000
+  ).then(function(txt){
+    $('btnGen').disabled = false;
+    $('genMsg').className = 'msg';
+    var n = makeNote(topic, txt.indexOf('#') === 0 ? txt : '# ' + topic + '\n\n' + txt);
+    if(n){ $('topicInput').value = ''; openDetail(n.id); toast('✅ 备好了', 2000); }
+  }).catch(function(e){
+    $('btnGen').disabled = false;
+    showMsg($('genMsg'), e.message, 'err');
+  });
+});
+$('btnBlank').addEventListener('click', function(){
+  var topic = $('topicInput').value.trim() || '未命名笔记';
+  var n = makeNote(topic, '# ' + topic + '\n\n');
+  if(n){ $('topicInput').value = ''; openDetail(n.id); $('btnHandEdit').click(); }
+});
+
+/* ==================== 编辑 ==================== */
+$('btnHandEdit').addEventListener('click', function(){
+  var n = getNote(curId); if(!n) return;
+  $('handTitle').value = n.title;
+  $('handTa').value = n.content;
+  $('handCard').classList.remove('hidden');
+  $('aiCard').classList.add('hidden');
+  $('handCard').scrollIntoView({ block: 'start' });
+});
+$('btnHandCancel').addEventListener('click', function(){ $('handCard').classList.add('hidden'); });
+$('btnHandSave').addEventListener('click', function(){
+  var notes = loadNotes();
+  var n = notes.filter(function(x){ return x.id === curId; })[0]; if(!n) return;
+  var title = $('handTitle').value.trim();
+  if(!title){ toast('标题不能为空', 2000); return; }
+  if(title !== n.title && notes.some(function(x){ return x.title === title; })){ toast('已有同名笔记', 2500); return; }
+  n.prev = n.content;
+  n.title = title;
+  n.content = $('handTa').value;
+  n.updatedAt = Date.now();
+  n.fp = strHash(n.content);
+  saveNotes(notes);
+  $('handCard').classList.add('hidden');
+  openDetail(n.id); renderList(); vaultQueue(n);
+  toast('💾 已保存', 1500);
+});
+$('btnAiEdit').addEventListener('click', function(){
+  $('aiCard').classList.remove('hidden');
+  $('handCard').classList.add('hidden');
+  $('aiCard').scrollIntoView({ block: 'start' });
+});
+$('btnAiCancel').addEventListener('click', function(){ $('aiCard').classList.add('hidden'); });
+$('btnAiSend').addEventListener('click', function(){
+  var n = getNote(curId); if(!n) return;
+  var inst = $('aiInst').value.trim();
+  if(!inst){ showMsg($('aiMsg'), '先写想让 AI 怎么改。', 'err'); return; }
+  $('btnAiSend').disabled = true;
+  showMsg($('aiMsg'), '🤖 AI 正在改…', 'ok');
+  callAI('你是笔记修改助手。给你一篇 markdown 笔记和一句修改要求，输出改后的完整笔记（markdown，保留 [[双链]] 语法，只输出笔记本身）。',
+    '【修改要求】' + inst + '\n\n【原笔记】\n' + n.content, 6000
+  ).then(function(txt){
+    $('btnAiSend').disabled = false;
+    $('aiMsg').className = 'msg';
+    $('aiInst').value = '';
+    var notes = loadNotes();
+    var nn = notes.filter(function(x){ return x.id === curId; })[0]; if(!nn) return;
+    nn.prev = nn.content;
+    nn.content = txt;
+    nn.updatedAt = Date.now();
+    nn.fp = strHash(nn.content);
+    saveNotes(notes);
+    n = nn;
+    $('aiCard').classList.add('hidden');
+    openDetail(n.id); renderList(); vaultQueue(n);
+    toast('✅ 改好了（不满意可回退）', 2500);
+  }).catch(function(e){
+    $('btnAiSend').disabled = false;
+    showMsg($('aiMsg'), e.message, 'err');
+  });
+});
+$('btnRevert').addEventListener('click', function(){
+  var notes = loadNotes();
+  var n = notes.filter(function(x){ return x.id === curId; })[0]; if(!n || !n.prev) return;
+  var tmp = n.content;
+  n.content = n.prev; n.prev = tmp;
+  n.updatedAt = Date.now(); n.fp = strHash(n.content);
+  saveNotes(notes);
+  openDetail(n.id); renderList(); vaultQueue(n);
+  toast('↩️ 已回退', 1500);
+});
+$('btnDelete').addEventListener('click', function(){
+  var n = getNote(curId); if(!n) return;
+  if(!confirm('确定删除「' + n.title + '」？（云端 vault 文件下次备份时一并清）')) return;
+  saveNotes(loadNotes().filter(function(x){ return x.id !== curId; }));
+  vaultDelQueue(n.title);
+  showPage('home'); renderList();
+  toast('🗑 已删除', 1500);
+});
+
+/* ==================== vault（Obsidian 真身） ==================== */
+function noteToMd(n){
+  var yaml = '---\ntitle: ' + n.title + '\ncreated: ' + new Date(n.createdAt).toISOString() +
+    '\nupdated: ' + new Date(n.updatedAt).toISOString() + '\nfp: ' + n.fp + '\n---\n\n';
+  return yaml + n.content;
+}
+function safeName(t){ return String(t).replace(/[\\/:*?"<>|]/g, '_'); }
+var vaultTimer = null, vaultDirty = {}, vaultDel = [];
+function vaultQueue(n){
+  vaultDirty[n.title] = noteToMd(n);
+  if(vaultTimer) clearTimeout(vaultTimer);
+  vaultTimer = setTimeout(vaultFlush, 5000);
+}
+function vaultDelQueue(title){
+  vaultDel.push(title);
+  if(vaultTimer) clearTimeout(vaultTimer);
+  vaultTimer = setTimeout(vaultFlush, 5000);
+}
+function vaultFlush(){
+  if(!ghReady()){ return; } /* 没配 GitHub 就等下次备份 */
+  var dirty = vaultDirty; var dels = vaultDel.slice();
+  vaultDirty = {}; vaultDel = [];
+  var chain = Promise.resolve();
+  Object.keys(dirty).forEach(function(t){
+    chain = chain.then(function(){ return ghPutFile('vault/笔记/' + safeName(t) + '.md', dirty[t], 'vault 笔记 ' + t); });
+  });
+  dels.forEach(function(t){
+    chain = chain.then(function(){ return ghDelFile('vault/笔记/' + safeName(t) + '.md', 'vault 删除 ' + t); });
+  });
+  chain.then(function(){ toast('☁️ vault 已同步', 1500); }).catch(function(){ toast('☁️ vault 同步失败，下次备份补', 3000); });
+}
+
+/* ==================== GitHub ==================== */
+function ghCfg(){
+  return { user: (localStorage.getItem('xt_gh_user') || '').trim(),
+           tok: (localStorage.getItem('xt_gh_tok') || '').trim(),
+           repo: (localStorage.getItem('xt_gh_repo') || '').trim() };
+}
+function ghReady(){ var c = ghCfg(); return !!(c.user && c.tok && c.repo); }
+function ghUrl(path){
+  var c = ghCfg();
+  return 'https://api.github.com/repos/' + encodeURIComponent(c.user) + '/' + encodeURIComponent(c.repo) +
+    '/contents/' + path.split('/').map(encodeURIComponent).join('/');
+}
+function ghHeaders(){ return { 'Authorization': 'token ' + ghCfg().tok, 'Accept': 'application/vnd.github+json' }; }
+function b64enc(s){ return btoa(unescape(encodeURIComponent(s))); }
+function b64dec(s){ return decodeURIComponent(escape(atob(String(s).replace(/\s+/g, '')))); }
+function ghPutFile(path, contentStr, msg){
+  return fetchWithTimeout(ghUrl(path), { headers: ghHeaders() }).then(function(resp){
+    if(resp.status === 404) return null;
+    if(!resp.ok) throw new Error('读旧文件失败');
+    return resp.json();
+  }).then(function(old){
+    var body = { message: msg, content: b64enc(contentStr) };
+    if(old && old.sha) body.sha = old.sha;
+    return fetchWithTimeout(ghUrl(path), { method: 'PUT', headers: ghHeaders(), body: JSON.stringify(body) });
+  }).then(function(resp){
+    if(!resp.ok) return resp.text().then(function(t){ throw new Error('写入失败 ' + resp.status + '：' + t.slice(0, 100)); });
+  });
+}
+function ghGetFile(path){
+  return fetchWithTimeout(ghUrl(path), { headers: ghHeaders() }).then(function(resp){
+    if(resp.status === 404) return null;
+    if(!resp.ok) throw new Error('读取失败 ' + resp.status);
+    return resp.json();
+  }).then(function(d){ return d ? b64dec(d.content) : null; });
+}
+function ghDelFile(path, msg){
+  return fetchWithTimeout(ghUrl(path), { headers: ghHeaders() }).then(function(resp){
+    if(resp.status === 404) return null;
+    return resp.json();
+  }).then(function(d){
+    if(!d || !d.sha) return;
+    return fetchWithTimeout(ghUrl(path), { method: 'DELETE', headers: ghHeaders(),
+      body: JSON.stringify({ message: msg, sha: d.sha }) });
+  });
+}
+
+/* ==================== 云备份/恢复 ==================== */
+$('ghPushBtn').addEventListener('click', function(){
+  if(!ghReady()){ showMsg($('ghMsg'), '先把上面三项填好保存。', 'err'); return; }
+  var notes = loadNotes();
+  if(!notes.length){ showMsg($('ghMsg'), '还没有笔记，跳过备份（防止空备份覆盖云端）。', 'err'); return; }
+  showMsg($('ghMsg'), '☁️ 正在备份（数据+vault 真身）…', 'ok');
+  ghPutFile('xiaotao-backup.json', JSON.stringify({ savedAt: new Date().toISOString(), notes: notes }), '小涛笔记备份').then(function(){
+    /* vault 全量重写 + 索引 */
+    var chain = Promise.resolve();
+    notes.forEach(function(n){
+      chain = chain.then(function(){ return ghPutFile('vault/笔记/' + safeName(n.title) + '.md', noteToMd(n), 'vault ' + n.title); });
+    });
+    var idx = '# 小涛笔记 · 全库索引\n\n> 自动生成，Obsidian 里当目录用。\n\n' +
+      notes.map(function(n){ return '- [[' + n.title + ']]（' + fmtTime(n.updatedAt).slice(0, 9) + '）'; }).join('\n') + '\n';
+    chain = chain.then(function(){ return ghPutFile('vault/索引.md', idx, 'vault 索引'); });
+    return chain;
+  }).then(function(){
+    showMsg($('ghMsg'), '✅ 备份完成（' + notes.length + ' 篇笔记 + vault md 真身）', 'ok');
+  }).catch(function(e){
+    showMsg($('ghMsg'), '❌ 备份失败：' + e.message, 'err');
+  });
+});
+$('ghPullBtn').addEventListener('click', function(){
+  if(!ghReady()){ showMsg($('ghMsg'), '先把上面三项填好保存。', 'err'); return; }
+  if(!confirm('从云端恢复会覆盖本机全部笔记，确定？')) return;
+  ghGetFile('xiaotao-backup.json').then(function(s){
+    if(!s){ showMsg($('ghMsg'), '云端还没有备份。', 'err'); return; }
+    var data = JSON.parse(s);
+    if(!data.notes || !data.notes.length){ showMsg($('ghMsg'), '云端备份是空的。', 'err'); return; }
+    saveNotes(data.notes);
+    renderList();
+    showMsg($('ghMsg'), '✅ 恢复完成（' + data.notes.length + ' 篇，' + (data.savedAt || '').slice(0, 10) + ' 的备份）', 'ok');
+  }).catch(function(e){ showMsg($('ghMsg'), '❌ 恢复失败：' + e.message, 'err'); });
+});
+
+/* ==================== 版本自检 ==================== */
+function cmpVer(a, b){
+  var pa = String(a).split('.'), pb = String(b).split('.');
+  for(var i = 0; i < 3; i++){ var d = (parseInt(pa[i] || '0') - parseInt(pb[i] || '0')); if(d) return d; }
+  return 0;
+}
+function updShow(kind, text, canDl){
+  var bar = $('updBar');
+  bar.classList.remove('hidden');
+  $('updRow').className = 'upd-row' + (kind === 'ok' ? ' okbar' : '');
+  $('updText').textContent = text;
+  $('updDlBtn').style.display = canDl ? '' : 'none';
+}
+function ghSelfCheck(manual){
+  if(!ghReady()){ if(manual) showMsg($('ghMsg'), '先填 GitHub 设置。', 'err'); return; }
+  ghGetFile('version-xiaotao.json').then(function(s){
+    if(!s){ updShow('ok', '✅ GitHub 线路通畅 · 本机 v' + SW_VERSION + '（云端还没有版本信息）'); setTimeout(function(){ $('updBar').classList.add('hidden'); }, 8000); return null; }
+    var info = JSON.parse(s);
+    if(cmpVer(info.version, SW_VERSION) > 0){
+      updShow('warn', '🎉 网上有新版 v' + info.version + '（本机 v' + SW_VERSION + '）：' + (info.note || ''), true);
+      window._xtDl = info.dl;
+    }else{
+      updShow('ok', '✅ 线路通畅，已是最新 v' + SW_VERSION);
+      setTimeout(function(){ $('updBar').classList.add('hidden'); }, 6000);
+    }
+  }).catch(function(e){
+    if(manual) showMsg($('ghMsg'), '❌ 自检失败：' + e.message, 'err');
+  });
+}
+$('ghCheckBtn').addEventListener('click', function(){ ghSelfCheck(true); });
+$('updClose').addEventListener('click', function(){ $('updBar').classList.add('hidden'); });
+$('updDlBtn').addEventListener('click', function(){
+  var dl = window._xtDl || 'software-xiaotao.html';
+  var c = ghCfg();
+  window.open('https://raw.githubusercontent.com/' + c.user + '/' + c.repo + '/main/' + encodeURIComponent(dl), '_blank');
+  toast('新页面打开后，另存为「小涛笔记.html」换掉旧文件', 5000);
+});
+
+/* ==================== 设置加载/保存 ==================== */
+function loadSettings(){
+  $('apiKey').value = localStorage.getItem('xt_apikey') || '';
+  $('modelSel').value = localStorage.getItem('xt_aimodel') || 'moonshot-v1-8k';
+  $('ghUser').value = localStorage.getItem('xt_gh_user') || '';
+  $('ghTok').value = localStorage.getItem('xt_gh_tok') || '';
+  $('ghRepo').value = localStorage.getItem('xt_gh_repo') || '';
+}
+$('btnSaveKey').addEventListener('click', function(){
+  hxPut('xt_apikey', $('apiKey').value.trim());
+  hxPut('xt_aimodel', $('modelSel').value);
+  showMsg($('keyMsg'), '💾 已保存（公共钱罐，其他软件也有了）', 'ok');
+});
+$('ghSave').addEventListener('click', function(){
+  hxPut('xt_gh_user', $('ghUser').value.trim());
+  hxPut('xt_gh_tok', $('ghTok').value.trim());
+  hxPut('xt_gh_repo', $('ghRepo').value.trim());
+  showMsg($('ghMsg'), '💾 已保存', 'ok');
+});
+$('btnBalance').addEventListener('click', function(){
+  var key = (localStorage.getItem('xt_apikey') || '').trim();
+  if(!key){ showMsg($('keyMsg'), '先保存 Key。', 'err'); return; }
+  showMsg($('keyMsg'), '查询中…', 'ok');
+  fetchWithTimeout('https://api.moonshot.cn/v1/users/me/balance', { headers: { 'Authorization': 'Bearer ' + key } })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if(d && d.data && d.data.available_balance != null) showMsg($('keyMsg'), '💰 开放平台余额：¥' + Number(d.data.available_balance).toFixed(2), 'ok');
+      else showMsg($('keyMsg'), '读不到余额（返回格式变了）', 'err');
+    }).catch(function(e){ showMsg($('keyMsg'), '查询失败：' + e.message, 'err'); });
+});
+$('btnBillReset').addEventListener('click', function(){
+  localStorage.setItem(LS_BILL, '{"calls":0,"chars":0}'); billRender();
+});
+
+/* ==================== 导出（Obsidian 打包说明） ==================== */
+$('btnExportMd').addEventListener('click', function(){
+  var notes = loadNotes();
+  if(!notes.length){ toast('还没有笔记', 2000); return; }
+  var all = notes.map(function(n){ return '══════════ ' + n.title + ' ══════════\n\n' + noteToMd(n); }).join('\n\n');
+  var blob = new Blob([all], { type: 'text/plain;charset=utf-8' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '小涛笔记_全部_' + new Date().toISOString().slice(0, 10) + '.txt';
+  a.click();
+  toast('已导出（每篇都带 YAML 头；正式搬家推荐直接用仓库 vault/ 区，见「关于」）', 5000);
+});
+
+/* ==================== 启动 ==================== */
+loadSettings();
+billRender();
+renderList();
+setTimeout(function(){ ghSelfCheck(false); }, 3000);
+})();
+</script>
+</body>
+</html>
