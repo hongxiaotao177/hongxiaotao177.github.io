@@ -572,7 +572,7 @@ window.addEventListener('load', function(){
 (function(){
 __bc('D脚本启动');
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.3.21';
+var SW_VERSION = '0.3.22';
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
@@ -2243,10 +2243,18 @@ try{
   /* v0.3.21 引擎身份直接写进标题栏（黑条有人找不到/看不清） */
   var __vs = document.querySelector('header .ver');
   if(__vs) __vs.textContent = 'v' + SW_VERSION + ' · ' + __eng;
-  /* 桥里若报了tbs版本号也贴上（壳v1.3.2+） */
-  if(window.LearnShell && window.LearnShell.engineInfo){
-    try{ var __ei = LearnShell.engineInfo(); if(__ei) __vs.textContent += ' · ' + __ei; }catch(e){}
+  /* 桥里若报了tbs版本号也贴上（壳v1.3.2+）；v0.3.22 起每10秒自动重取——
+     壳v1.3.3的X5下载催办进度（催下载中第N回→点火）就能在标题栏现场直播 */
+  function __engTick(){
+    if(window.LearnShell && window.LearnShell.engineInfo){
+      try{
+        var __ei = LearnShell.engineInfo();
+        if(__ei && __vs) __vs.textContent = 'v' + SW_VERSION + ' · ' + __eng + ' · ' + __ei;
+      }catch(e){}
+    }
   }
+  __engTick();
+  setInterval(__engTick, 10000);
 }catch(e){}
 /* v0.3.17 校准fixed滚动层顶端 = 标题实高（各机型字号/圆角不同，量出来的才准） */
 try{
