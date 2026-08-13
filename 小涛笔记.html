@@ -16,9 +16,10 @@ __bc('A头完');
 window.__nudge = function(){
   try{
     var b = document.body; if(!b) return;
-    b.style.webkitTransform = 'translateZ(0)';
+    /* v0.3.12 关灯再开灯：display整页切换，比transform强一个量级 */
+    b.style.display = 'none';
     void b.offsetHeight;
-    b.style.webkitTransform = '';
+    b.style.display = '';
   }catch(e){}
 };
 window.__nudgeCount = 0;
@@ -274,7 +275,7 @@ window.addEventListener('load', function(){
 </style>
 </head>
 <body>
-<header>📒 小涛笔记<span class="ver">v0.3.11</span></header>
+<header>📒 小涛笔记<span class="ver">v0.3.12</span></header>
 <div class="page">
 <script>__bc('B骨架');</script>
   <div id="updBar" class="hidden">
@@ -512,7 +513,7 @@ window.addEventListener('load', function(){
 (function(){
 __bc('D脚本启动');
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.3.11';
+var SW_VERSION = '0.3.12';
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
