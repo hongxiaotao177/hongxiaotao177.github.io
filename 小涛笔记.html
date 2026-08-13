@@ -2,8 +2,9 @@
 <html lang="zh-CN">
 <head>
 <script>
-/* v0.3.16 upd条改fixed浮条（脱离文档流）：记录仪铁证——upd条收起=案发扳机。
-   此前已排除：sticky全拆、软件渲染、强制暗夜、缓存、文件大小、display开关灯。 */
+/* v0.3.17 正文全体搬进fixed滚动层（body禁滚、标题fixed、.page=fixed全屏滚动框）。
+   v0.3.16证明upd条无辜（改浮条后首卡仍自己崩）：普通文档流内容层本身不稳，
+   fixed元素从来没事——那就让正文也fixed。 */
 /* v0.3.9 烽火台：blank排查期专用，五个哨兵逐段报数（左下黑条），完事即拆 */
 window.__bc = function(t){
   var d = document.getElementById('bcBar');
@@ -232,13 +233,21 @@ window.addEventListener('load', function(){
 -->
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; } /* v0.3.17 正文改fixed滚动层：body本身不再滚动 */
   body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
          background: #f7f3ea; color: #3a3428; font-size: 16px; }
-  header { background: #6b5d43; color: #fff; padding: 14px 16px; font-size: 20px; font-weight: bold; }
+  header { background: #6b5d43; color: #fff; padding: 14px 16px; font-size: 20px; font-weight: bold;
+           position: fixed; top: 0; left: 0; right: 0; z-index: 400; } /* v0.3.17 标题也fixed，纹丝不动 */
   /* v0.3.15 真凶伏法：header 原来一直是 position:sticky！vivo WebView 的 sticky 会把
      正文滚动层搞丢（标题在、正文凭空消失、区域触摸死）。updBar 的 sticky 只是从犯。 */
   header .ver { font-size: 12px; font-weight: normal; opacity: .75; margin-left: 8px; }
-  .page { max-width: 640px; margin: 0 auto; padding: 14px 12px 60px; }
+  .page { max-width: 640px; margin: 0 auto; padding: 14px 12px 60px;
+          position: fixed; top: 53px; left: 0; right: 0; bottom: 0;
+          overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  /* v0.3.17 核心手术：正文全体搬进fixed滚动层。记录仪铁证——upd条改浮条后无人操作，
+     首卡仍自己 71→-4→0 崩掉：这台vivo WebView的普通文档流内容层本身就不稳，
+     而fixed元素（黑条/🏠钮/标题）从来没出过事。那就让正文也享受fixed待遇。
+     top的53px是估值，脚本启动后会按标题实高校准。 */
   .card { background: #fffdf8; border: 1px solid #e8dfc8; border-radius: 14px;
           padding: 14px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(90,75,50,.06); }
   .card h2 { font-size: 17px; margin-bottom: 10px; color: #5a4f38; }
@@ -316,7 +325,7 @@ window.addEventListener('load', function(){
 </style>
 </head>
 <body>
-<header>📒 小涛笔记<span class="ver">v0.3.16</span></header>
+<header>📒 小涛笔记<span class="ver">v0.3.17</span></header>
 <div class="page">
 <script>__bc('B骨架');</script>
   <div id="updBar" class="hidden">
@@ -554,7 +563,7 @@ window.addEventListener('load', function(){
 (function(){
 __bc('D脚本启动');
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.3.16';
+var SW_VERSION = '0.3.17';
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
@@ -787,7 +796,8 @@ function showPage(which){
   document.querySelectorAll('.page')[0].classList.toggle('hidden', which !== 'home');
   $('detailPage').classList.toggle('hidden', which !== 'detail');
   $('libPage').classList.toggle('hidden', which !== 'lib');
-  window.scrollTo(0, 0);
+  var ps = document.querySelectorAll('.page');
+  for(var i = 0; i < ps.length; i++) ps[i].scrollTop = 0; /* v0.3.17 滚动的是.page容器，不再是window */
   if(window.__nudge) setTimeout(__nudge, 50);  /* v0.3.11 */
 }
 $('btnBack').addEventListener('click', function(){ showPage('home'); renderList(); });
@@ -2211,6 +2221,13 @@ $('btnRefs').addEventListener('click', function(){
 });
 
 __bc('E脚本跑完');
+/* v0.3.17 校准fixed滚动层顶端 = 标题实高（各机型字号/圆角不同，量出来的才准） */
+try{
+  var __hh = document.querySelector('header').offsetHeight;
+  var __ps = document.querySelectorAll('.page');
+  for(var __i = 0; __i < __ps.length; __i++) __ps[__i].style.top = __hh + 'px';
+  if(window.__bcLog) __bcLog(__sec() + '秒 滚动层校准 top=' + __hh);
+}catch(e){}
 /* 测试挂钩（ playwright 用，不影响功能 ） */
 window.__xt = { ensureJDB: ensureJDB, refTag: refTag, refSplitLocal: refSplitLocal, refFindSection: refFindSection };
 
