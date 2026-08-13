@@ -2,6 +2,15 @@
 <html lang="zh-CN">
 <head>
 <script>
+/* v0.3.9 烽火台：blank排查期专用，五个哨兵逐段报数（左下黑条），完事即拆 */
+window.__bc = function(t){
+  var d = document.getElementById('bcBar');
+  if(!d){ d = document.createElement('div'); d.id = 'bcBar';
+    d.style.cssText = 'position:fixed;left:0;bottom:0;z-index:99999;background:#222;color:#7f7;padding:8px 10px;font-size:13px;line-height:1.6;max-width:92%;border-radius:0 8px 0 0;';
+    (document.body || document.documentElement).appendChild(d); }
+  d.textContent += ' ' + t;
+};
+__bc('A头完');
 /* v0.3.7 看门狗：主程序死了/文件没下完整时，必须让人看见原因（原则三） */
 window.addEventListener('error', function(e){
   var d = document.getElementById('wdBar');
@@ -12,6 +21,11 @@ window.addEventListener('error', function(e){
 });
 window.addEventListener('load', function(){
   setTimeout(function(){
+    __bc('F加载完|btnGen=' + (document.getElementById('btnGen')?'有':'无')
+      + '|卡片数=' + document.querySelectorAll('.card').length
+      + '|正文长=' + (document.body ? document.body.innerHTML.length : -1));
+    try{ fetch(location.href).then(function(r){ return r.text(); }).then(function(t){
+      __bc('G文件实长=' + t.length); }).catch(function(e){ __bc('G自读败'); }); }catch(e){}
     if(!document.getElementById('btnGen')){
       var d = document.createElement('div');
       d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:999;background:#c0392b;color:#fff;padding:12px;font-size:15px;line-height:1.6;';
@@ -29,6 +43,8 @@ window.addEventListener('load', function(){
   小涛笔记（学习笔记2代）· 单文件版
 ==========================================================
   修改记录：
+   v0.3.9 2026-08-13 空白排查专用版：五个烽火台哨兵（左下黑条报数）+ 自读文件长度。
+   v0.3.8 2026-08-13 治本：文献库挪外挂 xt-jdb.js，主体瘦回96KB（当时以为是大文件写半截）。
    v0.3.7 2026-08-13 看门狗：洪老师更新后页面空白（手机上的文件疑似没下完整）。
         主程序报错→顶红条写清错误和行号；文件残缺→3秒后顶红条提示重新下载。
         教训：单文件APP越来越大（300KB+），下载/自更新要防半截文件。
@@ -220,9 +236,9 @@ window.addEventListener('load', function(){
 </style>
 </head>
 <body>
-<header>📒 小涛笔记<span class="ver">v0.3.8</span></header>
+<header>📒 小涛笔记<span class="ver">v0.3.9</span></header>
 <div class="page">
-
+<script>__bc('B骨架');</script>
   <div id="updBar" class="hidden">
     <div class="upd-row" id="updRow">
       <div class="upd-body" id="updText"></div>
@@ -452,11 +468,13 @@ window.addEventListener('load', function(){
 
 <div id="toast"></div>
 
+<script>__bc('C主脚本前');</script>
 <script>
 'use strict';
 (function(){
+__bc('D脚本启动');
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.3.8';
+var SW_VERSION = '0.3.9';
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
@@ -2070,6 +2088,7 @@ $('btnRefs').addEventListener('click', function(){
   });
 });
 
+__bc('E脚本跑完');
 /* 测试挂钩（ playwright 用，不影响功能 ） */
 window.__xt = { ensureJDB: ensureJDB, refTag: refTag, refSplitLocal: refSplitLocal, refFindSection: refFindSection };
 
