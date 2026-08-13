@@ -309,7 +309,7 @@ window.addEventListener('load', function(){
 </style>
 </head>
 <body>
-<header>📒 小涛笔记<span class="ver">v0.3.13</span></header>
+<header>📒 小涛笔记<span class="ver">v0.3.14</span></header>
 <div class="page">
 <script>__bc('B骨架');</script>
   <div id="updBar" class="hidden">
@@ -547,7 +547,7 @@ window.addEventListener('load', function(){
 (function(){
 __bc('D脚本启动');
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.3.13';
+var SW_VERSION = '0.3.14';
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
@@ -1083,17 +1083,56 @@ $('updClose').addEventListener('click', function(){ $('updBar').classList.add('h
 /* v0.2.1 踩坑修复：v0.2.0的下载按钮走raw.githubusercontent.com匿名直链——
    备份仓库是私有的，匿名访问一律404（洪老师实测）。改走ghGetFile带Token的API通道，
    壳里=自更新(applyUpdate)+文件夹备份，浏览器=blob下载。 */
+/* v0.3.14 下载现场直播：每一步喊到提示条+黄字条；壳v1.1.1+走分块对账；
+   装好自动刷新立刻生效（文件已换，reload即新版，不用重启APP）。 */
+function xtLog(m){
+  if(window.__bcLog) __bcLog(__sec() + '秒 ' + m);
+  var t = $('updText'); if(t && !$('updBar').classList.contains('hidden')) t.textContent = m;
+}
+function xtWrite(name, b64){
+  if(window.LearnShell && typeof window.LearnShell.applyUpdateBegin === 'function'){
+    try{
+      var r0 = window.LearnShell.applyUpdateBegin(name);
+      xtLog('开始写入 r=' + r0);
+      if(r0 !== 'ok') return false;
+      var CH = 60000, n = 0;
+      for(var i = 0; i < b64.length; i += CH){
+        var r = window.LearnShell.applyUpdateChunk(b64.substr(i, CH));
+        n++;
+        if(typeof r !== 'string' || r.indexOf('ok:') !== 0){ xtLog('第' + n + '块失败:' + r); try{ window.LearnShell.applyUpdateAbort(); }catch(e){} return false; }
+      }
+      var end = window.LearnShell.applyUpdateEnd();
+      xtLog('写完对账:' + end);
+      if(typeof end !== 'string' || end.indexOf('ok:') !== 0) return false;
+      var pt = end.split(':');
+      var pad = b64.slice(-2) === '==' ? 2 : (b64.slice(-1) === '=' ? 1 : 0);
+      var expect = Math.floor(b64.length * 3 / 4) - pad;
+      var pass = (+pt[1] === expect) && (+pt[2] === expect);
+      xtLog(pass ? ('✅对账通过 ' + expect + '字节') : ('❌对账不符 应收' + expect));
+      return pass;
+    }catch(e){ xtLog('写入异常:' + e.message); return false; }
+  }
+  if(window.LearnShell && typeof window.LearnShell.applyUpdate === 'function'){
+    try{ var ok = window.LearnShell.applyUpdate(name, b64); xtLog('老路写入:' + ok); return !!ok; }catch(e){ xtLog('老路异常:' + e.message); return false; }
+  }
+  return false;
+}
 $('updDlBtn').addEventListener('click', function(){
   var dl = window._xtDl || 'software-xiaotao.html';
-  toast('⏳ 正在下载新版…', 3000);
+  xtLog('⏳ 开始下载 ' + dl);
   ghGetFile(dl).then(function(s){
-    if(!s){ toast('❌ 云端没找到 ' + dl, 4000); return; }
+    if(!s){ xtLog('❌ 云端没找到 ' + dl); return; }
+    xtLog('拿到 ' + s.length + ' 字符，开始写入…');
     var b64 = b64enc(s);
-    if(window.LearnShell && typeof window.LearnShell.applyUpdate === 'function'){
-      var ok = false;
-      try{ ok = window.LearnShell.applyUpdate('小涛笔记.html', b64); }catch(e){}
+    if(window.LearnShell){
+      var ok = xtWrite('小涛笔记.html', b64);
       try{ if(window.LearnShell.folderSet && window.LearnShell.folderSet()) window.LearnShell.writeFile('小涛笔记.html', b64); }catch(e){}
-      if(ok){ toast('✅ 新版已装好，重启APP生效（文件夹里也存了一份）', 5000); return; }
+      if(ok){
+        xtLog('✅ 新版装好，2秒后自动刷新生效…');
+        setTimeout(function(){ location.reload(); }, 2000);
+        return;
+      }
+      xtLog('❌ 壳里没写成，改浏览器下载');
     }
     var blob = new Blob([s], { type: 'text/html;charset=utf-8' });
     var a = document.createElement('a');
@@ -1101,8 +1140,8 @@ $('updDlBtn').addEventListener('click', function(){
     a.download = '小涛笔记.html';
     document.body.appendChild(a); a.click();
     setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
-    toast('✅ 已下载，到下载列表找「小涛笔记.html」换掉旧文件', 5000);
-  }).catch(function(e){ toast('❌ 下载失败：' + e.message, 4000); });
+    xtLog('✅ 已下载到下载列表');
+  }).catch(function(e){ xtLog('❌ 下载失败：' + e.message); });
 });
 
 /* ==================== 设置加载/保存 ==================== */
