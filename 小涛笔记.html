@@ -26,6 +26,17 @@ window.addEventListener('load', function(){
       + '|正文长=' + (document.body ? document.body.innerHTML.length : -1));
     try{ fetch(location.href).then(function(r){ return r.text(); }).then(function(t){
       __bc('G文件实长=' + t.length); }).catch(function(e){ __bc('G自读败'); }); }catch(e){}
+    /* 占地排查：骨架里每个前排孩子报身高 */
+    try{
+      var pg0 = document.querySelector('.page'), msg = 'H';
+      if(pg0){ var kids = pg0.children;
+        for(var ki = 0; ki < Math.min(kids.length, 6); ki++){
+          var el = kids[ki];
+          msg += '|' + (el.id || el.tagName) + '=' + el.offsetHeight + 'px/' + getComputedStyle(el).display;
+        }
+      }
+      __bc(msg);
+    }catch(e){ __bc('H败'); }
     if(!document.getElementById('btnGen')){
       var d = document.createElement('div');
       d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:999;background:#c0392b;color:#fff;padding:12px;font-size:15px;line-height:1.6;';
@@ -236,7 +247,7 @@ window.addEventListener('load', function(){
 </style>
 </head>
 <body>
-<header>📒 小涛笔记<span class="ver">v0.3.9</span></header>
+<header>📒 小涛笔记<span class="ver">v0.3.9b</span></header>
 <div class="page">
 <script>__bc('B骨架');</script>
   <div id="updBar" class="hidden">
@@ -474,7 +485,7 @@ window.addEventListener('load', function(){
 (function(){
 __bc('D脚本启动');
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.3.9';
+var SW_VERSION = '0.3.9b';
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
