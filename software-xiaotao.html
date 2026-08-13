@@ -9,6 +9,10 @@
   小涛笔记（学习笔记2代）· 单文件版
 ==========================================================
   修改记录：
+   v0.3.5 2026-08-13 详情页瘦身（洪老师：手机屏幕小，一版别塞太多）：
+        ①五段总结折叠成「📋 五段总结（点开看）」，默认收起；
+        ②切块列表只留标题一行（摘要默认收起）；
+        ③点标题展开时摘要显示在正文顶部（💡开头），再点一下摘要正文一起收。
    v0.3.4 2026-08-13 省钱优先 + 机器人进度纸条（洪老师实测：k2.6思考型半小时烧32块）：
         根因：切片粗活用了思考型模型，"打草稿"也收费；用的哪个模型、切到第几批看不到。
         修法：①AI_PREFER改省钱优先——kimi-k2-0905-preview > moonshot-v1-32k > … > k2.6垫底保命
@@ -163,7 +167,8 @@
   .chunk-row { padding: 9px 4px; border-bottom: 1px dashed #eee4d4; }
   .chunk-row:last-child { border-bottom: none; }
   .chunk-row .ct { font-size: 15px; cursor: pointer; color: #4a3f2a; }
-  .chunk-row .cs { font-size: 13px; color: #9a8f80; margin-top: 2px; line-height: 1.5; }
+  .chunk-row .cs { display: none; } /* v0.3.5 列表只留标题，摘要收进展开页 */
+  .chunk-row .cs-open { font-size: 13px; color: #9a8f80; margin: 4px 0 6px; line-height: 1.5; background:#faf6ec; border-radius:8px; padding:6px 8px; }
   .chunk-row .cb { float: right; background: #efe8d5; border: none; border-radius: 8px;
                    padding: 4px 10px; font-size: 13px; color: #5a4f38; cursor: pointer; }
   .chunk-body { font-size: 14px; line-height: 1.7; background: #faf6ec; border-radius: 8px;
@@ -175,7 +180,7 @@
 </style>
 </head>
 <body>
-<header>📒 小涛笔记<span class="ver">v0.3.4</span></header>
+<header>📒 小涛笔记<span class="ver">v0.3.5</span></header>
 <div class="page">
 
   <div id="updBar" class="hidden">
@@ -286,7 +291,7 @@
   <details class="card">
     <summary>📋 关于 / Obsidian 搬家说明</summary>
     <div class="kv" style="margin-top:6px;">
-      <b>版本：</b>v0.3.4（2026-08-13）省钱优先模型名单+云端切片进度看得见<br><br>
+      <b>版本：</b>v0.3.5（2026-08-13）详情页瘦身：总结折叠+切块只列标题点开看<br><br>
       <b>⭐ 头一条铁律（Obsidian 搬家）：</b>小涛笔记里所有内容的<b>真身是标准 Markdown 文件</b>，
       全部存在 GitHub 仓库的 <b>vault/</b> 区——那就是一座现成的 Obsidian 仓库。<br>
       <b>搬家方法：</b>把仓库里 vault/ 文件夹下载到电脑/手机（或坚果云同步它），
@@ -352,7 +357,7 @@
       </select>
       <span class="hint" id="libMeta" style="display:inline; margin-left:8px;"></span>
     </div>
-    <div class="md-body" id="libBrief" style="font-size:15px; background:#faf6ec; border-radius:10px; padding:10px 12px;"></div>
+    <details id="libBriefBox" style="background:#faf6ec; border-radius:10px; padding:8px 12px;"><summary style="cursor:pointer; font-size:15px; font-weight:bold;">📋 五段总结（点开看）</summary><div class="md-body" id="libBrief" style="font-size:15px; margin-top:8px;"></div></details>
     <div id="libProgD" class="hidden" style="margin-top:8px; font-size:14px; color:#8a6d1a;"></div>
     <div id="libRetryBar" class="hidden" style="background:#fff8e8; border:1px solid #e8c96a; border-radius:10px; padding:8px 10px; margin-top:8px; font-size:14px;">
       <span id="libRetryText"></span>
@@ -388,7 +393,7 @@
 'use strict';
 (function(){
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.3.4';
+var SW_VERSION = '0.3.5';
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
@@ -1526,9 +1531,16 @@ function openLib(id){
     row.querySelector('.ct').addEventListener('click', function(){
       if(bodyEl){ bodyEl.remove(); bodyEl = null; return; }
       idbGet('chunks', id + '_' + c.ch).then(function(d){
-        bodyEl = document.createElement('div');
-        bodyEl.className = 'chunk-body';
-        bodyEl.textContent = d ? d.text : '（正文丢失）';
+        bodyEl = document.createElement('div'); /* v0.3.5：容器装摘要+正文，关时整锅端 */
+        if(c.summary){
+          var sEl = document.createElement('div');
+          sEl.className = 'cs-open'; sEl.textContent = '💡 ' + c.summary;
+          bodyEl.appendChild(sEl);
+        }
+        var tEl = document.createElement('div');
+        tEl.className = 'chunk-body';
+        tEl.textContent = d ? d.text : '（正文丢失）';
+        bodyEl.appendChild(tEl);
         row.appendChild(bodyEl);
       });
     });
