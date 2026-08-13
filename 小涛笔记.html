@@ -2,6 +2,8 @@
 <html lang="zh-CN">
 <head>
 <script>
+/* v0.3.16 upd条改fixed浮条（脱离文档流）：记录仪铁证——upd条收起=案发扳机。
+   此前已排除：sticky全拆、软件渲染、强制暗夜、缓存、文件大小、display开关灯。 */
 /* v0.3.9 烽火台：blank排查期专用，五个哨兵逐段报数（左下黑条），完事即拆 */
 window.__bc = function(t){
   var d = document.getElementById('bcBar');
@@ -278,7 +280,10 @@ window.addEventListener('load', function(){
   #toast { position: fixed; left: 50%; bottom: 40px; transform: translateX(-50%);
            background: #4a3f2a; color: #fff; padding: 10px 18px; border-radius: 20px;
            font-size: 14px; display: none; z-index: 99; max-width: 86%; text-align: center; }
-  #updBar { position: static; z-index: 9; margin-bottom: 10px; } /* v0.3.11 拆sticky：vivo WebView合成层作画丢失头号嫌疑 */
+  #updBar { position: fixed; top: 6px; left: 10px; right: 10px; z-index: 500; margin: 0;
+            box-shadow: 0 4px 14px rgba(0,0,0,.18); border-radius: 10px; }
+  /* v0.3.16 upd条改fixed浮条：铁证显示"upd条收起"这次文档流变动就是案发扳机
+     （首卡top 125→-31→0）。fixed脱离文档流，显隐永远不再引起正文重排。 */
   .upd-row { background: #fff8e8; border: 1.5px solid #e8c96a; border-radius: 10px;
              padding: 10px 12px; display: flex; align-items: center; gap: 8px; font-size: 14px; }
   .upd-row.okbar { background: #e9f3e6; border-color: #a8c99a; }
@@ -311,7 +316,7 @@ window.addEventListener('load', function(){
 </style>
 </head>
 <body>
-<header>📒 小涛笔记<span class="ver">v0.3.15</span></header>
+<header>📒 小涛笔记<span class="ver">v0.3.16</span></header>
 <div class="page">
 <script>__bc('B骨架');</script>
   <div id="updBar" class="hidden">
@@ -549,7 +554,7 @@ window.addEventListener('load', function(){
 (function(){
 __bc('D脚本启动');
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.3.15';
+var SW_VERSION = '0.3.16';
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
