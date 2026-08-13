@@ -1,6 +1,26 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+<script>
+/* v0.3.7 看门狗：主程序死了/文件没下完整时，必须让人看见原因（原则三） */
+window.addEventListener('error', function(e){
+  var d = document.getElementById('wdBar');
+  if(!d){ d = document.createElement('div'); d.id = 'wdBar';
+    d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:999;background:#c0392b;color:#fff;padding:10px;font-size:14px;line-height:1.5;';
+    document.body ? document.body.appendChild(d) : document.documentElement.appendChild(d); }
+  d.textContent = '⚠️ 程序报错：' + (e.message || '未知') + '（第' + (e.lineno || '?') + '行）——截图给小涛';
+});
+window.addEventListener('load', function(){
+  setTimeout(function(){
+    if(!document.getElementById('btnGen')){
+      var d = document.createElement('div');
+      d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:999;background:#c0392b;color:#fff;padding:12px;font-size:15px;line-height:1.6;';
+      d.textContent = '⚠️ 这个文件没下完整（内容缺了一半）。请回到能正常打开的小涛笔记，点「下载新版到本机」重新下载一次；或换个浏览器打开。';
+      document.body.appendChild(d);
+    }
+  }, 3000);
+});
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>小涛笔记</title>
@@ -9,6 +29,9 @@
   小涛笔记（学习笔记2代）· 单文件版
 ==========================================================
   修改记录：
+   v0.3.7 2026-08-13 看门狗：洪老师更新后页面空白（手机上的文件疑似没下完整）。
+        主程序报错→顶红条写清错误和行号；文件残缺→3秒后顶红条提示重新下载。
+        教训：单文件APP越来越大（300KB+），下载/自更新要防半截文件。
    v0.3.6 2026-08-13 「📚 参考文献」上线（提取→身份牌→AI定级→前十置顶）：
         - 全文找"参考文献"节（取最后一次出现），按 [n]/行首n. 连号切条；
         - 本地文献库挂身份牌（不联网秒出）：内置中文核心刊表151种（中华牌/中文核心）
@@ -197,7 +220,7 @@
 </style>
 </head>
 <body>
-<header>📒 小涛笔记<span class="ver">v0.3.6</span></header>
+<header>📒 小涛笔记<span class="ver">v0.3.7</span></header>
 <div class="page">
 
   <div id="updBar" class="hidden">
@@ -308,7 +331,7 @@
   <details class="card">
     <summary>📋 关于 / Obsidian 搬家说明</summary>
     <div class="kv" style="margin-top:6px;">
-      <b>版本：</b>v0.3.6（2026-08-13）参考文献：提取+身份牌+AI定级+必读前十置顶<br><br>
+      <b>版本：</b>v0.3.7（2026-08-13）加看门狗：程序报错/文件残缺直接亮红条说原因<br><br>
       <b>⭐ 头一条铁律（Obsidian 搬家）：</b>小涛笔记里所有内容的<b>真身是标准 Markdown 文件</b>，
       全部存在 GitHub 仓库的 <b>vault/</b> 区——那就是一座现成的 Obsidian 仓库。<br>
       <b>搬家方法：</b>把仓库里 vault/ 文件夹下载到电脑/手机（或坚果云同步它），
@@ -433,7 +456,7 @@
 'use strict';
 (function(){
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.3.6';
+var SW_VERSION = '0.3.7';
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
