@@ -11,22 +11,56 @@ window.__bc = function(t){
   d.textContent += ' ' + t;
 };
 __bc('A头完');
-/* v0.3.11 作画丢失对策：vivo WebView 合成层会把正文画丢（DOM在、屏幕空）。
-   捅一下body强制重排重画；开局30秒每2秒捅一次，之后每次界面变动捅。 */
+/* v0.3.13 案发现场记录仪：每秒量首卡位置，变了就带秒数记一笔；
+   updBar显隐也记；黑条上加🔄刷新钮救急。 */
+window.__bcLog = function(t){
+  var d = document.getElementById('bcLog');
+  if(!d){ d = document.createElement('div'); d.id = 'bcLog';
+    d.style.cssText = 'position:fixed;left:0;bottom:60px;z-index:99999;background:#111;color:#fc6;padding:6px 10px;font-size:12px;line-height:1.5;max-width:92%;max-height:120px;overflow:hidden;border-radius:0 8px 0 0;white-space:pre-line;';
+    (document.body || document.documentElement).appendChild(d); }
+  d.textContent = (d.textContent + '\n' + t).split('\n').slice(-6).join('\n');
+};
+window.__t0 = Date.now();
+window.__sec = function(){ return Math.round((Date.now() - window.__t0) / 1000); };
 window.__nudge = function(){
   try{
     var b = document.body; if(!b) return;
-    /* v0.3.12 关灯再开灯：display整页切换，比transform强一个量级 */
     b.style.display = 'none';
     void b.offsetHeight;
     b.style.display = '';
   }catch(e){}
 };
-window.__nudgeCount = 0;
-window.__nudgeTimer = setInterval(function(){
-  __nudge();
-  if(++window.__nudgeCount > 15){ clearInterval(window.__nudgeTimer); window.__nudgeTimer = null; }
-}, 2000);
+/* 核弹级重画：把整个骨架卸下来再装回去（节点不动，事件不丢） */
+window.__nudgeHard = function(){
+  try{
+    var pg = document.querySelector('.page'); if(!pg) return;
+    var nx = pg.nextSibling;
+    document.body.removeChild(pg);
+    void document.body.offsetHeight;
+    document.body.insertBefore(pg, nx || null);
+  }catch(e){}
+};
+window.__lastTop = -99;
+setInterval(function(){
+  var c = document.querySelector('.card');
+  if(!c) return;
+  var t = Math.round(c.getBoundingClientRect().top);
+  if(window.__lastTop === -99){ window.__lastTop = t; return; }
+  if(t !== window.__lastTop){
+    window.__bcLog(__sec() + '秒 首卡top ' + window.__lastTop + '→' + t);
+    window.__lastTop = t;
+  }
+}, 1000);
+setTimeout(function(){
+  var d = document.getElementById('bcBar');
+  if(d && !document.getElementById('bcReload')){
+    var b = document.createElement('button');
+    b.id = 'bcReload'; b.textContent = '🔄刷新';
+    b.style.cssText = 'margin-left:10px;padding:2px 10px;font-size:14px;';
+    b.onclick = function(){ location.reload(); };
+    d.appendChild(b);
+  }
+}, 500);
 /* v0.3.7 看门狗：主程序死了/文件没下完整时，必须让人看见原因（原则三） */
 window.addEventListener('error', function(e){
   var d = document.getElementById('wdBar');
@@ -275,7 +309,7 @@ window.addEventListener('load', function(){
 </style>
 </head>
 <body>
-<header>📒 小涛笔记<span class="ver">v0.3.12</span></header>
+<header>📒 小涛笔记<span class="ver">v0.3.13</span></header>
 <div class="page">
 <script>__bc('B骨架');</script>
   <div id="updBar" class="hidden">
@@ -513,7 +547,7 @@ window.addEventListener('load', function(){
 (function(){
 __bc('D脚本启动');
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.3.12';
+var SW_VERSION = '0.3.13';
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
@@ -1025,26 +1059,27 @@ function updShow(kind, text, canDl){
   $('updRow').className = 'upd-row' + (kind === 'ok' ? ' okbar' : '');
   $('updText').textContent = text;
   $('updDlBtn').style.display = canDl ? '' : 'none';
+  if(window.__bcLog) __bcLog(__sec() + '秒 upd条显示:' + kind);
   if(window.__nudge) __nudge();  /* v0.3.11 界面变动后强制重画 */
 }
 function ghSelfCheck(manual){
   if(!ghReady()){ if(manual) showMsg($('ghMsg'), '先填 GitHub 设置。', 'err'); return; }
   ghGetFile('version-xiaotao.json').then(function(s){
-    if(!s){ updShow('ok', '✅ GitHub 线路通畅 · 本机 v' + SW_VERSION + '（云端还没有版本信息）'); setTimeout(function(){ $('updBar').classList.add('hidden'); if(window.__nudge) __nudge(); }, 8000); return null; }
+    if(!s){ updShow('ok', '✅ GitHub 线路通畅 · 本机 v' + SW_VERSION + '（云端还没有版本信息）'); setTimeout(function(){ $('updBar').classList.add('hidden'); if(window.__bcLog) __bcLog(__sec() + '秒 upd条收起'); if(window.__nudgeHard) __nudgeHard(); }, 8000); return null; }
     var info = JSON.parse(s);
     if(cmpVer(info.version, SW_VERSION) > 0){
       updShow('warn', '🎉 网上有新版 v' + info.version + '（本机 v' + SW_VERSION + '）：' + (info.note || ''), true);
       window._xtDl = info.dl;
     }else{
       updShow('ok', '✅ 线路通畅，已是最新 v' + SW_VERSION);
-      setTimeout(function(){ $('updBar').classList.add('hidden'); if(window.__nudge) __nudge(); }, 6000);
+      setTimeout(function(){ $('updBar').classList.add('hidden'); if(window.__bcLog) __bcLog(__sec() + '秒 upd条收起'); if(window.__nudgeHard) __nudgeHard(); }, 6000);
     }
   }).catch(function(e){
     if(manual) showMsg($('ghMsg'), '❌ 自检失败：' + e.message, 'err');
   });
 }
 $('ghCheckBtn').addEventListener('click', function(){ ghSelfCheck(true); });
-$('updClose').addEventListener('click', function(){ $('updBar').classList.add('hidden'); if(window.__nudge) __nudge(); });
+$('updClose').addEventListener('click', function(){ $('updBar').classList.add('hidden'); if(window.__bcLog) __bcLog(__sec() + '秒 upd条收起'); if(window.__nudgeHard) __nudgeHard(); });
 /* v0.2.1 踩坑修复：v0.2.0的下载按钮走raw.githubusercontent.com匿名直链——
    备份仓库是私有的，匿名访问一律404（洪老师实测）。改走ghGetFile带Token的API通道，
    壳里=自更新(applyUpdate)+文件夹备份，浏览器=blob下载。 */
