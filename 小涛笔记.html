@@ -2,35 +2,13 @@
 <html lang="zh-CN">
 <head>
 <script>
-/* v0.3.21 引擎身份写进标题栏（系统·Cr版本号 / X5·TBS版本号 + 桥报tbs状态）。 */
-/* v0.3.20 修v0.3.19钢印行少个括号的语法错误（红条看门狗抓个正着，好狗）。 */
-/* v0.3.19 黑条显示引擎钢印（TBS=X5 / Chrome=系统），判X5到底点火没有。 */
-/* v0.3.18 静物实验：关开屏自动自检（upd条不主动弹）+ 正文保命微动画。 */
-/* v0.3.17 正文全体搬进fixed滚动层（body禁滚、标题fixed、.page=fixed全屏滚动框）。
-   v0.3.16证明upd条无辜（改浮条后首卡仍自己崩）：普通文档流内容层本身不稳，
-   fixed元素从来没事——那就让正文也fixed。 */
-/* v0.3.9 烽火台：blank排查期专用，五个哨兵逐段报数（左下黑条），完事即拆 */
-window.__bc = function(t){
-  var d = document.getElementById('bcBar');
-  if(!d){ d = document.createElement('div'); d.id = 'bcBar';
-    d.style.cssText = 'position:fixed;left:0;bottom:0;z-index:99999;background:#222;color:#7f7;padding:8px 10px;font-size:13px;line-height:1.6;max-width:92%;border-radius:0 8px 0 0;';
-    (document.body || document.documentElement).appendChild(d); }
-  d.textContent += ' ' + t;
-};
-__bc('A头完');
-/* v0.3.13 案发现场记录仪：每秒量首卡位置，变了就带秒数记一笔；
-   updBar显隐也记；黑条上加🔄刷新钮救急。 */
-window.__bcLog = function(t){
-  var d = document.getElementById('bcLog');
-  if(!d){ d = document.createElement('div'); d.id = 'bcLog';
-    d.style.cssText = 'position:fixed;left:0;bottom:60px;z-index:99999;background:#111;color:#fc6;padding:6px 10px;font-size:12px;line-height:1.5;max-width:92%;max-height:120px;overflow:hidden;border-radius:0 8px 0 0;white-space:pre-line;';
-    (document.body || document.documentElement).appendChild(d); }
-  d.textContent = (d.textContent + '\n' + t).split('\n').slice(-6).join('\n');
-};
-window.__t0 = Date.now();
-window.__sec = function(){ return Math.round((Date.now() - window.__t0) / 1000); };
+/* v0.3.26 收官清理：blank排查期监视器全部拆除（烽火台/记录仪/首卡哨兵/刷新钮/自读报数/引擎钢印）。
+   只留隐形看门狗——平时看不见，程序报错或文件缺半才亮红条。
+   __bc/__bcLog 留空壳，正文里漏网的调用不炸。 */
+window.__bc = function(){};
+window.__bcLog = function(){};
+window.__sec = function(){ return 0; };
 window.__nudge = function(){
-  /* v0.3.15 改回温和版：display开关灯在这台手机上反而晃坏排版 */
   try{
     var b = document.body; if(!b) return;
     b.style.webkitTransform = 'translateZ(0)';
@@ -38,79 +16,19 @@ window.__nudge = function(){
     b.style.webkitTransform = '';
   }catch(e){}
 };
-/* 核弹级重画：把整个骨架卸下来再装回去（节点不动，事件不丢） */
-window.__nudgeHard = function(){
-  try{
-    var pg = document.querySelector('.page'); if(!pg) return;
-    var nx = pg.nextSibling;
-    document.body.removeChild(pg);
-    void document.body.offsetHeight;
-    document.body.insertBefore(pg, nx || null);
-  }catch(e){}
-};
-window.__lastTop = -99;
-setInterval(function(){
-  var c = document.querySelector('.card');
-  if(!c) return;
-  var t = Math.round(c.getBoundingClientRect().top);
-  if(window.__lastTop === -99){ window.__lastTop = t; return; }
-  if(t !== window.__lastTop){
-    window.__bcLog(__sec() + '秒 首卡top ' + window.__lastTop + '→' + t);
-    window.__lastTop = t;
-  }
-}, 1000);
-setTimeout(function(){
-  var d = document.getElementById('bcBar');
-  if(d && !document.getElementById('bcReload')){
-    var b = document.createElement('button');
-    b.id = 'bcReload'; b.textContent = '🔄刷新';
-    b.style.cssText = 'margin-left:10px;padding:2px 10px;font-size:14px;';
-    b.onclick = function(){ location.reload(); };
-    d.appendChild(b);
-  }
-}, 500);
-/* v0.3.7 看门狗：主程序死了/文件没下完整时，必须让人看见原因（原则三） */
 window.addEventListener('error', function(e){
   var d = document.getElementById('wdBar');
   if(!d){ d = document.createElement('div'); d.id = 'wdBar';
     d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:999;background:#c0392b;color:#fff;padding:10px;font-size:14px;line-height:1.5;';
     document.body ? document.body.appendChild(d) : document.documentElement.appendChild(d); }
-  d.textContent = '⚠️ 程序报错：' + (e.message || '未知') + '（第' + (e.lineno || '?') + '行）——截图给小涛';
+  d.textContent = '\u26A0\uFE0F \u7A0B\u5E8F\u62A5\u9519\uFF1A' + (e.message || '\u672A\u77E5') + '\uFF08\u7B2C' + (e.lineno || '?') + '\u884C\uFF09\u2014\u2014\u622A\u56FE\u7ED9\u5C0F\u6D9B';
 });
 window.addEventListener('load', function(){
   setTimeout(function(){
-    __bc('F加载完|btnGen=' + (document.getElementById('btnGen')?'有':'无')
-      + '|卡片数=' + document.querySelectorAll('.card').length
-      + '|正文长=' + (document.body ? document.body.innerHTML.length : -1));
-    try{ fetch(location.href).then(function(r){ return r.text(); }).then(function(t){
-      __bc('G文件实长=' + t.length); }).catch(function(e){ __bc('G自读败'); }); }catch(e){}
-    /* 占地排查：骨架里每个前排孩子报身高 */
-    try{
-      var pg0 = document.querySelector('.page'), msg = 'H';
-      if(pg0){ var kids = pg0.children;
-        for(var ki = 0; ki < Math.min(kids.length, 6); ki++){
-          var el = kids[ki];
-          msg += '|' + (el.id || el.tagName) + '=' + el.offsetHeight + 'px/' + getComputedStyle(el).display;
-        }
-      }
-      __bc(msg);
-    }catch(e){ __bc('H败'); }
-    /* 点名排查：空白区里戳几针，看谁躺在最上面 */
-    try{
-      var msg2 = 'I', ys = [300, 900, 1600];
-      for(var yi = 0; yi < ys.length; yi++){
-        var hit = document.elementFromPoint(Math.round(window.innerWidth / 2), ys[yi]);
-        msg2 += '@' + ys[yi] + '=' + (hit ? (hit.id || hit.className || hit.tagName) : 'null');
-      }
-      var c1 = document.querySelector('.card'), rc = c1 ? c1.getBoundingClientRect() : null;
-      msg2 += '|首卡top=' + (rc ? Math.round(rc.top) : '?') + '高=' + (rc ? Math.round(rc.height) : '?');
-      msg2 += '|屏高=' + window.innerHeight + '|页高=' + document.body.scrollHeight;
-      __bc(msg2);
-    }catch(e){ __bc('I败'); }
     if(!document.getElementById('btnGen')){
       var d = document.createElement('div');
       d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:999;background:#c0392b;color:#fff;padding:12px;font-size:15px;line-height:1.6;';
-      d.textContent = '⚠️ 这个文件没下完整（内容缺了一半）。请回到能正常打开的小涛笔记，点「下载新版到本机」重新下载一次；或换个浏览器打开。';
+      d.textContent = '\u26A0\uFE0F \u8FD9\u4E2A\u6587\u4EF6\u6CA1\u4E0B\u5B8C\u6574\uFF08\u5185\u5BB9\u7F3A\u4E86\u4E00\u534A\uFF09\u3002\u8BF7\u56DE\u5230\u80FD\u6B63\u5E38\u6253\u5F00\u7684\u5C0F\u6D9B\u7B14\u8BB0\uFF0C\u70B9\u300C\u4E0B\u8F7D\u65B0\u7248\u5230\u672C\u673A\u300D\u91CD\u65B0\u4E0B\u8F7D\u4E00\u6B21\uFF1B\u6216\u6362\u4E2A\u6D4F\u89C8\u5668\u6253\u5F00\u3002';
       document.body.appendChild(d);
     }
   }, 3000);
@@ -579,7 +497,7 @@ window.addEventListener('load', function(){
 (function(){
 __bc('D脚本启动');
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.3.25';
+var SW_VERSION = '0.3.26';
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
@@ -2115,6 +2033,8 @@ function refFindSection(text){
 }
 /* 本地切条：[n] 或行首 n. 编号，编号必须连号才认（防正文里的[n]引用） */
 function refSplitLocal(sec){
+  /* v0.3.26 先剥"参考文献"标题（有时和第一条粘连："参考文献1 Fahy…"） */
+  sec = sec.replace(/^[\s\S]{0,12}?参考文献[:：]?\s*/, '');
   var marks = [], m, re = /\[(\d{1,3})\]/g;
   while((m = re.exec(sec))){ var n = +m[1];
     if(!marks.length ? n === 1 : n === marks[marks.length-1].n + 1) marks.push({ n: n, i: m.index, len: m[0].length }); }
@@ -2123,6 +2043,14 @@ function refSplitLocal(sec){
     while((m = re2.exec(sec))){ var n2 = +m[2];
       if(!marks.length ? n2 === 1 : n2 === marks[marks.length-1].n + 1)
         marks.push({ n: n2, i: m.index + m[1].length, len: m[0].length - m[1].length }); }
+  }
+  /* v0.3.26 退路③+：句中"句号/空白+数字+空格+大写字母或中文"连号——
+     GB/T格式被PDF抽成一整行时就这样："…2233-2247. 2 Randell SH…" */
+  if(marks.length < 3){
+    marks = []; var re4 = /(^|[\s.，。；\u4e00-\u9fa5])\s*(\d{1,3})\s+(?=[A-Z\u4e00-\u9fa5])/g;
+    while((m = re4.exec(sec))){ var n4 = +m[2];
+      if(!marks.length ? n4 === 1 : n4 === marks[marks.length-1].n + 1)
+        marks.push({ n: n4, i: m.index + m[1].length, len: m[0].length - m[1].length }); }
   }
   /* v0.3.25 退路③：行首 n）/ n．/ n: （全角半角都认），照样要连号 */
   if(marks.length < 3){
@@ -2304,32 +2232,10 @@ $('btnRefs').addEventListener('click', function(){
 });
 
 __bc('E脚本跑完');
-/* v0.3.19 引擎钢印：X5内核的UA里带"TBS/数字"标记，系统WebView没有。
-   Toast在vivo上会被通知权限吞掉，改在这儿明牌显示。 */
+/* v0.3.26 标题栏只留版本号（X5路线已判死，引擎标记退役；裸奔开关留用） */
 try{
-  var __ua = navigator.userAgent || '';
-  var __tbs = __ua.match(/TBS\/([0-9]+)/);
-  var __chrome = __ua.match(/Chrome\/([0-9]+)/);
-  var __eng = __tbs ? ('X5·TBS' + __tbs[1]) : ('系统·Cr' + (__chrome ? __chrome[1] : '?'));
-  /* v0.3.23 裸奔标记：没有桥=壳开了裸奔模式（或在浏览器里），标题直接亮出来 */
-  if(!window.LearnShell) __eng += '·🧪裸奔';
-  __bc(__eng);
-  /* v0.3.21 引擎身份直接写进标题栏（黑条有人找不到/看不清） */
   var __vs = document.querySelector('header .ver');
-  if(__vs) __vs.textContent = 'v' + SW_VERSION + ' · ' + __eng;
-  /* 桥里若报了tbs版本号也贴上（壳v1.3.2+）；v0.3.22 起每10秒自动重取——
-     壳v1.3.3的X5下载催办进度（催下载中第N回→点火）就能在标题栏现场直播 */
-  function __engTick(){
-    if(window.LearnShell && window.LearnShell.engineInfo){
-      try{
-        var __ei = LearnShell.engineInfo();
-        if(__ei && __vs) __vs.textContent = 'v' + SW_VERSION + ' · ' + __eng + ' · ' + __ei;
-      }catch(e){}
-    }
-  }
-  __engTick();
-  setInterval(__engTick, 10000);
-  /* v0.3.23 裸奔开关按钮 */
+  if(__vs) __vs.textContent = 'v' + SW_VERSION + (window.LearnShell ? '' : ' · 🧪裸奔');
   var __nb=document.getElementById('btnNobridge');
   if(__nb) __nb.onclick=function(){
     document.getElementById('nbMsg').textContent='正在切换…';
@@ -2341,7 +2247,6 @@ try{
   var __hh = document.querySelector('header').offsetHeight;
   var __ps = document.querySelectorAll('.page');
   for(var __i = 0; __i < __ps.length; __i++) __ps[__i].style.top = __hh + 'px';
-  if(window.__bcLog) __bcLog(__sec() + '秒 滚动层校准 top=' + __hh);
 }catch(e){}
 /* 测试挂钩（ playwright 用，不影响功能 ） */
 window.__xt = { ensureJDB: ensureJDB, refTag: refTag, refSplitLocal: refSplitLocal, refFindSection: refFindSection };
