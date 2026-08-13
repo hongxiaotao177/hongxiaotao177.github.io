@@ -11,6 +11,21 @@ window.__bc = function(t){
   d.textContent += ' ' + t;
 };
 __bc('A头完');
+/* v0.3.11 作画丢失对策：vivo WebView 合成层会把正文画丢（DOM在、屏幕空）。
+   捅一下body强制重排重画；开局30秒每2秒捅一次，之后每次界面变动捅。 */
+window.__nudge = function(){
+  try{
+    var b = document.body; if(!b) return;
+    b.style.webkitTransform = 'translateZ(0)';
+    void b.offsetHeight;
+    b.style.webkitTransform = '';
+  }catch(e){}
+};
+window.__nudgeCount = 0;
+window.__nudgeTimer = setInterval(function(){
+  __nudge();
+  if(++window.__nudgeCount > 15){ clearInterval(window.__nudgeTimer); window.__nudgeTimer = null; }
+}, 2000);
 /* v0.3.7 看门狗：主程序死了/文件没下完整时，必须让人看见原因（原则三） */
 window.addEventListener('error', function(e){
   var d = document.getElementById('wdBar');
@@ -226,7 +241,7 @@ window.addEventListener('load', function(){
   #toast { position: fixed; left: 50%; bottom: 40px; transform: translateX(-50%);
            background: #4a3f2a; color: #fff; padding: 10px 18px; border-radius: 20px;
            font-size: 14px; display: none; z-index: 99; max-width: 86%; text-align: center; }
-  #updBar { position: sticky; top: 50px; z-index: 9; margin-bottom: 10px; }
+  #updBar { position: static; z-index: 9; margin-bottom: 10px; } /* v0.3.11 拆sticky：vivo WebView合成层作画丢失头号嫌疑 */
   .upd-row { background: #fff8e8; border: 1.5px solid #e8c96a; border-radius: 10px;
              padding: 10px 12px; display: flex; align-items: center; gap: 8px; font-size: 14px; }
   .upd-row.okbar { background: #e9f3e6; border-color: #a8c99a; }
@@ -259,7 +274,7 @@ window.addEventListener('load', function(){
 </style>
 </head>
 <body>
-<header>📒 小涛笔记<span class="ver">v0.3.10</span></header>
+<header>📒 小涛笔记<span class="ver">v0.3.11</span></header>
 <div class="page">
 <script>__bc('B骨架');</script>
   <div id="updBar" class="hidden">
@@ -497,7 +512,7 @@ window.addEventListener('load', function(){
 (function(){
 __bc('D脚本启动');
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.3.10';
+var SW_VERSION = '0.3.11';
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
@@ -731,6 +746,7 @@ function showPage(which){
   $('detailPage').classList.toggle('hidden', which !== 'detail');
   $('libPage').classList.toggle('hidden', which !== 'lib');
   window.scrollTo(0, 0);
+  if(window.__nudge) setTimeout(__nudge, 50);  /* v0.3.11 */
 }
 $('btnBack').addEventListener('click', function(){ showPage('home'); renderList(); });
 
@@ -1008,25 +1024,26 @@ function updShow(kind, text, canDl){
   $('updRow').className = 'upd-row' + (kind === 'ok' ? ' okbar' : '');
   $('updText').textContent = text;
   $('updDlBtn').style.display = canDl ? '' : 'none';
+  if(window.__nudge) __nudge();  /* v0.3.11 界面变动后强制重画 */
 }
 function ghSelfCheck(manual){
   if(!ghReady()){ if(manual) showMsg($('ghMsg'), '先填 GitHub 设置。', 'err'); return; }
   ghGetFile('version-xiaotao.json').then(function(s){
-    if(!s){ updShow('ok', '✅ GitHub 线路通畅 · 本机 v' + SW_VERSION + '（云端还没有版本信息）'); setTimeout(function(){ $('updBar').classList.add('hidden'); }, 8000); return null; }
+    if(!s){ updShow('ok', '✅ GitHub 线路通畅 · 本机 v' + SW_VERSION + '（云端还没有版本信息）'); setTimeout(function(){ $('updBar').classList.add('hidden'); if(window.__nudge) __nudge(); }, 8000); return null; }
     var info = JSON.parse(s);
     if(cmpVer(info.version, SW_VERSION) > 0){
       updShow('warn', '🎉 网上有新版 v' + info.version + '（本机 v' + SW_VERSION + '）：' + (info.note || ''), true);
       window._xtDl = info.dl;
     }else{
       updShow('ok', '✅ 线路通畅，已是最新 v' + SW_VERSION);
-      setTimeout(function(){ $('updBar').classList.add('hidden'); }, 6000);
+      setTimeout(function(){ $('updBar').classList.add('hidden'); if(window.__nudge) __nudge(); }, 6000);
     }
   }).catch(function(e){
     if(manual) showMsg($('ghMsg'), '❌ 自检失败：' + e.message, 'err');
   });
 }
 $('ghCheckBtn').addEventListener('click', function(){ ghSelfCheck(true); });
-$('updClose').addEventListener('click', function(){ $('updBar').classList.add('hidden'); });
+$('updClose').addEventListener('click', function(){ $('updBar').classList.add('hidden'); if(window.__nudge) __nudge(); });
 /* v0.2.1 踩坑修复：v0.2.0的下载按钮走raw.githubusercontent.com匿名直链——
    备份仓库是私有的，匿名访问一律404（洪老师实测）。改走ghGetFile带Token的API通道，
    壳里=自更新(applyUpdate)+文件夹备份，浏览器=blob下载。 */
