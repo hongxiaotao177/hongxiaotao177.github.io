@@ -579,7 +579,7 @@ window.addEventListener('load', function(){
 (function(){
 __bc('D脚本启动');
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.3.24';
+var SW_VERSION = '0.3.25';
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
@@ -2124,11 +2124,30 @@ function refSplitLocal(sec){
       if(!marks.length ? n2 === 1 : n2 === marks[marks.length-1].n + 1)
         marks.push({ n: n2, i: m.index + m[1].length, len: m[0].length - m[1].length }); }
   }
+  /* v0.3.25 退路③：行首 n）/ n．/ n: （全角半角都认），照样要连号 */
+  if(marks.length < 3){
+    marks = []; var re3 = /(^|\n)\s*(\d{1,3})\s*[）).．:：]\s*/g;
+    while((m = re3.exec(sec))){ var n3 = +m[2];
+      if(!marks.length ? n3 === 1 : n3 === marks[marks.length-1].n + 1)
+        marks.push({ n: n3, i: m.index + m[1].length, len: m[0].length - m[1].length }); }
+  }
   var out = [];
   for(var k = 0; k < marks.length; k++){
     var st = marks[k].i + marks[k].len, en = (k + 1 < marks.length ? marks[k+1].i : sec.length);
     var t = sec.slice(st, en).replace(/\s+/g, ' ').trim();
     if(t.length > 10) out.push({ n: marks[k].n, text: t });
+  }
+  /* v0.3.25 退路④保底：编号实在认不出就按行切，一行一条，重新编号，文本原样（绝不空手） */
+  if(out.length < 3){
+    out = [];
+    var lines = sec.split(/\n+/), rn = 0;
+    for(var li = 0; li < lines.length; li++){
+      var ln = lines[li].replace(/\s+/g, ' ').trim();
+      if(ln.length < 12) continue;
+      if(/参考文献|references/i.test(ln) && ln.length < 20) continue;
+      rn++;
+      out.push({ n: rn, text: ln.replace(/^\[?\d{1,3}\]?[.、．）):：]?\s*/, '') });
+    }
   }
   return out;
 }
@@ -2265,7 +2284,7 @@ $('btnRefs').addEventListener('click', function(){
     var sec = refFindSection(raw);
     if(!sec){ refsSay('❌ 全文里没找到"参考文献"节（这份资料可能没有）。'); return; }
     var refs = refSplitLocal(sec);
-    if(refs.length < 3){ refsSay('❌ 参考文献节找到了，但编号格式认不出（截图给小涛看）。'); return; }
+    if(refs.length < 3){ refsSay('❌ 参考文献节找到了但切不出条目。把下面原文截图给小涛：『' + sec.slice(0, 150).replace(/\s+/g, ' ') + '…』'); return; }
     refsSay(JDB_EN ? ('✅ 切出 ' + refs.length + ' 条，挂身份牌…') : '📚 正在装文献库（头一回用要下载，约200KB）…');
     ensureJDB(function(jok){
     if(!jok) toast('⚠️ 文献库没装着，身份牌空着不碍事', 3000);
