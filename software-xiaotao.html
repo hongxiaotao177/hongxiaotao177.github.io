@@ -579,7 +579,7 @@ window.addEventListener('load', function(){
 (function(){
 __bc('D脚本启动');
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.3.23';
+var SW_VERSION = '0.3.24';
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
@@ -1750,6 +1750,48 @@ function openLib(id){
   $('libAskCard').classList.add('hidden');
   $('libAskAns').innerHTML = ''; $('btnAnsToNote').classList.add('hidden');
   var box = $('chunkList'); box.innerHTML = '';
+  /* v0.3.24 参考文献切片：就放在切块列表第一张，画法跟切块一模一样（朴素textContent），
+     用户亲定方案——老refsPage一切页就白屏，此路废弃。格式原样不变。 */
+  if(x.refs && x.refs.length){
+    var rrow = document.createElement('div');
+    rrow.className = 'chunk-row';
+    var mustN = x.refs.filter(function(r){ return r.lv === 1; }).length;
+    rrow.innerHTML = '<button class="cb" style="visibility:hidden;">📝</button>' +
+      '<div class="ct">📚 参考文献（' + x.refs.length + ' 条）' + (mustN ? ' · 🔴必读' + mustN + '条' : '') + '</div>' +
+      '<div class="cs">点我看文献清单（格式原样）· 可复制/存txt</div>';
+    var rbody = null;
+    rrow.querySelector('.ct').addEventListener('click', function(){
+      if(rbody){ rbody.remove(); rbody = null; return; }
+      rbody = document.createElement('div');
+      var top = refsTop10(x);
+      if(top.length){
+        var tp = document.createElement('div');
+        tp.className = 'cs-open';
+        tp.textContent = '⭐ 必读前' + top.length + '：' + top.map(function(r){ return '[' + r.n + ']'; }).join(' ');
+        rbody.appendChild(tp);
+      }
+      x.refs.forEach(function(r){
+        var d = document.createElement('div');
+        d.className = 'chunk-body';
+        d.style.borderBottom = '1px dashed #eee4d4';
+        d.textContent = (r.lv === 1 ? '🔴 ' : r.lv === 2 ? '🟡 ' : r.lv === 3 ? '⚪ ' : '❔ ') +
+          '[' + r.n + '] ' + r.text + (r.tag ? ' ' + r.tag : '') + (r.why ? '（' + r.why + '）' : '');
+        rbody.appendChild(d);
+      });
+      var act = document.createElement('div');
+      act.style.marginTop = '8px';
+      var b1 = document.createElement('button'); b1.className = 'btn secondary'; b1.style.cssText = 'padding:6px 10px; font-size:13px;'; b1.textContent = '📋 复制全部';
+      b1.addEventListener('click', function(){ refsCopy(false); });
+      var b2 = document.createElement('button'); b2.className = 'btn secondary'; b2.style.cssText = 'padding:6px 10px; font-size:13px; margin-left:6px;'; b2.textContent = '⭐ 只复制前十';
+      b2.addEventListener('click', function(){ refsCopy(true); });
+      var b3 = document.createElement('button'); b3.className = 'btn secondary'; b3.style.cssText = 'padding:6px 10px; font-size:13px; margin-left:6px;'; b3.textContent = '💾 存成txt';
+      b3.addEventListener('click', function(){ $('btnRefsSave').click(); });
+      act.appendChild(b1); act.appendChild(b2); act.appendChild(b3);
+      rbody.appendChild(act);
+      rrow.appendChild(rbody);
+    });
+    box.appendChild(rrow);
+  }
   (x.chunks || []).forEach(function(c){
     var row = document.createElement('div');
     row.className = 'chunk-row';
@@ -2129,6 +2171,11 @@ function refsAiGrade(refs, bookTitle, progFn){
   return chain.then(function(){ return result; });
 }
 var LV_ICON = ['❔', '🔴', '🟡', '⚪'], LV_NAME = ['未定级', '必读', '可读', '一般'];
+/* v0.3.24 提取进度改说在资料详情页（refsPage白屏废弃；refsProg还写着兜底，反正看不见不碍事） */
+function refsSay(m){
+  var p = $('libProgD'); if(p){ p.textContent = m; if(m) p.classList.remove('hidden'); else p.classList.add('hidden'); }
+  var q = $('refsProg'); if(q) q.textContent = m;
+}
 var refsFilter = '';
 function refItemText(r){ return '[' + r.n + '] ' + r.text + (r.tag ? ' ' + r.tag : ''); }
 function refsTop10(x){
@@ -2205,34 +2252,33 @@ Array.prototype.forEach.call(document.querySelectorAll('.rf-filter'), function(b
 $('btnRefsBack').addEventListener('click', function(){ openLib(curLibId); });
 $('btnRefs').addEventListener('click', function(){
   var id = curLibId, x = getLib(id); if(!x) return;
-  showPage('refs'); $('refsList').innerHTML = ''; $('refsTopBox').innerHTML = ''; $('refsMeta').textContent = '';
-  /* v0.3.8 先进门先装库：身份牌靠外挂文献库 */
-  ensureJDB(function(ok){
-    if(!ok && JDB_STATE === 'fail') toast('⚠️ 文献库没装着（断网？），身份牌先空着，AI定级不受影响', 3500);
-    renderRefs();
-  });
-  if(x.refs && x.refs.length){ $('refsProg').textContent = JDB_EN ? '' : '📚 头一回用，正在装文献库…'; renderRefs(); return; }
-  if(!(localStorage.getItem('xt_apikey') || '').trim()){ $('refsProg').textContent = '请先在 ⚙️设置 里填 API Key'; return; }
-  $('refsProg').textContent = '📖 正在找参考文献节…';
+  /* v0.3.24 不再切页（refsPage老路白屏）：有文献→跳到切块列表第一张"参考文献切片"并展开 */
+  if(x.refs && x.refs.length){
+    var rr = $('chunkList').querySelector('.chunk-row');
+    if(rr){ rr.scrollIntoView(); var ct = rr.querySelector('.ct'); if(ct && !rr.querySelector('.chunk-body')) ct.click(); }
+    return;
+  }
+  if(!(localStorage.getItem('xt_apikey') || '').trim()){ refsSay('请先在 ⚙️设置 里填 API Key'); return; }
+  refsSay('📖 正在找参考文献节…');
   libFullText(id).then(function(raw){
-    if(!raw){ $('refsProg').textContent = '❌ 正文丢了，没法提取。'; return; }
+    if(!raw){ refsSay('❌ 正文丢了，没法提取。'); return; }
     var sec = refFindSection(raw);
-    if(!sec){ $('refsProg').textContent = '❌ 全文里没找到"参考文献"节（这份资料可能没有）。'; return; }
+    if(!sec){ refsSay('❌ 全文里没找到"参考文献"节（这份资料可能没有）。'); return; }
     var refs = refSplitLocal(sec);
-    if(refs.length < 3){ $('refsProg').textContent = '❌ 参考文献节找到了，但编号格式认不出（截图给小涛看）。'; return; }
-    $('refsProg').textContent = JDB_EN ? ('✅ 切出 ' + refs.length + ' 条，挂身份牌…') : '📚 正在装文献库（头一回用要下载，约200KB）…';
+    if(refs.length < 3){ refsSay('❌ 参考文献节找到了，但编号格式认不出（截图给小涛看）。'); return; }
+    refsSay(JDB_EN ? ('✅ 切出 ' + refs.length + ' 条，挂身份牌…') : '📚 正在装文献库（头一回用要下载，约200KB）…');
     ensureJDB(function(jok){
     if(!jok) toast('⚠️ 文献库没装着，身份牌空着不碍事', 3000);
     refs.forEach(function(r){ var tg = refTag(r.text); r.tag = tg.label; r.w = tg.w; r.lv = 0; r.why = ''; });
-    $('refsProg').textContent = '✅ 切出 ' + refs.length + ' 条，身份牌挂好。开始 AI 定级…';
-    return refsAiGrade(refs, x.title, function(m){ $('refsProg').textContent = m; }).then(function(grades){
+    refsSay('✅ 切出 ' + refs.length + ' 条，身份牌挂好。开始 AI 定级…');
+    return refsAiGrade(refs, x.title, function(m){ refsSay(m); }).then(function(grades){
       var ok = 0;
       refs.forEach(function(r){ var g = grades[r.n]; if(g){ r.lv = g.lv; r.why = g.why; if(g.lv) ok++; } });
       var lib = loadLib(); var it = lib.filter(function(t){ return t.id === id; })[0];
       if(it){ it.refs = refs; saveLib(lib); }
-      $('refsProg').textContent = ok ? '' : '⚠️ AI 定级没成（条目都在，可手动点❔定级）';
+      refsSay(ok ? '' : '⚠️ AI 定级没成（条目都在，可手动点❔定级）');
       if(ok) toast('✅ 定级完成：' + ok + '/' + refs.length + ' 条', 2500);
-      renderRefs();
+      openLib(id);
     });
     });  /* ensureJDB 收口 */
   });
