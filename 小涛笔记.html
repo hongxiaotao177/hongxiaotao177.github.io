@@ -2,6 +2,7 @@
 <html lang="zh-CN">
 <head>
 <script>
+/* v0.3.21 引擎身份写进标题栏（系统·Cr版本号 / X5·TBS版本号 + 桥报tbs状态）。 */
 /* v0.3.20 修v0.3.19钢印行少个括号的语法错误（红条看门狗抓个正着，好狗）。 */
 /* v0.3.19 黑条显示引擎钢印（TBS=X5 / Chrome=系统），判X5到底点火没有。 */
 /* v0.3.18 静物实验：关开屏自动自检（upd条不主动弹）+ 正文保命微动画。 */
@@ -333,7 +334,7 @@ window.addEventListener('load', function(){
 </style>
 </head>
 <body>
-<header>📒 小涛笔记<span class="ver">v0.3.20</span></header>
+<header>📒 小涛笔记<span class="ver">v0.3.21</span></header>
 <div id="updBar" class="hidden">
   <div class="upd-row" id="updRow">
     <div class="upd-body" id="updText"></div>
@@ -571,7 +572,7 @@ window.addEventListener('load', function(){
 (function(){
 __bc('D脚本启动');
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.3.20';
+var SW_VERSION = '0.3.21';
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
@@ -2237,7 +2238,15 @@ try{
   var __ua = navigator.userAgent || '';
   var __tbs = __ua.match(/TBS\/([0-9]+)/);
   var __chrome = __ua.match(/Chrome\/([0-9]+)/);
-  __bc(__tbs ? ('X5钢印TBS=' + __tbs[1]) : ('系统内核Chrome=' + (__chrome ? __chrome[1] : '?')));
+  var __eng = __tbs ? ('X5·TBS' + __tbs[1]) : ('系统·Cr' + (__chrome ? __chrome[1] : '?'));
+  __bc(__eng);
+  /* v0.3.21 引擎身份直接写进标题栏（黑条有人找不到/看不清） */
+  var __vs = document.querySelector('header .ver');
+  if(__vs) __vs.textContent = 'v' + SW_VERSION + ' · ' + __eng;
+  /* 桥里若报了tbs版本号也贴上（壳v1.3.2+） */
+  if(window.LearnShell && window.LearnShell.engineInfo){
+    try{ var __ei = LearnShell.engineInfo(); if(__ei) __vs.textContent += ' · ' + __ei; }catch(e){}
+  }
 }catch(e){}
 /* v0.3.17 校准fixed滚动层顶端 = 标题实高（各机型字号/圆角不同，量出来的才准） */
 try{
