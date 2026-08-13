@@ -23,11 +23,12 @@ window.__bcLog = function(t){
 window.__t0 = Date.now();
 window.__sec = function(){ return Math.round((Date.now() - window.__t0) / 1000); };
 window.__nudge = function(){
+  /* v0.3.15 改回温和版：display开关灯在这台手机上反而晃坏排版 */
   try{
     var b = document.body; if(!b) return;
-    b.style.display = 'none';
+    b.style.webkitTransform = 'translateZ(0)';
     void b.offsetHeight;
-    b.style.display = '';
+    b.style.webkitTransform = '';
   }catch(e){}
 };
 /* 核弹级重画：把整个骨架卸下来再装回去（节点不动，事件不丢） */
@@ -231,8 +232,9 @@ window.addEventListener('load', function(){
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
          background: #f7f3ea; color: #3a3428; font-size: 16px; }
-  header { background: #6b5d43; color: #fff; padding: 14px 16px; font-size: 20px; font-weight: bold;
-           position: sticky; top: 0; z-index: 10; }
+  header { background: #6b5d43; color: #fff; padding: 14px 16px; font-size: 20px; font-weight: bold; }
+  /* v0.3.15 真凶伏法：header 原来一直是 position:sticky！vivo WebView 的 sticky 会把
+     正文滚动层搞丢（标题在、正文凭空消失、区域触摸死）。updBar 的 sticky 只是从犯。 */
   header .ver { font-size: 12px; font-weight: normal; opacity: .75; margin-left: 8px; }
   .page { max-width: 640px; margin: 0 auto; padding: 14px 12px 60px; }
   .card { background: #fffdf8; border: 1px solid #e8dfc8; border-radius: 14px;
@@ -309,7 +311,7 @@ window.addEventListener('load', function(){
 </style>
 </head>
 <body>
-<header>📒 小涛笔记<span class="ver">v0.3.14</span></header>
+<header>📒 小涛笔记<span class="ver">v0.3.15</span></header>
 <div class="page">
 <script>__bc('B骨架');</script>
   <div id="updBar" class="hidden">
@@ -547,7 +549,7 @@ window.addEventListener('load', function(){
 (function(){
 __bc('D脚本启动');
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.3.14';
+var SW_VERSION = '0.3.15';
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
@@ -1065,21 +1067,21 @@ function updShow(kind, text, canDl){
 function ghSelfCheck(manual){
   if(!ghReady()){ if(manual) showMsg($('ghMsg'), '先填 GitHub 设置。', 'err'); return; }
   ghGetFile('version-xiaotao.json').then(function(s){
-    if(!s){ updShow('ok', '✅ GitHub 线路通畅 · 本机 v' + SW_VERSION + '（云端还没有版本信息）'); setTimeout(function(){ $('updBar').classList.add('hidden'); if(window.__bcLog) __bcLog(__sec() + '秒 upd条收起'); if(window.__nudgeHard) __nudgeHard(); }, 8000); return null; }
+    if(!s){ updShow('ok', '✅ GitHub 线路通畅 · 本机 v' + SW_VERSION + '（云端还没有版本信息）'); setTimeout(function(){ $('updBar').classList.add('hidden'); if(window.__bcLog) __bcLog(__sec() + '秒 upd条收起'); }, 8000); return null; }
     var info = JSON.parse(s);
     if(cmpVer(info.version, SW_VERSION) > 0){
       updShow('warn', '🎉 网上有新版 v' + info.version + '（本机 v' + SW_VERSION + '）：' + (info.note || ''), true);
       window._xtDl = info.dl;
     }else{
       updShow('ok', '✅ 线路通畅，已是最新 v' + SW_VERSION);
-      setTimeout(function(){ $('updBar').classList.add('hidden'); if(window.__bcLog) __bcLog(__sec() + '秒 upd条收起'); if(window.__nudgeHard) __nudgeHard(); }, 6000);
+      setTimeout(function(){ $('updBar').classList.add('hidden'); if(window.__bcLog) __bcLog(__sec() + '秒 upd条收起'); }, 6000);
     }
   }).catch(function(e){
     if(manual) showMsg($('ghMsg'), '❌ 自检失败：' + e.message, 'err');
   });
 }
 $('ghCheckBtn').addEventListener('click', function(){ ghSelfCheck(true); });
-$('updClose').addEventListener('click', function(){ $('updBar').classList.add('hidden'); if(window.__bcLog) __bcLog(__sec() + '秒 upd条收起'); if(window.__nudgeHard) __nudgeHard(); });
+$('updClose').addEventListener('click', function(){ $('updBar').classList.add('hidden'); if(window.__bcLog) __bcLog(__sec() + '秒 upd条收起'); });
 /* v0.2.1 踩坑修复：v0.2.0的下载按钮走raw.githubusercontent.com匿名直链——
    备份仓库是私有的，匿名访问一律404（洪老师实测）。改走ghGetFile带Token的API通道，
    壳里=自更新(applyUpdate)+文件夹备份，浏览器=blob下载。 */
