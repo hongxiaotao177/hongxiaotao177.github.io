@@ -9,6 +9,12 @@
   小涛笔记（学习笔记2代）· 单文件版
 ==========================================================
   修改记录：
+   v0.3.4 2026-08-13 省钱优先 + 机器人进度纸条（洪老师实测：k2.6思考型半小时烧32块）：
+        根因：切片粗活用了思考型模型，"打草稿"也收费；用的哪个模型、切到第几批看不到。
+        修法：①AI_PREFER改省钱优先——kimi-k2-0905-preview > moonshot-v1-32k > … > k2.6垫底保命
+                （云端机器人同一份名单，两边一致）；
+             ②机器人每批写 done/status_{id}.json（模型+第X/Y批）并推仓库；
+             ③取回时点一下：done没好就改读进度纸条，回话"第X/Y批·模型xx"，不再干等瞎猜。
    v0.3.3 2026-08-13 粗切细刀 + 超大块不许出厂 + 换快模型（洪老师定的规矩）：
         现象：8万字的书只有23段，一段好几千字，粗切不敢从段落中间下刀
              →一块好几千字没法读；kimi-k2.6思考型回话慢、草稿吃额度→截断退粗切。
@@ -169,7 +175,7 @@
 </style>
 </head>
 <body>
-<header>📒 小涛笔记<span class="ver">v0.3.3</span></header>
+<header>📒 小涛笔记<span class="ver">v0.3.4</span></header>
 <div class="page">
 
   <div id="updBar" class="hidden">
@@ -280,7 +286,7 @@
   <details class="card">
     <summary>📋 关于 / Obsidian 搬家说明</summary>
     <div class="kv" style="margin-top:6px;">
-      <b>版本：</b>v0.3.3（2026-08-13）粗切细刀+超大块不许出厂+换快模型<br><br>
+      <b>版本：</b>v0.3.4（2026-08-13）省钱优先模型名单+云端切片进度看得见<br><br>
       <b>⭐ 头一条铁律（Obsidian 搬家）：</b>小涛笔记里所有内容的<b>真身是标准 Markdown 文件</b>，
       全部存在 GitHub 仓库的 <b>vault/</b> 区——那就是一座现成的 Obsidian 仓库。<br>
       <b>搬家方法：</b>把仓库里 vault/ 文件夹下载到电脑/手机（或坚果云同步它），
@@ -382,7 +388,7 @@
 'use strict';
 (function(){
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.3.3';
+var SW_VERSION = '0.3.4';
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
@@ -437,8 +443,8 @@ function billRender(){ var b = bill(); $('aiBill').textContent = '调用 ' + b.c
 var AI_MODELS = ['moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k'];
 /* v0.2.7：不猜模型名了——Kimi 有"花名册"接口 /v1/models，拿 Key 去问它
    "我这把 Key 能用哪些模型"，照实回答。自愈和设置里的刷新按钮都走这里。 */
-var AI_PREFER = ['kimi-k2-0905-preview', 'kimi-k2.6', 'kimi-k2-0711-preview', 'kimi-latest',
-                 'moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k', 'moonshot-v1-auto'];
+var AI_PREFER = ['kimi-k2-0905-preview', 'moonshot-v1-32k', 'kimi-k2-0711-preview', 'kimi-latest',
+                 'moonshot-v1-8k', 'moonshot-v1-auto', 'moonshot-v1-128k', 'kimi-k2.6']; /* v0.3.4 省钱优先，k2.6思考型垫底 */
 function aiModelSort(ids){
   return ids.slice().sort(function(a, b){
     var pa = AI_PREFER.indexOf(a), pb = AI_PREFER.indexOf(b);
@@ -1648,8 +1654,24 @@ $('btnCloudFetch').addEventListener('click', function(){
   $('btnCloudFetch').disabled = true;
   libProg('📥 看看机器人切好没有…');
   ghGetFile('done/slice_' + id + '.json').then(function(s){
-    if(!s){ libProg(''); $('btnCloudFetch').disabled = false;
-      libNote('☁️ 联系上了，仓库线路通畅——机器人还在切，没切完。过一会儿再点一次；厚书可能要十几二十分钟。', 'info'); return; }
+    if(!s){ /* v0.3.4：done没好→改读进度纸条，看得见的等待 */
+      return ghGetFile('done/status_' + id + '.json').then(function(st){
+        libProg(''); $('btnCloudFetch').disabled = false;
+        if(st){
+          try{
+            var o = JSON.parse(st);
+            libNote('☁️ 机器人在切：第 ' + o.batch + '/' + o.total + ' 批' +
+                    (o.phase && o.phase !== '切片中' ? '（' + o.phase + '）' : '') +
+                    (o.model ? '，用的模型：' + o.model : '') + '。过几分钟再点一次。', 'info');
+            return;
+          }catch(e){}
+        }
+        libNote('☁️ 联系上了，仓库线路通畅——机器人在排队或刚开工，还没切出进度。过一会儿再点一次；厚书按批数算，一批几分钟。', 'info');
+      }).catch(function(e){
+        libProg(''); $('btnCloudFetch').disabled = false;
+        libNote('❌ 没联系上仓库：' + ghErrText(e) + '。线路修好再点一次。', 'err');
+      });
+    }
     var data = JSON.parse(s);
     return libFullText(id).then(function(raw){
       var paras = splitParas(raw);
@@ -1692,6 +1714,8 @@ $('btnCloudFetch').addEventListener('click', function(){
           }
           /* 收尾：删掉云端结果文件；全AI切成的话原文也不留了 */
           return ghDelFile('done/slice_' + id + '.json', '切片已取回').catch(function(){}).then(function(){
+            return ghDelFile('done/status_' + id + '.json', '进度纸条已收').catch(function(){});
+          }).then(function(){
             if(!data.coarse) return idbDelPrefix('kv', 'raw_' + id).catch(function(){});
           });
         });
@@ -1700,7 +1724,8 @@ $('btnCloudFetch').addEventListener('click', function(){
         openLib(id);
         libNote(data.coarse
           ? '📥 取回来了，但有部分批次 AI 没切成（粗切保底）。可以点「☁️ 送云端自动切」再送一次，或用着先。'
-          : '✅ 取回来了！AI 切好的 ' + (data.chunks || []).length + ' 块已拼装进书库，总结也写好了。', 'ok');
+          : '✅ 取回来了！AI 切好的 ' + (data.chunks || []).length + ' 块已拼装进书库，总结也写好了。' +
+            (data.model ? '（用的模型：' + data.model + '）' : ''), 'ok');
       });
     });
   }).catch(function(e){
