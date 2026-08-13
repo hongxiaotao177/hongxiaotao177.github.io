@@ -2,6 +2,7 @@
 <html lang="zh-CN">
 <head>
 <script>
+/* v0.3.19 黑条显示引擎钢印（TBS=X5 / Chrome=系统），判X5到底点火没有。 */
 /* v0.3.18 静物实验：关开屏自动自检（upd条不主动弹）+ 正文保命微动画。 */
 /* v0.3.17 正文全体搬进fixed滚动层（body禁滚、标题fixed、.page=fixed全屏滚动框）。
    v0.3.16证明upd条无辜（改浮条后首卡仍自己崩）：普通文档流内容层本身不稳，
@@ -331,7 +332,7 @@ window.addEventListener('load', function(){
 </style>
 </head>
 <body>
-<header>📒 小涛笔记<span class="ver">v0.3.18</span></header>
+<header>📒 小涛笔记<span class="ver">v0.3.19</span></header>
 <div id="updBar" class="hidden">
   <div class="upd-row" id="updRow">
     <div class="upd-body" id="updText"></div>
@@ -569,7 +570,7 @@ window.addEventListener('load', function(){
 (function(){
 __bc('D脚本启动');
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.3.18';
+var SW_VERSION = '0.3.19';
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
@@ -2229,6 +2230,14 @@ $('btnRefs').addEventListener('click', function(){
 });
 
 __bc('E脚本跑完');
+/* v0.3.19 引擎钢印：X5内核的UA里带"TBS/数字"标记，系统WebView没有。
+   Toast在vivo上会被通知权限吞掉，改在这儿明牌显示。 */
+try{
+  var __ua = navigator.userAgent || '';
+  var __tbs = __ua.match(/TBS\/([0-9]+)/);
+  var __chrome = __ua.match(/Chrome\/([0-9]+)/);
+  __bc(__tbs ? ('X5钢印TBS=' + __tbs[1]) : ('系统内核Chrome=' + (__chrome ? __chrome[1] : '?'));
+}catch(e){}
 /* v0.3.17 校准fixed滚动层顶端 = 标题实高（各机型字号/圆角不同，量出来的才准） */
 try{
   var __hh = document.querySelector('header').offsetHeight;
