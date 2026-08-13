@@ -433,6 +433,13 @@ window.addEventListener('load', function(){
     <div class="msg" id="ghMsg"></div>
     <div class="hint">备份 = 笔记数据（xiaotao-backup.json）+ vault/ 区的 Obsidian 格式 md 真身。保存笔记5秒后也会自动单篇推 vault。</div>
 
+    <h2 style="margin-top:18px;">🧪 裸奔模式（修空白专用）</h2>
+    <div class="hint">页面间歇空白的病根排查：点下面按钮，壳会把"JS桥"和"🏠按钮"摘掉（同页面在浏览器里从不空白，这两样是浏览器没有的）。摘掉后多用一会儿：不空白了→凶手就在这两样里；还空白→换发动机。再点一次恢复。标题栏出现「🧪裸奔」=正在裸奔。此模式下导入PDF等要桥的功能暂时用不了，数据不受影响。</div>
+    <div style="margin-top:8px;">
+      <button class="btn secondary" id="btnNobridge">🧪 开/关 裸奔模式</button>
+      <span id="nbMsg" style="font-size:13px; color:#666; margin-left:6px;"></span>
+    </div>
+
     <h2 style="margin-top:18px;">🤖 AI 账本</h2>
     <div class="kv" id="aiBill">调用 0 次 · 发出 0 字</div>
     <button class="btn secondary" id="btnBillReset" style="font-size:13px; padding:6px 10px;">🗑 账本清零</button>
@@ -572,7 +579,7 @@ window.addEventListener('load', function(){
 (function(){
 __bc('D脚本启动');
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.3.22';
+var SW_VERSION = '0.3.23';
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
@@ -2239,6 +2246,8 @@ try{
   var __tbs = __ua.match(/TBS\/([0-9]+)/);
   var __chrome = __ua.match(/Chrome\/([0-9]+)/);
   var __eng = __tbs ? ('X5·TBS' + __tbs[1]) : ('系统·Cr' + (__chrome ? __chrome[1] : '?'));
+  /* v0.3.23 裸奔标记：没有桥=壳开了裸奔模式（或在浏览器里），标题直接亮出来 */
+  if(!window.LearnShell) __eng += '·🧪裸奔';
   __bc(__eng);
   /* v0.3.21 引擎身份直接写进标题栏（黑条有人找不到/看不清） */
   var __vs = document.querySelector('header .ver');
@@ -2255,6 +2264,12 @@ try{
   }
   __engTick();
   setInterval(__engTick, 10000);
+  /* v0.3.23 裸奔开关按钮 */
+  var __nb=document.getElementById('btnNobridge');
+  if(__nb) __nb.onclick=function(){
+    document.getElementById('nbMsg').textContent='正在切换…';
+    location.href='/__nobridge';
+  };
 }catch(e){}
 /* v0.3.17 校准fixed滚动层顶端 = 标题实高（各机型字号/圆角不同，量出来的才准） */
 try{
