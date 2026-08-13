@@ -2,6 +2,7 @@
 <html lang="zh-CN">
 <head>
 <script>
+/* v0.3.18 静物实验：关开屏自动自检（upd条不主动弹）+ 正文保命微动画。 */
 /* v0.3.17 正文全体搬进fixed滚动层（body禁滚、标题fixed、.page=fixed全屏滚动框）。
    v0.3.16证明upd条无辜（改浮条后首卡仍自己崩）：普通文档流内容层本身不稳，
    fixed元素从来没事——那就让正文也fixed。 */
@@ -241,9 +242,14 @@ window.addEventListener('load', function(){
   /* v0.3.15 真凶伏法：header 原来一直是 position:sticky！vivo WebView 的 sticky 会把
      正文滚动层搞丢（标题在、正文凭空消失、区域触摸死）。updBar 的 sticky 只是从犯。 */
   header .ver { font-size: 12px; font-weight: normal; opacity: .75; margin-left: 8px; }
+  @keyframes xtAlive { 0%, 100% { opacity: .999; } 50% { opacity: 1; } }
   .page { max-width: 640px; margin: 0 auto; padding: 14px 12px 60px;
           position: fixed; top: 53px; left: 0; right: 0; bottom: 0;
-          overflow-y: auto; -webkit-overflow-scrolling: touch; }
+          overflow-y: auto; -webkit-overflow-scrolling: touch;
+          transform: translateZ(0); will-change: transform;
+          backface-visibility: hidden; animation: xtAlive 5s linear infinite; }
+  /* v0.3.18 保命三件套：永久合成层+5秒微动画(0.999↔1肉眼不可见)。
+     依据：每秒都在写字的黑条/黄字从来没被画丢——合成器专丢静置层，那就让正文层永远在动。 */
   /* v0.3.17 核心手术：正文全体搬进fixed滚动层。记录仪铁证——upd条改浮条后无人操作，
      首卡仍自己 71→-4→0 崩掉：这台vivo WebView的普通文档流内容层本身就不稳，
      而fixed元素（黑条/🏠钮/标题）从来没出过事。那就让正文也享受fixed待遇。
@@ -325,16 +331,16 @@ window.addEventListener('load', function(){
 </style>
 </head>
 <body>
-<header>📒 小涛笔记<span class="ver">v0.3.17</span></header>
+<header>📒 小涛笔记<span class="ver">v0.3.18</span></header>
+<div id="updBar" class="hidden">
+  <div class="upd-row" id="updRow">
+    <div class="upd-body" id="updText"></div>
+    <button class="btn" id="updDlBtn" style="display:none; padding:6px 10px; font-size:13px;">⬇️ 下载新版到本机</button>
+    <button class="upd-x" id="updClose">✕</button>
+  </div>
+</div>
 <div class="page">
 <script>__bc('B骨架');</script>
-  <div id="updBar" class="hidden">
-    <div class="upd-row" id="updRow">
-      <div class="upd-body" id="updText"></div>
-      <button class="btn" id="updDlBtn" style="display:none; padding:6px 10px; font-size:13px;">⬇️ 下载新版到本机</button>
-      <button class="upd-x" id="updClose">✕</button>
-    </div>
-  </div>
 
   <!-- ✨ 新建笔记 -->
   <div class="card">
@@ -563,7 +569,7 @@ window.addEventListener('load', function(){
 (function(){
 __bc('D脚本启动');
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.3.17';
+var SW_VERSION = '0.3.18';
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
@@ -2016,7 +2022,9 @@ loadSettings();
 billRender();
 renderList();
 renderLib();
-setTimeout(function(){ ghSelfCheck(false); }, 3000);
+/* v0.3.18 静物实验：取消开屏自动自检。铁律对照——浏览器里upd条从未弹出→从不空白；
+   壳里每次空白都在upd条弹出后几秒。条改浮条只断了"推挤"，没断"界面变化"这个扳机。
+   想查更新：设置里手动点（ghCheckBtn还在）。 */
 
 /* ==================== v0.3.6 参考文献：提取→身份牌→AI定级→前十置顶 ==================== */
 /* v0.3.8 文献库改外挂：主体文件从320KB瘦回110KB（壳里大文件自更新会写半截→全空白）。
