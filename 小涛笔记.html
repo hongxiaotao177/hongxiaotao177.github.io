@@ -37,6 +37,18 @@ window.addEventListener('load', function(){
       }
       __bc(msg);
     }catch(e){ __bc('H败'); }
+    /* 点名排查：空白区里戳几针，看谁躺在最上面 */
+    try{
+      var msg2 = 'I', ys = [300, 900, 1600];
+      for(var yi = 0; yi < ys.length; yi++){
+        var hit = document.elementFromPoint(Math.round(window.innerWidth / 2), ys[yi]);
+        msg2 += '@' + ys[yi] + '=' + (hit ? (hit.id || hit.className || hit.tagName) : 'null');
+      }
+      var c1 = document.querySelector('.card'), rc = c1 ? c1.getBoundingClientRect() : null;
+      msg2 += '|首卡top=' + (rc ? Math.round(rc.top) : '?') + '高=' + (rc ? Math.round(rc.height) : '?');
+      msg2 += '|屏高=' + window.innerHeight + '|页高=' + document.body.scrollHeight;
+      __bc(msg2);
+    }catch(e){ __bc('I败'); }
     if(!document.getElementById('btnGen')){
       var d = document.createElement('div');
       d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:999;background:#c0392b;color:#fff;padding:12px;font-size:15px;line-height:1.6;';
@@ -247,7 +259,7 @@ window.addEventListener('load', function(){
 </style>
 </head>
 <body>
-<header>📒 小涛笔记<span class="ver">v0.3.9b</span></header>
+<header>📒 小涛笔记<span class="ver">v0.3.10</span></header>
 <div class="page">
 <script>__bc('B骨架');</script>
   <div id="updBar" class="hidden">
@@ -485,7 +497,7 @@ window.addEventListener('load', function(){
 (function(){
 __bc('D脚本启动');
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.3.9b';
+var SW_VERSION = '0.3.10';
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
