@@ -2,6 +2,8 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.3.4 2026-08-13 下载改"当面点清"：壳v1.1.1有分块写入就走分块+对账
+         （治applyUpdate大文件截断→小涛笔记全空白），老壳退回老办法。
     v1.3.3 2026-08-12 同步黄条说人话：原"已经从没没同步成了"拗口（"从没"和
       "没同步成"挤一起），洪老师连问两次什么意思。改成"还一次都没同步成功过
       ——这不是毛病，是要先在壳APP里配好坚果云"，把病因和出路一句说清。
@@ -251,12 +253,34 @@ function ghHeaders(){ var c=ghCfg(); return {"Authorization":"token "+c.tok, "Ac
     fetch(encodeURI(localName), { cache: "no-store" }).then(function(r){ cb(!r.ok); })
       .catch(function(){ cb(false); });  /* 探不动就不折腾，按没缺处理 */
   }
+  /* v1.3.4 当面点清：壳v1.1.1起有分块写入（一块64KB，写完对账实收字节数），
+     治"大字符串过JS桥被悄悄截断→半截文件全空白"。老壳没有就退回老办法。 */
+  function shellWrite(name, b64){
+    if(!window.LearnShell) return false;
+    if(typeof window.LearnShell.applyUpdateBegin === 'function'){
+      try{
+        if(window.LearnShell.applyUpdateBegin(name) !== 'ok') return false;
+        var CH = 60000, ok = true;
+        for(var i = 0; i < b64.length; i += CH){
+          var r = window.LearnShell.applyUpdateChunk(b64.substr(i, CH));
+          if(typeof r !== 'string' || r.indexOf('ok:') !== 0){ ok = false; break; }
+        }
+        if(!ok){ try{ window.LearnShell.applyUpdateAbort(); }catch(e){} return false; }
+        var end = window.LearnShell.applyUpdateEnd();
+        if(typeof end !== 'string' || end.indexOf('ok:') !== 0) return false;
+        var pt = end.split(':');
+        var pad = b64.slice(-2) === '==' ? 2 : (b64.slice(-1) === '=' ? 1 : 0);
+        var expect = Math.floor(b64.length * 3 / 4) - pad;
+        return (+pt[1] === expect) && (+pt[2] === expect);
+      }catch(e){ return false; }
+    }
+    try{ return !!window.LearnShell.applyUpdate(name, b64); }catch(e){ return false; }
+  }
   function dl(k, info, remote, localName, next){
     fetchJson(info.dl||remote).then(function(sf){
       var html=u8dec(sf.content||"");
       var b64=u8enc(html);
-      var ok=false;
-      try{ ok=window.LearnShell.applyUpdate(localName, b64); }catch(e){}
+      var ok=shellWrite(localName, b64);
       try{ if(window.LearnShell.folderSet()) window.LearnShell.writeFile(localName.replace(".html","")+"_v"+info.version+".html", b64); }catch(e){}
       if(ok){ CUR[k]=info.version; try{ localStorage.setItem("hx_suite_ver", JSON.stringify(CUR)); }catch(e){} updated.push(localName.replace(".html","")+"→v"+info.version); }
       else{ failed.push(localName); }
