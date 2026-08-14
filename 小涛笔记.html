@@ -42,6 +42,13 @@ window.addEventListener('load', function(){
   小涛笔记（学习笔记2代）· 单文件版
 ==========================================================
   修改记录：
+   v0.3.28 2026-08-14 三件事：①书库「自动切片巡逻」——打开资料库自动扫每本书，
+        待切/待总结的一本一本自动干完（有Key才跑，可⏸暂停，失败记台账当天不再碰）；
+        ②💰AI账本升级——按模型按书记token，价目表估算花费，设置页+资料详情页两处亮账；
+        ③AI_PREFER换血——删掉已停用的 kimi-k2-0905-preview/kimi-k2-0711-preview/kimi-latest
+        （Kimi官宣2026-08-31 moonshot-v1全系下线，v1全死后自动落 kimi-k2.5）。
+   v0.3.27 2026-08-14 参考文献走AI新通道（切条+清理+定级一趟，校验不过退老路）；
+        正文切片摘除参考文献节；复制按钮改为标题/完整/前十标题三键。
    v0.3.9 2026-08-13 空白排查专用版：五个烽火台哨兵（左下黑条报数）+ 自读文件长度。
    v0.3.8 2026-08-13 治本：文献库挪外挂 xt-jdb.js，主体瘦回96KB（当时以为是大文件写半截）。
    v0.3.7 2026-08-13 看门狗：洪老师更新后页面空白（手机上的文件疑似没下完整）。
@@ -291,6 +298,12 @@ window.addEventListener('load', function(){
     <div class="hint">导入后全自动：AI 认书 → 定级（🟢指南/📄期刊/📘书籍/🟠AI生成·待核）→ 切片 → 五段式总结。没填 Key 也能导入（本地粗切、手动起名）。</div>
     <div class="msg" id="libMsg"></div>
     <div id="libProg" class="hint" style="margin-top:6px;"></div>
+    <!-- v0.3.28 自动切片巡逻（本地，跟设置里的"云端切片巡逻兵"两码事） -->
+    <div id="patrolBar" class="hidden" style="margin-top:6px; background:#eef5ff; border:1px solid #b8d0ee; border-radius:10px; padding:8px 10px; font-size:14px;">
+      <span id="patrolText"></span>
+      <button class="btn secondary" id="btnPatrolPause" style="padding:4px 10px; font-size:13px; margin-left:8px;">⏸ 暂停</button>
+    </div>
+    <div id="patrolHint" class="hint hidden" style="margin-top:6px;">🔑 未填Key，巡逻休息中</div>
     <input type="text" id="libSearch" placeholder="🔍 搜索资料名/摘要…" style="margin-top:8px;">
     <div id="libList"></div>
   </details>
@@ -358,9 +371,11 @@ window.addEventListener('load', function(){
       <span id="nbMsg" style="font-size:13px; color:#666; margin-left:6px;"></span>
     </div>
 
-    <h2 style="margin-top:18px;">🤖 AI 账本</h2>
-    <div class="kv" id="aiBill">调用 0 次 · 发出 0 字</div>
-    <button class="btn secondary" id="btnBillReset" style="font-size:13px; padding:6px 10px;">🗑 账本清零</button>
+    <h2 style="margin-top:18px;">💰 AI 账本</h2>
+    <div class="kv" id="aiBill">累计 0 趟</div>
+    <div class="hint">估算价目2026-08-14 · 官方账单为准</div>
+    <details style="margin-top:6px;"><summary style="cursor:pointer; font-size:14px;">📜 最近20趟</summary><div id="aiBillLog" class="hint" style="margin-top:4px; line-height:1.7;"></div></details>
+    <button class="btn secondary" id="btnBillReset" style="font-size:13px; padding:6px 10px; margin-top:6px;">🧹 清空账本</button>
 
     <h2 style="margin-top:18px;">🤖 云端切片巡逻兵</h2>
     <div class="kv">二期随资料库上线：每小时自动切云端工单，这里显示巡逻状态。</div>
@@ -435,6 +450,7 @@ window.addEventListener('load', function(){
         <option value="ai">🟠 AI生成·待核</option>
       </select>
       <span class="hint" id="libMeta" style="display:inline; margin-left:8px;"></span>
+      <span class="hint" id="libCost" style="display:inline; margin-left:8px;"></span>
     </div>
     <details id="libBriefBox" style="background:#faf6ec; border-radius:10px; padding:8px 12px;"><summary style="cursor:pointer; font-size:15px; font-weight:bold;">📋 五段总结（点开看）</summary><div class="md-body" id="libBrief" style="font-size:15px; margin-top:8px;"></div></details>
     <div id="libProgD" class="hidden" style="margin-top:8px; font-size:14px; color:#8a6d1a;"></div>
@@ -497,7 +513,7 @@ window.addEventListener('load', function(){
 (function(){
 __bc('D脚本启动');
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.3.26';
+var SW_VERSION = '0.3.28';
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
@@ -540,9 +556,80 @@ var LS_BILL = 'xt_aibill_v1';
 function loadNotes(){ try{ var v = JSON.parse(localStorage.getItem(LS_NOTES) || '[]'); return Array.isArray(v) ? v : []; }catch(e){ return []; } }
 function saveNotes(list){ localStorage.setItem(LS_NOTES, JSON.stringify(list)); }
 function getNote(id){ return loadNotes().filter(function(n){ return n.id === id; })[0] || null; }
-function bill(){ try{ return JSON.parse(localStorage.getItem(LS_BILL) || '{"calls":0,"chars":0}'); }catch(e){ return {calls:0,chars:0}; } }
-function billAdd(chars){ var b = bill(); b.calls++; b.chars += chars; localStorage.setItem(LS_BILL, JSON.stringify(b)); billRender(); }
-function billRender(){ var b = bill(); $('aiBill').textContent = '调用 ' + b.calls + ' 次 · 发出 ' + Math.round(b.chars / 1000) + ' 千字'; }
+/* AI 价目表（2026-08-14官价，每月由Kimi复查更新），单位：元/百万tokens（人民币）。
+   查不到的型号按 kimi-k2.5 价估算。 */
+var AI_PRICE = {
+  'moonshot-v1-8k': { in: 12, out: 12 },
+  'moonshot-v1-32k': { in: 24, out: 24 },
+  'moonshot-v1-128k': { in: 60, out: 60 },
+  'kimi-k2.5': { in: 4, out: 16 },
+  'kimi-k2.6': { in: 4, out: 16 },
+  'kimi-k2.7-code': { in: 7, out: 27 },
+  'kimi-k3': { in: 21, out: 105 }
+};
+var _aiBook = null;   /* v0.3.28：当前这趟AI是给哪本书干的（byBook记帐用），各调用点顺手挂上 */
+function aiBookCtx(id){ _aiBook = id; }
+function billBlank(){ return { calls: 0, in: 0, out: 0, est: 0, byModel: {}, byBook: {}, log: [] }; }
+function bill(){
+  var b;
+  try{ b = JSON.parse(localStorage.getItem(LS_BILL) || 'null'); }catch(e){ b = null; }
+  if(!b || typeof b !== 'object') b = billBlank();
+  /* 老格式 {calls,chars} 升级成新格式（老趟数保住，token没记过就是0） */
+  if(b.chars != null && b.in == null){ var nb = billBlank(); nb.calls = b.calls | 0; b = nb; }
+  ['calls','in','out','est'].forEach(function(k){ if(typeof b[k] !== 'number') b[k] = 0; });
+  if(!b.byModel) b.byModel = {}; if(!b.byBook) b.byBook = {};
+  if(!Array.isArray(b.log)) b.log = [];
+  return b;
+}
+function billSave(b){ localStorage.setItem(LS_BILL, JSON.stringify(b)); billRender(); }
+/* 记一趟：usage没有就按字符数估算（tokens≈汉字数/2），记 est:true */
+function billAiUse(model, usage, inChars, outChars, what){
+  var b = bill();
+  var est = false, tin = 0, tout = 0;
+  if(usage && (usage.prompt_tokens != null || usage.completion_tokens != null || usage.total_tokens != null)){
+    tin = usage.prompt_tokens != null ? (usage.prompt_tokens | 0) : Math.max(0, (usage.total_tokens | 0) - (usage.completion_tokens | 0));
+    tout = usage.completion_tokens | 0;
+  }else{
+    est = true;
+    tin = Math.ceil((inChars || 0) / 2); tout = Math.ceil((outChars || 0) / 2);
+  }
+  model = model || '?';
+  var price = AI_PRICE[model] || AI_PRICE['kimi-k2.5'];
+  var yuan = (tin * price.in + tout * price.out) / 1000000;
+  b.calls++; b.in += tin; b.out += tout; if(est) b.est++;
+  if(!b.byModel[model]) b.byModel[model] = { calls: 0, in: 0, out: 0 };
+  b.byModel[model].calls++; b.byModel[model].in += tin; b.byModel[model].out += tout;
+  var bk = _aiBook;
+  if(bk){
+    if(!b.byBook[bk]) b.byBook[bk] = { calls: 0, in: 0, out: 0, yuan: 0 };
+    b.byBook[bk].calls++; b.byBook[bk].in += tin; b.byBook[bk].out += tout; b.byBook[bk].yuan += yuan;
+  }
+  b.log.unshift({ t: Date.now(), model: model, book: bk || '', in: tin, out: tout, what: what || '其他', est: est ? 1 : 0 });
+  b.log = b.log.slice(0, 50);
+  billSave(b);
+}
+function billYuan(b){
+  var y = 0;
+  Object.keys(b.byModel).forEach(function(m){
+    var p = AI_PRICE[m] || AI_PRICE['kimi-k2.5'], e = b.byModel[m];
+    y += (e.in * p.in + e.out * p.out) / 1000000;
+  });
+  return y;
+}
+function billFmt2(y){ return y < 0.01 ? '不足1分钱' : '¥' + y.toFixed(2); }
+function billFmt3(y){ return y < 0.01 ? '不足1分钱' : '¥' + y.toFixed(3); }
+function billRender(){
+  var el = $('aiBill'); if(!el) return;
+  var b = bill();
+  el.textContent = '累计 ' + b.calls + ' 趟 · 输入 ' + (b.in / 10000).toFixed(1) + ' 万 · 输出 ' +
+    (b.out / 10000).toFixed(1) + ' 万 · 估算花费 ' + billFmt2(billYuan(b));
+  var lg = $('aiBillLog');
+  if(lg){
+    lg.innerHTML = b.log.slice(0, 20).map(function(e){
+      return esc(fmtTime(e.t) + ' · ' + e.model + ' · ' + e.what + ' · 入' + e.in + '/出' + e.out + (e.est ? '（估算）' : ''));
+    }).join('<br>') || '还没有记录';
+  }
+}
 
 /* ==================== AI ==================== */
 /* v0.2.6：模型自愈。病根实录——洪老师机器里存的模型名是下拉框没有的旧值，
@@ -552,8 +639,10 @@ function billRender(){ var b = bill(); $('aiBill').textContent = '调用 ' + b.c
 var AI_MODELS = ['moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k'];
 /* v0.2.7：不猜模型名了——Kimi 有"花名册"接口 /v1/models，拿 Key 去问它
    "我这把 Key 能用哪些模型"，照实回答。自愈和设置里的刷新按钮都走这里。 */
-var AI_PREFER = ['kimi-k2-0905-preview', 'moonshot-v1-32k', 'kimi-k2-0711-preview', 'kimi-latest',
-                 'moonshot-v1-8k', 'moonshot-v1-auto', 'moonshot-v1-128k', 'kimi-k2.6']; /* v0.3.4 省钱优先，k2.6思考型垫底 */
+/* v0.3.28（2026-08-14）：Kimi官宣 2026-08-31 moonshot-v1 全系下线，
+   kimi-k2-0905-preview / kimi-k2-0711-preview / kimi-latest 已停用，从名单删掉；
+   v1 全死后按此名单自动落 kimi-k2.5，k2.6 思考型垫底保命。 */
+var AI_PREFER = ['moonshot-v1-32k', 'moonshot-v1-8k', 'moonshot-v1-128k', 'kimi-k2.5', 'kimi-k2.6'];
 function aiModelSort(ids){
   return ids.slice().sort(function(a, b){
     var pa = AI_PREFER.indexOf(a), pb = AI_PREFER.indexOf(b);
@@ -597,18 +686,27 @@ function callAIonce(key, model, sys, user, maxTok, timeoutMs){
   }, timeoutMs || 25000).then(function(resp){
     if(!resp.ok) return resp.text().then(function(t){ throw new Error('AI 报错 ' + resp.status + '：' + t.slice(0, 120)); });
     return resp.json();
-  }).then(function(d){ return d.choices[0].message.content; });
+  }).then(function(d){ callAIonce._usage = d.usage || null; return d.choices[0].message.content; });
 }
-function callAI(sys, user, maxTok, timeoutMs){
+/* v0.3.28：第5参 what 记账用（'切片'/'总结'/'定级'/'文献整理'/'认书'/'问资料'…，默认'其他'） */
+function callAI(sys, user, maxTok, timeoutMs, what){
+  if(window.__mockCallAI){   /* 测试挂钩（playwright mock用，平时为null不影响） */
+    return Promise.resolve(window.__mockCallAI(sys, user, maxTok, timeoutMs)).then(function(r){
+      var txt = (r && typeof r === 'object') ? String(r.text == null ? '' : r.text) : String(r);
+      var usg = (r && typeof r === 'object' && r.usage) ? r.usage : null;
+      billAiUse(aiModelCur(), usg, (sys || '').length + (user || '').length, txt.length, what);
+      return txt;
+    });
+  }
   var key = (localStorage.getItem('xt_apikey') || '').trim();
   if(!key) return Promise.reject(new Error('还没填 API Key（⚙️设置里保存）'));
-  billAdd((sys || '').length + (user || '').length);
   var cur = aiModelCur();
   var cands = [cur];
   var i = 0, roster = null;
   function attempt(){
     var model = cands[i];
     return callAIonce(key, model, sys, user, maxTok, timeoutMs).then(function(txt){
+      billAiUse(model, callAIonce._usage, (sys || '').length + (user || '').length, String(txt || '').length, what);   /* v0.3.28 记帐 */
       if(model !== cur){   /* 换模型才接通：记住这个能用的 */
         hxPut('xt_aimodel', model);
         if(roster && roster.indexOf(model) >= 0) modelSelSet(roster, model);
@@ -750,7 +848,7 @@ $('btnGen').addEventListener('click', function(){
   $('btnGen').disabled = true;
   showMsg($('genMsg'), '🤖 AI 正在备课（约十几秒）…', 'ok');
   callAI('你是医学学习助手，给ICU医生讲题。用中文大白话+条目式，markdown格式（# 标题开头，## 小节，- 列表，重点**加粗**）。内容：是什么、为什么重要、要点、临床怎么用、易错点。不要客套话。',
-    '主题：' + topic, 4000
+    '主题：' + topic, 4000, null, '备课'
   ).then(function(txt){
     $('btnGen').disabled = false;
     $('genMsg').className = 'msg';
@@ -806,7 +904,7 @@ $('btnAiSend').addEventListener('click', function(){
   $('btnAiSend').disabled = true;
   showMsg($('aiMsg'), '🤖 AI 正在改…', 'ok');
   callAI('你是笔记修改助手。给你一篇 markdown 笔记和一句修改要求，输出改后的完整笔记（markdown，保留 [[双链]] 语法，只输出笔记本身）。',
-    '【修改要求】' + inst + '\n\n【原笔记】\n' + n.content, 6000
+    '【修改要求】' + inst + '\n\n【原笔记】\n' + n.content, 6000, null, '改笔记'
   ).then(function(txt){
     $('btnAiSend').disabled = false;
     $('aiMsg').className = 'msg';
@@ -1156,7 +1254,8 @@ $('btnBalance').addEventListener('click', function(){
     }).catch(function(e){ showMsg($('keyMsg'), '查询失败：' + e.message, 'err'); });
 });
 $('btnBillReset').addEventListener('click', function(){
-  localStorage.setItem(LS_BILL, '{"calls":0,"chars":0}'); billRender();
+  if(!confirm('确定清空 AI 账本？（累计趟数、花费、明细全清零，不影响笔记和资料）')) return;
+  billSave(billBlank());
 });
 /* v0.2.9：🩺 AI 体检——最小的请求试一把，接上没接上、多快、用的哪个模型，一句话说清 */
 $('btnAITest').addEventListener('click', function(){
@@ -1165,7 +1264,7 @@ $('btnAITest').addEventListener('click', function(){
   $('btnAITest').disabled = true;
   showMsg($('keyMsg'), '🩺 正在联系 AI（模型 ' + aiModelCur() + '）…', 'ok');
   var t0 = Date.now();
-  callAI('你是测试员。', '只回一个字：通', 10, 60000).then(function(){
+  callAI('你是测试员。', '只回一个字：通', 10, 60000, '体检').then(function(){
     $('btnAITest').disabled = false;
     showMsg($('keyMsg'), '✅ AI 接上了！模型 ' + aiModelCur() + '，用时 ' + ((Date.now() - t0) / 1000).toFixed(1) + ' 秒', 'ok');
   }).catch(function(e){
@@ -1291,7 +1390,7 @@ function aiClassify(head, filename){
   var fallback = { title: filename.replace(/\.pdf$/i, ''), author: '', grade: 'book', gradeBy: 'manual' };
   if(!(localStorage.getItem('xt_apikey') || '').trim()) return Promise.resolve(fallback);
   return callAI('你是图书资料识别助手。给你一份PDF的开头，认出：书名/文献标题、作者（认不出留空）、类型——type 只能是这四个之一：指南（学会指南/共识/规范）、期刊（单篇期刊论文/综述/解读）、书籍（整本教材专著）、AI生成（明显是AI写的汇编/笔记）。只回严格JSON {"title":"","author":"","type":""}，不要任何多余的话。',
-    '【文件名】' + filename + '\n【开头】\n' + head, 800
+    '【文件名】' + filename + '\n【开头】\n' + head, 800, null, '认书'
   ).then(function(txt){
     var m = txt.match(/\{[\s\S]*\}/);
     var d = m ? JSON.parse(m[0]) : {};
@@ -1320,6 +1419,12 @@ function splitParas(text){
   });
   return out;
 }
+/* v0.3.27 找"参考文献"节起始段落号（全文最后一次出现 参考文献/References 所在段落），找不到返回-1 */
+function refStartPara(paras){
+  var re = /参\s*考\s*文\s*献|References|REFERENCES/, idx = -1;
+  paras.forEach(function(p, i){ if(re.test(p)) idx = i; });
+  return idx;
+}
 function makeBatches(paras, limit){
   var batches = [], cur = [], len = 0;
   paras.forEach(function(p, i){
@@ -1346,7 +1451,7 @@ function aiSliceBatch(paras, idxArr, startN){
      JSON损坏自动原样重试一次；仍不行才退粗切。 */
   function tryOnce(){
     return callAI('你是切书助手。下面是编了号的段落，把它们按"一个知识点一块"分组切开，每块起中文标题和一句话大白话摘要。只回严格JSON数组 [{"from":1,"to":3,"title":"","summary":""}]（编号用上面方括号里的数字，from/to含两头，所有段落都要分到、不许跳号），不要多余的话。',
-      numbered, 8000, 90000
+      numbered, 8000, 90000, '切片'
     ).then(function(txt){
       var m = txt.match(/\[[\s\S]*\]/);
       var arr = m ? JSON.parse(m[0]) : null;
@@ -1511,7 +1616,11 @@ $('btnShelfGo').addEventListener('click', function(){
   chain.then(function(){ libProg(''); renderLib(); });
 });
 function sliceLibItem(libId, text){
+  aiBookCtx(libId);   /* v0.3.28：这趟AI记到这本书账上 */
   var paras = splitParas(text);
+  /* v0.3.27 正文切片摘除参考文献节：只用该节之前的段落切块/写总结；找不到(idx<0)时行为照旧 */
+  var refAt = refStartPara(paras);
+  if(refAt >= 0){ paras = paras.slice(0, refAt); text = paras.join('\n'); }
   var batches = makeBatches(paras, 15000);   /* v0.3.0：6000→15000，批数砍掉一半多 */
   var hasKey = !!(localStorage.getItem('xt_apikey') || '').trim();
   var allChunks = [];
@@ -1567,8 +1676,9 @@ function sliceLibItem(libId, text){
   }).then(function(){ renderLib(); });
 }
 function libWriteBrief(libId, text){
+  aiBookCtx(libId);   /* v0.3.28：这趟AI记到这本书账上 */
   return callAI('你是医学资料总结助手。用中文大白话分五段总结这份资料：①这是什么 ②核心观点 ③关键数字/剂量/标准 ④临床怎么用 ⑤注意事项。markdown，段落加粗小标题开头，别客套。',
-    '【资料名】' + (getLib(libId) || {}).title + '\n【正文开头】\n' + String(text).slice(0, 4000), 4000, 60000
+    '【资料名】' + (getLib(libId) || {}).title + '\n【正文开头】\n' + String(text).slice(0, 4000), 4000, 60000, '总结'
   ).then(function(brief){
     var lib = loadLib(); var it2 = lib.filter(function(x){ return x.id === libId; })[0];
     if(it2){ it2.brief = brief; it2.done = true; saveLib(lib); }
@@ -1578,6 +1688,112 @@ function libWriteBrief(libId, text){
              it3.lastErr = aiErrText(e); saveLib(lib); }   /* v0.2.5：记下失败原因 */
   });
 }
+
+/* ==================== v0.3.28 自动切片巡逻（本地） ====================
+   打开资料库时扫每本书：没切块/全是粗切→"待切"；有切块没五段总结→"待总结"；都齐→跳过。
+   有Key且有待办就自动开跑，一本一本来（切片→总结→下一本），不并发。
+   跟设置里的"云端切片巡逻兵"两码事：它管云端取回，这里管本地自动切。
+   保险：没Key不跑；失败记 x.autoFail 当天不再碰（x.autoTryDay 记日期防死循环）；
+   只在书库页停留时跑（合上资料库/切后台/翻开详情页，跑完手头这本就停）。 */
+var _patrol = { q: [], i: 0, running: false, paused: false };
+function patrolToday(){ var d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
+function libNeedSlice(x){
+  var chs = (x && x.chunks) || [];
+  if(!chs.length) return true;
+  if(x.coarse || libHasDupTitles(x)) return true;
+  return chs.every(function(c){ return !c.summary || /本地粗切/.test(c.title || ''); });
+}
+function libNeedBrief(x){
+  return !x.brief || x.brief.indexOf('生成失败') >= 0 || x.brief.indexOf('未生成') >= 0;
+}
+function patrolScan(){
+  var today = patrolToday(), out = [];
+  loadLib().forEach(function(x){
+    if(x.cloud === 'sent') return;                              /* 云端代办中的书不碰 */
+    if(x.autoFail && x.autoTryDay === today) return;            /* 今天自动试过且败了，不纠缠 */
+    if(libNeedSlice(x)) out.push({ id: x.id, title: x.title, kind: 'slice' });
+    else if(libNeedBrief(x)) out.push({ id: x.id, title: x.title, kind: 'brief' });
+  });
+  return out;
+}
+function patrolBar(t){
+  var bar = $('patrolBar'); if(!bar) return;
+  if(!t){ bar.classList.add('hidden'); return; }
+  bar.classList.remove('hidden');
+  $('patrolText').textContent = t;
+  $('btnPatrolPause').textContent = _patrol.paused ? '▶ 继续' : '⏸ 暂停';
+}
+function patrolAwake(){
+  /* 人还停在书库页才跑：资料库合上了/切后台了/翻开某本详情了，都先歇着 */
+  return $('libBox').open && !document.hidden && $('libPage').classList.contains('hidden');
+}
+function patrolKick(){
+  var hint = $('patrolHint');
+  var hasKey = !!(localStorage.getItem('xt_apikey') || '').trim();
+  if(!hasKey){ if(hint) hint.classList.remove('hidden'); patrolBar(''); return; }   /* 保险①：没Key不跑，书库照常显示 */
+  if(hint) hint.classList.add('hidden');
+  if(_patrol.running || _patrol.paused) return;
+  var q = patrolScan();
+  if(!q.length){ patrolBar(''); return; }
+  _patrol.q = q; _patrol.i = 0; _patrol.running = true;
+  patrolNext();
+}
+function patrolNext(){
+  if(_patrol.paused || !patrolAwake()){ _patrol.running = false; patrolBar(''); return; }
+  if(_patrol.i >= _patrol.q.length){
+    _patrol.running = false; patrolBar(''); renderLib();
+    toast('✅ 自动切片巡逻完，书库都齐了', 2500);
+    return;
+  }
+  var job = _patrol.q[_patrol.i];
+  var lib = loadLib(); var it = lib.filter(function(x){ return x.id === job.id; })[0];
+  if(!it){ _patrol.i++; patrolNext(); return; }
+  it.autoTryDay = patrolToday(); it.autoFail = ''; saveLib(lib);   /* 保险③：今天自动碰过它了，同一天最多1次 */
+  var verb = job.kind === 'slice' ? '正在切' : '正在写总结';
+  patrolBar('🤖 巡逻中：' + verb + '《' + job.title + '》（第' + (_patrol.i + 1) + '/' + _patrol.q.length + '本）…');
+  libFullText(job.id).then(function(raw){
+    if(!raw) throw new Error('正文丢失，没法自动弄（点详情手动处理）');
+    if(job.kind === 'slice'){
+      var l2 = loadLib(); var it2 = l2.filter(function(x){ return x.id === job.id; })[0];
+      if(it2){ it2.chunks = []; it2.coarse = false; it2.done = false; saveLib(l2); }
+      return idbDelPrefix('chunks', job.id + '_').then(function(){
+        return sliceLibItem(job.id, raw);
+      }).then(function(){
+        var after = getLib(job.id);
+        if(after && libNeedSlice(after)) throw new Error(after.lastErr || 'AI 没切成（还是粗切）');   /* 保险② */
+      });
+    }
+    return libWriteBrief(job.id, raw).then(function(){
+      var after = getLib(job.id);
+      if(after && libNeedBrief(after)) throw new Error(after.lastErr || '总结没生成');               /* 保险② */
+    });
+  }).then(function(){
+    var l3 = loadLib(); var it3 = l3.filter(function(x){ return x.id === job.id; })[0];
+    if(it3){ it3.autoFail = ''; saveLib(l3); renderLib(); }
+  }).catch(function(e){
+    var l4 = loadLib(); var it4 = l4.filter(function(x){ return x.id === job.id; })[0];
+    if(it4){ it4.autoFail = aiErrText(e); saveLib(l4); renderLib(); }   /* 保险②：记台账，本次打开不再碰它 */
+  }).then(function(){
+    _patrol.i++;
+    patrolNext();
+  });
+}
+$('btnPatrolPause').addEventListener('click', function(){
+  _patrol.paused = !_patrol.paused;
+  if(_patrol.paused){
+    patrolBar('⏸ 已暂停（跑完手头这本就停）');
+  }else{
+    patrolBar('🤖 巡逻继续…');
+    if(!_patrol.running && _patrol.q.length){ _patrol.running = true; patrolNext(); }
+    else patrolKick();
+  }
+});
+$('libBox').addEventListener('toggle', function(){
+  if($('libBox').open){ _patrol.paused = false; patrolKick(); }   /* 打开资料库就巡逻 */
+});
+document.addEventListener('visibilitychange', function(){
+  if(!document.hidden && $('libBox').open) patrolKick();          /* 切回前台继续 */
+});
 
 /* --- 资料列表 --- */
 function renderLib(){
@@ -1596,7 +1812,8 @@ function renderLib(){
     row.className = 'lib-row';
     row.innerHTML = '<span class="gtag">' + (GRADES[x.grade] || '📘') + '</span>' +
       '<div class="t">' + esc(x.title) + (x.done ? '' : ' <span style="color:#b08a4a;">（切片中/未完）</span>') + '</div>' +
-      '<div class="d">' + (x.chunks || []).length + '块</div>';
+      '<div class="d">' + (x.chunks || []).length + '块' +
+      (x.autoFail ? '<br><span style="color:#b3261e;">⚠️自动切失败，点详情手动重试</span>' : '') + '</div>';
     row.querySelector('.t').addEventListener('click', function(){ openLib(x.id); });
     box.appendChild(row);
   });
@@ -1636,6 +1853,9 @@ function openLib(id){
   $('libTitle').textContent = x.title;
   $('libGradeSel').value = x.grade;
   $('libMeta').textContent = (x.author ? x.author + ' · ' : '') + Math.round((x.chars || 0) / 10000) + '万字 · ' + (x.chunks || []).length + '块';
+  /* v0.3.28：本书AI花费小字（按账本 byBook 记的 yuan 累加） */
+  var _bc = bill().byBook[id];
+  $('libCost').textContent = (_bc && _bc.calls) ? '本书AI花费约 ' + billFmt3(_bc.yuan || 0) + '（' + _bc.calls + '趟）' : '';
   $('libBrief').innerHTML = renderMd(x.brief || '（暂无总结）');
   /* v0.2.3 补救条：粗切过/总结失败时亮出重来按钮
      v0.2.4：老版本导入的书没有 coarse 标记——切块标题有重名（一堆"第1段"）也算没切好 */
@@ -1692,19 +1912,34 @@ function openLib(id){
         var d = document.createElement('div');
         d.className = 'chunk-body';
         d.style.borderBottom = '1px dashed #eee4d4';
-        d.textContent = (r.lv === 1 ? '🔴 ' : r.lv === 2 ? '🟡 ' : r.lv === 3 ? '⚪ ' : '❔ ') +
-          '[' + r.n + '] ' + r.text + (r.tag ? ' ' + r.tag : '') + (r.why ? '（' + r.why + '）' : '');
+        var ic = (r.lv === 1 ? '🔴 ' : r.lv === 2 ? '🟡 ' : r.lv === 3 ? '⚪ ' : '❔ ');
+        if(r.title){
+          /* v0.3.27 新格式条目两行：第一行"🔴 [12] 标题"，第二行小字"作者 · 期刊 · 年【身份牌】（why）" */
+          var l1 = document.createElement('div');
+          l1.textContent = ic + '[' + r.n + '] ' + r.title;
+          var l2 = document.createElement('div');
+          l2.style.cssText = 'font-size:12px;color:#9a8f80;margin-top:2px;';
+          l2.textContent = [r.authors, r.journal, r.year].filter(function(s){ return s; }).join(' · ') +
+            (r.tag ? ' ' + r.tag : '') + (r.why ? '（' + r.why + '）' : '');
+          d.appendChild(l1); d.appendChild(l2);
+        }else{
+          /* 旧格式条目（无title字段，老数据）保持单行渲染 */
+          d.textContent = ic + '[' + r.n + '] ' + r.text + (r.tag ? ' ' + r.tag : '') + (r.why ? '（' + r.why + '）' : '');
+        }
         rbody.appendChild(d);
       });
       var act = document.createElement('div');
       act.style.marginTop = '8px';
-      var b1 = document.createElement('button'); b1.className = 'btn secondary'; b1.style.cssText = 'padding:6px 10px; font-size:13px;'; b1.textContent = '📋 复制全部';
-      b1.addEventListener('click', function(){ refsCopy(false); });
-      var b2 = document.createElement('button'); b2.className = 'btn secondary'; b2.style.cssText = 'padding:6px 10px; font-size:13px; margin-left:6px;'; b2.textContent = '⭐ 只复制前十';
-      b2.addEventListener('click', function(){ refsCopy(true); });
+      /* v0.3.27 复制按钮三键：标题（主力，拿去文献网站搜）/ 完整条目 / 前十标题；存txt保留（导完整条目） */
+      var b1 = document.createElement('button'); b1.className = 'btn secondary'; b1.style.cssText = 'padding:6px 10px; font-size:13px;'; b1.textContent = '📋 复制标题';
+      b1.addEventListener('click', function(){ refsCopy('titles'); });
+      var b2 = document.createElement('button'); b2.className = 'btn secondary'; b2.style.cssText = 'padding:6px 10px; font-size:13px; margin-left:6px;'; b2.textContent = '📋 复制完整条目';
+      b2.addEventListener('click', function(){ refsCopy('full'); });
+      var b2b = document.createElement('button'); b2b.className = 'btn secondary'; b2b.style.cssText = 'padding:6px 10px; font-size:13px; margin-left:6px;'; b2b.textContent = '⭐ 前十标题';
+      b2b.addEventListener('click', function(){ refsCopy('top10'); });
       var b3 = document.createElement('button'); b3.className = 'btn secondary'; b3.style.cssText = 'padding:6px 10px; font-size:13px; margin-left:6px;'; b3.textContent = '💾 存成txt';
       b3.addEventListener('click', function(){ $('btnRefsSave').click(); });
-      act.appendChild(b1); act.appendChild(b2); act.appendChild(b3);
+      act.appendChild(b1); act.appendChild(b2); act.appendChild(b2b); act.appendChild(b3);
       rbody.appendChild(act);
       rrow.appendChild(rbody);
     });
@@ -1895,9 +2130,13 @@ $('btnCloudFetch').addEventListener('click', function(){
         return;
       }
       libProg('🔧 正在拼装切块…');
+      /* v0.3.27 正文切片摘除参考文献节：切块起始段落号 ≥ 参考文献起始段落号(1-based)的跳过不装；
+         找不到参考文献节(-1)时行为照旧。段落数一致性校验在上面，原样没动。 */
+      var refAt = refStartPara(paras);
+      var goodChunks = (data.chunks || []).filter(function(c){ return refAt < 0 || (c.from | 0) < refAt + 1; });
       return idbDelPrefix('chunks', id + '_').then(function(){
         var chain = Promise.resolve();
-        (data.chunks || []).forEach(function(c, i){
+        goodChunks.forEach(function(c, i){
           chain = chain.then(function(){
             var text = paras.slice(c.from - 1, c.to).join('\n');
             return idbPut('chunks', { id: id + '_' + (i + 1), text: text });
@@ -1906,7 +2145,7 @@ $('btnCloudFetch').addEventListener('click', function(){
         return chain.then(function(){
           var lib = loadLib(); var it = lib.filter(function(t){ return t.id === id; })[0];
           if(it){
-            it.chunks = data.chunks.map(function(c, i){ return { ch: i + 1, title: c.title, summary: c.summary || '' }; });
+            it.chunks = goodChunks.map(function(c, i){ return { ch: i + 1, title: c.title, summary: c.summary || '' }; });
             it.coarse = !!data.coarse;
             if(data.brief) it.brief = data.brief;
             it.done = true; it.cloud = '';
@@ -1966,9 +2205,10 @@ $('btnLibAskGo').addEventListener('click', function(){
   });
   chain.then(function(){
     showMsg($('libAskMsg'), '🤖 AI 回答中…', 'ok');
+    aiBookCtx(x.id);   /* v0.3.28：问资料记到这本书账上 */
     var warn = x.grade === 'ai' ? '注意：这份资料是"AI生成·待核"级别，回答开头必须先写一行 ⚠️ 提醒：本回答来自AI生成资料，请与正规指南核对后再用。\n' : '';
     return callAI('你是医学问答助手。只根据给你的资料切块回答问题，切块里没有的就明说"这份资料没提到"。回答用中文大白话，末尾注明引用了哪几个切块。' + warn,
-      '【资料】《' + x.title + '》（' + (GRADES[x.grade] || '') + '）\n【问题】' + q + '\n\n' + texts.join('\n\n'), 2000);
+      '【资料】《' + x.title + '》（' + (GRADES[x.grade] || '') + '）\n【问题】' + q + '\n\n' + texts.join('\n\n'), 2000, null, '问资料');
   }).then(function(ans){
     $('btnLibAskGo').disabled = false;
     $('libAskMsg').className = 'msg';
@@ -1992,6 +2232,7 @@ loadSettings();
 billRender();
 renderList();
 renderLib();
+if($('libBox').open) patrolKick();   /* v0.3.28：开屏时资料库若开着，直接巡逻 */
 /* v0.3.18 静物实验：取消开屏自动自检。铁律对照——浏览器里upd条从未弹出→从不空白；
    壳里每次空白都在upd条弹出后几秒。条改浮条只断了"推挤"，没断"界面变化"这个扳机。
    想查更新：设置里手动点（ghCheckBtn还在）。 */
@@ -2107,7 +2348,7 @@ function refsAiGrade(refs, bookTitle, progFn){
       progFn('🤖 AI 定级中：第 ' + (bi+1) + '/' + batches.length + ' 批（' + b.length + ' 条）…');
       var user = '【书名】' + bookTitle + '\n' + b.map(function(r){
         return '[' + r.n + '] ' + (r.tag ? r.tag + ' ' : '') + r.text.slice(0, 300); }).join('\n');
-      return callAI(SYS, user, 4000, 90000).then(function(txt){
+      return callAI(SYS, user, 4000, 90000, '定级').then(function(txt){
         var s = txt.indexOf('['), e = txt.lastIndexOf(']');
         JSON.parse(txt.slice(s, e + 1)).forEach(function(o){
           if(o && o.n != null) result[+o.n] = { lv: [1,2,3].indexOf(+o.lv) >= 0 ? +o.lv : 0, why: String(o.why || '').slice(0, 60) };
@@ -2116,6 +2357,72 @@ function refsAiGrade(refs, bookTitle, progFn){
     });
   });
   return chain.then(function(){ return result; });
+}
+/* v0.3.27 参考文献AI新通道：切条+清理+定级一趟。
+   分批（约6000字符/批，相邻批重叠约300字符，防条目被批次边界切断）→AI回严格JSON→本地按n去重（先到的为准）排序；
+   校验：title+authors+journal拼接总长 < 原文40%，或条目数<3，或全部批次失败 → 判定AI切条失败，
+   自动退老路（refSplitLocal + refsAiGrade，老路原代码一个字不删）。 */
+function refsAiParse(sec, bookTitle, progFn){
+  var SYS = '你是医学参考文献整理助手，帮ICU医生整理一本书的参考文献原文。' +
+    '①把这段参考文献原文切成一条条独立文献；' +
+    '②只许切条和清理多余空白/换行，文献内容一个字不许改、不许补、不许猜；' +
+    '③只回严格JSON数组 [{"n":原编号(整数,认不出就按顺序估),"title":"文献标题","authors":"作者(如 Fahy JV, Dickey BF)","journal":"刊名缩写","year":"年","lv":1或2或3,"why":"不超过30字理由"}]，不要多余的话；' +
+    '④定级：1=必读（指南/共识/高质量RCT/Meta分析，且与该书主题直接相关）、2=有空可读、3=一般；' +
+    '⑤若某段文字明显是半条（被批次边界切断），仍尽量返回，n照原编号。';
+  var BATCH = 6000, OVER = 300, batches = [];
+  for(var st = 0; st < sec.length; st += BATCH - OVER) batches.push(sec.slice(st, st + BATCH));
+  var got = {}, anyOk = false, chain = Promise.resolve();
+  batches.forEach(function(b, bi){
+    chain = chain.then(function(){
+      progFn('🤖 AI整理文献中：第' + (bi + 1) + '/' + batches.length + '批…');
+      return callAI(SYS, '【书名】' + bookTitle + '\n【参考文献原文 第' + (bi + 1) + '段】\n' + b, 4000, 90000, '文献整理').then(function(txt){
+        var s = txt.indexOf('['), e = txt.lastIndexOf(']');
+        var arr = JSON.parse(txt.slice(s, e + 1));
+        if(!Array.isArray(arr) || !arr.length) throw new Error('AI回格式不对');
+        anyOk = true;
+        arr.forEach(function(o){
+          if(!o) return;
+          var n = +o.n;
+          if(!(n > 0) || got[n]) return;   /* 按n去重，先到的为准（重叠区的条目不重装） */
+          got[n] = { n: n, title: String(o.title || ''), authors: String(o.authors || ''),
+                     journal: String(o.journal || ''), year: String(o.year || ''),
+                     lv: [1,2,3].indexOf(+o.lv) >= 0 ? +o.lv : 0, why: String(o.why || '').slice(0, 60) };
+        });
+      }).catch(function(){ /* 批次失败该批记缺，不拖死 */ });
+    });
+  });
+  function oldPath(){
+    /* AI切条失败退老路：本地切条→挂身份牌→AI定级（老函数原样保留，一个字没删） */
+    var refs = refSplitLocal(sec);
+    if(refs.length < 3) return refs;
+    progFn('⚠️ AI切条没成，退老路（本地切条+AI定级）…');
+    progFn(JDB_EN ? ('✅ 切出 ' + refs.length + ' 条，挂身份牌…') : '📚 正在装文献库（头一回用要下载，约200KB）…');
+    return new Promise(function(res){ ensureJDB(function(){ res(); }); }).then(function(){
+      refs.forEach(function(r){ var tg = refTag(r.text); r.tag = tg.label; r.w = tg.w; r.lv = 0; r.why = ''; });
+      progFn('✅ 切出 ' + refs.length + ' 条，身份牌挂好。开始 AI 定级…');
+      return refsAiGrade(refs, bookTitle, progFn).then(function(grades){
+        refs.forEach(function(r){ var g = grades[r.n]; if(g){ r.lv = g.lv; r.why = g.why; } });
+        return refs;
+      });
+    });
+  }
+  return chain.then(function(){
+    var refs = Object.keys(got).map(function(k){ return got[k]; }).sort(function(a, b){ return a.n - b.n; });
+    var joinLen = refs.reduce(function(s, r){ return s + r.title.length + r.authors.length + r.journal.length; }, 0);
+    if(!anyOk || refs.length < 3 || joinLen < sec.length * 0.4) return oldPath();
+    /* 新格式：text 按"authors. title. journal, year."原样字段拼接（缺啥少啥）；tag/w 本地 refTag 挂，不花AI钱 */
+    progFn(JDB_EN ? ('✅ AI整理出 ' + refs.length + ' 条，挂身份牌…') : '📚 正在装文献库（头一回用要下载，约200KB）…');
+    return new Promise(function(res){ ensureJDB(function(){ res(); }); }).then(function(){
+      refs.forEach(function(r){
+        r.text = [r.authors ? r.authors + '.' : '',
+                  r.title ? r.title + '.' : '',
+                  r.journal ? r.journal + (r.year ? ', ' + r.year + '.' : '.') : (r.year ? r.year + '.' : '')]
+          .filter(function(s){ return s; }).join(' ').replace(/\s+/g, ' ').trim();
+        var tg = refTag(r.text); r.tag = tg.label; r.w = tg.w;
+      });
+      return refs;
+    });
+  });
 }
 var LV_ICON = ['❔', '🔴', '🟡', '⚪'], LV_NAME = ['未定级', '必读', '可读', '一般'];
 /* v0.3.24 提取进度改说在资料详情页（refsPage白屏废弃；refsProg还写着兜底，反正看不见不碍事） */
@@ -2160,16 +2467,19 @@ function renderRefs(){
   });
   if(!graded) $('refsProg').textContent = '（还没定级：点资料详情的「📚 参考文献」可重新提取定级）';
 }
-function refsCopyText(x, onlyTop){
-  var list = onlyTop ? refsTop10(x) : x.refs;
-  var head = '参考文献' + (onlyTop ? '·必读前十' : '') + ' ——《' + x.title + '》\n\n';
+/* v0.3.27 拼串抽成可测试函数：mode 'titles'=一行一条标题（拿去文献网站搜）/ 'full'=一行一条完整text / 'top10'=必读前十标题。
+   新旧两种条目格式混排不崩（老条目没有title字段，用text顶上）。 */
+function refsCopyText(x, mode){
+  var list = mode === 'top10' ? refsTop10(x) : x.refs;
+  var head = '参考文献' + (mode === 'top10' ? '·必读前十' : (mode === 'titles' ? '·标题' : '')) + ' ——《' + x.title + '》\n\n';
   return head + list.map(function(r){
-    return refItemText(r) + (r.why ? '（' + LV_NAME[r.lv || 0] + '：' + r.why + '）' : ''); }).join('\n');
+    if(mode === 'full') return refItemText(r) + (r.why ? '（' + LV_NAME[r.lv || 0] + '：' + r.why + '）' : '');
+    return '[' + r.n + '] ' + (r.title || r.text); }).join('\n');
 }
-function refsCopy(onlyTop){
+function refsCopy(mode){
   var x = getLib(curLibId); if(!x || !x.refs) return;
-  var t = refsCopyText(x, onlyTop);
-  function done(){ toast('📋 已复制 ' + (onlyTop ? '前十' : x.refs.length + ' 条'), 2000); }
+  var t = refsCopyText(x, mode);
+  function done(){ toast('📋 已复制 ' + (mode === 'top10' ? '前十标题' : mode === 'titles' ? x.refs.length + ' 条标题' : x.refs.length + ' 条完整条目'), 2000); }
   if(navigator.clipboard && navigator.clipboard.writeText){
     navigator.clipboard.writeText(t).then(done, function(){ fallback(); });
   } else fallback();
@@ -2180,11 +2490,11 @@ function refsCopy(onlyTop){
     ta.remove();
   }
 }
-$('btnRefsCopyAll').addEventListener('click', function(){ refsCopy(false); });
-$('btnRefsCopyTop').addEventListener('click', function(){ refsCopy(true); });
+$('btnRefsCopyAll').addEventListener('click', function(){ refsCopy('full'); });
+$('btnRefsCopyTop').addEventListener('click', function(){ refsCopy('top10'); });
 $('btnRefsSave').addEventListener('click', function(){
   var x = getLib(curLibId); if(!x || !x.refs) return;
-  var t = refsCopyText(x, false), name = '参考文献_' + x.title.replace(/[\\/:*?"<>|]/g, '_').slice(0, 40) + '.txt';
+  var t = refsCopyText(x, 'full'), name = '参考文献_' + x.title.replace(/[\\/:*?"<>|]/g, '_').slice(0, 40) + '.txt';
   if(window.LearnShell && LearnShell.writeFile){
     try{ LearnShell.writeFile(name, b64enc(t)); toast('💾 已存进授权文件夹：' + name, 3000); return; }catch(e){}
   }
@@ -2211,23 +2521,17 @@ $('btnRefs').addEventListener('click', function(){
     if(!raw){ refsSay('❌ 正文丢了，没法提取。'); return; }
     var sec = refFindSection(raw);
     if(!sec){ refsSay('❌ 全文里没找到"参考文献"节（这份资料可能没有）。'); return; }
-    var refs = refSplitLocal(sec);
-    if(refs.length < 3){ refsSay('❌ 参考文献节找到了但切不出条目。把下面原文截图给小涛：『' + sec.slice(0, 150).replace(/\s+/g, ' ') + '…』'); return; }
-    refsSay(JDB_EN ? ('✅ 切出 ' + refs.length + ' 条，挂身份牌…') : '📚 正在装文献库（头一回用要下载，约200KB）…');
-    ensureJDB(function(jok){
-    if(!jok) toast('⚠️ 文献库没装着，身份牌空着不碍事', 3000);
-    refs.forEach(function(r){ var tg = refTag(r.text); r.tag = tg.label; r.w = tg.w; r.lv = 0; r.why = ''; });
-    refsSay('✅ 切出 ' + refs.length + ' 条，身份牌挂好。开始 AI 定级…');
-    return refsAiGrade(refs, x.title, function(m){ refsSay(m); }).then(function(grades){
-      var ok = 0;
-      refs.forEach(function(r){ var g = grades[r.n]; if(g){ r.lv = g.lv; r.why = g.why; if(g.lv) ok++; } });
+    /* v0.3.27 先走AI新通道（切条+清理+定级一趟），校验不过 refsAiParse 内部自动退老路 */
+    aiBookCtx(id);   /* v0.3.28：文献整理记到这本书账上 */
+    return refsAiParse(sec, x.title, function(m){ refsSay(m); }).then(function(refs){
+      if(!refs || refs.length < 3){ refsSay('❌ 参考文献节找到了但切不出条目。把下面原文截图给小涛：『' + sec.slice(0, 150).replace(/\s+/g, ' ') + '…』'); return; }
+      var ok = refs.filter(function(r){ return r.lv; }).length;
       var lib = loadLib(); var it = lib.filter(function(t){ return t.id === id; })[0];
       if(it){ it.refs = refs; saveLib(lib); }
       refsSay(ok ? '' : '⚠️ AI 定级没成（条目都在，可手动点❔定级）');
-      if(ok) toast('✅ 定级完成：' + ok + '/' + refs.length + ' 条', 2500);
+      toast('✅ 文献整理完成：' + refs.length + ' 条（定级 ' + ok + ' 条）', 2500);
       openLib(id);
     });
-    });  /* ensureJDB 收口 */
   });
 });
 
@@ -2249,7 +2553,12 @@ try{
   for(var __i = 0; __i < __ps.length; __i++) __ps[__i].style.top = __hh + 'px';
 }catch(e){}
 /* 测试挂钩（ playwright 用，不影响功能 ） */
-window.__xt = { ensureJDB: ensureJDB, refTag: refTag, refSplitLocal: refSplitLocal, refFindSection: refFindSection };
+window.__xt = { ensureJDB: ensureJDB, refTag: refTag, refSplitLocal: refSplitLocal, refFindSection: refFindSection,
+  refStartPara: refStartPara, refsAiParse: refsAiParse, refsCopyText: refsCopyText, splitParas: splitParas, makeBatches: makeBatches,
+  openLib: openLib,
+  /* v0.3.28 新挂钩：巡逻 + 账本 */
+  patrolScan: patrolScan, patrolKick: patrolKick, patrolState: _patrol, libNeedSlice: libNeedSlice, libNeedBrief: libNeedBrief,
+  bill: bill, billYuan: billYuan, AI_PRICE: AI_PRICE, AI_PREFER: AI_PREFER, callAI: callAI, aiBookCtx: aiBookCtx };
 
 })();
 </script>
