@@ -6,6 +6,9 @@
 <title>拍病历</title>
 <!--
 修改记录:
+拍病历 v0.1.5 2026-08-14
+- 加:遮挡页「🔄旋转90°」按钮——竖拍横屏内容(照片侧躺)先canvas转正再遮,合成和送识别都用正图
+- 修:黑块坐标对齐图片实际显示区域——遮罩容器尺寸锁成图片渲染矩形(无黑边),黑块拖哪遮哪,所见即所得;旋转后黑块清空回默认顶部块、缩放平移复位
 拍病历 v0.1.4 2026-08-14
 - 加①:识别账本(按病人分账+设置页总账+卡片小字),usage记账没有usage按图1000token+字符/2估算标est,存pai_bill_v1不串小涛
 - 修②:黑块硬夹图内(拖/缩放把手全程clamp)+越界老块进遮挡页自动拉回+新块落在当前可视中心
@@ -115,6 +118,7 @@ table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:
       <div class="maskwrap" id="maskWrap"><div id="maskZoom"><img id="maskImg" alt=""></div></div>
       <div class="row" style="margin-top:10px">
         <button class="btn sec sm" id="btnAddBlk">＋黑块</button>
+        <button class="btn sec sm" id="btnRotate">🔄 旋转90°</button>
         <button class="btn sm" id="btnMaskOk">完成这张 →</button>
         <button class="btn sec sm" id="btnZoomIn">🔍+</button>
         <button class="btn sec sm" id="btnZoomOut">🔍−</button>
@@ -192,7 +196,7 @@ table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:
 
 <script>
 'use strict';
-const SW_VERSION='0.1.4';
+const SW_VERSION='0.1.5';
 const $=id=>document.getElementById(id);
 const esc=s=>s; // 一律textContent渲染
 function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',2200);}
@@ -375,10 +379,36 @@ function loadMaskPhoto(){
   const ph=list[S.maskIdx];
   $('maskIdx').textContent=S.maskIdx+1;$('maskTot').textContent=list.length;
   const img=$('maskImg');img.src=ph.data;
-  img.onload=()=>{maskNat={w:img.naturalWidth,h:img.naturalHeight};buildBlocks();};
-  if(img.complete&&img.naturalWidth){maskNat={w:img.naturalWidth,h:img.naturalHeight};buildBlocks();}
+  img.onload=()=>{maskNat={w:img.naturalWidth,h:img.naturalHeight};fitWrap();buildBlocks();};
+  if(img.complete&&img.naturalWidth){maskNat={w:img.naturalWidth,h:img.naturalHeight};fitWrap();buildBlocks();}
   zoomReset();
 }
+/* v0.1.5 遮罩容器锁成图片实际渲染矩形(居中、无黑边):黑块0~1相对坐标直接对这张图,拖哪遮哪 */
+function fitWrap(){
+  const img=$('maskImg'),wrap=$('maskWrap');
+  if(!img.naturalWidth)return;
+  wrap.style.width=img.clientWidth+'px';
+  wrap.style.height=img.clientHeight+'px';
+}
+/* v0.1.5 顺时针转90°:canvas把dataURL转正替换当前照片(横拍转正再遮,AI收到的也是正图) */
+function rotateMaskPhoto(){
+  const list=rawPhotos();const ph=list[S.maskIdx];if(!ph)return;
+  const img=new Image();
+  img.onload=()=>{
+    const c=document.createElement('canvas');
+    c.width=img.naturalHeight;c.height=img.naturalWidth;
+    const g=c.getContext('2d');
+    g.translate(c.width,0);g.rotate(Math.PI/2);
+    g.drawImage(img,0,0);
+    ph.data=c.toDataURL('image/jpeg',0.92);
+    S.maskBlocks=[]; // 坐标系变了不硬套,清空重摆默认顶部块
+    zoomReset();
+    loadMaskPhoto();
+    toast('已顺时针转90°，不满意可再点');
+  };
+  img.src=ph.data;
+}
+$('btnRotate').addEventListener('click',rotateMaskPhoto);
 function buildBlocks(){
   const w=$('maskWrap');w.querySelectorAll('.blk').forEach(b=>b.remove());
   // v0.1.4 有老块(老数据/老会话)不丢,越界的拉回图内最近位置;没块才给默认黑块1
@@ -794,7 +824,7 @@ window.__pj={
   parseLabs,buildTrends,buildFullDoc,buildBackup,restoreBackup,guessCat,runQueue,
   visionModelPick,callVision,enqueue,zoomSet,zoomReset,Z,
   patients,entries,savePatients,saveEntries,S,openCam,openMask,openReview,openLib,addShot,
-  bill,billAiUse,billYuan,billFmt,PAI_PRICE,openSet,addBlock,renderBlocks,buildBlocks,
+  bill,billAiUse,billYuan,billFmt,PAI_PRICE,openSet,addBlock,renderBlocks,buildBlocks,rotateMaskPhoto,fitWrap,
   _ls:LS
 };
 renderHome();
