@@ -6,6 +6,10 @@
 <title>拍病历</title>
 <!--
 修改记录:
+拍病历 v0.4.3 2026-08-15
+- 归错病人补救两个口子:①过目页「👤换人」——识别后看内容认出是别人的,点名单换人,确认归档落进新病人的库;②库里每条「↪」——归档后发现归错,点名单挪走,照片跟条目走(photoId不变)
+- 账跟人走:billAiUse的log记pid+ref(照片id),billMoveRef按ref把费用从老病人名下挪到新病人名下(log只留50条,太老的挪不动);识别两处记账(runQueue/旋转重识别)都挂了ref
+- 选人名单patientPickRow两口共用,只列在科病人(归档区先拉回再挪)
 拍病历 v0.4.2 2026-08-15
 - 修「储存区没有内容」病灶:库入口是长按(contextmenu)太隐蔽找不到——①病人卡片加显式「🗂库」按钮(点卡仍是拍照);②归档后直接落进这个病人的库,存没存上一眼看见
 - 加「⚡免遮挡直接识别」快道:化验单/检查报告这类无敏感信息的,拍完跳过遮挡页,直接存档+入队识别;横拍(宽>高)内容本来就正,不旋转直接送
@@ -182,8 +186,11 @@ table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:
       <div class="row" id="rvCats"></div>
       <div class="row" style="margin-top:12px">
         <button class="btn grn" id="btnRvOk">确认归档</button>
+        <!-- v0.4.3 这条是别人的:换人后再归档,落进新病人的库,账跟人走 -->
+        <button class="btn sec sm" id="btnRvMove">👤 换人</button>
         <button class="btn red sm" id="btnRvDrop">丢弃这张</button>
       </div>
+      <div class="row hidden" id="rvMoveList" style="margin-top:8px;flex-wrap:wrap"></div>
     </div>
   </div>
 </div>
@@ -300,7 +307,7 @@ table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:
 
 <script>
 'use strict';
-const SW_VERSION='0.4.2';
+const SW_VERSION='0.4.3';
 const $=id=>document.getElementById(id);
 const esc=s=>s; // 一律textContent渲染
 function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',2200);}
@@ -393,7 +400,7 @@ const PAI_PRICE={ // 2026-08-14官价,每月复查
   'moonshot-v1-32k':{in:24,out:24}
 }; // 元/百万tokens,未知模型按8k-vision估
 function bill(){const b=LS.get('pai_bill_v1',null);return b||{calls:0,in:0,out:0,est:0,byModel:{},byPatient:{},log:[]};}
-function billAiUse(pid,model,usage,inChars,outChars,what){
+function billAiUse(pid,model,usage,inChars,outChars,what,ref){
   const b=bill();let est=false,tin=0,tout=0;
   if(usage&&(usage.prompt_tokens!=null||usage.completion_tokens!=null)){
     tin=usage.prompt_tokens|0;tout=usage.completion_tokens|0; // 视觉模型的图片token含在prompt_tokens里
@@ -406,9 +413,24 @@ function billAiUse(pid,model,usage,inChars,outChars,what){
     const bp=b.byPatient[pid];bp.calls++;bp.in+=tin;bp.out+=tout;
     const pr=PAI_PRICE[model]||PAI_PRICE['moonshot-v1-8k-vision-preview'];
     bp.yuan+=(tin*pr.in+tout*pr.out)/1e6;}
-  b.log.push({t:Date.now(),model:model,in:tin,out:tout,what:what||'识别'}); // what预留
+  b.log.push({t:Date.now(),model:model,in:tin,out:tout,what:what||'识别',pid:pid||null,ref:ref||null}); // v0.4.3 pid+ref:换人/挪条时账跟人走
   if(b.log.length>50)b.log=b.log.slice(-50);
   LS.set('pai_bill_v1',b);
+}
+/* v0.4.3 账跟人走:把ref(照片id)对应的费用从fromPid挪到toPid;log只留50条,太老的挪不动(估算账,影响忽略) */
+function billMoveRef(ref,fromPid,toPid){
+  if(!ref||!fromPid||!toPid||fromPid===toPid)return;
+  const b=bill();let moved=false;
+  for(const it of b.log){
+    if(it.ref!==ref||it.pid!==fromPid)continue;
+    const pr=PAI_PRICE[it.model]||PAI_PRICE['moonshot-v1-8k-vision-preview'];
+    const y=(it.in*pr.in+it.out*pr.out)/1e6;
+    const f=b.byPatient[fromPid];if(f){f.calls--;f.in-=it.in;f.out-=it.out;f.yuan-=y;}
+    if(!b.byPatient[toPid])b.byPatient[toPid]={calls:0,in:0,out:0,yuan:0};
+    const t=b.byPatient[toPid];t.calls++;t.in+=it.in;t.out+=it.out;t.yuan+=y;
+    it.pid=toPid;moved=true;
+  }
+  if(moved)LS.set('pai_bill_v1',b);
 }
 function billYuan(){const b=bill();let y=0;for(const m in b.byModel){const p=PAI_PRICE[m]||PAI_PRICE['moonshot-v1-8k-vision-preview'],e=b.byModel[m];y+=(e.in*p.in+e.out*p.out)/1e6;}return y;}
 function billYuanOf(pid){const bp=bill().byPatient[pid];return bp?bp.yuan:0;}
@@ -819,7 +841,7 @@ async function runQueue(){
     while((ph=S.photos.find(x=>x.status==='queued'))){
       ph.status='doing';if($('vQueue').classList.contains('on'))renderQueue();
       try{ph.text=await callVision(ph.data);
-        billAiUse(ph.pid,callVision._model,callVision._usage,OCR_PROMPT.length,(ph.text||'').length,'识别'); // v0.1.4 记账
+        billAiUse(ph.pid,callVision._model,callVision._usage,OCR_PROMPT.length,(ph.text||'').length,'识别',ph.id); // v0.1.4 记账;v0.4.3 挂ref账跟人走
         ph.status='done';
         if(ph.hasArch)ph.data=null; // v0.2.0 识别完成且idb已存档:内存丢原始大图防内存爆(重试的fail不丢)
       }
@@ -841,9 +863,21 @@ function guessCat(t){
   if(/(主诉|现病史)/.test(t))return'入院记录';
   return'其他';
 }
+/* v0.4.3 选人名单:列出其他在科病人,点谁onPick谁;过目换人和库里挪条共用 */
+function patientPickRow(excludePid,onPick){
+  const row=document.createElement('div');row.className='row';row.style.flexWrap='wrap';
+  const others=patients().filter(p=>!p.archived&&p.id!==excludePid);
+  if(!others.length){const s=document.createElement('span');s.className='small';s.textContent='没有其他在科病人';row.appendChild(s);return row;}
+  others.forEach(p=>{
+    const b=document.createElement('button');b.className='btn sm';b.textContent=p.name;
+    b.addEventListener('click',()=>onPick(p));row.appendChild(b);
+  });
+  return row;
+}
 function openReview(fid){
   const ph=S.photos.find(x=>x.id===fid);if(!ph)return;
   show('vReview');S.rvFid=fid;
+  $('rvMoveList').classList.add('hidden');$('rvMoveList').innerHTML=''; // v0.4.3
   const p=patients().find(x=>x.id===ph.pid);
   $('rvWho').textContent=p?p.name:'?';$('rvTime').textContent=new Date().toLocaleString();
   $('rvImg').src=ph.data||''; // v0.2.0 内存大图可能已丢,从idb读存档图
@@ -883,13 +917,27 @@ $('btnRvRot').addEventListener('click',async()=>{
     ph.data=nd;$('rvImg').src=nd;
     if(ph.hasArch){try{ph.hasArch=await IDB.put(ph.id,await makeArchive(nd));}catch(e){}} // 存档换正图
     ph.text=await callVision(nd);
-    billAiUse(ph.pid,callVision._model,callVision._usage,OCR_PROMPT.length,(ph.text||'').length,'识别'); // 账本照记
+    billAiUse(ph.pid,callVision._model,callVision._usage,OCR_PROMPT.length,(ph.text||'').length,'识别',ph.id); // 账本照记,挂ref
     $('rvText').value=ph.text||'';
     S.rvCat=guessCat(ph.text||''); // 预判分类刷新
     $('rvCats').querySelectorAll('button').forEach(x=>{const on=x.textContent===S.rvCat;x.classList.toggle('sec',!on);});
     toast('转正重识别完成');
   }catch(e){toast('重识别失败：'+String(e.message||e).slice(0,40));}
   finally{btn.disabled=false;btn.textContent='🔄 旋转90°重新识别';}
+});
+/* v0.4.3 过目页换人:认出"这条是别人的"→点名单→这条归新病人,归档就进他的库,识别费跟着走 */
+$('btnRvMove').addEventListener('click',()=>{
+  const ph=S.photos.find(x=>x.id===S.rvFid);if(!ph)return;
+  const box=$('rvMoveList');
+  if(!box.classList.contains('hidden')){box.classList.add('hidden');return;}
+  box.innerHTML='';box.classList.remove('hidden');
+  box.appendChild(patientPickRow(ph.pid,p=>{
+    const old=ph.pid;ph.pid=p.id;
+    billMoveRef(ph.id,old,p.id);
+    $('rvWho').textContent=p.name;
+    box.classList.add('hidden');
+    toast('这条归「'+p.name+'」名下，点确认归档就进他的库');
+  }));
 });
 $('btnRvDrop').addEventListener('click',()=>{
   if(!confirm('丢弃这张照片和识别结果?'))return;
@@ -921,11 +969,26 @@ function renderLib(mode,fullId){
     hd.textContent='━━ '+cat+'（'+items.length+'）';body.appendChild(hd);
   items.forEach(e=>{
     const c=document.createElement('div');c.className='card entry';
-    const h=document.createElement('div');
+    const h=document.createElement('div');h.style.cssText='display:flex;align-items:center;gap:8px'; // v0.4.3 flex:↪按钮靠右
     const tag=document.createElement('span');tag.className='tag';tag.textContent=e.cat;
     const tm=document.createElement('span');tm.className='small';tm.textContent=fmtT(e.time);
     if(e.recipe){const rt=document.createElement('span');rt.className='small';rt.textContent='菜谱:'+e.recipe;h.appendChild(rt);}
-    h.appendChild(tag);h.appendChild(tm);c.appendChild(h);
+    h.appendChild(tag);h.appendChild(tm);
+    // v0.4.3 归档后发现归错人:↪挪给别的病人,照片跟着条目走(photoId不变),识别费账跟人走
+    const mv=document.createElement('button');mv.className='btn sec sm';mv.style.marginLeft='auto';mv.textContent='↪';
+    mv.title='挪给别的病人';
+    mv.addEventListener('click',ev=>{ev.stopPropagation();
+      if(c._mvBox){c._mvBox.remove();c._mvBox=null;return;}
+      const box=patientPickRow(p.id,tp=>{
+        const es=entries();const it=es.find(x=>x.id===e.id);if(!it)return;
+        it.pid=tp.id;saveEntries(es);
+        billMoveRef(e.photoId,p.id,tp.id);
+        toast('已挪给「'+tp.name+'」');renderLib('list');
+      });
+      box.style.marginTop='6px';c.appendChild(box);c._mvBox=box;
+    });
+    h.appendChild(mv);
+    c.appendChild(h);
     if(e.photoId){const th=thumbEl(e);th.style.margin='6px 0';c.appendChild(th);} // v0.2.0 条目缩略图(idb读,点全屏)
     const pv=document.createElement('div');pv.className='small';pv.textContent=e.text.slice(0,50)+(e.text.length>50?'…':'');c.appendChild(pv);
     c.style.cursor='pointer';c.addEventListener('click',()=>{
@@ -1356,7 +1419,7 @@ window.__pj={
   parseLabs,buildTrends,buildFullDoc,buildBackup,restoreBackup,guessCat,runQueue,autoRotateCheck,CATS,OCR_PROMPT,
   visionModelPick,callVision,enqueue,zoomSet,zoomReset,Z,
   patients,entries,savePatients,saveEntries,S,openCam,openMask,openReview,openLib,addShot,
-  bill,billAiUse,billYuan,billFmt,PAI_PRICE,openSet,addBlock,renderBlocks,buildBlocks,rotateMaskPhoto,
+  bill,billAiUse,billYuan,billFmt,PAI_PRICE,billMoveRef,patientPickRow,openSet,addBlock,renderBlocks,buildBlocks,rotateMaskPhoto,
   fitImage,MD,IDB,makeArchive,thumbEl,openImgView,rotateRefit,maxZoom,
   recipes,saveRecipes,BUILTIN_RECIPES,callText,textModelPick,TMODEL_PREFS,
   buildAgg,aggVersions,buildDayCompare,buildCookPayload,cookPickEntries,openCook,openRecipes,renderRecipes,dayKey,isCourseRecipe,
