@@ -6,6 +6,9 @@
 <title>拍病历</title>
 <!--
 修改记录:
+拍病历 v0.2.1 2026-08-14
+- 修:旋转后图片缩角落/无法放大/黑块消失——①根因a(主因):zoomReset居中公式tx=(W-MD.w*s)/2漏减zoom层自身contain偏移MD.ox/MD.oy(transform叠在left/top之上),s>1时整图被推偏出视区,旋转极端长宽比图后缩成底部一条+上方黑空+黑块跑出视区;改为tx=(W-MD.w*s)/2-MD.ox、ty=(H-MD.h*s)/2-MD.oy,与addBlock可视中心公式同约定;②根因b:zoomSet/zoomReset缩放硬夹1~4,转正图(如306×1720→1720×306)铺满需s≈9被夹到4,到顶无法放大;改动态上限maxZoom()=max(4,铺满所需s);③根因c:loadMaskPhoto双触发(onload+complete同步跑)可能拿旧natural尺寸先适配;改seq令牌只认最后一次加载。旋转走rotateRefit()全新加载路径:等转正图onload拿新尺寸→fitImage→buildBlocks(默认顶部块)→zoomReset,三步成函数不散,连点多次/缩放中/平移过/加过块都正确复位
+- 加:test_real.py真实照片全流程测试(用户病历真图,390×780手机视口,mock识别)
 拍病历 v0.2.0 2026-08-14
 - 重做①:遮挡工作区显示——工作区固定75vh黑底overflow:hidden,图片不靠CSS自适应,JS在onload后显式算contain显示尺寸(imgW/imgH)并给#maskZoom设显式width/height+left/top居中;初始缩放s=夹取(1~4, max(区宽/imgW,区高/imgH))真铺满(横图铺满高度、竖图铺满宽度),tx/ty居中,超出部分双指平移看;⇄按钮在「铺满/全图适应」间切换;拖块/把手/捏合/clamp/合成全部基于imgW/imgH+Z显式坐标,所见即所得
 - 重做②:遮挡后的照片落盘——「完成这张」合成后压存档图(最长边1600px jpeg0.75)存IndexedDB('pai-db'/store 'photos',key=照片id),归档条目记photoId;病人的库+识别队列每条显缩略图,点缩略图全屏查看;识别完成后内存丢弃原始大图只留idb;备份仍只文字(照片只在本机IndexedDB);idb不可用自动降级不崩
@@ -209,7 +212,7 @@ table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:
 
 <script>
 'use strict';
-const SW_VERSION='0.2.0';
+const SW_VERSION='0.2.1';
 const $=id=>document.getElementById(id);
 const esc=s=>s; // 一律textContent渲染
 function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',2200);}
@@ -431,16 +434,16 @@ $('btnGoMask').addEventListener('click',()=>{
 let maskNat={w:1,h:1};
 function openMask(){show('vMask');loadMaskPhoto();}
 function rawPhotos(){return S.photos.filter(x=>x.status==='raw');}
+/* v0.2.1 seq令牌:换图/旋转都会重设src,只认最后一次onload,杜绝旧尺寸先适配 */
+let maskLoadSeq=0;
 function loadMaskPhoto(){
   const list=rawPhotos();if(S.maskIdx>=list.length){finishMaskAll();return;}
   const ph=list[S.maskIdx];
   fitMode='fill'; // v0.2.0 每张默认铺满工作区(横图铺满高度/竖图铺满宽度),⇄切'fit'全图适应
   $('maskIdx').textContent=S.maskIdx+1;$('maskTot').textContent=list.length;
-  const img=$('maskImg');
-  const ready=()=>{maskNat={w:img.naturalWidth,h:img.naturalHeight};fitImage();buildBlocks();zoomReset();};
-  img.onload=ready;
+  const img=$('maskImg');const seq=++maskLoadSeq;
+  img.onload=()=>{if(seq!==maskLoadSeq)return;maskNat={w:img.naturalWidth,h:img.naturalHeight};fitImage();buildBlocks();zoomReset();};
   img.src=ph.data;
-  if(img.complete&&img.naturalWidth)ready();
 }
 /* v0.2.0 显式显示尺寸体系(不靠CSS自适应):
    MD.w/MD.h = 图片在工作区内的contain显示尺寸, MD.ox/MD.oy = 居中偏移;
@@ -459,24 +462,28 @@ function fitImage(){
 }
 /* v0.2.0 适配模式:'fill'铺满工作区(初始缩放见zoomReset) / 'fit'全图适应(s=1) */
 let fitMode='fill';
-/* v0.1.5 顺时针转90°:canvas把dataURL转正替换当前照片(横拍转正再遮,AI收到的也是正图) */
-function rotateMaskPhoto(){
+/* v0.2.1 旋转重适配rotateRefit():canvas转正替换dataURL后走全新加载路径——
+   等转正图真正onload拿新尺寸→fitImage(新尺寸contain)→buildBlocks(黑块重置默认顶部块)→zoomReset(按铺满规则),
+   三步成函数不散;缩放中/平移过/加过块/连点多次(90→180→270→360)每次都完整复位 */
+async function rotateRefit(){
   const list=rawPhotos();const ph=list[S.maskIdx];if(!ph)return;
-  const img=new Image();
-  img.onload=()=>{
-    const c=document.createElement('canvas');
-    c.width=img.naturalHeight;c.height=img.naturalWidth;
-    const g=c.getContext('2d');
-    g.translate(c.width,0);g.rotate(Math.PI/2);
-    g.drawImage(img,0,0);
-    ph.data=c.toDataURL('image/jpeg',0.92);
-    S.maskBlocks=[]; // 坐标系变了不硬套,清空重摆默认顶部块
-    loadMaskPhoto(); // v0.2.0 load内部会重算fitImage+zoomReset
-    toast('已顺时针转90°，不满意可再点');
-  };
-  img.src=ph.data;
+  const src=await new Promise((r,j)=>{const i=new Image();i.onload=()=>r(i);i.onerror=()=>j(new Error('图片解码失败'));i.src=ph.data;});
+  const c=document.createElement('canvas');
+  c.width=src.naturalHeight;c.height=src.naturalWidth;
+  const g=c.getContext('2d');
+  g.translate(c.width,0);g.rotate(Math.PI/2);
+  g.drawImage(src,0,0);
+  ph.data=c.toDataURL('image/jpeg',0.92);
+  S.maskBlocks=[];fitMode='fill';Z.s=1;Z.tx=0;Z.ty=0;zoomApply(); // 坐标系变了:清块+适配模式/缩放平移归零
+  const img=$('maskImg');const seq=++maskLoadSeq;
+  await new Promise((r,j)=>{img.onload=()=>r();img.onerror=()=>j(new Error('旋转图加载失败'));img.src=ph.data;});
+  if(seq!==maskLoadSeq)return; // 期间又点了旋转/换图,让最新那次说了算
+  maskNat={w:img.naturalWidth,h:img.naturalHeight};
+  fitImage();buildBlocks();zoomReset();
+  toast('已顺时针转90°，不满意可再点');
 }
-$('btnRotate').addEventListener('click',rotateMaskPhoto);
+function rotateMaskPhoto(){rotateRefit();} // 兼容老测试挂钩
+$('btnRotate').addEventListener('click',rotateRefit);
 function buildBlocks(){
   const w=$('maskWrap');w.querySelectorAll('.blk').forEach(b=>b.remove());
   // v0.1.4 有老块(老数据/老会话)不丢,越界的拉回图内最近位置;没块才给默认黑块1
@@ -534,16 +541,21 @@ function bindBlk(el,hdl,b,idx){
 /* v0.1.2 双指捏合缩放+双指平移:transform包一层maskZoom,黑块在内随图动,图片相对坐标不变,合成不用改 */
 const Z={s:1,tx:0,ty:0};
 function zoomApply(){$('maskZoom').style.transform='translate('+Z.tx+'px,'+Z.ty+'px) scale('+Z.s+')';}
-function zoomSet(s){Z.s=Math.max(1,Math.min(4,s));zoomApply();}
+/* v0.2.1 动态缩放上限:极端长宽比(如侧躺化验单306×1720转正)铺满需s>4,硬夹4会缩成一条还无法再放大 */
+function maxZoom(){const wrap=$('maskWrap');if(!MD.w||!MD.h)return 4;return Math.max(4,wrap.clientWidth/MD.w,wrap.clientHeight/MD.h);}
+function zoomSet(s){Z.s=Math.max(1,Math.min(maxZoom(),s));zoomApply();}
 function zoomBy(d){zoomSet(Z.s+d);}
 /* v0.2.0 复位=回当前适配初始态:
-   fill铺满:s=夹取(1~4, max(区宽/imgW,区高/imgH))——横图=区高/imgH铺满高度,竖图=区宽/imgW铺满宽度,tx/ty居中,超出双指平移看;
-   fit全图:s=1,contain整图居中 */
+   fill铺满:s=夹取(1~maxZoom(), max(区宽/imgW,区高/imgH))——横图=区高/imgH铺满高度,竖图=区宽/imgW铺满宽度,tx/ty居中,超出双指平移看;
+   fit全图:s=1,contain整图居中。
+   v0.2.1 修根子:transform叠在zoom层left/top(=MD.ox/oy)之上,屏幕坐标=ox+tx+s*p;
+   旧式tx=(W-MD.w*s)/2漏减ox/oy,s>1或contain偏移大时整图被推偏——旋转极端长宽比图后缩成底部一条+上方黑空+黑块跑出视区,正是此因。
+   正确:tx=(W-MD.w*s)/2-MD.ox, ty=(H-MD.h*s)/2-MD.oy(与addBlock可视中心公式同约定) */
 function zoomReset(){
   const wrap=$('maskWrap'),W=wrap.clientWidth,H=wrap.clientHeight;
   if(!MD.w||!MD.h){Z.s=1;Z.tx=0;Z.ty=0;zoomApply();return;}
-  Z.s=fitMode==='fill'?Math.max(1,Math.min(4,Math.max(W/MD.w,H/MD.h))):1;
-  Z.tx=(W-MD.w*Z.s)/2;Z.ty=(H-MD.h*Z.s)/2;
+  Z.s=fitMode==='fill'?Math.max(1,Math.min(maxZoom(),Math.max(W/MD.w,H/MD.h))):1;
+  Z.tx=(W-MD.w*Z.s)/2-MD.ox;Z.ty=(H-MD.h*Z.s)/2-MD.oy;
   zoomApply();
 }
 $('btnFit').addEventListener('click',()=>{fitMode=fitMode==='fill'?'fit':'fill';zoomReset();toast(fitMode==='fill'?'已铺满工作区':'已显示全图');}); // v0.2.0 ⇄铺满/全图切换
@@ -920,7 +932,7 @@ window.__pj={
   visionModelPick,callVision,enqueue,zoomSet,zoomReset,Z,
   patients,entries,savePatients,saveEntries,S,openCam,openMask,openReview,openLib,addShot,
   bill,billAiUse,billYuan,billFmt,PAI_PRICE,openSet,addBlock,renderBlocks,buildBlocks,rotateMaskPhoto,
-  fitImage,MD,IDB,makeArchive,thumbEl,openImgView,
+  fitImage,MD,IDB,makeArchive,thumbEl,openImgView,rotateRefit,maxZoom,
   _ls:LS
 };
 renderHome();
