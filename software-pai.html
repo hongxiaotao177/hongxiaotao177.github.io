@@ -6,6 +6,8 @@
 <title>拍病历</title>
 <!--
 修改记录:
+拍病历 v0.1.1 2026-08-14
+- 修:建病人改用页面内输入面板(浏览器自带弹窗太暗,点空确定白跑一趟)
 拍病历 v0.1 2026-08-14
 - 病人卡片墙(真名+今日张数)、＋收新病人、底部归档区(可拉回)
 - 双名册:真名只存本机localStorage;代号P-MMDD-甲乙丙自动生成可改;对照表不出门不进备份
@@ -26,6 +28,7 @@ body{background:var(--bg);color:var(--tx);font-family:-apple-system,"PingFang SC
 .topbar button{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 10px;font-size:14px}
 .wrap{padding:12px;max-width:640px;margin:0 auto}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(120,90,50,.08)}
+.hidden{display:none}
 .pcard{display:flex;align-items:center;gap:12px;cursor:pointer}
 .pcard .nm{font-size:19px;font-weight:600}
 .pcard .cd{font-size:12px;color:var(--mut)}
@@ -65,6 +68,13 @@ table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:
   <div class="topbar"><h1>📷 拍病历</h1><button id="btnQ">队列</button><button id="btnSet">⚙️</button></div>
   <div class="wrap">
     <div class="row" style="margin-bottom:12px"><button class="btn" id="btnNew">＋收新病人</button></div>
+    <!-- v0.1.1 建病人改页面内面板（浏览器弹窗太暗看不清，洪大夫点空确定白跑一趟） -->
+    <div class="card hidden" id="newPane" style="margin-bottom:12px">
+      <div style="font-weight:bold;margin-bottom:8px">收新病人</div>
+      <input id="npName" placeholder="病人真名（只存本机，不出门）" style="width:100%;font-size:16px;padding:10px;margin-bottom:8px;border:1px solid #d8cbb2;border-radius:8px;background:#fffdf6">
+      <input id="npBed" placeholder="床号（可留空）" style="width:100%;font-size:16px;padding:10px;margin-bottom:8px;border:1px solid #d8cbb2;border-radius:8px;background:#fffdf6">
+      <div class="row"><button class="btn" id="npOk">建档</button><button class="btn sec" id="npCancel">取消</button></div>
+    </div>
     <div id="wall"></div>
     <details class="archbox card"><summary>📁 归档区（<span id="archN">0</span>）</summary><div id="archList" style="margin-top:8px"></div></details>
   </div>
@@ -159,7 +169,7 @@ table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:
 
 <script>
 'use strict';
-const SW_VERSION='0.1.0';
+const SW_VERSION='0.1.1';
 const $=id=>document.getElementById(id);
 const esc=s=>s; // 一律textContent渲染
 function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',2200);}
@@ -229,10 +239,12 @@ function renderHome(){
     al.appendChild(c);
   }
 }
-$('btnNew').addEventListener('click',()=>{
-  const name=prompt('病人真名（只存本机，不出门）:');if(!name||!name.trim())return;
-  const bed=prompt('床号（可留空）:')||'';
-  addPatient(name,bed);renderHome();toast('已建档');
+/* v0.1.1 建病人走页面内面板 */
+$('btnNew').addEventListener('click',()=>{ $('newPane').classList.remove('hidden'); $('npName').value=''; $('npBed').value=''; $('npName').focus(); });
+$('npCancel').addEventListener('click',()=>$('newPane').classList.add('hidden'));
+$('npOk').addEventListener('click',()=>{
+  const name=$('npName').value.trim(); if(!name){ toast('请填病人真名'); return; }
+  addPatient(name,$('npBed').value.trim()); $('newPane').classList.add('hidden'); renderHome(); toast('已建档');
 });
 
 /* ---------- 拍摄页 ---------- */
