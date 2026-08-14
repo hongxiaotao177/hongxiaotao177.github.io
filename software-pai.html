@@ -6,6 +6,9 @@
 <title>拍病历</title>
 <!--
 修改记录:
+拍病历 v0.2.0 2026-08-14
+- 重做①:遮挡工作区显示——工作区固定75vh黑底overflow:hidden,图片不靠CSS自适应,JS在onload后显式算contain显示尺寸(imgW/imgH)并给#maskZoom设显式width/height+left/top居中;初始缩放s=夹取(1~4, max(区宽/imgW,区高/imgH))真铺满(横图铺满高度、竖图铺满宽度),tx/ty居中,超出部分双指平移看;⇄按钮在「铺满/全图适应」间切换;拖块/把手/捏合/clamp/合成全部基于imgW/imgH+Z显式坐标,所见即所得
+- 重做②:遮挡后的照片落盘——「完成这张」合成后压存档图(最长边1600px jpeg0.75)存IndexedDB('pai-db'/store 'photos',key=照片id),归档条目记photoId;病人的库+识别队列每条显缩略图,点缩略图全屏查看;识别完成后内存丢弃原始大图只留idb;备份仍只文字(照片只在本机IndexedDB);idb不可用自动降级不崩
 拍病历 v0.1.6 2026-08-14
 - 修:横图(w>h)遮挡自动铺满高度——工作区加高到62vh,初始缩放=容器高/图片显示高,横向居中,左右超出双指平移看,不再只显示一小条;竖图行为不变
 - 加:「⇄适应宽度/铺满高度」切换按钮(复位旁),手动在两种初始适配间切换,切换即复位到对应适配;黑块/双指/clamp/合成坐标逻辑全不变
@@ -62,10 +65,13 @@ label{font-size:13px;color:var(--mut);display:block;margin:10px 0 4px}
 #camVideo{width:100%;border-radius:12px;background:#222;display:block}
 #camPrev{width:100%;border-radius:12px;display:none}
 .shotbtn{width:72px;height:72px;border-radius:50%;background:#fff;border:5px solid var(--brown);flex:none}
-.maskwrap{position:relative;touch-action:none;margin:0 auto;overflow:hidden}
-.maskwrap.fitH{height:62vh} /* v0.1.6 横图铺满高度模式:工作区加高,图按高度铺满,左右双指平移看 */
-#maskZoom{position:relative;transform-origin:0 0;width:100%}
-.maskwrap img{width:100%;display:block;border-radius:8px}
+/* v0.2.0 工作区固定75vh黑底;图片不靠CSS自适应,JS显式算contain尺寸设给#maskZoom和img */
+.maskwrap{position:relative;touch-action:none;margin:0 auto;overflow:hidden;width:100%;height:75vh;background:#000;border-radius:8px}
+#maskZoom{position:absolute;transform-origin:0 0}
+.maskwrap img{display:block}
+.thumb{width:64px;height:64px;object-fit:cover;border-radius:8px;background:#222;flex:none;cursor:pointer;border:1px solid var(--line)}
+#imgView{position:fixed;inset:0;background:rgba(0,0,0,.94);z-index:200;display:none;align-items:center;justify-content:center}
+#imgView img{max-width:96%;max-height:96%;border-radius:6px}
 .blk{position:absolute;background:#000;border:1px dashed #666;z-index:5}
 .blk .hdl{position:absolute;right:-9px;bottom:-9px;width:22px;height:22px;border-radius:50%;background:var(--brown);border:2px solid #fff}
 .entry{border-bottom:1px dashed var(--line);padding:10px 0}
@@ -127,8 +133,8 @@ table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:
         <button class="btn sec sm" id="btnZoomIn">🔍+</button>
         <button class="btn sec sm" id="btnZoomOut">🔍−</button>
         <button class="btn sec sm" id="btnZoomReset">复位</button>
-        <button class="btn sec sm" id="btnFit">⇄ 适应宽度/铺满高度</button>
-        <span class="small">横图已铺满高度，双指左右平移查看 · 单指拖黑块 · 双指捏合缩放/平移 · 右下角圆点缩放 · 双击删除</span>
+        <button class="btn sec sm" id="btnFit">⇄ 铺满/全图</button>
+        <span class="small">默认铺满工作区，超出部分双指平移查看 · 单指拖黑块 · 双指捏合缩放/平移 · 右下角圆点缩放 · 双击删除</span>
       </div>
     </div>
   </div>
@@ -197,16 +203,62 @@ table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:
   </div>
 </div>
 
+<!-- v0.2.0 点缩略图全屏看大图,再点关闭 -->
+<div id="imgView"><img id="imgViewImg" alt=""></div>
 <div id="toast"></div>
 
 <script>
 'use strict';
-const SW_VERSION='0.1.6';
+const SW_VERSION='0.2.0';
 const $=id=>document.getElementById(id);
 const esc=s=>s; // 一律textContent渲染
 function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',2200);}
 function show(id){document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));$(id).classList.add('on');}
 const LS={get:(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set:(k,v)=>localStorage.setItem(k,JSON.stringify(v))};
+
+/* ---------- v0.2.0 照片存档:IndexedDB 'pai-db'/store 'photos', key=照片id ----------
+   localStorage只存台账,照片只在本机IndexedDB(不进备份)。idb全异步且可能不可用(隐私模式/老浏览器),
+   所有读写带兜底:失败返回false/null,调用方降级为"不存图"并提示,绝不崩。 */
+const IDB={
+  _db:null,_broken:false,
+  open(){return new Promise(res=>{
+    if(IDB._db)return res(IDB._db);
+    if(IDB._broken||!window.indexedDB){IDB._broken=true;return res(null);}
+    try{
+      const rq=indexedDB.open('pai-db',1);
+      rq.onupgradeneeded=()=>{rq.result.createObjectStore('photos');};
+      rq.onsuccess=()=>{IDB._db=rq.result;res(IDB._db);};
+      rq.onerror=()=>{IDB._broken=true;res(null);};
+    }catch(e){IDB._broken=true;res(null);}
+  });},
+  async put(k,v){const db=await IDB.open();if(!db)return false;
+    return new Promise(res=>{try{const tx=db.transaction('photos','readwrite');
+      tx.objectStore('photos').put(v,k);tx.oncomplete=()=>res(true);tx.onerror=()=>res(false);}catch(e){res(false);}});},
+  async get(k){const db=await IDB.open();if(!db)return null;
+    return new Promise(res=>{try{const rq=db.transaction('photos','readonly').objectStore('photos').get(k);
+      rq.onsuccess=()=>res(rq.result||null);rq.onerror=()=>res(null);}catch(e){res(null);}});},
+  async del(k){const db=await IDB.open();if(!db)return false;
+    return new Promise(res=>{try{const tx=db.transaction('photos','readwrite');tx.objectStore('photos').delete(k);
+      tx.oncomplete=()=>res(true);tx.onerror=()=>res(false);}catch(e){res(false);}});}
+};
+/* 存档图:最长边1600px jpeg0.75(约200-400KB),idb存的就是它 */
+async function makeArchive(dataURL){
+  const img=await new Promise((r,j)=>{const i=new Image();i.onload=()=>r(i);i.onerror=j;i.src=dataURL;});
+  let w=img.naturalWidth,h=img.naturalHeight;const m=1600;
+  if(Math.max(w,h)>m){const k=m/Math.max(w,h);w=Math.round(w*k);h=Math.round(h*k);}
+  const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);
+  return c.toDataURL('image/jpeg',0.75);
+}
+/* 缩略图:异步从idb读,读不到用内存data兜底,再不行灰块;点它全屏看大图 */
+function thumbEl(phOrEntry){
+  const img=document.createElement('img');img.className='thumb';img.alt='图';
+  const id=phOrEntry.photoId||phOrEntry.id;
+  (async()=>{const d=await IDB.get(id);img.src=d||phOrEntry.data||'';})();
+  img.addEventListener('click',e=>{e.stopPropagation();if(img.src)openImgView(img.src);});
+  return img;
+}
+function openImgView(src){$('imgViewImg').src=src;$('imgView').style.display='flex';}
+$('imgView').addEventListener('click',()=>{$('imgView').style.display='none';});
 
 /* ---------- 数据 ---------- */
 const STEMS='甲乙丙丁戊己庚辛壬癸';
@@ -382,26 +434,31 @@ function rawPhotos(){return S.photos.filter(x=>x.status==='raw');}
 function loadMaskPhoto(){
   const list=rawPhotos();if(S.maskIdx>=list.length){finishMaskAll();return;}
   const ph=list[S.maskIdx];
-  fitMode='auto'; // v0.1.6 每张新开都回智能默认(横图铺满高度),手动⇄只管当前这张
+  fitMode='fill'; // v0.2.0 每张默认铺满工作区(横图铺满高度/竖图铺满宽度),⇄切'fit'全图适应
   $('maskIdx').textContent=S.maskIdx+1;$('maskTot').textContent=list.length;
-  const img=$('maskImg');img.src=ph.data;
-  img.onload=()=>{maskNat={w:img.naturalWidth,h:img.naturalHeight};fitWrap();buildBlocks();zoomReset();};
-  if(img.complete&&img.naturalWidth){maskNat={w:img.naturalWidth,h:img.naturalHeight};fitWrap();buildBlocks();zoomReset();}
-  zoomReset();
+  const img=$('maskImg');
+  const ready=()=>{maskNat={w:img.naturalWidth,h:img.naturalHeight};fitImage();buildBlocks();zoomReset();};
+  img.onload=ready;
+  img.src=ph.data;
+  if(img.complete&&img.naturalWidth)ready();
 }
-/* v0.1.6 适配模式:'auto'横图(w>h)铺满高度竖图适应宽度;用户可⇄手动锁定'width'/'height' */
-let fitMode='auto';
-function fitUseHeight(){const m=fitMode==='auto'?(maskNat.w>maskNat.h?'height':'width'):fitMode;return m==='height';}
-/* v0.1.5 遮罩容器锁成图片实际渲染矩形(居中、无黑边):黑块0~1相对坐标直接对这张图,拖哪遮哪
-   v0.1.6 铺满高度模式:容器高62vh(工作区加高),图仍按宽适配,初始缩放交给zoomReset把图撑满容器高 */
-function fitWrap(){
-  const img=$('maskImg'),wrap=$('maskWrap');
-  if(!img.naturalWidth)return;
-  const useH=fitUseHeight();
-  wrap.style.width=img.clientWidth+'px';
-  wrap.style.height=useH?'':img.clientHeight+'px';
-  wrap.classList.toggle('fitH',useH);
+/* v0.2.0 显式显示尺寸体系(不靠CSS自适应):
+   MD.w/MD.h = 图片在工作区内的contain显示尺寸, MD.ox/MD.oy = 居中偏移;
+   #maskZoom显式width/height=MD.w/MD.h、left/top=偏移; 黑块坐标=图片0~1相对坐标×MD.w/MD.h, 所见即所得 */
+const MD={w:0,h:0,ox:0,oy:0};
+function fitImage(){
+  const wrap=$('maskWrap'),zoom=$('maskZoom'),img=$('maskImg');
+  if(!maskNat.w||!maskNat.h)return;
+  const W=wrap.clientWidth,H=wrap.clientHeight;
+  const scale=Math.min(W/maskNat.w,H/maskNat.h); // contain算法
+  MD.w=Math.max(1,Math.round(maskNat.w*scale));MD.h=Math.max(1,Math.round(maskNat.h*scale));
+  MD.ox=(W-MD.w)/2;MD.oy=(H-MD.h)/2;
+  img.style.width=MD.w+'px';img.style.height=MD.h+'px';
+  zoom.style.width=MD.w+'px';zoom.style.height=MD.h+'px';
+  zoom.style.left=MD.ox+'px';zoom.style.top=MD.oy+'px';
 }
+/* v0.2.0 适配模式:'fill'铺满工作区(初始缩放见zoomReset) / 'fit'全图适应(s=1) */
+let fitMode='fill';
 /* v0.1.5 顺时针转90°:canvas把dataURL转正替换当前照片(横拍转正再遮,AI收到的也是正图) */
 function rotateMaskPhoto(){
   const list=rawPhotos();const ph=list[S.maskIdx];if(!ph)return;
@@ -414,8 +471,7 @@ function rotateMaskPhoto(){
     g.drawImage(img,0,0);
     ph.data=c.toDataURL('image/jpeg',0.92);
     S.maskBlocks=[]; // 坐标系变了不硬套,清空重摆默认顶部块
-    zoomReset();
-    loadMaskPhoto();
+    loadMaskPhoto(); // v0.2.0 load内部会重算fitImage+zoomReset
     toast('已顺时针转90°，不满意可再点');
   };
   img.src=ph.data;
@@ -428,17 +484,18 @@ function buildBlocks(){
   renderBlocks();
 }
 function addBlock(){
-  // v0.1.4 新块落在当前可视区域中心对应的图片坐标(放大了也在看得见的地方),不再固定顶部
-  const wrap=$('maskWrap'),W=wrap.clientWidth,H=$('maskImg').clientHeight;
-  const cx=((W/2-Z.tx)/Z.s)/W,cy=((wrap.clientHeight/2-Z.ty)/Z.s)/H;
+  // 新块落在当前可视区域中心对应的图片坐标(v0.2.0:可视中心→减zoom偏移/Z→除MD显式尺寸)
+  const wrap=$('maskWrap'),W=wrap.clientWidth,H=wrap.clientHeight;
+  const cx=((W/2-MD.ox-Z.tx)/Z.s)/MD.w,cy=((H/2-MD.oy-Z.ty)/Z.s)/MD.h;
   const b={x:cx-0.2,y:cy-0.06,w:0.4,h:0.12};
   clampBlk(b);S.maskBlocks.push(b);renderBlocks();
 }
 $('btnAddBlk').addEventListener('click',addBlock);
 function clampBlk(b){b.w=Math.max(0.03,Math.min(b.w,1));b.h=Math.max(0.02,Math.min(b.h,1));b.x=Math.max(0,Math.min(b.x,1-b.w));b.y=Math.max(0,Math.min(b.y,1-b.h));}
 function renderBlocks(){
-  const w=$('maskZoom');w.querySelectorAll('.blk').forEach(b=>b.remove()); // v0.1.2 挂进缩放层,clientWidth不受transform影响
-  const W=w.clientWidth,H=$('maskImg').clientHeight;
+  const w=$('maskZoom');w.querySelectorAll('.blk').forEach(b=>b.remove()); // 挂进缩放层,随图transform
+  const W=MD.w,H=MD.h; // v0.2.0 显式显示尺寸,不读clientWidth(clientHeight会被缩放外的布局影响)
+  if(!W||!H)return;
   S.maskBlocks.forEach((b,i)=>{
     clampBlk(b);
     const d=document.createElement('div');d.className='blk';d.dataset.i=i;
@@ -458,8 +515,8 @@ function bindBlk(el,hdl,b,idx){
   function move(e){
     if(!mode)return;if(e.touches&&e.touches.length>1){mode=null;return;}
     const pt=e.touches?e.touches[0]:e;
-    const W=$('maskWrap').clientWidth,H=$('maskImg').clientHeight;
-    const dx=(pt.clientX-sx)/W,dy=(pt.clientY-sy)/H;moved+=Math.abs(dx)+Math.abs(dy);
+    const W=MD.w,H=MD.h; // v0.2.0 屏幕位移/(显示尺寸*缩放)=图片相对位移
+    const dx=(pt.clientX-sx)/(W*Z.s),dy=(pt.clientY-sy)/(H*Z.s);moved+=Math.abs(dx)+Math.abs(dy);
     if(mode==='move'){b.x=ox+dx;b.y=oy+dy;}else{b.w=ow+dx;b.h=oh+dy;b.w=Math.min(b.w,1-ox);b.h=Math.min(b.h,1-oy);} // v0.1.4 把手缩放也不许越右下界
     clampBlk(b); // v0.1.4 全程硬夹图内(0~1,角都不许出)
     el.style.left=(b.x*W)+'px';el.style.top=(b.y*H)+'px';el.style.width=(b.w*W)+'px';el.style.height=(b.h*H)+'px';
@@ -479,17 +536,17 @@ const Z={s:1,tx:0,ty:0};
 function zoomApply(){$('maskZoom').style.transform='translate('+Z.tx+'px,'+Z.ty+'px) scale('+Z.s+')';}
 function zoomSet(s){Z.s=Math.max(1,Math.min(4,s));zoomApply();}
 function zoomBy(d){zoomSet(Z.s+d);}
-/* v0.1.6 复位即回到当前适配模式:铺满高度时初始s=容器高/图片显示高(同zoomSet的1~4夹取),横向居中,左右超出双指平移看 */
+/* v0.2.0 复位=回当前适配初始态:
+   fill铺满:s=夹取(1~4, max(区宽/imgW,区高/imgH))——横图=区高/imgH铺满高度,竖图=区宽/imgW铺满宽度,tx/ty居中,超出双指平移看;
+   fit全图:s=1,contain整图居中 */
 function zoomReset(){
-  Z.s=1;Z.tx=0;Z.ty=0;
-  const wrap=$('maskWrap'),img=$('maskImg');
-  if(img.naturalWidth&&fitUseHeight()){
-    const dispH=img.clientHeight,W=wrap.clientWidth;
-    if(dispH>0){Z.s=Math.max(1,Math.min(4,wrap.clientHeight/dispH));Z.tx=(W-W*Z.s)/2;}
-  }
+  const wrap=$('maskWrap'),W=wrap.clientWidth,H=wrap.clientHeight;
+  if(!MD.w||!MD.h){Z.s=1;Z.tx=0;Z.ty=0;zoomApply();return;}
+  Z.s=fitMode==='fill'?Math.max(1,Math.min(4,Math.max(W/MD.w,H/MD.h))):1;
+  Z.tx=(W-MD.w*Z.s)/2;Z.ty=(H-MD.h*Z.s)/2;
   zoomApply();
 }
-$('btnFit').addEventListener('click',()=>{fitMode=fitUseHeight()?'width':'height';fitWrap();zoomReset();}); // v0.1.6 ⇄切换两种初始适配
+$('btnFit').addEventListener('click',()=>{fitMode=fitMode==='fill'?'fit':'fill';zoomReset();toast(fitMode==='fill'?'已铺满工作区':'已显示全图');}); // v0.2.0 ⇄铺满/全图切换
 $('btnZoomIn').addEventListener('click',()=>zoomBy(0.5));
 $('btnZoomOut').addEventListener('click',()=>zoomBy(-0.5));
 $('btnZoomReset').addEventListener('click',zoomReset);
@@ -526,6 +583,12 @@ $('btnMaskOk').addEventListener('click',async()=>{
   const list=rawPhotos();const ph=list[S.maskIdx];
   if(!ph){finishMaskAll();return;}
   ph.data=await compositeMask(ph.data,S.maskBlocks);
+  // v0.2.0 合成后立刻压存档图存IndexedDB,刷新不丢;idb不可用降级不存并提示
+  try{
+    const arch=await makeArchive(ph.data);
+    ph.hasArch=await IDB.put(ph.id,arch);
+    if(!ph.hasArch)toast('本机存图失败(IndexedDB不可用)，这张照片刷新后不保留');
+  }catch(e){ph.hasArch=false;toast('存图失败:'+(e.message||e)+'，这张照片刷新后不保留');}
   ph.status='masked';enqueue(ph);
   S.maskBlocks=[]; // v0.1.4 这张画完清掉,下张回默认黑块1(配合buildBlocks保老块)
   S.maskIdx++;
@@ -549,8 +612,10 @@ function renderQueue(){
     const p=patients().find(x=>x.id===ph.pid);
     const c=document.createElement('div');c.className='card';
     const st={queued:'排队中',doing:'识别中',done:'✅完成',fail:'❌失败'}[ph.status];
+    const hd=document.createElement('div');hd.className='row';hd.style.flexWrap='nowrap';
+    hd.appendChild(thumbEl(ph)); // v0.2.0 队列每条显缩略图(idb读,点开全屏)
     const d=document.createElement('div');d.textContent=(p?p.name:'?')+' · '+st+'（第'+(i+1)+'/'+tot+'张）';
-    c.appendChild(d);
+    hd.appendChild(d);c.appendChild(hd);
     if(ph.status==='doing'){const b=document.createElement('div');b.className='small';b.textContent='识别中 第'+(i+1)+'/'+tot+'张…';c.appendChild(b);}
     const r=document.createElement('div');r.className='row';r.style.marginTop='8px';
     if(ph.status==='done'){const b=document.createElement('button');b.className='btn sm';b.textContent='去过目';b.addEventListener('click',()=>openReview(ph.id));r.appendChild(b);}
@@ -607,7 +672,9 @@ async function runQueue(){
       ph.status='doing';if($('vQueue').classList.contains('on'))renderQueue();
       try{ph.text=await callVision(ph.data);
         billAiUse(ph.pid,callVision._model,callVision._usage,OCR_PROMPT.length,(ph.text||'').length,'识别'); // v0.1.4 记账
-        ph.status='done';}
+        ph.status='done';
+        if(ph.hasArch)ph.data=null; // v0.2.0 识别完成且idb已存档:内存丢原始大图防内存爆(重试的fail不丢)
+      }
       catch(e){ph.status='fail';ph.err=String(e.message||e);}
       if($('vQueue').classList.contains('on'))renderQueue();
     }
@@ -629,7 +696,9 @@ function openReview(fid){
   show('vReview');S.rvFid=fid;
   const p=patients().find(x=>x.id===ph.pid);
   $('rvWho').textContent=p?p.name:'?';$('rvTime').textContent=new Date().toLocaleString();
-  $('rvImg').src=ph.data;$('rvText').value=ph.text||'';
+  $('rvImg').src=ph.data||''; // v0.2.0 内存大图可能已丢,从idb读存档图
+  if(!ph.data)IDB.get(ph.id).then(d=>{if(d&&S.rvFid===fid)$('rvImg').src=d;});
+  $('rvText').value=ph.text||'';
   S.rvCat=guessCat(ph.text||'');
   const rc=$('rvCats');rc.innerHTML='';
   CATS.forEach(c=>{
@@ -638,15 +707,18 @@ function openReview(fid){
     rc.appendChild(b);
   });
 }
-$('btnRvOk').addEventListener('click',()=>{
+$('btnRvOk').addEventListener('click',async()=>{
   const ph=S.photos.find(x=>x.id===S.rvFid);if(!ph)return;
-  const es=entries();es.push({id:'e'+Date.now(),pid:ph.pid,cat:S.rvCat,time:Date.now(),text:$('rvText').value});
+  // v0.2.0 归档条目记photoId;若遮挡时没存成(如idb当时不可用)而内存还有图,补存一次
+  if(!ph.hasArch&&ph.data){try{ph.hasArch=await IDB.put(ph.id,await makeArchive(ph.data));}catch(e){}}
+  const es=entries();es.push({id:'e'+Date.now(),pid:ph.pid,cat:S.rvCat,time:Date.now(),text:$('rvText').value,photoId:ph.hasArch?ph.id:null});
   saveEntries(es);
   S.photos=S.photos.filter(x=>x.id!==ph.id);
   toast('已归档');show('vHome');renderHome();
 });
 $('btnRvDrop').addEventListener('click',()=>{
   if(!confirm('丢弃这张照片和识别结果?'))return;
+  IDB.del(S.rvFid); // v0.2.0 顺手清存档图
   S.photos=S.photos.filter(x=>x.id!==S.rvFid);show('vHome');renderHome();
 });
 
@@ -671,6 +743,7 @@ function renderLib(mode,fullId){
     const tag=document.createElement('span');tag.className='tag';tag.textContent=e.cat;
     const tm=document.createElement('span');tm.className='small';tm.textContent=fmtT(e.time);
     h.appendChild(tag);h.appendChild(tm);c.appendChild(h);
+    if(e.photoId){const th=thumbEl(e);th.style.margin='6px 0';c.appendChild(th);} // v0.2.0 条目缩略图(idb读,点全屏)
     const pv=document.createElement('div');pv.className='small';pv.textContent=e.text.slice(0,50)+(e.text.length>50?'…':'');c.appendChild(pv);
     c.style.cursor='pointer';c.addEventListener('click',()=>{
       pv.textContent=(pv._open?e.text.slice(0,50)+(e.text.length>50?'…':''):e.text);pv._open=!pv._open;
@@ -788,7 +861,7 @@ $('btnBillClear').addEventListener('click',()=>{ // v0.1.4 清空账本
   if(!confirm('清空识别账本？不可恢复。'))return;
   localStorage.removeItem('pai_bill_v1');openSet();toast('账本已清空');
 });
-/* 备份包:只有代号+内容,无真名 */
+/* 备份包:只有代号+内容,无真名。照片只在本机IndexedDB('pai-db'),不随备份走,换机需重拍/重传 */
 function buildBackup(){
   return{app:'pai',ver:SW_VERSION,time:Date.now(),
     patients:patients().map(p=>({code:p.code,bed:p.bed,archived:p.archived,created:p.created})),
@@ -846,7 +919,8 @@ window.__pj={
   parseLabs,buildTrends,buildFullDoc,buildBackup,restoreBackup,guessCat,runQueue,
   visionModelPick,callVision,enqueue,zoomSet,zoomReset,Z,
   patients,entries,savePatients,saveEntries,S,openCam,openMask,openReview,openLib,addShot,
-  bill,billAiUse,billYuan,billFmt,PAI_PRICE,openSet,addBlock,renderBlocks,buildBlocks,rotateMaskPhoto,fitWrap,
+  bill,billAiUse,billYuan,billFmt,PAI_PRICE,openSet,addBlock,renderBlocks,buildBlocks,rotateMaskPhoto,
+  fitImage,MD,IDB,makeArchive,thumbEl,openImgView,
   _ls:LS
 };
 renderHome();
