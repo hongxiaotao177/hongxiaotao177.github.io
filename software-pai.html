@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>拍病历</title>
+<!--
+修改记录:
+拍病历 v0.1 2026-08-14
+- 病人卡片墙(真名+今日张数)、＋收新病人、底部归档区(可拉回)
+- 双名册:真名只存本机localStorage;代号P-MMDD-甲乙丙自动生成可改;对照表不出门不进备份
+- 拍摄页:getUserMedia取景,无权限降级<input type=file capture>;顶栏病人小圆钮秒换人
+- 遮挡页:黑块1自动盖顶部8%,2/3/4备用+可加;拖动/右下角缩放/双击删除/限图内;canvas真正画进图片
+- Kimi视觉识别:moonshot-v1-8k-vision,压1600px jpeg0.8,排队识别进度可见,失败重试
+- 看门人guardOut:出门前真名换代号并记日志
+- 过目页:可编辑+分类(AI预猜)+归档带时间
+- 病人的库:时间排条目+全文+📋完整资料Markdown一键复制/LearnShell写文件+📈趋势解析
+- 备份:GitHub Contents API,备份包只有代号,恢复可重填真名
+-->
+<style>
+:root{--bg:#f5efe2;--card:#faf6ec;--brown:#8a6d4b;--brown2:#6f573a;--line:#e3d8c3;--tx:#4a3f30;--mut:#9a8b74;--red:#b0563f;--grn:#5f7d4f}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--tx);font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;font-size:16px}
+.topbar{background:var(--brown);color:#fdf8ee;padding:12px 14px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:50}
+.topbar h1{font-size:18px;flex:1}
+.topbar button{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 10px;font-size:14px}
+.wrap{padding:12px;max-width:640px;margin:0 auto}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(120,90,50,.08)}
+.pcard{display:flex;align-items:center;gap:12px;cursor:pointer}
+.pcard .nm{font-size:19px;font-weight:600}
+.pcard .cd{font-size:12px;color:var(--mut)}
+.pcard .cnt{margin-left:auto;background:#efe4cd;color:var(--brown2);border-radius:999px;padding:3px 10px;font-size:13px}
+.btn{display:inline-block;background:var(--brown);color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:15px;cursor:pointer}
+.btn.sec{background:#e9dfc8;color:var(--brown2)}
+.btn.red{background:var(--red)}
+.btn.grn{background:var(--grn)}
+.btn.sm{padding:5px 10px;font-size:13px;border-radius:8px}
+input,textarea,select{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:#fff;font-size:15px;color:var(--tx)}
+textarea{min-height:180px;line-height:1.6}
+label{font-size:13px;color:var(--mut);display:block;margin:10px 0 4px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.view{display:none}.view.on{display:block}
+.chipbtn{width:44px;height:44px;border-radius:50%;border:2px solid transparent;background:#efe4cd;color:var(--brown2);font-size:12px;flex:none;cursor:pointer}
+.chipbtn.cur{border-color:var(--brown2);background:var(--brown);color:#fff}
+#camVideo{width:100%;border-radius:12px;background:#222;display:block}
+#camPrev{width:100%;border-radius:12px;display:none}
+.shotbtn{width:72px;height:72px;border-radius:50%;background:#fff;border:5px solid var(--brown);flex:none}
+.maskwrap{position:relative;touch-action:none;margin:0 auto}
+.maskwrap img{width:100%;display:block;border-radius:8px}
+.blk{position:absolute;background:#000;border:1px dashed #666;z-index:5}
+.blk .hdl{position:absolute;right:-9px;bottom:-9px;width:22px;height:22px;border-radius:50%;background:var(--brown);border:2px solid #fff}
+.entry{border-bottom:1px dashed var(--line);padding:10px 0}
+.tag{display:inline-block;background:#efe4cd;color:var(--brown2);border-radius:6px;padding:1px 8px;font-size:12px;margin-right:6px}
+.small{font-size:13px;color:var(--mut)}
+table.tt{border-collapse:collapse;width:100%;font-size:13px;margin-top:6px}
+table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:left}
+#toast{position:fixed;left:50%;bottom:40px;transform:translateX(-50%);background:#4a3f30;color:#fff;padding:9px 16px;border-radius:10px;display:none;z-index:99;max-width:86%}
+.archbox summary{cursor:pointer;padding:10px;color:var(--mut)}
+.qbar{background:#fff4d6;border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:14px}
+</style>
+</head>
+<body>
+
+<div class="view on" id="vHome">
+  <div class="topbar"><h1>📷 拍病历</h1><button id="btnQ">队列</button><button id="btnSet">⚙️</button></div>
+  <div class="wrap">
+    <div class="row" style="margin-bottom:12px"><button class="btn" id="btnNew">＋收新病人</button></div>
+    <div id="wall"></div>
+    <details class="archbox card"><summary>📁 归档区（<span id="archN">0</span>）</summary><div id="archList" style="margin-top:8px"></div></details>
+  </div>
+</div>
+
+<div class="view" id="vCam">
+  <div class="topbar"><button id="camBack">←</button><h1>正在拍：<span id="camName"></span></h1></div>
+  <div class="wrap">
+    <div class="row" id="camChips" style="margin-bottom:10px;overflow-x:auto;flex-wrap:nowrap"></div>
+    <video id="camVideo" autoplay playsinline muted></video>
+    <img id="camPrev" alt="">
+    <div class="row" style="justify-content:center;margin:14px 0"><button class="shotbtn" id="btnShot" aria-label="拍照"></button></div>
+    <input type="file" id="filePick" accept="image/*" capture="environment" style="display:none">
+    <div class="card" style="text-align:center">
+      <div id="camCount">已拍0张</div>
+      <button class="btn sec" id="btnGoMask" style="margin-top:8px">已拍0张 · 点我去遮挡识别</button>
+    </div>
+  </div>
+</div>
+
+<div class="view" id="vMask">
+  <div class="topbar"><button id="maskBack">←</button><h1>遮挡敏感处（第<span id="maskIdx">1</span>/<span id="maskTot">1</span>张）</h1></div>
+  <div class="wrap">
+    <div class="card">
+      <div class="maskwrap" id="maskWrap"><img id="maskImg" alt=""></div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn sec sm" id="btnAddBlk">＋黑块</button>
+        <button class="btn sm" id="btnMaskOk">完成这张 →</button>
+        <span class="small">拖动移动 · 右下角圆点缩放 · 双击删除</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="view" id="vQueue">
+  <div class="topbar"><button class="qBack">←</button><h1>识别队列</h1></div>
+  <div class="wrap"><div id="qList"></div></div>
+</div>
+
+<div class="view" id="vReview">
+  <div class="topbar"><button class="qBack">←</button><h1>过目（识别结果可改）</h1></div>
+  <div class="wrap">
+    <div class="card">
+      <div class="small">属于：<b id="rvWho"></b> · <span id="rvTime"></span></div>
+      <img id="rvImg" style="width:100%;border-radius:10px;margin:8px 0" alt="">
+      <textarea id="rvText"></textarea>
+      <label>分类</label>
+      <div class="row" id="rvCats"></div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn grn" id="btnRvOk">确认归档</button>
+        <button class="btn red sm" id="btnRvDrop">丢弃这张</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="view" id="vLib">
+  <div class="topbar"><button class="libBack">←</button><h1 id="libName"></h1></div>
+  <div class="wrap">
+    <div class="row" style="margin-bottom:10px">
+      <button class="btn sm" id="btnFull">📋 完整资料</button>
+      <button class="btn sec sm" id="btnTrend">📈 趋势</button>
+      <button class="btn sec sm" id="btnRename">改代号</button>
+      <button class="btn red sm" id="btnArch">出院归档</button>
+    </div>
+    <div id="libBody"></div>
+  </div>
+</div>
+
+<div class="view" id="vSet">
+  <div class="topbar"><button class="setBack">←</button><h1>设置</h1></div>
+  <div class="wrap">
+    <div class="card">
+      <label>Kimi API Key（存本机，与小涛笔记同钥匙）</label>
+      <input id="setKey" type="password" placeholder="sk-...">
+      <label>GitHub 用户名</label><input id="setGhU">
+      <label>GitHub Token</label><input id="setGhT" type="password">
+      <label>GitHub 仓库</label><input id="setGhR">
+      <div class="row" style="margin-top:12px"><button class="btn" id="btnSaveSet">保存</button></div>
+    </div>
+    <div class="card">
+      <b>备份 / 恢复</b>
+      <p class="small">备份包里只有代号和内容，真名对照表绝不进备份。</p>
+      <div class="row" style="margin:10px 0"><button class="btn sm" id="btnBackup">备份到GitHub</button><button class="btn sec sm" id="btnRestore">从GitHub恢复</button></div>
+      <div id="bakMsg" class="small"></div>
+    </div>
+    <div class="card"><b>看门人日志</b><div id="guardLog" class="small" style="margin-top:6px"></div></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+'use strict';
+const SW_VERSION='0.1.0';
+const $=id=>document.getElementById(id);
+const esc=s=>s; // 一律textContent渲染
+function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',2200);}
+function show(id){document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));$(id).classList.add('on');}
+const LS={get:(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set:(k,v)=>localStorage.setItem(k,JSON.stringify(v))};
+
+/* ---------- 数据 ---------- */
+const STEMS='甲乙丙丁戊己庚辛壬癸';
+function patients(){return LS.get('pai_patients',[])}
+function savePatients(p){LS.set('pai_patients',p)}
+function entries(){return LS.get('pai_entries',[])}
+function saveEntries(e){LS.set('pai_entries',e)}
+function genCode(){
+  const now=new Date(),mm=String(now.getMonth()+1).padStart(2,'0'),dd=String(now.getDate()).padStart(2,'0');
+  let seq=LS.get('pai_seq',0);LS.set('pai_seq',seq+1);
+  const s=STEMS[seq%10]+(seq>=10?Math.floor(seq/10)+1:'');
+  return 'P-'+mm+dd+'-'+s;
+}
+function addPatient(name,bed){
+  const p={id:'p'+Date.now()+Math.random().toString(36).slice(2,6),code:genCode(),name:name.trim(),bed:(bed||'').trim(),archived:false,created:Date.now()};
+  const ps=patients();ps.push(p);savePatients(ps);return p;
+}
+function todayCount(pid){
+  const d=new Date();const key=d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
+  return entries().filter(e=>e.pid===pid&&new Date(e.time).getFullYear()+'-'+(new Date(e.time).getMonth()+1)+'-'+new Date(e.time).getDate()===key).length;
+}
+function guardLog(){return LS.get('pai_guardlog',[])}
+/* 看门人:真名->代号 */
+function guardOut(text){
+  let out=String(text),hits=[];
+  for(const p of patients()){
+    if(p.name&&out.includes(p.name)){out=out.split(p.name).join(p.code);hits.push(p.code);}
+  }
+  if(hits.length){const lg=guardLog();lg.push({t:Date.now(),codes:hits});LS.set('pai_guardlog',lg);}
+  return out;
+}
+
+/* ---------- 主页 ---------- */
+function renderHome(){
+  const wall=$('wall');wall.innerHTML='';
+  const act=patients().filter(p=>!p.archived);
+  if(!act.length){const d=document.createElement('div');d.className='card small';d.textContent='还没有病人，点上面「＋收新病人」';wall.appendChild(d);}
+  for(const p of act){
+    const c=document.createElement('div');c.className='card pcard';c.dataset.pid=p.id;
+    const a=document.createElement('div');
+    const n=document.createElement('div');n.className='nm';n.textContent=p.name;
+    const cd=document.createElement('div');cd.className='cd';cd.textContent=p.code+(p.bed?' · 床'+p.bed:'');
+    a.appendChild(n);a.appendChild(cd);
+    const cnt=document.createElement('div');cnt.className='cnt';cnt.textContent='今日'+todayCount(p.id)+'张';
+    c.appendChild(a);c.appendChild(cnt);
+    c.addEventListener('click',()=>openCam(p.id));
+    c.addEventListener('contextmenu',e=>{e.preventDefault();openLib(p.id);});
+    wall.appendChild(c);
+  }
+  const arch=patients().filter(p=>p.archived);$('archN').textContent=arch.length;
+  const al=$('archList');al.innerHTML='';
+  for(const p of arch){
+    const c=document.createElement('div');c.className='card pcard';
+    const a=document.createElement('div');
+    const n=document.createElement('div');n.className='nm';n.textContent=p.name;
+    const cd=document.createElement('div');cd.className='cd';cd.textContent=p.code;
+    a.appendChild(n);a.appendChild(cd);
+    const b=document.createElement('button');b.className='btn sec sm';b.textContent='拉回';
+    b.addEventListener('click',e=>{e.stopPropagation();const ps=patients();ps.find(x=>x.id===p.id).archived=false;savePatients(ps);renderHome();});
+    c.appendChild(a);c.appendChild(b);
+    c.addEventListener('click',()=>openLib(p.id));
+    al.appendChild(c);
+  }
+}
+$('btnNew').addEventListener('click',()=>{
+  const name=prompt('病人真名（只存本机，不出门）:');if(!name||!name.trim())return;
+  const bed=prompt('床号（可留空）:')||'';
+  addPatient(name,bed);renderHome();toast('已建档');
+});
+
+/* ---------- 拍摄页 ---------- */
+const S={curPid:null,photos:[],stream:null,maskIdx:0,maskBlocks:[],qRunning:false};
+function getPhotoList(pid){return S.photos.filter(x=>x.pid===pid);}
+function openCam(pid){
+  S.curPid=pid;show('vCam');renderCam();
+  startCam();
+}
+async function startCam(){
+  const v=$('camVideo');stopStream();
+  try{
+    if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw 0;
+    S.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    v.srcObject=S.stream;v.style.display='block';$('camPrev').style.display='none';
+  }catch(e){useFileFallback();}
+}
+function stopStream(){if(S.stream){S.stream.getTracks().forEach(t=>t.stop());S.stream=null;}}
+function useFileFallback(){stopStream();$('camVideo').style.display='none';$('camPrev').style.display='none';toast('无摄像头权限，改用选照片');pickFile();}
+function pickFile(){$('filePick').click();}
+function renderCam(){
+  const p=patients().find(x=>x.id===S.curPid);if(!p)return;
+  $('camName').textContent=p.name;
+  const ch=$('camChips');ch.innerHTML='';
+  for(const q of patients().filter(x=>!x.archived)){
+    const b=document.createElement('button');b.className='chipbtn'+(q.id===S.curPid?' cur':'');
+    b.textContent=q.name.slice(0,2);b.title=q.name;
+    b.addEventListener('click',()=>{S.curPid=q.id;renderCam();});
+    ch.appendChild(b);
+  }
+  const n=getPhotoList(S.curPid).filter(x=>x.status==='raw').length;
+  const all=S.photos.length;
+  $('camCount').textContent='已拍'+all+'张（本病人待遮挡'+n+'张）';
+  $('btnGoMask').textContent='已拍'+all+'张 · 点我去遮挡识别';
+}
+$('btnShot').addEventListener('click',()=>{
+  const v=$('camVideo');
+  if(!S.stream){pickFile();return;}
+  const c=document.createElement('canvas');c.width=v.videoWidth||1280;c.height=v.videoHeight||720;
+  c.getContext('2d').drawImage(v,0,0);
+  addShot(c.toDataURL('image/jpeg',0.85));
+});
+function addShot(dataURL){
+  if(!S.curPid){toast('请先选病人');return;}
+  S.photos.push({id:'f'+Date.now()+Math.random().toString(36).slice(2,6),pid:S.curPid,data:dataURL,status:'raw'});
+  renderCam();toast('已拍下');
+}
+$('filePick').addEventListener('change',e=>{
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();r.onload=()=>addShot(r.result);r.readAsDataURL(f);
+  e.target.value='';
+});
+$('camBack').addEventListener('click',()=>{stopStream();show('vHome');renderHome();});
+$('btnGoMask').addEventListener('click',()=>{
+  const raw=S.photos.filter(x=>x.status==='raw');
+  if(!raw.length){toast('没有待遮挡的照片');return;}
+  stopStream();S.maskIdx=0;openMask();
+});
+
+/* ---------- 遮挡页 ---------- */
+let maskNat={w:1,h:1};
+function openMask(){show('vMask');loadMaskPhoto();}
+function rawPhotos(){return S.photos.filter(x=>x.status==='raw');}
+function loadMaskPhoto(){
+  const list=rawPhotos();if(S.maskIdx>=list.length){finishMaskAll();return;}
+  const ph=list[S.maskIdx];
+  $('maskIdx').textContent=S.maskIdx+1;$('maskTot').textContent=list.length;
+  const img=$('maskImg');img.src=ph.data;
+  img.onload=()=>{maskNat={w:img.naturalWidth,h:img.naturalHeight};buildBlocks();};
+  if(img.complete&&img.naturalWidth){maskNat={w:img.naturalWidth,h:img.naturalHeight};buildBlocks();}
+}
+function buildBlocks(){
+  const w=$('maskWrap');w.querySelectorAll('.blk').forEach(b=>b.remove());
+  S.maskBlocks=[{x:0,y:0,w:1,h:0.08}]; // 黑块1自动盖顶部8%
+  renderBlocks();
+}
+function addBlock(){S.maskBlocks.push({x:0.3,y:0.3,w:0.4,h:0.12});renderBlocks();}
+$('btnAddBlk').addEventListener('click',addBlock);
+function clampBlk(b){b.w=Math.max(0.03,Math.min(b.w,1));b.h=Math.max(0.02,Math.min(b.h,1));b.x=Math.max(0,Math.min(b.x,1-b.w));b.y=Math.max(0,Math.min(b.y,1-b.h));}
+function renderBlocks(){
+  const w=$('maskWrap');w.querySelectorAll('.blk').forEach(b=>b.remove());
+  const W=w.clientWidth,H=$('maskImg').clientHeight;
+  S.maskBlocks.forEach((b,i)=>{
+    clampBlk(b);
+    const d=document.createElement('div');d.className='blk';d.dataset.i=i;
+    d.style.left=(b.x*W)+'px';d.style.top=(b.y*H)+'px';d.style.width=(b.w*W)+'px';d.style.height=(b.h*H)+'px';
+    const h=document.createElement('div');h.className='hdl';d.appendChild(h);
+    w.appendChild(d);bindBlk(d,h,b,i);
+  });
+}
+function bindBlk(el,hdl,b,idx){
+  let mode=null,sx=0,sy=0,ox=0,oy=0,ow=0,oh=0,moved=0;
+  function down(e){
+    const t=e.target===hdl?'resize':'move';mode=t;moved=0;
+    const pt=e.touches?e.touches[0]:e;sx=pt.clientX;sy=pt.clientY;ox=b.x;oy=b.y;ow=b.w;oh=b.h;
+    e.preventDefault();e.stopPropagation();
+  }
+  function move(e){
+    if(!mode)return;const pt=e.touches?e.touches[0]:e;
+    const W=$('maskWrap').clientWidth,H=$('maskImg').clientHeight;
+    const dx=(pt.clientX-sx)/W,dy=(pt.clientY-sy)/H;moved+=Math.abs(dx)+Math.abs(dy);
+    if(mode==='move'){b.x=ox+dx;b.y=oy+dy;}else{b.w=ow+dx;b.h=oh+dy;}
+    clampBlk(b);
+    el.style.left=(b.x*W)+'px';el.style.top=(b.y*H)+'px';el.style.width=(b.w*W)+'px';el.style.height=(b.h*H)+'px';
+    e.preventDefault();
+  }
+  function up(){mode=null;}
+  el.addEventListener('mousedown',down);hdl.addEventListener('mousedown',down);
+  el.addEventListener('touchstart',down,{passive:false});
+  window.addEventListener('mousemove',move);window.addEventListener('mouseup',up);
+  el.addEventListener('touchmove',move,{passive:false});el.addEventListener('touchend',up);
+  el.addEventListener('dblclick',()=>{S.maskBlocks.splice(idx,1);renderBlocks();});
+  let lt=0;
+  el.addEventListener('touchend',e=>{const n=Date.now();if(n-lt<350&&moved<0.01){S.maskBlocks.splice(idx,1);renderBlocks();}lt=n;});
+}
+/* 把黑块真正画进图片 */
+function compositeMask(dataURL,blocks){
+  return new Promise(res=>{
+    const img=new Image();img.onload=()=>{
+      const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;
+      const g=c.getContext('2d');g.drawImage(img,0,0);g.fillStyle='#000';
+      for(const b of blocks){clampBlk(b);g.fillRect(b.x*c.width,b.y*c.height,b.w*c.width,b.h*c.height);}
+      res(c.toDataURL('image/jpeg',0.9));
+    };img.src=dataURL;
+  });
+}
+$('btnMaskOk').addEventListener('click',async()=>{
+  const list=rawPhotos();const ph=list[S.maskIdx];
+  if(!ph){finishMaskAll();return;}
+  ph.data=await compositeMask(ph.data,S.maskBlocks);
+  ph.status='masked';enqueue(ph);
+  S.maskIdx++;
+  if(rawPhotos().length){loadMaskPhoto();}else{finishMaskAll();}
+});
+function finishMaskAll(){toast('全部遮挡完成，进识别队列');openQueue();}
+$('maskBack').addEventListener('click',()=>{show('vCam');renderCam();});
+
+/* ---------- 识别队列 ---------- */
+function enqueue(ph){ph.status='queued';runQueue();}
+function openQueue(){show('vQueue');renderQueue();}
+function renderQueue(){
+  const l=$('qList');l.innerHTML='';
+  const items=S.photos.filter(x=>['queued','doing','done','fail'].includes(x.status));
+  if(!items.length){const d=document.createElement('div');d.className='card small';d.textContent='队列空了';l.appendChild(d);}
+  const tot=items.length;
+  items.forEach((ph,i)=>{
+    const p=patients().find(x=>x.id===ph.pid);
+    const c=document.createElement('div');c.className='card';
+    const st={queued:'排队中',doing:'识别中',done:'✅完成',fail:'❌失败'}[ph.status];
+    const d=document.createElement('div');d.textContent=(p?p.name:'?')+' · '+st+'（第'+(i+1)+'/'+tot+'张）';
+    c.appendChild(d);
+    if(ph.status==='doing'){const b=document.createElement('div');b.className='small';b.textContent='识别中 第'+(i+1)+'/'+tot+'张…';c.appendChild(b);}
+    const r=document.createElement('div');r.className='row';r.style.marginTop='8px';
+    if(ph.status==='done'){const b=document.createElement('button');b.className='btn sm';b.textContent='去过目';b.addEventListener('click',()=>openReview(ph.id));r.appendChild(b);}
+    if(ph.status==='fail'){
+      const b=document.createElement('button');b.className='btn sec sm';b.textContent='重试';b.addEventListener('click',()=>{ph.status='queued';runQueue();renderQueue();});r.appendChild(b);
+      const er=document.createElement('span');er.className='small';er.textContent=ph.err||'';r.appendChild(er);
+    }
+    c.appendChild(r);l.appendChild(c);
+  });
+}
+async function encodeForVision(dataURL){
+  const img=await new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.src=dataURL;});
+  let w=img.naturalWidth,h=img.naturalHeight;const m=1600;
+  if(Math.max(w,h)>m){const k=m/Math.max(w,h);w=Math.round(w*k);h=Math.round(h*k);}
+  const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);
+  return c.toDataURL('image/jpeg',0.8);
+}
+const OCR_PROMPT='你是医疗文书OCR助手。把这张病历/化验/检查照片里的文字原样转录成文本。要求：①数值、单位、上下箭头一个不错；②不同检验/检查项目之间输出 ━━ 分隔；③只输出文字内容，不要评论；④看不到/认不出的字用〔?〕标出，不许猜编。';
+async function callVision(dataURL){
+  if(window.__mockVision)return window.__mockVision(dataURL);
+  const key=localStorage.getItem('xt_apikey');if(!key)throw new Error('未设置API Key');
+  const img=await encodeForVision(dataURL);
+  const body={model:'moonshot-v1-8k-vision',messages:[{role:'user',content:[{type:'text',text:guardOut(OCR_PROMPT)},{type:'image_url',image_url:{url:img}}]}]};
+  const r=await fetch('https://api.moonshot.cn/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key.replace(/^"|"$/g,'')},body:JSON.stringify(body)});
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  const j=await r.json();return j.choices[0].message.content;
+}
+async function runQueue(){
+  if(S.qRunning)return;S.qRunning=true;
+  try{
+    let ph;
+    while((ph=S.photos.find(x=>x.status==='queued'))){
+      ph.status='doing';if($('vQueue').classList.contains('on'))renderQueue();
+      try{ph.text=await callVision(ph.data);ph.status='done';}
+      catch(e){ph.status='fail';ph.err=String(e.message||e);}
+      if($('vQueue').classList.contains('on'))renderQueue();
+    }
+  }finally{S.qRunning=false;}
+}
+$('btnQ').addEventListener('click',openQueue);
+document.querySelectorAll('.qBack').forEach(b=>b.addEventListener('click',()=>{show('vHome');renderHome();}));
+
+/* ---------- 过目归档 ---------- */
+const CATS=['化验','检查报告','病程记录','其他'];
+function guessCat(t){
+  if(/(mmol|umol|g\/L|白细胞|血红蛋白|肌酐|钠|钾|↑|↓)/.test(t))return'化验';
+  if(/(CT|胸片|超声|MRI|报告|所见|印象)/.test(t))return'检查报告';
+  if(/(查房|病程|今日|处理)/.test(t))return'病程记录';
+  return'其他';
+}
+function openReview(fid){
+  const ph=S.photos.find(x=>x.id===fid);if(!ph)return;
+  show('vReview');S.rvFid=fid;
+  const p=patients().find(x=>x.id===ph.pid);
+  $('rvWho').textContent=p?p.name:'?';$('rvTime').textContent=new Date().toLocaleString();
+  $('rvImg').src=ph.data;$('rvText').value=ph.text||'';
+  S.rvCat=guessCat(ph.text||'');
+  const rc=$('rvCats');rc.innerHTML='';
+  CATS.forEach(c=>{
+    const b=document.createElement('button');b.className='btn sm '+(c===S.rvCat?'':'sec');b.textContent=c;
+    b.addEventListener('click',()=>{S.rvCat=c;rc.querySelectorAll('button').forEach(x=>x.classList.add('sec'));b.classList.remove('sec');});
+    rc.appendChild(b);
+  });
+}
+$('btnRvOk').addEventListener('click',()=>{
+  const ph=S.photos.find(x=>x.id===S.rvFid);if(!ph)return;
+  const es=entries();es.push({id:'e'+Date.now(),pid:ph.pid,cat:S.rvCat,time:Date.now(),text:$('rvText').value});
+  saveEntries(es);
+  S.photos=S.photos.filter(x=>x.id!==ph.id);
+  toast('已归档');show('vHome');renderHome();
+});
+$('btnRvDrop').addEventListener('click',()=>{
+  if(!confirm('丢弃这张照片和识别结果?'))return;
+  S.photos=S.photos.filter(x=>x.id!==S.rvFid);show('vHome');renderHome();
+});
+
+/* ---------- 病人的库 ---------- */
+function openLib(pid){S.libPid=pid;show('vLib');renderLib('list');}
+function patEntries(pid){return entries().filter(e=>e.pid===pid).sort((a,b)=>a.time-b.time);}
+function fmtT(t){const d=new Date(t);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
+function renderLib(mode,fullId){
+  const p=patients().find(x=>x.id===S.libPid);if(!p){show('vHome');renderHome();return;}
+  $('libName').textContent=p.name+' 的库（'+p.code+'）';
+  const body=$('libBody');body.innerHTML='';
+  const list=patEntries(p.id);
+  if(mode==='trend'){renderTrends(body,list);return;}
+  if(mode==='full'){renderFull(body,p,list);return;}
+  if(!list.length){const d=document.createElement('div');d.className='card small';d.textContent='库里还没有条目';body.appendChild(d);}
+  [...list].reverse().forEach(e=>{
+    const c=document.createElement('div');c.className='card entry';
+    const h=document.createElement('div');
+    const tag=document.createElement('span');tag.className='tag';tag.textContent=e.cat;
+    const tm=document.createElement('span');tm.className='small';tm.textContent=fmtT(e.time);
+    h.appendChild(tag);h.appendChild(tm);c.appendChild(h);
+    const pv=document.createElement('div');pv.className='small';pv.textContent=e.text.slice(0,50)+(e.text.length>50?'…':'');c.appendChild(pv);
+    c.style.cursor='pointer';c.addEventListener('click',()=>{
+      pv.textContent=(pv._open?e.text.slice(0,50)+(e.text.length>50?'…':''):e.text);pv._open=!pv._open;
+    });
+    body.appendChild(c);
+  });
+}
+document.querySelector('.libBack').addEventListener('click',()=>{show('vHome');renderHome();});
+$('btnTrend').addEventListener('click',()=>renderLib('trend'));
+$('btnFull').addEventListener('click',()=>renderLib('full'));
+$('btnRename').addEventListener('click',()=>{
+  const p=patients().find(x=>x.id===S.libPid);
+  const v=prompt('新代号/外号（当前:'+p.code+'）:',p.code);if(!v||!v.trim())return;
+  const ps=patients();ps.find(x=>x.id===p.id).code=v.trim();savePatients(ps);renderLib('list');
+});
+$('btnArch').addEventListener('click',()=>{
+  if(!confirm('出院归档？数据不删，可在首页归档区拉回。'))return;
+  const ps=patients();ps.find(x=>x.id===S.libPid).archived=true;savePatients(ps);show('vHome');renderHome();
+});
+
+/* 趋势解析: 指标:数值+单位+↑↓ */
+const VAL_RE=/([一-龥A-Za-z][一-龥A-Za-z0-9%·\/\(\)-]{0,15})\s*[:：]?\s*(-?\d+(?:\.\d+)?)\s*([A-Za-zμµ%\/\*\.\^\d-]{0,12})\s*([↑↓])?/g;
+const SKIP_W=['日期','时间','姓名','床号','科室','标本','备注','2026','2025'];
+function parseLabs(text){
+  const out=[];let m;VAL_RE.lastIndex=0;
+  while((m=VAL_RE.exec(text))){
+    const name=m[1].trim();
+    if(SKIP_W.some(w=>name.includes(w)))continue;
+    if(!m[3]&&!m[4])continue; // 至少要单位或箭头
+    out.push({name:name,value:parseFloat(m[2]),unit:m[3]||'',arrow:m[4]||''});
+  }
+  return out;
+}
+function buildTrends(list){
+  const labs=list.filter(e=>e.cat==='化验').sort((a,b)=>a.time-b.time);
+  const map={};
+  for(const e of labs){
+    const items=parseLabs(e.text);
+    e._parsed=items;
+    for(const it of items){(map[it.name]=map[it.name]||[]).push({t:e.time,value:it.value,unit:it.unit,arrow:it.arrow});}
+  }
+  return{labs,map};
+}
+function renderTrends(body,list){
+  const{labs,map}=buildTrends(list);
+  if(!labs.length){const d=document.createElement('div');d.className='card small';d.textContent='还没有「化验」类条目';body.appendChild(d);return;}
+  const names=Object.keys(map);
+  if(!names.length){const d=document.createElement('div');d.className='card small';d.textContent='这张没解析出指标';body.appendChild(d);return;}
+  for(const nm of names){
+    const c=document.createElement('div');c.className='card';
+    const t=document.createElement('b');t.textContent=nm;c.appendChild(t);
+    const tb=document.createElement('table');tb.className='tt';
+    const hr=document.createElement('tr');['日期','值','单位','箭头'].forEach(x=>{const th=document.createElement('th');th.textContent=x;hr.appendChild(th);});tb.appendChild(hr);
+    for(const r of map[nm]){
+      const tr=document.createElement('tr');
+      [fmtT(r.t).slice(0,10),String(r.value),r.unit,r.arrow].forEach(x=>{const td=document.createElement('td');td.textContent=x;tr.appendChild(td);});
+      tb.appendChild(tr);
+    }
+    c.appendChild(tb);body.appendChild(c);
+  }
+  const d=document.createElement('div');d.className='small';d.style.marginTop='8px';d.textContent='没解析出的化验条目会忽略，不硬凑。';body.appendChild(d);
+}
+
+/* 完整资料:标准Markdown,分类分节,按时间 */
+function buildFullDoc(p,list){
+  const lines=['# '+p.code+' 完整资料','','> 导出时间:'+fmtT(Date.now()),''];
+  for(const cat of CATS){
+    const items=list.filter(e=>e.cat===cat).sort((a,b)=>a.time-b.time);
+    if(!items.length)continue;
+    lines.push('## '+cat,'');
+    for(const e of items){lines.push('### '+fmtT(e.time),'',e.text,'');}
+  }
+  return lines.join('\n');
+}
+function renderFull(body,p,list){
+  const md=buildFullDoc(p,list);
+  const c=document.createElement('div');c.className='card';
+  const ta=document.createElement('textarea');ta.id='fullMd';ta.value=md;ta.style.minHeight='320px';c.appendChild(ta);
+  const r=document.createElement('div');r.className='row';r.style.marginTop='8px';
+  const b1=document.createElement('button');b1.className='btn sm';b1.textContent='一键复制';
+  b1.addEventListener('click',()=>{copyText(md);});
+  const b2=document.createElement('button');b2.className='btn sec sm';b2.textContent='存到授权文件夹(壳)';
+  b2.addEventListener('click',()=>{
+    if(window.LearnShell&&window.LearnShell.writeFile){
+      try{window.LearnShell.writeFile(p.code+'-完整资料.md',md);toast('已交给壳保存');}
+      catch(e){copyText(md);}
+    }else{toast('无壳桥,已退化复制');copyText(md);}
+  });
+  r.appendChild(b1);r.appendChild(b2);c.appendChild(r);body.appendChild(c);
+}
+function copyText(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(()=>toast('已复制'),()=>fallbackCopy(t));}
+  else fallbackCopy(t);
+}
+function fallbackCopy(t){const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');toast('已复制');}catch(e){toast('复制失败');}a.remove();}
+
+/* ---------- 设置 & 备份 ---------- */
+function openSet(){show('vSet');
+  $('setKey').value=localStorage.getItem('xt_apikey')||'';$('setGhU').value=localStorage.getItem('xt_gh_user')||'';
+  $('setGhT').value=localStorage.getItem('xt_gh_tok')||'';$('setGhR').value=localStorage.getItem('xt_gh_repo')||'';
+  const gl=$('guardLog');gl.innerHTML='';
+  const lg=guardLog();
+  if(!lg.length)gl.textContent='（暂无替换记录）';
+  lg.slice(-10).reverse().forEach(x=>{const d=document.createElement('div');d.textContent=fmtT(x.t)+' 命中替换:'+x.codes.join(',');gl.appendChild(d);});
+}
+$('btnSet').addEventListener('click',openSet);
+document.querySelector('.setBack').addEventListener('click',()=>{show('vHome');renderHome();});
+$('btnSaveSet').addEventListener('click',()=>{
+  localStorage.setItem('xt_apikey',$('setKey').value.trim());localStorage.setItem('xt_gh_user',$('setGhU').value.trim());
+  localStorage.setItem('xt_gh_tok',$('setGhT').value.trim());localStorage.setItem('xt_gh_repo',$('setGhR').value.trim());
+  toast('已保存');
+});
+/* 备份包:只有代号+内容,无真名 */
+function buildBackup(){
+  return{app:'pai',ver:SW_VERSION,time:Date.now(),
+    patients:patients().map(p=>({code:p.code,bed:p.bed,archived:p.archived,created:p.created})),
+    entries:entries().map(e=>({code:(patients().find(p=>p.id===e.pid)||{}).code||'?',cat:e.cat,time:e.time,text:guardOut(e.text)}))};
+}
+async function ghPut(content){
+  const u=LS.get('xt_gh_user',''),t=LS.get('xt_gh_tok',''),r=LS.get('xt_gh_repo','');
+  if(!u||!t||!r)throw new Error('请先填GitHub三项');
+  const url='https://api.github.com/repos/'+u+'/'+r+'/contents/pai-backup.json';
+  const H={Authorization:'token '+t,'Content-Type':'application/json'};
+  let sha;
+  const g=await fetch(url,{headers:H});
+  if(g.ok)sha=(await g.json()).sha;
+  const body={message:'pai backup',content:btoa(unescape(encodeURIComponent(JSON.stringify(content))))};
+  if(sha)body.sha=sha;
+  const p=await fetch(url,{method:'PUT',headers:H,body:JSON.stringify(body)});
+  if(!p.ok)throw new Error('HTTP '+p.status);
+}
+async function ghGet(){
+  const u=LS.get('xt_gh_user',''),t=LS.get('xt_gh_tok',''),r=LS.get('xt_gh_repo','');
+  const url='https://api.github.com/repos/'+u+'/'+r+'/contents/pai-backup.json';
+  const g=await fetch(url,{headers:{Authorization:'token '+t}});
+  if(!g.ok)throw new Error('HTTP '+g.status);
+  const j=await g.json();return JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\n/g,'')))));
+}
+$('btnBackup').addEventListener('click',async()=>{
+  try{await ghPut(buildBackup());$('bakMsg').textContent='备份成功 '+fmtT(Date.now());}
+  catch(e){$('bakMsg').textContent='备份失败:'+e.message;}
+});
+$('btnRestore').addEventListener('click',async()=>{
+  try{
+    const data=await ghGet();restoreBackup(data);
+    $('bakMsg').textContent='恢复成功';renderHome();
+  }catch(e){$('bakMsg').textContent='恢复失败:'+e.message;}
+});
+/* 恢复:显示代号,允许重填真名 */
+function restoreBackup(data){
+  for(const bp of data.patients||[]){
+    let p=patients().find(x=>x.code===bp.code);
+    if(!p){
+      const name=prompt('恢复病人 '+bp.code+'，请填真名（可留空用代号）:')||bp.code;
+      p=addPatient(name,bp.bed||'');p.code=bp.code;p.archived=!!bp.archived;
+      const ps=patients();ps[ps.findIndex(x=>x.id===p.id)]=p;savePatients(ps);
+    }
+    for(const be of (data.entries||[]).filter(x=>x.code===bp.code)){
+      const es=entries();
+      if(!es.some(x=>x.pid===p.id&&x.time===be.time)){es.push({id:'e'+be.time+Math.random().toString(36).slice(2,5),pid:p.id,cat:be.cat,time:be.time,text:be.text});saveEntries(es);}
+    }
+  }
+}
+
+/* ---------- 测试挂钩 ---------- */
+window.__pj={
+  ver:SW_VERSION,addPatient,genCode,guardOut,compositeMask,encodeForVision,
+  parseLabs,buildTrends,buildFullDoc,buildBackup,restoreBackup,guessCat,runQueue,
+  patients,entries,savePatients,saveEntries,S,openCam,openMask,openReview,openLib,addShot,
+  _ls:LS
+};
+renderHome();
+</script>
+</body>
+</html>
