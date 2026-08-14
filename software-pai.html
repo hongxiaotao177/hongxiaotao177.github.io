@@ -6,6 +6,10 @@
 <title>拍病历</title>
 <!--
 修改记录:
+拍病历 v0.3.0 2026-08-14
+- 识别分组重排:OCR提示词升级——AI先自判化验单/病历文书/检查报告;化验单按组(血常规/生化/凝血/免疫/病原学/血气/其他)重排输出标准Markdown表(| 项目 | 结果 | 单位 | 提示 |),↑↓照录;病历文书原样转录,检查报告所见/结论分段;认不出〔?〕不许编;方向不正先脑中转正
+- 本地预判分类:识别文本正则预判(化验/检查报告/病程记录/入院记录/其他),过目页默认选中可改;病人的库按类别分节显示(类目标题+类内按时间排),顺序:入院记录/化验/检查报告/病程记录/其他
+- 横图遮挡页提示转正并记住选择:宽>高且宽高比>1.3的图,遮挡页弹轻提示「这图是横的,需要转正吗?[转正][不用]」,选一次记住(localStorage 'pai_autorot':'cw90'/'no'),以后同类图自动照做不再问
 拍病历 v0.2.1 2026-08-14
 - 修:旋转后图片缩角落/无法放大/黑块消失——①根因a(主因):zoomReset居中公式tx=(W-MD.w*s)/2漏减zoom层自身contain偏移MD.ox/MD.oy(transform叠在left/top之上),s>1时整图被推偏出视区,旋转极端长宽比图后缩成底部一条+上方黑空+黑块跑出视区;改为tx=(W-MD.w*s)/2-MD.ox、ty=(H-MD.h*s)/2-MD.oy,与addBlock可视中心公式同约定;②根因b:zoomSet/zoomReset缩放硬夹1~4,转正图(如306×1720→1720×306)铺满需s≈9被夹到4,到顶无法放大;改动态上限maxZoom()=max(4,铺满所需s);③根因c:loadMaskPhoto双触发(onload+complete同步跑)可能拿旧natural尺寸先适配;改seq令牌只认最后一次加载。旋转走rotateRefit()全新加载路径:等转正图onload拿新尺寸→fitImage→buildBlocks(默认顶部块)→zoomReset,三步成函数不散,连点多次/缩放中/平移过/加过块都正确复位
 - 加:test_real.py真实照片全流程测试(用户病历真图,390×780手机视口,mock识别)
@@ -127,6 +131,11 @@ table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:
   <div class="topbar"><button id="maskBack">←</button><h1>遮挡敏感处（第<span id="maskIdx">1</span>/<span id="maskTot">1</span>张）</h1></div>
   <div class="wrap">
     <div class="card">
+      <!-- v0.3.0 横图(w/h>1.3)轻提示转正;选一次记住(pai_autorot),以后同类图自动照做不再问 -->
+      <div class="qbar hidden" id="rotBar">这图是横的，需要转正吗？
+        <button class="btn sm" id="btnRotYes">转正</button>
+        <button class="btn sec sm" id="btnRotNo">不用</button>
+      </div>
       <!-- v0.1.2 黑块挪进maskZoom层,随图一起缩放平移,坐标系仍是图片相对坐标 -->
       <div class="maskwrap" id="maskWrap"><div id="maskZoom"><img id="maskImg" alt=""></div></div>
       <div class="row" style="margin-top:10px">
@@ -212,7 +221,7 @@ table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:
 
 <script>
 'use strict';
-const SW_VERSION='0.2.1';
+const SW_VERSION='0.3.0';
 const $=id=>document.getElementById(id);
 const esc=s=>s; // 一律textContent渲染
 function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',2200);}
@@ -442,9 +451,23 @@ function loadMaskPhoto(){
   fitMode='fill'; // v0.2.0 每张默认铺满工作区(横图铺满高度/竖图铺满宽度),⇄切'fit'全图适应
   $('maskIdx').textContent=S.maskIdx+1;$('maskTot').textContent=list.length;
   const img=$('maskImg');const seq=++maskLoadSeq;
-  img.onload=()=>{if(seq!==maskLoadSeq)return;maskNat={w:img.naturalWidth,h:img.naturalHeight};fitImage();buildBlocks();zoomReset();};
+  img.onload=()=>{if(seq!==maskLoadSeq)return;maskNat={w:img.naturalWidth,h:img.naturalHeight};fitImage();buildBlocks();zoomReset();autoRotateCheck();};
   img.src=ph.data;
 }
+/* v0.3.0 横图转正半自动:宽>高且宽高比>1.3→大概率横拍屏幕/化验单。
+   已记住(pai_autorot)就自动照做不再问;没记住弹#rotBar轻提示,用户选一次就记住。 */
+function autoRotateCheck(){
+  const bar=$('rotBar');
+  const land=maskNat.w>maskNat.h&&maskNat.w/maskNat.h>1.3;
+  if(!land){bar.classList.add('hidden');return;}
+  const pref=LS.get('pai_autorot',null);
+  if(pref==='cw90'){bar.classList.add('hidden');rotateRefit();}
+  else if(pref==='ccw90'){bar.classList.add('hidden');rotateRefit('ccw');}
+  else if(pref==='no'){bar.classList.add('hidden');}
+  else{bar.classList.remove('hidden');}
+}
+$('btnRotYes').addEventListener('click',()=>{LS.set('pai_autorot','cw90');$('rotBar').classList.add('hidden');rotateRefit();});
+$('btnRotNo').addEventListener('click',()=>{LS.set('pai_autorot','no');$('rotBar').classList.add('hidden');});
 /* v0.2.0 显式显示尺寸体系(不靠CSS自适应):
    MD.w/MD.h = 图片在工作区内的contain显示尺寸, MD.ox/MD.oy = 居中偏移;
    #maskZoom显式width/height=MD.w/MD.h、left/top=偏移; 黑块坐标=图片0~1相对坐标×MD.w/MD.h, 所见即所得 */
@@ -465,13 +488,14 @@ let fitMode='fill';
 /* v0.2.1 旋转重适配rotateRefit():canvas转正替换dataURL后走全新加载路径——
    等转正图真正onload拿新尺寸→fitImage(新尺寸contain)→buildBlocks(黑块重置默认顶部块)→zoomReset(按铺满规则),
    三步成函数不散;缩放中/平移过/加过块/连点多次(90→180→270→360)每次都完整复位 */
-async function rotateRefit(){
+async function rotateRefit(dir){ // v0.3.0 dir:'cw'(默认顺时针90°)/'ccw'(逆时针90°)
   const list=rawPhotos();const ph=list[S.maskIdx];if(!ph)return;
   const src=await new Promise((r,j)=>{const i=new Image();i.onload=()=>r(i);i.onerror=()=>j(new Error('图片解码失败'));i.src=ph.data;});
   const c=document.createElement('canvas');
   c.width=src.naturalHeight;c.height=src.naturalWidth;
   const g=c.getContext('2d');
-  g.translate(c.width,0);g.rotate(Math.PI/2);
+  if(dir==='ccw'){g.translate(0,c.height);g.rotate(-Math.PI/2);}
+  else{g.translate(c.width,0);g.rotate(Math.PI/2);}
   g.drawImage(src,0,0);
   ph.data=c.toDataURL('image/jpeg',0.92);
   S.maskBlocks=[];fitMode='fill';Z.s=1;Z.tx=0;Z.ty=0;zoomApply(); // 坐标系变了:清块+适配模式/缩放平移归零
@@ -645,7 +669,13 @@ async function encodeForVision(dataURL){
   const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);
   return c.toDataURL('image/jpeg',0.8);
 }
-const OCR_PROMPT='你是医疗文书OCR助手。把这张病历/化验/检查照片里的文字原样转录成文本。要求：①数值、单位、上下箭头一个不错；②不同检验/检查项目之间输出 ━━ 分隔；③只输出文字内容，不要评论；④看不到/认不出的字用〔?〕标出，不许猜编。';
+/* v0.3.0 提示词升级:先自判类型→化验单按组重排出标准Markdown表/文书原样转录/检查报告分段;方向不正先脑中转正;〔?〕兜底不许编 */
+const OCR_PROMPT='你是医疗文书OCR助手。先判断这张图片属于哪一类，再按对应规则转录：\n'+
+'0.若图片文字方向不正（侧躺/颠倒），请先在脑中转正再转录。\n'+
+'1.若是化验单：按组别重排（血常规/生化/凝血/免疫/病原学/血气/其他），每组先写组名，组下输出标准Markdown表格：| 项目 | 结果 | 单位 | 提示 |，表头下紧跟 |---|---|---|---| 分隔行；箭头↑↓照录进提示列。\n'+
+'2.若是病历文书（病程/入院/出院等）：原样转录，段落保留。\n'+
+'3.若是检查报告：检查所见、诊断结论分段转录。\n'+
+'4.认不出的字用〔?〕标出，不许猜编；数值、单位一个不错；只输出转录内容，不要评论。';
 /* v0.1.2 花名册自愈:调/v1/models按喜好挑视觉模型,缓存pai_vmodel;v1系2026-08-31下线后kimi兜底 */
 const VMODEL_PREFS=['moonshot-v1-8k-vision-preview','moonshot-v1-32k-vision-preview','moonshot-v1-128k-vision-preview','kimi-k2.5','kimi-k2.6'];
 async function visionModelPick(key){
@@ -696,11 +726,13 @@ $('btnQ').addEventListener('click',openQueue);
 document.querySelectorAll('.qBack').forEach(b=>b.addEventListener('click',()=>{show('vHome');renderHome();}));
 
 /* ---------- 过目归档 ---------- */
-const CATS=['化验','检查报告','病程记录','其他'];
+/* v0.3.0 本地预判分类(零AI):正则按关键词预判,库/完整资料分节顺序=CATS */
+const CATS=['入院记录','化验','检查报告','病程记录','其他'];
 function guessCat(t){
-  if(/(mmol|umol|g\/L|白细胞|血红蛋白|肌酐|钠|钾|↑|↓)/.test(t))return'化验';
-  if(/(CT|胸片|超声|MRI|报告|所见|印象)/.test(t))return'检查报告';
-  if(/(查房|病程|今日|处理)/.test(t))return'病程记录';
+  if(/(WBC|血红蛋白|肌酐|凝血酶原|白细胞|血小板|mmol|umol|g\/L|钠|钾|↑|↓)/.test(t))return'化验';
+  if(/(检查所见|诊断结论|CT|DR|超声|胸片|MRI|印象)/.test(t))return'检查报告';
+  if(/(病程记录|查房)/.test(t))return'病程记录';
+  if(/(主诉|现病史)/.test(t))return'入院记录';
   return'其他';
 }
 function openReview(fid){
@@ -749,7 +781,13 @@ function renderLib(mode,fullId){
   if(mode==='trend'){renderTrends(body,list);return;}
   if(mode==='full'){renderFull(body,p,list);return;}
   if(!list.length){const d=document.createElement('div');d.className='card small';d.textContent='库里还没有条目';body.appendChild(d);}
-  [...list].reverse().forEach(e=>{
+  /* v0.3.0 按类别分节:类目标题+类内按时间排,顺序=CATS(入院记录/化验/检查报告/病程记录/其他) */
+  for(const cat of CATS){
+    const items=list.filter(e=>e.cat===cat).sort((a,b)=>a.time-b.time);
+    if(!items.length)continue;
+    const hd=document.createElement('div');hd.className='cat-sec small';hd.style.cssText='font-weight:bold;color:var(--brown2);margin:12px 0 2px';
+    hd.textContent='━━ '+cat+'（'+items.length+'）';body.appendChild(hd);
+  items.forEach(e=>{
     const c=document.createElement('div');c.className='card entry';
     const h=document.createElement('div');
     const tag=document.createElement('span');tag.className='tag';tag.textContent=e.cat;
@@ -762,6 +800,7 @@ function renderLib(mode,fullId){
     });
     body.appendChild(c);
   });
+  } // end v0.3.0 分节
 }
 document.querySelector('.libBack').addEventListener('click',()=>{show('vHome');renderHome();});
 $('btnTrend').addEventListener('click',()=>renderLib('trend'));
@@ -928,7 +967,7 @@ function restoreBackup(data){
 /* ---------- 测试挂钩 ---------- */
 window.__pj={
   ver:SW_VERSION,addPatient,genCode,guardOut,compositeMask,encodeForVision,
-  parseLabs,buildTrends,buildFullDoc,buildBackup,restoreBackup,guessCat,runQueue,
+  parseLabs,buildTrends,buildFullDoc,buildBackup,restoreBackup,guessCat,runQueue,autoRotateCheck,CATS,OCR_PROMPT,
   visionModelPick,callVision,enqueue,zoomSet,zoomReset,Z,
   patients,entries,savePatients,saveEntries,S,openCam,openMask,openReview,openLib,addShot,
   bill,billAiUse,billYuan,billFmt,PAI_PRICE,openSet,addBlock,renderBlocks,buildBlocks,rotateMaskPhoto,
