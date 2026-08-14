@@ -6,6 +6,9 @@
 <title>拍病历</title>
 <!--
 修改记录:
+拍病历 v0.1.2 2026-08-14
+- 修①:视觉模型花名册自愈——调/v1/models按喜好挑带-preview视觉模型(缓存pai_vmodel),404清缓存重挑再试一次;没Key点识别拦下提示,不入队不空跑
+- 修②:遮挡页双指捏合缩放+双指平移(黑块随图动,坐标仍是图片相对坐标,合成逻辑不动),1x~4x,另加🔍+/🔍−/复位按钮后备
 拍病历 v0.1.1 2026-08-14
 - 修:建病人改用页面内输入面板(浏览器自带弹窗太暗,点空确定白跑一趟)
 拍病历 v0.1 2026-08-14
@@ -48,7 +51,8 @@ label{font-size:13px;color:var(--mut);display:block;margin:10px 0 4px}
 #camVideo{width:100%;border-radius:12px;background:#222;display:block}
 #camPrev{width:100%;border-radius:12px;display:none}
 .shotbtn{width:72px;height:72px;border-radius:50%;background:#fff;border:5px solid var(--brown);flex:none}
-.maskwrap{position:relative;touch-action:none;margin:0 auto}
+.maskwrap{position:relative;touch-action:none;margin:0 auto;overflow:hidden}
+#maskZoom{position:relative;transform-origin:0 0;width:100%}
 .maskwrap img{width:100%;display:block;border-radius:8px}
 .blk{position:absolute;background:#000;border:1px dashed #666;z-index:5}
 .blk .hdl{position:absolute;right:-9px;bottom:-9px;width:22px;height:22px;border-radius:50%;background:var(--brown);border:2px solid #fff}
@@ -99,11 +103,15 @@ table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:
   <div class="topbar"><button id="maskBack">←</button><h1>遮挡敏感处（第<span id="maskIdx">1</span>/<span id="maskTot">1</span>张）</h1></div>
   <div class="wrap">
     <div class="card">
-      <div class="maskwrap" id="maskWrap"><img id="maskImg" alt=""></div>
+      <!-- v0.1.2 黑块挪进maskZoom层,随图一起缩放平移,坐标系仍是图片相对坐标 -->
+      <div class="maskwrap" id="maskWrap"><div id="maskZoom"><img id="maskImg" alt=""></div></div>
       <div class="row" style="margin-top:10px">
         <button class="btn sec sm" id="btnAddBlk">＋黑块</button>
         <button class="btn sm" id="btnMaskOk">完成这张 →</button>
-        <span class="small">拖动移动 · 右下角圆点缩放 · 双击删除</span>
+        <button class="btn sec sm" id="btnZoomIn">🔍+</button>
+        <button class="btn sec sm" id="btnZoomOut">🔍−</button>
+        <button class="btn sec sm" id="btnZoomReset">复位</button>
+        <span class="small">单指拖黑块 · 双指捏合缩放/平移 · 右下角圆点缩放 · 双击删除</span>
       </div>
     </div>
   </div>
@@ -169,7 +177,7 @@ table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:
 
 <script>
 'use strict';
-const SW_VERSION='0.1.1';
+const SW_VERSION='0.1.2';
 const $=id=>document.getElementById(id);
 const esc=s=>s; // 一律textContent渲染
 function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',2200);}
@@ -315,6 +323,7 @@ function loadMaskPhoto(){
   const img=$('maskImg');img.src=ph.data;
   img.onload=()=>{maskNat={w:img.naturalWidth,h:img.naturalHeight};buildBlocks();};
   if(img.complete&&img.naturalWidth){maskNat={w:img.naturalWidth,h:img.naturalHeight};buildBlocks();}
+  zoomReset();
 }
 function buildBlocks(){
   const w=$('maskWrap');w.querySelectorAll('.blk').forEach(b=>b.remove());
@@ -325,7 +334,7 @@ function addBlock(){S.maskBlocks.push({x:0.3,y:0.3,w:0.4,h:0.12});renderBlocks()
 $('btnAddBlk').addEventListener('click',addBlock);
 function clampBlk(b){b.w=Math.max(0.03,Math.min(b.w,1));b.h=Math.max(0.02,Math.min(b.h,1));b.x=Math.max(0,Math.min(b.x,1-b.w));b.y=Math.max(0,Math.min(b.y,1-b.h));}
 function renderBlocks(){
-  const w=$('maskWrap');w.querySelectorAll('.blk').forEach(b=>b.remove());
+  const w=$('maskZoom');w.querySelectorAll('.blk').forEach(b=>b.remove()); // v0.1.2 挂进缩放层,clientWidth不受transform影响
   const W=w.clientWidth,H=$('maskImg').clientHeight;
   S.maskBlocks.forEach((b,i)=>{
     clampBlk(b);
@@ -338,12 +347,14 @@ function renderBlocks(){
 function bindBlk(el,hdl,b,idx){
   let mode=null,sx=0,sy=0,ox=0,oy=0,ow=0,oh=0,moved=0;
   function down(e){
+    if(e.touches&&e.touches.length>1){mode=null;return;} // v0.1.2 两指交给画布缩放
     const t=e.target===hdl?'resize':'move';mode=t;moved=0;
     const pt=e.touches?e.touches[0]:e;sx=pt.clientX;sy=pt.clientY;ox=b.x;oy=b.y;ow=b.w;oh=b.h;
     e.preventDefault();e.stopPropagation();
   }
   function move(e){
-    if(!mode)return;const pt=e.touches?e.touches[0]:e;
+    if(!mode)return;if(e.touches&&e.touches.length>1){mode=null;return;}
+    const pt=e.touches?e.touches[0]:e;
     const W=$('maskWrap').clientWidth,H=$('maskImg').clientHeight;
     const dx=(pt.clientX-sx)/W,dy=(pt.clientY-sy)/H;moved+=Math.abs(dx)+Math.abs(dy);
     if(mode==='move'){b.x=ox+dx;b.y=oy+dy;}else{b.w=ow+dx;b.h=oh+dy;}
@@ -360,6 +371,33 @@ function bindBlk(el,hdl,b,idx){
   let lt=0;
   el.addEventListener('touchend',e=>{const n=Date.now();if(n-lt<350&&moved<0.01){S.maskBlocks.splice(idx,1);renderBlocks();}lt=n;});
 }
+/* v0.1.2 双指捏合缩放+双指平移:transform包一层maskZoom,黑块在内随图动,图片相对坐标不变,合成不用改 */
+const Z={s:1,tx:0,ty:0};
+function zoomApply(){$('maskZoom').style.transform='translate('+Z.tx+'px,'+Z.ty+'px) scale('+Z.s+')';}
+function zoomSet(s){Z.s=Math.max(1,Math.min(4,s));zoomApply();}
+function zoomBy(d){zoomSet(Z.s+d);}
+function zoomReset(){Z.s=1;Z.tx=0;Z.ty=0;zoomApply();}
+$('btnZoomIn').addEventListener('click',()=>zoomBy(0.5));
+$('btnZoomOut').addEventListener('click',()=>zoomBy(-0.5));
+$('btnZoomReset').addEventListener('click',zoomReset);
+(function(){
+  const w=$('maskWrap');let prev=null;
+  function cent(t1,t2){const r=w.getBoundingClientRect();return{d:Math.hypot(t1.clientX-t2.clientX,t1.clientY-t2.clientY)||1,
+    cx:(t1.clientX+t2.clientX)/2-r.left,cy:(t1.clientY+t2.clientY)/2-r.top};}
+  w.addEventListener('touchstart',e=>{if(e.touches.length===2)prev=cent(e.touches[0],e.touches[1]);},{passive:false});
+  w.addEventListener('touchmove',e=>{
+    if(e.touches.length!==2)return;e.preventDefault(); // 防浏览器抢走手势
+    const c=cent(e.touches[0],e.touches[1]);
+    if(prev){
+      const s0=Z.s;zoomSet(s0*c.d/prev.d);const k=Z.s/s0;
+      Z.tx=c.cx-k*(prev.cx-Z.tx);Z.ty=c.cy-k*(prev.cy-Z.ty);zoomApply(); // 指尖下的内容点不动
+    }
+    prev=c;
+  },{passive:false});
+  w.addEventListener('touchend',e=>{prev=e.touches.length===2?cent(e.touches[0],e.touches[1]):null;});
+  w.addEventListener('touchcancel',()=>{prev=null;});
+  w.addEventListener('wheel',e=>{e.preventDefault();zoomBy(e.deltaY<0?0.5:-0.5);},{passive:false}); // 鼠标后备
+})();
 /* 把黑块真正画进图片 */
 function compositeMask(dataURL,blocks){
   return new Promise(res=>{
@@ -383,7 +421,10 @@ function finishMaskAll(){toast('全部遮挡完成，进识别队列');openQueue
 $('maskBack').addEventListener('click',()=>{show('vCam');renderCam();});
 
 /* ---------- 识别队列 ---------- */
-function enqueue(ph){ph.status='queued';runQueue();}
+function enqueue(ph){
+  if(!window.__mockVision&&!localStorage.getItem('xt_apikey')){toast('先去⚙️设置里填API Key');return;} // v0.1.2 没Key拦下,不入队不空跑
+  ph.status='queued';runQueue();
+}
 function openQueue(){show('vQueue');renderQueue();}
 function renderQueue(){
   const l=$('qList');l.innerHTML='';
@@ -414,12 +455,27 @@ async function encodeForVision(dataURL){
   return c.toDataURL('image/jpeg',0.8);
 }
 const OCR_PROMPT='你是医疗文书OCR助手。把这张病历/化验/检查照片里的文字原样转录成文本。要求：①数值、单位、上下箭头一个不错；②不同检验/检查项目之间输出 ━━ 分隔；③只输出文字内容，不要评论；④看不到/认不出的字用〔?〕标出，不许猜编。';
+/* v0.1.2 花名册自愈:调/v1/models按喜好挑视觉模型,缓存pai_vmodel;v1系2026-08-31下线后kimi兜底 */
+const VMODEL_PREFS=['moonshot-v1-8k-vision-preview','moonshot-v1-32k-vision-preview','moonshot-v1-128k-vision-preview','kimi-k2.5','kimi-k2.6'];
+async function visionModelPick(key){
+  const cached=LS.get('pai_vmodel',null);if(cached)return cached;
+  const k=(key||localStorage.getItem('xt_apikey')||'').replace(/^"|"$/g,'');
+  const r=await fetch('https://api.moonshot.cn/v1/models',{headers:{'Authorization':'Bearer '+k}});
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  const j=await r.json();const ids=(j.data||[]).map(m=>m.id);
+  const pick=VMODEL_PREFS.find(p=>ids.includes(p))||ids.find(id=>/vision/i.test(id));
+  if(!pick)throw new Error('花名册里没有视觉模型');
+  LS.set('pai_vmodel',pick);return pick;
+}
 async function callVision(dataURL){
   if(window.__mockVision)return window.__mockVision(dataURL);
   const key=localStorage.getItem('xt_apikey');if(!key)throw new Error('未设置API Key');
   const img=await encodeForVision(dataURL);
-  const body={model:'moonshot-v1-8k-vision',messages:[{role:'user',content:[{type:'text',text:guardOut(OCR_PROMPT)},{type:'image_url',image_url:{url:img}}]}]};
-  const r=await fetch('https://api.moonshot.cn/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key.replace(/^"|"$/g,'')},body:JSON.stringify(body)});
+  const H={'Content-Type':'application/json','Authorization':'Bearer '+key.replace(/^"|"$/g,'')};
+  const mk=mdl=>JSON.stringify({model:mdl,messages:[{role:'user',content:[{type:'text',text:guardOut(OCR_PROMPT)},{type:'image_url',image_url:{url:img}}]}]});
+  const post=mdl=>fetch('https://api.moonshot.cn/v1/chat/completions',{method:'POST',headers:H,body:mk(mdl)});
+  let r=await post(await visionModelPick(key));
+  if(r.status===404){localStorage.removeItem('pai_vmodel');r=await post(await visionModelPick(key));} // 自愈:清缓存重挑再试一次
   if(!r.ok)throw new Error('HTTP '+r.status);
   const j=await r.json();return j.choices[0].message.content;
 }
@@ -658,6 +714,7 @@ function restoreBackup(data){
 window.__pj={
   ver:SW_VERSION,addPatient,genCode,guardOut,compositeMask,encodeForVision,
   parseLabs,buildTrends,buildFullDoc,buildBackup,restoreBackup,guessCat,runQueue,
+  visionModelPick,callVision,enqueue,zoomSet,zoomReset,Z,
   patients,entries,savePatients,saveEntries,S,openCam,openMask,openReview,openLib,addShot,
   _ls:LS
 };
