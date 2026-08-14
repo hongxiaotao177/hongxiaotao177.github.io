@@ -6,6 +6,11 @@
 <title>拍病历</title>
 <!--
 修改记录:
+拍病历 v0.4.2 2026-08-15
+- 修「储存区没有内容」病灶:库入口是长按(contextmenu)太隐蔽找不到——①病人卡片加显式「🗂库」按钮(点卡仍是拍照);②归档后直接落进这个病人的库,存没存上一眼看见
+- 加「⚡免遮挡直接识别」快道:化验单/检查报告这类无敏感信息的,拍完跳过遮挡页,直接存档+入队识别;横拍(宽>高)内容本来就正,不旋转直接送
+- 识别质量(真Key真图验过):①encodeForVision 1600→2048px jpeg0.85(密字化验单1600太糊致漏项错字);②callVision加max_tokens=4096(默认1024把长病历拦腰截断,真机实测病例特点被切断);③提示词加第5条防编造——图躺/太糊时AI必须直说〔图片不清,建议重拍或转正后再识别〕绝不许编报告(实测:侧躺图从"编造整份假化验单含送检医生张三"变成直接拒识);④过目页见到〔图片不清自动提示点旋转重识别
+- 实测结论:竖文件装横内容的图AI认不出会编造,转正(逆时针)后同一张图转录完整准确(凝血四项/血常规五分类/病原体核酸全对);横拍=文件横=内容正=直接识别没问题
 拍病历 v0.4.1 2026-08-15
 - 加:过目页「🔄旋转90°重新识别」——竖向文件装横向内容(手机竖拍HIS横屏)宽高比检测不到横躺,人工一眼看出点一下:canvas转正→换图→重送AI识别→文本/预判分类刷新,已存档的同步换正图,账本照记
 - 收紧OCR提示词:①表格一行一项目四列齐全,空缺写"—"不许留空不粘行;②日期时间/标本/科室/送检医生单独成行,绝不许塞进表格(修"尿素/肌酐 2026/7/27 6:42:55"混行+空单元格错位)
@@ -128,6 +133,8 @@ table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:
     <div class="card" style="text-align:center">
       <div id="camCount">已拍0张</div>
       <button class="btn sec" id="btnGoMask" style="margin-top:8px">已拍0张 · 点我去遮挡识别</button>
+      <!-- v0.4.2 免遮挡快道:化验单这类无敏感信息的,拍完直接送识别,不过遮挡页 -->
+      <button class="btn grn" id="btnDirect" style="margin-top:8px">⚡ 免遮挡直接识别（化验单等无敏感信息）</button>
     </div>
   </div>
 </div>
@@ -137,7 +144,7 @@ table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:
   <div class="wrap">
     <div class="card">
       <!-- v0.3.0 横图(w/h>1.3)轻提示转正;选一次记住(pai_autorot),以后同类图自动照做不再问 -->
-      <div class="qbar hidden" id="rotBar">这图是横的，需要转正吗？
+      <div class="qbar hidden" id="rotBar">这图是横的：字是正的，还是躺着的？（躺着才点转正）
         <button class="btn sm" id="btnRotYes">转正</button>
         <button class="btn sec sm" id="btnRotNo">不用</button>
       </div>
@@ -293,7 +300,7 @@ table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:
 
 <script>
 'use strict';
-const SW_VERSION='0.4.1';
+const SW_VERSION='0.4.2';
 const $=id=>document.getElementById(id);
 const esc=s=>s; // 一律textContent渲染
 function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',2200);}
@@ -421,7 +428,12 @@ function renderHome(){
     const bp=bill().byPatient[p.id]; // v0.1.4 卡片小字账本
     if(bp){const bd=document.createElement('div');bd.className='cd bill-line';bd.textContent='识别'+bp.calls+'趟 '+billFmt(bp.yuan,2);a.appendChild(bd);}
     const cnt=document.createElement('div');cnt.className='cnt';cnt.textContent='今日'+todayCount(p.id)+'张';
-    c.appendChild(a);c.appendChild(cnt);
+    // v0.4.2 库入口摆明面:长按进库太隐蔽,洪大夫找不到存的内容("储存区没有内容"病灶)
+    const bk=document.createElement('button');bk.className='btn sec sm';bk.textContent='🗂 库';
+    bk.addEventListener('click',e=>{e.stopPropagation();openLib(p.id);});
+    const wrap=document.createElement('div');wrap.style.cssText='margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:6px';
+    cnt.style.marginLeft='0';wrap.appendChild(cnt);wrap.appendChild(bk);
+    c.appendChild(a);c.appendChild(wrap);
     c.addEventListener('click',()=>openCam(p.id));
     c.addEventListener('contextmenu',e=>{e.preventDefault();openLib(p.id);});
     wall.appendChild(c);
@@ -511,6 +523,21 @@ $('btnGoMask').addEventListener('click',()=>{
   const raw=S.photos.filter(x=>x.status==='raw');
   if(!raw.length){toast('没有待遮挡的照片');return;}
   stopStream();S.maskIdx=0;openMask();
+});
+/* v0.4.2 免遮挡快道:无敏感信息的(化验单/检查报告)拍完直接存档+入队识别,不过遮挡页不旋转 */
+$('btnDirect').addEventListener('click',async()=>{
+  const raw=S.photos.filter(x=>x.status==='raw');
+  if(!raw.length){toast('先拍或选一张');return;}
+  stopStream();
+  for(const ph of raw){
+    try{
+      const arch=await makeArchive(ph.data);
+      ph.hasArch=await IDB.put(ph.id,arch);
+      if(!ph.hasArch)toast('本机存图失败(IndexedDB不可用)，刷新后不保留');
+    }catch(e){ph.hasArch=false;toast('存图失败:'+(e.message||e));}
+    ph.status='masked';enqueue(ph);
+  }
+  toast(raw.length+'张直接进识别队列');openQueue();
 });
 
 /* ---------- 遮挡页 ---------- */
@@ -737,11 +764,12 @@ function renderQueue(){
   });
 }
 async function encodeForVision(dataURL){
+  // v0.4.2 1600→2048:密字化验单压到1600字太糊,漏项错字(氯→氧/mmol→%mol)多;费略涨换识别率
   const img=await new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.src=dataURL;});
-  let w=img.naturalWidth,h=img.naturalHeight;const m=1600;
+  let w=img.naturalWidth,h=img.naturalHeight;const m=2048;
   if(Math.max(w,h)>m){const k=m/Math.max(w,h);w=Math.round(w*k);h=Math.round(h*k);}
   const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);
-  return c.toDataURL('image/jpeg',0.8);
+  return c.toDataURL('image/jpeg',0.85);
 }
 /* v0.3.0 提示词升级:先自判类型→化验单按组重排出标准Markdown表/文书原样转录/检查报告分段;方向不正先脑中转正;〔?〕兜底不许编 */
 const OCR_PROMPT='你是医疗文书OCR助手。先判断这张图片属于哪一类，再按对应规则转录：\n'+
@@ -751,7 +779,8 @@ const OCR_PROMPT='你是医疗文书OCR助手。先判断这张图片属于哪�
 '1b.日期时间、标本类型、科室、送检医生这类信息不是化验项目，一律单独写成一行文字（如"送检时间：2026/7/27 6:42"），绝不许塞进表格的任何一格。\n'+
 '2.若是病历文书（病程/入院/出院等）：原样转录，段落保留。\n'+
 '3.若是检查报告：检查所见、诊断结论分段转录。\n'+
-'4.认不出的字用〔?〕标出，不许猜编；数值、单位一个不错；只输出转录内容，不要评论。';
+'4.认不出的字用〔?〕标出，不许猜编；数值、单位一个不错；只输出转录内容，不要评论。\n'+
+'5.重要：若图片模糊、字太小或方向不正到无法可靠辨认，直接输出〔图片不清，建议重拍或转正后再识别〕，绝不许凭经验编造一份报告。';
 /* v0.1.2 花名册自愈:调/v1/models按喜好挑视觉模型,缓存pai_vmodel;v1系2026-08-31下线后kimi兜底 */
 const VMODEL_PREFS=['moonshot-v1-8k-vision-preview','moonshot-v1-32k-vision-preview','moonshot-v1-128k-vision-preview','kimi-k2.5','kimi-k2.6'];
 async function visionModelPick(key){
@@ -773,7 +802,8 @@ async function callVision(dataURL){
   const key=localStorage.getItem('xt_apikey');if(!key)throw new Error('未设置API Key');
   const img=await encodeForVision(dataURL);
   const H={'Content-Type':'application/json','Authorization':'Bearer '+key.replace(/^"|"$/g,'')};
-  const mk=mdl=>JSON.stringify({model:mdl,messages:[{role:'user',content:[{type:'text',text:guardOut(OCR_PROMPT)},{type:'image_url',image_url:{url:img}}]}]});
+  // v0.4.2 max_tokens=4096:病历文书长,默认1024会拦腰截断(真机实测1586病例特点被切断=漏项病根之一)
+  const mk=mdl=>JSON.stringify({model:mdl,max_tokens:4096,messages:[{role:'user',content:[{type:'text',text:guardOut(OCR_PROMPT)},{type:'image_url',image_url:{url:img}}]}]});
   const post=mdl=>fetch('https://api.moonshot.cn/v1/chat/completions',{method:'POST',headers:H,body:mk(mdl)});
   let mdl=await visionModelPick(key),r=await post(mdl);
   if(r.status===404){localStorage.removeItem('pai_vmodel');mdl=await visionModelPick(key);r=await post(mdl);} // 自愈:清缓存重挑再试一次
@@ -819,6 +849,7 @@ function openReview(fid){
   $('rvImg').src=ph.data||''; // v0.2.0 内存大图可能已丢,从idb读存档图
   if(!ph.data)IDB.get(ph.id).then(d=>{if(d&&S.rvFid===fid)$('rvImg').src=d;});
   $('rvText').value=ph.text||'';
+  if((ph.text||'').indexOf('〔图片不清')>=0)toast('AI说图不清：照片可能是躺的，点下方「旋转90°重新识别」'); // v0.4.2 拒识指路
   S.rvCat=guessCat(ph.text||'');
   const rc=$('rvCats');rc.innerHTML='';
   CATS.forEach(c=>{
@@ -834,7 +865,8 @@ $('btnRvOk').addEventListener('click',async()=>{
   const es=entries();es.push({id:'e'+Date.now(),pid:ph.pid,cat:S.rvCat,time:Date.now(),text:$('rvText').value,photoId:ph.hasArch?ph.id:null});
   saveEntries(es);
   S.photos=S.photos.filter(x=>x.id!==ph.id);
-  toast('已归档');show('vHome');renderHome();
+  // v0.4.2 归档后直接开这个病人的库——存没存上一眼看见,不再回首页找不到东西
+  toast('已归档');openLib(ph.pid);
 });
 /* v0.4.1 过目页转正重识别:竖向文件装横向内容(手机竖拍HIS横屏)宽高比检测不到,人工一眼看出躺了点一下——
    canvas转正→换图→重新送AI识别→文本/预判分类刷新;已存档的同步更新存档图,归档的就是正图 */
