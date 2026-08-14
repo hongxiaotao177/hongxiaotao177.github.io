@@ -6,6 +6,9 @@
 <title>拍病历</title>
 <!--
 修改记录:
+拍病历 v0.4.1 2026-08-15
+- 加:过目页「🔄旋转90°重新识别」——竖向文件装横向内容(手机竖拍HIS横屏)宽高比检测不到横躺,人工一眼看出点一下:canvas转正→换图→重送AI识别→文本/预判分类刷新,已存档的同步换正图,账本照记
+- 收紧OCR提示词:①表格一行一项目四列齐全,空缺写"—"不许留空不粘行;②日期时间/标本/科室/送检医生单独成行,绝不许塞进表格(修"尿素/肌酐 2026/7/27 6:42:55"混行+空单元格错位)
 拍病历 v0.4.0 2026-08-14
 - 炒菜区上线:菜谱抽屉(预置4+增改删,删预置=恢复默认)、选菜三档(整份/某类/某天)、今日病程记录自动今昨对比+语音框、结果纯文本一键复制存库(类别AI分析+记账what='分析')、聚合完整病历可重复聚合留5版、文本模型花名册(moonshot-v1-32k→8k→kimi-k2.5,缓存pai_tmodel,404自愈)
 拍病历 v0.3.0 2026-08-14
@@ -165,6 +168,8 @@ table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:
     <div class="card">
       <div class="small">属于：<b id="rvWho"></b> · <span id="rvTime"></span></div>
       <img id="rvImg" style="width:100%;border-radius:10px;margin:8px 0" alt="">
+      <!-- v0.4.1 竖文件装横内容:自动检测不到,手动转正重识别 -->
+      <button class="btn sec sm" id="btnRvRot" style="margin-bottom:8px">🔄 旋转90°重新识别</button>
       <textarea id="rvText"></textarea>
       <label>分类</label>
       <div class="row" id="rvCats"></div>
@@ -288,7 +293,7 @@ table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:
 
 <script>
 'use strict';
-const SW_VERSION='0.4.0';
+const SW_VERSION='0.4.1';
 const $=id=>document.getElementById(id);
 const esc=s=>s; // 一律textContent渲染
 function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',2200);}
@@ -742,6 +747,8 @@ async function encodeForVision(dataURL){
 const OCR_PROMPT='你是医疗文书OCR助手。先判断这张图片属于哪一类，再按对应规则转录：\n'+
 '0.若图片文字方向不正（侧躺/颠倒），请先在脑中转正再转录。\n'+
 '1.若是化验单：按组别重排（血常规/生化/凝血/免疫/病原学/血气/其他），每组先写组名，组下输出标准Markdown表格：| 项目 | 结果 | 单位 | 提示 |，表头下紧跟 |---|---|---|---| 分隔行；箭头↑↓照录进提示列。\n'+
+'1a.表格铁律：一行只放一个项目，四列必须齐全；某列没有内容就写"—"，绝不许留空，绝不许把两个项目粘进同一行。\n'+
+'1b.日期时间、标本类型、科室、送检医生这类信息不是化验项目，一律单独写成一行文字（如"送检时间：2026/7/27 6:42"），绝不许塞进表格的任何一格。\n'+
 '2.若是病历文书（病程/入院/出院等）：原样转录，段落保留。\n'+
 '3.若是检查报告：检查所见、诊断结论分段转录。\n'+
 '4.认不出的字用〔?〕标出，不许猜编；数值、单位一个不错；只输出转录内容，不要评论。';
@@ -828,6 +835,29 @@ $('btnRvOk').addEventListener('click',async()=>{
   saveEntries(es);
   S.photos=S.photos.filter(x=>x.id!==ph.id);
   toast('已归档');show('vHome');renderHome();
+});
+/* v0.4.1 过目页转正重识别:竖向文件装横向内容(手机竖拍HIS横屏)宽高比检测不到,人工一眼看出躺了点一下——
+   canvas转正→换图→重新送AI识别→文本/预判分类刷新;已存档的同步更新存档图,归档的就是正图 */
+$('btnRvRot').addEventListener('click',async()=>{
+  const ph=S.photos.find(x=>x.id===S.rvFid);if(!ph)return;
+  const btn=$('btnRvRot');btn.disabled=true;btn.textContent='转正识别中…';
+  try{
+    let src=ph.data;if(!src)src=await IDB.get(ph.id);
+    if(!src)throw new Error('图没了');
+    const img=new Image();await new Promise((r,j)=>{img.onload=r;img.onerror=()=>j(new Error('图加载失败'));img.src=src;});
+    const c=document.createElement('canvas');c.width=img.naturalHeight;c.height=img.naturalWidth;
+    const g=c.getContext('2d');g.translate(c.width,0);g.rotate(Math.PI/2);g.drawImage(img,0,0);
+    const nd=c.toDataURL('image/jpeg',0.9);
+    ph.data=nd;$('rvImg').src=nd;
+    if(ph.hasArch){try{ph.hasArch=await IDB.put(ph.id,await makeArchive(nd));}catch(e){}} // 存档换正图
+    ph.text=await callVision(nd);
+    billAiUse(ph.pid,callVision._model,callVision._usage,OCR_PROMPT.length,(ph.text||'').length,'识别'); // 账本照记
+    $('rvText').value=ph.text||'';
+    S.rvCat=guessCat(ph.text||''); // 预判分类刷新
+    $('rvCats').querySelectorAll('button').forEach(x=>{const on=x.textContent===S.rvCat;x.classList.toggle('sec',!on);});
+    toast('转正重识别完成');
+  }catch(e){toast('重识别失败：'+String(e.message||e).slice(0,40));}
+  finally{btn.disabled=false;btn.textContent='🔄 旋转90°重新识别';}
 });
 $('btnRvDrop').addEventListener('click',()=>{
   if(!confirm('丢弃这张照片和识别结果?'))return;
