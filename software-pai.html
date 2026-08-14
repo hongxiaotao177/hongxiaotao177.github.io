@@ -6,6 +6,9 @@
 <title>拍病历</title>
 <!--
 修改记录:
+拍病历 v0.1.4 2026-08-14
+- 加①:识别账本(按病人分账+设置页总账+卡片小字),usage记账没有usage按图1000token+字符/2估算标est,存pai_bill_v1不串小涛
+- 修②:黑块硬夹图内(拖/缩放把手全程clamp)+越界老块进遮挡页自动拉回+新块落在当前可视中心
 拍病历 v0.1.3 2026-08-14
 - 加:拍摄页「🖼️从相册选图」按钮（不带capture的独立input，不在家时也能试软件）
 拍病历 v0.1.2 2026-08-14
@@ -174,6 +177,13 @@ table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:
       <div class="row" style="margin:10px 0"><button class="btn sm" id="btnBackup">备份到GitHub</button><button class="btn sec sm" id="btnRestore">从GitHub恢复</button></div>
       <div id="bakMsg" class="small"></div>
     </div>
+    <!-- v0.1.4 识别账本 -->
+    <div class="card">
+      <b>💰 识别账本</b>
+      <div id="billMain" style="margin:6px 0"></div>
+      <div class="small">估算价目2026-08-14·官方账单为准</div>
+      <div class="row" style="margin-top:8px"><button class="btn red sm" id="btnBillClear">🧹 清空账本</button></div>
+    </div>
     <div class="card"><b>看门人日志</b><div id="guardLog" class="small" style="margin-top:6px"></div></div>
   </div>
 </div>
@@ -182,7 +192,7 @@ table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:
 
 <script>
 'use strict';
-const SW_VERSION='0.1.3';
+const SW_VERSION='0.1.4';
 const $=id=>document.getElementById(id);
 const esc=s=>s; // 一律textContent渲染
 function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',2200);}
@@ -220,6 +230,36 @@ function guardOut(text){
   return out;
 }
 
+/* ---------- v0.1.4 识别账本（pai_bill_v1,别串小涛的xt_aibill_v1） ---------- */
+const PAI_PRICE={ // 2026-08-14官价,每月复查
+  'moonshot-v1-8k-vision-preview':{in:12,out:12},
+  'moonshot-v1-32k-vision-preview':{in:24,out:24},
+  'moonshot-v1-128k-vision-preview':{in:60,out:60},
+  'kimi-k2.5':{in:4,out:16},
+  'kimi-k2.6':{in:4,out:16}
+}; // 元/百万tokens,未知模型按8k-vision估
+function bill(){const b=LS.get('pai_bill_v1',null);return b||{calls:0,in:0,out:0,est:0,byModel:{},byPatient:{},log:[]};}
+function billAiUse(pid,model,usage,inChars,outChars,what){
+  const b=bill();let est=false,tin=0,tout=0;
+  if(usage&&(usage.prompt_tokens!=null||usage.completion_tokens!=null)){
+    tin=usage.prompt_tokens|0;tout=usage.completion_tokens|0; // 视觉模型的图片token含在prompt_tokens里
+  }else{est=true;tin=1000+Math.ceil((inChars|0)/2);tout=Math.ceil((outChars|0)/2);} // 图约1000token+文字字符/2
+  model=model||'moonshot-v1-8k-vision-preview';
+  b.calls++;b.in+=tin;b.out+=tout;if(est)b.est++;
+  if(!b.byModel[model])b.byModel[model]={calls:0,in:0,out:0};
+  const bm=b.byModel[model];bm.calls++;bm.in+=tin;bm.out+=tout;
+  if(pid){if(!b.byPatient[pid])b.byPatient[pid]={calls:0,in:0,out:0,yuan:0};
+    const bp=b.byPatient[pid];bp.calls++;bp.in+=tin;bp.out+=tout;
+    const pr=PAI_PRICE[model]||PAI_PRICE['moonshot-v1-8k-vision-preview'];
+    bp.yuan+=(tin*pr.in+tout*pr.out)/1e6;}
+  b.log.push({t:Date.now(),model:model,in:tin,out:tout,what:what||'识别'}); // what预留
+  if(b.log.length>50)b.log=b.log.slice(-50);
+  LS.set('pai_bill_v1',b);
+}
+function billYuan(){const b=bill();let y=0;for(const m in b.byModel){const p=PAI_PRICE[m]||PAI_PRICE['moonshot-v1-8k-vision-preview'],e=b.byModel[m];y+=(e.in*p.in+e.out*p.out)/1e6;}return y;}
+function billYuanOf(pid){const bp=bill().byPatient[pid];return bp?bp.yuan:0;}
+function billFmt(y,fix){return y<0.01?'不足1分钱':'¥'+y.toFixed(fix);}
+
 /* ---------- 主页 ---------- */
 function renderHome(){
   const wall=$('wall');wall.innerHTML='';
@@ -231,6 +271,8 @@ function renderHome(){
     const n=document.createElement('div');n.className='nm';n.textContent=p.name;
     const cd=document.createElement('div');cd.className='cd';cd.textContent=p.code+(p.bed?' · 床'+p.bed:'');
     a.appendChild(n);a.appendChild(cd);
+    const bp=bill().byPatient[p.id]; // v0.1.4 卡片小字账本
+    if(bp){const bd=document.createElement('div');bd.className='cd bill-line';bd.textContent='识别'+bp.calls+'趟 '+billFmt(bp.yuan,2);a.appendChild(bd);}
     const cnt=document.createElement('div');cnt.className='cnt';cnt.textContent='今日'+todayCount(p.id)+'张';
     c.appendChild(a);c.appendChild(cnt);
     c.addEventListener('click',()=>openCam(p.id));
@@ -339,10 +381,17 @@ function loadMaskPhoto(){
 }
 function buildBlocks(){
   const w=$('maskWrap');w.querySelectorAll('.blk').forEach(b=>b.remove());
-  S.maskBlocks=[{x:0,y:0,w:1,h:0.08}]; // 黑块1自动盖顶部8%
+  // v0.1.4 有老块(老数据/老会话)不丢,越界的拉回图内最近位置;没块才给默认黑块1
+  if(S.maskBlocks&&S.maskBlocks.length){S.maskBlocks.forEach(clampBlk);}else{S.maskBlocks=[{x:0,y:0,w:1,h:0.08}];}
   renderBlocks();
 }
-function addBlock(){S.maskBlocks.push({x:0.3,y:0.3,w:0.4,h:0.12});renderBlocks();}
+function addBlock(){
+  // v0.1.4 新块落在当前可视区域中心对应的图片坐标(放大了也在看得见的地方),不再固定顶部
+  const wrap=$('maskWrap'),W=wrap.clientWidth,H=$('maskImg').clientHeight;
+  const cx=((W/2-Z.tx)/Z.s)/W,cy=((wrap.clientHeight/2-Z.ty)/Z.s)/H;
+  const b={x:cx-0.2,y:cy-0.06,w:0.4,h:0.12};
+  clampBlk(b);S.maskBlocks.push(b);renderBlocks();
+}
 $('btnAddBlk').addEventListener('click',addBlock);
 function clampBlk(b){b.w=Math.max(0.03,Math.min(b.w,1));b.h=Math.max(0.02,Math.min(b.h,1));b.x=Math.max(0,Math.min(b.x,1-b.w));b.y=Math.max(0,Math.min(b.y,1-b.h));}
 function renderBlocks(){
@@ -369,8 +418,8 @@ function bindBlk(el,hdl,b,idx){
     const pt=e.touches?e.touches[0]:e;
     const W=$('maskWrap').clientWidth,H=$('maskImg').clientHeight;
     const dx=(pt.clientX-sx)/W,dy=(pt.clientY-sy)/H;moved+=Math.abs(dx)+Math.abs(dy);
-    if(mode==='move'){b.x=ox+dx;b.y=oy+dy;}else{b.w=ow+dx;b.h=oh+dy;}
-    clampBlk(b);
+    if(mode==='move'){b.x=ox+dx;b.y=oy+dy;}else{b.w=ow+dx;b.h=oh+dy;b.w=Math.min(b.w,1-ox);b.h=Math.min(b.h,1-oy);} // v0.1.4 把手缩放也不许越右下界
+    clampBlk(b); // v0.1.4 全程硬夹图内(0~1,角都不许出)
     el.style.left=(b.x*W)+'px';el.style.top=(b.y*H)+'px';el.style.width=(b.w*W)+'px';el.style.height=(b.h*H)+'px';
     e.preventDefault();
   }
@@ -426,6 +475,7 @@ $('btnMaskOk').addEventListener('click',async()=>{
   if(!ph){finishMaskAll();return;}
   ph.data=await compositeMask(ph.data,S.maskBlocks);
   ph.status='masked';enqueue(ph);
+  S.maskBlocks=[]; // v0.1.4 这张画完清掉,下张回默认黑块1(配合buildBlocks保老块)
   S.maskIdx++;
   if(rawPhotos().length){loadMaskPhoto();}else{finishMaskAll();}
 });
@@ -480,16 +530,22 @@ async function visionModelPick(key){
   LS.set('pai_vmodel',pick);return pick;
 }
 async function callVision(dataURL){
-  if(window.__mockVision)return window.__mockVision(dataURL);
+  if(window.__mockVision){ // v0.1.4 mock可回{text,usage,model}顺便记账
+    const m=await window.__mockVision(dataURL);
+    if(m&&typeof m==='object'&&m.text!=null){callVision._usage=m.usage||null;callVision._model=m.model||'moonshot-v1-8k-vision-preview';return m.text;}
+    callVision._usage=null;callVision._model='moonshot-v1-8k-vision-preview';return m;
+  }
   const key=localStorage.getItem('xt_apikey');if(!key)throw new Error('未设置API Key');
   const img=await encodeForVision(dataURL);
   const H={'Content-Type':'application/json','Authorization':'Bearer '+key.replace(/^"|"$/g,'')};
   const mk=mdl=>JSON.stringify({model:mdl,messages:[{role:'user',content:[{type:'text',text:guardOut(OCR_PROMPT)},{type:'image_url',image_url:{url:img}}]}]});
   const post=mdl=>fetch('https://api.moonshot.cn/v1/chat/completions',{method:'POST',headers:H,body:mk(mdl)});
-  let r=await post(await visionModelPick(key));
-  if(r.status===404){localStorage.removeItem('pai_vmodel');r=await post(await visionModelPick(key));} // 自愈:清缓存重挑再试一次
+  let mdl=await visionModelPick(key),r=await post(mdl);
+  if(r.status===404){localStorage.removeItem('pai_vmodel');mdl=await visionModelPick(key);r=await post(mdl);} // 自愈:清缓存重挑再试一次
   if(!r.ok)throw new Error('HTTP '+r.status);
-  const j=await r.json();return j.choices[0].message.content;
+  const j=await r.json();
+  callVision._usage=j.usage||null;callVision._model=mdl; // v0.1.4 记下usage给账本
+  return j.choices[0].message.content;
 }
 async function runQueue(){
   if(S.qRunning)return;S.qRunning=true;
@@ -497,7 +553,9 @@ async function runQueue(){
     let ph;
     while((ph=S.photos.find(x=>x.status==='queued'))){
       ph.status='doing';if($('vQueue').classList.contains('on'))renderQueue();
-      try{ph.text=await callVision(ph.data);ph.status='done';}
+      try{ph.text=await callVision(ph.data);
+        billAiUse(ph.pid,callVision._model,callVision._usage,OCR_PROMPT.length,(ph.text||'').length,'识别'); // v0.1.4 记账
+        ph.status='done';}
       catch(e){ph.status='fail';ph.err=String(e.message||e);}
       if($('vQueue').classList.contains('on'))renderQueue();
     }
@@ -548,6 +606,9 @@ function renderLib(mode,fullId){
   const p=patients().find(x=>x.id===S.libPid);if(!p){show('vHome');renderHome();return;}
   $('libName').textContent=p.name+' 的库（'+p.code+'）';
   const body=$('libBody');body.innerHTML='';
+  const bp2=bill().byPatient[p.id]; // v0.1.4 本病人分账
+  if(bp2){const bd=document.createElement('div');bd.className='small';bd.id='libBill';bd.style.marginBottom='8px';
+    bd.textContent='本病人识别花费约'+billFmt(bp2.yuan,3)+'（'+bp2.calls+'趟）';body.appendChild(bd);}
   const list=patEntries(p.id);
   if(mode==='trend'){renderTrends(body,list);return;}
   if(mode==='full'){renderFull(body,p,list);return;}
@@ -659,6 +720,7 @@ function openSet(){show('vSet');
   $('setKey').value=localStorage.getItem('xt_apikey')||'';$('setGhU').value=localStorage.getItem('xt_gh_user')||'';
   $('setGhT').value=localStorage.getItem('xt_gh_tok')||'';$('setGhR').value=localStorage.getItem('xt_gh_repo')||'';
   const gl=$('guardLog');gl.innerHTML='';
+  const bb=bill();$('billMain').textContent='累计'+bb.calls+'趟 · 估算花费'+billFmt(billYuan(),2); // v0.1.4
   const lg=guardLog();
   if(!lg.length)gl.textContent='（暂无替换记录）';
   lg.slice(-10).reverse().forEach(x=>{const d=document.createElement('div');d.textContent=fmtT(x.t)+' 命中替换:'+x.codes.join(',');gl.appendChild(d);});
@@ -669,6 +731,10 @@ $('btnSaveSet').addEventListener('click',()=>{
   localStorage.setItem('xt_apikey',$('setKey').value.trim());localStorage.setItem('xt_gh_user',$('setGhU').value.trim());
   localStorage.setItem('xt_gh_tok',$('setGhT').value.trim());localStorage.setItem('xt_gh_repo',$('setGhR').value.trim());
   toast('已保存');
+});
+$('btnBillClear').addEventListener('click',()=>{ // v0.1.4 清空账本
+  if(!confirm('清空识别账本？不可恢复。'))return;
+  localStorage.removeItem('pai_bill_v1');openSet();toast('账本已清空');
 });
 /* 备份包:只有代号+内容,无真名 */
 function buildBackup(){
@@ -728,6 +794,7 @@ window.__pj={
   parseLabs,buildTrends,buildFullDoc,buildBackup,restoreBackup,guessCat,runQueue,
   visionModelPick,callVision,enqueue,zoomSet,zoomReset,Z,
   patients,entries,savePatients,saveEntries,S,openCam,openMask,openReview,openLib,addShot,
+  bill,billAiUse,billYuan,billFmt,PAI_PRICE,openSet,addBlock,renderBlocks,buildBlocks,
   _ls:LS
 };
 renderHome();
