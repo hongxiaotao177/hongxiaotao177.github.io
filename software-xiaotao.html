@@ -42,6 +42,21 @@ window.addEventListener('load', function(){
   小涛笔记（学习笔记2代）· 单文件版
 ==========================================================
   修改记录：
+   v0.3.30 2026-08-14 三期「📚 我的书」上线：
+        ①建书三条路拟目录——Kimi拟(callAI·what='拟目录')/本地AI拟(Ollama，设置页加
+          "本地AI地址"默认 http://127.0.0.1:11434 + 模型名默认 qwen2.5:3b，调/api/generate，
+          连不上提示"换Kimi或手粘")/自己手粘(按行解析)；目录页章可改名/删除/末尾加章；
+        ②每章小作坊四个素材口子勾选组合：AI自身知识(可关，关则严格只用素材)/
+          资料库切块(只收已切完done的资料，二字组打分最多5段)/临时粘文献(超2000字先
+          AI压成≤1000字素材卡 what='压素材')/手写笔记(按章标题搜最多3篇)；
+          素材带出身证编号【素材n·来自…】进锅，句尾标[n]，章末"📖 本章来源"清单带
+          重要性标记(资料定级标/refTag身份牌/📝笔记/🤖纯AI)，标准Markdown；
+          章正文可手动编辑"💾保存修改"；写书记账 what='写书' byBook挂书id；
+        ③存储：书台账 xt_books_v1 进localStorage并进云备份json，章正文存IndexedDB
+          chunks仓(key=bookId_chId，仿切块模式，不进云包)；
+        ④📤导出全书(Obsidian)：一章一个md(首行#章标题、末尾上一章/下一章[[双链]]、
+          来源里资料名挂[[双链]])+ _目录.md；壳桥存授权文件夹(仿btnRefsSave)，
+          无桥退化为合并大md复制剪贴板。
    v0.3.29 2026-08-14 黄牌带原因：书库"自动切失败"后面直接写明失败原因（截40字），
         一眼分清网络/AI/额度问题，不用点进详情猜。原因本来v0.3.28就记了台账，只是没画出来。
    v0.3.28 2026-08-14 三件事：①书库「自动切片巡逻」——打开资料库自动扫每本书，
@@ -320,10 +335,28 @@ window.addEventListener('load', function(){
     <div id="noteList"></div>
   </details>
 
-  <!-- 📚 我的书（三期） -->
-  <details class="card" style="opacity:.6;">
-    <summary>📚 我的书</summary>
-    <div class="hint">三期上线：AI拟目录、逐章丰满、挂资料库切块、导Word、发PPT工坊。</div>
+  <!-- 📚 我的书（v0.3.30 三期上线：建书拟目录三条路/每章小作坊四素材口子/导出Obsidian） -->
+  <details class="card" id="booksBox">
+    <summary id="booksSum">📚 我的书</summary>
+    <div style="margin-top:4px;">
+      <button class="btn" id="btnNewBook">📖 新建一本书</button>
+    </div>
+    <div id="bookNewBox" class="hidden" style="margin-top:8px; background:#faf6ec; border-radius:10px; padding:10px;">
+      <label for="bookTitleIn">书名主题</label>
+      <input type="text" id="bookTitleIn" placeholder="如：ICU气道管理手册">
+      <div class="hint">目录三条路任选：Kimi拟 / 本地AI拟（Ollama，地址在⚙️设置里）/ 自己手粘。</div>
+      <div style="margin-top:6px;">
+        <button class="btn" id="btnTocKimi">🤖 Kimi 拟目录</button>
+        <button class="btn secondary" id="btnTocLocal">🏠 本地AI拟目录</button>
+        <button class="btn secondary" id="btnTocHand">✍️ 自己手粘目录</button>
+      </div>
+      <div id="bookHandBox" class="hidden">
+        <textarea id="bookTocTa" rows="7" placeholder="一行一章，把现成目录粘进来，如：&#10;第一章 气道黏液从哪来&#10;第二章 高渗盐水雾化"></textarea>
+        <button class="btn" id="btnTocHandGo" style="margin-top:6px;">✅ 按这个目录建书</button>
+      </div>
+      <div class="msg" id="bookMsg"></div>
+    </div>
+    <div id="bookList" style="margin-top:8px;"></div>
   </details>
 
   <!-- ⚙️ 设置 -->
@@ -349,6 +382,14 @@ window.addEventListener('load', function(){
       <button class="btn secondary" id="btnAITest">🩺 AI 体检</button>
     </div>
     <div class="msg" id="keyMsg"></div>
+
+    <!-- v0.3.30 本地AI（Ollama）：我的书拟目录用，连不上就换Kimi或手粘 -->
+    <h2 style="margin-top:18px;">🏠 本地AI（Ollama，可不填）</h2>
+    <label for="ollamaUrl">本地AI地址</label>
+    <input type="text" id="ollamaUrl" placeholder="http://127.0.0.1:11434" autocomplete="off">
+    <label for="ollamaModel">本地AI模型名</label>
+    <input type="text" id="ollamaModel" placeholder="qwen2.5:3b" autocomplete="off">
+    <div class="hint">跟「💾 保存 Key」一起保存。建书时选「本地AI拟目录」会调这台机器的 Ollama /api/generate。</div>
 
     <h2 style="margin-top:18px;">☁️ 云备份（GitHub 私有仓库）</h2>
     <label for="ghUser">GitHub 用户名</label>
@@ -507,6 +548,56 @@ window.addEventListener('load', function(){
   </div>
 </div>
 
+<!-- v0.3.30 书页（目录+导出） -->
+<div class="page hidden" id="bookPage">
+  <button class="btn secondary" id="btnBookBack">← 返回我的书</button>
+  <div class="card" style="margin-top:12px;">
+    <h2 id="bookTitleH"></h2>
+    <div id="bookMeta" class="hint"></div>
+    <div style="margin-top:8px;">
+      <button class="btn secondary" id="btnChapAdd">➕ 末尾加一章</button>
+      <button class="btn" id="btnBookExport">📤 导出全书</button>
+      <button class="btn danger" id="btnBookDel">🗑 删除本书</button>
+    </div>
+    <div class="msg" id="bookPageMsg"></div>
+  </div>
+  <div class="card">
+    <h2>📑 目录（点章名进小作坊）</h2>
+    <div id="chapList"></div>
+  </div>
+</div>
+
+<!-- v0.3.30 章工作坊页（四个素材口子） -->
+<div class="page hidden" id="chapPage">
+  <button class="btn secondary" id="btnChapBack">← 返回目录</button>
+  <div class="card" style="margin-top:12px;">
+    <h2 id="chapTitleH"></h2>
+    <div class="hint" style="margin-top:0;">四个素材口子，打勾随便组合：</div>
+    <label style="font-size:15px; color:#4a3f2a;"><input type="checkbox" id="ckAI" checked style="width:20px;height:20px;vertical-align:-4px;"> 🤖 AI自身知识<span class="hint" style="display:inline;">（默认勾；只用手粘素材时可关掉，AI会严格只用所给素材）</span></label>
+    <label style="font-size:15px; color:#4a3f2a;"><input type="checkbox" id="ckLib" checked style="width:20px;height:20px;vertical-align:-4px;"> 📚 资料库切块<span class="hint" style="display:inline;">（只收已切完的资料，按章标题挑，最多5段）</span></label>
+    <div id="chapLibList" style="margin:2px 0 6px 26px;"></div>
+    <label style="font-size:15px; color:#4a3f2a;"><input type="checkbox" id="ckPaste" style="width:20px;height:20px;vertical-align:-4px;"> 📄 临时粘文献<span class="hint" style="display:inline;">（超2000字先AI压成≤1000字素材卡）</span></label>
+    <div id="chapPasteBox" class="hidden" style="margin:2px 0 6px 26px;">
+      <textarea id="chapPaste" rows="5" placeholder="把文献原文粘这里"></textarea>
+    </div>
+    <label style="font-size:15px; color:#4a3f2a;"><input type="checkbox" id="ckNote" checked style="width:20px;height:20px;vertical-align:-4px;"> 📝 我的手写笔记<span class="hint" style="display:inline;">（按章标题搜，最多3篇）</span></label>
+    <div id="chapNoteList" style="margin:2px 0 6px 26px;"></div>
+    <button class="btn" id="btnChapWrite" style="margin-top:8px;">🤖 开写本章</button>
+    <div class="msg" id="chapMsg"></div>
+  </div>
+  <div class="card">
+    <h2>📄 本章正文</h2>
+    <div class="md-body" id="chapBody"></div>
+    <div id="chapEditBox" class="hidden">
+      <textarea id="chapTa" rows="16"></textarea>
+    </div>
+    <div style="margin-top:8px;">
+      <button class="btn secondary" id="btnChapEdit">✍️ 手动编辑</button>
+      <button class="btn hidden" id="btnChapSave">💾 保存修改</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>__bc('C主脚本前');</script>
@@ -515,7 +606,7 @@ window.addEventListener('load', function(){
 (function(){
 __bc('D脚本启动');
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.3.29';
+var SW_VERSION = '0.3.30';
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
@@ -830,6 +921,9 @@ function showPage(which){
   document.querySelectorAll('.page')[0].classList.toggle('hidden', which !== 'home');
   $('detailPage').classList.toggle('hidden', which !== 'detail');
   $('libPage').classList.toggle('hidden', which !== 'lib');
+  /* v0.3.30 三期：我的书两个新页 */
+  var bp = $('bookPage'); if(bp) bp.classList.toggle('hidden', which !== 'book');
+  var cp = $('chapPage'); if(cp) cp.classList.toggle('hidden', which !== 'chap');
   var ps = document.querySelectorAll('.page');
   for(var i = 0; i < ps.length; i++) ps[i].scrollTop = 0; /* v0.3.17 滚动的是.page容器，不再是window */
   if(window.__nudge) setTimeout(__nudge, 50);  /* v0.3.11 */
@@ -1050,7 +1144,8 @@ $('ghPushBtn').addEventListener('click', function(){
     });
   });
   chain.then(function(){
-    return ghPutFile('xiaotao-backup.json', JSON.stringify({ savedAt: new Date().toISOString(), notes: notes, lib: lib }), '小涛笔记备份');
+    /* v0.3.30：书台账顺手并入同一份备份json（章节正文在本机IndexedDB，不进备份） */
+    return ghPutFile('xiaotao-backup.json', JSON.stringify({ savedAt: new Date().toISOString(), notes: notes, lib: lib, books: loadBooks() }), '小涛笔记备份');
   }).then(function(){
     /* vault 全量重写：笔记 md + 资料 md + 索引 */
     var chain2 = Promise.resolve();
@@ -1092,7 +1187,8 @@ $('ghPullBtn').addEventListener('click', function(){
     });
     chain.then(function(){
       saveLib(lib);
-      renderList(); renderLib();
+      if(Array.isArray(data.books)) saveBooks(data.books);   /* v0.3.30：书台账一并恢复（正文在本机，不在云包里） */
+      renderList(); renderLib(); renderBooks();
       showMsg($('ghMsg'), '✅ 恢复完成（' + (data.notes || []).length + ' 篇笔记 + ' + lib.length + ' 份资料，' + (data.savedAt || '').slice(0, 10) + ' 的备份）', 'ok');
     });
   }).catch(function(e){ showMsg($('ghMsg'), '❌ 恢复失败：' + e.message, 'err'); });
@@ -1229,6 +1325,9 @@ function loadSettings(){
       $('modelsMsg').textContent = '❌ 查不到：' + e.message.slice(0, 60);
     });
   });
+  /* v0.3.30 本地AI（Ollama）设置 */
+  $('ollamaUrl').value = localStorage.getItem('xt_ollama_url') || 'http://127.0.0.1:11434';
+  $('ollamaModel').value = localStorage.getItem('xt_ollama_model') || 'qwen2.5:3b';
   $('ghUser').value = localStorage.getItem('xt_gh_user') || '';
   $('ghTok').value = localStorage.getItem('xt_gh_tok') || '';
   $('ghRepo').value = localStorage.getItem('xt_gh_repo') || '';
@@ -1236,6 +1335,9 @@ function loadSettings(){
 $('btnSaveKey').addEventListener('click', function(){
   hxPut('xt_apikey', $('apiKey').value.trim());
   hxPut('xt_aimodel', $('modelSel').value);
+  /* v0.3.30 本地AI设置跟着一起存 */
+  localStorage.setItem('xt_ollama_url', ($('ollamaUrl').value.trim() || 'http://127.0.0.1:11434'));
+  localStorage.setItem('xt_ollama_model', ($('ollamaModel').value.trim() || 'qwen2.5:3b'));
   showMsg($('keyMsg'), '💾 已保存（公共钱罐，其他软件也有了）', 'ok');
 });
 $('ghSave').addEventListener('click', function(){
@@ -2230,11 +2332,433 @@ $('btnAnsToNote').addEventListener('click', function(){
   if(n) openDetail(n.id);
 });
 
+/* ==================== v0.3.30 三期：我的书 ====================
+   台账 xt_books_v1：{id,title,chapters:[{id,t,state,src}],created}
+   章节正文存 IndexedDB chunks 仓（仿资料切块模式），key = bookId_chId。
+   账本：所有写书AI调用 aiBookCtx(book.id)，what 用 '拟目录'/'压素材'/'写书'。 */
+var LS_BOOKS = 'xt_books_v1';
+function loadBooks(){ try{ var v = JSON.parse(localStorage.getItem(LS_BOOKS) || '[]'); return Array.isArray(v) ? v : []; }catch(e){ return []; } }
+function saveBooks(list){ localStorage.setItem(LS_BOOKS, JSON.stringify(list)); }
+function getBook(id){ return loadBooks().filter(function(b){ return b.id === id; })[0] || null; }
+function bookChapKey(bid, cid){ return bid + '_' + cid; }
+
+/* 目录文本 → 章名清单（按行解析，剥"第X章/1./-"前导） */
+function parseToc(text){
+  return String(text || '').split(/\n+/).map(function(s){ return s.trim(); }).filter(function(s){ return s.length > 0; })
+    .map(function(s){
+      return s.replace(/^第[0-9一二三四五六七八九十百]+[章节篇部][：:、\s]*/, '')
+              .replace(/^\d{1,3}[.、．\s]+/, '')
+              .replace(/^[-*•·]\s*/, '').trim();
+    }).filter(function(s){ return s.length > 0; });
+}
+function bookCreate(title, tocLines){
+  var b = { id: uid(), title: title, created: Date.now(),
+    chapters: tocLines.map(function(t){ return { id: uid(), t: t, state: '未写', src: [] }; }) };
+  var books = loadBooks(); books.unshift(b); saveBooks(books); renderBooks();
+  return b;
+}
+/* 本地AI（Ollama）：设置页地址+模型，/api/generate */
+function ollamaCall(prompt){
+  var base = (localStorage.getItem('xt_ollama_url') || 'http://127.0.0.1:11434').replace(/\/+$/, '');
+  var model = localStorage.getItem('xt_ollama_model') || 'qwen2.5:3b';
+  return fetchWithTimeout(base + '/api/generate', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: model, prompt: prompt, stream: false })
+  }, 60000).then(function(resp){
+    if(!resp.ok) throw new Error('本地AI报错 ' + resp.status);
+    return resp.json();
+  }).then(function(d){
+    var t = (d && d.response) || '';
+    if(!t.trim()) throw new Error('本地AI回了空内容');
+    return t;
+  });
+}
+var TOC_SYS = '你是医学出书目录助手。给ICU医生要写的书拟目录，一行一章，只回章节清单（每行只写章名，不要编号、不要客套话）。';
+/* --- 建书面板 --- */
+$('btnNewBook').addEventListener('click', function(){
+  $('bookNewBox').classList.toggle('hidden');
+});
+function bookNewTitle(){
+  var t = $('bookTitleIn').value.trim();
+  if(!t){ showMsg($('bookMsg'), '先写书名主题。', 'err'); return ''; }
+  return t;
+}
+function bookTocDone(title, lines, from){
+  if(!lines.length){ showMsg($('bookMsg'), '目录是空的，没建成。', 'err'); return; }
+  $('bookMsg').className = 'msg';
+  var b = bookCreate(title, lines);
+  $('bookNewBox').classList.add('hidden');
+  $('bookTitleIn').value = ''; $('bookTocTa').value = '';
+  toast('✅ 书建好了：' + lines.length + ' 章（' + from + '）', 2500);
+  openBook(b.id);
+}
+$('btnTocKimi').addEventListener('click', function(){
+  var t = bookNewTitle(); if(!t) return;
+  $('btnTocKimi').disabled = true;
+  showMsg($('bookMsg'), '🤖 Kimi 正在拟目录（约十几秒）…', 'ok');
+  callAI(TOC_SYS, '书名主题：' + t, 2000, null, '拟目录').then(function(txt){
+    $('btnTocKimi').disabled = false;
+    bookTocDone(t, parseToc(txt), 'Kimi拟');
+  }).catch(function(e){
+    $('btnTocKimi').disabled = false;
+    showMsg($('bookMsg'), '❌ 拟目录没成：' + aiErrText(e) + '。可换本地AI或手粘。', 'err');
+  });
+});
+$('btnTocLocal').addEventListener('click', function(){
+  var t = bookNewTitle(); if(!t) return;
+  $('btnTocLocal').disabled = true;
+  showMsg($('bookMsg'), '🏠 本地AI 正在拟目录（本地模型可能慢一点）…', 'ok');
+  ollamaCall(TOC_SYS + '\n书名主题：' + t).then(function(txt){
+    $('btnTocLocal').disabled = false;
+    bookTocDone(t, parseToc(txt), '本地AI拟');
+  }).catch(function(e){
+    $('btnTocLocal').disabled = false;
+    showMsg($('bookMsg'), '❌ 本地AI没接上，换Kimi或手粘（' + String(e.message || e).slice(0, 40) + '）', 'err');
+  });
+});
+$('btnTocHand').addEventListener('click', function(){
+  $('bookHandBox').classList.toggle('hidden');
+});
+$('btnTocHandGo').addEventListener('click', function(){
+  var t = bookNewTitle(); if(!t) return;
+  bookTocDone(t, parseToc($('bookTocTa').value), '手粘');
+});
+/* --- 书清单 --- */
+function renderBooks(){
+  var books = loadBooks();
+  $('booksSum').textContent = '📚 我的书（' + books.length + '本）';
+  var box = $('bookList');
+  if(!books.length){ box.innerHTML = '<div class="hint">还没有书，点上方「📖 新建一本书」。</div>'; return; }
+  box.innerHTML = '';
+  books.forEach(function(b){
+    var done = (b.chapters || []).filter(function(c){ return c.state === '已写'; }).length;
+    var row = document.createElement('div');
+    row.className = 'lib-row';
+    row.innerHTML = '<span class="gtag">📖</span><div class="t">' + esc(b.title) + '</div>' +
+      '<div class="d">' + (b.chapters || []).length + '章 · 已写' + done + '</div>';
+    row.querySelector('.t').addEventListener('click', function(){ openBook(b.id); });
+    box.appendChild(row);
+  });
+}
+/* --- 书页（目录） --- */
+var curBookId = null;
+function openBook(id){
+  var b = getBook(id); if(!b) return;
+  curBookId = id;
+  $('bookTitleH').textContent = '📖 ' + b.title;
+  var _bc = bill().byBook[id];
+  $('bookMeta').textContent = '建于 ' + fmtTime(b.created).slice(0, 9) +
+    ((_bc && _bc.calls) ? ' · 本书AI花费约 ' + billFmt3(_bc.yuan || 0) + '（' + _bc.calls + '趟）' : '');
+  $('bookPageMsg').className = 'msg';
+  var box = $('chapList'); box.innerHTML = '';
+  (b.chapters || []).forEach(function(c, i){
+    var row = document.createElement('div');
+    row.className = 'chunk-row';
+    row.innerHTML = '<button class="cb bk-ren" style="margin-left:4px;">✏️ 改名</button>' +
+      '<button class="cb bk-del">🗑 删除</button>' +
+      '<div class="ct">' + (c.state === '已写' ? '✅ ' : '⚪ ') + (i + 1) + '. ' + esc(c.t) +
+      ' <span style="font-size:12px;color:#b5aa9c;">' + (c.state === '已写' ? '已写' : '未写') + '</span></div>';
+    row.querySelector('.ct').addEventListener('click', function(){ openChap(b.id, c.id); });
+    row.querySelector('.bk-ren').addEventListener('click', function(){
+      var nt = prompt('新章名：', c.t);
+      if(nt && nt.trim()){
+        var bs = loadBooks(); var bb = bs.filter(function(x){ return x.id === b.id; })[0];
+        var cc = bb.chapters.filter(function(x){ return x.id === c.id; })[0];
+        cc.t = nt.trim(); saveBooks(bs); openBook(b.id);
+      }
+    });
+    row.querySelector('.bk-del').addEventListener('click', function(){
+      if(!confirm('删掉「' + c.t + '」这一章？（正文一起删）')) return;
+      var bs = loadBooks(); var bb = bs.filter(function(x){ return x.id === b.id; })[0];
+      bb.chapters = bb.chapters.filter(function(x){ return x.id !== c.id; });
+      saveBooks(bs);
+      idbDelPrefix('chunks', bookChapKey(b.id, c.id)).catch(function(){});
+      openBook(b.id);
+    });
+    box.appendChild(row);
+  });
+  if(!(b.chapters || []).length) box.innerHTML = '<div class="hint">还没有章，点「➕ 末尾加一章」。</div>';
+  showPage('book');
+}
+$('btnBookBack').addEventListener('click', function(){ showPage('home'); renderBooks(); });
+$('btnChapAdd').addEventListener('click', function(){
+  var b = getBook(curBookId); if(!b) return;
+  var nt = prompt('新章名：');
+  if(!nt || !nt.trim()) return;
+  var bs = loadBooks(); var bb = bs.filter(function(x){ return x.id === curBookId; })[0];
+  bb.chapters.push({ id: uid(), t: nt.trim(), state: '未写', src: [] });
+  saveBooks(bs); openBook(curBookId);
+});
+$('btnBookDel').addEventListener('click', function(){
+  var b = getBook(curBookId); if(!b) return;
+  if(!confirm('确定删除《' + b.title + '》整本书？（各章正文一起删）')) return;
+  idbDelPrefix('chunks', b.id + '_').catch(function(){});
+  saveBooks(loadBooks().filter(function(x){ return x.id !== curBookId; }));
+  showPage('home'); renderBooks();
+  toast('🗑 已删除', 1500);
+});
+/* --- 素材挑选：二字组打分（沿用"问资料"的挑法） --- */
+function bigrams(s){
+  var g = [];
+  s = String(s || '').replace(/\s+/g, '');
+  for(var i = 0; i < s.length - 1; i++) g.push(s.slice(i, i + 2));
+  return g;
+}
+/* 资料库切块口子：只收已切完入库的资料（done），最多5段最相关的 */
+function bookPickLibChunks(chapTitle){
+  var grams = bigrams(chapTitle), out = [];
+  loadLib().forEach(function(x){
+    if(!x.done || !(x.chunks || []).length) return;   /* 没切完的/切片中的不许进选材清单 */
+    if(x.cloud === 'sent') return;
+    (x.chunks || []).forEach(function(c){
+      var hay = c.title + ' ' + (c.summary || ''), s = 0;
+      grams.forEach(function(g){ if(hay.indexOf(g) >= 0) s++; });
+      if(s > 0) out.push({ kind: 'lib', libId: x.id, libTitle: x.title, grade: x.grade, ch: c.ch, cTitle: c.title, s: s });
+    });
+  });
+  out.sort(function(a, b){ return b.s - a.s; });
+  return out.slice(0, 5);
+}
+/* 手写笔记口子：按章标题搜笔记（标题+正文匹配），最多3篇 */
+function bookPickNotes(chapTitle){
+  var grams = bigrams(chapTitle), out = [];
+  loadNotes().forEach(function(n){
+    var hay = n.title + ' ' + String(n.content || '').slice(0, 500), s = 0;
+    grams.forEach(function(g){ if(hay.indexOf(g) >= 0) s++; });
+    if(s > 0) out.push({ kind: 'note', noteId: n.id, noteTitle: n.title, s: s });
+  });
+  out.sort(function(a, b){ return b.s - a.s; });
+  return out.slice(0, 3);
+}
+/* --- 章工作坊页 --- */
+var curChapId = null, _chapMats = { lib: [], note: [] };
+function openChap(bid, cid){
+  var b = getBook(bid); if(!b) return;
+  var c = b.chapters.filter(function(x){ return x.id === cid; })[0]; if(!c) return;
+  curBookId = bid; curChapId = cid;
+  $('chapTitleH').textContent = '✍️ ' + c.t + '（' + (c.state === '已写' ? '已写' : '未写') + '）';
+  $('chapMsg').className = 'msg';
+  $('chapEditBox').classList.add('hidden'); $('btnChapSave').classList.add('hidden');
+  /* 候选素材清单（默认全勾，可单个摘勾） */
+  _chapMats.lib = bookPickLibChunks(c.t);
+  _chapMats.note = bookPickNotes(c.t);
+  var ll = $('chapLibList'); ll.innerHTML = '';
+  if(!_chapMats.lib.length) ll.innerHTML = '<div class="hint">（已切完的资料里没搜到跟这章标题相关的切块）</div>';
+  _chapMats.lib.forEach(function(m, i){
+    var d = document.createElement('div');
+    d.className = 'hint'; d.style.marginTop = '2px';
+    d.innerHTML = '<label><input type="checkbox" class="chap-lib-ck" data-i="' + i + '" checked style="width:18px;height:18px;vertical-align:-3px;"> 《' +
+      esc(m.libTitle) + '》切块' + m.ch + ' ' + esc(m.cTitle) + ' <span class="gtag">' + (GRADES[m.grade] || '📘') + '</span></label>';
+    ll.appendChild(d);
+  });
+  var nl = $('chapNoteList'); nl.innerHTML = '';
+  if(!_chapMats.note.length) nl.innerHTML = '<div class="hint">（笔记里没搜到跟这章标题相关的篇）</div>';
+  _chapMats.note.forEach(function(m, i){
+    var d = document.createElement('div');
+    d.className = 'hint'; d.style.marginTop = '2px';
+    d.innerHTML = '<label><input type="checkbox" class="chap-note-ck" data-i="' + i + '" checked style="width:18px;height:18px;vertical-align:-3px;"> 📝 ' + esc(m.noteTitle) + '</label>';
+    nl.appendChild(d);
+  });
+  $('chapPaste').value = ''; $('chapPasteBox').classList.add('hidden'); $('ckPaste').checked = false;
+  /* 已写的正文亮出来 */
+  $('chapBody').innerHTML = '<div class="hint">（本章还没写）</div>';
+  idbGet('chunks', bookChapKey(bid, cid)).then(function(d){
+    if(d && d.text) $('chapBody').innerHTML = renderMd(d.text);
+  });
+  showPage('chap');
+}
+$('ckPaste').addEventListener('change', function(){
+  $('chapPasteBox').classList.toggle('hidden', !$('ckPaste').checked);
+});
+$('btnChapBack').addEventListener('click', function(){ openBook(curBookId); });
+/* 素材带出身证：每段编号【素材n·来自…】 */
+function matLabel(m){
+  if(m.kind === 'lib') return '来自《' + m.libTitle + '》切块' + m.ch;
+  if(m.kind === 'note') return '来自笔记《' + m.noteTitle + '》';
+  return '您粘贴的文献';
+}
+/* 章末来源清单（本地兜底生成，带重要性标记；AI若自己写了就不重复挂） */
+function bookSrcSection(mats, useAI){
+  var lines = ['', '📖 本章来源', ''];
+  mats.forEach(function(m){
+    if(m.kind === 'lib') lines.push('- [' + m.n + '] [[' + m.libTitle + ']] 切块' + m.ch + ' · ' + (GRADES[m.grade] || '📘 书籍'));
+    else if(m.kind === 'note') lines.push('- [' + m.n + '] 📝 笔记 [[' + m.noteTitle + ']]');
+    else if(m.kind === 'paste') lines.push('- [' + m.n + '] 您粘贴的文献' + (m.tag ? ' ' + m.tag : ''));
+  });
+  if(useAI) lines.push('- 🤖 AI自身知识（正文未标[n]的部分）');
+  return lines.join('\n');
+}
+$('btnChapWrite').addEventListener('click', function(){
+  var b = getBook(curBookId); if(!b) return;
+  var ch = b.chapters.filter(function(x){ return x.id === curChapId; })[0]; if(!ch) return;
+  var useAI = $('ckAI').checked;
+  var useLib = $('ckLib').checked, usePaste = $('ckPaste').checked, useNote = $('ckNote').checked;
+  var pasteRaw = usePaste ? $('chapPaste').value.trim() : '';
+  if(!useAI && !useLib && !pasteRaw && !useNote){ showMsg($('chapMsg'), '四个口子至少开一个（或把AI自身知识勾上）。', 'err'); return; }
+  var mats = [];
+  if(useLib){
+    Array.from(document.querySelectorAll('.chap-lib-ck:checked')).forEach(function(ck){
+      mats.push(_chapMats.lib[+ck.getAttribute('data-i')]);
+    });
+  }
+  if(useNote){
+    Array.from(document.querySelectorAll('.chap-note-ck:checked')).forEach(function(ck){
+      mats.push(_chapMats.note[+ck.getAttribute('data-i')]);
+    });
+  }
+  $('btnChapWrite').disabled = true;
+  showMsg($('chapMsg'), '🔍 正在备素材（去库里取切块正文）…', 'ok');
+  aiBookCtx(b.id);   /* 这本书的账 */
+  /* 先把切块正文从 idb 收齐 */
+  var chain = Promise.resolve();
+  mats.forEach(function(m){
+    if(m.kind !== 'lib') return;
+    chain = chain.then(function(){
+      return idbGet('chunks', m.libId + '_' + m.ch).then(function(d){ m.text = d ? d.text : ''; });
+    });
+  });
+  mats.forEach(function(m){
+    if(m.kind === 'note'){
+      var n = getNote(m.noteId); m.text = n ? String(n.content || '').slice(0, 3000) : '';
+    }
+  });
+  chain.then(function(){
+    if(!pasteRaw) return null;
+    if(pasteRaw.length <= 2000){
+      mats.push({ kind: 'paste', text: pasteRaw, tag: refTag(pasteRaw).label });
+      return null;
+    }
+    /* 超2000字先AI压成≤1000字素材卡 */
+    showMsg($('chapMsg'), '🤖 粘的文献超2000字，AI 正在压成素材卡…', 'ok');
+    return callAI('你是文献压缩助手。把这段文献压成不超过1000字的素材卡，只留事实、数据、结论，一个字不许编。中文大白话，条目式。',
+      pasteRaw, 2000, 60000, '压素材').then(function(card){
+      mats.push({ kind: 'paste', text: card, tag: refTag(pasteRaw).label });
+    });
+  }).then(function(){
+    mats.forEach(function(m, i){ m.n = i + 1; });
+    var matTxt = mats.map(function(m){
+      return '【素材' + m.n + '·' + matLabel(m) + '】\n' + (m.text || '');
+    }).join('\n\n');
+    var sys = '你是医学写书助手，帮ICU医生写《' + b.title + '》的一章。铁规矩：' +
+      'a) 用到哪段素材，句尾标[n]（n是素材编号）；' +
+      'b) 医学内容必须忠于素材；素材没有的知识若用你自己的知识，那一段不标号；' +
+      'c) 章末输出"📖 本章来源"清单，逐条列来源；' +
+      'd) 标准Markdown（表格必须标准 | 格式，手机Obsidian只认这个），中文大白话。';
+    if(!useAI) sys += ' 本章严格只用所给素材写，素材没有的不许用自己的知识补，没有就明说"素材没提到"。';
+    var user = '【书名】《' + b.title + '》\n【本章】' + ch.t + '\n\n' + (matTxt || '（本章无素材，全凭您自身知识写）');
+    showMsg($('chapMsg'), '🤖 AI 正在写本章（约一两分钟，别退出）…', 'ok');
+    return callAI(sys, user, 8000, 120000, '写书').then(function(txt){
+      var content = String(txt || '').trim();
+      if(content.indexOf('本章来源') < 0) content += bookSrcSection(mats, useAI);   /* AI没写清单就本地兜底挂上 */
+      return idbPut('chunks', { id: bookChapKey(b.id, ch.id), text: content }).then(function(){
+        var bs = loadBooks(); var bb = bs.filter(function(x){ return x.id === b.id; })[0];
+        var cc = bb.chapters.filter(function(x){ return x.id === ch.id; })[0];
+        cc.state = '已写';
+        cc.src = mats.map(function(m){ return { n: m.n, kind: m.kind, label: matLabel(m) }; });
+        saveBooks(bs);
+        $('chapMsg').className = 'msg';
+        $('chapBody').innerHTML = renderMd(content);
+        $('chapTitleH').textContent = '✍️ ' + cc.t + '（已写）';
+        toast('✅ 本章写好了（句尾[n]是素材编号）', 2500);
+      });
+    });
+  }).catch(function(e){
+    showMsg($('chapMsg'), '❌ 没写成：' + aiErrText(e), 'err');
+  }).then(function(){
+    $('btnChapWrite').disabled = false;
+    aiBookCtx(null);
+  });
+});
+/* 手动编辑/保存 */
+$('btnChapEdit').addEventListener('click', function(){
+  idbGet('chunks', bookChapKey(curBookId, curChapId)).then(function(d){
+    $('chapTa').value = d ? d.text : '';
+    $('chapEditBox').classList.remove('hidden');
+    $('btnChapSave').classList.remove('hidden');
+    $('chapEditBox').scrollIntoView({ block: 'start' });
+  });
+});
+$('btnChapSave').addEventListener('click', function(){
+  var txt = $('chapTa').value;
+  idbPut('chunks', { id: bookChapKey(curBookId, curChapId), text: txt }).then(function(){
+    var bs = loadBooks(); var bb = bs.filter(function(x){ return x.id === curBookId; })[0];
+    if(bb){
+      var cc = bb.chapters.filter(function(x){ return x.id === curChapId; })[0];
+      if(cc && cc.state !== '已写'){ cc.state = '已写'; saveBooks(bs); }
+    }
+    $('chapBody').innerHTML = renderMd(txt);
+    $('chapEditBox').classList.add('hidden');
+    $('btnChapSave').classList.add('hidden');
+    toast('💾 已保存', 1500);
+  });
+});
+/* --- 导出全书（Obsidian适配：一章一个md + _目录.md） ---
+   章md：首行"# 章标题"，末尾带上一章/下一章[[双链]]；来源清单里资料名挂[[资料名]]双链
+   （写章时本地兜底挂的清单已是[[双链]]格式，AI自己写的若用《》这里顺手换成双链）。 */
+function bookExportFiles(b){
+  var files = [{ name: safeName(b.title) + '_目录.md',
+    md: '# 《' + b.title + '》目录\n\n' +
+        (b.chapters || []).map(function(c){ return '- [[' + c.t + ']]'; }).join('\n') + '\n' }];
+  var chain = Promise.resolve();
+  (b.chapters || []).forEach(function(c, i){
+    chain = chain.then(function(){
+      return idbGet('chunks', bookChapKey(b.id, c.id)).then(function(d){
+        var body = d && d.text ? d.text : '（本章还没写）';
+        /* 来源清单里的《资料名》统一挂成[[双链]]（AI自己写的清单可能是《》格式） */
+        (c.src || []).forEach(function(m){
+          if(m.kind === 'lib' || m.kind === 'note'){
+            var name = String(m.label || '').replace(/^来自/, '').replace(/^笔记/, '').replace(/[《》]/g, '').replace(/切块\d+$/, '').trim();
+            if(name) body = body.split('《' + name + '》').join('[[' + name + ']]');
+          }
+        });
+        var prev = b.chapters[i - 1], next = b.chapters[i + 1];
+        var nav = '\n\n---\n' +
+          (prev ? '上一章：[[' + prev.t + ']]\n' : '') +
+          (next ? '下一章：[[' + next.t + ']]\n' : '');
+        files.push({ name: safeName(b.title) + '_' + ('0' + (i + 1)).slice(-2) + '_' + safeName(c.t).slice(0, 30) + '.md',
+          md: '# ' + c.t + '\n\n' + body + nav });
+      });
+    });
+  });
+  return chain.then(function(){ return files; });
+}
+$('btnBookExport').addEventListener('click', function(){
+  var b = getBook(curBookId); if(!b) return;
+  if(!(b.chapters || []).length){ showMsg($('bookPageMsg'), '还没有章。', 'err'); return; }
+  showMsg($('bookPageMsg'), '📤 正在打包全书…', 'ok');
+  bookExportFiles(b).then(function(files){
+    /* 壳桥：一章一个md存授权文件夹（仿btnRefsSave走法） */
+    if(window.LearnShell && LearnShell.writeFile){
+      try{
+        files.forEach(function(f){ LearnShell.writeFile(f.name, b64enc(f.md)); });
+        $('bookPageMsg').className = 'msg';
+        toast('💾 已存进授权文件夹：' + files.length + ' 个md（含_目录）', 3500);
+        return;
+      }catch(e){}
+    }
+    /* 无桥（浏览器/裸奔）：合并成一个大md复制到剪贴板 */
+    var all = files.map(function(f){ return '══════════ ' + f.name + ' ══════════\n\n' + f.md; }).join('\n\n');
+    function done(){ $('bookPageMsg').className = 'msg'; toast('📋 无文件桥：全书已合并复制到剪贴板（' + files.length + '章+目录）', 4000); }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(all).then(done, function(){ fallback(); });
+    } else fallback();
+    function fallback(){
+      var ta = document.createElement('textarea'); ta.value = all;
+      document.body.appendChild(ta); ta.select();
+      try{ document.execCommand('copy'); done(); }catch(e){ toast('复制不成，请长按全选', 2500); }
+      ta.remove();
+    }
+  }).catch(function(e){
+    showMsg($('bookPageMsg'), '❌ 导出失败：' + e.message, 'err');
+  });
+});
+
 /* ==================== 启动 ==================== */
 loadSettings();
 billRender();
 renderList();
 renderLib();
+renderBooks();
 if($('libBox').open) patrolKick();   /* v0.3.28：开屏时资料库若开着，直接巡逻 */
 /* v0.3.18 静物实验：取消开屏自动自检。铁律对照——浏览器里upd条从未弹出→从不空白；
    壳里每次空白都在upd条弹出后几秒。条改浮条只断了"推挤"，没断"界面变化"这个扳机。
@@ -2561,7 +3085,13 @@ window.__xt = { ensureJDB: ensureJDB, refTag: refTag, refSplitLocal: refSplitLoc
   openLib: openLib,
   /* v0.3.28 新挂钩：巡逻 + 账本 */
   patrolScan: patrolScan, patrolKick: patrolKick, patrolState: _patrol, libNeedSlice: libNeedSlice, libNeedBrief: libNeedBrief,
-  bill: bill, billYuan: billYuan, AI_PRICE: AI_PRICE, AI_PREFER: AI_PREFER, callAI: callAI, aiBookCtx: aiBookCtx };
+  bill: bill, billYuan: billYuan, AI_PRICE: AI_PRICE, AI_PREFER: AI_PREFER, callAI: callAI, aiBookCtx: aiBookCtx,
+  /* v0.3.30 新挂钩：我的书 */
+  loadBooks: loadBooks, saveBooks: saveBooks, getBook: getBook, parseToc: parseToc, bookCreate: bookCreate,
+  ollamaCall: ollamaCall, renderBooks: renderBooks, openBook: openBook, openChap: openChap,
+  bookPickLibChunks: bookPickLibChunks, bookPickNotes: bookPickNotes, bookSrcSection: bookSrcSection,
+  bookExportFiles: bookExportFiles, bookChapKey: bookChapKey, idbGet: idbGet, idbPut: idbPut,
+  jdbSet: function(cn, en){ JDB_CN = cn; JDB_EN = en; _jdbEnLow = null; } };
 
 })();
 </script>
