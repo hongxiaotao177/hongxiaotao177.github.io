@@ -6,6 +6,8 @@
 <title>拍病历</title>
 <!--
 修改记录:
+拍病历 v0.4.0 2026-08-14
+- 炒菜区上线:菜谱抽屉(预置4+增改删,删预置=恢复默认)、选菜三档(整份/某类/某天)、今日病程记录自动今昨对比+语音框、结果纯文本一键复制存库(类别AI分析+记账what='分析')、聚合完整病历可重复聚合留5版、文本模型花名册(moonshot-v1-32k→8k→kimi-k2.5,缓存pai_tmodel,404自愈)
 拍病历 v0.3.0 2026-08-14
 - 识别分组重排:OCR提示词升级——AI先自判化验单/病历文书/检查报告;化验单按组(血常规/生化/凝血/免疫/病原学/血气/其他)重排输出标准Markdown表(| 项目 | 结果 | 单位 | 提示 |),↑↓照录;病历文书原样转录,检查报告所见/结论分段;认不出〔?〕不许编;方向不正先脑中转正
 - 本地预判分类:识别文本正则预判(化验/检查报告/病程记录/入院记录/其他),过目页默认选中可改;病人的库按类别分节显示(类目标题+类内按时间排),顺序:入院记录/化验/检查报告/病程记录/其他
@@ -179,6 +181,10 @@ table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:
   <div class="wrap">
     <div class="row" style="margin-bottom:10px">
       <button class="btn sm" id="btnFull">📋 完整资料</button>
+      <!-- v0.4.0 炒菜区入口 -->
+      <button class="btn grn sm" id="btnCook">🍳 拿去分析</button>
+      <button class="btn sm" id="btnAgg">📋 聚合完整病历</button>
+      <button class="btn sec sm" id="btnRecipes">📖 菜谱</button>
       <button class="btn sec sm" id="btnTrend">📈 趋势</button>
       <button class="btn sec sm" id="btnRename">改代号</button>
       <button class="btn red sm" id="btnArch">出院归档</button>
@@ -215,13 +221,74 @@ table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:
   </div>
 </div>
 
+<!-- v0.4.0 炒菜区 -->
+<div class="view" id="vCook">
+  <div class="topbar"><button class="cookBack">←</button><h1 id="cookTitle">炒菜</h1></div>
+  <div class="wrap">
+    <div class="card">
+      <b>1. 选菜</b>
+      <div class="row" id="ckScope" style="margin-top:8px">
+        <button class="btn sm" data-sc="all">整份聚合病历</button>
+        <button class="btn sec sm" data-sc="cat">只选某类</button>
+        <button class="btn sec sm" data-sc="day">只选某天</button>
+      </div>
+      <div id="ckCatBox" class="hidden"><label>选类别</label><select id="ckCat"></select></div>
+      <div id="ckDayBox" class="hidden"><label>选日期</label><select id="ckDay"></select></div>
+      <div class="small" id="ckScopeHint" style="margin-top:6px"></div>
+    </div>
+    <div class="card">
+      <b>2. 选菜谱</b>
+      <div class="row" style="margin-top:8px"><select id="ckRecipe" style="flex:1"></select><button class="btn sec sm" id="ckGoRecipes">📖 管理</button></div>
+      <textarea id="ckRecipeText" style="min-height:140px;margin-top:8px"></textarea>
+      <div class="row" style="margin-top:8px"><button class="btn sec sm" id="ckSaveAs">存为新菜谱</button><span class="small">上面临时改只影响这一次</span></div>
+    </div>
+    <!-- 只在「今日病程记录」类菜谱时出现 -->
+    <div class="card hidden" id="ckTodayBox">
+      <b>3. 今日情况（语音输入）</b>
+      <textarea id="ckToday" placeholder="点键盘上的麦克风直接说，说多少收多少" style="min-height:110px;margin-top:8px"></textarea>
+      <div class="small" id="ckCmpPrev" style="margin-top:6px;white-space:pre-wrap"></div>
+    </div>
+    <div class="card">
+      <button class="btn grn" id="btnFry" style="width:100%;font-size:17px">🔥 开始炒</button>
+      <div class="small" id="fryMsg" style="margin-top:8px"></div>
+    </div>
+  </div>
+</div>
+
+<div class="view" id="vResult">
+  <div class="topbar"><button class="resBack">←</button><h1>出锅</h1></div>
+  <div class="wrap">
+    <div class="card">
+      <div class="small" id="resMeta"></div>
+      <textarea id="resText" style="min-height:55vh;margin-top:8px" readonly></textarea>
+      <div class="row" style="margin-top:10px"><button class="btn" id="btnResCopy" style="width:100%;font-size:17px">📋 复制全文</button></div>
+      <div class="small" style="margin-top:6px">已自动存进病人的库（类别：AI分析），可随时回看对照。</div>
+    </div>
+  </div>
+</div>
+
+<div class="view" id="vRecipes">
+  <div class="topbar"><button class="rcpBack">←</button><h1>菜谱抽屉</h1></div>
+  <div class="wrap">
+    <div class="card">
+      <div class="row"><button class="btn" id="btnRcpNew">＋ 新建菜谱</button></div>
+      <div id="rcpForm" class="hidden" style="margin-top:10px">
+        <label>菜谱名</label><input id="rcpName">
+        <label>菜谱内容</label><textarea id="rcpText" style="min-height:160px"></textarea>
+        <div class="row" style="margin-top:8px"><button class="btn" id="btnRcpSave">保存</button><button class="btn sec" id="btnRcpCancel">取消</button></div>
+      </div>
+    </div>
+    <div id="rcpList"></div>
+  </div>
+</div>
+
 <!-- v0.2.0 点缩略图全屏看大图,再点关闭 -->
 <div id="imgView"><img id="imgViewImg" alt=""></div>
 <div id="toast"></div>
 
 <script>
 'use strict';
-const SW_VERSION='0.3.0';
+const SW_VERSION='0.4.0';
 const $=id=>document.getElementById(id);
 const esc=s=>s; // 一律textContent渲染
 function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',2200);}
@@ -309,7 +376,9 @@ const PAI_PRICE={ // 2026-08-14官价,每月复查
   'moonshot-v1-32k-vision-preview':{in:24,out:24},
   'moonshot-v1-128k-vision-preview':{in:60,out:60},
   'kimi-k2.5':{in:4,out:16},
-  'kimi-k2.6':{in:4,out:16}
+  'kimi-k2.6':{in:4,out:16},
+  'moonshot-v1-8k':{in:12,out:12},   // v0.4.0 文本模型价
+  'moonshot-v1-32k':{in:24,out:24}
 }; // 元/百万tokens,未知模型按8k-vision估
 function bill(){const b=LS.get('pai_bill_v1',null);return b||{calls:0,in:0,out:0,est:0,byModel:{},byPatient:{},log:[]};}
 function billAiUse(pid,model,usage,inChars,outChars,what){
@@ -780,9 +849,10 @@ function renderLib(mode,fullId){
   const list=patEntries(p.id);
   if(mode==='trend'){renderTrends(body,list);return;}
   if(mode==='full'){renderFull(body,p,list);return;}
+  if(mode==='agg'){renderAgg(body,p,list);return;} // v0.4.0 聚合完整病历
   if(!list.length){const d=document.createElement('div');d.className='card small';d.textContent='库里还没有条目';body.appendChild(d);}
-  /* v0.3.0 按类别分节:类目标题+类内按时间排,顺序=CATS(入院记录/化验/检查报告/病程记录/其他) */
-  for(const cat of CATS){
+  /* v0.3.0 按类别分节:类目标题+类内按时间排,顺序=CATS(入院记录/化验/检查报告/病程记录/其他);v0.4.0 库分节加AI分析 */
+  for(const cat of ['入院记录','化验','检查报告','病程记录','AI分析','其他']){
     const items=list.filter(e=>e.cat===cat).sort((a,b)=>a.time-b.time);
     if(!items.length)continue;
     const hd=document.createElement('div');hd.className='cat-sec small';hd.style.cssText='font-weight:bold;color:var(--brown2);margin:12px 0 2px';
@@ -792,6 +862,7 @@ function renderLib(mode,fullId){
     const h=document.createElement('div');
     const tag=document.createElement('span');tag.className='tag';tag.textContent=e.cat;
     const tm=document.createElement('span');tm.className='small';tm.textContent=fmtT(e.time);
+    if(e.recipe){const rt=document.createElement('span');rt.className='small';rt.textContent='菜谱:'+e.recipe;h.appendChild(rt);}
     h.appendChild(tag);h.appendChild(tm);c.appendChild(h);
     if(e.photoId){const th=thumbEl(e);th.style.margin='6px 0';c.appendChild(th);} // v0.2.0 条目缩略图(idb读,点全屏)
     const pv=document.createElement('div');pv.className='small';pv.textContent=e.text.slice(0,50)+(e.text.length>50?'…':'');c.appendChild(pv);
@@ -964,6 +1035,259 @@ function restoreBackup(data){
   }
 }
 
+/* ==================== v0.4.0 炒菜区 ==================== */
+/* ---------- 菜谱抽屉(localStorage 'pai_recipes':[{id,name,text,builtin}]) ---------- */
+const BUILTIN_RECIPES=[
+  {id:'rcp_qc',name:'这份病历写得怎么样',builtin:true,text:'你是病历质控专家。请审阅这份病历，专挑书写毛病：缺项漏项、前后矛盾、术语不规范、签名时间缺失、逻辑不通之处，分条列出，每条说明问题在哪、怎么改。纯文本输出，不虚构病历里没有的内容。'},
+  {id:'rcp_plan',name:'下一步处理建议',builtin:true,text:'你是ICU高年资医生。根据这份病历给出下一步处理建议：治疗策略分条列出，每条写明依据和预期目标；需要调整的用药、监护、复查安排分开列。纯文本输出，客观谨慎，不虚构检查结果。'},
+  {id:'rcp_diff',name:'鉴别诊断+补充检查',builtin:true,text:'你是ICU高年资医生。根据这份病历列出需要鉴别的诊断，每个鉴别诊断分三行写：支持点 / 不支持点 / 还需什么检查。纯文本输出，不虚构病历里没有的阳性发现。'},
+  {id:'rcp_course',name:'今日病程记录',builtin:true,text:'你是ICU主管医生。根据给出的病历背景、今昨化验对比清单和今日情况，写一份今日病程记录。要求：规范病历格式；纯文本；客观记录，不虚构；有变化的指标要点评；日期按当天日期写。'}
+];
+function recipes(){
+  let r=LS.get('pai_recipes',null);
+  if(!r||!r.length){r=BUILTIN_RECIPES.map(x=>({...x}));LS.set('pai_recipes',r);}
+  return r;
+}
+function saveRecipes(r){LS.set('pai_recipes',r);}
+function recipeById(id){return recipes().find(x=>x.id===id);}
+function isCourseRecipe(id){return id==='rcp_course';} // 「今日病程记录」特殊备料的识别依据
+
+/* ---------- 文本模型花名册(moonshot-v1-32k→8k→kimi-k2.5,缓存pai_tmodel,404自愈) ---------- */
+const TMODEL_PREFS=['moonshot-v1-32k','moonshot-v1-8k','kimi-k2.5'];
+async function textModelPick(key){
+  const cached=LS.get('pai_tmodel',null);if(cached)return cached;
+  const k=(key||localStorage.getItem('xt_apikey')||'').replace(/^"|"$/g,'');
+  const r=await fetch('https://api.moonshot.cn/v1/models',{headers:{'Authorization':'Bearer '+k}});
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  const j=await r.json();const ids=(j.data||[]).map(m=>m.id);
+  const pick=TMODEL_PREFS.find(p=>ids.includes(p));
+  if(!pick)throw new Error('花名册里没有文本模型');
+  LS.set('pai_tmodel',pick);return pick;
+}
+async function callText(sys,user){
+  if(window.__mockText){ // v0.4.0 mock挂钩,可回{text,usage,model}或纯串
+    const m=await window.__mockText(sys,user);
+    if(m&&typeof m==='object'&&m.text!=null){callText._usage=m.usage||null;callText._model=m.model||'moonshot-v1-32k';return m.text;}
+    callText._usage=null;callText._model='moonshot-v1-32k';return m;
+  }
+  const key=localStorage.getItem('xt_apikey');if(!key)throw new Error('未设置API Key');
+  const H={'Content-Type':'application/json','Authorization':'Bearer '+key.replace(/^"|"$/g,'')};
+  const mk=mdl=>JSON.stringify({model:mdl,messages:[{role:'system',content:sys},{role:'user',content:user}]});
+  const post=mdl=>fetch('https://api.moonshot.cn/v1/chat/completions',{method:'POST',headers:H,body:mk(mdl)});
+  let mdl=await textModelPick(key),r=await post(mdl);
+  if(r.status===404){localStorage.removeItem('pai_tmodel');mdl=await textModelPick(key);r=await post(mdl);} // 自愈:清缓存重挑再试一次
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  const j=await r.json();
+  callText._usage=j.usage||null;callText._model=mdl;
+  return j.choices[0].message.content;
+}
+
+/* ---------- 聚合完整病历(顺序:入院记录→化验→检查报告→病程记录→AI分析→其他,类内按日期;留最近5版) ---------- */
+const AGG_CATS=['入院记录','化验','检查报告','病程记录','AI分析','其他'];
+function buildAgg(p,list){
+  const lines=[p.code+' · 聚合于 '+fmtT(Date.now()),''];
+  for(const cat of AGG_CATS){
+    const items=list.filter(e=>e.cat===cat).sort((a,b)=>a.time-b.time);
+    if(!items.length)continue;
+    lines.push('━━ '+cat+' ━━','');
+    for(const e of items){lines.push('【'+fmtT(e.time)+(e.recipe?' · 菜谱:'+e.recipe:'')+'】',e.text,'');}
+  }
+  return lines.join('\n');
+}
+function aggVersions(pid){const a=LS.get('pai_agg',{});return a[pid]||[];}
+function saveAggVersion(pid,text){
+  const a=LS.get('pai_agg',{});const arr=a[pid]||[];
+  arr.push({t:Date.now(),text:text});
+  while(arr.length>5)arr.shift(); // 留最近5版
+  a[pid]=arr;LS.set('pai_agg',a);
+}
+function renderAgg(body,p,list){
+  const text=buildAgg(p,list);
+  saveAggVersion(p.id,text); // 每次聚合存一版
+  const c=document.createElement('div');c.className='card';
+  const ta=document.createElement('textarea');ta.id='aggMd';ta.value=text;ta.style.minHeight='320px';c.appendChild(ta);
+  const r=document.createElement('div');r.className='row';r.style.marginTop='8px';
+  const b1=document.createElement('button');b1.className='btn sm';b1.textContent='一键复制';
+  b1.addEventListener('click',()=>copyText(text));
+  r.appendChild(b1);c.appendChild(r);body.appendChild(c);
+  const vers=aggVersions(p.id);
+  const vc=document.createElement('div');vc.className='card';
+  const vb=document.createElement('b');vb.textContent='历史聚合版本（留最近5版）';vc.appendChild(vb);
+  vers.slice().reverse().forEach(v=>{
+    const d=document.createElement('div');d.className='small';d.style.cssText='cursor:pointer;margin-top:6px;text-decoration:underline';
+    d.textContent=fmtT(v.t)+'（'+v.text.length+'字）';
+    d.addEventListener('click',()=>{ta.value=v.text;toast('已换到该版本');});
+    vc.appendChild(d);
+  });
+  body.appendChild(vc);
+}
+
+/* ---------- 今昨对比备料(今日病程记录专用):今天归档的化验/检查,同指标昨天的值并排 ---------- */
+function dayKey(t){const d=new Date(t);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function buildDayCompare(pid){
+  const list=patEntries(pid).filter(e=>e.cat==='化验'||e.cat==='检查报告');
+  const today=new Date(),yd=new Date(today.getTime()-864e5);
+  const kt=dayKey(today),ky=dayKey(yd);
+  const tEnt=list.filter(e=>dayKey(e.time)===kt),yEnt=list.filter(e=>dayKey(e.time)===ky);
+  const yMap={};
+  for(const e of yEnt)for(const it of parseLabs(e.text))yMap[it.name]=it;
+  const rows=[];
+  for(const e of tEnt)for(const it of parseLabs(e.text)){
+    const y=yMap[it.name];
+    let line=it.name+' ';
+    if(y){const dir=it.value>y.value?'↑':(it.value<y.value?'↓':'—');
+      line+='昨'+y.value+'→今'+it.value+dir+(it.unit?it.unit:'');}
+    else line+='今'+it.value+(it.unit?it.unit:'')+(it.arrow||'')+'（昨日无对照）';
+    rows.push(line);
+  }
+  // 今日归档但没解析出指标的原文也带上(检查报告等)
+  for(const e of tEnt){if(!parseLabs(e.text).length)rows.push('【'+e.cat+' '+fmtT(e.time)+'】'+e.text.slice(0,300));}
+  return rows.join('\n');
+}
+
+/* ---------- 炒菜动线 ---------- */
+function openCook(pid){
+  S.cookPid=pid;S.ckScope='all';S.ckCat=CATS[0];S.ckDay=null;
+  const p=patients().find(x=>x.id===pid);if(!p)return;
+  $('cookTitle').textContent='炒菜：'+p.name;
+  show('vCook');
+  // 类别下拉
+  const cs=$('ckCat');cs.innerHTML='';
+  for(const c of CATS){const o=document.createElement('option');o.value=c;o.textContent=c;cs.appendChild(o);}
+  // 日期下拉(库里出现过的日期,新在前)
+  const ds=$('ckDay');ds.innerHTML='';
+  const days=[...new Set(patEntries(pid).map(e=>dayKey(e.time)))].sort().reverse();
+  for(const d of days){const o=document.createElement('option');o.value=d;o.textContent=d;ds.appendChild(o);}
+  if(!days.length){const o=document.createElement('option');o.value='';o.textContent='（库里还没有条目）';ds.appendChild(o);}
+  S.ckDay=days[0]||null;
+  // 菜谱下拉
+  const rs=$('ckRecipe');rs.innerHTML='';
+  for(const r of recipes()){const o=document.createElement('option');o.value=r.id;o.textContent=r.name;rs.appendChild(o);}
+  S.ckRecipeId=recipes()[0].id;
+  $('ckRecipeText').value=recipes()[0].text;
+  $('ckToday').value='';
+  refreshCookUI();
+}
+function refreshCookUI(){
+  $('ckScope').querySelectorAll('button').forEach(b=>{
+    b.className='btn sm '+(b.dataset.sc===S.ckScope?'':'sec');});
+  $('ckCatBox').classList.toggle('hidden',S.ckScope!=='cat');
+  $('ckDayBox').classList.toggle('hidden',S.ckScope!=='day');
+  const isCourse=isCourseRecipe(S.ckRecipeId);
+  $('ckTodayBox').classList.toggle('hidden',!isCourse);
+  if(isCourse){const cmp=buildDayCompare(S.cookPid);$('ckCmpPrev').textContent=cmp?('已自动备好今昨对比：\n'+cmp):'（今天还没有归档的化验/检查）';}
+  const n=cookPickEntries().length;
+  $('ckScopeHint').textContent='本次选了 '+n+' 条'+(S.ckScope==='all'?'（整份聚合病历）':S.ckScope==='cat'?('（'+S.ckCat+'）'):('（'+(S.ckDay||'无日期')+'）'));
+}
+$('ckScope').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{S.ckScope=b.dataset.sc;refreshCookUI();}));
+$('ckCat').addEventListener('change',()=>{S.ckCat=$('ckCat').value;refreshCookUI();});
+$('ckDay').addEventListener('change',()=>{S.ckDay=$('ckDay').value;refreshCookUI();});
+$('ckRecipe').addEventListener('change',()=>{
+  S.ckRecipeId=$('ckRecipe').value;const r=recipeById(S.ckRecipeId);
+  $('ckRecipeText').value=r?r.text:'';refreshCookUI();
+});
+function cookPickEntries(){
+  const list=patEntries(S.cookPid);
+  if(S.ckScope==='cat')return list.filter(e=>e.cat===S.ckCat);
+  if(S.ckScope==='day')return list.filter(e=>dayKey(e.time)===S.ckDay);
+  return list;
+}
+/* 组payload:病历背景(聚合简版,超2万字截断保头尾)+今昨对比+今日情况;看门人换代号在出口做 */
+function buildCookPayload(){
+  const p=patients().find(x=>x.id===S.cookPid);
+  let bg=buildAgg(p,cookPickEntries());
+  if(bg.length>20000)bg=bg.slice(0,10000)+'\n……(中间截断)……\n'+bg.slice(-10000);
+  let user='【病历背景】\n'+bg;
+  const isCourse=isCourseRecipe(S.ckRecipeId);
+  if(isCourse){
+    const cmp=buildDayCompare(S.cookPid);
+    if(cmp)user+='\n\n【今昨对比】\n'+cmp;
+    const t=$('ckToday').value.trim();
+    if(t)user+='\n\n【今日情况】\n'+t;
+  }
+  const sys=$('ckRecipeText').value;
+  return{sys:sys,user:user,recipeId:S.ckRecipeId,recipeName:(recipeById(S.ckRecipeId)||{name:'临时菜谱'}).name};
+}
+$('ckSaveAs').addEventListener('click',()=>{
+  const txt=$('ckRecipeText').value.trim();if(!txt){toast('菜谱内容是空的');return;}
+  const nm=prompt('新菜谱的名字:','我的菜谱');if(!nm||!nm.trim())return;
+  const r=recipes();const nr={id:'rcp_'+Date.now(),name:nm.trim(),text:txt,builtin:false};
+  r.push(nr);saveRecipes(r);
+  const rs=$('ckRecipe');const o=document.createElement('option');o.value=nr.id;o.textContent=nr.name;rs.appendChild(o);
+  rs.value=nr.id;S.ckRecipeId=nr.id;refreshCookUI();toast('已存为新菜谱');
+});
+$('ckGoRecipes').addEventListener('click',()=>openRecipes('cook'));
+$('btnFry').addEventListener('click',async()=>{
+  if(!window.__mockText&&!localStorage.getItem('xt_apikey')){toast('先去⚙️设置里填API Key');return;}
+  const pl=buildCookPayload();
+  if(!cookPickEntries().length&&!isCourseRecipe(pl.recipeId)){toast('选不到菜：库里这个范围没有条目');return;}
+  $('fryMsg').textContent='炒菜中…';$('btnFry').disabled=true;
+  try{
+    const sys=guardOut(pl.sys),user=guardOut(pl.user); // 看门人:出门换代号
+    const t0=Date.now();
+    const out=await callText(sys,user);
+    billAiUse(S.cookPid,callText._model,callText._usage,(sys+user).length,(out||'').length,'分析'); // 记账what='分析'
+    // 自动存档:类别AI分析,记菜谱名
+    const es=entries();es.push({id:'e'+Date.now(),pid:S.cookPid,cat:'AI分析',time:Date.now(),text:out,recipe:pl.recipeName});saveEntries(es);
+    showResult(out,pl,t0);
+  }catch(e){$('fryMsg').textContent='炒糊了:'+(e.message||e);}
+  finally{$('fryMsg').textContent=$('fryMsg').textContent==='炒菜中…'?'':$('fryMsg').textContent;$('btnFry').disabled=false;}
+});
+function showResult(out,pl,t0){
+  S.lastResult={text:out,recipeName:pl.recipeName,time:t0||Date.now()};
+  const y=billYuanOf(S.cookPid);
+  $('resMeta').textContent='菜谱：'+pl.recipeName+' · '+fmtT(Date.now())+' · 估算'+billFmt(y,2);
+  $('resText').value=out;
+  show('vResult');
+}
+$('btnResCopy').addEventListener('click',()=>copyText($('resText').value));
+document.querySelector('.cookBack').addEventListener('click',()=>{if(S.cookPid)openLib(S.cookPid);else{show('vHome');renderHome();}});
+document.querySelector('.resBack').addEventListener('click',()=>{if(S.cookPid)openLib(S.cookPid);else{show('vHome');renderHome();}});
+
+/* ---------- 菜谱管理页 ---------- */
+function openRecipes(from){S.rcpFrom=from||'lib';S.rcpEditId=null;$('rcpForm').classList.add('hidden');show('vRecipes');renderRecipes();}
+function renderRecipes(){
+  const l=$('rcpList');l.innerHTML='';
+  for(const r of recipes()){
+    const c=document.createElement('div');c.className='card';
+    const h=document.createElement('div');h.className='row';h.style.justifyContent='space-between';
+    const nm=document.createElement('b');nm.textContent=r.name+(r.builtin?'（预置）':'');
+    h.appendChild(nm);c.appendChild(h);
+    const pv=document.createElement('div');pv.className='small';pv.style.margin='6px 0';pv.textContent=r.text.slice(0,60)+(r.text.length>60?'…':'');c.appendChild(pv);
+    const br=document.createElement('div');br.className='row';
+    const be=document.createElement('button');be.className='btn sec sm';be.textContent='改';
+    be.addEventListener('click',()=>{S.rcpEditId=r.id;$('rcpName').value=r.name;$('rcpText').value=r.text;$('rcpForm').classList.remove('hidden');});
+    br.appendChild(be);
+    const bd=document.createElement('button');bd.className='btn red sm';bd.textContent=r.builtin?'恢复默认':'删';
+    bd.addEventListener('click',()=>{
+      if(r.builtin){ // 删预置=恢复默认,不算真删
+        const d=BUILTIN_RECIPES.find(x=>x.id===r.id);
+        const rs=recipes();const it=rs.find(x=>x.id===r.id);it.name=d.name;it.text=d.text;saveRecipes(rs);
+        toast('已恢复默认');
+      }else{if(!confirm('删掉菜谱「'+r.name+'」?'))return;saveRecipes(recipes().filter(x=>x.id!==r.id));toast('已删');}
+      renderRecipes();
+    });
+    br.appendChild(bd);c.appendChild(br);l.appendChild(c);
+  }
+}
+$('btnRcpNew').addEventListener('click',()=>{S.rcpEditId=null;$('rcpName').value='';$('rcpText').value='';$('rcpForm').classList.remove('hidden');});
+$('btnRcpCancel').addEventListener('click',()=>$('rcpForm').classList.add('hidden'));
+$('btnRcpSave').addEventListener('click',()=>{
+  const nm=$('rcpName').value.trim(),tx=$('rcpText').value.trim();
+  if(!nm||!tx){toast('名和内容都要填');return;}
+  const rs=recipes();
+  if(S.rcpEditId){const it=rs.find(x=>x.id===S.rcpEditId);if(it){it.name=nm;it.text=tx;}}
+  else rs.push({id:'rcp_'+Date.now(),name:nm,text:tx,builtin:false});
+  saveRecipes(rs);$('rcpForm').classList.add('hidden');renderRecipes();toast('已保存');
+});
+document.querySelector('.rcpBack').addEventListener('click',()=>{
+  if(S.rcpFrom==='cook'&&S.cookPid){openCook(S.cookPid);} // 回去时刷菜谱下拉
+  else if(S.libPid){openLib(S.libPid);}else{show('vHome');renderHome();}
+});
+$('btnCook').addEventListener('click',()=>openCook(S.libPid));
+$('btnAgg').addEventListener('click',()=>renderLib('agg'));
+$('btnRecipes').addEventListener('click',()=>openRecipes('lib'));
+
 /* ---------- 测试挂钩 ---------- */
 window.__pj={
   ver:SW_VERSION,addPatient,genCode,guardOut,compositeMask,encodeForVision,
@@ -972,6 +1296,8 @@ window.__pj={
   patients,entries,savePatients,saveEntries,S,openCam,openMask,openReview,openLib,addShot,
   bill,billAiUse,billYuan,billFmt,PAI_PRICE,openSet,addBlock,renderBlocks,buildBlocks,rotateMaskPhoto,
   fitImage,MD,IDB,makeArchive,thumbEl,openImgView,rotateRefit,maxZoom,
+  recipes,saveRecipes,BUILTIN_RECIPES,callText,textModelPick,TMODEL_PREFS,
+  buildAgg,aggVersions,buildDayCompare,buildCookPayload,cookPickEntries,openCook,openRecipes,renderRecipes,dayKey,isCourseRecipe,
   _ls:LS
 };
 renderHome();
