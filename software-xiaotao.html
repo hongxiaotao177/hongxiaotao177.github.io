@@ -42,6 +42,8 @@ window.addEventListener('load', function(){
   小涛笔记（学习笔记2代）· 单文件版
 ==========================================================
   修改记录：
+   v0.3.29 2026-08-14 黄牌带原因：书库"自动切失败"后面直接写明失败原因（截40字），
+        一眼分清网络/AI/额度问题，不用点进详情猜。原因本来v0.3.28就记了台账，只是没画出来。
    v0.3.28 2026-08-14 三件事：①书库「自动切片巡逻」——打开资料库自动扫每本书，
         待切/待总结的一本一本自动干完（有Key才跑，可⏸暂停，失败记台账当天不再碰）；
         ②💰AI账本升级——按模型按书记token，价目表估算花费，设置页+资料详情页两处亮账；
@@ -513,7 +515,7 @@ window.addEventListener('load', function(){
 (function(){
 __bc('D脚本启动');
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.3.28';
+var SW_VERSION = '0.3.29';
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
@@ -1813,7 +1815,8 @@ function renderLib(){
     row.innerHTML = '<span class="gtag">' + (GRADES[x.grade] || '📘') + '</span>' +
       '<div class="t">' + esc(x.title) + (x.done ? '' : ' <span style="color:#b08a4a;">（切片中/未完）</span>') + '</div>' +
       '<div class="d">' + (x.chunks || []).length + '块' +
-      (x.autoFail ? '<br><span style="color:#b3261e;">⚠️自动切失败，点详情手动重试</span>' : '') + '</div>';
+      /* v0.3.29 黄牌带原因：一眼分清是网络/AI/额度问题，不用点进去猜 */
+      (x.autoFail ? '<br><span style="color:#b3261e;">⚠️自动切失败：' + esc(String(x.autoFail).slice(0, 40)) + '（点详情手动重试）</span>' : '') + '</div>';
     row.querySelector('.t').addEventListener('click', function(){ openLib(x.id); });
     box.appendChild(row);
   });
