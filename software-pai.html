@@ -6,6 +6,9 @@
 <title>拍病历</title>
 <!--
 修改记录:
+拍病历 v0.4.5 2026-08-15
+- 加md2plain+「复制纯文本(无竖线)」:Markdown表行|a|b|c|d|→"a b c d"空格分隔,分隔行/表头/"—"/粗体星号全清,直接粘病历;过目页+完整资料页各一颗
+- 修:相册选图开multiple,一次勾多张全进待遮挡(原来只能一张张取)
 拍病历 v0.4.4 2026-08-15
 - 修连拍丢照片(除根):遮完一张raw名单缩短一个、老计数器却+1,正好跳一张(连拍3张只遮2张)——改永远取raw第1张,总数进遮挡页时记S.maskTot
 - 加:库里每条「🗑删除」——条目+idb照片一起删,二次确认;归档后重遮没意义(数据已出门),删除是补救
@@ -139,7 +142,7 @@ table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:
     <div class="row" style="justify-content:center;margin:14px 0"><button class="shotbtn" id="btnShot" aria-label="拍照"></button></div>
     <input type="file" id="filePick" accept="image/*" capture="environment" style="display:none">
     <!-- v0.1.3 从相册选图：不带capture才会开相册（带capture多数安卓直接弹相机），不在家试软件用 -->
-    <input type="file" id="fileGallery" accept="image/*" style="display:none">
+    <input type="file" id="fileGallery" accept="image/*" multiple style="display:none"><!-- v0.4.5 相册一次勾多张 -->
     <div class="row" style="justify-content:center;margin-bottom:10px"><button class="btn sec" id="btnGallery">🖼️ 从相册选图</button></div>
     <div class="card" style="text-align:center">
       <div id="camCount">已拍0张</div>
@@ -188,6 +191,8 @@ table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:
       <img id="rvImg" style="width:100%;border-radius:10px;margin:8px 0" alt="">
       <!-- v0.4.1 竖文件装横内容:自动检测不到,手动转正重识别 -->
       <button class="btn sec sm" id="btnRvRot" style="margin-bottom:8px">🔄 旋转90°重新识别</button>
+      <!-- v0.4.5 无竖线纯文本复制:表格转一行一项,直接粘病历 -->
+      <button class="btn grn sm" id="btnRvCopy" style="margin-bottom:8px">📋 复制纯文本（无竖线，直接粘病历）</button>
       <textarea id="rvText"></textarea>
       <label>分类</label>
       <div class="row" id="rvCats"></div>
@@ -314,7 +319,7 @@ table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:
 
 <script>
 'use strict';
-const SW_VERSION='0.4.4';
+const SW_VERSION='0.4.5';
 const $=id=>document.getElementById(id);
 const esc=s=>s; // 一律textContent渲染
 function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',2200);}
@@ -543,8 +548,10 @@ $('filePick').addEventListener('change',e=>{
 /* v0.1.3 相册选图，跟拍照走同一个addShot入口 */
 $('btnGallery').addEventListener('click',()=>$('fileGallery').click());
 $('fileGallery').addEventListener('change',e=>{
-  const f=e.target.files[0];if(!f)return;
-  const r=new FileReader();r.onload=()=>addShot(r.result);r.readAsDataURL(f);
+  // v0.4.5 多张:一次勾几张全部进待遮挡
+  [...e.target.files].forEach(f=>{
+    const r=new FileReader();r.onload=()=>addShot(r.result);r.readAsDataURL(f);
+  });
   e.target.value='';
 });
 $('camBack').addEventListener('click',()=>{stopStream();show('vHome');renderHome();});
@@ -960,6 +967,8 @@ $('btnRvRot').addEventListener('click',async()=>{
   }catch(e){toast('重识别失败：'+String(e.message||e).slice(0,40));}
   finally{btn.disabled=false;btn.textContent='🔄 旋转90°重新识别';}
 });
+/* v0.4.5 过目页复制纯文本 */
+$('btnRvCopy').addEventListener('click',()=>{copyText(md2plain($('rvText').value));});
 /* v0.4.3 过目页换人:认出"这条是别人的"→点名单→这条归新病人,归档就进他的库,识别费跟着走 */
 $('btnRvMove').addEventListener('click',()=>{
   const ph=S.photos.find(x=>x.id===S.rvFid);if(!ph)return;
@@ -1117,6 +1126,8 @@ function renderFull(body,p,list){
   const r=document.createElement('div');r.className='row';r.style.marginTop='8px';
   const b1=document.createElement('button');b1.className='btn sm';b1.textContent='一键复制';
   b1.addEventListener('click',()=>{copyText(md);});
+  const b3=document.createElement('button');b3.className='btn grn sm';b3.textContent='复制纯文本(无竖线)'; // v0.4.5
+  b3.addEventListener('click',()=>{copyText(md2plain(ta.value));});
   const b2=document.createElement('button');b2.className='btn sec sm';b2.textContent='存到授权文件夹(壳)';
   b2.addEventListener('click',()=>{
     if(window.LearnShell&&window.LearnShell.writeFile){
@@ -1124,7 +1135,21 @@ function renderFull(body,p,list){
       catch(e){copyText(md);}
     }else{toast('无壳桥,已退化复制');copyText(md);}
   });
-  r.appendChild(b1);r.appendChild(b2);c.appendChild(r);body.appendChild(c);
+  r.appendChild(b1);r.appendChild(b3);r.appendChild(b2);c.appendChild(r);body.appendChild(c);
+}
+/* v0.4.5 Markdown表格→纯文本:竖线表格粘不进HIS("这么多竖线是想让我坐牢吗")——
+   表行|a|b|c|d|→"a b c d"空格分隔,分隔行/表头行/"—"空格/粗体星号全清,直接粘病历 */
+function md2plain(t){
+  return String(t||'').split('\n').map(l=>{
+    const s=l.trim();
+    if(/^\|[\s\-|:]+\|$/.test(s))return null; // |---|---| 分隔行丢
+    if(s.startsWith('|')&&s.endsWith('|')){
+      const cells=s.slice(1,-1).split('|').map(x=>x.trim());
+      if(cells.join(' ')==='项目 结果 单位 提示')return null; // 表头行丢
+      return cells.filter(x=>x&&x!=='—').join(' ');
+    }
+    return l.replace(/\*\*/g,'');
+  }).filter(x=>x!==null).join('\n');
 }
 function copyText(t){
   if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(()=>toast('已复制'),()=>fallbackCopy(t));}
@@ -1464,7 +1489,7 @@ window.__pj={
   parseLabs,buildTrends,buildFullDoc,buildBackup,restoreBackup,guessCat,runQueue,autoRotateCheck,CATS,OCR_PROMPT,
   visionModelPick,callVision,enqueue,zoomSet,zoomReset,Z,
   patients,entries,savePatients,saveEntries,S,openCam,openMask,openReview,openLib,addShot,
-  bill,billAiUse,billYuan,billFmt,PAI_PRICE,billMoveRef,patientPickRow,callVisionSmart,openSet,addBlock,renderBlocks,buildBlocks,rotateMaskPhoto,
+  bill,billAiUse,billYuan,billFmt,PAI_PRICE,billMoveRef,patientPickRow,callVisionSmart,md2plain,openSet,addBlock,renderBlocks,buildBlocks,rotateMaskPhoto,
   fitImage,MD,IDB,makeArchive,thumbEl,openImgView,rotateRefit,maxZoom,
   recipes,saveRecipes,BUILTIN_RECIPES,callText,textModelPick,TMODEL_PREFS,
   buildAgg,aggVersions,buildDayCompare,buildCookPayload,cookPickEntries,openCook,openRecipes,renderRecipes,dayKey,isCourseRecipe,
