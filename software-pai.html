@@ -6,6 +6,13 @@
 <title>拍病历</title>
 <!--
 修改记录:
+拍病历 v0.4.4 2026-08-15
+- 修连拍丢照片(除根):遮完一张raw名单缩短一个、老计数器却+1,正好跳一张(连拍3张只遮2张)——改永远取raw第1张,总数进遮挡页时记S.maskTot
+- 加:库里每条「🗑删除」——条目+idb照片一起删,二次确认;归档后重遮没意义(数据已出门),删除是补救
+- 加:密字横图(w/h>1.8)自动对半切识别——上下两半15%重叠各送一次拼接去重(真机实测:整图送dense横屏被拒识/错数值,切半后完整);费×2约4分一张
+- 加:快道(免遮挡)照片归档前把关「没遮过就送出识别了,确定归档?」
+- 修:kimi系兜底模型(k2.5)max_tokens 4096被推理吃光吐0字(真机实测),kimi系单开8192
+- 黑块不动(用户决定:用加小黑块对付)
 拍病历 v0.4.3 2026-08-15
 - 归错病人补救两个口子:①过目页「👤换人」——识别后看内容认出是别人的,点名单换人,确认归档落进新病人的库;②库里每条「↪」——归档后发现归错,点名单挪走,照片跟条目走(photoId不变)
 - 账跟人走:billAiUse的log记pid+ref(照片id),billMoveRef按ref把费用从老病人名下挪到新病人名下(log只留50条,太老的挪不动);识别两处记账(runQueue/旋转重识别)都挂了ref
@@ -307,7 +314,7 @@ table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:
 
 <script>
 'use strict';
-const SW_VERSION='0.4.3';
+const SW_VERSION='0.4.4';
 const $=id=>document.getElementById(id);
 const esc=s=>s; // 一律textContent渲染
 function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',2200);}
@@ -544,7 +551,7 @@ $('camBack').addEventListener('click',()=>{stopStream();show('vHome');renderHome
 $('btnGoMask').addEventListener('click',()=>{
   const raw=S.photos.filter(x=>x.status==='raw');
   if(!raw.length){toast('没有待遮挡的照片');return;}
-  stopStream();S.maskIdx=0;openMask();
+  stopStream();S.maskTot=raw.length;openMask(); // v0.4.4 记下总数
 });
 /* v0.4.2 免遮挡快道:无敏感信息的(化验单/检查报告)拍完直接存档+入队识别,不过遮挡页不旋转 */
 $('btnDirect').addEventListener('click',async()=>{
@@ -557,7 +564,7 @@ $('btnDirect').addEventListener('click',async()=>{
       ph.hasArch=await IDB.put(ph.id,arch);
       if(!ph.hasArch)toast('本机存图失败(IndexedDB不可用)，刷新后不保留');
     }catch(e){ph.hasArch=false;toast('存图失败:'+(e.message||e));}
-    ph.status='masked';enqueue(ph);
+    ph.status='masked';ph.noMask=true;enqueue(ph); // v0.4.4 快道打标:归档时把关提醒
   }
   toast(raw.length+'张直接进识别队列');openQueue();
 });
@@ -569,10 +576,12 @@ function rawPhotos(){return S.photos.filter(x=>x.status==='raw');}
 /* v0.2.1 seq令牌:换图/旋转都会重设src,只认最后一次onload,杜绝旧尺寸先适配 */
 let maskLoadSeq=0;
 function loadMaskPhoto(){
-  const list=rawPhotos();if(S.maskIdx>=list.length){finishMaskAll();return;}
-  const ph=list[S.maskIdx];
+  /* v0.4.4 除根连拍丢照片:老逻辑"遮完一张maskIdx+1"但raw名单同时缩短一个,正好跳一张(3张只遮到2张)。
+     新逻辑:永远取raw名单第1张,遮完它自动出列,下一张顶上;总数在进遮挡页时记S.maskTot */
+  const list=rawPhotos();if(!list.length){finishMaskAll();return;}
+  const ph=list[0];
   fitMode='fill'; // v0.2.0 每张默认铺满工作区(横图铺满高度/竖图铺满宽度),⇄切'fit'全图适应
-  $('maskIdx').textContent=S.maskIdx+1;$('maskTot').textContent=list.length;
+  $('maskIdx').textContent=(S.maskTot-list.length+1);$('maskTot').textContent=S.maskTot;
   const img=$('maskImg');const seq=++maskLoadSeq;
   img.onload=()=>{if(seq!==maskLoadSeq)return;maskNat={w:img.naturalWidth,h:img.naturalHeight};fitImage();buildBlocks();zoomReset();autoRotateCheck();};
   img.src=ph.data;
@@ -612,7 +621,7 @@ let fitMode='fill';
    等转正图真正onload拿新尺寸→fitImage(新尺寸contain)→buildBlocks(黑块重置默认顶部块)→zoomReset(按铺满规则),
    三步成函数不散;缩放中/平移过/加过块/连点多次(90→180→270→360)每次都完整复位 */
 async function rotateRefit(dir){ // v0.3.0 dir:'cw'(默认顺时针90°)/'ccw'(逆时针90°)
-  const list=rawPhotos();const ph=list[S.maskIdx];if(!ph)return;
+  const list=rawPhotos();const ph=list[0];if(!ph)return; // v0.4.4 永远第1张
   const src=await new Promise((r,j)=>{const i=new Image();i.onload=()=>r(i);i.onerror=()=>j(new Error('图片解码失败'));i.src=ph.data;});
   const c=document.createElement('canvas');
   c.width=src.naturalHeight;c.height=src.naturalWidth;
@@ -739,7 +748,7 @@ function compositeMask(dataURL,blocks){
   });
 }
 $('btnMaskOk').addEventListener('click',async()=>{
-  const list=rawPhotos();const ph=list[S.maskIdx];
+  const list=rawPhotos();const ph=list[0]; // v0.4.4 永远第1张
   if(!ph){finishMaskAll();return;}
   ph.data=await compositeMask(ph.data,S.maskBlocks);
   // v0.2.0 合成后立刻压存档图存IndexedDB,刷新不丢;idb不可用降级不存并提示
@@ -750,8 +759,7 @@ $('btnMaskOk').addEventListener('click',async()=>{
   }catch(e){ph.hasArch=false;toast('存图失败:'+(e.message||e)+'，这张照片刷新后不保留');}
   ph.status='masked';enqueue(ph);
   S.maskBlocks=[]; // v0.1.4 这张画完清掉,下张回默认黑块1(配合buildBlocks保老块)
-  S.maskIdx++;
-  if(rawPhotos().length){loadMaskPhoto();}else{finishMaskAll();}
+  if(rawPhotos().length){loadMaskPhoto();}else{finishMaskAll();} // v0.4.4 不再maskIdx++,名单自缩
 });
 function finishMaskAll(){toast('全部遮挡完成，进识别队列');openQueue();}
 $('maskBack').addEventListener('click',()=>{show('vCam');renderCam();});
@@ -825,7 +833,8 @@ async function callVision(dataURL){
   const img=await encodeForVision(dataURL);
   const H={'Content-Type':'application/json','Authorization':'Bearer '+key.replace(/^"|"$/g,'')};
   // v0.4.2 max_tokens=4096:病历文书长,默认1024会拦腰截断(真机实测1586病例特点被切断=漏项病根之一)
-  const mk=mdl=>JSON.stringify({model:mdl,max_tokens:4096,messages:[{role:'user',content:[{type:'text',text:guardOut(OCR_PROMPT)},{type:'image_url',image_url:{url:img}}]}]});
+  // v0.4.4 kimi系(k2.5兜底)是推理模型,4096全被"思考"吃光正文吐0字(真机实测),单开8192
+  const mk=mdl=>JSON.stringify({model:mdl,max_tokens:/^kimi/.test(mdl)?8192:4096,messages:[{role:'user',content:[{type:'text',text:guardOut(OCR_PROMPT)},{type:'image_url',image_url:{url:img}}]}]});
   const post=mdl=>fetch('https://api.moonshot.cn/v1/chat/completions',{method:'POST',headers:H,body:mk(mdl)});
   let mdl=await visionModelPick(key),r=await post(mdl);
   if(r.status===404){localStorage.removeItem('pai_vmodel');mdl=await visionModelPick(key);r=await post(mdl);} // 自愈:清缓存重挑再试一次
@@ -834,14 +843,38 @@ async function callVision(dataURL){
   callVision._usage=j.usage||null;callVision._model=mdl; // v0.1.4 记下usage给账本
   return j.choices[0].message.content;
 }
+/* v0.4.4 密字横图(w/h>1.8)自动对半切:上下两半15%重叠各送一次,拼接去重行——
+   真机实测:整图送dense横屏化验单会拒识/错数值,切半后转录完整(费×2约4分一张换识别率) */
+async function callVisionSmart(ph){
+  let dims=null;
+  try{dims=await new Promise((r,j)=>{const i=new Image();i.onload=()=>r({w:i.naturalWidth,h:i.naturalHeight});i.onerror=()=>j(new Error('图加载失败'));i.src=ph.data;});}
+  catch(e){dims=null;} // 图读不出尺寸(理论不该发生):按普通图单趟走,别卡死队列
+  if(!dims||dims.w/dims.h<=1.8){ // 普通图:单趟
+    const t=await callVision(ph.data);
+    billAiUse(ph.pid,callVision._model,callVision._usage,OCR_PROMPT.length,(t||'').length,'识别',ph.id);
+    return t;
+  }
+  const img=await new Promise((r,j)=>{const i=new Image();i.onload=()=>r(i);i.onerror=()=>j(new Error('图加载失败'));i.src=ph.data;});
+  const w=img.naturalWidth,h=img.naturalHeight;
+  const mk=(y0,y1)=>{const c=document.createElement('canvas');c.width=w;c.height=y1-y0;
+    c.getContext('2d').drawImage(img,0,y0,w,y1-y0,0,0,w,y1-y0);return c.toDataURL('image/jpeg',0.9);};
+  const halves=[mk(0,Math.round(h*0.575)),mk(Math.round(h*0.425),h)];
+  const t1=await callVision(halves[0]);
+  billAiUse(ph.pid,callVision._model,callVision._usage,OCR_PROMPT.length,(t1||'').length,'识别',ph.id);
+  const t2=await callVision(halves[1]);
+  billAiUse(ph.pid,callVision._model,callVision._usage,OCR_PROMPT.length,(t2||'').length,'识别',ph.id);
+  // 拼接:上半全留,下半丢与上半重复的行(重叠区会认两次)
+  const seen=new Set(String(t1||'').split('\n').map(x=>x.trim()).filter(Boolean));
+  const keep=String(t2||'').split('\n').filter(x=>{const t=x.trim();return t&&!seen.has(t);});
+  return String(t1||'').trim()+'\n'+keep.join('\n').trim();
+}
 async function runQueue(){
   if(S.qRunning)return;S.qRunning=true;
   try{
     let ph;
     while((ph=S.photos.find(x=>x.status==='queued'))){
       ph.status='doing';if($('vQueue').classList.contains('on'))renderQueue();
-      try{ph.text=await callVision(ph.data);
-        billAiUse(ph.pid,callVision._model,callVision._usage,OCR_PROMPT.length,(ph.text||'').length,'识别',ph.id); // v0.1.4 记账;v0.4.3 挂ref账跟人走
+      try{ph.text=await callVisionSmart(ph); // v0.4.4 记账进了smart(横图两趟记两笔)
         ph.status='done';
         if(ph.hasArch)ph.data=null; // v0.2.0 识别完成且idb已存档:内存丢原始大图防内存爆(重试的fail不丢)
       }
@@ -894,6 +927,8 @@ function openReview(fid){
 }
 $('btnRvOk').addEventListener('click',async()=>{
   const ph=S.photos.find(x=>x.id===S.rvFid);if(!ph)return;
+  // v0.4.4 快道(没遮过)的归档前把一关:出门信息已经送过AI了,提醒一次防习惯性直送敏感图
+  if(ph.noMask&&!confirm('这张走的免遮挡快道，没遮过就送出识别了。确定归档？'))return;
   // v0.2.0 归档条目记photoId;若遮挡时没存成(如idb当时不可用)而内存还有图,补存一次
   if(!ph.hasArch&&ph.data){try{ph.hasArch=await IDB.put(ph.id,await makeArchive(ph.data));}catch(e){}}
   const es=entries();es.push({id:'e'+Date.now(),pid:ph.pid,cat:S.rvCat,time:Date.now(),text:$('rvText').value,photoId:ph.hasArch?ph.id:null});
@@ -988,6 +1023,16 @@ function renderLib(mode,fullId){
       box.style.marginTop='6px';c.appendChild(box);c._mvBox=box;
     });
     h.appendChild(mv);
+    // v0.4.4 库里删除:条目+照片一起删,二次确认(归档后重遮没意义,删除是补救)
+    const del=document.createElement('button');del.className='btn red sm';del.textContent='🗑';
+    del.title='删除这条';
+    del.addEventListener('click',ev=>{ev.stopPropagation();
+      if(!confirm('删除这条记录和它的照片？删了找不回。'))return;
+      if(e.photoId)IDB.del(e.photoId);
+      saveEntries(entries().filter(x=>x.id!==e.id));
+      toast('已删');renderLib('list');
+    });
+    h.appendChild(del);
     c.appendChild(h);
     if(e.photoId){const th=thumbEl(e);th.style.margin='6px 0';c.appendChild(th);} // v0.2.0 条目缩略图(idb读,点全屏)
     const pv=document.createElement('div');pv.className='small';pv.textContent=e.text.slice(0,50)+(e.text.length>50?'…':'');c.appendChild(pv);
@@ -1419,7 +1464,7 @@ window.__pj={
   parseLabs,buildTrends,buildFullDoc,buildBackup,restoreBackup,guessCat,runQueue,autoRotateCheck,CATS,OCR_PROMPT,
   visionModelPick,callVision,enqueue,zoomSet,zoomReset,Z,
   patients,entries,savePatients,saveEntries,S,openCam,openMask,openReview,openLib,addShot,
-  bill,billAiUse,billYuan,billFmt,PAI_PRICE,billMoveRef,patientPickRow,openSet,addBlock,renderBlocks,buildBlocks,rotateMaskPhoto,
+  bill,billAiUse,billYuan,billFmt,PAI_PRICE,billMoveRef,patientPickRow,callVisionSmart,openSet,addBlock,renderBlocks,buildBlocks,rotateMaskPhoto,
   fitImage,MD,IDB,makeArchive,thumbEl,openImgView,rotateRefit,maxZoom,
   recipes,saveRecipes,BUILTIN_RECIPES,callText,textModelPick,TMODEL_PREFS,
   buildAgg,aggVersions,buildDayCompare,buildCookPayload,cookPickEntries,openCook,openRecipes,renderRecipes,dayKey,isCourseRecipe,
