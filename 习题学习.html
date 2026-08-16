@@ -442,6 +442,16 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 - 间隔重复（熟悉的题隔几天再现）
 - 老.doc支持、选择题(A/B/C/D)题型
 ================================================================================
+    v1.8.0 2026-08-16 粘贴导入改AI优先（用户：虽然花钱，但方便）：
+    ①doPasteImport不再先本地认格式，粘贴确认后一律先走AI整理成题
+      （无Key/AI失败/AI吐0题时自动退回本地parseQuestions保底，两头都
+      认不出才弹aihelp窗）；
+    ②新增splitByQ按题号行切批（每批≤6000字），100题长文不再被
+      slice(0,8000)砍掉尾巴；aihelp窗的AI整理同步换成分批版；
+    ③新提示词XT_PASTE_PROMPT专门叮嘱：原文答案常紧跟问题下一行、
+      没有「答：」标记，AI要认出来并补上标记（治CRRT式裸答案文本
+      粘贴后只有问题没有答案的病根）；
+    ④整理期间确认按钮显示「AI整理中 第X/N批…」并禁用防重复点。
     v1.7.5 2026-08-11 词后解释（小序号）+注释里定标也画下划线：
     ①修复：在注释里定标的词，注释展开时不画虚线下划线（renderAnswerHtml漏配）；
     ②集体形成注释的解释不再生成注释条，直接挂到定标词后面：正文词后显示
@@ -526,7 +536,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>习题学习 v1.7.5</title>
+<title>习题学习 v1.8.0</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f2f4f8; color: #222; }
@@ -609,7 +619,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 
 <script id="embedded-data" type="application/json">null</script>
 
-<header>📖 习题学习<span class="ver">v1.7.5</span></header>
+<header>📖 习题学习<span class="ver">v1.8.0</span></header>
 
 <!-- ========== 首页 ========== -->
 <div id="page-home" class="page">
@@ -874,9 +884,9 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
       <option value="root">词根学习</option>
       <option value="shift">交班英语</option>
     </select>
-    <textarea id="paste-text" placeholder="把题目文字粘贴到这里。格式很宽松：1. / （1）/ ① / 第1题 都行，答案行写 答：或 答案：或 A: 都行；实在认不出会问你要不要AI帮忙整理。"></textarea>
+    <textarea id="paste-text" placeholder="把题目文字粘贴到这里，点确认后AI帮你整理成习题（用你存的Kimi key，费一点点额度）。格式无所谓，答案没有「答：」标记AI也能认出来。"></textarea>
     <div class="btn-row">
-      <button onclick="doPasteImport()">确认导入</button>
+      <button id="paste-ok" onclick="doPasteImport()">确认导入</button>
       <button class="ghost" onclick="closePaste()">取消</button>
     </div>
   </div>
@@ -1291,14 +1301,68 @@ function doPasteImport() {
   var type = document.getElementById("paste-type").value;
   var dest = +document.getElementById("paste-dest").value; // v1.5.0：>=0 表示从题库卡片进来，默认并入该库
   var text = document.getElementById("paste-text").value;
-  var qs = parseQuestions(text);
-  // v1.5.0：认不出格式 → 弹窗问要不要AI帮忙整理
-  if (!qs.length) { pendingPaste = { name: name, type: type, dest: dest, text: text }; openAiHelp(); return; }
-  closePaste();
-  document.getElementById("paste-text").value = ""; document.getElementById("paste-name").value = ""; document.getElementById("paste-dest").value = "-1";
-  enqueueImport(name, qs, type, dest >= 0 ? dest : null);
+  if (!text.trim()) { toast("先粘贴题目文字"); return; }
+  // v1.8.0：AI优先——一律先走AI整理，不行才退本地认格式
+  var btn = document.getElementById("paste-ok");
+  btn.disabled = true; btn.textContent = "AI整理中…";
+  aiPasteImport(name, type, dest, text, btn);
 }
-/* ---- v1.5.0 AI帮忙整理格式 ---- */
+/* ---- v1.8.0 AI优先粘贴导入 ---- */
+var XT_PASTE_PROMPT = "你是习题格式整理助手。把用户给的文字整理成问答题库格式，每题两行：第一行「1. 题目」，第二行「答：答案」（答案有多行就跟在后面）。特别注意：原文里答案常常就紧跟在问题下一行、没有任何标记，你要认出来并在前面补上「答：」。保持题目原来的顺序，题号从1递增。只输出整理后的题目，不要任何解释、标题或多余的话。如果内容里有交班英语（中文配英文翻译），改用「Q:中文」加「A:英文」两行一题。";
+function splitByQ(text, maxLen) {
+  // 按题号行切批，每批尽量≤maxLen字；单批仍超长就硬切兜底
+  var isQ = /^\s*(?:\d+\s*[.、．\)]|第\s*\d+\s*题|[①-⑳])/;
+  var lines = text.split("\n"), out = [], cur = "", i, l;
+  for (i = 0; i < lines.length; i++) {
+    l = lines[i];
+    if (cur && cur.length + l.length + 1 > maxLen && isQ.test(l)) { out.push(cur); cur = l; }
+    else cur = cur ? cur + "\n" + l : l;
+  }
+  if (cur) out.push(cur);
+  var res = [];
+  out.forEach(function (s) {
+    while (s.length > maxLen * 1.5) { res.push(s.slice(0, maxLen)); s = s.slice(maxLen); }
+    if (s.trim()) res.push(s);
+  });
+  return res;
+}
+async function aiPasteImport(name, type, dest, text, btn) {
+  var resetBtn = function () { btn.disabled = false; btn.textContent = "确认导入"; };
+  var finish = function (qs, msg) {
+    closePaste();
+    document.getElementById("paste-text").value = ""; document.getElementById("paste-name").value = ""; document.getElementById("paste-dest").value = "-1";
+    resetBtn();
+    enqueueImport(name, qs, type, dest >= 0 ? dest : null);
+    toast(msg + "，共 " + qs.length + " 题");
+  };
+  var localTry = function () { var qs = parseQuestions(text); return qs.length ? qs : null; };
+  try {
+    if (!needKey()) { // 没key：先去设置窗，同时本地认格式保底
+      resetBtn();
+      var q0 = localTry();
+      if (q0) finish(q0, "没有AI key，改本地格式认出");
+      else { pendingPaste = { name: name, type: type, dest: dest, text: text }; openAiHelp(); }
+      return;
+    }
+    var batches = splitByQ(text, 6000), allQs = [], i;
+    for (i = 0; i < batches.length; i++) {
+      btn.textContent = "AI整理中 第" + (i + 1) + "/" + batches.length + "批…";
+      var fixed = await callAI(XT_PASTE_PROMPT, batches[i]);
+      allQs = allQs.concat(parseQuestions(fixed));
+    }
+    if (allQs.length) { finish(allQs, "AI整理完成"); return; }
+    resetBtn();
+    var q1 = localTry();
+    if (q1) finish(q1, "AI没认出来，本地格式认出");
+    else toast("AI和本地都认不出这段内容，请检查是不是问答题");
+  } catch (e) {
+    resetBtn();
+    var q2 = localTry();
+    if (q2) finish(q2, "AI整理失败（" + e.message + "），改本地格式认出");
+    else toast("AI整理失败：" + e.message + "；本地也认不出格式");
+  }
+}
+/* ---- v1.5.0 AI帮忙整理格式（v1.8.0起仅作无key时的兜底入口） ---- */
 var pendingPaste = null;
 function openAiHelp() {
   document.getElementById("aihelp-yes").disabled = false;
@@ -1310,12 +1374,13 @@ async function aiHelpYes() {
   if (!needKey()) return; // 没key就去设置窗，本窗留着
   var btn = document.getElementById("aihelp-yes");
   btn.disabled = true;
-  document.getElementById("aihelp-info").textContent = "AI整理中，请稍等…";
   try {
-    var fixed = await callAI(
-      "你是习题格式整理助手。把用户给的文字整理成问答题库格式，每题两行：第一行「1. 题目」，第二行「答：答案」（答案有多行就跟在后面）。题号从1递增。只输出整理后的题目，不要任何解释、标题或多余的话。如果内容里有交班英语（中文配英文翻译），改用「Q:中文」加「A:英文」两行一题。",
-      pendingPaste.text.slice(0, 8000));
-    var qs = parseQuestions(fixed);
+    var batches = splitByQ(pendingPaste.text, 6000), qs = [];
+    for (var i = 0; i < batches.length; i++) {
+      document.getElementById("aihelp-info").textContent = "AI整理中 第" + (i + 1) + "/" + batches.length + "批…";
+      var fixed = await callAI(XT_PASTE_PROMPT, batches[i]);
+      qs = qs.concat(parseQuestions(fixed));
+    }
     if (!qs.length) {
       document.getElementById("aihelp-info").textContent = "AI整理后还是认不出来，这段内容可能不是问答题。请手工改成「1.题目 换行 答：答案」再试。";
       btn.disabled = false;
@@ -2619,7 +2684,7 @@ function toast(msg) {
    完整设计思路与协同协议见学习笔记.html 代码顶部（两边以那份为准）。 */
 var XT_GH_USER = "xt_gh_user", XT_GH_TOK = "xt_gh_tok", XT_GH_REPO = "xt_gh_repo",
     XT_GH_LAST = "xt_gh_last", XT_GH_CHECK = "xt_gh_check";
-var SW_VERSION = "1.7.5";
+var SW_VERSION = "1.8.0";
 /* v1.4.8 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["xt_gh_user", "hx_gh_user"], ["xt_gh_tok", "hx_gh_tok"], ["xt_gh_repo", "hx_gh_repo"]];
