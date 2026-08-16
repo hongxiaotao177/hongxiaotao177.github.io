@@ -442,6 +442,14 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 - 间隔重复（熟悉的题隔几天再现）
 - 老.doc支持、选择题(A/B/C/D)题型
 ================================================================================
+    v1.8.1 2026-08-16 删除题库改自画确认窗+5秒反悔：
+    ①用户手机（vivo浏览器/壳）里系统confirm的按钮字渲染成绿方块乱码，
+      分不清哪边是删除——delBank改用自画delbank-modal：左灰「取消」右红
+      「确认删除」，18号大字；
+    ②窗内写明「共X题｜已学Y题」，防两个同名库删错（用户正有两个同名
+      「真菌感染指南习题」）；
+    ③确认删除后不立刻落锤：底部弹5秒「↩ 反悔」条（undoBar），反悔即
+      连题库带进度原样还原；超时或又删下一个才真正清掉进度键。
     v1.8.0 2026-08-16 粘贴导入改AI优先（用户：虽然花钱，但方便）：
     ①doPasteImport不再先本地认格式，粘贴确认后一律先走AI整理成题
       （无Key/AI失败/AI吐0题时自动退回本地parseQuestions保底，两头都
@@ -536,7 +544,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>习题学习 v1.8.0</title>
+<title>习题学习 v1.8.1</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f2f4f8; color: #222; }
@@ -619,7 +627,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 
 <script id="embedded-data" type="application/json">null</script>
 
-<header>📖 习题学习<span class="ver">v1.8.0</span></header>
+<header>📖 习题学习<span class="ver">v1.8.1</span></header>
 
 <!-- ========== 首页 ========== -->
 <div id="page-home" class="page">
@@ -900,6 +908,18 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
     <div class="btn-row">
       <button id="aihelp-yes" onclick="aiHelpYes()">🤖 要，AI帮忙</button>
       <button class="ghost" onclick="closeAiHelp()">不要</button>
+    </div>
+  </div>
+</div>
+
+<!-- v1.8.1 删除题库确认窗（手机自带confirm按钮乱码，改自画，大字分清取消/删除） -->
+<div id="delbank-modal" class="modal-mask hidden" onclick="if(event.target===this)closeDelBank()">
+  <div class="modal">
+    <h3>🗑 删除题库？</h3>
+    <div id="delbank-info" style="font-size:15px;color:#333;margin-bottom:6px;line-height:1.7"></div>
+    <div class="btn-row" style="margin-top:14px">
+      <button class="ghost" style="flex:1;font-size:18px;padding:14px" onclick="closeDelBank()">取消</button>
+      <button class="danger" style="flex:1;font-size:18px;padding:14px" onclick="doDelBank()">确认删除</button>
     </div>
   </div>
 </div>
@@ -1596,14 +1616,65 @@ function confirmMerge() {
   toast("合并成功：" + newBank.questions.length + "题");
 }
 
+/* v1.8.1 删除题库：自画确认窗（部分手机浏览器自带confirm按钮字渲染成绿方块乱码，
+   分不清哪边是删除）+ 窗内写明题数/已学数防删错同名库 + 5秒反悔 */
+var delTarget = null, delStash = null, delUndoTimer = null;
 function delBank(bi) {
-  var b = store.banks[bi];
-  if (!confirm("删除题库「" + b.name + "」？其学习进度也会删除。")) return;
-  b.questions.forEach(function (_, qi) { delete store.progress[pKey(b.id, qi)]; });
+  var b = store.banks[bi]; if (!b) return;
+  delTarget = bi;
+  var learned = 0;
+  b.questions.forEach(function (_, qi) { if (store.progress[pKey(b.id, qi)]) learned++; });
+  document.getElementById("delbank-info").textContent =
+    "「" + b.name + "」共" + b.questions.length + "题｜已学" + learned + "题。删除后这些学习记录也会一起删掉。";
+  document.getElementById("delbank-modal").classList.remove("hidden");
+}
+function closeDelBank() { document.getElementById("delbank-modal").classList.add("hidden"); delTarget = null; }
+function doDelBank() {
+  if (delTarget == null) return;
+  var bi = delTarget; delTarget = null;
+  document.getElementById("delbank-modal").classList.add("hidden");
+  var b = store.banks[bi]; if (!b) return;
+  var prog = {};
+  b.questions.forEach(function (_, qi) {
+    var k = pKey(b.id, qi);
+    if (store.progress[k]) { prog[k] = store.progress[k]; delete store.progress[k]; } // 快照后清掉，反悔时还原
+  });
+  if (delStash) { // 上一个还没反悔完又删一个：上一个落锤，只留最新这个可反悔
+    clearTimeout(delUndoTimer);
+    var ob = document.getElementById("undo-bar"); if (ob) ob.remove();
+  }
+  delStash = { idx: bi, bank: b, prog: prog };
   store.banks.splice(bi, 1);
   saveStore(); renderBanks();
   if (currentMode === "root") updateRootPanel();
   if (currentMode === "shift") updateShiftPanel();
+  undoBar("已删除「" + b.name + "」", 5000);
+}
+function undoBar(msg, ms) {
+  document.querySelectorAll(".toast").forEach(function (o) { o.remove(); }); // 别和普通toast叠在一起
+  var bar = document.createElement("div");
+  bar.id = "undo-bar"; bar.className = "toast";
+  bar.style.cssText = "max-width:92%;display:flex;align-items:center;gap:10px";
+  bar.appendChild(document.createTextNode(msg));
+  var btn = document.createElement("button");
+  btn.textContent = "↩ 反悔";
+  btn.style.cssText = "font-size:16px;padding:6px 14px;flex-shrink:0";
+  btn.onclick = undoDelBank;
+  bar.appendChild(btn);
+  document.body.appendChild(bar);
+  delUndoTimer = setTimeout(function () { bar.remove(); delStash = null; }, ms);
+}
+function undoDelBank() {
+  if (!delStash) return;
+  clearTimeout(delUndoTimer);
+  var bar = document.getElementById("undo-bar"); if (bar) bar.remove();
+  store.banks.splice(Math.min(delStash.idx, store.banks.length), 0, delStash.bank);
+  Object.keys(delStash.prog).forEach(function (k) { store.progress[k] = delStash.prog[k]; });
+  delStash = null;
+  saveStore(); renderBanks();
+  if (currentMode === "root") updateRootPanel();
+  if (currentMode === "shift") updateShiftPanel();
+  toast("已恢复删除的题库");
 }
 function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
 
@@ -2684,7 +2755,7 @@ function toast(msg) {
    完整设计思路与协同协议见学习笔记.html 代码顶部（两边以那份为准）。 */
 var XT_GH_USER = "xt_gh_user", XT_GH_TOK = "xt_gh_tok", XT_GH_REPO = "xt_gh_repo",
     XT_GH_LAST = "xt_gh_last", XT_GH_CHECK = "xt_gh_check";
-var SW_VERSION = "1.8.0";
+var SW_VERSION = "1.8.1";
 /* v1.4.8 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["xt_gh_user", "hx_gh_user"], ["xt_gh_tok", "hx_gh_tok"], ["xt_gh_repo", "hx_gh_repo"]];
