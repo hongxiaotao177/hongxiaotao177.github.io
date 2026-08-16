@@ -442,6 +442,59 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 - 间隔重复（熟悉的题隔几天再现）
 - 老.doc支持、选择题(A/B/C/D)题型
 ================================================================================
+    v1.8.0 2026-08-16 粘贴导入改AI优先（用户：虽然花钱，但方便）：
+    ①doPasteImport不再先本地认格式，粘贴确认后一律先走AI整理成题
+      （无Key/AI失败/AI吐0题时自动退回本地parseQuestions保底，两头都
+      认不出才弹aihelp窗）；
+    ②新增splitByQ按题号行切批（每批≤6000字），100题长文不再被
+      slice(0,8000)砍掉尾巴；aihelp窗的AI整理同步换成分批版；
+    ③新提示词XT_PASTE_PROMPT专门叮嘱：原文答案常紧跟问题下一行、
+      没有「答：」标记，AI要认出来并补上标记（治CRRT式裸答案文本
+      粘贴后只有问题没有答案的病根）；
+    ④整理期间确认按钮显示「AI整理中 第X/N批…」并禁用防重复点。
+    v1.7.5 2026-08-11 词后解释（小序号）+注释里定标也画下划线：
+    ①修复：在注释里定标的词，注释展开时不画虚线下划线（renderAnswerHtml漏配）；
+    ②集体形成注释的解释不再生成注释条，直接挂到定标词后面：正文词后显示
+      可点小序号①②③（it.mn 词→解释），点序号弹窗看解释，可✏️改/🤖AI重写/
+      ✂️摘下来变回注释/🗑删；
+    ③注释展开区加「📌 挂到定标词」：把旧注释搬到指定定标词后面变词后解释
+      （noteToMn，点选代替长按拖动）；
+    ④导出错题txt带词解行（词解①词：内容，Obsidian里对号看）；
+    ⑤标记说明窗加「📖 词后解释×N」行，可一键清除（miDo('mn')）。
+    数据：题目对象新增 mn={词:解释}，随分身/云备份自动走。
+    v1.7.4 2026-08-10 丢出双戳+标记说明窗+丢出题入口：
+    ①反复学加「🚫 丢出本题」：不升级也丢出，盖现役戳o（repThrowOut）；
+    ②丢出题任意打档=平反：o自动转历史戳oh（曾丢出×N，永久留痕）——mark()统一处理；
+    ③题目行标记（🚫/⚠️/🔁/📍）全部可点→openMarkInfo说明窗，每标记配大白话说明
+      +就地取消按钮（miDo），解决"符号多了记不住"；
+    ④反复学弹窗加"只抽丢出来的"，档标注加丢出数；首页加「🚫 丢出题(N)」按钮
+      一键循环重点复习（session.rep.out模式，任意打档即出池）。
+    v1.7.3 2026-08-10 学习页也放🔁反复学按钮（用户：刷题刷到一半想进反复学，
+    不该被逼退回首页）。
+    v1.7.2 2026-08-10 反复学按经历细分：
+    弹窗加"反复经历"三选一（不限/只抽没反复过的/只抽反复过的，对勾选档一起生效）；
+    打开弹窗时每档自动标数量（共X题，Y没反复过）；抽题逻辑统一收口到repScan()。
+    v1.7.1 2026-08-10 标记全部可删：
+    ①注释展开区加「🗑 删这条」（以前只能绕去修改本题）；
+    ②修改本题窗加「🔁 清零反复学次数」（有标记才显示）；
+    定标本有清除按钮。另修：version-xiti.json 的 dl 字段 v1.5.0~v1.7.0 推送时丢失
+    导致「下载新版到本机」按钮失效，已补回（教训：版本文件必须照 {version,dl,note} 老格式）。
+    v1.7.0 2026-08-10 四档+反复学：
+    ①档位三升四：陌生(1)/一般(2)/中间(3)/熟悉(4)；migLv4迁移旧数据（旧熟悉3→4，
+      仅跑一次，loadStore/分身恢复/云端恢复三处都挂）；
+    ②🔁反复学：勾1~2个档+抽N题（默认10）→循环刷；mark升出勾选档自动丢出本轮
+      （从session.items和view同时摘除）；刷完一遍repLoop洗牌再来；池空即完成；
+    ③反复学每刷一次progress记r+1，题目行永久显示🔁×次数（getRep）。
+    v1.6.4 2026-08-10 后台存注释"存上了却看不见"的根治：
+    现象=Q19后台问AI→学到Q22→弹窗存入成功→翻回Q19注释按钮还是旧条数；
+    根因=aiCommitNote在"别的题"分支只写题库，没同步session.items快照
+    （开学时复制的旧n数组）；
+    修法=该分支补遍历快照换掉目标题的n。
+    v1.6.3 2026-08-10 问AI后台存注释失败的根治：
+    现象=后台回答弹出后点「📎 存入这道题注释」，回原题看注释没有形成；
+    根因=aiCommitNote残留旧版"注释满3条就拒存"上限（v1.6注释已改动态列表不限条数），
+    命中上限只弹一句toast、不关框也不存，用户以为已存；
+    修法=删除note/bank两处的3条上限。
     v1.6.2 2026-08-09 定标改走常驻按钮（根治vivo手机浏览器浮动按钮不显示）：
     现象=涂黑词后「➕ 定标」浮动按钮始终不出现（排除系统菜单遮挡，用户上下滑动验证）；
     根因=部分国产安卓浏览器对 selectionchange/touchend 选区事件支持不全，浮动按钮方案不可靠；
@@ -483,7 +536,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>习题学习 v1.6.2</title>
+<title>习题学习 v1.8.0</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f2f4f8; color: #222; }
@@ -514,6 +567,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
   .tag.s { background: #fde2e1; color: #c0534f; }
   .tag.y { background: #fdf3d8; color: #a07a1f; }
   .tag.s2 { background: #e1f3e4; color: #2e7d32; }
+  .tag.z { background: #ddf0ea; color: #2a7a6d; }
   .tag.root { background: #e8e0f7; color: #5e35b1; }
   .tag.normal { background: #e3f0fa; color: #2c6e9e; }
   .tag.shift { background: #e0f2f1; color: #00695c; }
@@ -530,6 +584,8 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
   .a-text { font-size: 16px; line-height: 1.7; margin-top: 14px; padding-top: 14px; border-top: 1px dashed #ccc; white-space: pre-wrap; color: #1a4d2e; }
   /* v1.6 定标：待解释词虚线下划线；浮动定标按钮 */
   .mk { text-decoration: underline dashed #c9a227; text-underline-offset: 3px; }
+  /* v1.7.5 词后解释序号：可点小圆圈 */
+  .mkn { font-size: 11px; color: #b06a00; cursor: pointer; vertical-align: super; padding: 0 1px; }
   #mk-btn { position: fixed; z-index: 95; display: none; box-shadow: 0 2px 10px rgba(0,0,0,.2); }
   .a-cover { margin-top: 14px; text-align: center; }
   .mark-row { display: flex; gap: 8px; margin-top: 16px; }
@@ -537,6 +593,8 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
   .btn-ms { background: #c0534f; }
   .btn-yb { background: #d29a26; }
   .btn-sx { background: #2e7d32; }
+  .btn-zj { background: #2a9d8f; }
+  .qmk { cursor: pointer; border-bottom: 1px dashed #999; white-space: nowrap; }
   .nav-row { display: flex; justify-content: space-between; margin-top: 14px; }
   .progress-outer { height: 8px; background: #dde3ea; border-radius: 4px; overflow: hidden; margin: 10px 0; }
   .progress-inner { height: 100%; background: #2c6e9e; width: 0; transition: width .2s; }
@@ -561,7 +619,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 
 <script id="embedded-data" type="application/json">null</script>
 
-<header>📖 习题学习<span class="ver">v1.6.2</span></header>
+<header>📖 习题学习<span class="ver">v1.8.0</span></header>
 
 <!-- ========== 首页 ========== -->
 <div id="page-home" class="page">
@@ -580,6 +638,8 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
     </div>
     <div class="btn-row">
       <button id="btn-start" onclick="startStudy()">▶ 复习勾选的题库</button>
+      <button class="ghost" onclick="openRep()">🔁 反复学</button>
+      <button class="ghost" id="rep-out-btn" onclick="startRepOut()">🚫 丢出题</button>
       <button class="ghost" onclick="openMerge()">🗃 合并勾选的题库</button>
       <button class="ghost" onclick="exportWrong()">📤 导出错题</button>
     </div>
@@ -687,6 +747,12 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 
 <!-- ========== 学习页 ========== -->
 <div id="page-study" class="page hidden">
+  <!-- v1.7：反复学状态条（反复学模式才显示） -->
+  <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap" class="hidden" id="rep-bar-wrap">
+    <div id="rep-bar" style="flex:1;font-size:13px;color:#2a7a6d;background:#ddf0ea;border-radius:8px;padding:8px;min-width:180px"></div>
+    <button class="ghost" style="font-size:13px;padding:6px 10px;white-space:nowrap;color:#c0534f" onclick="repThrowOut()">🚫 丢出本题</button>
+    <button class="ghost" style="font-size:13px;padding:6px 10px;white-space:nowrap" onclick="exitRep()">退出反复学</button>
+  </div>
   <div class="toolbar">
     <button class="ghost" onclick="goHome()">← 返回</button>
     <select id="filter-select" onchange="applyFilter()">
@@ -694,6 +760,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
       <option value="ms">只看陌生</option>
       <option value="ms_yb">陌生+一般</option>
       <option value="yb">只看一般</option>
+      <option value="zj">只看中间</option>
       <option value="sx">只看熟悉</option>
       <option value="new">只看未学</option>
     </select>
@@ -705,6 +772,8 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
       <option value="30">近30天</option>
     </select>
     <button class="ghost" onclick="shuffle()">🔀 打乱</button>
+    <!-- v1.7.3：学习页也能直接进反复学，不用退回首页 -->
+    <button class="ghost" onclick="openRep()">🔁 反复学</button>
   </div>
   <div class="toolbar">
     <input type="text" id="kw-input" placeholder="🔍 关键词筛选（如：铜绿）" style="flex:1;padding:8px 10px;font-size:15px;border:1px solid #ccc;border-radius:8px" onkeydown="if(event.key==='Enter')applyFilter()">
@@ -721,7 +790,8 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
     <div class="mark-row hidden" id="mark-row">
       <button class="btn-ms" onclick="mark(1)">陌生</button>
       <button class="btn-yb" onclick="mark(2)">一般</button>
-      <button class="btn-sx" onclick="mark(3)">熟悉</button>
+      <button class="btn-zj" onclick="mark(3)">中间</button>
+      <button class="btn-sx" onclick="mark(4)">熟悉</button>
     </div>
   </div>
   <div class="nav-row">
@@ -731,6 +801,58 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 </div>
 
 <!-- ========== 弹窗 ========== -->
+<!-- v1.7.4 标记说明窗（点题目行的标记弹出） -->
+<div id="markinfo-modal" class="modal-mask hidden" onclick="if(event.target===this)this.classList.add('hidden')">
+  <div class="modal">
+    <h3>🏷 这题的标记</h3>
+    <div id="markinfo-body" style="font-size:14px"></div>
+    <div class="btn-row" style="margin-top:10px">
+      <button class="ghost" onclick="document.getElementById('markinfo-modal').classList.add('hidden')">关闭</button>
+    </div>
+  </div>
+</div>
+<!-- v1.7.5 词后解释窗（点词后小序号弹出） -->
+<div id="mknote-modal" class="modal-mask hidden" onclick="if(event.target===this)this.classList.add('hidden')">
+  <div class="modal">
+    <h3 id="mknote-title">词后解释</h3>
+    <div id="mknote-body" style="font-size:15px;line-height:1.7;white-space:pre-wrap;margin-bottom:12px"></div>
+    <div class="btn-row" style="flex-wrap:wrap;gap:6px">
+      <button class="ghost" id="mknote-edit" style="font-size:13px;padding:6px 10px">✏️ 改解释</button>
+      <button class="ghost" id="mknote-ai" style="font-size:13px;padding:6px 10px">🤖 让AI重写</button>
+      <button class="ghost" id="mknote-detach" style="font-size:13px;padding:6px 10px">✂️ 摘下来变注释</button>
+      <button class="ghost" id="mknote-del" style="font-size:13px;padding:6px 10px;color:#c0534f">🗑 删除</button>
+      <button class="ghost" style="font-size:13px;padding:6px 10px" onclick="document.getElementById('mknote-modal').classList.add('hidden')">关闭</button>
+    </div>
+  </div>
+</div>
+<!-- v1.7 反复学设置 -->
+<div id="rep-modal" class="modal-mask hidden" onclick="if(event.target===this)this.classList.add('hidden')">
+  <div class="modal">
+    <h3>🔁 反复学</h3>
+    <div style="font-size:14px;color:#666;margin-bottom:8px">从您勾选的题库里抽题，循环刷；题升档后自动丢出本轮</div>
+    <div style="font-size:15px;margin-bottom:6px">从哪几个档抽（勾1~2个）：</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;font-size:16px">
+      <label><input type="checkbox" id="rep-lv1" checked> 陌生</label><span id="rep-lab1" style="font-size:12px;color:#888"></span>
+      <label><input type="checkbox" id="rep-lv2" checked> 一般</label><span id="rep-lab2" style="font-size:12px;color:#888"></span>
+      <label><input type="checkbox" id="rep-lv3"> 中间</label><span id="rep-lab3" style="font-size:12px;color:#888"></span>
+      <label><input type="checkbox" id="rep-lv4"> 熟悉</label><span id="rep-lab4" style="font-size:12px;color:#888"></span>
+    </div>
+    <!-- v1.7.2：按反复经历再细分 -->
+    <div style="font-size:15px;margin-bottom:6px">反复经历：</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;font-size:15px">
+      <label><input type="radio" name="rep-exp" value="all" checked> 不限</label>
+      <label><input type="radio" name="rep-exp" value="none"> 只抽没反复过的</label>
+      <label><input type="radio" name="rep-exp" value="done"> 只抽反复过的</label>
+      <label><input type="radio" name="rep-exp" value="out"> 只抽丢出来的（重点复习）</label>
+    </div>
+    <div style="font-size:15px;margin-bottom:6px">抽几题：</div>
+    <input type="number" id="rep-n" value="10" min="1" max="100" style="width:100%;margin-bottom:10px;font-size:16px;padding:10px">
+    <div class="btn-row">
+      <button onclick="startRep()">🚀 开始反复学</button>
+      <button class="ghost" onclick="document.getElementById('rep-modal').classList.add('hidden')">取消</button>
+    </div>
+  </div>
+</div>
 <!-- 导入确认 -->
 <div id="import-modal" class="modal-mask hidden" onclick="if(event.target===this)cancelImport()">
   <div class="modal">
@@ -762,9 +884,9 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
       <option value="root">词根学习</option>
       <option value="shift">交班英语</option>
     </select>
-    <textarea id="paste-text" placeholder="把题目文字粘贴到这里。格式很宽松：1. / （1）/ ① / 第1题 都行，答案行写 答：或 答案：或 A: 都行；实在认不出会问你要不要AI帮忙整理。"></textarea>
+    <textarea id="paste-text" placeholder="把题目文字粘贴到这里，点确认后AI帮你整理成习题（用你存的Kimi key，费一点点额度）。格式无所谓，答案没有「答：」标记AI也能认出来。"></textarea>
     <div class="btn-row">
-      <button onclick="doPasteImport()">确认导入</button>
+      <button id="paste-ok" onclick="doPasteImport()">确认导入</button>
       <button class="ghost" onclick="closePaste()">取消</button>
     </div>
   </div>
@@ -792,6 +914,8 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
     <!-- v1.6：3个固定框→动态列表 -->
     <div id="edit-notes"></div>
     <button class="ghost" style="font-size:13px;padding:6px 10px;margin-bottom:6px" onclick="editAddNote()">➕ 加一条注释</button>
+    <!-- v1.7.1：本题有反复学标记时才显示清零按钮 -->
+    <button class="ghost hidden" id="rep-clear-btn" style="font-size:13px;padding:6px 10px;margin-bottom:6px" onclick="repClear()">🔁 清零反复学次数</button>
     <div class="btn-row">
       <button onclick="saveEdit()">保存</button>
       <button class="ghost" onclick="closeEdit()">取消</button>
@@ -994,6 +1118,7 @@ window.onerror = function (msg, src, line) { toast("出错：" + msg + "（第" 
 /* ================= 数据层 ================= */
 var LS_KEY = "xitixuexi_v01";
 var store = loadStore();
+migLv4(); /* v1.7：旧三档数据迁移四档 */
 var currentMode = sessionStorage.getItem("xiti_mode") || "normal";
 var shiftDir = sessionStorage.getItem("xiti_shiftDir") || "zh";
 
@@ -1021,6 +1146,30 @@ function getLevel(bankId, idx) {
 function getTime(bankId, idx) {
   var p = store.progress[pKey(bankId, idx)];
   return (p && p.t) || 0;
+}
+/* v1.7：反复学次数标记（永久） */
+function getRep(bankId, idx) {
+  var p = store.progress[pKey(bankId, idx)];
+  return (p && p.r) || 0;
+}
+/* v1.7.4：丢出（现役🚫）与曾丢出（历史⚠️） */
+function getOut(bankId, idx) {
+  var p = store.progress[pKey(bankId, idx)];
+  return (p && p.o) || 0;
+}
+function getOh(bankId, idx) {
+  var p = store.progress[pKey(bankId, idx)];
+  return (p && p.oh) || 0;
+}
+/* v1.7：三档→四档迁移（旧"熟悉3"升级为4，新3=中间），只跑一次 */
+function migLv4() {
+  if (!store || store.lv4) return;
+  Object.keys(store.progress || {}).forEach(function (k) {
+    var p = store.progress[k];
+    if (typeof p === "number") { if (p === 3) store.progress[k] = 4; }
+    else if (p && p.l === 3) p.l = 4;
+  });
+  store.lv4 = true;
 }
 
 /* ================= 模式切换 ================= */
@@ -1152,14 +1301,68 @@ function doPasteImport() {
   var type = document.getElementById("paste-type").value;
   var dest = +document.getElementById("paste-dest").value; // v1.5.0：>=0 表示从题库卡片进来，默认并入该库
   var text = document.getElementById("paste-text").value;
-  var qs = parseQuestions(text);
-  // v1.5.0：认不出格式 → 弹窗问要不要AI帮忙整理
-  if (!qs.length) { pendingPaste = { name: name, type: type, dest: dest, text: text }; openAiHelp(); return; }
-  closePaste();
-  document.getElementById("paste-text").value = ""; document.getElementById("paste-name").value = ""; document.getElementById("paste-dest").value = "-1";
-  enqueueImport(name, qs, type, dest >= 0 ? dest : null);
+  if (!text.trim()) { toast("先粘贴题目文字"); return; }
+  // v1.8.0：AI优先——一律先走AI整理，不行才退本地认格式
+  var btn = document.getElementById("paste-ok");
+  btn.disabled = true; btn.textContent = "AI整理中…";
+  aiPasteImport(name, type, dest, text, btn);
 }
-/* ---- v1.5.0 AI帮忙整理格式 ---- */
+/* ---- v1.8.0 AI优先粘贴导入 ---- */
+var XT_PASTE_PROMPT = "你是习题格式整理助手。把用户给的文字整理成问答题库格式，每题两行：第一行「1. 题目」，第二行「答：答案」（答案有多行就跟在后面）。特别注意：原文里答案常常就紧跟在问题下一行、没有任何标记，你要认出来并在前面补上「答：」。保持题目原来的顺序，题号从1递增。只输出整理后的题目，不要任何解释、标题或多余的话。如果内容里有交班英语（中文配英文翻译），改用「Q:中文」加「A:英文」两行一题。";
+function splitByQ(text, maxLen) {
+  // 按题号行切批，每批尽量≤maxLen字；单批仍超长就硬切兜底
+  var isQ = /^\s*(?:\d+\s*[.、．\)]|第\s*\d+\s*题|[①-⑳])/;
+  var lines = text.split("\n"), out = [], cur = "", i, l;
+  for (i = 0; i < lines.length; i++) {
+    l = lines[i];
+    if (cur && cur.length + l.length + 1 > maxLen && isQ.test(l)) { out.push(cur); cur = l; }
+    else cur = cur ? cur + "\n" + l : l;
+  }
+  if (cur) out.push(cur);
+  var res = [];
+  out.forEach(function (s) {
+    while (s.length > maxLen * 1.5) { res.push(s.slice(0, maxLen)); s = s.slice(maxLen); }
+    if (s.trim()) res.push(s);
+  });
+  return res;
+}
+async function aiPasteImport(name, type, dest, text, btn) {
+  var resetBtn = function () { btn.disabled = false; btn.textContent = "确认导入"; };
+  var finish = function (qs, msg) {
+    closePaste();
+    document.getElementById("paste-text").value = ""; document.getElementById("paste-name").value = ""; document.getElementById("paste-dest").value = "-1";
+    resetBtn();
+    enqueueImport(name, qs, type, dest >= 0 ? dest : null);
+    toast(msg + "，共 " + qs.length + " 题");
+  };
+  var localTry = function () { var qs = parseQuestions(text); return qs.length ? qs : null; };
+  try {
+    if (!needKey()) { // 没key：先去设置窗，同时本地认格式保底
+      resetBtn();
+      var q0 = localTry();
+      if (q0) finish(q0, "没有AI key，改本地格式认出");
+      else { pendingPaste = { name: name, type: type, dest: dest, text: text }; openAiHelp(); }
+      return;
+    }
+    var batches = splitByQ(text, 6000), allQs = [], i;
+    for (i = 0; i < batches.length; i++) {
+      btn.textContent = "AI整理中 第" + (i + 1) + "/" + batches.length + "批…";
+      var fixed = await callAI(XT_PASTE_PROMPT, batches[i]);
+      allQs = allQs.concat(parseQuestions(fixed));
+    }
+    if (allQs.length) { finish(allQs, "AI整理完成"); return; }
+    resetBtn();
+    var q1 = localTry();
+    if (q1) finish(q1, "AI没认出来，本地格式认出");
+    else toast("AI和本地都认不出这段内容，请检查是不是问答题");
+  } catch (e) {
+    resetBtn();
+    var q2 = localTry();
+    if (q2) finish(q2, "AI整理失败（" + e.message + "），改本地格式认出");
+    else toast("AI整理失败：" + e.message + "；本地也认不出格式");
+  }
+}
+/* ---- v1.5.0 AI帮忙整理格式（v1.8.0起仅作无key时的兜底入口） ---- */
 var pendingPaste = null;
 function openAiHelp() {
   document.getElementById("aihelp-yes").disabled = false;
@@ -1171,12 +1374,13 @@ async function aiHelpYes() {
   if (!needKey()) return; // 没key就去设置窗，本窗留着
   var btn = document.getElementById("aihelp-yes");
   btn.disabled = true;
-  document.getElementById("aihelp-info").textContent = "AI整理中，请稍等…";
   try {
-    var fixed = await callAI(
-      "你是习题格式整理助手。把用户给的文字整理成问答题库格式，每题两行：第一行「1. 题目」，第二行「答：答案」（答案有多行就跟在后面）。题号从1递增。只输出整理后的题目，不要任何解释、标题或多余的话。如果内容里有交班英语（中文配英文翻译），改用「Q:中文」加「A:英文」两行一题。",
-      pendingPaste.text.slice(0, 8000));
-    var qs = parseQuestions(fixed);
+    var batches = splitByQ(pendingPaste.text, 6000), qs = [];
+    for (var i = 0; i < batches.length; i++) {
+      document.getElementById("aihelp-info").textContent = "AI整理中 第" + (i + 1) + "/" + batches.length + "批…";
+      var fixed = await callAI(XT_PASTE_PROMPT, batches[i]);
+      qs = qs.concat(parseQuestions(fixed));
+    }
     if (!qs.length) {
       document.getElementById("aihelp-info").textContent = "AI整理后还是认不出来，这段内容可能不是问答题。请手工改成「1.题目 换行 答：答案」再试。";
       btn.disabled = false;
@@ -1253,9 +1457,9 @@ function renderBanks() {
   var html = "";
   modeBanks.forEach(function (b, bi) {
     var realIdx = store.banks.indexOf(b);
-    var c = { 1: 0, 2: 0, 3: 0 };
+    var c = { 1: 0, 2: 0, 3: 0, 4: 0 };
     b.questions.forEach(function (_, qi) { var lv = getLevel(b.id, qi); if (c[lv] !== undefined) c[lv]++; });
-    var newN = b.questions.length - c[1] - c[2] - c[3];
+    var newN = b.questions.length - c[1] - c[2] - c[3] - c[4];
     var typeTag = "";
     if (b.type === "root") typeTag = "<span class=\"tag root\">词根</span>";
     else if (b.type === "shift") typeTag = "<span class=\"tag shift\">交班</span>";
@@ -1264,7 +1468,7 @@ function renderBanks() {
       + "<input type=\"checkbox\" class=\"bank-check\" data-bi=\"" + realIdx + "\" checked>"
       + "<div class=\"bank-info\"><div class=\"bank-name\">" + esc(b.name) + " " + typeTag + "</div>"
       + "<div class=\"bank-stats\">共" + b.questions.length + "题 ｜ "
-      + "<span class=\"tag s\">陌生" + c[1] + "</span><span class=\"tag y\">一般" + c[2] + "</span><span class=\"tag s2\">熟悉" + c[3] + "</span> 未学" + newN
+      + "<span class=\"tag s\">陌生" + c[1] + "</span><span class=\"tag y\">一般" + c[2] + "</span><span class=\"tag z\">中间" + c[3] + "</span><span class=\"tag s2\">熟悉" + c[4] + "</span> 未学" + newN
       + "</div></div>"
       + "<button class=\"ghost\" style=\"padding:6px 10px;font-size:13px\" onclick=\"openAiBank(" + realIdx + ")\">🤖 AI出题</button>"
       + "<button class=\"ghost\" style=\"padding:6px 10px;font-size:13px\" onclick=\"openPasteBank(" + realIdx + ")\">📋 粘贴出题</button>"
@@ -1272,6 +1476,14 @@ function renderBanks() {
       + "</div>";
   });
   box.innerHTML = html;
+  /* v1.7.4：首页丢出题按钮带数量 */
+  var outBtn = document.getElementById("rep-out-btn");
+  if (outBtn) {
+    var outN = 0;
+    modeBanks.forEach(function (b) { b.questions.forEach(function (_, qi) { if (getOut(b.id, qi)) outN++; }); });
+    outBtn.textContent = "🚫 丢出题（" + outN + "）";
+    outBtn.style.opacity = outN ? "1" : "0.5";
+  }
 }
 
 /* ================= 词根面板 ================= */
@@ -1397,6 +1609,137 @@ function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").
 
 /* ================= 学习 ================= */
 var session = null;
+/* ================= v1.7.4 标记说明窗 ================= */
+function miRow(icon, txt, btnTxt, fn) {
+  return "<div style=\"border-bottom:1px solid #eee;padding:8px 0\"><b>" + icon + "</b>：" + txt
+    + "<div style=\"text-align:right;margin-top:4px\"><button class=\"ghost\" style=\"font-size:13px;padding:5px 10px;color:#c0534f\" onclick=\"" + fn + "\">" + btnTxt + "</button></div></div>";
+}
+function openMarkInfo() {
+  var it = curList()[session.pos];
+  var k = pKey(it.bankId, it.idx);
+  var p = store.progress[k] || {};
+  var rows = "";
+  if (p.o) rows += miRow("🚫 丢出", "反复学时没学会，手动放一边的，要重点复习。给它打个档就自动转成「曾丢出」。", "取消丢出", "miDo('o')");
+  if (p.oh > 0) rows += miRow("⚠️ 曾丢出×" + p.oh, "以前被丢出过" + p.oh + "次，后来升档了。留着提个醒：这题有前科，升了档也要留神。", "清除曾丢出记录", "miDo('oh')");
+  if ((p.r || 0) > 0) rows += miRow("🔁 反复学×" + p.r, "在反复学里刷过" + p.r + "遍。", "反复学次数清零", "miDo('r')");
+  var mkc = (it.mk || []).length;
+  if (mkc > 0) rows += miRow("📍 定标×" + mkc, "划了" + mkc + "个词，等着点「🤖 集体形成注释」让AI解释。", "清除定标", "miDo('mk')");
+  var mnc = it.mn ? Object.keys(it.mn).length : 0;
+  if (mnc > 0) rows += miRow("📖 词后解释×" + mnc, "定标词后面的小序号，点一下看解释；也可点解释窗里的✂️摘下来变回注释。", "清除全部词后解释", "miDo('mn')");
+  document.getElementById("markinfo-body").innerHTML = rows || "这题现在没有任何标记。";
+  document.getElementById("markinfo-modal").classList.remove("hidden");
+}
+function miDo(what) {
+  var it = curList()[session.pos];
+  var k = pKey(it.bankId, it.idx);
+  var p = store.progress[k] || {};
+  var msg = { o: "取消这题的「丢出」标记？", oh: "清除这题的「曾丢出」记录？", r: "把这题的反复学次数清零？", mk: "清除这题的全部定标？", mn: "清除这题的全部词后解释？（定标下划线保留）" }[what];
+  if (!confirm(msg)) return;
+  if (what === "o") delete p.o;
+  else if (what === "oh") p.oh = 0;
+  else if (what === "r") p.r = 0;
+  else if (what === "mk") { it.mk = []; syncMkToBank(it); }
+  else if (what === "mn") { it.mn = {}; syncMnToBank(it); }
+  if (what !== "mk" && what !== "mn") store.progress[k] = p;
+  saveStore();
+  document.getElementById("markinfo-modal").classList.add("hidden");
+  showQ();
+  toast("已处理");
+}
+
+/* ================= v1.7 反复学 ================= */
+/* v1.7.2：打开弹窗时给每档标数量（共X题，Y题没反复过） */
+function repScan(lvs) {
+  var boxId = currentMode === "normal" ? "bank-list" : (currentMode === "root" ? "bank-list-root" : "bank-list-shift");
+  var pool = [];
+  document.getElementById(boxId).querySelectorAll(".bank-check").forEach(function (c) {
+    if (!c.checked) return;
+    var b = store.banks[+c.dataset.bi];
+    var bt = b.type || "normal";
+    if (bt !== currentMode) return;
+    b.questions.forEach(function (q, qi) {
+      if (!lvs || lvs.indexOf(getLevel(b.id, qi)) > -1) pool.push({ bankId: b.id, bankName: b.name, idx: qi, q: q.q, a: q.a, n: q.n, mk: q.mk, type: bt, lv: getLevel(b.id, qi) });
+    });
+  });
+  return pool;
+}
+function openRep() {
+  /* 标数量 */
+  var pool = repScan(null);
+  [1, 2, 3, 4].forEach(function (lv) {
+    var all = pool.filter(function (x) { return x.lv === lv; });
+    var fresh = all.filter(function (x) { return getRep(x.bankId, x.idx) === 0; });
+    var outN = all.filter(function (x) { return getOut(x.bankId, x.idx) > 0; }).length;
+    document.getElementById("rep-lab" + lv).textContent = all.length
+      ? "(" + all.length + "题，" + fresh.length + "没反复过" + (outN ? "，" + outN + "丢出" : "") + ")" : "(0题)";
+  });
+  document.getElementById("rep-modal").classList.remove("hidden");
+}
+function startRep() {
+  var lvs = [];
+  [1, 2, 3, 4].forEach(function (lv) { if (document.getElementById("rep-lv" + lv).checked) lvs.push(lv); });
+  if (!lvs.length) { toast("先勾至少一个档"); return; }
+  var n = +document.getElementById("rep-n").value || 10;
+  /* v1.7.2：反复经历筛选 */
+  var exp = "all";
+  var radios = document.getElementsByName("rep-exp");
+  for (var ri = 0; ri < radios.length; ri++) if (radios[ri].checked) exp = radios[ri].value;
+  var pool = repScan(lvs).filter(function (x) {
+    var r = getRep(x.bankId, x.idx);
+    if (exp === "none") return r === 0 && !getOut(x.bankId, x.idx);
+    if (exp === "done") return r > 0 && !getOut(x.bankId, x.idx);
+    if (exp === "out") return getOut(x.bankId, x.idx) > 0;
+    return true;
+  });
+  if (!pool.length) { toast(exp === "all" ? "勾选的档里没有题，先去正常学习刷几题定档" : (exp === "none" ? "勾选的档里没有「没反复过」的题" : (exp === "out" ? "勾选的档里没有「丢出来」的题" : "勾选的档里没有「反复过」的题"))); return; }
+  for (var i = pool.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = pool[i]; pool[i] = pool[j]; pool[j] = t; }
+  var items = pool.slice(0, n);
+  session = { items: items, pos: 0, rep: { lvs: lvs } };
+  view = null;
+  document.getElementById("rep-modal").classList.add("hidden");
+  document.getElementById("page-home").classList.add("hidden");
+  document.getElementById("page-study").classList.remove("hidden");
+  document.getElementById("filter-select").value = "all";
+  document.getElementById("time-select").value = "0";
+  document.getElementById("kw-input").value = "";
+  showQ();
+  toast("🔁 反复学开始：共" + items.length + "题，刷完自动循环");
+}
+function exitRep() {
+  if (session) session.rep = null;
+  document.getElementById("rep-bar-wrap").classList.add("hidden");
+  goHome();
+}
+/* v1.7.4：反复学中手动丢出本题（不升级，盖🚫现役戳，以后重点复习） */
+function repThrowOut() {
+  if (!session || !session.rep) return;
+  var it = curList()[session.pos];
+  var k = pKey(it.bankId, it.idx);
+  var old = store.progress[k] || {};
+  store.progress[k] = { l: old.l || 0, t: old.t || 0, r: (old.r || 0) + 1, oh: old.oh || 0, o: Date.now() };
+  var i1 = session.items.indexOf(it); if (i1 > -1) session.items.splice(i1, 1);
+  if (view) { var i2 = view.indexOf(it); if (i2 > -1) view.splice(i2, 1); }
+  saveStore();
+  if (!curList().length) { exitRep(); toast("🎉 本轮反复学结束"); return; }
+  toast("🚫 已丢出，标为重点复习（首页「丢出题」可找回）");
+  if (session.pos >= curList().length) repLoop(); else showQ();
+}
+/* v1.7.4：首页「🚫 丢出题」——勾选题库里所有现役丢出题，直接循环重点复习 */
+function startRepOut() {
+  var pool = repScan(null).filter(function (x) { return getOut(x.bankId, x.idx) > 0; });
+  if (!pool.length) { toast("现在没有丢出来的题"); return; }
+  for (var i = pool.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = pool[i]; pool[i] = pool[j]; pool[j] = t; }
+  session = { items: pool, pos: 0, rep: { lvs: [], out: true } };
+  view = null;
+  document.getElementById("page-home").classList.add("hidden");
+  document.getElementById("page-study").classList.remove("hidden");
+  document.getElementById("filter-select").value = "all";
+  document.getElementById("time-select").value = "0";
+  document.getElementById("kw-input").value = "";
+  showQ();
+  toast("🚫 重点复习丢出题：共" + pool.length + "题，打档即平反（转曾丢出）");
+}
+
 function startStudy() {
   // v0.12.3修复：只扫描当前面板的题库列表，结构上保证选哪个类别就学哪一类
   var boxId = currentMode === "normal" ? "bank-list" : (currentMode === "root" ? "bank-list-root" : "bank-list-shift");
@@ -1429,7 +1772,8 @@ function filteredItems() {
     if (f === "all") ok = true;
     else if (f === "ms") ok = lv === 1;
     else if (f === "yb") ok = lv === 2;
-    else if (f === "sx") ok = lv === 3;
+    else if (f === "zj") ok = lv === 3;
+    else if (f === "sx") ok = lv === 4;
     else if (f === "ms_yb") ok = lv === 1 || lv === 2;
     else ok = lv === 0;
     if (!ok) return false;
@@ -1468,9 +1812,18 @@ function showQ() {
   if (session.pos < 0) session.pos = 0;
   var it = list[session.pos];
   var lv = getLevel(it.bankId, it.idx);
-  var lvTxt = ["未学", "陌生", "一般", "熟悉"][lv];
+  var lvTxt = ["未学", "陌生", "一般", "中间", "熟悉"][lv];
   var tTxt = it.type === "root" ? "词根学习" : (it.type === "shift" ? "交班英语" : "普通题库");
-  document.getElementById("q-meta").textContent = tTxt + " ｜ " + it.bankName + " ｜ 第" + (session.pos + 1) + "/" + list.length + "题 ｜ " + lvTxt;
+  /* v1.7.4：标记全部可点（点了出说明+取消按钮） */
+  var rp = getRep(it.bankId, it.idx);
+  var mkc = (it.mk || []).length;
+  var marks = "";
+  if (getOut(it.bankId, it.idx)) marks += " <span class=\"qmk\" onclick=\"openMarkInfo()\">🚫丢出</span>";
+  var ohc = getOh(it.bankId, it.idx);
+  if (ohc > 0) marks += " <span class=\"qmk\" onclick=\"openMarkInfo()\">⚠️曾丢出×" + ohc + "</span>";
+  if (rp > 0) marks += " <span class=\"qmk\" onclick=\"openMarkInfo()\">🔁×" + rp + "</span>";
+  if (mkc > 0) marks += " <span class=\"qmk\" onclick=\"openMarkInfo()\">📍定标×" + mkc + "</span>";
+  document.getElementById("q-meta").innerHTML = tTxt + " ｜ " + esc(it.bankName) + " ｜ 第" + (session.pos + 1) + "/" + list.length + "题 ｜ " + lvTxt + (marks ? " ｜" + marks : "");
 
   // 交班英语：根据方向决定先显示哪边
   if (it.type === "shift") {
@@ -1487,15 +1840,24 @@ function showQ() {
     document.getElementById("a-area").innerHTML = "<div class=\"a-cover\"><button class=\"ghost\" onclick=\"reveal()\">👁 显示答案</button></div>";
   }
   document.getElementById("mark-row").classList.add("hidden");
-  var c = { 0: 0, 1: 0, 2: 0, 3: 0 };
+  var c = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0 };
   session.items.forEach(function (x) { c[getLevel(x.bankId, x.idx)]++; });
-  document.getElementById("stat-line").textContent = "总" + session.items.length + "题：陌生" + c[1] + " 一般" + c[2] + " 熟悉" + c[3] + " 未学" + c[0];
+  document.getElementById("stat-line").textContent = "总" + session.items.length + "题：陌生" + c[1] + " 一般" + c[2] + " 中间" + c[3] + " 熟悉" + c[4] + " 未学" + c[0];
+  /* v1.7：反复学状态条 */
+  var rbw = document.getElementById("rep-bar-wrap");
+  if (session.rep) {
+    var lvNames = ["", "陌生", "一般", "中间", "熟悉"];
+    document.getElementById("rep-bar").textContent = session.rep.out
+      ? "🚫 重点复习丢出题｜本轮剩 " + list.length + " 题，打档即平反"
+      : "🔁 反复学中（" + session.rep.lvs.map(function (x) { return lvNames[x]; }).join("＋") + "档）｜本轮剩 " + list.length + " 题，刷完自动循环";
+    rbw.classList.remove("hidden");
+  } else rbw.classList.add("hidden");
   document.getElementById("progress-inner").style.width = ((session.pos + 1) / list.length * 100) + "%";
 }
 
 function reveal() {
   var it = curList()[session.pos];
-  var html = "<div class=\"a-text\">" + renderAnswerHtml(it.a, it.mk) + "</div>" + mkRowHtml(it);
+  var html = "<div class=\"a-text\">" + renderAnswerHtml(it.a, it.mk, it.mn) + "</div>" + mkRowHtml(it);
   var notes = it.n || [];
   for (var i = 0; i < notes.length; i++) {
     if (notes[i]) html += "<button class=\"ghost\" style=\"margin:8px 6px 0 0;font-size:13px;padding:6px 10px\" onclick=\"toggleNote(" + i + ")\">📎 注释" + (i + 1) + "</button>";
@@ -1508,7 +1870,7 @@ function reveal() {
 function revealShift() {
   // v0.12.6修复：补加注释按钮（v0.12遗漏，普通/词根库的reveal()本来就有）
   var it = curList()[session.pos];
-  var html = "<div class=\"a-text\">" + renderAnswerHtml(session._shiftSecond, it.mk) + "</div>" + mkRowHtml(it);
+  var html = "<div class=\"a-text\">" + renderAnswerHtml(session._shiftSecond, it.mk, it.mn) + "</div>" + mkRowHtml(it);
   var notes = it.n || [];
   for (var i = 0; i < notes.length; i++) {
     if (notes[i]) html += "<button class=\"ghost\" style=\"margin:8px 6px 0 0;font-size:13px;padding:6px 10px\" onclick=\"toggleNote(" + i + ")\">📎 注释" + (i + 1) + "</button>";
@@ -1522,9 +1884,20 @@ function toggleNote(ni) {
   var it = curList()[session.pos];
   var area = document.getElementById("note-area");
   if (area.getAttribute("data-open") === String(ni)) { area.innerHTML = ""; area.setAttribute("data-open", ""); return; }
-  area.innerHTML = "<div class=\"a-text\" style=\"color:#5a4a1f;background:#fdf8ec;border-radius:8px;padding:12px\">" + esc(it.n[ni]) + "</div>"
-    + "<div style=\"text-align:right;margin-top:6px\"><button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"addMarkFromSelection()\">📍 定标选中词</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"noteManualEdit(" + ni + ")\">✏️ 改这条</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"aiRewriteNote(" + ni + ")\">🤖 让AI整理这条注释</button></div>";
+  /* v1.7.5修复：注释里定标的词也要画下划线（以前只答案区画，注释区漏配） */
+  area.innerHTML = "<div class=\"a-text\" style=\"color:#5a4a1f;background:#fdf8ec;border-radius:8px;padding:12px\">" + renderAnswerHtml(it.n[ni], it.mk, it.mn) + "</div>"
+    + "<div style=\"text-align:right;margin-top:6px\"><button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"addMarkFromSelection()\">📍 定标选中词</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"noteToMn(" + ni + ")\">📌 挂到定标词</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"noteManualEdit(" + ni + ")\">✏️ 改这条</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px\" onclick=\"aiRewriteNote(" + ni + ")\">🤖 让AI整理这条注释</button> <button class=\"ghost\" style=\"font-size:13px;padding:6px 10px;color:#c0534f\" onclick=\"noteDelete(" + ni + ")\">🗑 删这条</button></div>";
   area.setAttribute("data-open", String(ni));
+}
+/* v1.7.1：注释可单独删除（以前只能绕去修改本题） */
+function noteDelete(ni) {
+  var it = curList()[session.pos];
+  if (!confirm("删掉注释" + (ni + 1) + "？\n\n" + (it.n[ni] || "").slice(0, 40)) || !it.n) return;
+  it.n.splice(ni, 1);
+  store.banks.forEach(function (b) { if (b.id === it.bankId) { b.questions[it.idx].n = it.n; } });
+  saveStore();
+  if (it.type !== "shift") reveal(); else revealShift();
+  toast("已删除，剩" + it.n.length + "条注释");
 }
 /* v1.6.1：注释手动编辑（以前只能AI整理或进修改本题窗，太绕） */
 function noteManualEdit(ni) {
@@ -1593,12 +1966,21 @@ function aiRwCancel() {
 }
 
 /* ================= v1.6 定标→集体形成注释 ================= */
-/* 答案里已定标的词显示虚线下划线 */
-function renderAnswerHtml(a, mk) {
+/* 词后解释序号：①…⑩，超出用(11)样式 */
+function mnNum(i) {
+  var circ = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧", "⑨", "⑩"];
+  return i < 10 ? circ[i] : "(" + (i + 1) + ")";
+}
+/* 答案里已定标的词显示虚线下划线；有词后解释（mn）的词后面跟可点小序号 */
+function renderAnswerHtml(a, mk, mn) {
   var html = esc(a);
+  var keys = mn ? Object.keys(mn) : [];
   (mk || []).forEach(function (t) {
     var et = esc(t);
-    html = html.split(et).join("<span class=\"mk\">" + et + "</span>");
+    var rep = "<span class=\"mk\">" + et + "</span>";
+    var mi = keys.indexOf(t);
+    if (mi >= 0) rep += "<span class=\"mkn\" onclick=\"openMkNote(" + mi + ")\">" + mnNum(mi) + "</span>";
+    html = html.split(et).join(rep);
   });
   return html;
 }
@@ -1606,7 +1988,9 @@ function renderAnswerHtml(a, mk) {
 function mkRowHtml(it) {
   var mk = it.mk || [];
   if (!mk.length) return "";
+  var mnc = it.mn ? Object.keys(it.mn).length : 0;
   return "<div style=\"margin-top:8px;font-size:13px;color:#8a6d1f;background:#fdf8ec;border-radius:8px;padding:8px\">📍 已定标 " + mk.length + " 个：" + esc(mk.join("、")) +
+    (mnc ? "（" + mnc + "个已有词后解释，点词后小序号看）" : "") +
     " <button style=\"font-size:13px;padding:5px 8px\" onclick=\"aiMkAll()\">🤖 集体形成注释</button>" +
     " <button class=\"ghost\" style=\"font-size:13px;padding:5px 8px\" onclick=\"clearMk()\">清除</button></div>";
 }
@@ -1672,9 +2056,10 @@ function clearMk() {
 async function aiMkAll() {
   if (!needKey()) return;
   var it = curList()[session.pos];
-  var mk = (it.mk || []).slice();
-  if (!mk.length) return;
-  toast("AI正在为 " + mk.length + " 个定标词写注释…");
+  /* v1.7.5：已有词后解释的词跳过，只解释还没解释的 */
+  var mk = (it.mk || []).filter(function (t) { return !(it.mn && it.mn[t]); });
+  if (!mk.length) { toast("定标的词都已经有词后解释了"); return; }
+  toast("AI正在为 " + mk.length + " 个定标词写解释…");
   try {
     var ans = await callAI(
       "你是重症医学教学助手。用户学习一道题时划了几个词想让你逐一解释。只返回一个JSON对象（不要markdown围栏，不要解释）：{\"annots\":[{\"term\":\"词\",\"note\":\"解释\"}]}。term必须和用户给的词一字不差原样返回；note用大白话解释这个词在这道题语境下的含义，60字以内。",
@@ -1682,19 +2067,120 @@ async function aiMkAll() {
     var m = ans.replace(/```json|```/g, "").match(/\{[\s\S]*\}/);
     var obj = m ? JSON.parse(m[0]) : null;
     if (!obj || !Array.isArray(obj.annots)) throw new Error("AI回信格式不对，请重试");
-    it.n = it.n || [];
+    /* v1.7.5：解释不再生成注释条，直接挂到词后面（it.mn 词→解释），点小序号看 */
+    it.mn = it.mn || {};
     var done = [];
     obj.annots.forEach(function (a) {
-      if (a && a.term && a.note) { it.n.push(a.term + "：" + a.note); done.push(a.term); }
+      if (a && a.term && a.note && mk.indexOf(a.term) >= 0) { it.mn[a.term] = a.note; done.push(a.term); }
     });
     if (!done.length) throw new Error("AI没写出注释，请重试");
-    it.mk = mk.filter(function (t) { return done.indexOf(t) < 0; }); /* 没解释到的词留着下次再形成 */
-    syncMkToBank(it);
-    store.banks.forEach(function (b) { if (b.id === it.bankId) { b.questions[it.idx].n = it.n; } });
+    syncMnToBank(it);
     saveStore();
     if (it.type !== "shift") reveal(); else revealShift();
-    toast("✅ 已形成 " + done.length + " 条注释（📎注释按钮里看）");
+    toast("✅ 已形成 " + done.length + " 条词后解释（点词后面的小序号看）");
   } catch (e) { toast("集体形成失败：" + e.message); }
+}
+/* v1.7.5：词后解释（mn）同步到题库（和快照同一份引用，写bank即可） */
+function syncMnToBank(it) {
+  store.banks.forEach(function (b) { if (b.id === it.bankId) { b.questions[it.idx].mn = it.mn; } });
+}
+/* 点词后小序号：弹出解释窗（看/改/AI重写/摘下/删） */
+function openMkNote(mi) {
+  var it = curList()[session.pos];
+  var keys = it.mn ? Object.keys(it.mn) : [];
+  var term = keys[mi];
+  if (!term) return;
+  document.getElementById("mknote-title").textContent = mnNum(mi) + " " + term;
+  document.getElementById("mknote-body").textContent = it.mn[term];
+  document.getElementById("mknote-edit").setAttribute("onclick", "mnEdit(" + mi + ")");
+  document.getElementById("mknote-ai").setAttribute("onclick", "mnAi(" + mi + ")");
+  document.getElementById("mknote-detach").setAttribute("onclick", "mnDetach(" + mi + ")");
+  document.getElementById("mknote-del").setAttribute("onclick", "mnDel(" + mi + ")");
+  document.getElementById("mknote-modal").classList.remove("hidden");
+}
+function mnEdit(mi) {
+  var it = curList()[session.pos];
+  var term = Object.keys(it.mn)[mi];
+  if (!term) return;
+  var nv = prompt("改「" + term + "」的解释：", it.mn[term]);
+  if (nv === null) return;
+  nv = nv.trim();
+  if (!nv) { toast("解释不能为空（想删请点🗑）"); return; }
+  it.mn[term] = nv;
+  syncMnToBank(it); saveStore();
+  document.getElementById("mknote-modal").classList.add("hidden");
+  if (it.type !== "shift") reveal(); else revealShift();
+  toast("已改");
+}
+async function mnAi(mi) {
+  if (!needKey()) return;
+  var it = curList()[session.pos];
+  var term = Object.keys(it.mn)[mi];
+  if (!term) return;
+  toast("AI正在重写「" + term + "」的解释…");
+  try {
+    var ans = await callAI(
+      "你是重症医学教学助手。只返回一个JSON对象（不要markdown围栏，不要解释）：{\"note\":\"解释\"}。note用大白话解释这个词在这道题语境下的含义，60字以内。",
+      "题目：" + it.q + "\n答案：" + it.a + "\n\n请解释这个词：" + term);
+    var m = ans.replace(/```json|```/g, "").match(/\{[\s\S]*\}/);
+    var obj = m ? JSON.parse(m[0]) : null;
+    if (!obj || !obj.note) throw new Error("AI回信格式不对，请重试");
+    it.mn[term] = obj.note;
+    syncMnToBank(it); saveStore();
+    document.getElementById("mknote-modal").classList.add("hidden");
+    if (it.type !== "shift") reveal(); else revealShift();
+    toast("✅ 已重写");
+  } catch (e) { toast("重写失败：" + e.message); }
+}
+/* 摘下来：词后解释变回普通注释 */
+function mnDetach(mi) {
+  var it = curList()[session.pos];
+  var term = Object.keys(it.mn)[mi];
+  if (!term) return;
+  it.n = it.n || [];
+  it.n.push(term + "：" + it.mn[term]);
+  delete it.mn[term];
+  syncMnToBank(it);
+  store.banks.forEach(function (b) { if (b.id === it.bankId) { b.questions[it.idx].n = it.n; } });
+  saveStore();
+  document.getElementById("mknote-modal").classList.add("hidden");
+  if (it.type !== "shift") reveal(); else revealShift();
+  toast("已摘下来，变成注释" + it.n.length);
+}
+function mnDel(mi) {
+  var it = curList()[session.pos];
+  var term = Object.keys(it.mn)[mi];
+  if (!term) return;
+  if (!confirm("删掉「" + term + "」的词后解释？（定标下划线还在）")) return;
+  delete it.mn[term];
+  syncMnToBank(it); saveStore();
+  document.getElementById("mknote-modal").classList.add("hidden");
+  if (it.type !== "shift") reveal(); else revealShift();
+  toast("已删");
+}
+/* v1.7.5：把一条注释挂到某个定标词后面（注释→词后解释） */
+function noteToMn(ni) {
+  var it = curList()[session.pos];
+  var mk = it.mk || [];
+  if (!mk.length) { toast("这题还没定标任何词，先涂黑定标再挂"); return; }
+  var term = mk[0];
+  if (mk.length > 1) {
+    var menu = mk.map(function (t, i) { return (i + 1) + ". " + t; }).join("\n");
+    var pick = prompt("挂到哪个词后面？输入序号：\n" + menu, "1");
+    if (pick === null) return;
+    var pi = parseInt(pick, 10) - 1;
+    if (isNaN(pi) || pi < 0 || pi >= mk.length) { toast("序号不对，没挂"); return; }
+    term = mk[pi];
+  }
+  if (it.mn && it.mn[term] && !confirm("「" + term + "」已经有一句词后解释了，用这条注释盖掉它吗？")) return;
+  it.mn = it.mn || {};
+  it.mn[term] = it.n[ni];
+  it.n.splice(ni, 1);
+  syncMnToBank(it);
+  store.banks.forEach(function (b) { if (b.id === it.bankId) { b.questions[it.idx].n = it.n; } });
+  saveStore();
+  if (it.type !== "shift") reveal(); else revealShift();
+  toast("📌 已挂到「" + term + "」后面，点词后小序号看");
 }
 
 /* ================= 修改本题 ================= */
@@ -1704,6 +2190,8 @@ function openEdit() {
   document.getElementById("edit-a").value = it.a;
   /* v1.6：注释动态列表，旧数据（含中间空位）原样摆出来 */
   editNoteRows(it.n || []);
+  /* v1.7.1：有反复学标记才显示清零按钮 */
+  document.getElementById("rep-clear-btn").classList.toggle("hidden", getRep(it.bankId, it.idx) <= 0);
   document.getElementById("edit-modal").classList.remove("hidden");
 }
 /* v1.6 动态注释列表 */
@@ -1721,6 +2209,17 @@ function editAddNote() {
   document.getElementById("edit-notes").insertAdjacentHTML("beforeend", editNoteRowHtml(""));
 }
 function closeEdit() { taClose(); document.getElementById("edit-modal").classList.add("hidden"); }
+/* v1.7.1：清零本题反复学标记（🔁×次数可删除） */
+function repClear() {
+  var it = curList()[session.pos];
+  if (!confirm("把这题的反复学标记（🔁×" + getRep(it.bankId, it.idx) + "）清零吗？档位和学习时间不受影响")) return;
+  var k = pKey(it.bankId, it.idx);
+  var p = store.progress[k];
+  if (p) { if (typeof p === "number") store.progress[k] = { l: p, t: 0, r: 0 }; else p.r = 0; }
+  saveStore();
+  document.getElementById("rep-clear-btn").classList.add("hidden");
+  toast("🔁 标记已清零");
+}
 function taClose() {
   var list = document.querySelectorAll("textarea.ta-full");
   for (var i = 0; i < list.length; i++) { list[i].classList.remove("ta-full"); list[i].blur(); }
@@ -1761,11 +2260,41 @@ function saveEdit() {
 }
 function mark(lv) {
   var it = curList()[session.pos];
-  store.progress[pKey(it.bankId, it.idx)] = { l: lv, t: Date.now() };
+  var k = pKey(it.bankId, it.idx);
+  var old = store.progress[k] || {};
+  var r = old.r || 0;
+  var oh = old.oh || 0;
+  if (session.rep) r++; /* v1.7：反复学里每刷一次记一遍，永久留痕 */
+  /* v1.7.4：丢出题打了档=平反，🚫现役戳自动转⚠️曾丢出（任何模式都生效） */
+  if (old.o) oh++;
+  store.progress[k] = { l: lv, t: Date.now(), r: r, oh: oh };
+  /* v1.7：反复学模式——升出勾选档（或丢出复习池里任意打档）就自动丢出本轮 */
+  if (session.rep && (session.rep.out || session.rep.lvs.indexOf(lv) < 0)) {
+    var i1 = session.items.indexOf(it); if (i1 > -1) session.items.splice(i1, 1);
+    if (view) { var i2 = view.indexOf(it); if (i2 > -1) view.splice(i2, 1); }
+    saveStore();
+    if (!curList().length) { exitRep(); toast("🎉 全部升档移出，反复学完成！"); return; }
+    toast("已升档，移出反复学（剩" + curList().length + "题）");
+    if (session.pos >= curList().length) repLoop(); else showQ();
+    return;
+  }
   saveStore();
   nextQ();
 }
-function nextQ() { var list = curList(); if (session.pos < list.length - 1) { session.pos++; } else { toast("已到最后一题"); } showQ(); }
+/* v1.7：反复学刷完一遍→洗牌→再来一遍 */
+function repLoop() {
+  var list = curList();
+  for (var i = list.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = list[i]; list[i] = list[j]; list[j] = t; }
+  session.pos = 0;
+  toast("🔁 一遍刷完，洗牌再来一遍");
+  showQ();
+}
+function nextQ() {
+  var list = curList();
+  if (session.pos < list.length - 1) { session.pos++; showQ(); }
+  else if (session.rep && list.length) repLoop();
+  else { toast("已到最后一题"); showQ(); }
+}
 function prevQ() { if (session.pos > 0) { session.pos--; showQ(); } }
 function goHome() {
   document.getElementById("page-study").classList.add("hidden");
@@ -1794,6 +2323,9 @@ function exportWrong() {
       var lv = getLevel(b.id, qi);
       if (lv === 1 || lv === 2) {
         var line = (lines.length / 2 + 1) + ". " + q.q + "\n答：" + q.a;
+        /* v1.7.5：词后解释随导出走（Obsidian里用 词解①词：内容 对号） */
+        var mnks = q.mn ? Object.keys(q.mn) : [];
+        mnks.forEach(function (t, ti) { if (q.mn[t]) line += "\n词解" + mnNum(ti) + t + "：" + q.mn[t]; });
         (q.n || []).forEach(function (n, ni) { if (n) line += "\n注释" + (ni + 1) + "：" + n; });
         lines.push(line);
       }
@@ -2045,7 +2577,7 @@ function aiCommitNote() {
     if (!bank) { toast("找不到原题库"); return; }
     var q = bank.questions[qi];
     if (!q.n) q.n = [];
-    if (q.n.length >= 3) { toast("注释已满3条，请先「修改本题」清理"); return; }
+    /* v1.6.3：注释已是动态列表不限条数，删掉旧的3条上限（上限命中时只弹toast不关框，用户以为已存） */
     q.n.push(noteText);
     // 若学习页还停在原题，同步快照并刷新答案区；在别的题则只存数据
     var cur = null;
@@ -2059,6 +2591,14 @@ function aiCommitNote() {
         return;
       }
     }
+    /* v1.6.4坑：在别的题时只存了题库，没同步学习快照（session.items是开学时复制的
+       旧n数组），翻回原题注释按钮还是旧条数，用户以为没存上。
+       修法：把快照里那一题的n也换掉（view里的项是同一批对象引用，改一处即生效）。 */
+    if (session && session.items) {
+      session.items.forEach(function (it2) {
+        if (it2.bankId === t.bankId && it2.idx === t.idx) it2.n = q.n;
+      });
+    }
     saveStore(); closeAi();
     toast("已存入注释（在当初提问的那道题里）");
   } else {
@@ -2066,7 +2606,7 @@ function aiCommitNote() {
     if (!b.questions.length) { toast("题库为空，先出题再存"); return; }
     var q0 = b.questions[0];
     if (!q0.n) q0.n = [];
-    if (q0.n.length >= 3) { toast("首题注释已满3条"); return; }
+    /* v1.6.3：同上，删掉旧的3条上限 */
     q0.n.push(noteText);
     saveStore(); closeAi();
     toast("已存为首题注释");
@@ -2095,6 +2635,7 @@ function restoreFromText(text) {
     if (!d || !d.banks) { toast("文件数据格式不对，恢复失败"); return; }
     if (!confirm("将从分身恢复「" + d.banks.length + "个题库」及全部学习记录，当前数据会被覆盖，确定吗？")) return;
     store = d;
+    migLv4(); /* v1.7：分身恢复的旧数据也迁移四档 */
     saveStore(); renderBanks();
     if (currentMode === "root") updateRootPanel();
     if (currentMode === "shift") updateShiftPanel();
@@ -2143,7 +2684,7 @@ function toast(msg) {
    完整设计思路与协同协议见学习笔记.html 代码顶部（两边以那份为准）。 */
 var XT_GH_USER = "xt_gh_user", XT_GH_TOK = "xt_gh_tok", XT_GH_REPO = "xt_gh_repo",
     XT_GH_LAST = "xt_gh_last", XT_GH_CHECK = "xt_gh_check";
-var SW_VERSION = "1.6.2";
+var SW_VERSION = "1.8.0";
 /* v1.4.8 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["xt_gh_user", "hx_gh_user"], ["xt_gh_tok", "hx_gh_tok"], ["xt_gh_repo", "hx_gh_repo"]];
@@ -2338,6 +2879,7 @@ function ghAskRestore(payload, srcLabel) {
   if (!confirm((srcLabel || "云端") + "有 " + n + " 个题库（备份于 " + when + "）。恢复将覆盖本机现有题库和学习记录，确定吗？")) return;
   ghSuspend = true;
   store = payload.store;
+  migLv4(); /* v1.7：云端恢复的旧数据也迁移四档 */
   saveStore(); /* 挂起期间不触发自动备份 */
   ghSuspend = false;
   renderBanks();
