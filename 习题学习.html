@@ -46,8 +46,8 @@
 - 复习页：看题→显示答案→标记 陌生(1)/一般(2)/熟悉(3)；筛选（全部/陌生/
   一般/熟悉/陌生+一般/未学）；可打乱顺序。
 - 导出错题：陌生+一般 导出为txt。
-- 导出分身：把 store（题库+进度）嵌入 <script id="embedded-data"> 生成新HTML
-  下载，用于备份/分享/换设备；打开分身且localStorage为空时自动载入内嵌数据。
+- 备份：GitHub云备份 + 壳APP本地文件夹备份（v1.4起，替代早期"导出文件"方案）；
+  打开含 embedded-data 内嵌数据的老文件且localStorage为空时自动载入内嵌数据。
 - v0.12新增：三模式切换（普通题库/词根学习/交班英语）
   · 词根模式：自动提取所有题库中的词根（xxx- / hepat(o)- / (nephr)- 等），
     实时显示已学词根清单，一键生成Kimi提示词（第一次给格式，后续附带已学词根）。
@@ -422,7 +422,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 ① 把v0.12.7改造为"App版"：加入坚果云WebDAV直连（"上传到坚果云"/
   "从坚果云恢复"两按钮），用HBuilderX的plus.network接口（无跨域限制）；
   保持单文件结构，电脑浏览器打开照样能用（浏览器里同步按钮降级为
-  现有的分身导出/恢复）。
+  现有的云备份/文件夹恢复）。
 ② 用户电脑装HBuilderX（DCloud免费工具）→云打包生成APK→手机安装。
 ③ 手机实测坚果云同步（上传→另一设备恢复→接力学习）。
 ④ 电脑端维持现状：浏览器打开HTML+坚果云客户端同步文件夹，云端汇合。
@@ -433,7 +433,6 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 
 【搁置的备选（若App打包走不通再回来）】
 - FolderSync双向同步文件夹方案（步骤已讨论过）。
-- 分身文件名加时分避免同日覆盖（几行代码，可顺手并入App版）。
 
 --------------------------------------------------------------------------------
 七、远期候选（用户提出再动）
@@ -442,6 +441,26 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 - 间隔重复（熟悉的题隔几天再现）
 - 老.doc支持、选择题(A/B/C/D)题型
 ================================================================================
+    v1.8.3 2026-08-26 瘦身三项（依据功能重叠调研：重复入口让老用户犯迷糊）：
+    ①砍掉"分身"备份整套：三个面板6个「💾 导出分身/📥 从分身恢复」按钮、
+      exportClone/restoreFromClone/restoreFromText/closeExportModal/copyExportCode
+      五个函数、页底导出分身弹窗全删——GitHub云备份+本地文件夹备份已完全替代；
+      loadStore的embedded-data内嵌数据读取保留兜底，老分身文件打开仍自动载入；
+      空题库提示语改指云备份。
+    ②词根/交班「生成Kimi提示词」改AI直调：新genRootDirect/genShiftDirect复用
+      原提示词文本（抽出rootPromptText/shiftPromptText两处共用，一字未改）直接
+      callAI生成→parseQuestions解析→enqueueImport走现有导入确认窗
+      （词根库名"词根新题+日期"、交班"交班新题+日期"）；没key走needKey去设置窗
+      中止；认出0题时toast提示+原文显示在提示词框；按钮生成期间禁用防重复点；
+      旁留小字链接「没有API key？复制提示词去Kimi」保老路（原genRootPrompt/
+      genShiftPrompt保留）。
+    ③删反复学状态条里手动「🚫 丢出本题」按钮及repThrowOut函数——与升档自动
+      丢出重复；首页「🚫 丢出题」找回入口+打档平反机制保留（自动丢出的题靠它
+      找回），丢出题数据不依赖手动丢出。
+    修改结果：成功。playwright自测（t02.py）28项全过：无JS报错、三面板无分身、
+      词根/交班AI直调mock各+20题走导入确认窗入库、无key拦截不崩、回归（导入/
+      开始学习/四档打分/合并默认不勾+重名拦截）、正文无分身及被删函数残留。
+=======================================================
     v1.8.2 2026-08-26 两处小改（洪老师点单）：
      ①打开软件题库不再默认全打勾——bank-check渲染行删掉写死的checked属性，
        现在全不勾，想学哪个自己勾。
@@ -554,7 +573,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>习题学习 v1.8.2</title>
+<title>习题学习 v1.8.3</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f2f4f8; color: #222; }
@@ -637,7 +656,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 
 <script id="embedded-data" type="application/json">null</script>
 
-<header>📖 习题学习<span class="ver">v1.8.2</span></header>
+<header>📖 习题学习<span class="ver">v1.8.3</span></header>
 
 <!-- ========== 首页 ========== -->
 <div id="page-home" class="page">
@@ -660,10 +679,6 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
       <button class="ghost" id="rep-out-btn" onclick="startRepOut()">🚫 丢出题</button>
       <button class="ghost" onclick="openMerge()">🗃 合并勾选的题库</button>
       <button class="ghost" onclick="exportWrong()">📤 导出错题</button>
-    </div>
-    <div class="btn-row">
-      <button class="ghost" onclick="exportClone()">💾 导出分身</button>
-      <button class="ghost" onclick="restoreFromClone()">📥 从分身恢复</button>
     </div>
     <div id="bank-list"></div>
 
@@ -717,8 +732,6 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
       <label class="btn file-btn">📂 导入词根题<input type="file" id="file-input-root" accept=".txt,.md,.text,.docx,.doc,.rtf" multiple></label>
       <button class="ghost" onclick="openPasteRoot()">📋 粘贴导入词根</button>
       <button class="ghost" onclick="startStudy()">▶ 开始词根学习</button>
-      <button class="ghost" onclick="exportClone()">💾 导出分身</button>
-      <button class="ghost" onclick="restoreFromClone()">📥 从分身恢复</button>
     </div>
     <div class="card">
       <div style="font-weight:bold;margin-bottom:8px">📋 已学词根清单（自动提取）</div>
@@ -726,9 +739,10 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
     </div>
     <div class="card">
       <div style="font-weight:bold;margin-bottom:8px">🤖 生成Kimi提示词</div>
-      <div id="root-prompt" class="prompt-box">点击下方按钮生成提示词，自动复制到剪贴板</div>
+      <div id="root-prompt" class="prompt-box">点下方按钮AI直接生成新题；没有API key可点旁边小字复制提示词去Kimi</div>
       <div class="btn-row" style="margin-top:10px">
-        <button onclick="genRootPrompt()">📋 生成并复制提示词</button>
+        <button onclick="genRootDirect(this)">🤖 AI直接生成20道新题</button>
+        <a href="javascript:void(0)" onclick="genRootPrompt()" style="font-size:12px;color:#888;align-self:center">没有API key？复制提示词去Kimi</a>
       </div>
     </div>
     <div id="bank-list-root"></div>
@@ -740,8 +754,6 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
       <label class="btn file-btn">📂 导入交班题<input type="file" id="file-input-shift" accept=".txt,.md,.text,.docx,.doc,.rtf" multiple></label>
       <button class="ghost" onclick="openPasteShift()">📋 粘贴导入交班</button>
       <button class="ghost" onclick="startStudy()">▶ 开始交班学习</button>
-      <button class="ghost" onclick="exportClone()">💾 导出分身</button>
-      <button class="ghost" onclick="restoreFromClone()">📥 从分身恢复</button>
     </div>
     <div class="card">
       <div style="font-weight:bold;margin-bottom:8px">🔄 学习方向</div>
@@ -754,9 +766,10 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
     </div>
     <div class="card">
       <div style="font-weight:bold;margin-bottom:8px">🤖 生成Kimi提示词</div>
-      <div id="shift-prompt" class="prompt-box">点击下方按钮生成提示词，自动复制到剪贴板</div>
+      <div id="shift-prompt" class="prompt-box">点下方按钮AI直接生成新题；没有API key可点旁边小字复制提示词去Kimi</div>
       <div class="btn-row" style="margin-top:10px">
-        <button onclick="genShiftPrompt()">📋 生成并复制提示词</button>
+        <button onclick="genShiftDirect(this)">🤖 AI直接生成20道新题</button>
+        <a href="javascript:void(0)" onclick="genShiftPrompt()" style="font-size:12px;color:#888;align-self:center">没有API key？复制提示词去Kimi</a>
       </div>
     </div>
     <div id="bank-list-shift"></div>
@@ -768,7 +781,6 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
   <!-- v1.7：反复学状态条（反复学模式才显示） -->
   <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap" class="hidden" id="rep-bar-wrap">
     <div id="rep-bar" style="flex:1;font-size:13px;color:#2a7a6d;background:#ddf0ea;border-radius:8px;padding:8px;min-width:180px"></div>
-    <button class="ghost" style="font-size:13px;padding:6px 10px;white-space:nowrap;color:#c0534f" onclick="repThrowOut()">🚫 丢出本题</button>
     <button class="ghost" style="font-size:13px;padding:6px 10px;white-space:nowrap" onclick="exitRep()">退出反复学</button>
   </div>
   <div class="toolbar">
@@ -963,7 +975,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
     <div id="aikey-count" style="font-size:13px;color:#2c6e9e;margin-bottom:8px">已输入 0 位</div>
     <div style="font-size:13px;color:#888;margin-bottom:2px">② 模型（一般不用动）：</div>
     <input type="text" id="aimodel-input" placeholder="模型（默认 kimi-k2.5，便宜够用）" style="margin-bottom:8px">
-    <div style="font-size:13px;color:#888;margin-bottom:8px">key存在本软件数据里，只在本机使用；导出分身时可选择不带。</div>
+    <div style="font-size:13px;color:#888;margin-bottom:8px">key存在本软件数据里，只在本机使用。</div>
     <div class="btn-row">
       <button onclick="saveAiKey()">保存</button>
       <button class="ghost" onclick="checkAiBalance()">💰 查额度</button>
@@ -1481,7 +1493,7 @@ function renderBanks() {
   var boxId = currentMode === "normal" ? "bank-list" : (currentMode === "root" ? "bank-list-root" : "bank-list-shift");
   var box = document.getElementById(boxId);
   if (!modeBanks.length) {
-    box.innerHTML = "<div class=\"empty-tip\">还没有题库<br>点上方导入或粘贴<br>换版本升级请点「📥 从分身恢复」</div>";
+    box.innerHTML = "<div class=\"empty-tip\">还没有题库<br>点上方导入或粘贴<br>可用下方云备份恢复</div>";
     return;
   }
   var html = "";
@@ -1543,7 +1555,8 @@ function updateRootPanel() {
     listEl.textContent = "暂无词根数据，请先导入词根题库";
   }
 }
-function genRootPrompt() {
+/* v1.8.3：提示词拼法抽出共用（AI直调与复制老路用同一段文字，一字不差） */
+function rootPromptText() {
   var roots = extractRoots();
   var prompt;
   if (roots.length === 0) {
@@ -1551,9 +1564,31 @@ function genRootPrompt() {
   } else {
     prompt = "我已经学习了以下医学英语词根，请不要重复：\n" + roots.join("、") + "\n\n请继续生成20个新的医学英语词根学习习题。\n\n格式要求（严格按此格式，每题独立）：\n1. 词根：xxx- (中文意思)\n   例词：英文单词\n   释义：中文释义\n   例句：一句医学场景英文例句\n答：词根解释。\n\n请确保不重复以上已学词根。";
   }
+  return prompt;
+}
+function genRootPrompt() {
+  var prompt = rootPromptText();
   document.getElementById("root-prompt").textContent = prompt;
   copyToClipboard(prompt);
   toast("提示词已复制到剪贴板");
+}
+/* v1.8.3：AI直调生成词根新题（提示词同rootPromptText，回复走parseQuestions+enqueueImport现有导入确认窗） */
+async function genRootDirect(btn) {
+  if (!needKey()) return; /* 没key：开设置窗+toast提示，中止 */
+  btn.disabled = true; btn.textContent = "AI生成中…";
+  try {
+    var text = await callAI("你是医学英语词根出题助手，只输出规定格式的题目。", rootPromptText());
+    var qs = parseQuestions(text);
+    if (!qs.length) {
+      document.getElementById("root-prompt").textContent = "AI回的内容没认出题目，请重试。原文：\n" + text;
+      toast("AI回的内容没认出题目，请重试");
+      return;
+    }
+    enqueueImport("词根新题" + dateStr(), qs, "root");
+  } catch (e) {
+    toast("AI生成失败：" + e.message);
+  }
+  btn.disabled = false; btn.textContent = "🤖 AI直接生成20道新题";
 }
 
 /* ================= 交班面板 ================= */
@@ -1571,7 +1606,7 @@ function updateShiftPanel() {
   var sentences = extractShiftSentences();
   document.getElementById("shift-count").textContent = sentences.length;
 }
-function genShiftPrompt() {
+function shiftPromptText() {
   var sentences = extractShiftSentences();
   var prompt;
   if (sentences.length === 0) {
@@ -1579,9 +1614,31 @@ function genShiftPrompt() {
   } else {
     prompt = "我已经学习了以下交班英语句子，请不要重复：\n" + sentences.join("\n") + "\n\n请继续生成20句新的交班英语句子。\n\n格式要求（严格按此格式）：\nQ: 中文句子\nA: English sentence\n\n请确保不重复以上已学句子。";
   }
+  return prompt;
+}
+function genShiftPrompt() {
+  var prompt = shiftPromptText();
   document.getElementById("shift-prompt").textContent = prompt;
   copyToClipboard(prompt);
   toast("提示词已复制到剪贴板");
+}
+/* v1.8.3：AI直调生成交班新题（同genRootDirect，Q:/A:格式走parseQuestions交班规则） */
+async function genShiftDirect(btn) {
+  if (!needKey()) return;
+  btn.disabled = true; btn.textContent = "AI生成中…";
+  try {
+    var text = await callAI("你是ICU交班英语出题助手，只输出规定格式的题目。", shiftPromptText());
+    var qs = parseQuestions(text);
+    if (!qs.length) {
+      document.getElementById("shift-prompt").textContent = "AI回的内容没认出题目，请重试。原文：\n" + text;
+      toast("AI回的内容没认出题目，请重试");
+      return;
+    }
+    enqueueImport("交班新题" + dateStr(), qs, "shift");
+  } catch (e) {
+    toast("AI生成失败：" + e.message);
+  }
+  btn.disabled = false; btn.textContent = "🤖 AI直接生成20道新题";
 }
 
 /* ================= 合并题库 ================= */
@@ -1795,20 +1852,6 @@ function exitRep() {
   if (session) session.rep = null;
   document.getElementById("rep-bar-wrap").classList.add("hidden");
   goHome();
-}
-/* v1.7.4：反复学中手动丢出本题（不升级，盖🚫现役戳，以后重点复习） */
-function repThrowOut() {
-  if (!session || !session.rep) return;
-  var it = curList()[session.pos];
-  var k = pKey(it.bankId, it.idx);
-  var old = store.progress[k] || {};
-  store.progress[k] = { l: old.l || 0, t: old.t || 0, r: (old.r || 0) + 1, oh: old.oh || 0, o: Date.now() };
-  var i1 = session.items.indexOf(it); if (i1 > -1) session.items.splice(i1, 1);
-  if (view) { var i2 = view.indexOf(it); if (i2 > -1) view.splice(i2, 1); }
-  saveStore();
-  if (!curList().length) { exitRep(); toast("🎉 本轮反复学结束"); return; }
-  toast("🚫 已丢出，标为重点复习（首页「丢出题」可找回）");
-  if (session.pos >= curList().length) repLoop(); else showQ();
 }
 /* v1.7.4：首页「🚫 丢出题」——勾选题库里所有现役丢出题，直接循环重点复习 */
 function startRepOut() {
@@ -2424,29 +2467,8 @@ function exportWrong() {
   if (!out.length) { toast("没有陌生或一般的题"); return; }
   downloadText("错题导出_" + dateStr() + ".txt", out.join("\n\n\n"));
 }
-function exportClone() {
-  var html = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-  // v1.2：含AI key时询问是否随分身导出（不带则仅剔key，模型等其他数据照走）
-  var exportData = store;
-  if (store.ai && store.ai.key) {
-    var withKey = confirm("分身里要带上AI key吗？\n\n「确定」带上：自己备份 / 发给信得过的人\n「取消」不带：发给别人（他填自己的key）");
-    if (!withKey) { exportData = JSON.parse(JSON.stringify(store)); delete exportData.ai.key; }
-  }
-  var dataJson = JSON.stringify(exportData).replace(/<\/script>/gi, "<\\/script>");
-  html = html.replace(/(<script id=\"embedded-data\" type=\"application\/json\">)[\s\S]*?(<\/script>)/, "$1" + dataJson + "$2");
-  var filename = "习题学习_分身_" + dateStr() + ".html";
-  var url = downloadText(filename, html, "text/html;charset=utf-8");
-  // 同时显示弹窗，提供可见下载链接和复制代码兜底
-  var linkArea = document.getElementById("export-link-area");
-  linkArea.innerHTML = '<a href="' + url + '" download="' + filename + '" style="display:block;padding:12px;background:#2c6e9e;color:#fff;text-align:center;border-radius:8px;text-decoration:none;font-size:16px">📥 手动点击下载：' + filename + '</a>';
-  document.getElementById("export-modal").classList.remove("hidden");
-  session._exportCode = html;
-  toast("分身已导出，如未自动下载请点弹窗链接");
-}
-function closeExportModal() { document.getElementById("export-modal").classList.add("hidden"); }
-
 /* ================= v1.2 AI功能 ================= */
-/* key存在store.ai里（随分身走，导出时可选剔除）；API为月之暗面Kimi，已实测允许浏览器跨域直连 */
+/* key存在store.ai里；API为月之暗面Kimi，已实测允许浏览器跨域直连 */
 var aiMode = null;      // "bank"=题库出题 / "note"=题内提问
 var aiBankIdx = -1;     // bank模式：目标题库下标
 var aiLastQA = null;    // 最近一次问答（形成题目用）
@@ -2699,41 +2721,6 @@ function aiCommitNote() {
   }
 }
 
-/* ================= v0.12.7 从分身恢复 ================= */
-function restoreFromClone() {
-  var inp = document.createElement("input");
-  inp.type = "file";
-  inp.accept = ".html,.htm,text/html";
-  inp.onchange = function () {
-    var f = inp.files[0];
-    if (!f) return;
-    var reader = new FileReader();
-    reader.onload = function () { restoreFromText(String(reader.result)); };
-    reader.readAsText(f, "utf-8");
-  };
-  inp.click();
-}
-function restoreFromText(text) {
-  try {
-    var m = text.match(/<script id="embedded-data" type="application\/json">([\s\S]*?)<\/script>/);
-    if (!m || !m[1] || m[1].trim() === "" || m[1].trim() === "null") { toast("这个文件里没有数据，请选择「导出分身」生成的文件"); return; }
-    var d = JSON.parse(m[1]);
-    if (!d || !d.banks) { toast("文件数据格式不对，恢复失败"); return; }
-    if (!confirm("将从分身恢复「" + d.banks.length + "个题库」及全部学习记录，当前数据会被覆盖，确定吗？")) return;
-    store = d;
-    migLv4(); /* v1.7：分身恢复的旧数据也迁移四档 */
-    saveStore(); renderBanks();
-    if (currentMode === "root") updateRootPanel();
-    if (currentMode === "shift") updateShiftPanel();
-    toast("恢复成功：" + d.banks.length + "个题库及学习记录");
-  } catch (e) { toast("恢复失败：" + e.message); }
-}
-function copyExportCode() {
-  if (session && session._exportCode) {
-    copyToClipboard(session._exportCode);
-    toast("全部代码已复制，请粘贴到备忘录保存为.html文件");
-  }
-}
 function dateStr() {
   var d = new Date();
   return d.getFullYear() + String(d.getMonth() + 1).padStart(2, "0") + String(d.getDate()).padStart(2, "0");
@@ -2770,7 +2757,7 @@ function toast(msg) {
    完整设计思路与协同协议见学习笔记.html 代码顶部（两边以那份为准）。 */
 var XT_GH_USER = "xt_gh_user", XT_GH_TOK = "xt_gh_tok", XT_GH_REPO = "xt_gh_repo",
     XT_GH_LAST = "xt_gh_last", XT_GH_CHECK = "xt_gh_check";
-var SW_VERSION = "1.8.2";
+var SW_VERSION = "1.8.3";
 /* v1.4.8 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["xt_gh_user", "hx_gh_user"], ["xt_gh_tok", "hx_gh_tok"], ["xt_gh_repo", "hx_gh_repo"]];
@@ -3274,19 +3261,6 @@ setShiftDir(shiftDir);
 renderBanks();
 ghInit(); /* v1.4 */
 </script>
-<!-- 导出分身弹窗 -->
-<div id="export-modal" class="modal-mask hidden" onclick="if(event.target===this)closeExportModal()">
-  <div class="modal">
-    <h3>导出分身</h3>
-    <div style="font-size:14px;color:#666;margin-bottom:10px">如果自动下载没反应，请用下面任一方法：</div>
-    <div id="export-link-area" style="margin-bottom:10px"></div>
-    <div class="btn-row">
-      <button onclick="copyExportCode()">📋 复制全部代码</button>
-      <button class="ghost" onclick="closeExportModal()">关闭</button>
-    </div>
-    <div style="font-size:13px;color:#888;margin-top:8px">提示：复制代码后→粘贴到手机备忘录→保存为.html文件</div>
-  </div>
-</div>
 
 </body>
 </html>
