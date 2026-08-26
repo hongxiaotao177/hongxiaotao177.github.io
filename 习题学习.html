@@ -442,6 +442,16 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 - 间隔重复（熟悉的题隔几天再现）
 - 老.doc支持、选择题(A/B/C/D)题型
 ================================================================================
+    v1.8.2 2026-08-26 两处小改（洪老师点单）：
+     ①打开软件题库不再默认全打勾——bank-check渲染行删掉写死的checked属性，
+       现在全不勾，想学哪个自己勾。
+     ②合并题库重名治理：默认新名=题目最多的那个库名+"等N库合并"
+       （如"心内题库等3库合并"），不再写死"合并题库"；确认时若与现存
+       题库撞名→toast提醒改名、不硬存（被勾中待删的旧库不算撞名）。
+     修改结果：成功。playwright自测7项全过（打开/刷新后全不勾；默认名
+       "呼吸题库等3库合并"；合并成功旧库删除；撞名拦截不硬存；改名后
+       可合并；回归：勾选后正常开始学习）。
+=======================================================
     v1.8.1 2026-08-16 删除题库改自画确认窗+5秒反悔：
     ①用户手机（vivo浏览器/壳）里系统confirm的按钮字渲染成绿方块乱码，
       分不清哪边是删除——delBank改用自画delbank-modal：左灰「取消」右红
@@ -544,7 +554,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>习题学习 v1.8.1</title>
+<title>习题学习 v1.8.2</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f2f4f8; color: #222; }
@@ -627,7 +637,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 
 <script id="embedded-data" type="application/json">null</script>
 
-<header>📖 习题学习<span class="ver">v1.8.1</span></header>
+<header>📖 习题学习<span class="ver">v1.8.2</span></header>
 
 <!-- ========== 首页 ========== -->
 <div id="page-home" class="page">
@@ -1485,7 +1495,7 @@ function renderBanks() {
     else if (b.type === "shift") typeTag = "<span class=\"tag shift\">交班</span>";
     else typeTag = "<span class=\"tag normal\">普通</span>";
     html += "<div class=\"card bank-item\">"
-      + "<input type=\"checkbox\" class=\"bank-check\" data-bi=\"" + realIdx + "\" checked>"
+      + "<input type=\"checkbox\" class=\"bank-check\" data-bi=\"" + realIdx + "\">"
       + "<div class=\"bank-info\"><div class=\"bank-name\">" + esc(b.name) + " " + typeTag + "</div>"
       + "<div class=\"bank-stats\">共" + b.questions.length + "题 ｜ "
       + "<span class=\"tag s\">陌生" + c[1] + "</span><span class=\"tag y\">一般" + c[2] + "</span><span class=\"tag z\">中间" + c[3] + "</span><span class=\"tag s2\">熟悉" + c[4] + "</span> 未学" + newN
@@ -1585,13 +1595,18 @@ function openMerge() {
   mergeTargets.forEach(function (bi) { var b = store.banks[bi]; total += b.questions.length; info += "· " + b.name + "（" + b.questions.length + "题）\n"; });
   info += "合计 " + total + " 题";
   document.getElementById("merge-info").textContent = info;
-  document.getElementById("merge-name").value = "合并题库";
+  var big = store.banks[mergeTargets[0]];
+  mergeTargets.forEach(function (bi) { if (store.banks[bi].questions.length > big.questions.length) big = store.banks[bi]; });
+  document.getElementById("merge-name").value = big.name + "等" + mergeTargets.length + "库合并"; // v1.8.2：默认名带内容提示，不再写死"合并题库"
   document.getElementById("merge-modal").classList.remove("hidden");
 }
 function closeMerge() { document.getElementById("merge-modal").classList.add("hidden"); }
 function confirmMerge() {
   var name = document.getElementById("merge-name").value.trim() || "合并题库";
   var delOld = document.getElementById("merge-del").checked;
+  // v1.8.2：重名拦截——与现存题库撞名就提醒改名（被勾中要删的库不算撞名）
+  var dup = store.banks.some(function (b, idx) { return b.name === name && !(delOld && mergeTargets.indexOf(idx) > -1); });
+  if (dup) { toast("已有同名题库「" + name + "」，请换个名字"); return; }
   var newBank = { id: "b" + Date.now() + "_" + Math.floor(Math.random() * 1e6), name: name, type: "normal", questions: [] };
   mergeTargets.forEach(function (bi) {
     var b = store.banks[bi];
@@ -2755,7 +2770,7 @@ function toast(msg) {
    完整设计思路与协同协议见学习笔记.html 代码顶部（两边以那份为准）。 */
 var XT_GH_USER = "xt_gh_user", XT_GH_TOK = "xt_gh_tok", XT_GH_REPO = "xt_gh_repo",
     XT_GH_LAST = "xt_gh_last", XT_GH_CHECK = "xt_gh_check";
-var SW_VERSION = "1.8.1";
+var SW_VERSION = "1.8.2";
 /* v1.4.8 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["xt_gh_user", "hx_gh_user"], ["xt_gh_tok", "hx_gh_tok"], ["xt_gh_repo", "hx_gh_repo"]];
