@@ -120,6 +120,10 @@
     策略拦截）；素材从unpkg下载后要验证完整性（jsdelivr经常截断）。其余代码两版完全相同。
      v0.10.2 2026-08-06 公共钱罐hx_*：GitHub Token/仓库名/API Key 四个软件+主界面一处填处处有（空的自动抄公共的）。踩坑：各软件存钱罐名不一（bg_/xt_/br_），同源也互通不了。
     同版补充：主界面刷新hxIndexRefresh——壳里打开任一软件顺带把套装主界面(index.html)也换新，主界面从此也能自动更新。
+    v0.10.4 2026-08-31晚 修"调用失败404 查无vision模型"：官方下架moonshot-v1-*-vision-preview
+        全系列（账户实测只剩kimi-k2.6/k3/k2.7-code/highspeed四个），v0.10.3写死的快速模型404。
+        修法：VENT_MODELS候选名单挨个试（128k-vision→k2.6→k3），404自动换下一个，非404不换；
+        状态栏显示实际用的模型；提示语改为"思考型模型要1-3分钟"。
     v0.10.3 2026-08-31 修呼吸机分析"发给AI没反应"：根因是呼吸机功能跟着全局模型走，默认kimi-k2.6
         是思考型，带图先打草稿慢到几分钟。修法：呼吸机功能固定用VENT_MODEL=moonshot-v1-128k-vision-preview
         （非思考型直出，15-40秒），不再读getModel()。另：拍照按钮变相册的根因不在本软件——壳X5内核的
@@ -181,7 +185,7 @@
 </style>
 </head>
 <body>
-<header><span>血气分析解读助手</span><span class="ver">v0.10.3</span></header>
+<header><span>血气分析解读助手</span><span class="ver">v0.10.4</span></header>
 <main>
 
   <!-- 第1步：首页 -->
@@ -369,6 +373,7 @@
 
 ★ 如果"自动定位"提示识别引擎下载失败或一直转圈：先检查网络、换个网络（WiFi换流量）多试几次；还是不行，把这个HTML文件发回给Kimi，说一句"引擎下载失败"，它读文件开头的说明就知道原因和处理办法，会直接给您做一个不联网的离线版。
 
+v0.10.4 修复呼吸机分析报404：官方下架了老vision模型，改为自动排队选可用模型（404自动换下一个），状态栏会显示本次实际用的模型
 v0.10.3 修复呼吸机分析发给AI后迟迟没反应：呼吸机功能改用快速读图模型，一般15-40秒出结果（原来跟着默认的思考型模型走，带图要想好几分钟）
 v0.9.11 云备份上线（和学习笔记同款）：设置区新增「☁️ 云备份」折叠卡片，填一次 GitHub 用户名/Token/备份仓库名（xuexi-backup），之后每次改动 10 秒自动备份到您的 GitHub 私有仓库（备份文件 xueqi-backup.json，含 API Key，换手机点「📥 从云端恢复」一键搬回）；Token 只存在本机浏览器
 v0.9.10 记忆成功条件：每次定位成功后自动记住当时的方向+识别模式，下次拍照直接按记忆先试，命中就不用再扫八个方向（拍单角度固定的话，以后基本都是一次过）；记忆失败会自动走完整扫描并更新记忆
@@ -1957,7 +1962,7 @@ ghBindBtn($("ghConfNo"), function(){
    与学习笔记/习题学习/文件桥同款：读 version-xueqi.json 比对版本；
    壳APP里下载新版 = applyUpdate 自更新（重启生效）+ 授权文件夹存备份；
    浏览器里 = 普通下载。 */
-var SW_VERSION = "0.10.3";
+var SW_VERSION = "0.10.4";
 /* v0.10.2 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["bg_gh_user", "hx_gh_user"], ["bg_gh_tok", "hx_gh_tok"], ["bg_gh_repo", "hx_gh_repo"], ["bg_apikey", "hx_apikey"]];
@@ -2155,12 +2160,28 @@ $("ventFileAlbum").onchange = e => { ventPickImage(e.target.files[0]); e.target.
 /* v0.10.3 呼吸机功能固定用 vision 快速模型：k2.6/k3是思考型，带图要先打草稿，
    慢到几分钟且草稿也计费；v1-vision非思考型直出答案，一般15-40秒。
    不跟全局模型设置走（全局设置只管血气主功能）。 */
-const VENT_MODEL = "moonshot-v1-128k-vision-preview";
+/* v0.10.4 模型自动排队：2026-08-31实测官方下架了vision-preview系列（账户404查无此模型），
+   能读图的只剩思考型k2.6/k3。改成候选名单挨个试，404自动换下一个，
+   实际用哪个显示在状态栏，以后官方名单再变也不怕。 */
+const VENT_MODELS = ["moonshot-v1-128k-vision-preview","kimi-k2.6","kimi-k3"];
+let ventModelUsed = "";
 async function ventCallAI(key){
+  let lastErr = null;
+  for(const m of VENT_MODELS){
+    try { const r = await ventCallOnce(key, m); ventModelUsed = m; return r; }
+    catch(e){
+      lastErr = e;
+      if(!/404|Not found|not found/i.test(e.message)) throw e; /* 非404是真错（网络/key），别换模型 */
+      $("ventStatus").textContent = "模型 " + m + " 不可用，自动换下一个…";
+    }
+  }
+  throw lastErr;
+}
+async function ventCallOnce(key, model){
   const resp = await fetch(API_URL, {
     method: "POST",
     headers: { "Content-Type":"application/json", "Authorization":"Bearer " + key },
-    body: JSON.stringify({ model: VENT_MODEL, messages: ventConvo, max_tokens: 4096 })
+    body: JSON.stringify({ model: model, messages: ventConvo, max_tokens: 4096 })
   });
   const data = await resp.json();
   if(!resp.ok) throw new Error("调用失败 HTTP " + resp.status + "：" + JSON.stringify(data).slice(0, 300));
@@ -2265,19 +2286,19 @@ $("ventBtnSend").onclick = async () => {
   ventShots.forEach(d => content.push({ type: "image_url", image_url: { url: d } }));
   ventConvo = [{ role: "user", content: content }];
   $("ventBtnSend").disabled = true;
-  $("ventStatus").textContent = "正在发给AI分析（快速读图模型），一般15-40秒，请保持屏幕亮着…";
+  $("ventStatus").textContent = "正在发给AI分析（自动选可用模型，思考型模型要1-3分钟，请保持屏幕亮着别切后台）…";
   try{
     ventLastText = await ventCallAI(key);
     ventConvo.push({ role: "assistant", content: ventLastText });
     $("ventResultCard").hidden = false;
     ventRenderConvo();
-    $("ventStatus").textContent = "";
+    $("ventStatus").textContent = "（本次使用模型：" + ventModelUsed + "）";
     ventShots = []; ventRenderShots();
     ventSaveRecord();
     $("ventArchiveInfo").textContent = "✅ 已自动存入呼吸机分析记录";
     $("ventResultCard").scrollIntoView({ block: "start" });
   }catch(err){
-    $("ventStatus").textContent = err.message + "\n\n如反复 Failed to fetch：保持屏幕亮着别切后台，或回首页设置换 128k-vision 快速模型。";
+    $("ventStatus").textContent = err.message + "\n\n如反复 Failed to fetch：保持屏幕亮着别切后台，网络问题居多，模型已自动排队选择。";
   }finally{
     $("ventBtnSend").disabled = false;
   }
