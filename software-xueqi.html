@@ -120,6 +120,14 @@
     策略拦截）；素材从unpkg下载后要验证完整性（jsdelivr经常截断）。其余代码两版完全相同。
      v0.10.2 2026-08-06 公共钱罐hx_*：GitHub Token/仓库名/API Key 四个软件+主界面一处填处处有（空的自动抄公共的）。踩坑：各软件存钱罐名不一（bg_/xt_/br_），同源也互通不了。
     同版补充：主界面刷新hxIndexRefresh——壳里打开任一软件顺带把套装主界面(index.html)也换新，主界面从此也能自动更新。
+    v0.10.6 2026-09-01 两棒制（洪医生设计）：第1棒读图AI只"抄屏幕"（读数小表+波形文字描述+
+        版面自报，任务小想得快），第2棒把文字给快速文字模型做分析（千问文字版qwen-plus几秒，
+        无千问Key退回Kimi）；提示词加"直接输出不要过度思考"+SV650屏幕地图草稿v1（标签认不出
+        按位置推断）；本地体检：MV≈VT×f、FiO2范围等合理性校验，不对自动反问重读一次；
+        建议改四段式小卡（测什么/怎么测/理由/怎么看结果）带【检测:名称|单位】暗号，
+        软件解析出手输框（B方案），填数字直接发给AI，AI没守格式就用追问框兜底（A方案）；
+        版面自报存localStorage vent_layouts（上限50条，为版面记忆攒资料）；
+        历史记录回看自动重建轻量链，旧记录也能继续追问。
     v0.10.5 2026-09-01 AI厂商改版（洪医生三规矩：开场可选厂商/不选自动+失败自动换/进度提示不傻等）：
         新增通义千问qwen-vl-max（阿里云百炼，OpenAI兼容格式，非思考型读图10~30秒）；
         设置页加「读图AI厂商」选择（auto/qwen/kimi存bg_ai_provider）+千问Key（bg_qwen_key，同步公共钱罐hx_qwenkey）；
@@ -191,7 +199,7 @@
 </style>
 </head>
 <body>
-<header><span>血气分析解读助手</span><span class="ver">v0.10.5</span></header>
+<header><span>血气分析解读助手</span><span class="ver">v0.10.6</span></header>
 <main>
 
   <!-- 第1步：首页 -->
@@ -386,6 +394,7 @@
 
 ★ 如果"自动定位"提示识别引擎下载失败或一直转圈：先检查网络、换个网络（WiFi换流量）多试几次；还是不行，把这个HTML文件发回给Kimi，说一句"引擎下载失败"，它读文件开头的说明就知道原因和处理办法，会直接给您做一个不联网的离线版。
 
+v0.10.6 两棒制提速：第1棒AI只抄屏幕读数（快），第2棒换快速文字模型做分析（千问几秒）；读数带本地体检（数不对自动让AI重读）；建议改成"测什么/怎么测/理由/怎么看结果"小卡片，下面自动生成手输数字框，不方便拍照就填数字
 v0.10.5 AI厂商改版：新增通义千问（读图快，10~30秒），设置页可选厂商/填千问Key；不选就自动，失败自动换；等待时每秒显示进度和预计时间，不用傻等；修复Kimi"只想不答"的问题
 v0.10.4 修复呼吸机分析报404：官方下架了老vision模型，改为自动排队选可用模型（404自动换下一个），状态栏会显示本次实际用的模型
 v0.10.3 修复呼吸机分析发给AI后迟迟没反应：呼吸机功能改用快速读图模型，一般15-40秒出结果（原来跟着默认的思考型模型走，带图要想好几分钟）
@@ -451,6 +460,7 @@ v0.1  初版：拍照→裁剪脱敏→Kimi解读→复制归档
     <div class="card" id="ventResultCard" hidden>
       <p class="hint" id="ventArchiveInfo"></p>
       <div id="ventResultBox"></div>
+      <div id="ventCheckBox" hidden style="background:#f7f5ef;border-radius:8px;padding:10px;margin-top:8px;"></div>
       <div class="row" style="margin-top:8px;">
         <button class="btn secondary" id="ventBtnAddShot">📷 按AI指导做完检测，拍检测界面补充</button>
       </div>
@@ -1991,7 +2001,7 @@ ghBindBtn($("ghConfNo"), function(){
    与学习笔记/习题学习/文件桥同款：读 version-xueqi.json 比对版本；
    壳APP里下载新版 = applyUpdate 自更新（重启生效）+ 授权文件夹存备份；
    浏览器里 = 普通下载。 */
-var SW_VERSION = "0.10.5";
+var SW_VERSION = "0.10.6";
 /* v0.10.2 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["bg_gh_user", "hx_gh_user"], ["bg_gh_tok", "hx_gh_tok"], ["bg_gh_repo", "hx_gh_repo"], ["bg_apikey", "hx_apikey"]];
@@ -2130,20 +2140,49 @@ const VENT_PROFILES = {
     text: "【通用原则】吸气保持测平台压、呼气保持测内源性PEEP、呼吸力学菜单测P0.1/NIF/RSBI，具体按键位置请用户自己找，做完把结果界面拍照发来。"
   }
 };
-const VENT_PROMPT = [
-  "你是ICU呼吸治疗专家，在看一张呼吸机控制界面的照片。{背景}",
-  "请严格按以下结构回复（用大白话+专业术语对照，禁止使用LaTeX公式，计算列普通算式）：",
-  "一、屏幕读数：①品牌型号与通气模式 ②全部设定参数（氧浓度/压力/频率/吸呼比/PEEP等，逐项列出）③全部监测值（峰压/平台压/平均压/潮气量/频率/分钟通气量等，逐项列出；读不出的标⚠️无法识别）",
-  "二、波形解读：描述压力-时间、流量-时间、容量-时间曲线形态，重点判断：①人机是否同步（有无无效触发/双触发/流速饥渴）②流量曲线呼气支是否回到零（回不到零提示内源性PEEP）③有无明显漏气或分泌物迹象。波形只能定性，说清这是筛查不是精确测量。",
-  "三、初步分析：通气/氧合支持力度评估，肺保护通气是否达标（结合TVe/IBW或潮气量），目前参数的风险点和需要警惕的地方。",
-  "四、下一步建议：结合下面的操作档案，告诉用户接下来该做哪个检测、按哪个键（一步步写清，老人也能照着做），做完拍检测界面照片发回来继续分析。如果信息已够，就直接给调整建议。",
+/* v0.10.6 两棒制（洪医生设计）：
+   第1棒 读图AI：只"抄屏幕"——读数小表+波形文字描述+版面自报，任务小、输出短、想得快；
+   第2棒 文字AI：拿第1棒的文字做分析建议——不读图，可走最快的纯文字模型；
+   版面自报顺手存档（vent_layouts），为以后"版面记忆"攒资料。
+   提示词要求"直接输出不要过度思考"（省思考型模型时间）。 */
+const VENT_MAP_SV650 = [
+  "【SV650主界面·波形页 屏幕地图（草稿v1，洪医生校正中）】",
+  "底部参数栏从左到右通常是：通气模式页签 → FiO₂(%) → 潮气量(ml) → SIMV频率(次/分) → 吸气时间或流速 → PEEP。",
+  "右侧监测区大数字通常是：分钟通气量(L/min)、自主呼吸频率、FiO₂(%)、峰压/平台压(cmH₂O)等。",
+  "标签汉字认不出时按位置推断，推断的一律标\"⚠️按位置推断\"；若实际排版与地图明显不符，在版面自报里说明。"
+].join("\n");
+
+const VENT_PROMPT_READ = [
+  "你是ICU呼吸治疗技师。任务只有一件：把这张呼吸机控制界面照片里的信息如实抄下来。直接输出，不要过度思考。{背景}",
+  "严格按三段输出：",
+  "一、读数小表（markdown表格：项目 | 数值 | 备注）：型号与通气模式；设定参数（氧浓度/潮气量或压力/频率/吸呼比/PEEP等）；监测值（峰压/平台压/潮气量/频率/分钟通气量等）。只列读得出的；读不出标\"⚠️无法识别\"。",
+  "二、波形描述（纯文字3~6句）：压力/流量/容量曲线形态；流量曲线呼气支是否回到零（回不到零提示内源性PEEP）；有无双触发/无效触发/漏气迹象。定性即可。",
+  "三、版面自报（必须一行，格式固定）：【版面】页签=? 底部格数=? 右侧列数=? 有无波形区=? ",
+  "{地图}"
+].join("\n");
+
+const VENT_PROMPT_ANALYZE = [
+  "你是ICU呼吸治疗专家。同事刚从呼吸机屏幕上抄下读数和波形描述如下：",
+  "{读数}",
+  "请分析（大白话+专业术语对照，禁LaTeX，计算列普通算式；直接输出，不要过度思考）：",
+  "一、初步分析（控制在5句内）：支持力度评估、肺保护通气是否达标、风险点。",
+  "二、下一步建议：每条检测一张小卡，格式严格固定（软件要靠暗号生成手输框）：",
+  "【检测:检测名称|单位】",
+  "测什么：一句话",
+  "怎么测：结合操作档案一步步写清按哪个键（老人也能照做）",
+  "理由：为什么要测",
+  "怎么看结果：判断标准（给出具体数字界限）",
+  "如果信息已够，就不列检测，直接给调整建议（说清调哪个参数、调到多少、观察什么）。",
   "{档案}"
 ].join("\n");
 
-let ventConvo = [];       // 呼吸机对话链（含图片）
+let ventConvo = [];       // 显示+存档用对话链（含图片）
+let ventLight = [];       // API用轻量链（首棒图→文字摘要，追问走纯文字模型）
 let ventShots = [];       // 待首次发送的照片 dataURL 数组
 let ventRecIndex = -1;    // 当前查看的记录下标（-1=未保存）
 let ventLastText = "";
+let ventReadText = "";    // 第1棒读数结果
+let ventChecks = [];      // 第2棒解析出的待测项目 [{name,unit}]
 
 function ventCompress(file){
   return new Promise((res, rej) => {
@@ -2186,20 +2225,25 @@ $("ventBtnAlbum").onclick = () => $("ventFileAlbum").click();
 $("ventFileCamera").onchange = e => { ventPickImage(e.target.files[0]); e.target.value = ""; };
 $("ventFileAlbum").onchange = e => { ventPickImage(e.target.files[0]); e.target.value = ""; };
 
-/* v0.10.5 AI厂商改版（洪医生定规矩：①开场让用户选厂商 ②不选就自动+失败自动换
+/* v0.10.6 两棒制提速：第1棒AI只抄屏幕读数（快），第2棒换快速文字模型做分析（千问几秒）；读数带本地体检（数不对自动让AI重读）；建议改成"测什么/怎么测/理由/怎么看结果"小卡片，下面自动生成手输数字框，不方便拍照就填数字
+v0.10.5 AI厂商改版（洪医生定规矩：①开场让用户选厂商 ②不选就自动+失败自动换
    ③进度提示告诉用户正在哪一步、大概还要多久，不傻等）
    厂商：通义千问qwen-vl-max（阿里，非思考型直出，读图快10~30秒）/ Kimi（思考型1~3分钟）
    踩坑补记：思考型模型的"思考过程"也吃max_tokens额度——4096会被想光、正文吐不出来
    （已踩三次：v0.4.1截断/v0.6.4/2026-08-31只返回思考过程），Kimi一律给16384。 */
 const AI_PROVIDERS = {
   qwen: { name:"通义千问", url:"https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
-          models:["qwen-vl-max"], est:"通常10~30秒", maxTok:4096,
+          modelsV:["qwen-vl-max"], estV:"通常10~30秒", maxTokV:4096,          /* 读图棒 */
+          modelsT:["qwen-plus"],  estT:"通常5~15秒",  maxTokT:4096,           /* 文字棒 */
           keyOf:function(){ return localStorage.getItem("bg_qwen_key")||localStorage.getItem("hx_qwenkey")||""; } },
-  kimi: { name:"Kimi", url:API_URL, models:["kimi-k2.6","kimi-k3"], est:"思考型要想一想，通常1~3分钟", maxTok:16384,
+  kimi: { name:"Kimi", url:API_URL,
+          modelsV:["kimi-k2.6","kimi-k3"], estV:"思考型要想一想，通常1~3分钟", maxTokV:16384,
+          modelsT:["kimi-k2.6"],           estT:"思考型，通常1~2分钟",       maxTokT:16384,
           keyOf:function(){ return localStorage.getItem("bg_apikey")||""; } }
 };
 function ventProviderPref(){ return localStorage.getItem("bg_ai_provider") || "auto"; }
-function ventCandidates(){
+/* chain: "V"=读图棒  "T"=文字棒 */
+function ventCandidates(chain){
   const pref = ventProviderPref();
   let order = [];
   if(pref === "qwen") order = ["qwen","kimi"];
@@ -2209,26 +2253,29 @@ function ventCandidates(){
   for(const pv of order){
     const P = AI_PROVIDERS[pv], k = P.keyOf();
     if(!k) continue;
-    for(const m of P.models) out.push({ pvName:P.name, url:P.url, model:m, key:k, est:P.est, maxTok:P.maxTok });
+    const ms = chain === "T" ? P.modelsT : P.modelsV;
+    const est = chain === "T" ? P.estT : P.estV;
+    const maxTok = chain === "T" ? P.maxTokT : P.maxTokV;
+    for(const m of ms) out.push({ pvName:P.name, url:P.url, model:m, key:k, est:est, maxTok:maxTok });
   }
   return out;
 }
 function ventRouteText(){
-  const c = ventCandidates();
-  if(!c.length) return "⚠️ 没填任何AI的Key，请到首页设置里填";
-  const first = c[0];
-  return "本次将用【" + first.pvName + " " + first.model + "】（" + first.est + "）"
-       + (c.length > 1 ? "，失败自动换【" + c[1].pvName + "】" : "")
-       + "　·　换厂商：首页设置";
+  const v = ventCandidates("V"), t = ventCandidates("T");
+  if(!v.length) return "⚠️ 没填任何AI的Key，请到首页设置里填";
+  let s = "第1棒读图【" + v[0].pvName + "】（" + v[0].est + "）";
+  if(t.length) s += " → 第2棒分析【" + t[0].pvName + (t[0].pvName === v[0].pvName ? "文字版" : "") + "】（" + t[0].est + "）";
+  if(v.length > 1) s += "　失败自动换【" + v[1].pvName + "】";
+  return s + "　·　换厂商：首页设置";
 }
 /* 进度提示：每秒刷新，告诉用户正在哪一步、还要多久 */
 let ventTimer = null;
-function ventProgressStart(elId, c){
+function ventProgressStart(elId, c, stage){
   ventProgressStop();
   const t0 = Date.now();
   const tick = () => {
     const sec = Math.round((Date.now() - t0) / 1000);
-    $(elId).textContent = "已等 " + sec + " 秒 · 正在用【" + c.pvName + " " + c.model + "】读图分析（" + c.est + "）· 请保持屏幕亮着别切后台";
+    $(elId).textContent = (stage ? stage + " · " : "") + "已等 " + sec + " 秒 · 正在用【" + c.pvName + " " + c.model + "】（" + c.est + "）· 请保持屏幕亮着别切后台";
   };
   tick();
   ventTimer = setInterval(tick, 1000);
@@ -2236,16 +2283,17 @@ function ventProgressStart(elId, c){
 function ventProgressStop(){ if(ventTimer){ clearInterval(ventTimer); ventTimer = null; } }
 
 let ventModelUsed = "";
-async function ventCallAI(key, elId){
+/* 通用排队调用：chain="V"读图棒 / "T"文字棒；msgs=本次要发的消息数组 */
+async function ventCallChain(chain, msgs, elId, stage){
   elId = elId || "ventStatus";
-  const cands = ventCandidates();
+  const cands = ventCandidates(chain);
   if(!cands.length) throw new Error("没有可用的AI：请先在首页「设置」里填 Kimi 或 通义千问 的 Key。");
   let lastErr = null;
   for(let i = 0; i < cands.length; i++){
     const c = cands[i];
-    ventProgressStart(elId, c);
+    ventProgressStart(elId, c, stage);
     try{
-      const r = await ventCallOnce(c);
+      const r = await ventCallOnce(c, msgs);
       ventModelUsed = c.pvName + " " + c.model;
       ventProgressStop();
       return r;
@@ -2260,11 +2308,11 @@ async function ventCallAI(key, elId){
   }
   throw lastErr;
 }
-async function ventCallOnce(c){
+async function ventCallOnce(c, msgs){
   const resp = await fetch(c.url, {
     method: "POST",
     headers: { "Content-Type":"application/json", "Authorization":"Bearer " + c.key },
-    body: JSON.stringify({ model: c.model, messages: ventConvo, max_tokens: c.maxTok })
+    body: JSON.stringify({ model: c.model, messages: msgs, max_tokens: c.maxTok })
   });
   const data = await resp.json();
   if(!resp.ok) throw new Error("调用失败 HTTP " + resp.status + "：" + JSON.stringify(data).slice(0, 300));
@@ -2343,6 +2391,16 @@ function ventOpenRecord(i){
     ventConvo = [{ role:"user", content:[{ type:"text", text:"（历史记录首轮，含照片）" }] }].concat(it.convo.slice(1));
     /* 完整恢复首轮（含图片） */
     ventConvo = it.convo.map(m => ({ role: m.role, content: m.content }));
+    /* v0.10.6 重建ventLight轻量链：图片消息替换成当时的读数文字，追问才能走纯文字模型 */
+    ventLight = ventConvo.map(m => {
+      if(Array.isArray(m.content)){
+        const txt = (m.content.find(p => p.type === "text") || {}).text || "（照片）";
+        return { role: m.role, content: txt };
+      }
+      return { role: m.role, content: m.content };
+    });
+    ventChecks = ventParseChecks(ventLastText || "");
+    ventRenderChecks();
     ventLastText = it.text || "";
     $("ventResultCard").hidden = false;
     $("ventArchiveInfo").textContent = "📂 查看历史记录：" + (it.bg || "未标病人") + "（" + it.time + "），可继续追问";
@@ -2358,23 +2416,49 @@ $("ventBtnRecords").onclick = () => {
 
 $("ventBtnSend").onclick = async () => {
   const key = localStorage.getItem("bg_apikey") || "";
-  if(!ventCandidates().length){ $("ventStatus").textContent = "请先在首页「设置」里填 Kimi 或 通义千问 的 Key。"; return; }
+  if(!ventCandidates("V").length){ $("ventStatus").textContent = "请先在首页「设置」里填 Kimi 或 通义千问 的 Key。"; return; }
   if(!ventShots.length){ $("ventStatus").textContent = "请先拍呼吸机屏幕。"; return; }
   const profile = VENT_PROFILES[$("ventModel").value] || VENT_PROFILES.generic;
   const bg = $("ventBg").value.trim();
-  const prompt = VENT_PROMPT
-    .replace("{背景}", bg ? "病人背景：" + bg + "。" : "（未提供病人背景）")
-    .replace("{档案}", profile.text);
-  const content = [{ type: "text", text: prompt }];
-  ventShots.forEach(d => content.push({ type: "image_url", image_url: { url: d } }));
-  ventConvo = [{ role: "user", content: content }];
+  const bgTxt = bg ? "病人背景：" + bg + "。" : "（未提供病人背景）";
   $("ventBtnSend").disabled = true;
   try{
-    ventLastText = await ventCallAI(key);
+    /* ===== 第1棒：读图（抄屏幕） ===== */
+    const pRead = VENT_PROMPT_READ
+      .replace("{背景}", bgTxt)
+      .replace("{地图}", $("ventModel").value === "sv650" ? VENT_MAP_SV650 : "（无屏幕地图，按通用逻辑读，读不出的标签如实标注）");
+    const content = [{ type: "text", text: pRead }];
+    ventShots.forEach(d => content.push({ type: "image_url", image_url: { url: d } }));
+    ventConvo = [{ role: "user", content: content }];
+    ventReadText = await ventCallChain("V", ventConvo, "ventStatus", "第1步/共2步：读图抄数");
+    ventConvo.push({ role: "assistant", content: ventReadText });
+    ventSaveLayout(ventReadText); /* 版面自报存档，攒资料 */
+
+    /* ===== 本地体检：数据合理性，不对就自动反问重读一次 ===== */
+    const bad = ventSanityCheck(ventReadText);
+    if(bad){
+      $("ventStatus").textContent = "本地体检发现数据对不上（" + bad + "），自动让AI重新辨认…";
+      ventConvo.push({ role: "user", content: "本地校验发现问题：" + bad + "。请重新仔细辨认照片里这几个数值，只回复更正后的读数小表，其他不要。" });
+      const reread = await ventCallChain("V", ventConvo, "ventStatus", "第1步复查：重新辨认");
+      ventConvo.push({ role: "assistant", content: reread });
+      ventReadText = reread;
+    }
+
+    /* ===== 第2棒：纯文字分析（可走快速文字模型） ===== */
+    const pAna = VENT_PROMPT_ANALYZE
+      .replace("{读数}", ventReadText)
+      .replace("{档案}", profile.text);
+    ventLight = [{ role: "user", content: pAna }];
+    ventLastText = await ventCallChain("T", ventLight, "ventStatus", "第2步/共2步：文字分析");
+    ventLight.push({ role: "assistant", content: ventLastText });
+    ventConvo.push({ role: "user", content: "（第2棒文字分析，基于上面读数）" });
     ventConvo.push({ role: "assistant", content: ventLastText });
+
+    ventChecks = ventParseChecks(ventLastText);
     $("ventResultCard").hidden = false;
     ventRenderConvo();
-    $("ventStatus").textContent = "（本次使用模型：" + ventModelUsed + "）";
+    ventRenderChecks();
+    $("ventStatus").textContent = "（读图：" + ventModelUsed + "）";
     ventShots = []; ventRenderShots();
     ventSaveRecord();
     $("ventArchiveInfo").textContent = "✅ 已自动存入呼吸机分析记录";
@@ -2385,6 +2469,66 @@ $("ventBtnSend").onclick = async () => {
     $("ventBtnSend").disabled = false;
   }
 };
+
+/* 本地体检：拿读数小表做合理性检查，发现明显读错就返回问题描述（否则返回空） */
+function ventSanityCheck(t){
+  const num = (re) => { const m = t.match(re); return m ? parseFloat(m[1]) : null; };
+  const vt = num(/潮气量[^\n\|]*\|\s*([\d.]+)/) || num(/VT[^\n\|]*\|\s*([\d.]+)/i);
+  const f  = num(/频率[^\n\|]*\|\s*([\d.]+)/) || num(/Rate[^\n\|]*\|\s*([\d.]+)/i);
+  const mv = num(/分钟通气量[^\n\|]*\|\s*([\d.]+)/) || num(/MV[^\n\|]*\|\s*([\d.]+)/i);
+  const fio2 = num(/FiO[^\n\|]*\|\s*([\d.]+)/i) || num(/氧浓度[^\n\|]*\|\s*([\d.]+)/);
+  const probs = [];
+  if(fio2 !== null && (fio2 < 21 || fio2 > 100)) probs.push("FiO₂=" + fio2 + " 超出21~100范围");
+  if(vt && f && mv){
+    const expect = vt * f / 1000;
+    if(Math.abs(mv - expect) / expect > 0.35) probs.push("分钟通气量" + mv + "与潮气量" + vt + "×频率" + f + "≈" + expect.toFixed(1) + "对不上（注意SIMV自主呼吸会有影响，若是自主呼吸强属正常，请在回复中说明）");
+  }
+  return probs.join("；");
+}
+/* 版面自报存档：攒资料给以后的版面记忆用 */
+function ventSaveLayout(t){
+  const m = t.match(/【版面】([^\n]*)/);
+  if(!m) return;
+  try{
+    const arr = JSON.parse(localStorage.getItem("vent_layouts") || "[]");
+    arr.unshift({ time: new Date().toLocaleString("zh-CN"), layout: m[1].trim() });
+    while(arr.length > 50) arr.pop();
+    localStorage.setItem("vent_layouts", JSON.stringify(arr));
+  }catch(e){}
+}
+/* 解析分析文本里的检测暗号【检测:名称|单位】，生成手输框 */
+function ventParseChecks(t){
+  const out = [];
+  const re = /【检测[:：]([^|】]+)\|([^】]+)】/g;
+  let m;
+  while((m = re.exec(t)) !== null) out.push({ name: m[1].trim(), unit: m[2].trim() });
+  return out;
+}
+function ventRenderChecks(){
+  const box = $("ventCheckBox");
+  if(!ventChecks.length){ box.hidden = true; return; }
+  box.hidden = false;
+  let h = "<b>✍️ 手输检测结果（不方便拍照就填数字，填几个算几个）</b>";
+  ventChecks.forEach((c, i) => {
+    h += "<div class='row' style='align-items:center;margin-top:6px;'><span style='min-width:110px;'>" + c.name + "</span>"
+       + "<input type='text' inputmode='decimal' id='ventCk" + i + "' placeholder='数值' style='flex:1;font-size:16px;padding:10px;border:1px solid #ccc;border-radius:8px;'>"
+       + "<span>" + c.unit + "</span></div>";
+  });
+  h += "<button class='btn' id='ventCkSend' style='margin-top:8px;'>📤 把手输结果发给AI</button>";
+  box.innerHTML = h;
+  $("ventCkSend").onclick = () => {
+    const parts = [];
+    ventChecks.forEach((c, i) => {
+      const v = $("ventCk" + i).value.trim();
+      if(v) parts.push(c.name + "=" + v + " " + c.unit);
+    });
+    if(!parts.length){ $("ventFollowStatus").textContent = "至少填一个数值"; return; }
+    ventConvo.push({ role: "user", content: "手输检测结果：" + parts.join("，") });
+    ventLight.push({ role: "user", content: "手输检测结果：" + parts.join("，") + "。请结合前面分析继续。" });
+    $("ventCheckBox").hidden = true;
+    ventContinue();
+  };
+}
 
 /* 补充照片（做完检测拍检测界面） */
 $("ventBtnAddShot").onclick = () => {
@@ -2398,7 +2542,7 @@ $("ventBtnAddShot").onclick = () => {
         { type: "text", text: "这是按您的指导做完检测后拍的屏幕照片，请读出检测结果并结合前面的分析继续。" },
         { type: "image_url", image_url: { url: d } }
       ]});
-      ventContinue();
+      ventContinue(true);
     }).catch(() => { $("ventFollowStatus").textContent = "图片读不出来，换一张试试"; });
   };
   inp.click();
@@ -2408,14 +2552,19 @@ $("ventBtnFollow").onclick = () => {
   const q = $("ventFollowInput").value.trim();
   if(!q){ $("ventFollowStatus").textContent = "请先输入追问内容"; return; }
   ventConvo.push({ role: "user", content: q });
+  ventLight.push({ role: "user", content: q });
   $("ventFollowInput").value = "";
-  ventContinue();
+  ventContinue(false);
 };
-async function ventContinue(){
+async function ventContinue(withPhoto){
   const key = localStorage.getItem("bg_apikey") || "";
   try{
-    ventLastText = await ventCallAI(key, "ventFollowStatus");
+    /* v0.10.6：补照片走读图棒（ventConvo带图），纯文字追问走文字棒（ventLight轻量链） */
+    ventLastText = withPhoto
+      ? await ventCallChain("V", ventConvo, "ventFollowStatus", "补充照片识别")
+      : await ventCallChain("T", ventLight, "ventFollowStatus", "AI分析中");
     ventConvo.push({ role: "assistant", content: ventLastText });
+    ventLight.push({ role: "assistant", content: ventLastText });
     ventRenderConvo();
     $("ventFollowStatus").textContent = "（本次使用模型：" + ventModelUsed + "）";
     /* 更新记录 */
