@@ -120,6 +120,12 @@
     策略拦截）；素材从unpkg下载后要验证完整性（jsdelivr经常截断）。其余代码两版完全相同。
      v0.10.2 2026-08-06 公共钱罐hx_*：GitHub Token/仓库名/API Key 四个软件+主界面一处填处处有（空的自动抄公共的）。踩坑：各软件存钱罐名不一（bg_/xt_/br_），同源也互通不了。
     同版补充：主界面刷新hxIndexRefresh——壳里打开任一软件顺带把套装主界面(index.html)也换新，主界面从此也能自动更新。
+    v0.10.5 2026-09-01 AI厂商改版（洪医生三规矩：开场可选厂商/不选自动+失败自动换/进度提示不傻等）：
+        新增通义千问qwen-vl-max（阿里云百炼，OpenAI兼容格式，非思考型读图10~30秒）；
+        设置页加「读图AI厂商」选择（auto/qwen/kimi存bg_ai_provider）+千问Key（bg_qwen_key，同步公共钱罐hx_qwenkey）；
+        进呼吸机页即显示"本次将用哪个AI"；等待时每秒刷新进度（已等X秒·正在用谁·通常要多久）；
+        Kimi的max_tokens提16384（思考过程也吃额度，4096会被想光——此坑已踩三次，入交接说明踩坑区）；
+        删掉全局模型框里两个已下架的vision-preview选项；"只返回思考过程"由显示草稿改为报错自动换模型。
     v0.10.4 2026-08-31晚 修"调用失败404 查无vision模型"：官方下架moonshot-v1-*-vision-preview
         全系列（账户实测只剩kimi-k2.6/k3/k2.7-code/highspeed四个），v0.10.3写死的快速模型404。
         修法：VENT_MODELS候选名单挨个试（128k-vision→k2.6→k3），404自动换下一个，非404不换；
@@ -185,7 +191,7 @@
 </style>
 </head>
 <body>
-<header><span>血气分析解读助手</span><span class="ver">v0.10.4</span></header>
+<header><span>血气分析解读助手</span><span class="ver">v0.10.5</span></header>
 <main>
 
   <!-- 第1步：首页 -->
@@ -215,12 +221,19 @@
       <button class="btn secondary" id="btnSaveKey">保存 API Key</button>
       <button class="btn secondary" id="btnCopyKey">📋 复制已保存的 API Key（备份用）</button>
       <p class="hint" id="keyStatus"></p>
-      <b>AI模型</b>
+      <b>读图AI厂商（拍呼吸机/血气单用）</b>
+      <select id="aiProvider" style="width:100%;padding:12px;font-size:16px;border:1px solid #ccc;border-radius:8px;margin:6px 0;">
+        <option value="auto">自动（推荐）：有千问Key先千问，失败自动换Kimi</option>
+        <option value="qwen">通义千问（阿里，快，10~30秒，推荐）</option>
+        <option value="kimi">Kimi（思考型，慢，1~3分钟）</option>
+      </select>
+      <input type="password" id="qwenKeyInput" placeholder="通义千问 API Key（阿里云百炼平台领取，只需填一次）" style="width:100%;font-size:16px;padding:10px 12px;margin:4px 0;border:1px solid #ccc;border-radius:8px;">
+      <button class="btn secondary" id="btnSaveQwen">保存千问Key和厂商选择</button>
+      <p class="hint" id="qwenStatus"></p>
+      <b>AI模型（血气主功能换模型重发用）</b>
       <select id="modelSelect" style="width:100%;padding:12px;font-size:16px;border:1px solid #ccc;border-radius:8px;margin:6px 0;">
         <option value="kimi-k2.6">kimi-k2.6（推荐，新一代，读图强）</option>
         <option value="kimi-k3">kimi-k3（最新旗舰，可能更贵）</option>
-        <option value="moonshot-v1-128k-vision-preview">moonshot-v1-128k-vision-preview（老架构长上下文）</option>
-        <option value="moonshot-v1-32k-vision-preview">moonshot-v1-32k-vision-preview（旧版，最弱）</option>
       </select>
       <button class="btn secondary" id="btnSaveModel">保存模型选择</button>
       <p class="hint" id="modelStatus"></p>
@@ -373,6 +386,7 @@
 
 ★ 如果"自动定位"提示识别引擎下载失败或一直转圈：先检查网络、换个网络（WiFi换流量）多试几次；还是不行，把这个HTML文件发回给Kimi，说一句"引擎下载失败"，它读文件开头的说明就知道原因和处理办法，会直接给您做一个不联网的离线版。
 
+v0.10.5 AI厂商改版：新增通义千问（读图快，10~30秒），设置页可选厂商/填千问Key；不选就自动，失败自动换；等待时每秒显示进度和预计时间，不用傻等；修复Kimi"只想不答"的问题
 v0.10.4 修复呼吸机分析报404：官方下架了老vision模型，改为自动排队选可用模型（404自动换下一个），状态栏会显示本次实际用的模型
 v0.10.3 修复呼吸机分析发给AI后迟迟没反应：呼吸机功能改用快速读图模型，一般15-40秒出结果（原来跟着默认的思考型模型走，带图要想好几分钟）
 v0.9.11 云备份上线（和学习笔记同款）：设置区新增「☁️ 云备份」折叠卡片，填一次 GitHub 用户名/Token/备份仓库名（xuexi-backup），之后每次改动 10 秒自动备份到您的 GitHub 私有仓库（备份文件 xueqi-backup.json，含 API Key，换手机点「📥 从云端恢复」一键搬回）；Token 只存在本机浏览器
@@ -417,6 +431,7 @@ v0.1  初版：拍照→裁剪脱敏→Kimi解读→复制归档
     <div class="card">
       <b>🫁 呼吸机屏幕分析</b>
       <p class="hint">拍呼吸机控制界面（屏幕没有病人信息，不用脱敏，整屏发出）。AI会读出设定和监测值、看波形，并按机型指导您做进一步检测。</p>
+      <p class="hint" id="ventRouteInfo" style="background:#f3f6f4;border-radius:8px;padding:8px;"></p>
       <b>呼吸机型号</b>
       <select id="ventModel" style="width:100%;padding:12px;font-size:16px;border:1px solid #ccc;border-radius:8px;margin:6px 0;">
         <option value="sv650">迈瑞 Mindray SV650（内置操作档案）</option>
@@ -1119,6 +1134,20 @@ function initModel(){
   $("modelSelect").value = getModel();
   $("modelStatus").textContent = "当前使用：" + getModel();
 }
+/* v0.10.5 厂商选择+千问Key */
+(function(){
+  $("aiProvider").value = localStorage.getItem("bg_ai_provider") || "auto";
+  const qk = localStorage.getItem("bg_qwen_key") || "";
+  $("qwenStatus").textContent = qk ? "已保存千问Key（尾号 …" + qk.slice(-4) + "）" : "尚未保存千问Key（不填就自动走Kimi）";
+  if(qk) $("qwenKeyInput").value = qk;
+})();
+$("btnSaveQwen").onclick = () => {
+  localStorage.setItem("bg_ai_provider", $("aiProvider").value);
+  const v = $("qwenKeyInput").value.trim();
+  if(v){ localStorage.setItem("bg_qwen_key", v); localStorage.setItem("hx_qwenkey", v); /* 公共钱罐 */ }
+  $("qwenStatus").textContent = "已保存。厂商=" + $("aiProvider").selectedOptions[0].textContent.slice(0,6) + (v ? "，千问Key已存" : "");
+  bgDirty();
+};
 $("btnSaveModel").onclick = () => {
   localStorage.setItem("bg_model", $("modelSelect").value);
   bgDirty(); /* v0.9.11 自动云备份钩子 */
@@ -1962,7 +1991,7 @@ ghBindBtn($("ghConfNo"), function(){
    与学习笔记/习题学习/文件桥同款：读 version-xueqi.json 比对版本；
    壳APP里下载新版 = applyUpdate 自更新（重启生效）+ 授权文件夹存备份；
    浏览器里 = 普通下载。 */
-var SW_VERSION = "0.10.4";
+var SW_VERSION = "0.10.5";
 /* v0.10.2 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["bg_gh_user", "hx_gh_user"], ["bg_gh_tok", "hx_gh_tok"], ["bg_gh_repo", "hx_gh_repo"], ["bg_apikey", "hx_apikey"]];
@@ -2157,40 +2186,94 @@ $("ventBtnAlbum").onclick = () => $("ventFileAlbum").click();
 $("ventFileCamera").onchange = e => { ventPickImage(e.target.files[0]); e.target.value = ""; };
 $("ventFileAlbum").onchange = e => { ventPickImage(e.target.files[0]); e.target.value = ""; };
 
-/* v0.10.3 呼吸机功能固定用 vision 快速模型：k2.6/k3是思考型，带图要先打草稿，
-   慢到几分钟且草稿也计费；v1-vision非思考型直出答案，一般15-40秒。
-   不跟全局模型设置走（全局设置只管血气主功能）。 */
-/* v0.10.4 模型自动排队：2026-08-31实测官方下架了vision-preview系列（账户404查无此模型），
-   能读图的只剩思考型k2.6/k3。改成候选名单挨个试，404自动换下一个，
-   实际用哪个显示在状态栏，以后官方名单再变也不怕。 */
-const VENT_MODELS = ["moonshot-v1-128k-vision-preview","kimi-k2.6","kimi-k3"];
+/* v0.10.5 AI厂商改版（洪医生定规矩：①开场让用户选厂商 ②不选就自动+失败自动换
+   ③进度提示告诉用户正在哪一步、大概还要多久，不傻等）
+   厂商：通义千问qwen-vl-max（阿里，非思考型直出，读图快10~30秒）/ Kimi（思考型1~3分钟）
+   踩坑补记：思考型模型的"思考过程"也吃max_tokens额度——4096会被想光、正文吐不出来
+   （已踩三次：v0.4.1截断/v0.6.4/2026-08-31只返回思考过程），Kimi一律给16384。 */
+const AI_PROVIDERS = {
+  qwen: { name:"通义千问", url:"https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+          models:["qwen-vl-max"], est:"通常10~30秒", maxTok:4096,
+          keyOf:function(){ return localStorage.getItem("bg_qwen_key")||localStorage.getItem("hx_qwenkey")||""; } },
+  kimi: { name:"Kimi", url:API_URL, models:["kimi-k2.6","kimi-k3"], est:"思考型要想一想，通常1~3分钟", maxTok:16384,
+          keyOf:function(){ return localStorage.getItem("bg_apikey")||""; } }
+};
+function ventProviderPref(){ return localStorage.getItem("bg_ai_provider") || "auto"; }
+function ventCandidates(){
+  const pref = ventProviderPref();
+  let order = [];
+  if(pref === "qwen") order = ["qwen","kimi"];
+  else if(pref === "kimi") order = ["kimi"];
+  else order = AI_PROVIDERS.qwen.keyOf() ? ["qwen","kimi"] : ["kimi"]; /* auto：填了千问Key就先千问 */
+  const out = [];
+  for(const pv of order){
+    const P = AI_PROVIDERS[pv], k = P.keyOf();
+    if(!k) continue;
+    for(const m of P.models) out.push({ pvName:P.name, url:P.url, model:m, key:k, est:P.est, maxTok:P.maxTok });
+  }
+  return out;
+}
+function ventRouteText(){
+  const c = ventCandidates();
+  if(!c.length) return "⚠️ 没填任何AI的Key，请到首页设置里填";
+  const first = c[0];
+  return "本次将用【" + first.pvName + " " + first.model + "】（" + first.est + "）"
+       + (c.length > 1 ? "，失败自动换【" + c[1].pvName + "】" : "")
+       + "　·　换厂商：首页设置";
+}
+/* 进度提示：每秒刷新，告诉用户正在哪一步、还要多久 */
+let ventTimer = null;
+function ventProgressStart(elId, c){
+  ventProgressStop();
+  const t0 = Date.now();
+  const tick = () => {
+    const sec = Math.round((Date.now() - t0) / 1000);
+    $(elId).textContent = "已等 " + sec + " 秒 · 正在用【" + c.pvName + " " + c.model + "】读图分析（" + c.est + "）· 请保持屏幕亮着别切后台";
+  };
+  tick();
+  ventTimer = setInterval(tick, 1000);
+}
+function ventProgressStop(){ if(ventTimer){ clearInterval(ventTimer); ventTimer = null; } }
+
 let ventModelUsed = "";
-async function ventCallAI(key){
+async function ventCallAI(key, elId){
+  elId = elId || "ventStatus";
+  const cands = ventCandidates();
+  if(!cands.length) throw new Error("没有可用的AI：请先在首页「设置」里填 Kimi 或 通义千问 的 Key。");
   let lastErr = null;
-  for(const m of VENT_MODELS){
-    try { const r = await ventCallOnce(key, m); ventModelUsed = m; return r; }
-    catch(e){
+  for(let i = 0; i < cands.length; i++){
+    const c = cands[i];
+    ventProgressStart(elId, c);
+    try{
+      const r = await ventCallOnce(c);
+      ventModelUsed = c.pvName + " " + c.model;
+      ventProgressStop();
+      return r;
+    }catch(e){
       lastErr = e;
-      if(!/404|Not found|not found/i.test(e.message)) throw e; /* 非404是真错（网络/key），别换模型 */
-      $("ventStatus").textContent = "模型 " + m + " 不可用，自动换下一个…";
+      ventProgressStop();
+      if(i < cands.length - 1){
+        $(elId).textContent = "【" + c.pvName + "】没成功（" + String(e.message).slice(0, 60) + "），自动换【" + cands[i+1].pvName + "】…";
+        await new Promise(r => setTimeout(r, 1200));
+      }
     }
   }
   throw lastErr;
 }
-async function ventCallOnce(key, model){
-  const resp = await fetch(API_URL, {
+async function ventCallOnce(c){
+  const resp = await fetch(c.url, {
     method: "POST",
-    headers: { "Content-Type":"application/json", "Authorization":"Bearer " + key },
-    body: JSON.stringify({ model: model, messages: ventConvo, max_tokens: 4096 })
+    headers: { "Content-Type":"application/json", "Authorization":"Bearer " + c.key },
+    body: JSON.stringify({ model: c.model, messages: ventConvo, max_tokens: c.maxTok })
   });
   const data = await resp.json();
   if(!resp.ok) throw new Error("调用失败 HTTP " + resp.status + "：" + JSON.stringify(data).slice(0, 300));
   const msg = data.choices[0].message;
-  let c = msg.content;
-  if(Array.isArray(c)) c = c.map(p => typeof p === "string" ? p : (p && p.text ? p.text : "")).join("");
-  if(!c && msg.reasoning_content) c = "⚠️ 模型只返回了思考过程，建议换 moonshot-v1-128k-vision-preview 重试。\n\n" + msg.reasoning_content.slice(0, 600);
-  if(!c) throw new Error("AI返回了空内容");
-  return c;
+  let ct = msg.content;
+  if(Array.isArray(ct)) ct = ct.map(p => typeof p === "string" ? p : (p && p.text ? p.text : "")).join("");
+  if(!ct && msg.reasoning_content) throw new Error("模型只想没写答案（额度被思考吃光），换下一个试试");
+  if(!ct) throw new Error("AI返回了空内容");
+  return ct;
 }
 function ventRenderConvo(){
   let html = "";
@@ -2275,7 +2358,7 @@ $("ventBtnRecords").onclick = () => {
 
 $("ventBtnSend").onclick = async () => {
   const key = localStorage.getItem("bg_apikey") || "";
-  if(!key){ $("ventStatus").textContent = "请先在首页「设置」里填好并保存 API Key。"; return; }
+  if(!ventCandidates().length){ $("ventStatus").textContent = "请先在首页「设置」里填 Kimi 或 通义千问 的 Key。"; return; }
   if(!ventShots.length){ $("ventStatus").textContent = "请先拍呼吸机屏幕。"; return; }
   const profile = VENT_PROFILES[$("ventModel").value] || VENT_PROFILES.generic;
   const bg = $("ventBg").value.trim();
@@ -2286,7 +2369,6 @@ $("ventBtnSend").onclick = async () => {
   ventShots.forEach(d => content.push({ type: "image_url", image_url: { url: d } }));
   ventConvo = [{ role: "user", content: content }];
   $("ventBtnSend").disabled = true;
-  $("ventStatus").textContent = "正在发给AI分析（自动选可用模型，思考型模型要1-3分钟，请保持屏幕亮着别切后台）…";
   try{
     ventLastText = await ventCallAI(key);
     ventConvo.push({ role: "assistant", content: ventLastText });
@@ -2331,12 +2413,11 @@ $("ventBtnFollow").onclick = () => {
 };
 async function ventContinue(){
   const key = localStorage.getItem("bg_apikey") || "";
-  $("ventFollowStatus").textContent = "AI思考中…";
   try{
-    ventLastText = await ventCallAI(key);
+    ventLastText = await ventCallAI(key, "ventFollowStatus");
     ventConvo.push({ role: "assistant", content: ventLastText });
     ventRenderConvo();
-    $("ventFollowStatus").textContent = "";
+    $("ventFollowStatus").textContent = "（本次使用模型：" + ventModelUsed + "）";
     /* 更新记录 */
     ventIdbRead().then(arr => {
       if(ventRecIndex >= 0 && arr[ventRecIndex]){
@@ -2350,7 +2431,10 @@ async function ventContinue(){
   }
 }
 
-$("btnVent").onclick = () => { show("ventPage"); };
+$("btnVent").onclick = () => {
+  show("ventPage");
+  $("ventRouteInfo").textContent = ventRouteText(); /* v0.10.5 开场就告诉用户将用哪个AI */
+};
 $("ventBtnBack").onclick = () => show("step1");
 
 show("step1");
