@@ -10,6 +10,13 @@
           → 大纲编辑页改稿 → 一键生成HTML幻灯片 → 横屏播放 → 每页可AI重做/换版式
           → 导出单个HTML（微信发别人，浏览器打开即放映）
   修改记录：
+    v0.6.1 2026-09-02 自选背景图（洪医生愿望清单第2批）：
+      - 幻灯片页工具条加「🖼️ 背景图」：相册选图→canvas压到≤1600px、JPEG逐步降质到≤200KB
+        →存当前PPT的p.bg（每个PPT各选各的，不设全局）
+      - 渲染：.slide-page叠82%不透明蒙纱（米白学术用米白纱，深蓝/墨绿/黑板用深色纱），
+        照片隐约可见、字绝对清楚
+      - 「✕ 清除背景」有背景时才露面；导出HTML把照片内嵌带走（slideHTML原样序列化，导出文件同款效果）
+      - 提醒：亮色素照片效果好；导出会把照片带出去，别夹病人信息
     v0.4.0 2026-08-07 链接某段升级成洪老师方案：涂黑观点→点链接某段→AI拿观点读文献正文，
       摘出最相关的1~2段原文+一句大白话"这段凭啥支持"；您过目可改才插入。文献库没正文就老实
       退回端总结（老样子）。没涂黑就点也退回老样子。
@@ -273,6 +280,9 @@
         <option value="t-ink">🎨 墨绿讲堂</option>
         <option value="t-chalk">🎨 黑板粉笔</option>
       </select>
+      <button class="ghost" id="btnBgImg">🖼️ 背景图</button>
+      <button class="ghost" id="btnBgClear" style="display:none">✕ 清除背景</button>
+      <input type="file" id="bgFile" accept="image/*" style="display:none">
       <button class="ghost" id="btnCopyProof2">📋 复制校对（全片）</button>
       <button class="ghost" id="btnProofIn2">📥 贴回校对结果</button>
       <button class="ghost" id="btnExport">📤 导出HTML</button>
@@ -351,7 +361,7 @@
 
 <script>
 "use strict";
-var SW_VERSION = "0.6.0"; /* v0.6.0 四套皮肤（米白学术/深蓝正式/墨绿讲堂/黑板粉笔），每个PPT各选各的，导出HTML带着走；点屏翻页其实v0.2.0起就有（点左35%上页/右65%下页） */ /* v0.5.0 放映自适应：底栏实底让位+内容超高自动等比缩小（洪医生横屏讲课表格最后一行被吃） */ /* v0.4.8 AI报错带官方原因+400也自动换模型重试（洪医生贴回校对撞HTTP400：疑公共模型罐里存着已下架的moonshot-v1系列，400不走404重试路） */ /* v0.4.7 版本字样治病根：头顶+页脚+标题改成代码自动填SW_VERSION（v0.4.0~0.4.6期间头顶一直显示旧号，害用户以为没更新） */ /* v0.4.6 更新通道免Token备用路：自检/下载新版在API不通或没填Token时自动走github.io公开直链 */ /* v0.4.5 贴回校对结果：别的AI的校对意见贴进来，本软件AI照改大纲（原文没提到的部分不动）+秒表进度 */ /* v0.4.4 复制校对：大纲/全片一键连校对指令复制，借别的AI挑错，不花自己Key */ /* v0.4.3 修404：死模型自动换kimi-k2.6+重试；max_tokens 8000→16384（k2.6思考型） */ /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
+var SW_VERSION = "0.6.1"; /* v0.6.1 自选背景图（愿望清单第2批）：幻灯片页「🖼️ 背景图」相册选图→canvas压缩≤1600px、JPEG逐步降质（≤200KB）→存本PPT的p.bg（不设全局）；渲染时.slide-page叠82%不透明蒙纱（米白皮用米白纱/深色皮用深色纱）保证字可读；「✕ 清除背景」一键还原；导出HTML内嵌带走。提醒：导出会把照片带出去，别夹病人信息 */ /* v0.6.0 四套皮肤（米白学术/深蓝正式/墨绿讲堂/黑板粉笔），每个PPT各选各的，导出HTML带着走；点屏翻页其实v0.2.0起就有（点左35%上页/右65%下页） */ /* v0.5.0 放映自适应：底栏实底让位+内容超高自动等比缩小（洪医生横屏讲课表格最后一行被吃） */ /* v0.4.8 AI报错带官方原因+400也自动换模型重试（洪医生贴回校对撞HTTP400：疑公共模型罐里存着已下架的moonshot-v1系列，400不走404重试路） */ /* v0.4.7 版本字样治病根：头顶+页脚+标题改成代码自动填SW_VERSION（v0.4.0~0.4.6期间头顶一直显示旧号，害用户以为没更新） */ /* v0.4.6 更新通道免Token备用路：自检/下载新版在API不通或没填Token时自动走github.io公开直链 */ /* v0.4.5 贴回校对结果：别的AI的校对意见贴进来，本软件AI照改大纲（原文没提到的部分不动）+秒表进度 */ /* v0.4.4 复制校对：大纲/全片一键连校对指令复制，借别的AI挑错，不花自己Key */ /* v0.4.3 修404：死模型自动换kimi-k2.6+重试；max_tokens 8000→16384（k2.6思考型） */ /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
 /* 公共钱罐：API key/GitHub配置 一处填处处有（与其他软件共享 hx_*） */
 (function(){
   var HX_MAP=[["hx_apikey","hx_apikey"],["hx_gh_user","hx_gh_user"],["hx_gh_tok","hx_gh_tok"],["hx_gh_repo","hx_gh_repo"]];
@@ -757,12 +767,51 @@ function linkify(escaped){
     return '<a class="plnk" data-f="'+encodeURIComponent(fn)+'">'+label+'</a>';
   });
 }
+/* v0.6.1 自选背景图：PPT_BG=当前PPT的背景照片(dataURL)。bgStyleStr会被原样序列化进导出HTML */
+var PPT_BG=null, PPT_BG_DARK=false;
+function bgStyleStr(){
+  if(typeof PPT_BG==='undefined'||!PPT_BG) return '';
+  var veil=(typeof PPT_BG_DARK!=='undefined'&&PPT_BG_DARK)?'rgba(22,28,38,0.82)':'rgba(250,247,242,0.82)';
+  return ' style="background:linear-gradient('+veil+','+veil+'),url('+PPT_BG+') center/cover no-repeat"';
+}
+function syncBgGlobals(){
+  var p=curProj();
+  PPT_BG=(p&&p.bg)?p.bg:null;
+  PPT_BG_DARK=!!(p&&(p.theme==='t-deep'||p.theme==='t-ink'||p.theme==='t-chalk'));
+}
+function pickBgImage(file){
+  var p=curProj(); if(!p) return;
+  if(!/^image\//.test(file.type)){ toast('请选图片文件'); return; }
+  var url=URL.createObjectURL(file);
+  var img=new Image();
+  img.onload=function(){
+    var w=img.width,h=img.height, mx=1600;
+    if(w>mx||h>mx){ var r=mx/Math.max(w,h); w=Math.round(w*r); h=Math.round(h*r); }
+    var cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+    cv.getContext('2d').drawImage(img,0,0,w,h);
+    URL.revokeObjectURL(url);
+    var qs=[0.7,0.6,0.5,0.4], du=null;
+    for(var i=0;i<qs.length;i++){ du=cv.toDataURL('image/jpeg',qs[i]); if(du.length<270000) break; } /* dataURL长度×3/4≈二进制，27万≈200KB */
+    /* v0.6.1补丁(独立测试t20抓到)：噪点大图q0.4仍超200KB→继续降质+每轮尺寸打85折，直到达标或小到320px */
+    while(du.length>=270000 && w>320){
+      w=Math.round(w*0.85); h=Math.round(h*0.85);
+      cv.width=w; cv.height=h; cv.getContext('2d').drawImage(img,0,0,w,h);
+      var q2=[0.4,0.3,0.25];
+      for(var j=0;j<q2.length;j++){ du=cv.toDataURL('image/jpeg',q2[j]); if(du.length<270000) break; }
+    }
+    p.bg=du; saveStore(); syncBgGlobals(); renderSlides(); renderStage();
+    var kb=Math.round(du.length*3/4/1024);
+    toast('🖼️ 背景图已上好（约'+kb+'KB）。提醒：导出会把照片带出去，别夹病人信息',5000);
+  };
+  img.onerror=function(){ URL.revokeObjectURL(url); toast('这张图读不出来，换一张试试'); };
+  img.src=url;
+}
 function slideHTML(p){
   var kind=pageKind(p);
   if(kind==="cover"){
-    return '<div class="slide-page sp-cover"><h1>'+linkify(esc(p.title))+'</h1>'+(p.para?'<div class="sp-sub">'+linkify(esc(p.para))+'</div>':'')+'</div>';
+    return '<div class="slide-page sp-cover"'+bgStyleStr()+'><h1>'+linkify(esc(p.title))+'</h1>'+(p.para?'<div class="sp-sub">'+linkify(esc(p.para))+'</div>':'')+'</div>';
   }
-  var h='<div class="slide-page">';
+  var h='<div class="slide-page"'+bgStyleStr()+'>';
   if(p.title) h+='<h2>'+linkify(esc(p.title))+'</h2>';
   if(kind==="big"){
     h+='<div class="sp-big"><div class="n">'+esc(p.big)+'</div><div class="t">'+esc(p.bigText||"")+'</div></div>';
@@ -966,6 +1015,7 @@ function renderSlides(){
   var p=curProj(); if(!p) return;
   $('slidesTitle').textContent='🎞 '+(p.title||'无题')+'（'+p.slides.length+'页）';
   $('themeSel').value=p.theme||'t-academic'; /* v0.6.0 皮肤回显 */
+  $('btnBgClear').style.display=p.bg?'':'none'; /* v0.6.1 有背景才露清除钮 */
   var el=$('slideList'); el.innerHTML='';
   p.slides.forEach(function(s,i){
     var d=document.createElement('div'); d.className='slide-item';
@@ -1002,6 +1052,7 @@ function renderStage(){
   var p=curProj(); if(!p||!p.slides.length) return;
   pvIdx=Math.max(0,Math.min(pvIdx,p.slides.length-1));
   $('stage').className=(p.theme&&p.theme!=='t-academic')?p.theme:''; /* v0.6.0 皮肤 */
+  syncBgGlobals(); /* v0.6.1 背景图：渲染前同步当前PPT的bg给slideHTML用 */
   $('stage').innerHTML=slideHTML(p.slides[pvIdx]);
   $('pvNo').textContent=(pvIdx+1)+'/'+p.slides.length;
   autoFitStage();
@@ -1369,7 +1420,7 @@ async function exportHTML(){
   var css=document.querySelector('style').textContent;
   var slidesJson=JSON.stringify(p.slides).replace(/<\/script>/gi,'<\\/script>');
   var linksJson=JSON.stringify(LINKS).replace(/<\/script>/gi,'<\\/script>');
-  var fn=slideHTML.toString(), fn2=chartSVG.toString(), fn3=esc.toString(), fn4=pageKind.toString(), fn5=linkify.toString();
+  var fn=slideHTML.toString(), fn2=chartSVG.toString(), fn3=esc.toString(), fn4=pageKind.toString(), fn5=linkify.toString(), fn6=bgStyleStr.toString(); /* v0.6.1 bgStyleStr一起带走 */
   var doc='<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">'+
     '<meta name="viewport" content="width=device-width, initial-scale=1.0">'+
     '<title>'+esc(p.title||'PPT')+'</title><style>'+css+'</style></head><body>'+
@@ -1379,6 +1430,7 @@ async function exportHTML(){
     '<div id="fileViewer" class="hidden"><div class="fv-card"><div class="fv-head"><div class="fv-title" id="fvTitle"></div><button onclick="fvClose2()">✕ 关闭</button></div><div class="fv-body" id="fvBody"></div><div class="fv-src" id="fvSrc"></div></div></div>'+
     '<script>var slides='+slidesJson+';var pvIdx=0;'+
     'var PPT_LINKS='+linksJson+';'+
+    'var PPT_BG='+(p.bg?JSON.stringify(p.bg):'null')+';var PPT_BG_DARK='+((p.theme==='t-deep'||p.theme==='t-ink'||p.theme==='t-chalk')?'true':'false')+';var bgStyleStr='+fn6+'; /* v0.6.1 背景图内嵌 */'+
     'var esc='+fn3+';var pageKind='+fn4+';var chartSVG='+fn2+';var linkify='+fn5+';var slideHTML='+fn+';'+
     'function fvClose2(){document.getElementById("fileViewer").classList.add("hidden");}'+
     'function fvLink(name){document.getElementById("fvTitle").textContent="📎 "+name;var txt=PPT_LINKS[name];var b=document.getElementById("fvBody");if(txt){b.innerHTML="<pre>"+esc(txt)+"</pre>";document.getElementById("fvSrc").textContent="内嵌摘要（导出时自动抓取），这份HTML自己带着，不用联网";}else{b.innerHTML="<div style=color:#a89f93>这份HTML没有内嵌该文件的摘要</div>";document.getElementById("fvSrc").textContent="";}document.getElementById("fileViewer").classList.remove("hidden");}'+
@@ -1515,6 +1567,10 @@ $('btnBackHome').onclick=function(){ renderProjects(); showPage('homePage'); };
 $('btnBackEdit').onclick=function(){ showPage('editPage'); };
 $('btnPlay').onclick=startPlay;
 $('btnExport').onclick=exportHTML;
+/* v0.6.1 自选背景图 */
+$('btnBgImg').onclick=function(){ var p=curProj(); if(!p){toast('先打开一个PPT');return;} $('bgFile').click(); };
+$('btnBgClear').onclick=function(){ var p=curProj(); if(!p) return; delete p.bg; saveStore(); syncBgGlobals(); renderSlides(); renderStage(); toast('背景已清除，回到纯色皮肤'); };
+$('bgFile').onchange=function(){ var f=this.files&&this.files[0]; this.value=''; if(f) pickBgImage(f); };
 $('ghSave').onclick=function(){
   localStorage.setItem('hx_gh_user',$('ghUser').value.trim());
   localStorage.setItem('hx_gh_tok',$('ghTok').value.trim());
