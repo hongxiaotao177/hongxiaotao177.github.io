@@ -680,6 +680,10 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
       <button class="ghost" onclick="openMerge()">🗃 合并勾选的题库</button>
       <button class="ghost" onclick="exportWrong()">📤 导出错题</button>
     </div>
+    <div class="btn-row">
+      <button class="ghost" onclick="openPptSimple()">📊 习题→PPT</button>
+      <button class="ghost" onclick="openPptAI()">🤖 AI综合备课</button>
+    </div>
     <div id="bank-list"></div>
 
     <!-- v1.4 云备份卡片（GitHub 私有仓库；与学习笔记同一仓库，文件名 xiti-backup.json） -->
@@ -1012,6 +1016,51 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
       <button onclick="confirmMerge()">确认合并</button>
       <button class="ghost" onclick="closeMerge()">取消</button>
     </div>
+  </div>
+</div>
+
+<!-- v1.8.5 习题→PPT工坊（任务一本地拼 + 任务二AI综合，共用这一个窗） -->
+<div id="ppt-modal" class="modal-mask hidden" onclick="if(event.target===this)closePpt()">
+  <div class="modal">
+    <h3 id="ppt-title">📊 习题→PPT工坊</h3>
+    <div id="ppt-setup">
+      <label style="font-size:14px;color:#666;">范围</label>
+      <select id="ppt-scope" style="width:100%;padding:10px;font-size:15px;border:1px solid #ccc;border-radius:8px;margin:4px 0 8px">
+        <option value="checked">勾选的题库</option>
+        <option value="all">全部普通题库</option>
+      </select>
+      <label style="font-size:14px;color:#666;">题目筛选</label>
+      <select id="ppt-filter" style="width:100%;padding:10px;font-size:15px;border:1px solid #ccc;border-radius:8px;margin:4px 0 8px">
+        <option value="all">全部题</option>
+        <option value="weak">只陌生+一般（对着薄弱点）</option>
+        <option value="strange">只陌生</option>
+      </select>
+      <div id="ppt-layout-row">
+        <label style="font-size:14px;color:#666;">排版</label>
+        <select id="ppt-layout" style="width:100%;padding:10px;font-size:15px;border:1px solid #ccc;border-radius:8px;margin:4px 0 8px">
+          <option value="same">题+答同页（自习用）</option>
+          <option value="split">题一页、答一页（课堂提问用）</option>
+        </select>
+      </div>
+      <div id="ppt-focus-row" class="hidden">
+        <label style="font-size:14px;color:#666;">给谁讲、想突出什么（可留空）</label>
+        <input type="text" id="ppt-focus" placeholder="如：给规培生讲，突出鉴别诊断" style="margin:4px 0 8px">
+      </div>
+      <div class="btn-row">
+        <button id="ppt-go">生成</button>
+        <button class="ghost" onclick="closePpt()">关闭</button>
+      </div>
+    </div>
+    <div id="ppt-preview-wrap" class="hidden">
+      <div style="font-size:13px;color:#888;margin-bottom:4px;">大纲可以改，改完再寄：</div>
+      <textarea id="ppt-preview" style="min-height:220px;font-size:14px"></textarea>
+      <div class="btn-row" style="margin-top:8px">
+        <button onclick="pptSend()">📤 寄去PPT工坊</button>
+        <button class="ghost" onclick="pptBack()">返回重选</button>
+        <button class="ghost" onclick="closePpt()">关闭</button>
+      </div>
+    </div>
+    <div id="ppt-status" style="font-size:14px;color:#666;margin-top:8px;white-space:pre-wrap"></div>
   </div>
 </div>
 
@@ -1527,6 +1576,144 @@ function renderBanks() {
     outBtn.style.opacity = outN ? "1" : "0.5";
   }
 }
+
+/* ================= v1.8.5 习题→PPT工坊 =================
+   邮路照抄血气分析v0.10.8的ppt_inbox格式（同源localStorage，PPT工坊弹窗收）。
+   任务一（本地拼，不花AI钱）：习题一页一页；任务二（AI综合备课）：提炼知识点成课。 */
+var pptMode = "simple", pptTitle = "";
+function sendToPpt(title, md){
+  try{
+    localStorage.setItem("ppt_inbox", JSON.stringify({ title: title, text: md, from: "习题学习", t: Date.now() }));
+    alert("📤 已发送！现在去打开「PPT工坊」，它会弹窗问您收不收。");
+  }catch(e){ alert("写入收件箱失败：" + e.message); }
+}
+function pptBanks(){
+  var scope = document.getElementById("ppt-scope").value, out = [];
+  if (scope === "checked"){
+    document.querySelectorAll("#bank-list .bank-check").forEach(function(cb){
+      if (cb.checked) out.push(store.banks[+cb.getAttribute("data-bi")]);
+    });
+  } else {
+    out = store.banks.filter(function(b){ return (b.type || "normal") === "normal"; });
+  }
+  return out.filter(Boolean);
+}
+function pptPick(b, filter){
+  var arr = [];
+  b.questions.forEach(function(q, qi){
+    var lv = getLevel(b.id, qi);
+    if (filter === "weak" && !(lv === 1 || lv === 2)) return;
+    if (filter === "strange" && lv !== 1) return;
+    arr.push(q);
+  });
+  return arr;
+}
+function openPptSimple(){
+  pptMode = "simple";
+  document.getElementById("ppt-title").textContent = "📊 习题一页一页 → PPT工坊";
+  document.getElementById("ppt-layout-row").classList.remove("hidden");
+  document.getElementById("ppt-focus-row").classList.add("hidden");
+  document.getElementById("ppt-setup").classList.remove("hidden");
+  document.getElementById("ppt-preview-wrap").classList.add("hidden");
+  document.getElementById("ppt-status").textContent = "";
+  document.getElementById("ppt-modal").classList.remove("hidden");
+}
+function openPptAI(){
+  if (!needKey()) return;
+  pptMode = "ai";
+  document.getElementById("ppt-title").textContent = "🤖 AI综合备课 → PPT工坊";
+  document.getElementById("ppt-layout-row").classList.add("hidden");
+  document.getElementById("ppt-focus-row").classList.remove("hidden");
+  document.getElementById("ppt-setup").classList.remove("hidden");
+  document.getElementById("ppt-preview-wrap").classList.add("hidden");
+  document.getElementById("ppt-status").textContent = "";
+  document.getElementById("ppt-modal").classList.remove("hidden");
+}
+function closePpt(){ document.getElementById("ppt-modal").classList.add("hidden"); }
+function pptBack(){
+  document.getElementById("ppt-setup").classList.remove("hidden");
+  document.getElementById("ppt-preview-wrap").classList.add("hidden");
+}
+function pptShowPreview(title, md){
+  pptTitle = title;
+  document.getElementById("ppt-preview").value = md;
+  document.getElementById("ppt-setup").classList.add("hidden");
+  document.getElementById("ppt-preview-wrap").classList.remove("hidden");
+}
+function pptSend(){
+  var md = document.getElementById("ppt-preview").value.replace(/^\s+|\s+$/g, "");
+  if (!md){ toast("大纲是空的"); return; }
+  sendToPpt(pptTitle || "习题备课", md);
+  closePpt();
+}
+function buildPptSimple(){
+  var banks = pptBanks();
+  var st = document.getElementById("ppt-status");
+  if (!banks.length){ st.textContent = "⚠️ 请先勾选题库（或把范围改成全部）"; return; }
+  var filter = document.getElementById("ppt-filter").value;
+  var layout = document.getElementById("ppt-layout").value;
+  var multi = banks.length > 1, n = 0;
+  var title = multi ? "习题集（" + banks.length + "个题库）" : banks[0].name + " 习题卡";
+  var md = "# " + title + "\n";
+  banks.forEach(function(b){
+    var qs = pptPick(b, filter);
+    qs.forEach(function(q){
+      n++;
+      var head = "## 第" + n + "题" + (multi ? "（" + b.name + "）" : "");
+      var notes = (q.n || []).map(function(x){ return "> " + x; }).join("\n");
+      if (layout === "split"){
+        md += head + "\n" + (q.q || "") + "\n"
+            + "## 第" + n + "题 · 答案\n- " + (q.a || "（无答案）") + "\n" + (notes ? notes + "\n" : "");
+      } else {
+        md += head + "\n" + (q.q || "") + "\n- ✅ " + (q.a || "（无答案）") + "\n" + (notes ? notes + "\n" : "");
+      }
+    });
+  });
+  if (!n){ st.textContent = "⚠️ 这个筛选条件下一题都没有"; return; }
+  pptShowPreview(title + "（" + n + "题）", md);
+  st.textContent = "✅ 拼好 " + n + " 题，共 " + (layout === "split" ? n * 2 + 1 : n + 1) + " 页";
+}
+async function buildPptAI(){
+  var banks = pptBanks();
+  var st = document.getElementById("ppt-status");
+  if (!banks.length){ st.textContent = "⚠️ 请先勾选题库（或把范围改成全部）"; return; }
+  var filter = document.getElementById("ppt-filter").value;
+  var focus = document.getElementById("ppt-focus").value.replace(/^\s+|\s+$/g, "");
+  var material = "", qn = 0;
+  banks.forEach(function(b){
+    var qs = pptPick(b, filter);
+    if (!qs.length) return;
+    material += "【题库：" + b.name + "】\n";
+    qs.forEach(function(q){
+      qn++;
+      material += "问：" + (q.q || "") + "\n答：" + (q.a || "") + "\n";
+      if (q.n && q.n.length) material += "注释：" + q.n.join("；") + "\n";
+    });
+  });
+  if (!qn){ st.textContent = "⚠️ 这个筛选条件下一题都没有"; return; }
+  var truncated = false;
+  if (material.length > 12000){ material = material.slice(0, 12000); truncated = true; }
+  st.textContent = "🤖 AI正在备课…共 " + qn + " 题，通常1~2分钟，请别关页面";
+  var title = (banks.length === 1 ? banks[0].name : "习题综合") + " 备课";
+  try{
+    var md = await callAI(
+      "您是ICU教学备课助手。把习题内容综合成一堂课的教学PPT大纲——不是把题堆上去，要提炼：归纳知识点、做对比表格、挑易错点、给记忆钩子。",
+      "【输出规矩（Markdown）】\n- 第一行：# 演示标题（封面）\n- 每页以「## 页标题」开头\n- 要点：行首「- 」（每页3~6条，每条不超过30字，说人话）\n- 对比表：用 | 表头 | 表头 | 画（第二行不要分隔线也认得），适合对比的优先用表\n- 大数字页：行首「!! 数字 说明文字」\n- 金句页：行首「> 」\n- 只输出Markdown本身，不要任何解释。页数8~15页。\n\n"
+      + (focus ? "【讲课要求】" + focus + "\n\n" : "")
+      + (filter !== "all" ? "【说明】以下只挑了学生掌握不牢的题（陌生/一般），备课要对着薄弱点讲。\n\n" : "")
+      + "【习题素材】\n" + material
+      + (truncated ? "\n（素材太长，以上截取前一部分）" : ""));
+    var m = md.match(/```(?:markdown)?\s*([\s\S]*?)```/);
+    if (m) md = m[1];
+    md = md.replace(/^\s+|\s+$/g, "");
+    if (md.indexOf("#") !== 0) md = "# " + title + "\n" + md;
+    pptShowPreview(title, md);
+    st.textContent = "✅ 大纲写好了，可以改，改完寄去PPT工坊";
+  }catch(e){
+    st.textContent = "❌ " + e.message;
+  }
+}
+document.getElementById("ppt-go").onclick = function(){ pptMode === "ai" ? buildPptAI() : buildPptSimple(); };
 
 /* ================= 词根面板 ================= */
 function extractRoots() {
@@ -2757,7 +2944,11 @@ function toast(msg) {
    完整设计思路与协同协议见学习笔记.html 代码顶部（两边以那份为准）。 */
 var XT_GH_USER = "xt_gh_user", XT_GH_TOK = "xt_gh_tok", XT_GH_REPO = "xt_gh_repo",
     XT_GH_LAST = "xt_gh_last", XT_GH_CHECK = "xt_gh_check";
-var SW_VERSION = "1.8.4"; /* v1.8.4 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */
+var SW_VERSION = "1.8.5"; /* v1.8.5 习题→PPT工坊两路（洪医生任务2026-09-01）：任务一「📊 习题→PPT」本地拼——
+  范围(勾选/全部)×筛选(全部/陌生+一般/只陌生)×排版(题答同页自习用 / 题一页答一页课堂提问用)，不花AI钱；
+  任务二「🤖 AI综合备课」——AI读全部问答提炼成课（归纳/对比表/易错点，不是堆题），可填讲课重点，可对着薄弱点，
+  大纲先预览可手改再寄。两路都走ppt_inbox邮路（照抄血气分析v0.10.8格式），PPT工坊弹窗收。 */
+/* v1.8.4 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */
 /* v1.4.8 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["xt_gh_user", "hx_gh_user"], ["xt_gh_tok", "hx_gh_tok"], ["xt_gh_repo", "hx_gh_repo"]];
