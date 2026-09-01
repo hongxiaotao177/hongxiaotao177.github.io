@@ -120,6 +120,10 @@
     策略拦截）；素材从unpkg下载后要验证完整性（jsdelivr经常截断）。其余代码两版完全相同。
      v0.10.2 2026-08-06 公共钱罐hx_*：GitHub Token/仓库名/API Key 四个软件+主界面一处填处处有（空的自动抄公共的）。踩坑：各软件存钱罐名不一（bg_/xt_/br_），同源也互通不了。
     同版补充：主界面刷新hxIndexRefresh——壳里打开任一软件顺带把套装主界面(index.html)也换新，主界面从此也能自动更新。
+    v0.10.13 2026-09-01 公共钱罐v2·时间戳版（洪医生问"Token为什么改不进来"查出的病根）：
+        旧规矩"自己有且≠公共就盖公共"，各软件兜里的旧Token会把新Token顶掉（打地鼠复活）；
+        新规矩：手动保存打时间戳，同步时戳新的赢、平局以公共钱罐为准。全家六处（学习笔记/
+        习题学习/文件桥/小涛笔记/PPT工坊/血气分析）同天齐改，主界面只读不写不用动。
     v0.10.12 2026-09-01 PB840入编（洪医生科室第二款呼吸机）：机型下拉新增PB840——
         屏幕地图v1（顶部监测条七项/双波形区/蓝色设定区按栏目对号/底部触摸页签/实体键清单）
         + 操作档案v1（关键区别：吸气保持/呼气保持是屏幕右下实体键INSP PAUSE/EXP PAUSE，
@@ -235,7 +239,7 @@
 </style>
 </head>
 <body>
-<header><span>血气分析解读助手</span><span class="ver">v0.10.12</span></header>
+<header><span>血气分析解读助手</span><span class="ver">v0.10.13</span></header>
 <main>
 
   <!-- 第1步：首页 -->
@@ -431,6 +435,7 @@
 
 ★ 如果"自动定位"提示识别引擎下载失败或一直转圈：先检查网络、换个网络（WiFi换流量）多试几次；还是不行，把这个HTML文件发回给Kimi，说一句"引擎下载失败"，它读文件开头的说明就知道原因和处理办法，会直接给您做一个不联网的离线版。
 
+v0.10.13 公共钱罐v2：GitHub Token/API Key 改成"新的盖旧的"——在一处填新的，全家软件自动跟新，旧的不会再复活（以前要到处手动改）
 v0.10.12 PB840入编：机型选择新增PB840（科室第二款呼吸机），带屏幕地图和操作档案——吸气保持/呼气保持是屏幕右下方的实体键（INSP PAUSE/EXP PAUSE），不在屏幕菜单里
 v0.10.11 SV650操作档案真机核准（v2）：吸气保持/呼气保持按键路径已和真机对上——右栏「工具」→基本工具→「按下并保持」；P0.1/NIF等力学检测在「高级工具」页（待核对）
 v0.10.10 SV650屏幕地图真机核准（v2）：底部两行、PS位置标明、右侧监测列内容明确
@@ -2052,6 +2057,7 @@ ghBindBtn($("ghSave"), function(){
     localStorage.setItem(LS_GH_USER, $("ghUser").value.replace(/^\s+|\s+$/g,""));
     localStorage.setItem(LS_GH_TOK,  $("ghTok").value.replace(/^\s+|\s+$/g,""));
     localStorage.setItem(LS_GH_REPO, $("ghRepo").value.replace(/^\s+|\s+$/g,""));
+    hxStamp(LS_GH_USER, LS_GH_TOK, LS_GH_REPO);
     ghToast("💾 已保存", 2000);
   }catch(e){ ghShowMsg("保存失败：浏览器禁止了本地存储。", "err"); }
 });
@@ -2067,17 +2073,22 @@ ghBindBtn($("ghConfNo"), function(){
    与学习笔记/习题学习/文件桥同款：读 version-xueqi.json 比对版本；
    壳APP里下载新版 = applyUpdate 自更新（重启生效）+ 授权文件夹存备份；
    浏览器里 = 普通下载。 */
-var SW_VERSION = "0.10.12";
+var SW_VERSION = "0.10.13";
 /* v0.10.2 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["bg_gh_user", "hx_gh_user"], ["bg_gh_tok", "hx_gh_tok"], ["bg_gh_repo", "hx_gh_repo"], ["bg_apikey", "hx_apikey"]];
-  function hxSync(){
-    for(var i=0;i<HX_MAP.length;i++){
-      var own=localStorage.getItem(HX_MAP[i][0]), sh=localStorage.getItem(HX_MAP[i][1]);
-      if(own && own!==sh) localStorage.setItem(HX_MAP[i][1], own);
-      else if(!own && sh) localStorage.setItem(HX_MAP[i][0], sh);
-    }
+  function hxStamp(){ for(var i=0;i<arguments.length;i++) localStorage.setItem(arguments[i]+"_t", String(Date.now())); }
+  /* 公共钱罐v2（2026-09-01 时间戳版）：新填的盖旧的，旧Token不再复活。手动保存时打时间戳 hxStamp(键)；同步时戳新的赢，平局以公共钱罐为准 */
+  function hxSync1(ownKey, shKey){
+    var o=localStorage.getItem(ownKey), s=localStorage.getItem(shKey);
+    var ot=+localStorage.getItem(ownKey+"_t")||0, st=+localStorage.getItem(shKey+"_t")||0;
+    if(o && s && o!==s){
+      if(ot>st){ localStorage.setItem(shKey,o); localStorage.setItem(shKey+"_t",ot); }
+      else { localStorage.setItem(ownKey,s); localStorage.setItem(ownKey+"_t",st); }
+    }else if(o && !s){ localStorage.setItem(shKey,o); localStorage.setItem(shKey+"_t",ot); }
+    else if(!o && s){ localStorage.setItem(ownKey,s); localStorage.setItem(ownKey+"_t",st); }
   }
+  function hxSync(){ for(var i=0;i<HX_MAP.length;i++) hxSync1(HX_MAP[i][0], HX_MAP[i][1]); }
   hxSync(); setInterval(hxSync, 2000);
 })();
 /* 主界面刷新：壳里打开软件时顺带检查套装主界面(index.html)有没有新版，有就换新（解决主界面自己不会更新的鸡生蛋问题） */
