@@ -6826,6 +6826,7 @@ ghBindBtn($('ghSave'), function(){
     localStorage.setItem(LS_GH_USER, ghUserInput.value.replace(/^\s+|\s+$/g,''));
     localStorage.setItem(LS_GH_TOK,  ghTokInput.value.replace(/^\s+|\s+$/g,''));
     localStorage.setItem(LS_GH_REPO, ghRepoInput.value.replace(/^\s+|\s+$/g,''));
+    hxStamp(LS_GH_USER, LS_GH_TOK, LS_GH_REPO);
     popToast('💾 已保存', 2000);
   }catch(e){ showMsg(ghMsg, '保存失败：浏览器禁止了本地存储。', 'err'); }
 });
@@ -6959,17 +6960,22 @@ ghBindBtn($('ghConfNo'), function(){
      不通=红条常驻（只说连不上，不影响使用）
    注意：version.json 与软件副本（dl 字段指向的文件）由交付端（AI）每次发版时
    推到备份仓库；本文件版本号改 SW_VERSION 一处即可。 */
-var SW_VERSION = '2.14.0';
+var SW_VERSION = '2.14.1'; /* v2.14.1 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */
 /* v2.6.7 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["bg_gh_user", "hx_gh_user"], ["bg_gh_tok", "hx_gh_tok"], ["bg_gh_repo", "hx_gh_repo"], ["bg_apikey", "hx_apikey"]];
-  function hxSync(){
-    for(var i=0;i<HX_MAP.length;i++){
-      var own=localStorage.getItem(HX_MAP[i][0]), sh=localStorage.getItem(HX_MAP[i][1]);
-      if(own && own!==sh) localStorage.setItem(HX_MAP[i][1], own);
-      else if(!own && sh) localStorage.setItem(HX_MAP[i][0], sh);
-    }
+  /* 公共钱罐v2（2026-09-01 时间戳版）：新填的盖旧的，旧Token不再复活。手动保存时打时间戳 hxStamp(键)；同步时戳新的赢，平局以公共钱罐为准 */
+  function hxSync1(ownKey, shKey){
+    var o=localStorage.getItem(ownKey), s=localStorage.getItem(shKey);
+    var ot=+localStorage.getItem(ownKey+"_t")||0, st=+localStorage.getItem(shKey+"_t")||0;
+    if(o && s && o!==s){
+      if(ot>st){ localStorage.setItem(shKey,o); localStorage.setItem(shKey+"_t",ot); }
+      else { localStorage.setItem(ownKey,s); localStorage.setItem(ownKey+"_t",st); }
+    }else if(o && !s){ localStorage.setItem(shKey,o); localStorage.setItem(shKey+"_t",ot); }
+    else if(!o && s){ localStorage.setItem(ownKey,s); localStorage.setItem(ownKey+"_t",st); }
   }
+  function hxStamp(){ for(var i=0;i<arguments.length;i++) localStorage.setItem(arguments[i]+"_t", String(Date.now())); }
+  function hxSync(){ for(var i=0;i<HX_MAP.length;i++) hxSync1(HX_MAP[i][0], HX_MAP[i][1]); }
   hxSync(); setInterval(hxSync, 2000);
 })();
 /* 主界面刷新：壳里打开软件时顺带检查套装主界面(index.html)有没有新版，有就换新（解决主界面自己不会更新的鸡生蛋问题） */
