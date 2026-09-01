@@ -120,6 +120,13 @@
     策略拦截）；素材从unpkg下载后要验证完整性（jsdelivr经常截断）。其余代码两版完全相同。
      v0.10.2 2026-08-06 公共钱罐hx_*：GitHub Token/仓库名/API Key 四个软件+主界面一处填处处有（空的自动抄公共的）。踩坑：各软件存钱罐名不一（bg_/xt_/br_），同源也互通不了。
     同版补充：主界面刷新hxIndexRefresh——壳里打开任一软件顺带把套装主界面(index.html)也换新，主界面从此也能自动更新。
+    v0.10.8 2026-09-01 三合一（洪医生拍板）：①血气↔呼吸机结合——两边发送时自动捎带"同一病人"
+        最近一次对方摘要（血气发送附最近呼吸机分析要点；呼吸机发送附最近血气要点，各截300字）；
+        ②病人统一——呼吸机页撤掉自由文本框，改用首页"当前病人"（getSelectedPatient/bg_curpatient），
+        记录带patient字段；命名引导"床号+姓+诊断"（占位符提示，不强制）；
+        ③PPT邮路——血气结果页和呼吸机结果卡各加「📊 送去PPT工坊」，照抄学习笔记ppt_inbox格式
+        （{title,text:md,from,t}，同源localStorage，壳/网站内通用）。
+        注意：ventBg输入框已删，引用处全部改getSelectedPatient()。
     v0.10.7 2026-09-01 版面账半自动对账（洪医生定：错地图不如没地图）：见过的版面安静存档；
         没见过的版面弹条问"新界面还是AI认错"，✔️记下/❌删掉；记录页加「📐 版面账本」随时翻看删除。
     v0.10.6 2026-09-01 两棒制（洪医生设计）：第1棒读图AI只"抄屏幕"（读数小表+波形文字描述+
@@ -201,7 +208,7 @@
 </style>
 </head>
 <body>
-<header><span>血气分析解读助手</span><span class="ver">v0.10.7</span></header>
+<header><span>血气分析解读助手</span><span class="ver">v0.10.8</span></header>
 <main>
 
   <!-- 第1步：首页 -->
@@ -344,7 +351,7 @@
     <div class="card"><img id="previewImg" style="width:100%;border-radius:6px;" alt=""></div>
     <div class="card">
       <b>病人标识</b>
-      <input type="text" id="patientInput" placeholder="看着单据输入病人名字/床号，或从下方选择">
+      <input type="text" id="patientInput" placeholder="床号+姓+诊断，如 5床张三重症肺炎；或从下方选择">
       <div id="patientBtns"></div>
       <p class="hint">留空则归入"未命名病人"。</p>
     </div>
@@ -376,6 +383,7 @@
       <div id="retryStatus"></div>
     </div>
     <button class="btn secondary" id="btnRefile">✏️ 改归其他病人（名字输错时用）</button>
+    <button class="btn secondary" id="btnToPpt">📊 送去PPT工坊</button>
     <button class="btn" id="btnCopy">📋 复制解读结果</button>
     <div class="row">
       <button class="btn secondary" id="btnNew">再拍一张</button>
@@ -396,6 +404,7 @@
 
 ★ 如果"自动定位"提示识别引擎下载失败或一直转圈：先检查网络、换个网络（WiFi换流量）多试几次；还是不行，把这个HTML文件发回给Kimi，说一句"引擎下载失败"，它读文件开头的说明就知道原因和处理办法，会直接给您做一个不联网的离线版。
 
+v0.10.8 三合一：血气和呼吸机自动互相参考同一病人的最近结果；呼吸机页病人和首页统一（床号+姓+诊断）；两个结果页都能「📊 送去PPT工坊」
 v0.10.7 版面账本：没见过的新版面会问您一句"新界面还是AI认错"，点一下就行；记录页新增「📐 版面账本」随时翻看删除
 v0.10.6 两棒制提速：第1棒AI只抄屏幕读数（快），第2棒换快速文字模型做分析（千问几秒）；读数带本地体检（数不对自动让AI重读）；建议改成"测什么/怎么测/理由/怎么看结果"小卡片，下面自动生成手输数字框，不方便拍照就填数字
 v0.10.5 AI厂商改版：新增通义千问（读图快，10~30秒），设置页可选厂商/填千问Key；不选就自动，失败自动换；等待时每秒显示进度和预计时间，不用傻等；修复Kimi"只想不答"的问题
@@ -449,7 +458,11 @@ v0.1  初版：拍照→裁剪脱敏→Kimi解读→复制归档
         <option value="sv650">迈瑞 Mindray SV650（内置操作档案）</option>
         <option value="generic">其他/通用（无操作档案，只分析）</option>
       </select>
-      <input type="text" id="ventBg" placeholder="病人背景（可选）：床号+一句话病情，如 5床 重症肺炎ARDS" style="width:100%;font-size:16px;padding:10px 12px;margin:4px 0 8px;border:1px solid #ccc;border-radius:8px;">
+      <div style="display:flex;align-items:center;gap:8px;margin:4px 0 8px;">
+        <span style="font-size:15px;">当前病人：<b id="ventPatientName"></b></span>
+        <button class="btn secondary" id="ventBtnChgPatient" style="width:auto;padding:6px 12px;font-size:14px;">换病人</button>
+      </div>
+      <p class="hint" style="margin-top:0;">和首页是同一个病人（命名建议：床号+姓+诊断）；该病人最近的血气结果会自动捎给AI参考。</p>
       <div class="row">
         <button class="btn" id="ventBtnCamera">📷 拍呼吸机屏幕</button>
         <button class="btn secondary" id="ventBtnAlbum">🖼 相册</button>
@@ -473,6 +486,7 @@ v0.1  初版：拍照→裁剪脱敏→Kimi解读→复制归档
       <div id="ventCheckBox" hidden style="background:#f7f5ef;border-radius:8px;padding:10px;margin-top:8px;"></div>
       <div class="row" style="margin-top:8px;">
         <button class="btn secondary" id="ventBtnAddShot">📷 按AI指导做完检测，拍检测界面补充</button>
+        <button class="btn secondary" id="ventBtnToPpt">📊 送去PPT工坊</button>
       </div>
       <textarea id="ventFollowInput" placeholder="追问：比如 这个病人现在能试脱机吗？" style="width:100%;min-height:70px;font-size:15px;margin-top:8px;"></textarea>
       <button class="btn" id="ventBtnFollow">发送追问</button>
@@ -1343,10 +1357,18 @@ async function runFirstSend(mode, statusEl, btn){
   }
 }
 
-$("btnSend").onclick = () => {
+$("btnSend").onclick = async () => {
   if(!croppedDataURL){ $("status").textContent = "没有裁剪后的图片。"; return; }
   pickPatient();  // 保存/发送时才确定病人标识
-  const bg = $("bgInput").value.trim() || "未提供";
+  let bg = $("bgInput").value.trim() || "未提供";
+  /* v0.10.8 呼吸机联动：自动捎带该病人最近一次呼吸机分析要点 */
+  try{
+    const vh = await ventIdbRead();
+    const lastVent = vh.find(it => (it.patient || it.bg || "未命名病人") === currentPatient);
+    if(lastVent && lastVent.text){
+      bg += "（附：该病人最近一次呼吸机分析 " + lastVent.time + " 要点：" + String(lastVent.text).slice(0, 300) + "……）";
+    }
+  }catch(e){}
   convoPrompt = getPrompt().replace("{背景}", bg);
   convo = [{
     role: "user",
@@ -2013,7 +2035,7 @@ ghBindBtn($("ghConfNo"), function(){
    与学习笔记/习题学习/文件桥同款：读 version-xueqi.json 比对版本；
    壳APP里下载新版 = applyUpdate 自更新（重启生效）+ 授权文件夹存备份；
    浏览器里 = 普通下载。 */
-var SW_VERSION = "0.10.7";
+var SW_VERSION = "0.10.8";
 /* v0.10.2 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["bg_gh_user", "hx_gh_user"], ["bg_gh_tok", "hx_gh_tok"], ["bg_gh_repo", "hx_gh_repo"], ["bg_apikey", "hx_apikey"]];
@@ -2373,7 +2395,8 @@ function ventSaveRecord(){
     arr.unshift({
       time: new Date().toLocaleString("zh-CN"),
       model: VENT_PROFILES[$("ventModel").value].name,
-      bg: $("ventBg").value.trim(),
+      bg: getSelectedPatient(),
+      patient: getSelectedPatient(),
       text: ventLastText,
       convo: ventConvo.map(m => ({ role: m.role, content: m.content }))
     });
@@ -2438,8 +2461,13 @@ $("ventBtnSend").onclick = async () => {
   if(!ventCandidates("V").length){ $("ventStatus").textContent = "请先在首页「设置」里填 Kimi 或 通义千问 的 Key。"; return; }
   if(!ventShots.length){ $("ventStatus").textContent = "请先拍呼吸机屏幕。"; return; }
   const profile = VENT_PROFILES[$("ventModel").value] || VENT_PROFILES.generic;
-  const bg = $("ventBg").value.trim();
-  const bgTxt = bg ? "病人背景：" + bg + "。" : "（未提供病人背景）";
+  /* v0.10.8 病人统一+血气联动：病人=首页当前病人；自动捎带该病人最近一次血气分析要点 */
+  const patient = getSelectedPatient();
+  let bgTxt = "病人：" + patient + "。";
+  const lastBg = (getHist() || []).find(it => (it.patient || "未命名病人") === patient);
+  if(lastBg && lastBg.text){
+    bgTxt += "该病人最近一次血气分析（" + lastBg.time + "）要点：" + String(lastBg.text).slice(0, 300) + "……";
+  }
   $("ventBtnSend").disabled = true;
   try{
     /* ===== 第1棒：读图（抄屏幕） ===== */
@@ -2641,10 +2669,29 @@ async function ventContinue(withPhoto){
   }
 }
 
+/* v0.10.8 PPT邮路（照抄学习笔记→PPT工坊的ppt_inbox格式，同源才收得到） */
+function sendToPpt(title, md){
+  try{
+    localStorage.setItem("ppt_inbox", JSON.stringify({ title: title, text: md, from: "血气分析", t: Date.now() }));
+    alert("📤 已发送！现在去打开「PPT工坊」，它会弹窗问您收不收。");
+  }catch(e){ alert("写入收件箱失败：" + e.message); }
+}
+$("btnToPpt").onclick = () => {
+  const md = "# " + (currentPatient || "病人") + " 血气分析\n## 结果\n" + lastResultText + "\n";
+  sendToPpt((currentPatient || "病人") + " 血气分析", md);
+};
+$("ventBtnToPpt").onclick = () => {
+  const p = getSelectedPatient();
+  const md = "# " + p + " 呼吸机分析\n## 屏幕读数\n" + ventReadText + "\n## 分析建议\n" + ventLastText + "\n";
+  sendToPpt(p + " 呼吸机分析", md);
+};
+
 $("btnVent").onclick = () => {
   show("ventPage");
+  $("ventPatientName").textContent = getSelectedPatient(); /* v0.10.8 与首页同一病人 */
   $("ventRouteInfo").textContent = ventRouteText(); /* v0.10.5 开场就告诉用户将用哪个AI */
 };
+$("ventBtnChgPatient").onclick = () => show("step1");
 $("ventBtnBack").onclick = () => show("step1");
 
 show("step1");
