@@ -118,6 +118,43 @@
   .chart-title { text-align:center; font-size:1em; color:#8a8178; margin-bottom:.4em; }
   /* v0.2.0 双链[[]]：放映/导出时括号不露，显示为下划线链接（Obsidian规矩） */
   .plnk { color:#2f5f8f; text-decoration:underline; cursor:pointer; }
+  /* ===== v0.6.0 四套皮肤：只管配色不动结构，随每个PPT的theme存 ===== */
+  #stage.t-deep { background:#16283f; }
+  #stage.t-deep .slide-page { background:#16283f; }
+  #stage.t-deep .slide-page h2 { color:#eef3f9; border-left-color:#d9a441; }
+  #stage.t-deep .slide-page ul, #stage.t-deep .slide-page td, #stage.t-deep .sp-para { color:#d3dde8; }
+  #stage.t-deep .slide-page table { background:rgba(255,255,255,.05); }
+  #stage.t-deep .slide-page th { background:#2b4a6b; color:#f0e6cf; }
+  #stage.t-deep .slide-page td { border-bottom-color:#2b4a6b; }
+  #stage.t-deep .slide-page tr:nth-child(even) td { background:rgba(255,255,255,.06); }
+  #stage.t-deep .sp-cover h1, #stage.t-deep .sp-quote .q { color:#f2ecdd; }
+  #stage.t-deep .sp-cover .sp-sub, #stage.t-deep .sp-big .t, #stage.t-deep .chart-title { color:#9db2c6; }
+  #stage.t-deep .sp-big .n { color:#d9a441; }
+  #stage.t-deep .sp-quote .q::before, #stage.t-deep .sp-quote .q::after { color:#d9a441; }
+  #stage.t-ink { background:#21362a; }
+  #stage.t-ink .slide-page { background:#21362a; }
+  #stage.t-ink .slide-page h2 { color:#f1f4e8; border-left-color:#e3c878; }
+  #stage.t-ink .slide-page ul, #stage.t-ink .slide-page td, #stage.t-ink .sp-para { color:#d9e2cf; }
+  #stage.t-ink .slide-page table { background:rgba(255,255,255,.05); }
+  #stage.t-ink .slide-page th { background:#33523e; color:#f4e9c9; }
+  #stage.t-ink .slide-page td { border-bottom-color:#33523e; }
+  #stage.t-ink .slide-page tr:nth-child(even) td { background:rgba(255,255,255,.06); }
+  #stage.t-ink .sp-cover h1, #stage.t-ink .sp-quote .q { color:#f4f1e2; }
+  #stage.t-ink .sp-cover .sp-sub, #stage.t-ink .sp-big .t, #stage.t-ink .chart-title { color:#a9bda4; }
+  #stage.t-ink .sp-big .n { color:#e3c878; }
+  #stage.t-ink .sp-quote .q::before, #stage.t-ink .sp-quote .q::after { color:#e3c878; }
+  #stage.t-chalk { background:#2e2e2c; }
+  #stage.t-chalk .slide-page { background:#2e2e2c; }
+  #stage.t-chalk .slide-page h2 { color:#f5f1de; border-left-color:#f0e6bd; }
+  #stage.t-chalk .slide-page ul, #stage.t-chalk .slide-page td, #stage.t-chalk .sp-para { color:#e2ddca; }
+  #stage.t-chalk .slide-page table { background:rgba(255,255,255,.04); }
+  #stage.t-chalk .slide-page th { background:transparent; color:#f0e6bd; border-bottom:2px dashed #f0e6bd; }
+  #stage.t-chalk .slide-page td { border-bottom:1px dashed #6a685f; }
+  #stage.t-chalk .slide-page tr:nth-child(even) td { background:rgba(255,255,255,.04); }
+  #stage.t-chalk .sp-cover h1, #stage.t-chalk .sp-quote .q { color:#f7f3e4; }
+  #stage.t-chalk .sp-cover .sp-sub, #stage.t-chalk .sp-big .t, #stage.t-chalk .chart-title { color:#b3ae9c; }
+  #stage.t-chalk .sp-big .n { color:#f0e6bd; }
+  #stage.t-chalk .sp-quote .q::before, #stage.t-chalk .sp-quote .q::after { color:#f0e6bd; }
   /* 文件查看器（工坊与导出的HTML共用样式，导出时随<style>一起带走） */
   #fileViewer { position:fixed; inset:0; z-index:110; /* 要比播放器(z100)还高，放映中点链接才打得开 */ background:rgba(40,34,26,.55); display:flex; align-items:center; justify-content:center; padding:10px; }
   #fileViewer.hidden { display:none !important; }
@@ -230,7 +267,12 @@
   <div class="card">
     <h3 id="slidesTitle">🎞 幻灯片</h3>
     <div class="btn-row">
-      <button id="btnPlay" style="background:#b3742a;">▶️ 放映（手机横过来）</button>
+      <button id="btnPlay" style="background:#b3742a;">▶️ 放映（手机横过来）</button> <select id="themeSel" title="版面皮肤" style="font-size:14px;padding:8px 10px;border:1px solid #ccc;border-radius:8px;background:#fff;">
+        <option value="t-academic">🎨 米白学术（默认）</option>
+        <option value="t-deep">🎨 深蓝正式</option>
+        <option value="t-ink">🎨 墨绿讲堂</option>
+        <option value="t-chalk">🎨 黑板粉笔</option>
+      </select>
       <button class="ghost" id="btnCopyProof2">📋 复制校对（全片）</button>
       <button class="ghost" id="btnProofIn2">📥 贴回校对结果</button>
       <button class="ghost" id="btnExport">📤 导出HTML</button>
@@ -309,7 +351,7 @@
 
 <script>
 "use strict";
-var SW_VERSION = "0.5.0"; /* v0.5.0 放映自适应：底栏实底让位+内容超高自动等比缩小（洪医生横屏讲课表格最后一行被吃） */ /* v0.4.8 AI报错带官方原因+400也自动换模型重试（洪医生贴回校对撞HTTP400：疑公共模型罐里存着已下架的moonshot-v1系列，400不走404重试路） */ /* v0.4.7 版本字样治病根：头顶+页脚+标题改成代码自动填SW_VERSION（v0.4.0~0.4.6期间头顶一直显示旧号，害用户以为没更新） */ /* v0.4.6 更新通道免Token备用路：自检/下载新版在API不通或没填Token时自动走github.io公开直链 */ /* v0.4.5 贴回校对结果：别的AI的校对意见贴进来，本软件AI照改大纲（原文没提到的部分不动）+秒表进度 */ /* v0.4.4 复制校对：大纲/全片一键连校对指令复制，借别的AI挑错，不花自己Key */ /* v0.4.3 修404：死模型自动换kimi-k2.6+重试；max_tokens 8000→16384（k2.6思考型） */ /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
+var SW_VERSION = "0.6.0"; /* v0.6.0 四套皮肤（米白学术/深蓝正式/墨绿讲堂/黑板粉笔），每个PPT各选各的，导出HTML带着走；点屏翻页其实v0.2.0起就有（点左35%上页/右65%下页） */ /* v0.5.0 放映自适应：底栏实底让位+内容超高自动等比缩小（洪医生横屏讲课表格最后一行被吃） */ /* v0.4.8 AI报错带官方原因+400也自动换模型重试（洪医生贴回校对撞HTTP400：疑公共模型罐里存着已下架的moonshot-v1系列，400不走404重试路） */ /* v0.4.7 版本字样治病根：头顶+页脚+标题改成代码自动填SW_VERSION（v0.4.0~0.4.6期间头顶一直显示旧号，害用户以为没更新） */ /* v0.4.6 更新通道免Token备用路：自检/下载新版在API不通或没填Token时自动走github.io公开直链 */ /* v0.4.5 贴回校对结果：别的AI的校对意见贴进来，本软件AI照改大纲（原文没提到的部分不动）+秒表进度 */ /* v0.4.4 复制校对：大纲/全片一键连校对指令复制，借别的AI挑错，不花自己Key */ /* v0.4.3 修404：死模型自动换kimi-k2.6+重试；max_tokens 8000→16384（k2.6思考型） */ /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
 /* 公共钱罐：API key/GitHub配置 一处填处处有（与其他软件共享 hx_*） */
 (function(){
   var HX_MAP=[["hx_apikey","hx_apikey"],["hx_gh_user","hx_gh_user"],["hx_gh_tok","hx_gh_tok"],["hx_gh_repo","hx_gh_repo"]];
@@ -923,6 +965,7 @@ function renderSlidesIfReady(){ var p=curProj(); if(p&&p.slides.length){ renderS
 function renderSlides(){
   var p=curProj(); if(!p) return;
   $('slidesTitle').textContent='🎞 '+(p.title||'无题')+'（'+p.slides.length+'页）';
+  $('themeSel').value=p.theme||'t-academic'; /* v0.6.0 皮肤回显 */
   var el=$('slideList'); el.innerHTML='';
   p.slides.forEach(function(s,i){
     var d=document.createElement('div'); d.className='slide-item';
@@ -958,6 +1001,7 @@ function fitStage(){
 function renderStage(){
   var p=curProj(); if(!p||!p.slides.length) return;
   pvIdx=Math.max(0,Math.min(pvIdx,p.slides.length-1));
+  $('stage').className=(p.theme&&p.theme!=='t-academic')?p.theme:''; /* v0.6.0 皮肤 */
   $('stage').innerHTML=slideHTML(p.slides[pvIdx]);
   $('pvNo').textContent=(pvIdx+1)+'/'+p.slides.length;
   autoFitStage();
@@ -1006,6 +1050,12 @@ $('player').addEventListener('click',function(e){
 $('pvPrev').onclick=function(){ pvIdx--; renderStage(); };
 $('pvNext').onclick=function(){ pvIdx++; renderStage(); };
 $('pvExit').onclick=stopPlay;
+/* v0.6.0 皮肤换装：即选即存，云备份跟着走 */
+$('themeSel').onchange=function(){
+  var p=curProj(); if(!p) return;
+  p.theme=this.value; saveStore();
+  toast('🎨 皮肤已换成「'+this.options[this.selectedIndex].text.replace('🎨 ','')+'」，放映即见，导出也带着');
+};
 </script>
 <script>
 "use strict";
@@ -1323,7 +1373,7 @@ async function exportHTML(){
   var doc='<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">'+
     '<meta name="viewport" content="width=device-width, initial-scale=1.0">'+
     '<title>'+esc(p.title||'PPT')+'</title><style>'+css+'</style></head><body>'+
-    '<div id="player" style="display:flex"><div id="stage"></div>'+
+    '<div id="player" style="display:flex"><div id="stage"'+((p.theme&&p.theme!=='t-academic')?(' class="'+p.theme+'"'):'')+'></div>'+
     '<div id="playerBar"><button onclick="pv(-1)">← 上一页</button><span id="pvNo"></span>'+
     '<button onclick="pv(1)">下一页 →</button></div></div>'+
     '<div id="fileViewer" class="hidden"><div class="fv-card"><div class="fv-head"><div class="fv-title" id="fvTitle"></div><button onclick="fvClose2()">✕ 关闭</button></div><div class="fv-body" id="fvBody"></div><div class="fv-src" id="fvSrc"></div></div></div>'+
