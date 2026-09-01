@@ -120,6 +120,11 @@
     策略拦截）；素材从unpkg下载后要验证完整性（jsdelivr经常截断）。其余代码两版完全相同。
      v0.10.2 2026-08-06 公共钱罐hx_*：GitHub Token/仓库名/API Key 四个软件+主界面一处填处处有（空的自动抄公共的）。踩坑：各软件存钱罐名不一（bg_/xt_/br_），同源也互通不了。
     同版补充：主界面刷新hxIndexRefresh——壳里打开任一软件顺带把套装主界面(index.html)也换新，主界面从此也能自动更新。
+    v0.10.9 2026-09-01 鱼骨头+排版（洪医生真机验收：两棒全走千问共<1分钟，定为最优解）：
+        ①全部答案强制鱼骨头式——提示词加"风格铁律：只要骨头不要肉，短句列表每句≤15字，
+        禁止长段落/推理过程/客套话"（读数波形/初步分析/检测卡全面适用）；
+        ②结果区排版CSS：表格带框带底色、列表留白、标题绿色左竖条，手机上看得清。
+        里程碑补记：2026-09-01早真机跑通"千问vl-max读图+qwen-plus分析"全流程<60秒。
     v0.10.8 2026-09-01 三合一（洪医生拍板）：①血气↔呼吸机结合——两边发送时自动捎带"同一病人"
         最近一次对方摘要（血气发送附最近呼吸机分析要点；呼吸机发送附最近血气要点，各截300字）；
         ②病人统一——呼吸机页撤掉自由文本框，改用首页"当前病人"（getSelectedPatient/bg_curpatient），
@@ -169,6 +174,15 @@
   .row .btn { flex:1; }
   .card { background:#fff; border-radius:10px; padding:14px; margin:12px 0; box-shadow:0 1px 3px rgba(0,0,0,.08); }
   .hint { font-size:13px; color:#888; margin:6px 0; }
+  /* v0.10.9 结果区排版（洪医生嫌乱）：表格带框、列表留白、标题分色 */
+  #ventResultBox table, #resultBox table { border-collapse:collapse; width:100%; margin:8px 0; font-size:14px; }
+  #ventResultBox th, #resultBox th { background:#eef3f0; border:1px solid #c9d4cd; padding:6px 8px; text-align:left; }
+  #ventResultBox td, #resultBox td { border:1px solid #ddd; padding:6px 8px; }
+  #ventResultBox ul, #resultBox ul { padding-left:20px; margin:6px 0; }
+  #ventResultBox li, #resultBox li { margin:5px 0; line-height:1.6; }
+  #ventResultBox p, #resultBox p { margin:6px 0; line-height:1.7; }
+  #ventResultBox h2, #resultBox h2 { font-size:17px; color:#4a6b5d; margin:12px 0 6px; border-left:4px solid #4a6b5d; padding-left:8px; }
+  #ventResultBox h3, #resultBox h3 { font-size:15px; color:#4a6b5d; margin:10px 0 4px; }
   input[type=text], input[type=password], textarea { width:100%; padding:12px; font-size:16px; border:1px solid #ccc; border-radius:8px; margin:6px 0; }
   textarea { min-height:80px; resize:vertical; }
   /* 裁剪区 */
@@ -208,7 +222,7 @@
 </style>
 </head>
 <body>
-<header><span>血气分析解读助手</span><span class="ver">v0.10.8</span></header>
+<header><span>血气分析解读助手</span><span class="ver">v0.10.9</span></header>
 <main>
 
   <!-- 第1步：首页 -->
@@ -404,6 +418,7 @@
 
 ★ 如果"自动定位"提示识别引擎下载失败或一直转圈：先检查网络、换个网络（WiFi换流量）多试几次；还是不行，把这个HTML文件发回给Kimi，说一句"引擎下载失败"，它读文件开头的说明就知道原因和处理办法，会直接给您做一个不联网的离线版。
 
+v0.10.9 全部答案改鱼骨头式（短句列表，只要骨头不要肉）；结果区排版优化（表格带框、标题分色），手机上看得清
 v0.10.8 三合一：血气和呼吸机自动互相参考同一病人的最近结果；呼吸机页病人和首页统一（床号+姓+诊断）；两个结果页都能「📊 送去PPT工坊」
 v0.10.7 版面账本：没见过的新版面会问您一句"新界面还是AI认错"，点一下就行；记录页新增「📐 版面账本」随时翻看删除
 v0.10.6 两棒制提速：第1棒AI只抄屏幕读数（快），第2棒换快速文字模型做分析（千问几秒）；读数带本地体检（数不对自动让AI重读）；建议改成"测什么/怎么测/理由/怎么看结果"小卡片，下面自动生成手输数字框，不方便拍照就填数字
@@ -2035,7 +2050,7 @@ ghBindBtn($("ghConfNo"), function(){
    与学习笔记/习题学习/文件桥同款：读 version-xueqi.json 比对版本；
    壳APP里下载新版 = applyUpdate 自更新（重启生效）+ 授权文件夹存备份；
    浏览器里 = 普通下载。 */
-var SW_VERSION = "0.10.8";
+var SW_VERSION = "0.10.9";
 /* v0.10.2 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["bg_gh_user", "hx_gh_user"], ["bg_gh_tok", "hx_gh_tok"], ["bg_gh_repo", "hx_gh_repo"], ["bg_apikey", "hx_apikey"]];
@@ -2188,9 +2203,10 @@ const VENT_MAP_SV650 = [
 
 const VENT_PROMPT_READ = [
   "你是ICU呼吸治疗技师。任务只有一件：把这张呼吸机控制界面照片里的信息如实抄下来。直接输出，不要过度思考。{背景}",
+  "风格铁律（用户硬性要求）：鱼骨头式，只要骨头不要肉——每条一行短句，不超过15个字，禁止长段落、禁止解释推理过程。",
   "严格按三段输出：",
   "一、读数小表（markdown表格：项目 | 数值 | 备注）：型号与通气模式；设定参数（氧浓度/潮气量或压力/频率/吸呼比/PEEP等）；监测值（峰压/平台压/潮气量/频率/分钟通气量等）。只列读得出的；读不出标\"⚠️无法识别\"。",
-  "二、波形描述（纯文字3~6句）：压力/流量/容量曲线形态；流量曲线呼气支是否回到零（回不到零提示内源性PEEP）；有无双触发/无效触发/漏气迹象。定性即可。",
+  "二、波形描述（-短句列表，≤6条）：曲线形态；呼气支是否回零（回不到零=内源性PEEP）；双触发/无效触发/漏气迹象。每条一行，定性即可。",
   "三、版面自报（必须一行，格式固定）：【版面】页签=? 底部格数=? 右侧列数=? 有无波形区=? ",
   "{地图}"
 ].join("\n");
@@ -2198,15 +2214,15 @@ const VENT_PROMPT_READ = [
 const VENT_PROMPT_ANALYZE = [
   "你是ICU呼吸治疗专家。同事刚从呼吸机屏幕上抄下读数和波形描述如下：",
   "{读数}",
-  "请分析（大白话+专业术语对照，禁LaTeX，计算列普通算式；直接输出，不要过度思考）：",
-  "一、初步分析（控制在5句内）：支持力度评估、肺保护通气是否达标、风险点。",
+  "风格铁律（用户硬性要求）：鱼骨头式，只要骨头不要肉——全部用-短句列表，每句不超过15个字，禁止长段落、禁止解释推理过程、禁止客套话。禁LaTeX，计算列普通算式。直接输出，不要过度思考。",
+  "一、初步分析（-短句列表，≤6条）：支持力度、肺保护是否达标、风险点，每条一行。",
   "二、下一步建议：每条检测一张小卡，格式严格固定（软件要靠暗号生成手输框）：",
   "【检测:检测名称|单位】",
-  "测什么：一句话",
-  "怎么测：结合操作档案一步步写清按哪个键（老人也能照做）",
-  "理由：为什么要测",
-  "怎么看结果：判断标准（给出具体数字界限）",
-  "如果信息已够，就不列检测，直接给调整建议（说清调哪个参数、调到多少、观察什么）。",
+  "测什么：≤15字",
+  "怎么测：按哪个键，一步步写清（这条可稍长，老人要照做）",
+  "理由：≤15字",
+  "怎么看结果：具体数字界限",
+  "如果信息已够，就不列检测，直接给调整建议（调哪个参数、调到多少、观察什么，同样短句列表）。",
   "{档案}"
 ].join("\n");
 
