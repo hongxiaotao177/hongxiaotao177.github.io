@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PPT工坊 v0.4.0</title>
+<title>PPT工坊 v0.4.7</title>
 <!--
   PPT工坊 —— 红小涛学习套装第五位成员
   工作流：学习笔记整理知识点 → AI生成Markdown大纲 → 内部邮路(ppt_inbox)寄到本软件
@@ -143,7 +143,7 @@
 </head>
 <body>
 
-<header>📊 PPT工坊<span class="ver">v0.4.0</span></header>
+<header>📊 PPT工坊<span class="ver" id="hdVer">v0.4.7</span></header>
 
 <div class="page" id="homePage">
 
@@ -196,7 +196,7 @@
     </div>
   </details>
 
-  <div class="hint" style="text-align:center; margin-top:14px;">PPT工坊 v0.1.0 · 红小涛的学习套装</div>
+  <div class="hint" style="text-align:center; margin-top:14px;">PPT工坊 <span id="ftVer">v0.4.7</span> · 红小涛的学习套装</div>
 </div>
 
 <!-- 大纲编辑页 -->
@@ -308,7 +308,7 @@
 
 <script>
 "use strict";
-var SW_VERSION = "0.4.6"; /* v0.4.6 更新通道免Token备用路：自检/下载新版在API不通或没填Token时自动走github.io公开直链 */ /* v0.4.5 贴回校对结果：别的AI的校对意见贴进来，本软件AI照改大纲（原文没提到的部分不动）+秒表进度 */ /* v0.4.4 复制校对：大纲/全片一键连校对指令复制，借别的AI挑错，不花自己Key */ /* v0.4.3 修404：死模型自动换kimi-k2.6+重试；max_tokens 8000→16384（k2.6思考型） */ /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
+var SW_VERSION = "0.4.7"; /* v0.4.7 版本字样治病根：头顶+页脚+标题改成代码自动填SW_VERSION（v0.4.0~0.4.6期间头顶一直显示旧号，害用户以为没更新） */ /* v0.4.6 更新通道免Token备用路：自检/下载新版在API不通或没填Token时自动走github.io公开直链 */ /* v0.4.5 贴回校对结果：别的AI的校对意见贴进来，本软件AI照改大纲（原文没提到的部分不动）+秒表进度 */ /* v0.4.4 复制校对：大纲/全片一键连校对指令复制，借别的AI挑错，不花自己Key */ /* v0.4.3 修404：死模型自动换kimi-k2.6+重试；max_tokens 8000→16384（k2.6思考型） */ /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
 /* 公共钱罐：API key/GitHub配置 一处填处处有（与其他软件共享 hx_*） */
 (function(){
   var HX_MAP=[["hx_apikey","hx_apikey"],["hx_gh_user","hx_gh_user"],["hx_gh_tok","hx_gh_tok"],["hx_gh_repo","hx_gh_repo"]];
@@ -1495,6 +1495,9 @@ $('ghDlBtn').onclick=function(){
     ghPull(function(err,payload){ if(!err&&payload) ghAskRestore(payload); });
   }
 })();
+</script>
+<script>
+(function(){ try{ document.getElementById("hdVer").textContent="v"+SW_VERSION; var f=document.getElementById("ftVer"); if(f) f.textContent="v"+SW_VERSION; document.title="PPT工坊 v"+SW_VERSION; }catch(e){} })();
 </script>
 </body>
 </html>
