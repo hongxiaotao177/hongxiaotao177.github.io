@@ -216,6 +216,7 @@
     </div>
     <div class="btn-row">
       <button id="btnBuild" style="background:#b3742a;">🎬 生成PPT</button>
+      <button class="ghost" id="btnCopyProof">📋 复制校对（大纲）</button>
       <button class="ghost" id="btnBackHome">← 返回</button>
     </div>
     <div class="msg" id="editMsg"></div>
@@ -228,6 +229,7 @@
     <h3 id="slidesTitle">🎞 幻灯片</h3>
     <div class="btn-row">
       <button id="btnPlay" style="background:#b3742a;">▶️ 放映（手机横过来）</button>
+      <button class="ghost" id="btnCopyProof2">📋 复制校对（全片）</button>
       <button class="ghost" id="btnExport">📤 导出HTML</button>
       <button class="ghost" id="btnBackEdit">← 回大纲</button>
     </div>
@@ -290,7 +292,7 @@
 
 <script>
 "use strict";
-var SW_VERSION = "0.4.3"; /* v0.4.3 修404：死模型自动换kimi-k2.6+重试；max_tokens 8000→16384（k2.6思考型） */ /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
+var SW_VERSION = "0.4.4"; /* v0.4.4 复制校对：大纲/全片一键连校对指令复制，借别的AI挑错，不花自己Key */ /* v0.4.3 修404：死模型自动换kimi-k2.6+重试；max_tokens 8000→16384（k2.6思考型） */ /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
 /* 公共钱罐：API key/GitHub配置 一处填处处有（与其他软件共享 hx_*） */
 (function(){
   var HX_MAP=[["hx_apikey","hx_apikey"],["hx_gh_user","hx_gh_user"],["hx_gh_tok","hx_gh_tok"],["hx_gh_repo","hx_gh_repo"]];
@@ -1319,6 +1321,42 @@ function checkInbox(){
   };
   $('inboxDrop').onclick=function(){ localStorage.removeItem('ppt_inbox'); $('inboxCard').style.display='none'; };
 }
+
+/* ==================== v0.4.4 复制校对（借别的AI挑错，不花自己Key） ====================
+   按一下=校对指令+内容一起进剪贴板，去别的AI（豆包/DeepSeek/微信里问Kimi等）直接粘贴 */
+function proofText(kind){
+  var body="";
+  if(kind==="outline"){
+    body=($('outlineText').value||"").replace(/^\s+|\s+$/g,"");
+    if(!body) return "";
+  }else{
+    var p=curProj();
+    if(!p || !p.slides || !p.slides.length) return "";
+    body="《"+(p.title||"无题")+"》共"+p.slides.length+"页\n\n"+p.slides.map(function(s,i){ return "【第"+(i+1)+"页】\n"+pageToMd(s); }).join("\n\n");
+  }
+  return "请您当医学校对员，校对下面这份ICU教学PPT"
+    + (kind==="outline"?"大纲":"") + "。请逐项检查：①医学事实有没有错（药名/剂量/指南数字/适应证）②错别字和用词 ③前后矛盾 ④说法过时的地方。"
+    + "按「位置→原文→问题→建议改法」列出，没说错的部分不用提。\n\n=====要校对的内容=====\n" + body;
+}
+function copyProof(kind, msgEl){
+  var t=proofText(kind);
+  if(!t){ showMsg(msgEl, kind==="outline"?"大纲还是空的，没什么可校对":"还没有生成幻灯片，没什么可校对", "err"); return; }
+  function done(){ showMsg(msgEl, "📋 已复制 "+t.length+" 字（含校对指令），去别的AI里直接粘贴就行", "ok"); toast("📋 已复制，去别的AI粘贴"); }
+  function fallback(){
+    var ta=document.createElement("textarea");
+    ta.value=t; ta.style.cssText="position:fixed;opacity:0";
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand("copy"); done(); }
+    catch(e){ showMsg(msgEl,"复制失败，请长按大纲框全选手动复制","err"); }
+    ta.remove();
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t).then(done, fallback);
+  }else fallback();
+}
+$('btnCopyProof').onclick=function(){ copyProof("outline", $('editMsg')); };
+$('btnCopyProof2').onclick=function(){ copyProof("slides", $('slidesMsg')); };
+
 /* ==================== 事件绑定 + 初始化 ==================== */
 $('btnNew').onclick=function(){
   var p={id:newId(), title:'', outline:'', slides:[], linkNotes:{}, t:Date.now()};
