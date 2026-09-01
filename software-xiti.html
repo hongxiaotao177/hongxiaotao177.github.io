@@ -2757,17 +2757,22 @@ function toast(msg) {
    完整设计思路与协同协议见学习笔记.html 代码顶部（两边以那份为准）。 */
 var XT_GH_USER = "xt_gh_user", XT_GH_TOK = "xt_gh_tok", XT_GH_REPO = "xt_gh_repo",
     XT_GH_LAST = "xt_gh_last", XT_GH_CHECK = "xt_gh_check";
-var SW_VERSION = "1.8.3";
+var SW_VERSION = "1.8.4"; /* v1.8.4 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */
 /* v1.4.8 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["xt_gh_user", "hx_gh_user"], ["xt_gh_tok", "hx_gh_tok"], ["xt_gh_repo", "hx_gh_repo"]];
-  function hxSync(){
-    for(var i=0;i<HX_MAP.length;i++){
-      var own=localStorage.getItem(HX_MAP[i][0]), sh=localStorage.getItem(HX_MAP[i][1]);
-      if(own && own!==sh) localStorage.setItem(HX_MAP[i][1], own);
-      else if(!own && sh) localStorage.setItem(HX_MAP[i][0], sh);
-    }
+  /* 公共钱罐v2（2026-09-01 时间戳版）：新填的盖旧的，旧Token不再复活。手动保存时打时间戳 hxStamp(键)；同步时戳新的赢，平局以公共钱罐为准 */
+  function hxSync1(ownKey, shKey){
+    var o=localStorage.getItem(ownKey), s=localStorage.getItem(shKey);
+    var ot=+localStorage.getItem(ownKey+"_t")||0, st=+localStorage.getItem(shKey+"_t")||0;
+    if(o && s && o!==s){
+      if(ot>st){ localStorage.setItem(shKey,o); localStorage.setItem(shKey+"_t",ot); }
+      else { localStorage.setItem(ownKey,s); localStorage.setItem(ownKey+"_t",st); }
+    }else if(o && !s){ localStorage.setItem(shKey,o); localStorage.setItem(shKey+"_t",ot); }
+    else if(!o && s){ localStorage.setItem(ownKey,s); localStorage.setItem(ownKey+"_t",st); }
   }
+  function hxStamp(){ for(var i=0;i<arguments.length;i++) localStorage.setItem(arguments[i]+"_t", String(Date.now())); }
+  function hxSync(){ for(var i=0;i<HX_MAP.length;i++) hxSync1(HX_MAP[i][0], HX_MAP[i][1]); }
   hxSync(); setInterval(hxSync, 2000);
   /* v1.4.10 「问AI」的 key/模型 也进公共钱罐：store.ai.key ↔ hx_apikey、store.ai.model ↔ hx_aimodel
      （自己的有就写公共的；自己空、公共有就抄过来——习题学习填一次，PPT工坊等全家都能用） */
@@ -2854,6 +2859,7 @@ function ghSaveCfg() {
     localStorage.setItem(XT_GH_USER, document.getElementById("ghUser").value.replace(/^\s+|\s+$/g, ""));
     localStorage.setItem(XT_GH_TOK, document.getElementById("ghTok").value.replace(/^\s+|\s+$/g, ""));
     localStorage.setItem(XT_GH_REPO, document.getElementById("ghRepo").value.replace(/^\s+|\s+$/g, ""));
+    hxStamp(XT_GH_USER, XT_GH_TOK, XT_GH_REPO);
     toast("💾 已保存");
   } catch (e) { toast("保存失败：浏览器禁止了本地存储"); }
 }
