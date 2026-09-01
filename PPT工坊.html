@@ -290,7 +290,7 @@
 
 <script>
 "use strict";
-var SW_VERSION = "0.4.0";
+var SW_VERSION = "0.4.1"; /* v0.4.1 公共钱罐v2时间戳版 */
 /* 公共钱罐：API key/GitHub配置 一处填处处有（与其他软件共享 hx_*） */
 (function(){
   var HX_MAP=[["hx_apikey","hx_apikey"],["hx_gh_user","hx_gh_user"],["hx_gh_tok","hx_gh_tok"],["hx_gh_repo","hx_gh_repo"]];
@@ -1310,6 +1310,7 @@ $('ghSave').onclick=function(){
   localStorage.setItem('hx_gh_user',$('ghUser').value.trim());
   localStorage.setItem('hx_gh_tok',$('ghTok').value.trim());
   localStorage.setItem('hx_gh_repo',$('ghRepo').value.trim());
+  ['hx_gh_user','hx_gh_tok','hx_gh_repo'].forEach(function(k){ localStorage.setItem(k+'_t', String(Date.now())); }); /* 公共钱罐v2：保存打时间戳，新Token全家跟新 */
   toast('✅ 已保存（全家软件通用）');
 };
 $('ghPushBtn').onclick=function(){
