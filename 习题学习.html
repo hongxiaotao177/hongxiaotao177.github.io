@@ -1702,7 +1702,7 @@ async function buildPptAI(){
       + (focus ? "【讲课要求】" + focus + "\n\n" : "")
       + (filter !== "all" ? "【说明】以下只挑了学生掌握不牢的题（陌生/一般），备课要对着薄弱点讲。\n\n" : "")
       + "【习题素材】\n" + material
-      + (truncated ? "\n（素材太长，以上截取前一部分）" : ""));
+      + (truncated ? "\n（素材太长，以上截取前一部分）" : ""), "综合备课");
     var m = md.match(/```(?:markdown)?\s*([\s\S]*?)```/);
     if (m) md = m[1];
     md = md.replace(/^\s+|\s+$/g, "");
@@ -2697,7 +2697,15 @@ async function checkAiBalance() {
 }
 function needKey() { if (store.ai && store.ai.key) return true; openAiKey(); toast("请先设置API key"); return false; }
 function aiModel() { return (store.ai && store.ai.model) || "kimi-k2.5"; }
-async function callAI(sysPrompt, userText) {
+/* ===== 全家AI账本 hx_aibill（2026-09-01 洪医生家规：每次AI记一笔+弹一条花了多少钱；主界面💰卡片汇总。tokens≈汉字数/2，是估算，真扣费以官方账单为准） ===== */
+var HX_PRICE={"kimi-k2.5":[4,16],"kimi-k2.6":[4,16],"kimi-k2.7":[7,27],"kimi-k3":[21,105],"qwen-vl-max":[3,9],"qwen-plus":[0.8,2],"moonshot-v1-8k":[12,12],"moonshot-v1-32k":[24,24],"moonshot-v1-128k":[60,60]};
+function hxBillYuan(model,inC,outC,imgs){var p=HX_PRICE["kimi-k2.5"];for(var k in HX_PRICE){if(model&&String(model).indexOf(k)===0){p=HX_PRICE[k];break;}}return Math.ceil((inC||0)/2)/1e6*p[0]+Math.ceil((outC||0)/2)/1e6*p[1]+(imgs||0)*0.005;}
+function hxBill(app,what,inC,outC,model,imgs){try{var c=hxBillYuan(model,inC,outC,imgs);var arr=JSON.parse(localStorage.getItem("hx_aibill")||"[]");arr.unshift({app:app,what:what||"",cost:+c.toFixed(4),t:Date.now()});if(arr.length>500)arr.length=500;localStorage.setItem("hx_aibill",JSON.stringify(arr));return c;}catch(e){return 0;}}
+function hxBillMonth(){try{var arr=JSON.parse(localStorage.getItem("hx_aibill")||"[]");var n=new Date(),s=0;arr.forEach(function(e){var t=new Date(e.t);if(t.getFullYear()===n.getFullYear()&&t.getMonth()===n.getMonth())s+=e.cost||0;});return s;}catch(e){return 0;}}
+function hxBillMsg(c){return "💰 本次约¥"+(c<0.01?c.toFixed(3):c.toFixed(2))+" ｜ 本月全家约¥"+hxBillMonth().toFixed(2);}
+function hxBillToast(c){try{var d=document.createElement("div");d.textContent=hxBillMsg(c);d.style.cssText="position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#4a6b4f;color:#fff;padding:10px 18px;border-radius:20px;font-size:14px;z-index:99999;box-shadow:0 2px 8px rgba(0,0,0,.25)";document.body.appendChild(d);setTimeout(function(){d.remove();},4000);}catch(e){}}
+
+async function callAI(sysPrompt, userText, what) {
   var r = await fetch("https://api.moonshot.cn/v1/chat/completions", {
     method: "POST",
     headers: { "Authorization": "Bearer " + store.ai.key, "Content-Type": "application/json" },
@@ -2709,7 +2717,9 @@ async function callAI(sysPrompt, userText) {
   if (r.status === 401) throw new Error("API key无效（401），请点「⚙ 设置」检查");
   if (!r.ok) throw new Error("AI请求失败（HTTP " + r.status + "），可能是模型名不对或余额不足");
   var d = await r.json();
-  return d.choices[0].message.content;
+  var _c = d.choices[0].message.content;
+  hxBillToast(hxBill("习题学习", what||"问AI", (sysPrompt||"").length+(userText||"").length, (_c||"").length, aiModel()));
+  return _c;
 }
 function openAiModal(title, context, ph) {
   document.getElementById("ai-title").textContent = title;
@@ -2944,7 +2954,7 @@ function toast(msg) {
    完整设计思路与协同协议见学习笔记.html 代码顶部（两边以那份为准）。 */
 var XT_GH_USER = "xt_gh_user", XT_GH_TOK = "xt_gh_tok", XT_GH_REPO = "xt_gh_repo",
     XT_GH_LAST = "xt_gh_last", XT_GH_CHECK = "xt_gh_check";
-var SW_VERSION = "1.8.5"; /* v1.8.5 习题→PPT工坊两路（洪医生任务2026-09-01）：任务一「📊 习题→PPT」本地拼——
+var SW_VERSION = "1.8.6"; /* v1.8.6 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v1.8.5 习题→PPT工坊两路（洪医生任务2026-09-01）：任务一「📊 习题→PPT」本地拼——
   范围(勾选/全部)×筛选(全部/陌生+一般/只陌生)×排版(题答同页自习用 / 题一页答一页课堂提问用)，不花AI钱；
   任务二「🤖 AI综合备课」——AI读全部问答提炼成课（归纳/对比表/易错点，不是堆题），可填讲课重点，可对着薄弱点，
   大纲先预览可手改再寄。两路都走ppt_inbox邮路（照抄血气分析v0.10.8格式），PPT工坊弹窗收。 */
