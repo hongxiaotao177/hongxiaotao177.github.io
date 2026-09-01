@@ -1,0 +1,1366 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PPT工坊 v0.4.0</title>
+<!--
+  PPT工坊 —— 红小涛学习套装第五位成员
+  工作流：学习笔记整理知识点 → AI生成Markdown大纲 → 内部邮路(ppt_inbox)寄到本软件
+          → 大纲编辑页改稿 → 一键生成HTML幻灯片 → 横屏播放 → 每页可AI重做/换版式
+          → 导出单个HTML（微信发别人，浏览器打开即放映）
+  修改记录：
+    v0.4.0 2026-08-07 链接某段升级成洪老师方案：涂黑观点→点链接某段→AI拿观点读文献正文，
+      摘出最相关的1~2段原文+一句大白话"这段凭啥支持"；您过目可改才插入。文献库没正文就老实
+      退回端总结（老样子）。没涂黑就点也退回老样子。
+    v0.3.0 2026-08-06 涂黑编辑上线（照学习笔记涂黑弹菜单思路）：
+      - 大纲页涂黑一段→底部浮小编辑条：✏️自己改 / 🤖AI改 / 📎链接文献（涂黑字变显示文字）
+        / 📎链接某段（选文献→摘一段→插入链接，摘录存项目linkNotes，导出时优先当影子副本）
+      - 生成后每页加「✏️ 编辑」：手动改字 / AI改 / 插链接，改完保存只动这一页
+      - findExcerpt 顺序改：您摘的段落 > 文献库AI总结 > 全文节选
+    v0.2.0 2026-08-06 双链文件跳转上线：
+      - 大纲里写 [[文件名.pdf]] 或 [[文件名|显示文字]]（Obsidian规矩：编辑见括号，放映/导出
+        括号不露，显示为下划线链接）——标题/要点/表格/段落/金句都认
+      - 放映点链接→文件查看器四路取件：①壳授权文件夹 ②浏览器文件夹（借文件桥句柄）
+        ③仓库shared区（iPad能走）④学习笔记文献库影子副本（AI总结/全文节选）
+      - 导出HTML自动给每个链接内嵌影子副本（几KB文本）：发给别人点链接也能看内容，
+        不用联网不用仓库——上课发人是课件，自己留着是笔记本（洪医生双用途设计）
+      - 顺手修：SW_VERSION停留在0.1.0（v0.1.1改版本时引号写法没匹配上），现归位
+    v0.1.1 2026-08-06 踩坑修复：chart 围栏同一行写法兼容——AI 常把 JSON 直接写在
+      ```chart 后面同一行，旧解析器会丢掉它（t9测试抓到）；现支持同行JSON、同行开
+      关围栏两种写法。标题同步改 v0.1.1。
+    v0.1.0 2026-08-06 初版：
+      - Markdown大纲规矩：#标题页 ##分页 -要点 |表格| ```chart图表 !!大数字 >金句 其余=段落
+      - 内部邮路 ppt_inbox（照抄学习笔记→习题学习的xitixuexi_inbox协议，同源localStorage）
+      - 六版式：cover/bullets/table/chart/big/quote，页面类auto自动判断
+      - 图表纯SVG手绘（柱/饼/折线），不依赖CDN/外部库（套件铁律：单文件离线可用）
+      - 每页「🔄AI重做」（可附一句话指令）+ 换版式 + 上下移/删除；整篇「✨AI润色大纲」
+      - 播放：16:9横屏，点左/右翻页、键盘方向键、触屏滑动、页码、ESC退出
+      - 导出：单个HTML文件（内嵌播放器和数据），壳里可同时存授权文件夹
+      - 公共钱罐hx_*（API key/Token一处填处处有）+ 云备份ppt-backup.json双通道
+        +backup-meta-ppt.json对账 + 自检/下载新版(version-ppt.json/software-ppt.html)
+        + hxIndexRefresh顺带刷新主界面 + 下载整套五件套
+      踩坑备忘：习题学习确认框在壳里弹不出是壳没WebChromeClient（壳v1.0.4已修），
+        本软件确认一律用confirm；vivo上壳的JS写法一律老式（不用lambda是Java侧的事）。
+-->
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif; background:#f4f1ec; color:#33312e; }
+  header { background:#5b7f5e; color:#fff; padding:14px 16px; font-size:18px; font-weight:bold; position:sticky; top:0; z-index:20; }
+  header .ver { font-size:12px; font-weight:normal; opacity:.85; margin-left:8px; }
+  .page { padding:14px; max-width:760px; margin:0 auto; }
+  .hidden { display:none !important; }
+  button, label.btn { font-size:16px; border:none; border-radius:10px; padding:11px 16px; cursor:pointer;
+    background:#5b7f5e; color:#fff; display:inline-block; }
+  button.ghost { background:#e9e4da; color:#5a544c; }
+  button.danger { background:#b3543f; }
+  button:active { transform:scale(.97); }
+  textarea, input[type=text], input[type=password], select {
+    width:100%; font-size:16px; padding:10px 12px; border:1.5px solid #d8d0c2; border-radius:10px;
+    background:#fff; font-family:inherit; }
+  textarea { line-height:1.7; }
+  .card { background:#fff; border-radius:14px; padding:16px; margin-bottom:12px;
+    box-shadow:0 1px 4px rgba(60,50,40,.07); border:1px solid #ece6db; }
+  .card h3 { font-size:16px; margin-bottom:8px; color:#4a463f; }
+  .hint { font-size:12.5px; color:#9a9184; line-height:1.7; margin-top:8px; }
+  .btn-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+  .btn-row button { flex:1 1 auto; }
+  .msg { font-size:13.5px; margin-top:8px; min-height:18px; }
+  .msg.err { color:#b3543f; } .msg.ok { color:#4a6b4f; }
+  .toast { position:fixed; left:50%; bottom:90px; transform:translateX(-50%);
+    background:rgba(40,36,32,.92); color:#fff; padding:12px 18px; border-radius:12px;
+    font-size:14.5px; z-index:999; max-width:86vw; line-height:1.6; }
+  details.card summary { font-size:16px; font-weight:600; color:#4a463f; cursor:pointer; }
+  .proj-item { display:flex; align-items:center; gap:10px; padding:12px 4px; border-bottom:1px solid #f0ebe1; }
+  .proj-item:last-child { border-bottom:none; }
+  .proj-info { flex:1; }
+  .proj-name { font-size:16px; font-weight:600; }
+  .proj-meta { font-size:12px; color:#9a9184; margin-top:3px; }
+  /* 大纲编辑页 */
+  #outlineText { min-height:46vh; font-size:15px; font-family:ui-monospace,Menlo,monospace; }
+  /* 幻灯片编辑列表 */
+  .slide-item { background:#fff; border:1px solid #ece6db; border-radius:12px; padding:12px; margin-bottom:10px; }
+  .slide-head { display:flex; align-items:center; gap:8px; }
+  .slide-no { font-size:12px; color:#9a9184; }
+  .slide-title { flex:1; font-size:15px; font-weight:600; }
+  .slide-preview { font-size:12.5px; color:#8a8178; margin-top:6px; line-height:1.6;
+    max-height:60px; overflow:hidden; }
+  .slide-ops { display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; }
+  .slide-ops button, .slide-ops select { font-size:13px; padding:6px 10px; width:auto; }
+  /* 播放器 */
+  #player { position:fixed; inset:0; background:#1c1a17; z-index:100; display:flex;
+    align-items:center; justify-content:center; }
+  #stage { position:relative; background:#faf7f2; overflow:hidden; }
+  .slide-page { position:absolute; inset:0; padding:5% 6%; display:flex; flex-direction:column; }
+  .sp-cover { justify-content:center; text-align:center; }
+  .sp-cover h1 { font-size:2.2em; color:#2e2a26; line-height:1.4; }
+  .sp-cover .sp-sub { margin-top:1em; color:#8a8178; font-size:1em; }
+  .slide-page h2 { font-size:1.5em; color:#2e2a26; border-left:6px solid #5b7f5e; padding-left:.5em;
+    margin-bottom:.8em; line-height:1.35; }
+  .slide-page ul { font-size:1.05em; line-height:2.0; color:#4a463f; padding-left:1.2em; }
+  .slide-page table { width:100%; border-collapse:collapse; font-size:.95em; background:#fff;
+    border-radius:8px; overflow:hidden; }
+  .slide-page th { background:#5b7f5e; color:#fff; padding:.55em .7em; text-align:left; font-weight:600; }
+  .slide-page td { padding:.5em .7em; border-bottom:1px solid #ece6db; color:#4a463f; }
+  .slide-page tr:nth-child(even) td { background:#f6f2ea; }
+  .sp-para { font-size:1.05em; line-height:2.0; color:#4a463f; }
+  .sp-big { flex:1; display:flex; flex-direction:column; justify-content:center; text-align:center; }
+  .sp-big .n { font-size:3.2em; font-weight:700; color:#5b7f5e; line-height:1.2; }
+  .sp-big .t { font-size:1.1em; color:#8a8178; margin-top:.6em; }
+  .sp-quote { flex:1; display:flex; align-items:center; justify-content:center; }
+  .sp-quote .q { font-size:1.5em; color:#2e2a26; line-height:1.9; text-align:center; padding:0 1em; }
+  .sp-quote .q::before { content:"“"; color:#5b7f5e; } .sp-quote .q::after { content:"”"; color:#5b7f5e; }
+  #playerBar { position:fixed; bottom:10px; left:50%; transform:translateX(-50%); z-index:101;
+    color:#cfc8bd; font-size:13px; display:flex; gap:14px; align-items:center; }
+  #playerBar button { font-size:13px; padding:6px 12px; background:rgba(255,255,255,.14); }
+  .chart-box { flex:1; display:flex; align-items:center; justify-content:center; }
+  .chart-title { text-align:center; font-size:1em; color:#8a8178; margin-bottom:.4em; }
+  /* v0.2.0 双链[[]]：放映/导出时括号不露，显示为下划线链接（Obsidian规矩） */
+  .plnk { color:#2f5f8f; text-decoration:underline; cursor:pointer; }
+  /* 文件查看器（工坊与导出的HTML共用样式，导出时随<style>一起带走） */
+  #fileViewer { position:fixed; inset:0; z-index:110; /* 要比播放器(z100)还高，放映中点链接才打得开 */ background:rgba(40,34,26,.55); display:flex; align-items:center; justify-content:center; padding:10px; }
+  #fileViewer.hidden { display:none !important; }
+  #fileViewer .fv-card { background:#fffdf8; border-radius:14px; width:100%; max-width:760px; max-height:88vh; display:flex; flex-direction:column; padding:14px; }
+  #fileViewer .fv-head { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  #fileViewer .fv-title { flex:1; font-size:15px; font-weight:600; color:#3a3632; word-break:break-all; }
+  #fileViewer .fv-body { flex:1; overflow:auto; font-size:15px; line-height:1.7; color:#3a3632; }
+  #fileViewer iframe { width:100%; height:66vh; border:none; background:#fff; }
+  #fileViewer pre { white-space:pre-wrap; word-break:break-word; font-family:inherit; margin:0; }
+  #fileViewer .fv-src { font-size:12px; color:#a89f93; margin-top:8px; line-height:1.5; }
+  /* v0.3.0 涂黑编辑条（大纲页涂黑一段就浮出来） */
+  #selBar { position:fixed; left:50%; bottom:14px; transform:translateX(-50%); z-index:85;
+    background:#3a3632; border-radius:12px; padding:6px; display:flex; gap:4px; box-shadow:0 4px 14px rgba(0,0,0,.3); }
+  #selBar.hidden { display:none !important; }
+  #selBar button { background:#5b7f5e; color:#fff; border:none; border-radius:8px; padding:9px 10px; font-size:13px; cursor:pointer; }
+  #selBar button.ghost2 { background:#6a6258; }
+  /* 文献选择窗 / 单页编辑窗（复用fv骨架） */
+  .mini-modal { position:fixed; inset:0; z-index:96; background:rgba(40,34,26,.55); display:flex; align-items:center; justify-content:center; padding:10px; }
+  .mini-modal.hidden { display:none !important; }
+  .mini-modal .mm-card { background:#fffdf8; border-radius:14px; width:100%; max-width:640px; max-height:86vh; overflow:auto; padding:14px; }
+  .mini-modal .mm-item { padding:11px 6px; border-bottom:1px solid #eee5d8; cursor:pointer; font-size:15px; }
+  .mini-modal textarea { width:100%; min-height:200px; font-size:15px; padding:10px; border:1px solid #e5ddd0; border-radius:10px; box-sizing:border-box; }
+</style>
+</head>
+<body>
+
+<header>📊 PPT工坊<span class="ver">v0.4.0</span></header>
+
+<div class="page" id="homePage">
+
+  <div class="card" id="inboxCard" style="display:none; border-color:#5b7f5e;">
+    <h3>📬 学习笔记寄来了一份大纲</h3>
+    <div class="hint" id="inboxInfo"></div>
+    <div class="btn-row">
+      <button id="inboxAccept">✅ 收下，去编辑大纲</button>
+      <button class="ghost" id="inboxDrop">不要了</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <button id="btnNew" style="width:100%; font-size:17px;">➕ 新建PPT（贴大纲 / 给主题让AI起草）</button>
+    <div class="hint">也接受从「学习笔记」寄来的大纲（那边笔记里点「📊 生成PPT大纲」→ 发送）。</div>
+  </div>
+
+  <div class="card" id="projCard">
+    <h3>📁 我的PPT</h3>
+    <div id="projList"><div class="hint">还没有，点上面新建一个。</div></div>
+  </div>
+
+  <details class="card" id="ghCard">
+    <summary>☁️ 云备份（GitHub 私有仓库）</summary>
+    <div style="margin-top:12px;">
+      <div class="hint">Token/仓库名和其他软件共用一个钱罐，别处填过这里自动有。</div>
+      <label class="hint" for="ghUser">GitHub 用户名</label>
+      <input type="text" id="ghUser" placeholder="如 hongxiaotao177" autocomplete="off">
+      <label class="hint" for="ghTok" style="margin-top:8px; display:block;">Token（个人访问令牌，只存本机，不外传）</label>
+      <input type="password" id="ghTok" autocomplete="off">
+      <label class="hint" for="ghRepo" style="margin-top:8px; display:block;">备份仓库名（私有仓库）</label>
+      <input type="text" id="ghRepo" placeholder="xuexi-backup" autocomplete="off">
+      <div class="btn-row">
+        <button id="ghSave">💾 保存设置</button>
+        <button id="ghPushBtn">☁️ 立即备份</button>
+      </div>
+      <div class="btn-row">
+        <button class="ghost" id="ghPullBtn">📥 从云端恢复</button>
+        <button class="ghost" id="ghCheckBtn">🔍 自检：线路 + 新版本</button>
+      </div>
+      <div class="btn-row">
+        <button class="ghost" id="ghDlAllBtn">⬇️ 下载整套软件</button>
+        <button class="ghost" id="ghDlBtn" hidden>⬇️ 下载新版</button>
+      </div>
+      <div class="msg" id="ghStatus"></div>
+      <div class="msg" id="locStatus"></div>
+      <div class="msg" id="recStatus"></div>
+      <div class="msg" id="ghCheck"></div>
+      <div class="hint">「下载整套」= 学习笔记 + 习题学习 + 文件桥 + 血气分析 + PPT工坊，五个最新版一起下载。壳APP里直接装好，浏览器里进「下载内容」找。</div>
+    </div>
+  </details>
+
+  <div class="hint" style="text-align:center; margin-top:14px;">PPT工坊 v0.1.0 · 红小涛的学习套装</div>
+</div>
+
+<!-- 大纲编辑页 -->
+<div class="page hidden" id="editPage">
+  <div class="card">
+    <h3>📝 大纲（Markdown规矩，随便改）</h3>
+    <div class="hint">
+      <b>#</b> 开头=封面标题　<b>##</b> 开头=新的一页　<b>-</b> 开头=要点　
+      <b>| 表 | 格 |</b>=对比表　<b>!!</b> 开头=大数字页　<b>&gt;</b> 开头=金句页　
+      ```chart 包住的 {JSON} =图表页（柱bar/饼pie/折线line）　<b>[[文件名]]</b>=链接指南（放映可点开）
+    </div>
+    <div class="hint" style="color:#b3742a;">✍️ 涂黑大纲里的一段字，会弹出小编辑条：自己改 / AI改 / 链接文献 / 链接文献某段</div>
+    <textarea id="outlineText" placeholder="# 我的题目&#10;&#10;## 第一页&#10;- 要点一&#10;- 要点二&#10;&#10;## 对比&#10;| 项目 | A方案 | B方案 |&#10;| 优点 | … | … |"></textarea>
+    <div class="btn-row">
+      <button id="btnAiDraft">🤖 AI起草/重写大纲</button>
+      <button class="ghost" id="btnAiPolish">✨ AI润色大纲</button>
+    </div>
+    <div class="btn-row">
+      <button id="btnBuild" style="background:#b3742a;">🎬 生成PPT</button>
+      <button class="ghost" id="btnBackHome">← 返回</button>
+    </div>
+    <div class="msg" id="editMsg"></div>
+  </div>
+</div>
+
+<!-- 幻灯片列表/单页编辑 -->
+<div class="page hidden" id="slidesPage">
+  <div class="card">
+    <h3 id="slidesTitle">🎞 幻灯片</h3>
+    <div class="btn-row">
+      <button id="btnPlay" style="background:#b3742a;">▶️ 放映（手机横过来）</button>
+      <button class="ghost" id="btnExport">📤 导出HTML</button>
+      <button class="ghost" id="btnBackEdit">← 回大纲</button>
+    </div>
+    <div class="msg" id="slidesMsg"></div>
+  </div>
+  <div id="slideList"></div>
+</div>
+
+<!-- 播放器 -->
+<div id="player" class="hidden">
+  <div id="stage"></div>
+  <div id="playerBar">
+    <button id="pvPrev">← 上一页</button>
+    <span id="pvNo">1/1</span>
+    <button id="pvNext">下一页 →</button>
+    <button id="pvExit">✕ 退出</button>
+  </div>
+</div>
+
+<!-- v0.2.0 链接文件查看器（[[文件]]点击后在这里看） -->
+<div id="fileViewer" class="hidden">
+  <div class="fv-card">
+    <div class="fv-head"><div class="fv-title" id="fvTitle"></div><button class="ghost" id="fvClose">✕ 关闭</button></div>
+    <div class="fv-body" id="fvBody"></div>
+    <div class="fv-src" id="fvSrc"></div>
+  </div>
+</div>
+
+<!-- v0.3.0 涂黑编辑条 -->
+<div id="selBar" class="hidden">
+  <button id="selEdit">✏️ 自己改</button>
+  <button id="selAi">🤖 AI改</button>
+  <button id="selLinkLit">📎 链接文献</button>
+  <button id="selLinkPart" class="ghost2">📎 链接某段</button>
+</div>
+
+<!-- v0.3.0 文献选择窗 -->
+<div id="litModal" class="mini-modal hidden">
+  <div class="mm-card">
+    <h3 id="litModalTitle">📎 选一篇文献</h3>
+    <div id="litList"></div>
+    <div class="btn-row"><button class="ghost" id="litCancel">取消</button></div>
+  </div>
+</div>
+
+<!-- v0.3.0 单页编辑窗 -->
+<div id="pageEditModal" class="mini-modal hidden">
+  <div class="mm-card">
+    <h3 id="peTitle">✏️ 编辑本页</h3>
+    <textarea id="peText"></textarea>
+    <div class="btn-row">
+      <button id="peSave">✅ 保存</button>
+      <button class="ghost" id="peAi">🤖 AI改</button>
+      <button class="ghost" id="peLink">📎 链接文献</button>
+      <button class="ghost" id="peCancel">取消</button>
+    </div>
+    <div class="msg" id="peMsg"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+var SW_VERSION = "0.4.2"; /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
+/* 公共钱罐：API key/GitHub配置 一处填处处有（与其他软件共享 hx_*） */
+(function(){
+  var HX_MAP=[["hx_apikey","hx_apikey"],["hx_gh_user","hx_gh_user"],["hx_gh_tok","hx_gh_tok"],["hx_gh_repo","hx_gh_repo"]];
+  /* 本软件GitHub配置直接用公共钱罐键，无需映射；此处只为保持家族一致 */
+})();
+function $(id){ return document.getElementById(id); }
+function toast(msg, ms){
+  var d=document.createElement('div'); d.className='toast'; d.textContent=msg;
+  document.body.appendChild(d); setTimeout(function(){ d.remove(); }, ms||3000);
+}
+function showMsg(el, t, cls){ el.textContent=t||''; el.className='msg'+(cls?' '+cls:''); }
+
+/* ==================== 数据层 ==================== */
+var LS_STORE='ppt_gongfang_v01';
+var store=loadStore();
+var curId=null; /* 当前编辑的project id */
+function loadStore(){
+  try{ var s=localStorage.getItem(LS_STORE); if(s) return JSON.parse(s); }catch(e){}
+  return { projects:[] };
+}
+var ghSuspend=false, ghAutoTimer=null;
+function saveStore(){
+  try{ localStorage.setItem(LS_STORE, JSON.stringify(store)); }catch(e){ toast('存储失败：'+e.message); }
+  scheduleGhAutoBackup();
+}
+function curProj(){ for(var i=0;i<store.projects.length;i++) if(store.projects[i].id===curId) return store.projects[i]; return null; }
+function newId(){ return 'p'+Date.now().toString(36)+Math.floor(Math.random()*999); }
+
+/* ==================== GitHub 配置（公共钱罐直读直写） ==================== */
+function ghCfg(){
+  return {
+    user:(localStorage.getItem('hx_gh_user')||'').replace(/^\s+|\s+$/g,''),
+    tok:(localStorage.getItem('hx_gh_tok')||'').replace(/^\s+|\s+$/g,''),
+    repo:(localStorage.getItem('hx_gh_repo')||'xuexi-backup').replace(/^\s+|\s+$/g,'')
+  };
+}
+function ghReady(){ var c=ghCfg(); return !!(c.user&&c.tok&&c.repo); }
+function ghHeaders(){ return {"Authorization":"token "+ghCfg().tok,"Accept":"application/vnd.github+json"}; }
+function ghFileUrl(name){
+  var c=ghCfg();
+  return "https://api.github.com/repos/"+encodeURIComponent(c.user)+"/"+encodeURIComponent(c.repo)+"/contents/"+encodeURIComponent(name);
+}
+function ghB64enc(s){ return btoa(unescape(encodeURIComponent(s))); }
+function ghB64dec(b){ return decodeURIComponent(escape(atob(String(b).replace(/\s+/g,'')))); }
+function ghFetch(url, options){
+  return new Promise(function(resolve,reject){
+    var ctrl=new AbortController();
+    var timer=setTimeout(function(){ ctrl.abort(); reject(new Error("等待超过30秒，网络不通")); },30000);
+    options=options||{}; options.signal=ctrl.signal;
+    fetch(url,options).then(function(r){ clearTimeout(timer); resolve(r); })
+      .catch(function(e){ clearTimeout(timer); reject(new Error("网络不通，请稍后再试")); });
+  });
+}
+function ghErrText(status, body){
+  if(status===401) return "Token 失效或没权限，检查 Token";
+  if(status===404) return "仓库或文件不存在（404）";
+  return "HTTP "+status+"："+String(body||"").replace(/\s+/g," ").slice(0,120);
+}
+function cmpVer(a,b){
+  var pa=String(a).split("."), pb=String(b).split(".");
+  for(var i=0;i<Math.max(pa.length,pb.length);i++){
+    var x=parseInt(pa[i]||"0",10), y=parseInt(pb[i]||"0",10);
+    if(x>y) return 1; if(x<y) return -1;
+  } return 0;
+}
+function strHash(s){
+  var h=0x811c9dc5;
+  for(var i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=(h*0x01000193)>>>0; }
+  return ("0000000"+h.toString(16)).slice(-8);
+}
+</script>
+<script>
+"use strict";
+/* ==================== 云备份（双通道+对账，家族同款） ==================== */
+function ghPush(onDone){
+  var metaJson=null;
+  if(!store.projects || store.projects.length===0){ if(onDone) onDone("empty",0); return; }
+  ghFetch(ghFileUrl("ppt-backup.json"),{headers:ghHeaders()}).then(function(resp){
+    if(resp.status===404) return null;
+    if(!resp.ok) return resp.text().then(function(t){ throw new Error(ghErrText(resp.status,t)); });
+    return resp.json();
+  }).then(function(file){
+    var payload={version:1, savedAt:new Date().toISOString(), store:store};
+    var payloadStr=JSON.stringify(payload);
+    metaJson=JSON.stringify({savedAt:payload.savedAt, hash:strHash(payloadStr), count:store.projects.length});
+    /* 双通道：壳里同时写一份到授权文件夹 */
+    try{
+      if(window.LearnShell && window.LearnShell.folderSet && window.LearnShell.folderSet()){
+        window.LearnShell.writeFile("ppt-backup.json", ghB64enc(payloadStr));
+        window.LearnShell.writeFile("backup-meta-ppt.json", ghB64enc(metaJson));
+      }
+    }catch(e){}
+    var body={message:"PPT工坊备份 "+payload.savedAt, content:ghB64enc(payloadStr)};
+    if(file && file.sha) body.sha=file.sha;
+    return ghFetch(ghFileUrl("ppt-backup.json"),{method:"PUT",headers:ghHeaders(),body:JSON.stringify(body)});
+  }).then(function(resp){
+    if(!resp.ok) return resp.text().then(function(t){ throw new Error(ghErrText(resp.status,t)); });
+    /* meta写云端 */
+    return ghFetch(ghFileUrl("backup-meta-ppt.json"),{headers:ghHeaders()}).then(function(r2){
+      var mbody={message:"ppt meta", content:ghB64enc(metaJson)};
+      if(r2.ok) return r2.json().then(function(mf){ mbody.sha=mf.sha;
+        return ghFetch(ghFileUrl("backup-meta-ppt.json"),{method:"PUT",headers:ghHeaders(),body:JSON.stringify(mbody)}); });
+      return ghFetch(ghFileUrl("backup-meta-ppt.json"),{method:"PUT",headers:ghHeaders(),body:JSON.stringify(mbody)});
+    });
+  }).then(function(){
+    localStorage.setItem('ppt_gh_last', new Date().toLocaleString());
+    ghStatusRender();
+    if(onDone) onDone(null, store.projects.length);
+  }).catch(function(e){
+    var msg=(e&&e.message)?e.message:"网络不通，备份没成功";
+    showMsg($('ghStatus'),'备份失败：'+msg,'err');
+    if(onDone) onDone(msg,0);
+  });
+}
+function ghPull(onResult){
+  ghFetch(ghFileUrl("ppt-backup.json"),{headers:ghHeaders()}).then(function(resp){
+    if(resp.status===404){ onResult("云端还没有备份文件（第一次用请先点「☁️ 立即备份」）。"); return null; }
+    if(!resp.ok) return resp.text().then(function(t){ onResult(ghErrText(resp.status,t)); return null; });
+    return resp.json();
+  }).then(function(file){
+    if(!file) return;
+    try{
+      var payload=JSON.parse(ghB64dec(file.content||""));
+      if(!payload||!payload.store||!Array.isArray(payload.store.projects)) throw new Error("bad");
+      onResult(null,payload);
+    }catch(e){ onResult("云端备份文件读不懂（内容可能损坏）。"); }
+  }).catch(function(e){ onResult((e&&e.message)?e.message:"网络不通，恢复没成功"); });
+}
+function ghAskRestore(payload, srcLabel){
+  var when=payload.savedAt?new Date(payload.savedAt).toLocaleString():"未知时间";
+  var n=payload.store.projects.length;
+  if(!confirm((srcLabel||"云端")+"有 "+n+" 个PPT（备份于 "+when+"）。恢复将覆盖本机现有PPT，确定吗？")) return;
+  ghSuspend=true;
+  store=payload.store;
+  saveStore();
+  ghSuspend=false;
+  renderProjects();
+  toast("✅ 已恢复 "+n+" 个PPT");
+}
+function ghStatusRender(){
+  var last=localStorage.getItem('ppt_gh_last');
+  showMsg($('ghStatus'), last?("上次备份："+last):"还没备份过", last?'ok':'');
+}
+function scheduleGhAutoBackup(){
+  if(ghSuspend||!ghReady()) return;
+  if(ghAutoTimer) clearTimeout(ghAutoTimer);
+  ghAutoTimer=setTimeout(function(){ ghPush(function(){}); },10000);
+}
+/* 本地文件夹状态 + 从文件夹恢复 */
+function locRender(){
+  if(!(window.LearnShell&&window.LearnShell.folderSet&&window.LearnShell.folderSet())){
+    showMsg($('locStatus'),'本地备份：仅壳APP可用（授权文件夹后随备份双写）'); return;
+  }
+  var b64=null;
+  try{ b64=window.LearnShell.readFile("backup-meta-ppt.json"); }catch(e){}
+  if(!b64){ showMsg($('locStatus'),'本地备份：📫 文件夹里还没有（点「☁️ 立即备份」一次就会同时存进文件夹）'); return; }
+  try{
+    var m=JSON.parse(ghB64dec(b64));
+    showMsg($('locStatus'),'本地备份：📁 文件夹里有 '+m.count+' 个PPT（'+new Date(m.savedAt).toLocaleString()+'）','ok');
+  }catch(e){ showMsg($('locStatus'),'本地备份：文件夹里有备份'); }
+}
+/* 对账：云端meta vs 文件夹meta */
+function locReconcile(manual){
+  if(!(window.LearnShell&&window.LearnShell.folderSet&&window.LearnShell.folderSet())){
+    if(manual) showMsg($('recStatus'),'对账：仅壳APP可用'); return;
+  }
+  var locB64=null;
+  try{ locB64=window.LearnShell.readFile("backup-meta-ppt.json"); }catch(e){}
+  ghFetch(ghFileUrl("backup-meta-ppt.json"),{headers:ghHeaders()}).then(function(r){
+    if(r.status===404) return null;
+    if(!r.ok) throw new Error("x");
+    return r.json();
+  }).then(function(f){
+    var cloud=f?JSON.parse(ghB64dec(f.content||"")):null;
+    var loc=locB64?JSON.parse(ghB64dec(locB64)):null;
+    if(!cloud&&!loc){ showMsg($('recStatus'),'对账：两边都还没有备份，先备份一次'); return; }
+    if(cloud&&loc){
+      if(cloud.hash===loc.hash){ showMsg($('recStatus'),'对账：✅ 云端与文件夹一致（'+cloud.count+'个PPT）','ok'); return; }
+      var newer=new Date(cloud.savedAt)>new Date(loc.savedAt)?"云端":"文件夹";
+      showMsg($('recStatus'),'对账：⚠️ 两边不一样，'+newer+'的更新，恢复时选'+newer+'那份');
+    }else{
+      showMsg($('recStatus'),'对账：只有'+(cloud?"云端":"文件夹")+'有备份，另一边备份一次即可补齐');
+    }
+  }).catch(function(e){
+    showMsg($('recStatus'), locB64?('对账：断网查不了云端，📁 本地备份在手'):'对账：断网，且文件夹里也没有备份');
+  });
+}
+/* 自检 + 下载新版 */
+var ghVerPending=null;
+function ghSelfCheck(manual){
+  if(!ghReady()){ if(manual) showMsg($('ghCheck'),"请先填好用户名、Token、仓库名并保存。","err"); return; }
+  if(manual) showMsg($('ghCheck'),"自检：正在查…");
+  ghFetch(ghFileUrl("version-ppt.json"),{headers:ghHeaders()}).then(function(resp){
+    if(resp.status===404){ showMsg($('ghCheck'),"自检：✅ 线路通（云端还没有版本信息）","ok"); return null; }
+    if(!resp.ok) return resp.text().then(function(t){ throw new Error(ghErrText(resp.status,t)); });
+    return resp.json();
+  }).then(function(file){
+    if(!file) return;
+    var info;
+    try{ info=JSON.parse(ghB64dec(file.content||"")); }catch(e){ info=null; }
+    if(!info||!info.version){ showMsg($('ghCheck'),"自检：✅ 线路通（版本信息读不懂）","ok"); return; }
+    if(cmpVer(info.version,SW_VERSION)>0){
+      ghVerPending=info;
+      showMsg($('ghCheck'),"自检：✅ 线路通　🎉 网上有新版 v"+info.version+"（本机 v"+SW_VERSION+"）"+(info.note?("——"+info.note):""),"ok");
+      $("ghDlBtn").hidden=false;
+      toast("🎉 有新版 v"+info.version+"，点云备份卡片里的「⬇️ 下载新版」",4500);
+    }else{
+      showMsg($('ghCheck'),"自检：✅ 线路通　已是最新版 v"+SW_VERSION,"ok");
+      $("ghDlBtn").hidden=true;
+    }
+    locReconcile(false); /* 自检顺手对账 */
+  }).catch(function(e){
+    showMsg($('ghCheck'),"自检：❌ 连不上 GitHub（"+((e&&e.message)||"网络不通")+"）","err");
+  });
+}
+function ghDlFile(repoName, saveName, cb){
+  ghFetch(ghFileUrl(repoName),{headers:ghHeaders()}).then(function(resp){
+    if(!resp.ok) return resp.text().then(function(t){ throw new Error(ghErrText(resp.status,t)); });
+    return resp.json();
+  }).then(function(file){
+    var html=ghB64dec(file.content||"");
+    if(window.LearnShell && window.LearnShell.applyUpdate){
+      var b64=ghB64enc(html);
+      window.LearnShell.applyUpdate(saveName,b64);
+      try{ if(window.LearnShell.folderSet()) window.LearnShell.writeFile(saveName.replace(".html","")+"_新版.html",b64); }catch(e){}
+    }else{
+      var blob=new Blob([html],{type:"text/html;charset=utf-8"});
+      var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=saveName;
+      document.body.appendChild(a); a.click();
+      setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },1000);
+    }
+    cb(null);
+  }).catch(function(e){ cb((e&&e.message)||"下载失败"); });
+}
+function ghDownloadAll(){
+  if(!ghReady()){ toast("请先填好用户名、Token、仓库名并保存设置"); $("ghCard").open=true; return; }
+  toast("⬇️ 开始下载五个软件…",2500);
+  ghDlFile("software-notes.html","学习笔记.html",function(e1){
+    ghDlFile("software-xiti.html","习题学习.html",function(e2){
+      ghDlFile("software-bridge.html","文件桥.html",function(e3){
+        ghDlFile("software-xueqi.html","血气分析.html",function(e4){
+          ghDlFile("software-ppt.html","PPT工坊.html",function(e5){
+            var errs=[e1,e2,e3,e4,e5].filter(Boolean);
+            if(errs.length) toast("⚠️ 有没下成的："+errs[0],4500);
+            else toast(window.LearnShell?"✅ 五个软件都已装好，重启APP生效":"✅ 五个软件都已下载，到「下载」目录找",4500);
+          });
+        });
+      });
+    });
+  });
+}
+/* 主界面刷新：壳里打开时顺带把套装主界面(index.html)换新 */
+function hxIndexRefresh(){
+  if(!window.LearnShell||!window.LearnShell.applyUpdate) return;
+  var c=ghCfg(); if(!(c.user&&c.tok&&c.repo)) return;
+  var H={"Authorization":"token "+c.tok,"Accept":"application/vnd.github+json"};
+  var _base="https://api.github.com/repos/"+encodeURIComponent(c.user)+"/"+encodeURIComponent(c.repo)+"/contents/";
+  fetch(_base+encodeURIComponent("version-index.json"),{headers:H}).then(function(r){ if(!r.ok) return null; return r.json(); }).then(function(vf){
+    if(!vf) return;
+    var info; try{ info=JSON.parse(ghB64dec(vf.content||"")); }catch(e){ return; }
+    var cur=localStorage.getItem("hx_index_ver")||"1.0.0";
+    if(!info||!info.version||cmpVer(info.version,cur)<=0) return;
+    fetch(_base+encodeURIComponent("index.html"),{headers:H}).then(function(r){ if(!r.ok) return null; return r.json(); }).then(function(sf){
+      if(!sf) return;
+      var b64=ghB64enc(ghB64dec(sf.content||""));
+      try{ if(window.LearnShell.applyUpdate("index.html",b64)) localStorage.setItem("hx_index_ver",info.version); }catch(e){}
+    });
+  }).catch(function(){});
+}
+</script>
+<script>
+"use strict";
+/* ==================== Markdown大纲解析 → 幻灯片数据 ==================== */
+/* 规矩：#封面 ##分页 -要点 |表格| ```chart {JSON}``` !!大数字 >金句 其余=段落 */
+function parseOutline(md){
+  var lines=String(md||"").replace(/\r/g,"").split("\n");
+  var pages=[], cur=null, inChart=false, chartBuf=[];
+  function pushCur(){ if(cur) pages.push(cur); cur=null; }
+  function newPage(title){ pushCur(); cur={title:title||"", bullets:[], table:null, chart:null, para:"", big:"", bigText:"", quote:"", cls:"auto"}; }
+  for(var i=0;i<lines.length;i++){
+    var ln=lines[i];
+    if(inChart){
+      if(/^\s*```/.test(ln)){
+        try{ var j=JSON.parse(chartBuf.join("\n")); if(cur){ cur.chart=j; } }catch(e){}
+        inChart=false; chartBuf=[];
+      }else chartBuf.push(ln);
+      continue;
+    }
+    if(/^\s*```chart/.test(ln)){
+      if(!cur) newPage("");
+      /* v0.1.1 兼容：JSON 可以跟在 ```chart 同一行（AI 常这么写） */
+      var rest=ln.replace(/^\s*```chart\s*/,"");
+      chartBuf=[];
+      if(/```\s*$/.test(rest)){ rest=rest.replace(/```\s*$/,""); if(rest) chartBuf=[rest]; try{ var j0=JSON.parse(chartBuf.join("\n")); if(cur){ cur.chart=j0; } }catch(e){} }
+      else if(rest){ chartBuf=[rest]; inChart=true; }
+      else inChart=true;
+      continue;
+    }
+    if(/^#\s+/.test(ln)){ newPage(ln.replace(/^#\s+/,"")); cur.cls="cover"; continue; }
+    if(/^##\s+/.test(ln)){ newPage(ln.replace(/^##\s+/,"")); continue; }
+    if(!cur) newPage("");
+    if(/^!!\s*/.test(ln)){
+      var t=ln.replace(/^!!\s*/,"");
+      var sp=t.indexOf(" ");
+      if(sp>0){ cur.big=t.slice(0,sp); cur.bigText=t.slice(sp+1); } else cur.big=t;
+      continue;
+    }
+    if(/^>\s?/.test(ln)){ cur.quote=(cur.quote?cur.quote+"\n":"")+ln.replace(/^>\s?/,""); continue; }
+    if(/^\s*[-•*]\s+/.test(ln)){ cur.bullets.push(ln.replace(/^\s*[-•*]\s+/,"")); continue; }
+    if(/^\s*\|.*\|\s*$/.test(ln)){
+      var cells=ln.replace(/^\s*\|/,"").replace(/\|\s*$/,"").split("|").map(function(x){ return x.replace(/^\s+|\s+$/g,""); });
+      var isSep=cells.every(function(c){ return /^:?-{2,}:?$/.test(c)||c===""; });
+      if(!isSep){
+        if(!cur.table) cur.table={headers:cells, rows:[]};
+        else cur.table.rows.push(cells);
+      }
+      continue;
+    }
+    if(/^\s*$/.test(ln)) continue;
+    cur.para=(cur.para?cur.para+"\n":"")+ln;
+  }
+  pushCur();
+  return pages;
+}
+function pageKind(p){
+  if(p.cls&&p.cls!=="auto") return p.cls;
+  if(p.big) return "big";
+  if(p.quote&&!p.bullets.length&&!p.table) return "quote";
+  if(p.table) return "table";
+  if(p.chart) return "chart";
+  return "bullets";
+}
+/* ==================== SVG图表（纯手绘） ==================== */
+function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function chartSVG(ch){
+  var W=640,H=360,pad=50;
+  var labels=ch.labels||[], values=ch.values||[], type=ch.type||"bar";
+  var title=ch.title||"";
+  var max=Math.max.apply(null,values.concat([1]));
+  var colors=["#5b7f5e","#b3742a","#7a6a9e","#4a7a8a","#b3543f","#8a7a63"];
+  var s='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;max-height:100%">';
+  if(type==="pie"){
+    var total=values.reduce(function(a,b){return a+b;},0)||1;
+    var cx=W/2, cy=H/2+10, r=120, a0=-Math.PI/2;
+    for(var i=0;i<values.length;i++){
+      var a1=a0+Math.PI*2*values[i]/total;
+      var x0=cx+r*Math.cos(a0), y0=cy+r*Math.sin(a0), x1=cx+r*Math.cos(a1), y1=cy+r*Math.sin(a1);
+      var large=(a1-a0)>Math.PI?1:0;
+      s+='<path d="M'+cx+','+cy+' L'+x0.toFixed(1)+','+y0.toFixed(1)+' A'+r+','+r+' 0 '+large+' 1 '+x1.toFixed(1)+','+y1.toFixed(1)+' Z" fill="'+colors[i%6]+'"/>';
+      var am=(a0+a1)/2;
+      s+='<text x="'+(cx+(r+28)*Math.cos(am)).toFixed(1)+'" y="'+(cy+(r+28)*Math.sin(am)).toFixed(1)+'" font-size="14" fill="#4a463f" text-anchor="middle">'+esc(labels[i]||"")+' '+values[i]+'</text>';
+      a0=a1;
+    }
+  }else if(type==="line"){
+    var bw=(W-pad*2)/Math.max(values.length-1,1);
+    s+='<line x1="'+pad+'" y1="'+(H-pad)+'" x2="'+(W-pad)+'" y2="'+(H-pad)+'" stroke="#c9c0b2"/>';
+    s+='<line x1="'+pad+'" y1="'+pad+'" x2="'+pad+'" y2="'+(H-pad)+'" stroke="#c9c0b2"/>';
+    var pts="";
+    for(var j=0;j<values.length;j++){
+      var x=pad+j*bw, y=(H-pad)-(H-pad*2-20)*values[j]/max;
+      pts+=x.toFixed(1)+","+y.toFixed(1)+" ";
+      s+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="4" fill="#5b7f5e"/>';
+      s+='<text x="'+x.toFixed(1)+'" y="'+(y-10).toFixed(1)+'" font-size="13" fill="#4a463f" text-anchor="middle">'+values[j]+'</text>';
+      s+='<text x="'+x.toFixed(1)+'" y="'+(H-pad+18)+'" font-size="12" fill="#8a8178" text-anchor="middle">'+esc(labels[j]||"")+'</text>';
+    }
+    s+='<polyline points="'+pts+'" fill="none" stroke="#5b7f5e" stroke-width="2.5"/>';
+  }else{ /* bar */
+    var bw2=(W-pad*2)/Math.max(values.length,1);
+    s+='<line x1="'+pad+'" y1="'+(H-pad)+'" x2="'+(W-pad)+'" y2="'+(H-pad)+'" stroke="#c9c0b2"/>';
+    for(var k=0;k<values.length;k++){
+      var bh=(H-pad*2-20)*values[k]/max;
+      var bx=pad+k*bw2+bw2*0.15, by=H-pad-bh;
+      s+='<rect x="'+bx.toFixed(1)+'" y="'+by.toFixed(1)+'" width="'+(bw2*0.7).toFixed(1)+'" height="'+bh.toFixed(1)+'" rx="4" fill="'+colors[k%6]+'"/>';
+      s+='<text x="'+(bx+bw2*0.35).toFixed(1)+'" y="'+(by-8).toFixed(1)+'" font-size="13" fill="#4a463f" text-anchor="middle">'+values[k]+'</text>';
+      s+='<text x="'+(bx+bw2*0.35).toFixed(1)+'" y="'+(H-pad+18)+'" font-size="12" fill="#8a8178" text-anchor="middle">'+esc(labels[k]||"")+'</text>';
+    }
+  }
+  s+='</svg>';
+  return s;
+}
+/* ==================== 单页渲染HTML（播放器/导出共用） ==================== */
+/* v0.2.0 双链：[[文件名]] 或 [[文件名|显示文字]] → 下划线链接（括号不露） */
+function linkify(escaped){
+  return String(escaped||"").replace(/\[\[([^\[\]|]+)(?:\|([^\[\]]+))?\]\]/g, function(m,f,t){
+    var fn=f.replace(/^\s+|\s+$/g,""), label=t? t.replace(/^\s+|\s+$/g,"") : fn;
+    return '<a class="plnk" data-f="'+encodeURIComponent(fn)+'">'+label+'</a>';
+  });
+}
+function slideHTML(p){
+  var kind=pageKind(p);
+  if(kind==="cover"){
+    return '<div class="slide-page sp-cover"><h1>'+linkify(esc(p.title))+'</h1>'+(p.para?'<div class="sp-sub">'+linkify(esc(p.para))+'</div>':'')+'</div>';
+  }
+  var h='<div class="slide-page">';
+  if(p.title) h+='<h2>'+linkify(esc(p.title))+'</h2>';
+  if(kind==="big"){
+    h+='<div class="sp-big"><div class="n">'+esc(p.big)+'</div><div class="t">'+esc(p.bigText||"")+'</div></div>';
+  }else if(kind==="quote"){
+    h+='<div class="sp-quote"><div class="q">'+linkify(esc(p.quote))+'</div></div>';
+  }else{
+    if(p.bullets.length){ h+='<ul>'; p.bullets.forEach(function(b){ h+='<li>'+linkify(esc(b))+'</li>'; }); h+='</ul>'; }
+    if(p.table){
+      h+='<table><tr>'; p.table.headers.forEach(function(c){ h+='<th>'+linkify(esc(c))+'</th>'; }); h+='</tr>';
+      p.table.rows.forEach(function(r){ h+='<tr>'; r.forEach(function(c){ h+='<td>'+linkify(esc(c))+'</td>'; }); h+='</tr>'; });
+      h+='</table>';
+    }
+    if(p.chart) h+='<div class="chart-box"><div style="width:92%"><div class="chart-title">'+esc(p.chart.title||"")+'</div>'+chartSVG(p.chart)+'</div></div>';
+    if(p.quote) h+='<div class="sp-quote" style="flex:0"><div class="q" style="font-size:1.05em">'+linkify(esc(p.quote))+'</div></div>';
+    if(p.para) h+='<div class="sp-para">'+linkify(esc(p.para)).replace(/\n/g,"<br>")+'</div>';
+  }
+  h+='</div>';
+  return h;
+}
+</script>
+<script>
+"use strict";
+/* ==================== AI 调用 ==================== */
+var API_URL="https://api.moonshot.cn/v1/chat/completions";
+function aiKey(){ return (localStorage.getItem('hx_apikey')||'').replace(/^\s+|\s+$/g,''); }
+function aiModel(){ return localStorage.getItem('hx_aimodel')||'kimi-k2.5'; }
+/* ===== 全家AI账本 hx_aibill（2026-09-01 洪医生家规：每次AI记一笔+弹一条花了多少钱；主界面💰卡片汇总。tokens≈汉字数/2，是估算，真扣费以官方账单为准） ===== */
+var HX_PRICE={"kimi-k2.5":[4,16],"kimi-k2.6":[4,16],"kimi-k2.7":[7,27],"kimi-k3":[21,105],"qwen-vl-max":[3,9],"qwen-plus":[0.8,2],"moonshot-v1-8k":[12,12],"moonshot-v1-32k":[24,24],"moonshot-v1-128k":[60,60]};
+function hxBillYuan(model,inC,outC,imgs){var p=HX_PRICE["kimi-k2.5"];for(var k in HX_PRICE){if(model&&String(model).indexOf(k)===0){p=HX_PRICE[k];break;}}return Math.ceil((inC||0)/2)/1e6*p[0]+Math.ceil((outC||0)/2)/1e6*p[1]+(imgs||0)*0.005;}
+function hxBill(app,what,inC,outC,model,imgs){try{var c=hxBillYuan(model,inC,outC,imgs);var arr=JSON.parse(localStorage.getItem("hx_aibill")||"[]");arr.unshift({app:app,what:what||"",cost:+c.toFixed(4),t:Date.now()});if(arr.length>500)arr.length=500;localStorage.setItem("hx_aibill",JSON.stringify(arr));return c;}catch(e){return 0;}}
+function hxBillMonth(){try{var arr=JSON.parse(localStorage.getItem("hx_aibill")||"[]");var n=new Date(),s=0;arr.forEach(function(e){var t=new Date(e.t);if(t.getFullYear()===n.getFullYear()&&t.getMonth()===n.getMonth())s+=e.cost||0;});return s;}catch(e){return 0;}}
+function hxBillMsg(c){return "💰 本次约¥"+(c<0.01?c.toFixed(3):c.toFixed(2))+" ｜ 本月全家约¥"+hxBillMonth().toFixed(2);}
+function hxBillToast(c){try{var d=document.createElement("div");d.textContent=hxBillMsg(c);d.style.cssText="position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#4a6b4f;color:#fff;padding:10px 18px;border-radius:20px;font-size:14px;z-index:99999;box-shadow:0 2px 8px rgba(0,0,0,.25)";document.body.appendChild(d);setTimeout(function(){d.remove();},4000);}catch(e){}}
+
+function callAI(sys, usr, onOk, onErr){
+  var key=aiKey();
+  if(!key){ onErr('还没有 API Key。请到学习笔记/血气分析的设置里填一次（公共钱罐全家通用），或在本页粘贴：'); keyInputAsk(); return; }
+  fetch(API_URL,{method:"POST",
+    headers:{"Content-Type":"application/json","Authorization":"Bearer "+key},
+    body:JSON.stringify({model:aiModel(),messages:[{role:"system",content:sys},{role:"user",content:usr}],max_tokens:8000,temperature:0.4})
+  }).then(function(r){
+    if(!r.ok) return r.text().then(function(t){ throw new Error("AI线路出错 HTTP "+r.status); });
+    return r.json();
+  }).then(function(j){
+    var msg=j.choices&&j.choices[0]&&j.choices[0].message;
+    var c=msg?msg.content:"";
+    if(Array.isArray(c)) c=c.map(function(x){return x.text||x.content||"";}).join("");
+    if(!c) throw new Error("AI没说出话来，再试一次");
+    hxBillToast(hxBill("PPT工坊","AI",(sys||"").length+(usr||"").length,(c||"").length,aiModel()));
+    onOk(c);
+  }).catch(function(e){ onErr((e&&e.message)||"网络不通"); });
+}
+function keyInputAsk(){
+  var k=prompt("把 Kimi API key（sk-开头）贴这里：","");
+  if(k){ localStorage.setItem('hx_apikey', k.trim()); toast("✅ key已存进公共钱罐，全家软件通用"); }
+}
+var MD_RULES=
+'【输出规矩（Markdown）】\n'+
+'- 第一行：# 演示标题（这是封面）\n'+
+'- 每页以「## 页标题」开头\n'+
+'- 要点：行首「- 」（每页3~6条，每条不超过30字，说人话）\n'+
+'- 对比表：用 | 表头 | 表头 | 画（第二行不要分隔线也认得），适合对比的内容优先用表\n'+
+'- 大数字页：行首「!! 数字 说明文字」（如 !! 95% 五年生存率）\n'+
+'- 金句页：行首「> 」\n'+
+'- 引用指南/文献：[[文件名.pdf]]（放映时显示成下划线链接，可点开看；如 [[ARDS柏林指南.pdf]]）\n'+
+'- 图表页：用 ```chart 包住一行JSON，如 ```chart {"type":"bar","title":"标题","labels":["A","B"],"values":[3,5]} ``` （type可选bar柱/pie饼/line折线；只有真有数字对比时才用）\n'+
+'- 只输出Markdown本身，不要任何解释。页数8~15页。';
+function aiDraftOutline(){
+  var cur=$('outlineText').value;
+  var topic=cur.replace(/^\s+|\s+$/g,'');
+  var ask=prompt(topic?"在此基础上重写/大改，说您的要求（留空=按现有内容重新组织）：":"您的PPT主题是什么？（一句话，如：CRAB感染的抗菌治疗策略）","");
+  if(ask===null) return;
+  var sys='您是ICU主任医师的教学助手，帮人把主题做成讲课PPT的大纲。';
+  var usr=(topic?('【现有大纲/资料】\n'+topic+'\n\n'):'')+
+    '【题目/要求】'+(ask||'按上面资料重新组织成大纲')+'\n\n'+MD_RULES;
+  showMsg($('editMsg'),'🤖 AI正在起草大纲…');
+  callAI(sys,usr,function(text){
+    var m=text.match(/```(?:markdown)?\s*([\s\S]*?)```/);
+    $('outlineText').value=(m?m[1]:text).replace(/^\s+|\s+$/g,'');
+    showMsg($('editMsg'),'✅ 大纲起草好了，改完点「🎬 生成PPT」','ok');
+  },function(err){ showMsg($('editMsg'),err,'err'); });
+}
+function aiPolishOutline(){
+  var cur=$('outlineText').value.replace(/^\s+|\s+$/g,'');
+  if(!cur){ showMsg($('editMsg'),'大纲还是空的，先写点或让AI起草','err'); return; }
+  showMsg($('editMsg'),'✨ AI正在润色…');
+  callAI('您是ICU教学PPT大纲润色助手。',
+    '【现有大纲】\n'+cur+'\n\n请在不增减事实的前提下润色：表述更精炼、口语化、适合讲课；结构不变。\n'+MD_RULES,
+    function(text){
+      var m=text.match(/```(?:markdown)?\s*([\s\S]*?)```/);
+      $('outlineText').value=(m?m[1]:text).replace(/^\s+|\s+$/g,'');
+      showMsg($('editMsg'),'✅ 润色完成','ok');
+    },function(err){ showMsg($('editMsg'),err,'err'); });
+}
+/* 单页重做：把该页markdown+一句话指令发给AI */
+function pageToMd(p){
+  var md='## '+(p.title||'')+'\n';
+  p.bullets.forEach(function(b){ md+='- '+b+'\n'; });
+  if(p.table){
+    md+='| '+p.table.headers.join(' | ')+' |\n';
+    p.table.rows.forEach(function(r){ md+='| '+r.join(' | ')+' |\n'; });
+  }
+  if(p.chart) md+='```chart '+JSON.stringify(p.chart)+' ```\n';
+  if(p.big) md+='!! '+p.big+' '+(p.bigText||'')+'\n';
+  if(p.quote) md+='> '+p.quote+'\n';
+  if(p.para) md+=p.para+'\n';
+  return md;
+}
+function aiRegenPage(idx){
+  var proj=curProj(); if(!proj) return;
+  var p=proj.slides[idx];
+  var ask=prompt('这一页哪里不满意？（留空=AI自由重写本页）','');
+  if(ask===null) return;
+  showMsg($('slidesMsg'),'🤖 AI正在重做第'+(idx+1)+'页…');
+  callAI('您是ICU教学PPT的单页重做助手。',
+    '【整场PPT题目】'+(proj.title||'')+'\n【本页现状】\n'+pageToMd(p)+'\n【要求】'+(ask||'自由重写，更好讲')+'\n\n只重做这一页。'+MD_RULES.replace('页数8~15页。','只输出这一页（一个##段落）。'),
+    function(text){
+      var m=text.match(/```(?:markdown)?\s*([\s\S]*?)```/);
+      var md=(m?m[1]:text).replace(/^\s+|\s+$/g,'');
+      var pages=parseOutline(md);
+      if(!pages.length){ showMsg($('slidesMsg'),'AI给的这页读不懂，换个说法再试','err'); return; }
+      pages[0].cls=p.cls;
+      proj.slides[idx]=pages[0];
+      proj.t=Date.now(); saveStore();
+      renderSlides();
+      showMsg($('slidesMsg'),'✅ 第'+(idx+1)+'页已重做','ok');
+    },function(err){ showMsg($('slidesMsg'),err,'err'); });
+}
+</script>
+<script>
+"use strict";
+/* ==================== 页面流转 ==================== */
+function showPage(id){
+  ['homePage','editPage','slidesPage'].forEach(function(p){ $(p).classList.add('hidden'); });
+  $(id).classList.remove('hidden');
+  window.scrollTo(0,0);
+}
+function renderProjects(){
+  var el=$('projList');
+  if(!store.projects.length){ el.innerHTML='<div class="hint">还没有，点上面新建一个。</div>'; return; }
+  el.innerHTML='';
+  store.projects.slice().sort(function(a,b){return b.t-a.t;}).forEach(function(p){
+    var d=document.createElement('div'); d.className='proj-item';
+    d.innerHTML='<div class="proj-info"><div class="proj-name">'+esc(p.title||'无题')+'</div>'+
+      '<div class="proj-meta">'+p.slides.length+'页 · '+new Date(p.t).toLocaleString()+'</div></div>';
+    var b1=document.createElement('button'); b1.textContent='▶️ 放映'; b1.style.fontSize='13px'; b1.style.padding='7px 10px';
+    b1.onclick=function(){ openProject(p.id); startPlay(); };
+    var b2=document.createElement('button'); b2.textContent='✏️ 编辑'; b2.className='ghost'; b2.style.fontSize='13px'; b2.style.padding='7px 10px';
+    b2.onclick=function(){ openProject(p.id); };
+    var b3=document.createElement('button'); b3.textContent='删除'; b3.className='danger'; b3.style.fontSize='13px'; b3.style.padding='7px 10px';
+    b3.onclick=function(){ if(confirm('删除「'+(p.title||'无题')+'」？')){ store.projects=store.projects.filter(function(x){return x.id!==p.id;}); saveStore(); renderProjects(); } };
+    d.appendChild(b1); d.appendChild(b2); d.appendChild(b3);
+    el.appendChild(d);
+  });
+}
+function openProject(id){
+  curId=id;
+  var p=curProj(); if(!p) return;
+  outlineLinks=p.linkNotes||{};  /* v0.3.0 */
+  if(p.outline){ $('outlineText').value=p.outline; showPage('editPage'); showMsg($('editMsg'),'改完大纲点「🎬 生成PPT」，或直接','ok'); }
+  renderSlidesIfReady();
+}
+function buildFromOutline(){
+  var md=$('outlineText').value.replace(/^\s+|\s+$/g,'');
+  if(!md){ showMsg($('editMsg'),'大纲还是空的','err'); return; }
+  var pages=parseOutline(md);
+  if(!pages.length){ showMsg($('editMsg'),'没解析出任何一页，检查格式','err'); return; }
+  var p=curProj();
+  if(!p){ p={id:newId(), title:'', outline:'', slides:[], t:Date.now()}; store.projects.push(p); curId=p.id; }
+  p.outline=md;
+  p.slides=pages;
+  p.linkNotes=outlineLinks;  /* v0.3.0 摘录跟着项目走 */
+  p.title=pages[0]&&pages[0].cls==='cover'?pages[0].title:(pages[0].title||'无题');
+  p.t=Date.now();
+  saveStore(); renderSlides(); showPage('slidesPage');
+  showMsg($('slidesMsg'),'✅ 生成 '+pages.length+' 页。哪页不满意就点那页的「🔄AI重做」','ok');
+}
+function renderSlidesIfReady(){ var p=curProj(); if(p&&p.slides.length){ renderSlides(); showPage('slidesPage'); } }
+function renderSlides(){
+  var p=curProj(); if(!p) return;
+  $('slidesTitle').textContent='🎞 '+(p.title||'无题')+'（'+p.slides.length+'页）';
+  var el=$('slideList'); el.innerHTML='';
+  p.slides.forEach(function(s,i){
+    var d=document.createElement('div'); d.className='slide-item';
+    var prev=s.title+'　'+(s.bullets.slice(0,2).join('；'))+(s.table?('　[表'+s.table.rows.length+'行]'):'')+(s.chart?'　[图表]':'')+(s.big?('　!!'+s.big):'')+(s.quote?'　[金句]':'');
+    d.innerHTML='<div class="slide-head"><span class="slide-no">第'+(i+1)+'页</span>'+
+      '<span class="slide-title">'+esc(s.title||'（'+pageKind(s)+'）')+'</span></div>'+
+      '<div class="slide-preview">'+esc(prev)+'</div>';
+    var ops=document.createElement('div'); ops.className='slide-ops';
+    var bRegen=document.createElement('button'); bRegen.textContent='🔄 AI重做本页'; bRegen.onclick=function(){ aiRegenPage(i); };
+    var bEdit=document.createElement('button'); bEdit.textContent='✏️ 编辑'; bEdit.className='ghost'; bEdit.onclick=function(){ peOpen(i); };
+    var sel=document.createElement('select');
+    sel.innerHTML='<option value="auto">版式：自动</option><option value="bullets">要点</option><option value="table">表格</option><option value="big">大数字</option><option value="quote">金句</option><option value="cover">封面</option>';
+    sel.value=s.cls||'auto';
+    sel.onchange=function(){ s.cls=sel.value; p.t=Date.now(); saveStore(); };
+    var bUp=document.createElement('button'); bUp.className='ghost'; bUp.textContent='↑'; bUp.onclick=function(){ if(i>0){ p.slides.splice(i-1,0,p.slides.splice(i,1)[0]); saveStore(); renderSlides(); } };
+    var bDn=document.createElement('button'); bDn.className='ghost'; bDn.textContent='↓'; bDn.onclick=function(){ if(i<p.slides.length-1){ p.slides.splice(i+1,0,p.slides.splice(i,1)[0]); saveStore(); renderSlides(); } };
+    var bDel=document.createElement('button'); bDel.className='danger'; bDel.textContent='删'; bDel.onclick=function(){ if(confirm('删第'+(i+1)+'页？')){ p.slides.splice(i,1); saveStore(); renderSlides(); } };
+    ops.appendChild(bRegen); ops.appendChild(bEdit); ops.appendChild(sel); ops.appendChild(bUp); ops.appendChild(bDn); ops.appendChild(bDel);
+    d.appendChild(ops);
+    el.appendChild(d);
+  });
+}
+/* ==================== 播放器 ==================== */
+var pvIdx=0;
+function fitStage(){
+  var st=$('stage');
+  var w=window.innerWidth, h=window.innerHeight;
+  var sw=w, sh=w*9/16;
+  if(sh>h){ sh=h; sw=h*16/9; }
+  st.style.width=sw+'px'; st.style.height=sh+'px';
+  st.style.fontSize=(sh/22)+'px';
+}
+function renderStage(){
+  var p=curProj(); if(!p||!p.slides.length) return;
+  pvIdx=Math.max(0,Math.min(pvIdx,p.slides.length-1));
+  $('stage').innerHTML=slideHTML(p.slides[pvIdx]);
+  $('pvNo').textContent=(pvIdx+1)+'/'+p.slides.length;
+}
+function startPlay(){
+  var p=curProj(); if(!p||!p.slides.length){ toast('先生成PPT'); return; }
+  pvIdx=0; $('player').classList.remove('hidden');
+  fitStage(); renderStage();
+}
+function stopPlay(){ $('player').classList.add('hidden'); }
+window.addEventListener('resize', function(){ if(!$('player').classList.contains('hidden')){ fitStage(); renderStage(); } });
+document.addEventListener('keydown', function(e){
+  if($('player').classList.contains('hidden')) return;
+  if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){ pvIdx++; renderStage(); }
+  else if(e.key==='ArrowLeft'||e.key==='PageUp'){ pvIdx--; renderStage(); }
+  else if(e.key==='Escape') stopPlay();
+});
+var touchX=null;
+$('player').addEventListener('touchstart',function(e){ touchX=e.touches[0].clientX; });
+$('player').addEventListener('touchend',function(e){
+  if(touchX===null) return;
+  var dx=e.changedTouches[0].clientX-touchX; touchX=null;
+  if(dx<-40){ pvIdx++; renderStage(); } else if(dx>40){ pvIdx--; renderStage(); }
+});
+$('player').addEventListener('click',function(e){
+  if(e.target.tagName==='BUTTON') return;
+  /* v0.2.0 点到[[链接]]：进文件查看器，不翻页 */
+  var a=e.target.closest? e.target.closest('.plnk'):null;
+  if(a){ openLinkedFile(decodeURIComponent(a.getAttribute('data-f')||'')); return; }
+  var x=e.clientX;
+  if(x<window.innerWidth*0.35){ pvIdx--; } else if(x>window.innerWidth*0.65){ pvIdx++; }
+  renderStage();
+});
+$('pvPrev').onclick=function(){ pvIdx--; renderStage(); };
+$('pvNext').onclick=function(){ pvIdx++; renderStage(); };
+$('pvExit').onclick=stopPlay;
+</script>
+<script>
+"use strict";
+/* ==================== v0.2.0 链接文件查看器 ====================
+   点[[链接]]取文件四条路，按顺序试：
+   ①壳APP授权文件夹（LearnShell.readFile）②浏览器授权文件夹（借文件桥的bridge-db句柄，同源IndexedDB共享）
+   ③仓库共享区 shared/<文件名>（iPad也能走这条）④影子副本（学习笔记文献库的AI总结/全文节选） */
+function fvOpen(name){
+  $('fvTitle').textContent='📎 '+name;
+  $('fvBody').innerHTML='<div style="color:#a89f93">正在取文件…</div>';
+  $('fvSrc').textContent='';
+  $('fileViewer').classList.remove('hidden');
+}
+function fvClose(){ $('fileViewer').classList.add('hidden'); $('fvBody').innerHTML=''; }
+$('fvClose').onclick=fvClose;
+function fvShowBlob(blob,name){
+  fvOpen(name);
+  if(/\.(txt|md|csv)$/i.test(name)){
+    var rd=new FileReader();
+    rd.onload=function(){ $('fvBody').innerHTML='<pre>'+esc(rd.result||'')+'</pre>'; };
+    rd.readAsText(blob);
+  }else{
+    var url=URL.createObjectURL(blob);
+    $('fvBody').innerHTML='<iframe src="'+url+'"></iframe>';
+  }
+  $('fvSrc').textContent='📄 完整文件原件';
+}
+function fvShowText(name, text, src){
+  fvOpen(name);
+  $('fvBody').innerHTML=text? '<pre>'+esc(text)+'</pre>' : '<div style="color:#a89f93">（没有内容）</div>';
+  $('fvSrc').textContent=src||'';
+}
+function b64ToBlob(b64,mime){
+  var s=atob(String(b64||'').replace(/\s+/g,'')), b=new Uint8Array(s.length);
+  for(var i=0;i<s.length;i++) b[i]=s.charCodeAt(i);
+  return new Blob([b],{type:mime||'application/octet-stream'});
+}
+function mimeOf(name){
+  if(/\.pdf$/i.test(name)) return 'application/pdf';
+  if(/\.png$/i.test(name)) return 'image/png';
+  if(/\.jpe?g$/i.test(name)) return 'image/jpeg';
+  if(/\.gif$/i.test(name)) return 'image/gif';
+  if(/\.(txt|md|csv)$/i.test(name)) return 'text/plain';
+  return 'application/octet-stream';
+}
+/* 借文件桥的文件夹句柄（同源 IndexedDB 'bridge-db'/'kv'/'dir'） */
+function bridgeDirHandle(){
+  return new Promise(function(res){
+    try{
+      var rq=indexedDB.open('bridge-db',1);
+      rq.onerror=function(){ res(null); };
+      rq.onupgradeneeded=function(){ rq.transaction.abort(); res(null); };
+      rq.onsuccess=function(){
+        var db=rq.result;
+        try{
+          var g=db.transaction('kv','readonly').objectStore('kv').get('dir');
+          g.onsuccess=function(){ res(g.result||null); };
+          g.onerror=function(){ res(null); };
+        }catch(e){ res(null); }
+      };
+    }catch(e){ res(null); }
+  });
+}
+/* 影子副本：学习笔记文献库（bijiben_lit_v1 元数据 + lit-db/papers 全文） */
+function litFindByFilename(name){
+  try{
+    var meta=JSON.parse(localStorage.getItem('bijiben_lit_v1')||'[]');
+    for(var i=0;i<meta.length;i++){ if(meta[i].filename===name) return meta[i]; }
+  }catch(e){}
+  return null;
+}
+function litTextGet(id){
+  return new Promise(function(res){
+    try{
+      var rq=indexedDB.open('lit-db',1);
+      rq.onerror=function(){ res(null); };
+      rq.onupgradeneeded=function(){ rq.transaction.abort(); res(null); };
+      rq.onsuccess=function(){
+        var db=rq.result;
+        try{
+          var g=db.transaction('papers','readonly').objectStore('papers').get(id);
+          g.onsuccess=function(){ res(g.result? g.result.text : null); };
+          g.onerror=function(){ res(null); };
+        }catch(e){ res(null); }
+      };
+    }catch(e){ res(null); }
+  });
+}
+function findExcerpt(name){
+  var cp=(typeof curProj==='function')? curProj():null;  /* v0.3.0 您摘的段落优先 */
+  if(cp && cp.linkNotes && cp.linkNotes[name]) return Promise.resolve({text:cp.linkNotes[name], src:'您亲手摘的段落'});
+  var m=litFindByFilename(name);
+  if(m && m.summary) return Promise.resolve({text:m.summary, src:'学习笔记文献库·AI总结'});
+  if(m) return litTextGet(m.id).then(function(t){
+    return t? {text:t.slice(0,2000)+(t.length>2000?'\n……（节选前2000字）':''), src:'学习笔记文献库·全文节选'} : null;
+  });
+  return Promise.resolve(null);
+}
+async function openLinkedFile(name){
+  fvOpen(name);
+  /* ①壳APP授权文件夹 */
+  try{
+    if(window.LearnShell && window.LearnShell.folderSet && window.LearnShell.folderSet()){
+      var b64=window.LearnShell.readFile(name);
+      if(b64){ fvShowBlob(b64ToBlob(b64, mimeOf(name)), name); return; }
+    }
+  }catch(e){}
+  /* ②浏览器授权文件夹（文件桥句柄） */
+  try{
+    var h=await bridgeDirHandle();
+    if(h){
+      if(h.queryPermission && (await h.queryPermission({mode:'read'}))!=='granted'){
+        if(h.requestPermission) await h.requestPermission({mode:'read'});
+      }
+      var fh=await h.getFileHandle(name);
+      var file=await fh.getFile();
+      fvShowBlob(file, name); return;
+    }
+  }catch(e){}
+  /* ③仓库共享区 shared/ */
+  try{
+    if(ghReady()){
+      var r=await ghFetch(ghFileUrl('shared/'+name), {headers:ghHeaders()});
+      if(r.ok){ var j=await r.json(); fvShowBlob(b64ToBlob(j.content||'', mimeOf(name)), name); return; }
+    }
+  }catch(e){}
+  /* ④影子副本 */
+  try{
+    var ex=await findExcerpt(name);
+    if(ex){ fvShowText(name, ex.text, '没取到原件，先给您看「'+ex.src+'」。要看完整文件：把 '+name+' 放进授权文件夹或仓库 shared 区。'); return; }
+  }catch(e){}
+  fvShowText(name, '', '四条路都没取到「'+name+'」：①授权文件夹 ②浏览器文件夹 ③仓库shared区 ④学习笔记文献库。把文件放进其中一处再来点。');
+}
+
+/* ==================== v0.3.0 涂黑编辑（大纲页）+ 单页编辑窗 ====================
+   照学习笔记的涂黑弹菜单思路：大纲涂黑一段→底部浮出小编辑条（自己改/AI改/链接文献/链接某段）；
+   生成后每页「✏️ 编辑本页」→手动改/AI改/插链接。摘的段落存进项目 linkNotes，
+   导出时优先当影子副本内嵌（openLinkedFile兜底也先看它）。 */
+var outlineLinks={};  /* 当前大纲页对应的 linkNotes（{文件名:摘录}），生成时并给项目 */
+
+function outlineSel(){
+  var ta=$('outlineText'), s=ta.selectionStart, e=ta.selectionEnd;
+  return {s:s, e:e, text:(e>s)? ta.value.substring(s,e) : ''};
+}
+function selBarRefresh(){
+  var sel=outlineSel();
+  if(sel.text.length>0) $('selBar').classList.remove('hidden');
+  else $('selBar').classList.add('hidden');
+}
+['mouseup','keyup','touchend','select'].forEach(function(ev){
+  $('outlineText').addEventListener(ev, function(){ setTimeout(selBarRefresh, 50); });
+});
+document.addEventListener('click', function(e){
+  if(e.target===$('outlineText') || (e.target.closest && e.target.closest('#selBar'))) return;
+  $('selBar').classList.add('hidden');
+});
+function outlineReplace(newText){
+  var ta=$('outlineText'), sel=outlineSel();
+  ta.value=ta.value.slice(0,sel.s)+newText+ta.value.slice(sel.e);
+  $('selBar').classList.add('hidden');
+}
+$('selEdit').onclick=function(){
+  var sel=outlineSel(); if(!sel.text) return;
+  var t=prompt('改成什么？', sel.text);
+  if(t===null) return;
+  outlineReplace(t);
+};
+$('selAi').onclick=function(){
+  var sel=outlineSel(); if(!sel.text) return;
+  var ask=prompt('对这段的要求？（如：更简洁 / 改成对比表 / 扩成三条要点）','');
+  if(ask===null) return;
+  toast('🤖 AI正在改这段…');
+  callAI('您是ICU教学PPT大纲的段落编辑助手。',
+    '把下面这段PPT大纲文字改一改。要求：'+ask+'\n只输出改后的这段文字本身（保留Markdown记号），不要解释。\n\n【原文】\n'+sel.text,
+    function(text){
+      var m=text.match(/```(?:markdown)?\s*([\s\S]*?)```/); if(m) text=m[1];
+      outlineReplace(text.replace(/^\s+|\s+$/g,'')); toast('✅ 改好了');
+    }, function(err){ toast('⚠️ '+err); });
+};
+/* 文献选择窗：mode 'link'=插[[文件]]；'part'=摘一段插[[文件|标签]]并存linkNotes */
+var litMode='link', litTarget=null;  /* litTarget: 'outline' 或 'page'（单页编辑窗的textarea） */
+function litTargetTa(){ return litTarget==='page'? $('peText') : $('outlineText'); }
+var litViewpoint='';  /* 点开选择窗那一刻涂黑的观点（part模式AI按它找段落） */
+function openLitPicker(mode, target){
+  litMode=mode; litTarget=target||'outline';
+  litViewpoint=(litTarget==='outline')? outlineSel().text : litTargetTa().value.substring(litTargetTa().selectionStart, litTargetTa().selectionEnd);
+  var meta=[]; try{ meta=JSON.parse(localStorage.getItem('bijiben_lit_v1')||'[]'); }catch(e){}
+  var el=$('litList'); el.innerHTML='';
+  if(!meta.length){ el.innerHTML='<div class="hint" style="padding:10px">文献库是空的——先去「学习笔记」的文献库导入PDF。</div>'; }
+  meta.forEach(function(m){
+    var d=document.createElement('div'); d.className='mm-item';
+    d.textContent='📄 '+(m.title||m.filename)+(m.category? '（'+m.category+'）':'');
+    d.onclick=function(){ litPicked(m); };
+    el.appendChild(d);
+  });
+  $('litModalTitle').textContent = mode==='part'? '📎 第一步：选一篇文献，再摘一段' : '📎 选一篇文献做链接';
+  $('litModal').classList.remove('hidden');
+}
+function litInsert(text){
+  var ta=litTargetTa();
+  var s=ta.selectionStart, e=ta.selectionEnd;
+  ta.value=ta.value.slice(0,s)+text+ta.value.slice(e);
+  $('litModal').classList.add('hidden');
+  $('selBar').classList.add('hidden');
+}
+function litPicked(m){
+  if(litMode==='link'){
+    var sel=(litTarget==='outline')? outlineSel().text : litTargetTa().value.substring(litTargetTa().selectionStart, litTargetTa().selectionEnd);
+    litInsert(sel? ('[['+m.filename+'|'+sel+']]') : ('[['+m.filename+']]'));
+    toast('✅ 链接已插入：'+m.filename);
+    return;
+  }
+  /* part 模式：第二步摘一段（v0.4.0 涂黑了观点→AI读文献按观点找段落；否则老样子端总结） */
+  litTextGet(m.id).then(function(full){
+    var el=$('litList');
+    el.innerHTML='';
+    var ta=document.createElement('textarea'); ta.id='litPartText';
+    if(litViewpoint && full){
+      /* 您的方案：AI拿涂黑的观点读文献正文，找最相关的段落+一句大白话 */
+      $('litModalTitle').textContent='📎 第二步：🤖 AI正在按您的观点读这篇文献…';
+      ta.value='（AI正在读文献，找跟「'+litViewpoint.slice(0,30)+'」最相关的段落…）';
+      el.appendChild(ta);
+      callAI('您是ICU医生的文献助教。医生在大纲里涂黑了一个观点，请从文献正文里找最能支持（或回答）这个观点的1~2段原文。',
+        '【医生涂黑的观点】\n'+litViewpoint+'\n\n【文献正文（可能截断）】\n'+full.slice(0,6000)+
+        '\n\n请输出：\n第一段：从原文摘出的最相关段落（尽量用原文句子，可以连着摘1~2段）\n第二段：一句大白话「这段凭啥支持这个观点」\n只输出这两段，不要标题、不要解释。',
+        function(text){
+          var mm=text.match(/```(?:markdown)?\s*([\s\S]*?)```/); if(mm) text=mm[1];
+          ta.value=text.replace(/^\s+|\s+$/g,'');
+          $('litModalTitle').textContent='📎 第二步：AI找好了，您过目（可改），点「插入链接」';
+        },
+        function(err){
+          ta.value=m.summary || full.slice(0,3000);
+          $('litModalTitle').textContent='📎 AI没读成（'+err+'），老办法：自己挑一段';
+        });
+    }else{
+      if(litViewpoint && !full) toast('这篇文章文献库里没正文，AI读不了，给您端总结');
+      $('litModalTitle').textContent='📎 第二步：留下要给别人看的这段（可改），点「插入链接」';
+      ta.value=m.summary || (full? full.slice(0,3000) : '') || '';
+      el.appendChild(ta);
+    }
+    var b=document.createElement('button'); b.textContent='✅ 插入链接'; b.style.marginTop='10px';
+    b.onclick=function(){
+      var excerpt=ta.value.replace(/^\s+|\s+$/g,'');
+      if(!excerpt){ toast('摘要是空的'); return; }
+      var label=prompt('链接上显示什么字？', m.title||m.filename);
+      if(label===null) return;
+      outlineLinks[m.filename]=excerpt;
+      litInsert('[['+m.filename+'|'+label+']]');
+      toast('✅ 已插入，摘录已存（导出时别人点开看到的就是这段）');
+    };
+    el.appendChild(b);
+  });
+}
+$('litCancel').onclick=function(){ $('litModal').classList.add('hidden'); };
+$('selLinkLit').onclick=function(){ openLitPicker('link','outline'); };
+$('selLinkPart').onclick=function(){ openLitPicker('part','outline'); };
+
+/* ---- 单页编辑窗 ---- */
+var peIdx=null;
+function peOpen(i){
+  var p=curProj(); if(!p) return;
+  peIdx=i;
+  $('peTitle').textContent='✏️ 编辑第'+(i+1)+'页';
+  $('peText').value=pageToMd(p.slides[i]);
+  $('peMsg').className='msg'; $('peMsg').textContent='';
+  $('pageEditModal').classList.remove('hidden');
+}
+$('peSave').onclick=function(){
+  var p=curProj(); if(!p||peIdx===null) return;
+  var pages=parseOutline($('peText').value);
+  if(!pages.length){ $('peMsg').textContent='认不出这一页（至少留个##标题或要点）'; $('peMsg').className='msg err'; return; }
+  pages[0].cls=p.slides[peIdx].cls;
+  p.slides[peIdx]=pages[0]; p.t=Date.now(); saveStore(); renderSlides();
+  $('pageEditModal').classList.add('hidden'); toast('✅ 第'+(peIdx+1)+'页已保存');
+};
+$('peAi').onclick=function(){
+  var ask=prompt('这页怎么改？（如：要点再精简 / 加个对比表）','');
+  if(ask===null) return;
+  $('peMsg').textContent='🤖 AI正在改…'; $('peMsg').className='msg';
+  callAI('您是ICU教学PPT的单页编辑助手。',
+    '【本页现状】\n'+$('peText').value+'\n【要求】'+ask+'\n\n只输出改后的这一页（Markdown），不要解释。'+MD_RULES,
+    function(text){
+      var m=text.match(/```(?:markdown)?\s*([\s\S]*?)```/); if(m) text=m[1];
+      $('peText').value=text.replace(/^\s+|\s+$/g,'');
+      $('peMsg').textContent='✅ AI改好了，检查后点「保存」';
+    }, function(err){ $('peMsg').textContent=err; $('peMsg').className='msg err'; });
+};
+$('peLink').onclick=function(){ openLitPicker('link','page'); };
+$('peCancel').onclick=function(){ $('pageEditModal').classList.add('hidden'); peIdx=null; };
+
+/* ==================== 导出单个HTML（自带播放器） ==================== */
+async function exportHTML(){
+  var p=curProj(); if(!p||!p.slides.length){ toast('先生成PPT'); return; }
+  /* v0.2.0 抓所有[[]]链接的文件名，给每个链接内嵌"影子副本"（文献库AI总结/全文节选），
+     发给别人点开链接也能看到内容——HTML自己带着，不用联网 */
+  var linkNames=[], seen={};
+  function scan(t){ if(!t) return; var m, re=/\[\[([^\[\]|]+)(?:\|[^\[\]]+)?\]\]/g;
+    while((m=re.exec(t))){ var n=m[1].replace(/^\s+|\s+$/g,""); if(!seen[n]){ seen[n]=1; linkNames.push(n); } } }
+  p.slides.forEach(function(s){
+    scan(s.title); scan(s.para); scan(s.quote);
+    (s.bullets||[]).forEach(scan);
+    if(s.table){ (s.table.headers||[]).forEach(scan); (s.table.rows||[]).forEach(function(r){ r.forEach(scan); }); }
+  });
+  var LINKS={};
+  if(linkNames.length){
+    toast('⏳ 正在给 '+linkNames.length+' 个链接准备内嵌摘要…');
+    for(var li=0;li<linkNames.length;li++){
+      try{ var ex=await findExcerpt(linkNames[li]); if(ex && ex.text) LINKS[linkNames[li]]=ex.text; }catch(e){}
+    }
+  }
+  var css=document.querySelector('style').textContent;
+  var slidesJson=JSON.stringify(p.slides).replace(/<\/script>/gi,'<\\/script>');
+  var linksJson=JSON.stringify(LINKS).replace(/<\/script>/gi,'<\\/script>');
+  var fn=slideHTML.toString(), fn2=chartSVG.toString(), fn3=esc.toString(), fn4=pageKind.toString(), fn5=linkify.toString();
+  var doc='<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">'+
+    '<meta name="viewport" content="width=device-width, initial-scale=1.0">'+
+    '<title>'+esc(p.title||'PPT')+'</title><style>'+css+'</style></head><body>'+
+    '<div id="player" style="display:flex"><div id="stage"></div>'+
+    '<div id="playerBar"><button onclick="pv(-1)">← 上一页</button><span id="pvNo"></span>'+
+    '<button onclick="pv(1)">下一页 →</button></div></div>'+
+    '<div id="fileViewer" class="hidden"><div class="fv-card"><div class="fv-head"><div class="fv-title" id="fvTitle"></div><button onclick="fvClose2()">✕ 关闭</button></div><div class="fv-body" id="fvBody"></div><div class="fv-src" id="fvSrc"></div></div></div>'+
+    '<script>var slides='+slidesJson+';var pvIdx=0;'+
+    'var PPT_LINKS='+linksJson+';'+
+    'var esc='+fn3+';var pageKind='+fn4+';var chartSVG='+fn2+';var linkify='+fn5+';var slideHTML='+fn+';'+
+    'function fvClose2(){document.getElementById("fileViewer").classList.add("hidden");}'+
+    'function fvLink(name){document.getElementById("fvTitle").textContent="📎 "+name;var txt=PPT_LINKS[name];var b=document.getElementById("fvBody");if(txt){b.innerHTML="<pre>"+esc(txt)+"</pre>";document.getElementById("fvSrc").textContent="内嵌摘要（导出时自动抓取），这份HTML自己带着，不用联网";}else{b.innerHTML="<div style=color:#a89f93>这份HTML没有内嵌该文件的摘要</div>";document.getElementById("fvSrc").textContent="";}document.getElementById("fileViewer").classList.remove("hidden");}'+
+    'function fit(){var st=document.getElementById("stage");var w=innerWidth,h=innerHeight;var sw=w,sh=w*9/16;if(sh>h){sh=h;sw=h*16/9;}st.style.width=sw+"px";st.style.height=sh+"px";st.style.fontSize=(sh/22)+"px";}'+
+    'function render(){pvIdx=Math.max(0,Math.min(pvIdx,slides.length-1));document.getElementById("stage").innerHTML=slideHTML(slides[pvIdx]);document.getElementById("pvNo").textContent=(pvIdx+1)+"/"+slides.length;}'+
+    'function pv(d){pvIdx+=d;render();}onresize=function(){fit();render();};'+
+    'document.addEventListener("keydown",function(e){if(e.key==="ArrowRight"||e.key===" ")pv(1);else if(e.key==="ArrowLeft")pv(-1);});'+
+    'document.getElementById("player").addEventListener("click",function(e){if(e.target.tagName==="BUTTON")return;var a=e.target.closest?e.target.closest(".plnk"):null;if(a){fvLink(decodeURIComponent(a.getAttribute("data-f")||""));return;}var x=e.clientX;if(x<innerWidth*0.35)pv(-1);else if(x>innerWidth*0.65)pv(1);});'+
+    'var tx=null;document.addEventListener("touchstart",function(e){tx=e.touches[0].clientX});document.addEventListener("touchend",function(e){if(tx===null)return;var dx=e.changedTouches[0].clientX-tx;tx=null;if(dx<-40)pv(1);else if(dx>40)pv(-1);});'+
+    'fit();render();'+
+    '</'+'script></body></html>';
+  var fname=(p.title||'PPT')+'.html';
+  if(window.LearnShell && window.LearnShell.folderSet && window.LearnShell.folderSet()){
+    try{ window.LearnShell.writeFile(fname, ghB64enc(doc)); toast('✅ 已存进您的文件夹：'+fname,4000); }catch(e){}
+  }
+  var blob=new Blob([doc],{type:"text/html;charset=utf-8"});
+  var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fname;
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },1000);
+  toast('📤 已导出 '+fname+'（浏览器下载目录；壳里也存了文件夹一份）',4000);
+}
+/* ==================== 收件箱（学习笔记寄大纲来） ==================== */
+function checkInbox(){
+  var raw=localStorage.getItem('ppt_inbox');
+  if(!raw) return;
+  var d=null; try{ d=JSON.parse(raw); }catch(e){}
+  if(!d||!d.text){ localStorage.removeItem('ppt_inbox'); return; }
+  $('inboxCard').style.display='block';
+  $('inboxInfo').textContent='「'+(d.title||'无题')+'」（'+d.text.length+'字，'+new Date(d.t||Date.now()).toLocaleString()+'）';
+  $('inboxAccept').onclick=function(){
+    localStorage.removeItem('ppt_inbox');
+    $('inboxCard').style.display='none';
+    var p={id:newId(), title:d.title||'来自学习笔记', outline:d.text, slides:[], linkNotes:{}, t:Date.now()};
+    store.projects.push(p); curId=p.id; saveStore();
+    $('outlineText').value=d.text;
+    showPage('editPage');
+    showMsg($('editMsg'),'📬 大纲已收下，改完点「🎬 生成PPT」','ok');
+  };
+  $('inboxDrop').onclick=function(){ localStorage.removeItem('ppt_inbox'); $('inboxCard').style.display='none'; };
+}
+/* ==================== 事件绑定 + 初始化 ==================== */
+$('btnNew').onclick=function(){
+  var p={id:newId(), title:'', outline:'', slides:[], linkNotes:{}, t:Date.now()};
+  store.projects.push(p); curId=p.id; saveStore();
+  outlineLinks={};  /* v0.3.0 */
+  $('outlineText').value='';
+  showPage('editPage');
+  showMsg($('editMsg'),'贴Markdown大纲，或点「🤖 AI起草/重写大纲」给个主题让AI写','ok');
+};
+$('btnAiDraft').onclick=aiDraftOutline;
+$('btnAiPolish').onclick=aiPolishOutline;
+$('btnBuild').onclick=buildFromOutline;
+$('btnBackHome').onclick=function(){ renderProjects(); showPage('homePage'); };
+$('btnBackEdit').onclick=function(){ showPage('editPage'); };
+$('btnPlay').onclick=startPlay;
+$('btnExport').onclick=exportHTML;
+$('ghSave').onclick=function(){
+  localStorage.setItem('hx_gh_user',$('ghUser').value.trim());
+  localStorage.setItem('hx_gh_tok',$('ghTok').value.trim());
+  localStorage.setItem('hx_gh_repo',$('ghRepo').value.trim());
+  ['hx_gh_user','hx_gh_tok','hx_gh_repo'].forEach(function(k){ localStorage.setItem(k+'_t', String(Date.now())); }); /* 公共钱罐v2：保存打时间戳，新Token全家跟新 */
+  toast('✅ 已保存（全家软件通用）');
+};
+$('ghPushBtn').onclick=function(){
+  if(!ghReady()){ toast('请先填好用户名、Token、仓库名并保存设置'); $('ghCard').open=true; return; }
+  toast('☁️ 正在备份…');
+  ghPush(function(err,count){
+    if(err){ if(err!=='empty') toast('备份失败：'+err); else toast('还没有PPT，跳过备份'); return; }
+    toast('✅ 已备份到云端（'+count+' 个PPT）'+(window.LearnShell?'，文件夹也存了一份':''));
+    locRender();
+  });
+};
+$('ghPullBtn').onclick=function(){
+  if(!ghReady()){ toast('请先填好用户名、Token、仓库名并保存设置'); $('ghCard').open=true; return; }
+  toast('📥 正在连接 GitHub…');
+  ghPull(function(err,payload){ if(err){ toast('恢复失败：'+err); return; } ghAskRestore(payload); });
+};
+$('ghCheckBtn').onclick=function(){ ghSelfCheck(true); };
+$('ghDlAllBtn').onclick=ghDownloadAll;
+$('ghDlBtn').onclick=function(){
+  if(!ghVerPending){ return; }
+  toast('⏳ 正在下载新版…',2000);
+  ghDlFile(ghVerPending.dl||'software-ppt.html','PPT工坊.html',function(err){
+    if(err){ toast('❌ 下载失败：'+err,4000); return; }
+    toast(window.LearnShell?'✅ 新版已装好，重启APP生效':'✅ 新版已下载，到「下载」目录找新文件打开',4000);
+    ghVerPending=null; $('ghDlBtn').hidden=true;
+  });
+};
+/* 初始化：预填设置 + 状态行 + 收件箱 + 自检 + 主界面刷新 */
+(function init(){
+  $('ghUser').value=ghCfg().user;
+  $('ghTok').value=ghCfg().tok;
+  $('ghRepo').value=ghCfg().repo;
+  ghStatusRender(); locRender(); renderProjects(); checkInbox();
+  setTimeout(function(){ if(ghReady()) ghSelfCheck(false); },3000);
+  setTimeout(function(){ if(ghReady()) locReconcile(false); },4000);
+  setTimeout(hxIndexRefresh,6000);
+  /* 本机空+配置齐全 → 自动pull（confirm防误覆盖） */
+  if(store.projects.length===0 && ghReady()){
+    ghPull(function(err,payload){ if(!err&&payload) ghAskRestore(payload); });
+  }
+})();
+</script>
+</body>
+</html>
