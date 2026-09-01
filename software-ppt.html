@@ -89,7 +89,7 @@
   .slide-ops button, .slide-ops select { font-size:13px; padding:6px 10px; width:auto; }
   /* 播放器 */
   #player { position:fixed; inset:0; background:#1c1a17; z-index:100; display:flex;
-    align-items:center; justify-content:center; }
+    align-items:center; justify-content:center; padding-bottom:56px; box-sizing:border-box; } /* v0.5.0 底栏让位 */
   #stage { position:relative; background:#faf7f2; overflow:hidden; }
   .slide-page { position:absolute; inset:0; padding:5% 6%; display:flex; flex-direction:column; }
   .sp-cover { justify-content:center; text-align:center; }
@@ -110,8 +110,9 @@
   .sp-quote { flex:1; display:flex; align-items:center; justify-content:center; }
   .sp-quote .q { font-size:1.5em; color:#2e2a26; line-height:1.9; text-align:center; padding:0 1em; }
   .sp-quote .q::before { content:"“"; color:#5b7f5e; } .sp-quote .q::after { content:"”"; color:#5b7f5e; }
-  #playerBar { position:fixed; bottom:10px; left:50%; transform:translateX(-50%); z-index:101;
-    color:#cfc8bd; font-size:13px; display:flex; gap:14px; align-items:center; }
+  #playerBar { position:fixed; bottom:8px; left:50%; transform:translateX(-50%); z-index:101;
+    color:#e8e2d8; font-size:13px; display:flex; gap:14px; align-items:center;
+    background:#2e2a26; padding:7px 16px; border-radius:999px; box-shadow:0 2px 12px rgba(0,0,0,.45); } /* v0.5.0 实底不再透内容 */
   #playerBar button { font-size:13px; padding:6px 12px; background:rgba(255,255,255,.14); }
   .chart-box { flex:1; display:flex; align-items:center; justify-content:center; }
   .chart-title { text-align:center; font-size:1em; color:#8a8178; margin-bottom:.4em; }
@@ -308,7 +309,7 @@
 
 <script>
 "use strict";
-var SW_VERSION = "0.4.9"; /* v0.4.8 AI报错带官方原因+400也自动换模型重试（洪医生贴回校对撞HTTP400：疑公共模型罐里存着已下架的moonshot-v1系列，400不走404重试路） */ /* v0.4.7 版本字样治病根：头顶+页脚+标题改成代码自动填SW_VERSION（v0.4.0~0.4.6期间头顶一直显示旧号，害用户以为没更新） */ /* v0.4.6 更新通道免Token备用路：自检/下载新版在API不通或没填Token时自动走github.io公开直链 */ /* v0.4.5 贴回校对结果：别的AI的校对意见贴进来，本软件AI照改大纲（原文没提到的部分不动）+秒表进度 */ /* v0.4.4 复制校对：大纲/全片一键连校对指令复制，借别的AI挑错，不花自己Key */ /* v0.4.3 修404：死模型自动换kimi-k2.6+重试；max_tokens 8000→16384（k2.6思考型） */ /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
+var SW_VERSION = "0.5.0"; /* v0.5.0 放映自适应：底栏实底让位+内容超高自动等比缩小（洪医生横屏讲课表格最后一行被吃） */ /* v0.4.8 AI报错带官方原因+400也自动换模型重试（洪医生贴回校对撞HTTP400：疑公共模型罐里存着已下架的moonshot-v1系列，400不走404重试路） */ /* v0.4.7 版本字样治病根：头顶+页脚+标题改成代码自动填SW_VERSION（v0.4.0~0.4.6期间头顶一直显示旧号，害用户以为没更新） */ /* v0.4.6 更新通道免Token备用路：自检/下载新版在API不通或没填Token时自动走github.io公开直链 */ /* v0.4.5 贴回校对结果：别的AI的校对意见贴进来，本软件AI照改大纲（原文没提到的部分不动）+秒表进度 */ /* v0.4.4 复制校对：大纲/全片一键连校对指令复制，借别的AI挑错，不花自己Key */ /* v0.4.3 修404：死模型自动换kimi-k2.6+重试；max_tokens 8000→16384（k2.6思考型） */ /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
 /* 公共钱罐：API key/GitHub配置 一处填处处有（与其他软件共享 hx_*） */
 (function(){
   var HX_MAP=[["hx_apikey","hx_apikey"],["hx_gh_user","hx_gh_user"],["hx_gh_tok","hx_gh_tok"],["hx_gh_repo","hx_gh_repo"]];
@@ -948,7 +949,7 @@ function renderSlides(){
 var pvIdx=0;
 function fitStage(){
   var st=$('stage');
-  var w=window.innerWidth, h=window.innerHeight;
+  var w=window.innerWidth, h=window.innerHeight-56; /* v0.5.0 扣底栏 */
   var sw=w, sh=w*9/16;
   if(sh>h){ sh=h; sw=h*16/9; }
   st.style.width=sw+'px'; st.style.height=sh+'px';
@@ -959,6 +960,19 @@ function renderStage(){
   pvIdx=Math.max(0,Math.min(pvIdx,p.slides.length-1));
   $('stage').innerHTML=slideHTML(p.slides[pvIdx]);
   $('pvNo').textContent=(pvIdx+1)+'/'+p.slides.length;
+  autoFitStage();
+}
+/* v0.5.0 放映自适应：内容（em单位）超高就逐步缩小字号，最多缩到35%，横屏表格不再被吃 */
+function autoFitStage(){
+  var st=$('stage'); if(!st) return;
+  var pg=st.querySelector('.slide-page'); if(!pg) return;
+  var f=parseFloat(st.style.fontSize)||(st.clientHeight/22);
+  var min=(st.clientHeight/22)*0.35;
+  for(var i=0;i<40;i++){
+    if(pg.scrollHeight<=pg.clientHeight+2 && pg.scrollWidth<=pg.clientWidth+2) break;
+    if(f<=min) break;
+    f=Math.max(min,f*0.93); st.style.fontSize=f+'px';
+  }
 }
 function startPlay(){
   var p=curProj(); if(!p||!p.slides.length){ toast('先生成PPT'); return; }
@@ -1318,8 +1332,9 @@ async function exportHTML(){
     'var esc='+fn3+';var pageKind='+fn4+';var chartSVG='+fn2+';var linkify='+fn5+';var slideHTML='+fn+';'+
     'function fvClose2(){document.getElementById("fileViewer").classList.add("hidden");}'+
     'function fvLink(name){document.getElementById("fvTitle").textContent="📎 "+name;var txt=PPT_LINKS[name];var b=document.getElementById("fvBody");if(txt){b.innerHTML="<pre>"+esc(txt)+"</pre>";document.getElementById("fvSrc").textContent="内嵌摘要（导出时自动抓取），这份HTML自己带着，不用联网";}else{b.innerHTML="<div style=color:#a89f93>这份HTML没有内嵌该文件的摘要</div>";document.getElementById("fvSrc").textContent="";}document.getElementById("fileViewer").classList.remove("hidden");}'+
-    'function fit(){var st=document.getElementById("stage");var w=innerWidth,h=innerHeight;var sw=w,sh=w*9/16;if(sh>h){sh=h;sw=h*16/9;}st.style.width=sw+"px";st.style.height=sh+"px";st.style.fontSize=(sh/22)+"px";}'+
-    'function render(){pvIdx=Math.max(0,Math.min(pvIdx,slides.length-1));document.getElementById("stage").innerHTML=slideHTML(slides[pvIdx]);document.getElementById("pvNo").textContent=(pvIdx+1)+"/"+slides.length;}'+
+    'function fit(){var st=document.getElementById("stage");var w=innerWidth,h=innerHeight-56;var sw=w,sh=w*9/16;if(sh>h){sh=h;sw=h*16/9;}st.style.width=sw+"px";st.style.height=sh+"px";st.style.fontSize=(sh/22)+"px";}'+
+    'function render(){pvIdx=Math.max(0,Math.min(pvIdx,slides.length-1));var st=document.getElementById("stage");st.innerHTML=slideHTML(slides[pvIdx]);document.getElementById("pvNo").textContent=(pvIdx+1)+"/"+slides.length;autoFit();}'+
+    'function autoFit(){var st=document.getElementById("stage");var pg=st.querySelector(".slide-page");if(!pg)return;var f=parseFloat(st.style.fontSize)||(st.clientHeight/22);var min=(st.clientHeight/22)*0.35;for(var i=0;i<40;i++){if(pg.scrollHeight<=pg.clientHeight+2&&pg.scrollWidth<=pg.clientWidth+2)break;if(f<=min)break;f=Math.max(min,f*0.93);st.style.fontSize=f+"px";}} /* v0.5.0 导出同款自适应 */'+
     'function pv(d){pvIdx+=d;render();}onresize=function(){fit();render();};'+
     'document.addEventListener("keydown",function(e){if(e.key==="ArrowRight"||e.key===" ")pv(1);else if(e.key==="ArrowLeft")pv(-1);});'+
     'document.getElementById("player").addEventListener("click",function(e){if(e.target.tagName==="BUTTON")return;var a=e.target.closest?e.target.closest(".plnk"):null;if(a){fvLink(decodeURIComponent(a.getAttribute("data-f")||""));return;}var x=e.clientX;if(x<innerWidth*0.35)pv(-1);else if(x>innerWidth*0.65)pv(1);});'+
