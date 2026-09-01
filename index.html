@@ -2,6 +2,10 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.3.5 2026-09-01 「💰 AI花钱」卡片入编（洪医生家规）：首页第一屏见今日/本月估算，
+      点开按软件分列+最近15条明细+每月提醒线（hx_bill_cap默认50，超了卡片变橙）。
+      数据源=全家公共账本hx_aibill（各软件每次AI记一笔：血气0.10.14/习题1.8.6/笔记2.14.2/PPT0.4.2/小涛0.3.32）。
+      顺带校准CUR到全家最新（原CUR停在8月中，members早升过好几轮）。
     v1.3.4 2026-08-13 下载改"当面点清"：壳v1.1.1有分块写入就走分块+对账
          （治applyUpdate大文件截断→小涛笔记全空白），老壳退回老办法。
     v1.3.3 2026-08-12 同步黄条说人话：原"已经从没没同步成了"拗口（"从没"和
@@ -89,6 +93,16 @@
 
   <div id="updLine"></div>
 
+  <a class="card" id="billCard" href="javascript:void(0)">
+    <h2>💰 AI花钱</h2>
+    <div class="desc" id="billLine">今天 ¥0.00 ｜ 本月 ¥0.00（估算）</div>
+    <div class="meta"><span class="tag">点我看明细</span></div>
+  </a>
+  <div class="card" id="billPanel" style="display:none;">
+    <div id="billDetail" style="font-size:13px;line-height:1.9;color:#6b6257;white-space:pre-wrap;"></div>
+    <div style="margin-top:10px;font-size:13px;color:#8a8178;">每月提醒线：¥<input id="billCap" type="number" min="1" style="width:70px;font-size:14px;padding:4px 6px;border:1px solid #ddd3c5;border-radius:8px;">　超过卡片变橙（默认50）</div>
+  </div>
+
   <div class="section-title">临床工具</div>
 
   <a class="card" href="血气分析.html">
@@ -165,7 +179,7 @@
 <script>
 /* ==================== 套装主界面自检器官（v1.1.0） ==================== */
 /* 本界面对应的四个软件当前内装版本（每次发版跟着改） */
-var CUR = { notes:"2.6.9", xiti:"1.4.10", bridge:"1.1.3", xueqi:"0.10.2", ppt:"0", xiaotao:"0" };
+var CUR = { notes:"2.14.2", xiti:"1.8.6", bridge:"1.2.1", xueqi:"0.10.14", ppt:"0.4.2", xiaotao:"0.3.32" };
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
 try{ var _sv=JSON.parse(localStorage.getItem("hx_suite_ver")||"{}"); Object.keys(_sv).forEach(function(k){ if(_sv[k]) CUR[k]=_sv[k]; }); }catch(e){}
 /* key: [云端软件文件, 壳内文件名, 云端版本文件, 标签id] */
@@ -479,6 +493,27 @@ document.getElementById('cabCard').addEventListener('click', function(){
 });
 document.getElementById('cabRefresh').addEventListener('click', cabLoad);
 document.getElementById('cabSync').addEventListener('click', function(){ syncShared(true); });
+/* v1.3.5 💰AI花钱卡片：读全家账本hx_aibill（各软件每次AI记一笔，估算） */
+function billRender(){
+  var arr=[]; try{ arr=JSON.parse(localStorage.getItem("hx_aibill")||"[]"); }catch(e){}
+  var n=new Date(), today=n.toDateString(), mKey=n.getFullYear()+"-"+n.getMonth();
+  var tSum=0, mSum=0, byApp={};
+  arr.forEach(function(e){ var t=new Date(e.t), c=e.cost||0;
+    if(t.toDateString()===today) tSum+=c;
+    if(t.getFullYear()+"-"+t.getMonth()===mKey){ mSum+=c; byApp[e.app]=(byApp[e.app]||0)+c; } });
+  var cap=+(localStorage.getItem("hx_bill_cap")||50);
+  document.getElementById("billLine").textContent="今天 ¥"+tSum.toFixed(2)+" ｜ 本月 ¥"+mSum.toFixed(2)+"（估算）"+(mSum>cap?" ⚠️ 过提醒线了":"");
+  document.getElementById("billCard").style.border = mSum>cap ? "2px solid #e0a34a" : "";
+  var apps=Object.keys(byApp).sort(function(a,b){ return byApp[b]-byApp[a]; });
+  var h="本月各软件：\n"+(apps.length? apps.map(function(a){ return "· "+a+"：¥"+byApp[a].toFixed(2); }).join("\n") : "（还没有记录）");
+  h+="\n\n最近花费：\n"+(arr.slice(0,15).map(function(e){ var t=new Date(e.t);
+    return (t.getMonth()+1)+"/"+t.getDate()+" "+("0"+t.getHours()).slice(-2)+":"+("0"+t.getMinutes()).slice(-2)+"  "+e.app+"·"+(e.what||"")+"  ¥"+(e.cost||0).toFixed(3); }).join("\n")||"（空）");
+  document.getElementById("billDetail").textContent=h;
+}
+document.getElementById("billCard").onclick=function(){ var p=document.getElementById("billPanel"); p.style.display=p.style.display==="none"?"block":"none"; billRender(); };
+document.getElementById("billCap").value=localStorage.getItem("hx_bill_cap")||50;
+document.getElementById("billCap").onchange=function(){ localStorage.setItem("hx_bill_cap",this.value||50); billRender(); };
+billRender();
 </script>
 
 </body>
