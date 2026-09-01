@@ -120,6 +120,8 @@
     策略拦截）；素材从unpkg下载后要验证完整性（jsdelivr经常截断）。其余代码两版完全相同。
      v0.10.2 2026-08-06 公共钱罐hx_*：GitHub Token/仓库名/API Key 四个软件+主界面一处填处处有（空的自动抄公共的）。踩坑：各软件存钱罐名不一（bg_/xt_/br_），同源也互通不了。
     同版补充：主界面刷新hxIndexRefresh——壳里打开任一软件顺带把套装主界面(index.html)也换新，主界面从此也能自动更新。
+    v0.10.7 2026-09-01 版面账半自动对账（洪医生定：错地图不如没地图）：见过的版面安静存档；
+        没见过的版面弹条问"新界面还是AI认错"，✔️记下/❌删掉；记录页加「📐 版面账本」随时翻看删除。
     v0.10.6 2026-09-01 两棒制（洪医生设计）：第1棒读图AI只"抄屏幕"（读数小表+波形文字描述+
         版面自报，任务小想得快），第2棒把文字给快速文字模型做分析（千问文字版qwen-plus几秒，
         无千问Key退回Kimi）；提示词加"直接输出不要过度思考"+SV650屏幕地图草稿v1（标签认不出
@@ -199,7 +201,7 @@
 </style>
 </head>
 <body>
-<header><span>血气分析解读助手</span><span class="ver">v0.10.6</span></header>
+<header><span>血气分析解读助手</span><span class="ver">v0.10.7</span></header>
 <main>
 
   <!-- 第1步：首页 -->
@@ -394,6 +396,7 @@
 
 ★ 如果"自动定位"提示识别引擎下载失败或一直转圈：先检查网络、换个网络（WiFi换流量）多试几次；还是不行，把这个HTML文件发回给Kimi，说一句"引擎下载失败"，它读文件开头的说明就知道原因和处理办法，会直接给您做一个不联网的离线版。
 
+v0.10.7 版面账本：没见过的新版面会问您一句"新界面还是AI认错"，点一下就行；记录页新增「📐 版面账本」随时翻看删除
 v0.10.6 两棒制提速：第1棒AI只抄屏幕读数（快），第2棒换快速文字模型做分析（千问几秒）；读数带本地体检（数不对自动让AI重读）；建议改成"测什么/怎么测/理由/怎么看结果"小卡片，下面自动生成手输数字框，不方便拍照就填数字
 v0.10.5 AI厂商改版：新增通义千问（读图快，10~30秒），设置页可选厂商/填千问Key；不选就自动，失败自动换；等待时每秒显示进度和预计时间，不用傻等；修复Kimi"只想不答"的问题
 v0.10.4 修复呼吸机分析报404：官方下架了老vision模型，改为自动排队选可用模型（404自动换下一个），状态栏会显示本次实际用的模型
@@ -460,6 +463,13 @@ v0.1  初版：拍照→裁剪脱敏→Kimi解读→复制归档
     <div class="card" id="ventResultCard" hidden>
       <p class="hint" id="ventArchiveInfo"></p>
       <div id="ventResultBox"></div>
+      <div id="ventLayoutAsk" hidden style="background:#fdf6e3;border:1px solid #e0d5b0;border-radius:8px;padding:10px;margin-top:8px;">
+        <p id="ventLayoutAskTxt" style="font-size:14px;margin-bottom:6px;"></p>
+        <div class="row">
+          <button class="btn secondary" id="ventLayoutYes" style="width:auto;">✔️ 新界面，记下</button>
+          <button class="btn secondary" id="ventLayoutNo" style="width:auto;">❌ AI认错了，删掉</button>
+        </div>
+      </div>
       <div id="ventCheckBox" hidden style="background:#f7f5ef;border-radius:8px;padding:10px;margin-top:8px;"></div>
       <div class="row" style="margin-top:8px;">
         <button class="btn secondary" id="ventBtnAddShot">📷 按AI指导做完检测，拍检测界面补充</button>
@@ -470,7 +480,9 @@ v0.1  初版：拍照→裁剪脱敏→Kimi解读→复制归档
     </div>
     <div class="card">
       <button class="btn secondary" id="ventBtnRecords">📄 呼吸机分析记录</button>
+      <button class="btn secondary" id="ventBtnLayouts">📐 版面账本</button>
       <div id="ventRecordsList" style="margin-top:8px;"></div>
+      <div id="ventLayoutList" style="margin-top:8px;"></div>
     </div>
     <button class="btn secondary" id="ventBtnBack">返回首页</button>
   </section>
@@ -2001,7 +2013,7 @@ ghBindBtn($("ghConfNo"), function(){
    与学习笔记/习题学习/文件桥同款：读 version-xueqi.json 比对版本；
    壳APP里下载新版 = applyUpdate 自更新（重启生效）+ 授权文件夹存备份；
    浏览器里 = 普通下载。 */
-var SW_VERSION = "0.10.6";
+var SW_VERSION = "0.10.7";
 /* v0.10.2 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["bg_gh_user", "hx_gh_user"], ["bg_gh_tok", "hx_gh_tok"], ["bg_gh_repo", "hx_gh_repo"], ["bg_apikey", "hx_apikey"]];
@@ -2409,9 +2421,16 @@ function ventOpenRecord(i){
   }).catch(() => {});
 }
 $("ventBtnRecords").onclick = () => {
+  $("ventLayoutList").innerHTML = "";
   const box = $("ventRecordsList");
   box.innerHTML = box.innerHTML ? "" : "";
   ventRenderRecords();
+};
+$("ventBtnLayouts").onclick = () => {  /* v0.10.7 版面账本 */
+  $("ventRecordsList").innerHTML = "";
+  const box = $("ventLayoutList");
+  if(box.innerHTML){ box.innerHTML = ""; return; }
+  ventRenderLayouts();
 };
 
 $("ventBtnSend").onclick = async () => {
@@ -2485,16 +2504,58 @@ function ventSanityCheck(t){
   }
   return probs.join("；");
 }
-/* 版面自报存档：攒资料给以后的版面记忆用 */
+/* 版面自报存档：攒资料给以后的版面记忆用。
+   v0.10.7 半自动对账（洪医生定）：见过的版面安静存档；没见过的弹条问一句
+   "换新界面了还是AI认错了"，点一下就行。错地图不如没地图。 */
 function ventSaveLayout(t){
   const m = t.match(/【版面】([^\n]*)/);
   if(!m) return;
   try{
+    const lay = m[1].trim();
     const arr = JSON.parse(localStorage.getItem("vent_layouts") || "[]");
-    arr.unshift({ time: new Date().toLocaleString("zh-CN"), layout: m[1].trim() });
+    const seen = arr.some(x => x.layout === lay);
+    arr.unshift({ time: new Date().toLocaleString("zh-CN"), layout: lay, ok: seen });
     while(arr.length > 50) arr.pop();
     localStorage.setItem("vent_layouts", JSON.stringify(arr));
+    if(!seen){  /* 新面孔：弹条对账 */
+      const bar = $("ventLayoutAsk");
+      bar.hidden = false;
+      $("ventLayoutAskTxt").textContent = "📐 发现新版面：" + lay + "　——是医生换了界面，还是AI认错了？";
+      $("ventLayoutYes").onclick = () => {
+        arr[0].ok = true;
+        localStorage.setItem("vent_layouts", JSON.stringify(arr));
+        bar.hidden = true;
+      };
+      $("ventLayoutNo").onclick = () => {
+        arr.shift(); /* 认错就删掉这条，不脏账本 */
+        localStorage.setItem("vent_layouts", JSON.stringify(arr));
+        bar.hidden = true;
+      };
+    }
   }catch(e){}
+}
+/* 版面账本查看/删除 */
+function ventRenderLayouts(){
+  const box = $("ventLayoutList");
+  const arr = JSON.parse(localStorage.getItem("vent_layouts") || "[]");
+  if(!arr.length){ box.innerHTML = "<p class='hint'>还没有版面记录，分析一次就有了。</p>"; return; }
+  box.innerHTML = "";
+  arr.forEach((x, i) => {
+    const div = document.createElement("div");
+    div.style.cssText = "border:1px solid #ddd;border-radius:8px;padding:8px;margin:6px 0;font-size:14px;";
+    div.innerHTML = (x.ok ? "✅ " : "❓ ") + x.layout + "<br><span style='color:#999;'>" + x.time + "</span> ";
+    const del = document.createElement("button");
+    del.className = "btn secondary"; del.textContent = "🗑 删除";
+    del.style.cssText = "width:auto;padding:4px 10px;font-size:13px;float:right;";
+    del.onclick = () => {
+      const a2 = JSON.parse(localStorage.getItem("vent_layouts") || "[]");
+      a2.splice(i, 1);
+      localStorage.setItem("vent_layouts", JSON.stringify(a2));
+      ventRenderLayouts();
+    };
+    div.appendChild(del);
+    box.appendChild(div);
+  });
 }
 /* 解析分析文本里的检测暗号【检测:名称|单位】，生成手输框 */
 function ventParseChecks(t){
