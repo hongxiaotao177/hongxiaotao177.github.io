@@ -120,6 +120,59 @@
     策略拦截）；素材从unpkg下载后要验证完整性（jsdelivr经常截断）。其余代码两版完全相同。
      v0.10.2 2026-08-06 公共钱罐hx_*：GitHub Token/仓库名/API Key 四个软件+主界面一处填处处有（空的自动抄公共的）。踩坑：各软件存钱罐名不一（bg_/xt_/br_），同源也互通不了。
     同版补充：主界面刷新hxIndexRefresh——壳里打开任一软件顺带把套装主界面(index.html)也换新，主界面从此也能自动更新。
+    v0.10.13 2026-09-01 公共钱罐v2·时间戳版（洪医生问"Token为什么改不进来"查出的病根）：
+        旧规矩"自己有且≠公共就盖公共"，各软件兜里的旧Token会把新Token顶掉（打地鼠复活）；
+        新规矩：手动保存打时间戳，同步时戳新的赢、平局以公共钱罐为准。全家六处（学习笔记/
+        习题学习/文件桥/小涛笔记/PPT工坊/血气分析）同天齐改，主界面只读不写不用动。
+    v0.10.12 2026-09-01 PB840入编（洪医生科室第二款呼吸机）：机型下拉新增PB840——
+        屏幕地图v1（顶部监测条七项/双波形区/蓝色设定区按栏目对号/底部触摸页签/实体键清单）
+        + 操作档案v1（关键区别：吸气保持/呼气保持是屏幕右下实体键INSP PAUSE/EXP PAUSE，
+        不在屏幕菜单里；改参数=点格子+转大旋钮）；P0.1/NIF路径标"待真机核对"。
+        地图选择逻辑改VENT_MAPS字典按机型取。
+    v0.10.11 2026-09-01 SV650操作档案升v2（洪医生真机「工具」弹窗照片对账）：工具菜单
+        结构核准=三页签（基本工具/高级工具/快捷键设置）；基本工具页三行按钮原文记下
+        （按下 手动呼吸 / 按下并保持 吸气保持 / 按下并保持 呼气保持）——吸气保持、呼气保持
+        按键路径从此是"真机核准"不再是草稿；P0.1/NIF/RSBI基本工具页没有，指向高级工具页（待拍照）。
+    v0.10.10 2026-09-01 SV650屏幕地图v2（洪医生PRVC真机照片对账核准）：底部改两行描述
+        （模式页签行+设定值行）；设定值按模式分列（PRVC五格/V-SIMV六格含PS倒数第2格——
+        正是洪医生说的"数字认出PS认不出"的位置）；右侧监测区明确两大列内容；补顶部页签/
+        右竖排按键/报警横幅位置。
+    v0.10.9 2026-09-01 鱼骨头+排版（洪医生真机验收：两棒全走千问共<1分钟，定为最优解）：
+        ①全部答案强制鱼骨头式——提示词加"风格铁律：只要骨头不要肉，短句列表每句≤15字，
+        禁止长段落/推理过程/客套话"（读数波形/初步分析/检测卡全面适用）；
+        ②结果区排版CSS：表格带框带底色、列表留白、标题绿色左竖条，手机上看得清。
+        里程碑补记：2026-09-01早真机跑通"千问vl-max读图+qwen-plus分析"全流程<60秒。
+    v0.10.8 2026-09-01 三合一（洪医生拍板）：①血气↔呼吸机结合——两边发送时自动捎带"同一病人"
+        最近一次对方摘要（血气发送附最近呼吸机分析要点；呼吸机发送附最近血气要点，各截300字）；
+        ②病人统一——呼吸机页撤掉自由文本框，改用首页"当前病人"（getSelectedPatient/bg_curpatient），
+        记录带patient字段；命名引导"床号+姓+诊断"（占位符提示，不强制）；
+        ③PPT邮路——血气结果页和呼吸机结果卡各加「📊 送去PPT工坊」，照抄学习笔记ppt_inbox格式
+        （{title,text:md,from,t}，同源localStorage，壳/网站内通用）。
+        注意：ventBg输入框已删，引用处全部改getSelectedPatient()。
+    v0.10.7 2026-09-01 版面账半自动对账（洪医生定：错地图不如没地图）：见过的版面安静存档；
+        没见过的版面弹条问"新界面还是AI认错"，✔️记下/❌删掉；记录页加「📐 版面账本」随时翻看删除。
+    v0.10.6 2026-09-01 两棒制（洪医生设计）：第1棒读图AI只"抄屏幕"（读数小表+波形文字描述+
+        版面自报，任务小想得快），第2棒把文字给快速文字模型做分析（千问文字版qwen-plus几秒，
+        无千问Key退回Kimi）；提示词加"直接输出不要过度思考"+SV650屏幕地图草稿v1（标签认不出
+        按位置推断）；本地体检：MV≈VT×f、FiO2范围等合理性校验，不对自动反问重读一次；
+        建议改四段式小卡（测什么/怎么测/理由/怎么看结果）带【检测:名称|单位】暗号，
+        软件解析出手输框（B方案），填数字直接发给AI，AI没守格式就用追问框兜底（A方案）；
+        版面自报存localStorage vent_layouts（上限50条，为版面记忆攒资料）；
+        历史记录回看自动重建轻量链，旧记录也能继续追问。
+    v0.10.5 2026-09-01 AI厂商改版（洪医生三规矩：开场可选厂商/不选自动+失败自动换/进度提示不傻等）：
+        新增通义千问qwen-vl-max（阿里云百炼，OpenAI兼容格式，非思考型读图10~30秒）；
+        设置页加「读图AI厂商」选择（auto/qwen/kimi存bg_ai_provider）+千问Key（bg_qwen_key，同步公共钱罐hx_qwenkey）；
+        进呼吸机页即显示"本次将用哪个AI"；等待时每秒刷新进度（已等X秒·正在用谁·通常要多久）；
+        Kimi的max_tokens提16384（思考过程也吃额度，4096会被想光——此坑已踩三次，入交接说明踩坑区）；
+        删掉全局模型框里两个已下架的vision-preview选项；"只返回思考过程"由显示草稿改为报错自动换模型。
+    v0.10.4 2026-08-31晚 修"调用失败404 查无vision模型"：官方下架moonshot-v1-*-vision-preview
+        全系列（账户实测只剩kimi-k2.6/k3/k2.7-code/highspeed四个），v0.10.3写死的快速模型404。
+        修法：VENT_MODELS候选名单挨个试（128k-vision→k2.6→k3），404自动换下一个，非404不换；
+        状态栏显示实际用的模型；提示语改为"思考型模型要1-3分钟"。
+    v0.10.3 2026-08-31 修呼吸机分析"发给AI没反应"：根因是呼吸机功能跟着全局模型走，默认kimi-k2.6
+        是思考型，带图先打草稿慢到几分钟。修法：呼吸机功能固定用VENT_MODEL=moonshot-v1-128k-vision-preview
+        （非思考型直出，15-40秒），不再读getModel()。另：拍照按钮变相册的根因不在本软件——壳X5内核的
+        createIntent()不理capture标记，由壳v1.1.3修复（MainActivity识别capture直接调系统相机）。
 -->
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
@@ -138,6 +191,15 @@
   .row .btn { flex:1; }
   .card { background:#fff; border-radius:10px; padding:14px; margin:12px 0; box-shadow:0 1px 3px rgba(0,0,0,.08); }
   .hint { font-size:13px; color:#888; margin:6px 0; }
+  /* v0.10.9 结果区排版（洪医生嫌乱）：表格带框、列表留白、标题分色 */
+  #ventResultBox table, #resultBox table { border-collapse:collapse; width:100%; margin:8px 0; font-size:14px; }
+  #ventResultBox th, #resultBox th { background:#eef3f0; border:1px solid #c9d4cd; padding:6px 8px; text-align:left; }
+  #ventResultBox td, #resultBox td { border:1px solid #ddd; padding:6px 8px; }
+  #ventResultBox ul, #resultBox ul { padding-left:20px; margin:6px 0; }
+  #ventResultBox li, #resultBox li { margin:5px 0; line-height:1.6; }
+  #ventResultBox p, #resultBox p { margin:6px 0; line-height:1.7; }
+  #ventResultBox h2, #resultBox h2 { font-size:17px; color:#4a6b5d; margin:12px 0 6px; border-left:4px solid #4a6b5d; padding-left:8px; }
+  #ventResultBox h3, #resultBox h3 { font-size:15px; color:#4a6b5d; margin:10px 0 4px; }
   input[type=text], input[type=password], textarea { width:100%; padding:12px; font-size:16px; border:1px solid #ccc; border-radius:8px; margin:6px 0; }
   textarea { min-height:80px; resize:vertical; }
   /* 裁剪区 */
@@ -177,7 +239,7 @@
 </style>
 </head>
 <body>
-<header><span>血气分析解读助手</span><span class="ver">v0.10.2</span></header>
+<header><span>血气分析解读助手</span><span class="ver">v0.10.13</span></header>
 <main>
 
   <!-- 第1步：首页 -->
@@ -207,12 +269,19 @@
       <button class="btn secondary" id="btnSaveKey">保存 API Key</button>
       <button class="btn secondary" id="btnCopyKey">📋 复制已保存的 API Key（备份用）</button>
       <p class="hint" id="keyStatus"></p>
-      <b>AI模型</b>
+      <b>读图AI厂商（拍呼吸机/血气单用）</b>
+      <select id="aiProvider" style="width:100%;padding:12px;font-size:16px;border:1px solid #ccc;border-radius:8px;margin:6px 0;">
+        <option value="auto">自动（推荐）：有千问Key先千问，失败自动换Kimi</option>
+        <option value="qwen">通义千问（阿里，快，10~30秒，推荐）</option>
+        <option value="kimi">Kimi（思考型，慢，1~3分钟）</option>
+      </select>
+      <input type="password" id="qwenKeyInput" placeholder="通义千问 API Key（阿里云百炼平台领取，只需填一次）" style="width:100%;font-size:16px;padding:10px 12px;margin:4px 0;border:1px solid #ccc;border-radius:8px;">
+      <button class="btn secondary" id="btnSaveQwen">保存千问Key和厂商选择</button>
+      <p class="hint" id="qwenStatus"></p>
+      <b>AI模型（血气主功能换模型重发用）</b>
       <select id="modelSelect" style="width:100%;padding:12px;font-size:16px;border:1px solid #ccc;border-radius:8px;margin:6px 0;">
         <option value="kimi-k2.6">kimi-k2.6（推荐，新一代，读图强）</option>
         <option value="kimi-k3">kimi-k3（最新旗舰，可能更贵）</option>
-        <option value="moonshot-v1-128k-vision-preview">moonshot-v1-128k-vision-preview（老架构长上下文）</option>
-        <option value="moonshot-v1-32k-vision-preview">moonshot-v1-32k-vision-preview（旧版，最弱）</option>
       </select>
       <button class="btn secondary" id="btnSaveModel">保存模型选择</button>
       <p class="hint" id="modelStatus"></p>
@@ -313,7 +382,7 @@
     <div class="card"><img id="previewImg" style="width:100%;border-radius:6px;" alt=""></div>
     <div class="card">
       <b>病人标识</b>
-      <input type="text" id="patientInput" placeholder="看着单据输入病人名字/床号，或从下方选择">
+      <input type="text" id="patientInput" placeholder="床号+姓+诊断，如 5床张三重症肺炎；或从下方选择">
       <div id="patientBtns"></div>
       <p class="hint">留空则归入"未命名病人"。</p>
     </div>
@@ -345,6 +414,7 @@
       <div id="retryStatus"></div>
     </div>
     <button class="btn secondary" id="btnRefile">✏️ 改归其他病人（名字输错时用）</button>
+    <button class="btn secondary" id="btnToPpt">📊 送去PPT工坊</button>
     <button class="btn" id="btnCopy">📋 复制解读结果</button>
     <div class="row">
       <button class="btn secondary" id="btnNew">再拍一张</button>
@@ -365,6 +435,17 @@
 
 ★ 如果"自动定位"提示识别引擎下载失败或一直转圈：先检查网络、换个网络（WiFi换流量）多试几次；还是不行，把这个HTML文件发回给Kimi，说一句"引擎下载失败"，它读文件开头的说明就知道原因和处理办法，会直接给您做一个不联网的离线版。
 
+v0.10.13 公共钱罐v2：GitHub Token/API Key 改成"新的盖旧的"——在一处填新的，全家软件自动跟新，旧的不会再复活（以前要到处手动改）
+v0.10.12 PB840入编：机型选择新增PB840（科室第二款呼吸机），带屏幕地图和操作档案——吸气保持/呼气保持是屏幕右下方的实体键（INSP PAUSE/EXP PAUSE），不在屏幕菜单里
+v0.10.11 SV650操作档案真机核准（v2）：吸气保持/呼气保持按键路径已和真机对上——右栏「工具」→基本工具→「按下并保持」；P0.1/NIF等力学检测在「高级工具」页（待核对）
+v0.10.10 SV650屏幕地图真机核准（v2）：底部两行、PS位置标明、右侧监测列内容明确
+v0.10.9 全部答案改鱼骨头式（短句列表，只要骨头不要肉）；结果区排版优化（表格带框、标题分色），手机上看得清
+v0.10.8 三合一：血气和呼吸机自动互相参考同一病人的最近结果；呼吸机页病人和首页统一（床号+姓+诊断）；两个结果页都能「📊 送去PPT工坊」
+v0.10.7 版面账本：没见过的新版面会问您一句"新界面还是AI认错"，点一下就行；记录页新增「📐 版面账本」随时翻看删除
+v0.10.6 两棒制提速：第1棒AI只抄屏幕读数（快），第2棒换快速文字模型做分析（千问几秒）；读数带本地体检（数不对自动让AI重读）；建议改成"测什么/怎么测/理由/怎么看结果"小卡片，下面自动生成手输数字框，不方便拍照就填数字
+v0.10.5 AI厂商改版：新增通义千问（读图快，10~30秒），设置页可选厂商/填千问Key；不选就自动，失败自动换；等待时每秒显示进度和预计时间，不用傻等；修复Kimi"只想不答"的问题
+v0.10.4 修复呼吸机分析报404：官方下架了老vision模型，改为自动排队选可用模型（404自动换下一个），状态栏会显示本次实际用的模型
+v0.10.3 修复呼吸机分析发给AI后迟迟没反应：呼吸机功能改用快速读图模型，一般15-40秒出结果（原来跟着默认的思考型模型走，带图要想好几分钟）
 v0.9.11 云备份上线（和学习笔记同款）：设置区新增「☁️ 云备份」折叠卡片，填一次 GitHub 用户名/Token/备份仓库名（xuexi-backup），之后每次改动 10 秒自动备份到您的 GitHub 私有仓库（备份文件 xueqi-backup.json，含 API Key，换手机点「📥 从云端恢复」一键搬回）；Token 只存在本机浏览器
 v0.9.10 记忆成功条件：每次定位成功后自动记住当时的方向+识别模式，下次拍照直接按记忆先试，命中就不用再扫八个方向（拍单角度固定的话，以后基本都是一次过）；记忆失败会自动走完整扫描并更新记忆
 v0.9.9 对抗不同手机识别差异：常见错字自动纠正+锚点加"日期"+第一遍失败自动换识别模式再扫一遍（成功率提升）
@@ -407,12 +488,18 @@ v0.1  初版：拍照→裁剪脱敏→Kimi解读→复制归档
     <div class="card">
       <b>🫁 呼吸机屏幕分析</b>
       <p class="hint">拍呼吸机控制界面（屏幕没有病人信息，不用脱敏，整屏发出）。AI会读出设定和监测值、看波形，并按机型指导您做进一步检测。</p>
+      <p class="hint" id="ventRouteInfo" style="background:#f3f6f4;border-radius:8px;padding:8px;"></p>
       <b>呼吸机型号</b>
       <select id="ventModel" style="width:100%;padding:12px;font-size:16px;border:1px solid #ccc;border-radius:8px;margin:6px 0;">
         <option value="sv650">迈瑞 Mindray SV650（内置操作档案）</option>
+        <option value="pb840">PB840 Puritan Bennett（内置操作档案）</option>
         <option value="generic">其他/通用（无操作档案，只分析）</option>
       </select>
-      <input type="text" id="ventBg" placeholder="病人背景（可选）：床号+一句话病情，如 5床 重症肺炎ARDS" style="width:100%;font-size:16px;padding:10px 12px;margin:4px 0 8px;border:1px solid #ccc;border-radius:8px;">
+      <div style="display:flex;align-items:center;gap:8px;margin:4px 0 8px;">
+        <span style="font-size:15px;">当前病人：<b id="ventPatientName"></b></span>
+        <button class="btn secondary" id="ventBtnChgPatient" style="width:auto;padding:6px 12px;font-size:14px;">换病人</button>
+      </div>
+      <p class="hint" style="margin-top:0;">和首页是同一个病人（命名建议：床号+姓+诊断）；该病人最近的血气结果会自动捎给AI参考。</p>
       <div class="row">
         <button class="btn" id="ventBtnCamera">📷 拍呼吸机屏幕</button>
         <button class="btn secondary" id="ventBtnAlbum">🖼 相册</button>
@@ -426,8 +513,17 @@ v0.1  初版：拍照→裁剪脱敏→Kimi解读→复制归档
     <div class="card" id="ventResultCard" hidden>
       <p class="hint" id="ventArchiveInfo"></p>
       <div id="ventResultBox"></div>
+      <div id="ventLayoutAsk" hidden style="background:#fdf6e3;border:1px solid #e0d5b0;border-radius:8px;padding:10px;margin-top:8px;">
+        <p id="ventLayoutAskTxt" style="font-size:14px;margin-bottom:6px;"></p>
+        <div class="row">
+          <button class="btn secondary" id="ventLayoutYes" style="width:auto;">✔️ 新界面，记下</button>
+          <button class="btn secondary" id="ventLayoutNo" style="width:auto;">❌ AI认错了，删掉</button>
+        </div>
+      </div>
+      <div id="ventCheckBox" hidden style="background:#f7f5ef;border-radius:8px;padding:10px;margin-top:8px;"></div>
       <div class="row" style="margin-top:8px;">
         <button class="btn secondary" id="ventBtnAddShot">📷 按AI指导做完检测，拍检测界面补充</button>
+        <button class="btn secondary" id="ventBtnToPpt">📊 送去PPT工坊</button>
       </div>
       <textarea id="ventFollowInput" placeholder="追问：比如 这个病人现在能试脱机吗？" style="width:100%;min-height:70px;font-size:15px;margin-top:8px;"></textarea>
       <button class="btn" id="ventBtnFollow">发送追问</button>
@@ -435,7 +531,9 @@ v0.1  初版：拍照→裁剪脱敏→Kimi解读→复制归档
     </div>
     <div class="card">
       <button class="btn secondary" id="ventBtnRecords">📄 呼吸机分析记录</button>
+      <button class="btn secondary" id="ventBtnLayouts">📐 版面账本</button>
       <div id="ventRecordsList" style="margin-top:8px;"></div>
+      <div id="ventLayoutList" style="margin-top:8px;"></div>
     </div>
     <button class="btn secondary" id="ventBtnBack">返回首页</button>
   </section>
@@ -1109,6 +1207,20 @@ function initModel(){
   $("modelSelect").value = getModel();
   $("modelStatus").textContent = "当前使用：" + getModel();
 }
+/* v0.10.5 厂商选择+千问Key */
+(function(){
+  $("aiProvider").value = localStorage.getItem("bg_ai_provider") || "auto";
+  const qk = localStorage.getItem("bg_qwen_key") || "";
+  $("qwenStatus").textContent = qk ? "已保存千问Key（尾号 …" + qk.slice(-4) + "）" : "尚未保存千问Key（不填就自动走Kimi）";
+  if(qk) $("qwenKeyInput").value = qk;
+})();
+$("btnSaveQwen").onclick = () => {
+  localStorage.setItem("bg_ai_provider", $("aiProvider").value);
+  const v = $("qwenKeyInput").value.trim();
+  if(v){ localStorage.setItem("bg_qwen_key", v); localStorage.setItem("hx_qwenkey", v); /* 公共钱罐 */ }
+  $("qwenStatus").textContent = "已保存。厂商=" + $("aiProvider").selectedOptions[0].textContent.slice(0,6) + (v ? "，千问Key已存" : "");
+  bgDirty();
+};
 $("btnSaveModel").onclick = () => {
   localStorage.setItem("bg_model", $("modelSelect").value);
   bgDirty(); /* v0.9.11 自动云备份钩子 */
@@ -1282,10 +1394,18 @@ async function runFirstSend(mode, statusEl, btn){
   }
 }
 
-$("btnSend").onclick = () => {
+$("btnSend").onclick = async () => {
   if(!croppedDataURL){ $("status").textContent = "没有裁剪后的图片。"; return; }
   pickPatient();  // 保存/发送时才确定病人标识
-  const bg = $("bgInput").value.trim() || "未提供";
+  let bg = $("bgInput").value.trim() || "未提供";
+  /* v0.10.8 呼吸机联动：自动捎带该病人最近一次呼吸机分析要点 */
+  try{
+    const vh = await ventIdbRead();
+    const lastVent = vh.find(it => (it.patient || it.bg || "未命名病人") === currentPatient);
+    if(lastVent && lastVent.text){
+      bg += "（附：该病人最近一次呼吸机分析 " + lastVent.time + " 要点：" + String(lastVent.text).slice(0, 300) + "……）";
+    }
+  }catch(e){}
   convoPrompt = getPrompt().replace("{背景}", bg);
   convo = [{
     role: "user",
@@ -1937,6 +2057,7 @@ ghBindBtn($("ghSave"), function(){
     localStorage.setItem(LS_GH_USER, $("ghUser").value.replace(/^\s+|\s+$/g,""));
     localStorage.setItem(LS_GH_TOK,  $("ghTok").value.replace(/^\s+|\s+$/g,""));
     localStorage.setItem(LS_GH_REPO, $("ghRepo").value.replace(/^\s+|\s+$/g,""));
+    hxStamp(LS_GH_USER, LS_GH_TOK, LS_GH_REPO);
     ghToast("💾 已保存", 2000);
   }catch(e){ ghShowMsg("保存失败：浏览器禁止了本地存储。", "err"); }
 });
@@ -1952,17 +2073,22 @@ ghBindBtn($("ghConfNo"), function(){
    与学习笔记/习题学习/文件桥同款：读 version-xueqi.json 比对版本；
    壳APP里下载新版 = applyUpdate 自更新（重启生效）+ 授权文件夹存备份；
    浏览器里 = 普通下载。 */
-var SW_VERSION = "0.10.2";
+var SW_VERSION = "0.10.13";
 /* v0.10.2 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["bg_gh_user", "hx_gh_user"], ["bg_gh_tok", "hx_gh_tok"], ["bg_gh_repo", "hx_gh_repo"], ["bg_apikey", "hx_apikey"]];
-  function hxSync(){
-    for(var i=0;i<HX_MAP.length;i++){
-      var own=localStorage.getItem(HX_MAP[i][0]), sh=localStorage.getItem(HX_MAP[i][1]);
-      if(own && own!==sh) localStorage.setItem(HX_MAP[i][1], own);
-      else if(!own && sh) localStorage.setItem(HX_MAP[i][0], sh);
-    }
+  function hxStamp(){ for(var i=0;i<arguments.length;i++) localStorage.setItem(arguments[i]+"_t", String(Date.now())); }
+  /* 公共钱罐v2（2026-09-01 时间戳版）：新填的盖旧的，旧Token不再复活。手动保存时打时间戳 hxStamp(键)；同步时戳新的赢，平局以公共钱罐为准 */
+  function hxSync1(ownKey, shKey){
+    var o=localStorage.getItem(ownKey), s=localStorage.getItem(shKey);
+    var ot=+localStorage.getItem(ownKey+"_t")||0, st=+localStorage.getItem(shKey+"_t")||0;
+    if(o && s && o!==s){
+      if(ot>st){ localStorage.setItem(shKey,o); localStorage.setItem(shKey+"_t",ot); }
+      else { localStorage.setItem(ownKey,s); localStorage.setItem(ownKey+"_t",st); }
+    }else if(o && !s){ localStorage.setItem(shKey,o); localStorage.setItem(shKey+"_t",ot); }
+    else if(!o && s){ localStorage.setItem(ownKey,s); localStorage.setItem(ownKey+"_t",st); }
   }
+  function hxSync(){ for(var i=0;i<HX_MAP.length;i++) hxSync1(HX_MAP[i][0], HX_MAP[i][1]); }
   hxSync(); setInterval(hxSync, 2000);
 })();
 /* 主界面刷新：壳里打开软件时顺带检查套装主界面(index.html)有没有新版，有就换新（解决主界面自己不会更新的鸡生蛋问题） */
@@ -2078,33 +2204,91 @@ syncQuickSelects();
 const VENT_PROFILES = {
   sv650: {
     name: "迈瑞 Mindray SV650",
-    text: "【迈瑞SV650操作档案·草稿v1（洪医生校正中）】\n" +
-      "1) 测平台压Pplat：做吸气保持——屏幕右栏点「工具」，找「吸气保持」（部分界面在波形下方工具条），按住3秒至读数稳定，保持界面会显示平台压。\n" +
-      "2) 测内源性PEEP（PEEPi）/总PEEP：做呼气保持——「工具」里的「呼气保持」，按住至呼气末暂停，显示总PEEP，减去设定PEEP即PEEPi。\n" +
-      "3) 呼吸力学检测（P0.1、NIF最大吸气负压、RSBI浅快呼吸指数等）：点屏幕右栏「工具」键进入工具菜单选对应项目，按提示操作，结果界面拍照。\n" +
+    text: "【迈瑞SV650操作档案·v2（2026-09-01洪医生真机对账核准）】\n" +
+      "工具菜单=屏幕最右竖排「工具」键，弹出窗三个页签：基本工具/高级工具/快捷键设置。\n" +
+      "「基本工具」页已核准三行按钮：「按下 手动呼吸」「按下并保持 吸气保持」「按下并保持 呼气保持」。\n" +
+      "1) 测平台压Pplat：右栏「工具」→基本工具→「按下并保持 吸气保持」，按住约3秒至读数稳定，保持界面显示平台压。\n" +
+      "2) 测内源性PEEP（PEEPi）/总PEEP：同页「按下并保持 呼气保持」，按住至呼气末暂停，显示总PEEP，减去设定PEEP即PEEPi。\n" +
+      "3) 呼吸力学检测（P0.1、NIF最大吸气负压、RSBI浅快呼吸指数等）：基本工具页没有，应在「高级工具」页签（待真机拍照核对）；找到后按提示操作，结果界面拍照。\n" +
       "4) 看监测值/趋势：顶部「监测值」页签；要大字显示点「大字体」。\n" +
       "5) 看报警回顾：右上角「报警」键。\n" +
       "注意：若档案与真机菜单位置不符，以真机为准并在追问中告诉AI实际路径，AI会记住本次说法。"
+  },
+  pb840: {
+    name: "PB840 (Puritan Bennett)",
+    text: "【PB840操作档案·v1（2026-09-01洪医生真机对账，部分待核准）】\n" +
+      "PB840没有屏幕内工具菜单——吸气保持/呼气保持是屏幕右下方实体键，别在屏幕里找。\n" +
+      "1) 测平台压Pplat：按住实体键「INSP PAUSE」（吸气保持）约3秒至读数稳定，波形区显示平台期，松手恢复。\n" +
+      "2) 测内源性PEEP（PEEPi）/总PEEP：按住实体键「EXP PAUSE」（呼气保持）至呼气末暂停，显示总PEEP，减去设定PEEP即PEEPi。\n" +
+      "3) 手动呼吸：实体键「MANUAL INSP」按一次送一次；吸痰增氧：实体键「INCREASE O₂ 2min」。\n" +
+      "4) 呼吸力学检测（P0.1、NIF、RSBI）：PB840无一键菜单，NIF/P0.1需特殊操作路径（待真机核对，洪医生校正中）；RSBI可用监测条 fTOT÷VTi 粗算。\n" +
+      "5) 改参数：触屏点蓝色参数格 → 转机器右下大旋钮调数值 → 按确认；报警上下限在最底部「报警设置」页签。\n" +
+      "注意：若档案与真机不符，以真机为准并在追问中告诉AI实际路径，AI会记住本次说法。"
   },
   generic: {
     name: "通用呼吸机",
     text: "【通用原则】吸气保持测平台压、呼气保持测内源性PEEP、呼吸力学菜单测P0.1/NIF/RSBI，具体按键位置请用户自己找，做完把结果界面拍照发来。"
   }
 };
-const VENT_PROMPT = [
-  "你是ICU呼吸治疗专家，在看一张呼吸机控制界面的照片。{背景}",
-  "请严格按以下结构回复（用大白话+专业术语对照，禁止使用LaTeX公式，计算列普通算式）：",
-  "一、屏幕读数：①品牌型号与通气模式 ②全部设定参数（氧浓度/压力/频率/吸呼比/PEEP等，逐项列出）③全部监测值（峰压/平台压/平均压/潮气量/频率/分钟通气量等，逐项列出；读不出的标⚠️无法识别）",
-  "二、波形解读：描述压力-时间、流量-时间、容量-时间曲线形态，重点判断：①人机是否同步（有无无效触发/双触发/流速饥渴）②流量曲线呼气支是否回到零（回不到零提示内源性PEEP）③有无明显漏气或分泌物迹象。波形只能定性，说清这是筛查不是精确测量。",
-  "三、初步分析：通气/氧合支持力度评估，肺保护通气是否达标（结合TVe/IBW或潮气量），目前参数的风险点和需要警惕的地方。",
-  "四、下一步建议：结合下面的操作档案，告诉用户接下来该做哪个检测、按哪个键（一步步写清，老人也能照着做），做完拍检测界面照片发回来继续分析。如果信息已够，就直接给调整建议。",
+/* v0.10.6 两棒制（洪医生设计）：
+   第1棒 读图AI：只"抄屏幕"——读数小表+波形文字描述+版面自报，任务小、输出短、想得快；
+   第2棒 文字AI：拿第1棒的文字做分析建议——不读图，可走最快的纯文字模型；
+   版面自报顺手存档（vent_layouts），为以后"版面记忆"攒资料。
+   提示词要求"直接输出不要过度思考"（省思考型模型时间）。 */
+const VENT_MAP_SV650 = [
+  "【SV650主界面·波形页 屏幕地图 v2（2026-09-01洪医生真机对账核准）】",
+  "顶部：页签=波形/环图/监测值/大字体；最右竖排按键=报警、吸痰、雾化、工具、锁屏、菜单、待机；横幅区会显示报警文字（如\"氧监测已关闭\"）。",
+  "底部是两行，别搞混：上行=通气模式页签（V-A/C、P-A/C、PRVC、CPAP/PSV、V-SIMV、P-SIMV、PRVC-SIMV…当前模式高亮白底）；下行=设定值，格子随模式变：",
+  "  · PRVC模式从左到右：氧浓度(%) → 潮气量(ml) → 呼吸频率 → 吸气时间(s) → 呼末正压PEEP → >>更多",
+  "  · V-SIMV模式从左到右：氧浓度(%) → 潮气量(ml) → SIMV频率 → 吸气时间(s) → 压力支持PS(cmH₂O，倒数第2格！) → PEEP",
+  "右侧监测区两大列（黄色大数字）：左列=峰值压、MVe分钟通气量(L/min)、FiO₂(%，可能显示OFF)；右列=平台压、呼末正压、呼出潮气量(ml)、总频率、自主频率、TVe/IBW(ml/kg)。",
+  "标签汉字认不出时按位置推断，推断的一律标\"⚠️按位置推断\"；若实际排版与地图明显不符，在版面自报里说明。"
+].join("\n");
+
+/* v0.10.12 PB840屏幕地图 v1（2026-09-01洪医生真机照片对账·LC/PC/PS页核准，待各模式补拍） */
+const VENT_MAP_PB840 = [
+  "【PB840主界面 屏幕地图 v1（2026-09-01洪医生真机对账）】",
+  "最顶部监测条（白底黑字一排，从左到右）：模式字母（C=A/C控制通气）→ Ppeak峰值压 → Pmean平均压 → PEEP → I:E吸呼比 → fTOT总频率 → VTi吸入潮气量(ml) → VeTOT分钟通气量(L)。",
+  "中部波形区：上条=压力曲线，下条=流速曲线；波形下方一行图标工具条（波形冻结/光标/报警/声音等），右端「手动事件」。",
+  "下半屏蓝色设定区：顶部横排模式/栏目名（如 LC、PC、PS、V-TRIG、体重kg）；下面参数格分两排，常见从左到右：f呼吸频率(/min) → Pᵢ吸气压(cmH₂O) → Tᵢ吸气时间(s) → 触发灵敏度（V-TRIG流速触发L/min）→ O₂氧浓度(%)；第二排：上升时间(%) → E_SENS呼气触发(%) → PEEP呼末正压。格子随模式变，按栏目名对号入座。",
+  "再往下：蓝色信息区（显示报警/提示文字，如\"氧传感器关闭\"）；最底部触摸页签=通气设置/窒息设置/报警设置/更多。",
+  "屏幕下方实体键（不在屏幕里）：锁屏、报警静音、报警复位、?帮助、INCREASE O₂ 2min（吸痰增氧）、MANUAL INSP（手动呼吸）、EXP PAUSE（呼气保持）、INSP PAUSE（吸气保持）。",
+  "标签认不出时按位置推断并标\"⚠️按位置推断\"；排版与地图不符时在版面自报里说明。"
+].join("\n");
+const VENT_MAPS = { sv650: VENT_MAP_SV650, pb840: VENT_MAP_PB840 };
+
+const VENT_PROMPT_READ = [
+  "你是ICU呼吸治疗技师。任务只有一件：把这张呼吸机控制界面照片里的信息如实抄下来。直接输出，不要过度思考。{背景}",
+  "风格铁律（用户硬性要求）：鱼骨头式，只要骨头不要肉——每条一行短句，不超过15个字，禁止长段落、禁止解释推理过程。",
+  "严格按三段输出：",
+  "一、读数小表（markdown表格：项目 | 数值 | 备注）：型号与通气模式；设定参数（氧浓度/潮气量或压力/频率/吸呼比/PEEP等）；监测值（峰压/平台压/潮气量/频率/分钟通气量等）。只列读得出的；读不出标\"⚠️无法识别\"。",
+  "二、波形描述（-短句列表，≤6条）：曲线形态；呼气支是否回零（回不到零=内源性PEEP）；双触发/无效触发/漏气迹象。每条一行，定性即可。",
+  "三、版面自报（必须一行，格式固定）：【版面】页签=? 底部格数=? 右侧列数=? 有无波形区=? ",
+  "{地图}"
+].join("\n");
+
+const VENT_PROMPT_ANALYZE = [
+  "你是ICU呼吸治疗专家。同事刚从呼吸机屏幕上抄下读数和波形描述如下：",
+  "{读数}",
+  "风格铁律（用户硬性要求）：鱼骨头式，只要骨头不要肉——全部用-短句列表，每句不超过15个字，禁止长段落、禁止解释推理过程、禁止客套话。禁LaTeX，计算列普通算式。直接输出，不要过度思考。",
+  "一、初步分析（-短句列表，≤6条）：支持力度、肺保护是否达标、风险点，每条一行。",
+  "二、下一步建议：每条检测一张小卡，格式严格固定（软件要靠暗号生成手输框）：",
+  "【检测:检测名称|单位】",
+  "测什么：≤15字",
+  "怎么测：按哪个键，一步步写清（这条可稍长，老人要照做）",
+  "理由：≤15字",
+  "怎么看结果：具体数字界限",
+  "如果信息已够，就不列检测，直接给调整建议（调哪个参数、调到多少、观察什么，同样短句列表）。",
   "{档案}"
 ].join("\n");
 
-let ventConvo = [];       // 呼吸机对话链（含图片）
+let ventConvo = [];       // 显示+存档用对话链（含图片）
+let ventLight = [];       // API用轻量链（首棒图→文字摘要，追问走纯文字模型）
 let ventShots = [];       // 待首次发送的照片 dataURL 数组
 let ventRecIndex = -1;    // 当前查看的记录下标（-1=未保存）
 let ventLastText = "";
+let ventReadText = "";    // 第1棒读数结果
+let ventChecks = [];      // 第2棒解析出的待测项目 [{name,unit}]
 
 function ventCompress(file){
   return new Promise((res, rej) => {
@@ -2147,20 +2331,103 @@ $("ventBtnAlbum").onclick = () => $("ventFileAlbum").click();
 $("ventFileCamera").onchange = e => { ventPickImage(e.target.files[0]); e.target.value = ""; };
 $("ventFileAlbum").onchange = e => { ventPickImage(e.target.files[0]); e.target.value = ""; };
 
-async function ventCallAI(key){
-  const resp = await fetch(API_URL, {
+/* v0.10.6 两棒制提速：第1棒AI只抄屏幕读数（快），第2棒换快速文字模型做分析（千问几秒）；读数带本地体检（数不对自动让AI重读）；建议改成"测什么/怎么测/理由/怎么看结果"小卡片，下面自动生成手输数字框，不方便拍照就填数字
+v0.10.5 AI厂商改版（洪医生定规矩：①开场让用户选厂商 ②不选就自动+失败自动换
+   ③进度提示告诉用户正在哪一步、大概还要多久，不傻等）
+   厂商：通义千问qwen-vl-max（阿里，非思考型直出，读图快10~30秒）/ Kimi（思考型1~3分钟）
+   踩坑补记：思考型模型的"思考过程"也吃max_tokens额度——4096会被想光、正文吐不出来
+   （已踩三次：v0.4.1截断/v0.6.4/2026-08-31只返回思考过程），Kimi一律给16384。 */
+const AI_PROVIDERS = {
+  qwen: { name:"通义千问", url:"https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+          modelsV:["qwen-vl-max"], estV:"通常10~30秒", maxTokV:4096,          /* 读图棒 */
+          modelsT:["qwen-plus"],  estT:"通常5~15秒",  maxTokT:4096,           /* 文字棒 */
+          keyOf:function(){ return localStorage.getItem("bg_qwen_key")||localStorage.getItem("hx_qwenkey")||""; } },
+  kimi: { name:"Kimi", url:API_URL,
+          modelsV:["kimi-k2.6","kimi-k3"], estV:"思考型要想一想，通常1~3分钟", maxTokV:16384,
+          modelsT:["kimi-k2.6"],           estT:"思考型，通常1~2分钟",       maxTokT:16384,
+          keyOf:function(){ return localStorage.getItem("bg_apikey")||""; } }
+};
+function ventProviderPref(){ return localStorage.getItem("bg_ai_provider") || "auto"; }
+/* chain: "V"=读图棒  "T"=文字棒 */
+function ventCandidates(chain){
+  const pref = ventProviderPref();
+  let order = [];
+  if(pref === "qwen") order = ["qwen","kimi"];
+  else if(pref === "kimi") order = ["kimi"];
+  else order = AI_PROVIDERS.qwen.keyOf() ? ["qwen","kimi"] : ["kimi"]; /* auto：填了千问Key就先千问 */
+  const out = [];
+  for(const pv of order){
+    const P = AI_PROVIDERS[pv], k = P.keyOf();
+    if(!k) continue;
+    const ms = chain === "T" ? P.modelsT : P.modelsV;
+    const est = chain === "T" ? P.estT : P.estV;
+    const maxTok = chain === "T" ? P.maxTokT : P.maxTokV;
+    for(const m of ms) out.push({ pvName:P.name, url:P.url, model:m, key:k, est:est, maxTok:maxTok });
+  }
+  return out;
+}
+function ventRouteText(){
+  const v = ventCandidates("V"), t = ventCandidates("T");
+  if(!v.length) return "⚠️ 没填任何AI的Key，请到首页设置里填";
+  let s = "第1棒读图【" + v[0].pvName + "】（" + v[0].est + "）";
+  if(t.length) s += " → 第2棒分析【" + t[0].pvName + (t[0].pvName === v[0].pvName ? "文字版" : "") + "】（" + t[0].est + "）";
+  if(v.length > 1) s += "　失败自动换【" + v[1].pvName + "】";
+  return s + "　·　换厂商：首页设置";
+}
+/* 进度提示：每秒刷新，告诉用户正在哪一步、还要多久 */
+let ventTimer = null;
+function ventProgressStart(elId, c, stage){
+  ventProgressStop();
+  const t0 = Date.now();
+  const tick = () => {
+    const sec = Math.round((Date.now() - t0) / 1000);
+    $(elId).textContent = (stage ? stage + " · " : "") + "已等 " + sec + " 秒 · 正在用【" + c.pvName + " " + c.model + "】（" + c.est + "）· 请保持屏幕亮着别切后台";
+  };
+  tick();
+  ventTimer = setInterval(tick, 1000);
+}
+function ventProgressStop(){ if(ventTimer){ clearInterval(ventTimer); ventTimer = null; } }
+
+let ventModelUsed = "";
+/* 通用排队调用：chain="V"读图棒 / "T"文字棒；msgs=本次要发的消息数组 */
+async function ventCallChain(chain, msgs, elId, stage){
+  elId = elId || "ventStatus";
+  const cands = ventCandidates(chain);
+  if(!cands.length) throw new Error("没有可用的AI：请先在首页「设置」里填 Kimi 或 通义千问 的 Key。");
+  let lastErr = null;
+  for(let i = 0; i < cands.length; i++){
+    const c = cands[i];
+    ventProgressStart(elId, c, stage);
+    try{
+      const r = await ventCallOnce(c, msgs);
+      ventModelUsed = c.pvName + " " + c.model;
+      ventProgressStop();
+      return r;
+    }catch(e){
+      lastErr = e;
+      ventProgressStop();
+      if(i < cands.length - 1){
+        $(elId).textContent = "【" + c.pvName + "】没成功（" + String(e.message).slice(0, 60) + "），自动换【" + cands[i+1].pvName + "】…";
+        await new Promise(r => setTimeout(r, 1200));
+      }
+    }
+  }
+  throw lastErr;
+}
+async function ventCallOnce(c, msgs){
+  const resp = await fetch(c.url, {
     method: "POST",
-    headers: { "Content-Type":"application/json", "Authorization":"Bearer " + key },
-    body: JSON.stringify({ model: getModel(), messages: ventConvo, max_tokens: 4096 })
+    headers: { "Content-Type":"application/json", "Authorization":"Bearer " + c.key },
+    body: JSON.stringify({ model: c.model, messages: msgs, max_tokens: c.maxTok })
   });
   const data = await resp.json();
   if(!resp.ok) throw new Error("调用失败 HTTP " + resp.status + "：" + JSON.stringify(data).slice(0, 300));
   const msg = data.choices[0].message;
-  let c = msg.content;
-  if(Array.isArray(c)) c = c.map(p => typeof p === "string" ? p : (p && p.text ? p.text : "")).join("");
-  if(!c && msg.reasoning_content) c = "⚠️ 模型只返回了思考过程，建议换 moonshot-v1-128k-vision-preview 重试。\n\n" + msg.reasoning_content.slice(0, 600);
-  if(!c) throw new Error("AI返回了空内容");
-  return c;
+  let ct = msg.content;
+  if(Array.isArray(ct)) ct = ct.map(p => typeof p === "string" ? p : (p && p.text ? p.text : "")).join("");
+  if(!ct && msg.reasoning_content) throw new Error("模型只想没写答案（额度被思考吃光），换下一个试试");
+  if(!ct) throw new Error("AI返回了空内容");
+  return ct;
 }
 function ventRenderConvo(){
   let html = "";
@@ -2200,7 +2467,8 @@ function ventSaveRecord(){
     arr.unshift({
       time: new Date().toLocaleString("zh-CN"),
       model: VENT_PROFILES[$("ventModel").value].name,
-      bg: $("ventBg").value.trim(),
+      bg: getSelectedPatient(),
+      patient: getSelectedPatient(),
       text: ventLastText,
       convo: ventConvo.map(m => ({ role: m.role, content: m.content }))
     });
@@ -2230,6 +2498,16 @@ function ventOpenRecord(i){
     ventConvo = [{ role:"user", content:[{ type:"text", text:"（历史记录首轮，含照片）" }] }].concat(it.convo.slice(1));
     /* 完整恢复首轮（含图片） */
     ventConvo = it.convo.map(m => ({ role: m.role, content: m.content }));
+    /* v0.10.6 重建ventLight轻量链：图片消息替换成当时的读数文字，追问才能走纯文字模型 */
+    ventLight = ventConvo.map(m => {
+      if(Array.isArray(m.content)){
+        const txt = (m.content.find(p => p.type === "text") || {}).text || "（照片）";
+        return { role: m.role, content: txt };
+      }
+      return { role: m.role, content: m.content };
+    });
+    ventChecks = ventParseChecks(ventLastText || "");
+    ventRenderChecks();
     ventLastText = it.text || "";
     $("ventResultCard").hidden = false;
     $("ventArchiveInfo").textContent = "📂 查看历史记录：" + (it.bg || "未标病人") + "（" + it.time + "），可继续追问";
@@ -2238,41 +2516,180 @@ function ventOpenRecord(i){
   }).catch(() => {});
 }
 $("ventBtnRecords").onclick = () => {
+  $("ventLayoutList").innerHTML = "";
   const box = $("ventRecordsList");
   box.innerHTML = box.innerHTML ? "" : "";
   ventRenderRecords();
 };
+$("ventBtnLayouts").onclick = () => {  /* v0.10.7 版面账本 */
+  $("ventRecordsList").innerHTML = "";
+  const box = $("ventLayoutList");
+  if(box.innerHTML){ box.innerHTML = ""; return; }
+  ventRenderLayouts();
+};
 
 $("ventBtnSend").onclick = async () => {
   const key = localStorage.getItem("bg_apikey") || "";
-  if(!key){ $("ventStatus").textContent = "请先在首页「设置」里填好并保存 API Key。"; return; }
+  if(!ventCandidates("V").length){ $("ventStatus").textContent = "请先在首页「设置」里填 Kimi 或 通义千问 的 Key。"; return; }
   if(!ventShots.length){ $("ventStatus").textContent = "请先拍呼吸机屏幕。"; return; }
   const profile = VENT_PROFILES[$("ventModel").value] || VENT_PROFILES.generic;
-  const bg = $("ventBg").value.trim();
-  const prompt = VENT_PROMPT
-    .replace("{背景}", bg ? "病人背景：" + bg + "。" : "（未提供病人背景）")
-    .replace("{档案}", profile.text);
-  const content = [{ type: "text", text: prompt }];
-  ventShots.forEach(d => content.push({ type: "image_url", image_url: { url: d } }));
-  ventConvo = [{ role: "user", content: content }];
+  /* v0.10.8 病人统一+血气联动：病人=首页当前病人；自动捎带该病人最近一次血气分析要点 */
+  const patient = getSelectedPatient();
+  let bgTxt = "病人：" + patient + "。";
+  const lastBg = (getHist() || []).find(it => (it.patient || "未命名病人") === patient);
+  if(lastBg && lastBg.text){
+    bgTxt += "该病人最近一次血气分析（" + lastBg.time + "）要点：" + String(lastBg.text).slice(0, 300) + "……";
+  }
   $("ventBtnSend").disabled = true;
-  $("ventStatus").textContent = "正在发给AI分析（" + getModel() + "），约10-90秒，请保持屏幕亮着…";
   try{
-    ventLastText = await ventCallAI(key);
+    /* ===== 第1棒：读图（抄屏幕） ===== */
+    const pRead = VENT_PROMPT_READ
+      .replace("{背景}", bgTxt)
+      .replace("{地图}", VENT_MAPS[$("ventModel").value] || "（无屏幕地图，按通用逻辑读，读不出的标签如实标注）");
+    const content = [{ type: "text", text: pRead }];
+    ventShots.forEach(d => content.push({ type: "image_url", image_url: { url: d } }));
+    ventConvo = [{ role: "user", content: content }];
+    ventReadText = await ventCallChain("V", ventConvo, "ventStatus", "第1步/共2步：读图抄数");
+    ventConvo.push({ role: "assistant", content: ventReadText });
+    ventSaveLayout(ventReadText); /* 版面自报存档，攒资料 */
+
+    /* ===== 本地体检：数据合理性，不对就自动反问重读一次 ===== */
+    const bad = ventSanityCheck(ventReadText);
+    if(bad){
+      $("ventStatus").textContent = "本地体检发现数据对不上（" + bad + "），自动让AI重新辨认…";
+      ventConvo.push({ role: "user", content: "本地校验发现问题：" + bad + "。请重新仔细辨认照片里这几个数值，只回复更正后的读数小表，其他不要。" });
+      const reread = await ventCallChain("V", ventConvo, "ventStatus", "第1步复查：重新辨认");
+      ventConvo.push({ role: "assistant", content: reread });
+      ventReadText = reread;
+    }
+
+    /* ===== 第2棒：纯文字分析（可走快速文字模型） ===== */
+    const pAna = VENT_PROMPT_ANALYZE
+      .replace("{读数}", ventReadText)
+      .replace("{档案}", profile.text);
+    ventLight = [{ role: "user", content: pAna }];
+    ventLastText = await ventCallChain("T", ventLight, "ventStatus", "第2步/共2步：文字分析");
+    ventLight.push({ role: "assistant", content: ventLastText });
+    ventConvo.push({ role: "user", content: "（第2棒文字分析，基于上面读数）" });
     ventConvo.push({ role: "assistant", content: ventLastText });
+
+    ventChecks = ventParseChecks(ventLastText);
     $("ventResultCard").hidden = false;
     ventRenderConvo();
-    $("ventStatus").textContent = "";
+    ventRenderChecks();
+    $("ventStatus").textContent = "（读图：" + ventModelUsed + "）";
     ventShots = []; ventRenderShots();
     ventSaveRecord();
     $("ventArchiveInfo").textContent = "✅ 已自动存入呼吸机分析记录";
     $("ventResultCard").scrollIntoView({ block: "start" });
   }catch(err){
-    $("ventStatus").textContent = err.message + "\n\n如反复 Failed to fetch：保持屏幕亮着别切后台，或回首页设置换 128k-vision 快速模型。";
+    $("ventStatus").textContent = err.message + "\n\n如反复 Failed to fetch：保持屏幕亮着别切后台，网络问题居多，模型已自动排队选择。";
   }finally{
     $("ventBtnSend").disabled = false;
   }
 };
+
+/* 本地体检：拿读数小表做合理性检查，发现明显读错就返回问题描述（否则返回空） */
+function ventSanityCheck(t){
+  const num = (re) => { const m = t.match(re); return m ? parseFloat(m[1]) : null; };
+  const vt = num(/潮气量[^\n\|]*\|\s*([\d.]+)/) || num(/VT[^\n\|]*\|\s*([\d.]+)/i);
+  const f  = num(/频率[^\n\|]*\|\s*([\d.]+)/) || num(/Rate[^\n\|]*\|\s*([\d.]+)/i);
+  const mv = num(/分钟通气量[^\n\|]*\|\s*([\d.]+)/) || num(/MV[^\n\|]*\|\s*([\d.]+)/i);
+  const fio2 = num(/FiO[^\n\|]*\|\s*([\d.]+)/i) || num(/氧浓度[^\n\|]*\|\s*([\d.]+)/);
+  const probs = [];
+  if(fio2 !== null && (fio2 < 21 || fio2 > 100)) probs.push("FiO₂=" + fio2 + " 超出21~100范围");
+  if(vt && f && mv){
+    const expect = vt * f / 1000;
+    if(Math.abs(mv - expect) / expect > 0.35) probs.push("分钟通气量" + mv + "与潮气量" + vt + "×频率" + f + "≈" + expect.toFixed(1) + "对不上（注意SIMV自主呼吸会有影响，若是自主呼吸强属正常，请在回复中说明）");
+  }
+  return probs.join("；");
+}
+/* 版面自报存档：攒资料给以后的版面记忆用。
+   v0.10.7 半自动对账（洪医生定）：见过的版面安静存档；没见过的弹条问一句
+   "换新界面了还是AI认错了"，点一下就行。错地图不如没地图。 */
+function ventSaveLayout(t){
+  const m = t.match(/【版面】([^\n]*)/);
+  if(!m) return;
+  try{
+    const lay = m[1].trim();
+    const arr = JSON.parse(localStorage.getItem("vent_layouts") || "[]");
+    const seen = arr.some(x => x.layout === lay);
+    arr.unshift({ time: new Date().toLocaleString("zh-CN"), layout: lay, ok: seen });
+    while(arr.length > 50) arr.pop();
+    localStorage.setItem("vent_layouts", JSON.stringify(arr));
+    if(!seen){  /* 新面孔：弹条对账 */
+      const bar = $("ventLayoutAsk");
+      bar.hidden = false;
+      $("ventLayoutAskTxt").textContent = "📐 发现新版面：" + lay + "　——是医生换了界面，还是AI认错了？";
+      $("ventLayoutYes").onclick = () => {
+        arr[0].ok = true;
+        localStorage.setItem("vent_layouts", JSON.stringify(arr));
+        bar.hidden = true;
+      };
+      $("ventLayoutNo").onclick = () => {
+        arr.shift(); /* 认错就删掉这条，不脏账本 */
+        localStorage.setItem("vent_layouts", JSON.stringify(arr));
+        bar.hidden = true;
+      };
+    }
+  }catch(e){}
+}
+/* 版面账本查看/删除 */
+function ventRenderLayouts(){
+  const box = $("ventLayoutList");
+  const arr = JSON.parse(localStorage.getItem("vent_layouts") || "[]");
+  if(!arr.length){ box.innerHTML = "<p class='hint'>还没有版面记录，分析一次就有了。</p>"; return; }
+  box.innerHTML = "";
+  arr.forEach((x, i) => {
+    const div = document.createElement("div");
+    div.style.cssText = "border:1px solid #ddd;border-radius:8px;padding:8px;margin:6px 0;font-size:14px;";
+    div.innerHTML = (x.ok ? "✅ " : "❓ ") + x.layout + "<br><span style='color:#999;'>" + x.time + "</span> ";
+    const del = document.createElement("button");
+    del.className = "btn secondary"; del.textContent = "🗑 删除";
+    del.style.cssText = "width:auto;padding:4px 10px;font-size:13px;float:right;";
+    del.onclick = () => {
+      const a2 = JSON.parse(localStorage.getItem("vent_layouts") || "[]");
+      a2.splice(i, 1);
+      localStorage.setItem("vent_layouts", JSON.stringify(a2));
+      ventRenderLayouts();
+    };
+    div.appendChild(del);
+    box.appendChild(div);
+  });
+}
+/* 解析分析文本里的检测暗号【检测:名称|单位】，生成手输框 */
+function ventParseChecks(t){
+  const out = [];
+  const re = /【检测[:：]([^|】]+)\|([^】]+)】/g;
+  let m;
+  while((m = re.exec(t)) !== null) out.push({ name: m[1].trim(), unit: m[2].trim() });
+  return out;
+}
+function ventRenderChecks(){
+  const box = $("ventCheckBox");
+  if(!ventChecks.length){ box.hidden = true; return; }
+  box.hidden = false;
+  let h = "<b>✍️ 手输检测结果（不方便拍照就填数字，填几个算几个）</b>";
+  ventChecks.forEach((c, i) => {
+    h += "<div class='row' style='align-items:center;margin-top:6px;'><span style='min-width:110px;'>" + c.name + "</span>"
+       + "<input type='text' inputmode='decimal' id='ventCk" + i + "' placeholder='数值' style='flex:1;font-size:16px;padding:10px;border:1px solid #ccc;border-radius:8px;'>"
+       + "<span>" + c.unit + "</span></div>";
+  });
+  h += "<button class='btn' id='ventCkSend' style='margin-top:8px;'>📤 把手输结果发给AI</button>";
+  box.innerHTML = h;
+  $("ventCkSend").onclick = () => {
+    const parts = [];
+    ventChecks.forEach((c, i) => {
+      const v = $("ventCk" + i).value.trim();
+      if(v) parts.push(c.name + "=" + v + " " + c.unit);
+    });
+    if(!parts.length){ $("ventFollowStatus").textContent = "至少填一个数值"; return; }
+    ventConvo.push({ role: "user", content: "手输检测结果：" + parts.join("，") });
+    ventLight.push({ role: "user", content: "手输检测结果：" + parts.join("，") + "。请结合前面分析继续。" });
+    $("ventCheckBox").hidden = true;
+    ventContinue();
+  };
+}
 
 /* 补充照片（做完检测拍检测界面） */
 $("ventBtnAddShot").onclick = () => {
@@ -2286,7 +2703,7 @@ $("ventBtnAddShot").onclick = () => {
         { type: "text", text: "这是按您的指导做完检测后拍的屏幕照片，请读出检测结果并结合前面的分析继续。" },
         { type: "image_url", image_url: { url: d } }
       ]});
-      ventContinue();
+      ventContinue(true);
     }).catch(() => { $("ventFollowStatus").textContent = "图片读不出来，换一张试试"; });
   };
   inp.click();
@@ -2296,17 +2713,21 @@ $("ventBtnFollow").onclick = () => {
   const q = $("ventFollowInput").value.trim();
   if(!q){ $("ventFollowStatus").textContent = "请先输入追问内容"; return; }
   ventConvo.push({ role: "user", content: q });
+  ventLight.push({ role: "user", content: q });
   $("ventFollowInput").value = "";
-  ventContinue();
+  ventContinue(false);
 };
-async function ventContinue(){
+async function ventContinue(withPhoto){
   const key = localStorage.getItem("bg_apikey") || "";
-  $("ventFollowStatus").textContent = "AI思考中…";
   try{
-    ventLastText = await ventCallAI(key);
+    /* v0.10.6：补照片走读图棒（ventConvo带图），纯文字追问走文字棒（ventLight轻量链） */
+    ventLastText = withPhoto
+      ? await ventCallChain("V", ventConvo, "ventFollowStatus", "补充照片识别")
+      : await ventCallChain("T", ventLight, "ventFollowStatus", "AI分析中");
     ventConvo.push({ role: "assistant", content: ventLastText });
+    ventLight.push({ role: "assistant", content: ventLastText });
     ventRenderConvo();
-    $("ventFollowStatus").textContent = "";
+    $("ventFollowStatus").textContent = "（本次使用模型：" + ventModelUsed + "）";
     /* 更新记录 */
     ventIdbRead().then(arr => {
       if(ventRecIndex >= 0 && arr[ventRecIndex]){
@@ -2320,7 +2741,29 @@ async function ventContinue(){
   }
 }
 
-$("btnVent").onclick = () => { show("ventPage"); };
+/* v0.10.8 PPT邮路（照抄学习笔记→PPT工坊的ppt_inbox格式，同源才收得到） */
+function sendToPpt(title, md){
+  try{
+    localStorage.setItem("ppt_inbox", JSON.stringify({ title: title, text: md, from: "血气分析", t: Date.now() }));
+    alert("📤 已发送！现在去打开「PPT工坊」，它会弹窗问您收不收。");
+  }catch(e){ alert("写入收件箱失败：" + e.message); }
+}
+$("btnToPpt").onclick = () => {
+  const md = "# " + (currentPatient || "病人") + " 血气分析\n## 结果\n" + lastResultText + "\n";
+  sendToPpt((currentPatient || "病人") + " 血气分析", md);
+};
+$("ventBtnToPpt").onclick = () => {
+  const p = getSelectedPatient();
+  const md = "# " + p + " 呼吸机分析\n## 屏幕读数\n" + ventReadText + "\n## 分析建议\n" + ventLastText + "\n";
+  sendToPpt(p + " 呼吸机分析", md);
+};
+
+$("btnVent").onclick = () => {
+  show("ventPage");
+  $("ventPatientName").textContent = getSelectedPatient(); /* v0.10.8 与首页同一病人 */
+  $("ventRouteInfo").textContent = ventRouteText(); /* v0.10.5 开场就告诉用户将用哪个AI */
+};
+$("ventBtnChgPatient").onclick = () => show("step1");
 $("ventBtnBack").onclick = () => show("step1");
 
 show("step1");
