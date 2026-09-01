@@ -606,7 +606,7 @@ window.addEventListener('load', function(){
 (function(){
 __bc('D脚本启动');
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.3.31'; /* v0.3.31 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */
+var SW_VERSION = '0.3.32'; /* v0.3.32 账本桥进全家hx_aibill（主界面💰卡片汇总） */ /* v0.3.31 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
@@ -705,6 +705,11 @@ function billAiUse(model, usage, inChars, outChars, what){
   b.log.unshift({ t: Date.now(), model: model, book: bk || '', in: tin, out: tout, what: what || '其他', est: est ? 1 : 0 });
   b.log = b.log.slice(0, 50);
   billSave(b);
+  /* v0.3.32 桥进全家账本 hx_aibill（主界面💰卡片汇总用） */
+  try{ var _arr=JSON.parse(localStorage.getItem("hx_aibill")||"[]");
+    _arr.unshift({app:"小涛笔记",what:what||"其他",cost:+yuan.toFixed(4),t:Date.now()});
+    if(_arr.length>500)_arr.length=500;
+    localStorage.setItem("hx_aibill",JSON.stringify(_arr)); }catch(e){}
 }
 function billYuan(b){
   var y = 0;
