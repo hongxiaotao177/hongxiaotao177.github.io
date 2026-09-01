@@ -290,7 +290,7 @@
 
 <script>
 "use strict";
-var SW_VERSION = "0.4.2"; /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
+var SW_VERSION = "0.4.3"; /* v0.4.3 修404：死模型自动换kimi-k2.6+重试；max_tokens 8000→16384（k2.6思考型） */ /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
 /* 公共钱罐：API key/GitHub配置 一处填处处有（与其他软件共享 hx_*） */
 (function(){
   var HX_MAP=[["hx_apikey","hx_apikey"],["hx_gh_user","hx_gh_user"],["hx_gh_tok","hx_gh_tok"],["hx_gh_repo","hx_gh_repo"]];
@@ -710,7 +710,15 @@ function slideHTML(p){
 /* ==================== AI 调用 ==================== */
 var API_URL="https://api.moonshot.cn/v1/chat/completions";
 function aiKey(){ return (localStorage.getItem('hx_apikey')||'').replace(/^\s+|\s+$/g,''); }
-function aiModel(){ return localStorage.getItem('hx_aimodel')||'kimi-k2.5'; }
+/* 死模型回退（2026-09-01：kimi-k2.5被官方下架404，踩坑）——名单里的自动换kimi-k2.6并写回，不傻等 */
+var DEAD_MODELS=["kimi-k2.5","kimi-latest","moonshot-v1-8k-vision-preview","moonshot-v1-32k-vision-preview","moonshot-v1-128k-vision-preview"];
+function liveModel(m){ return (m && DEAD_MODELS.indexOf(m)<0) ? m : "kimi-k2.6"; }
+function aiModel(){
+  var m=localStorage.getItem('hx_aimodel')||'';
+  var lm=liveModel(m);
+  if(lm!==m) try{ localStorage.setItem('hx_aimodel',lm); }catch(e){}
+  return lm;
+}
 /* ===== 全家AI账本 hx_aibill（2026-09-01 洪医生家规：每次AI记一笔+弹一条花了多少钱；主界面💰卡片汇总。tokens≈汉字数/2，是估算，真扣费以官方账单为准） ===== */
 var HX_PRICE={"kimi-k2.5":[4,16],"kimi-k2.6":[4,16],"kimi-k2.7":[7,27],"kimi-k3":[21,105],"qwen-vl-max":[3,9],"qwen-plus":[0.8,2],"moonshot-v1-8k":[12,12],"moonshot-v1-32k":[24,24],"moonshot-v1-128k":[60,60]};
 function hxBillYuan(model,inC,outC,imgs){var p=HX_PRICE["kimi-k2.5"];for(var k in HX_PRICE){if(model&&String(model).indexOf(k)===0){p=HX_PRICE[k];break;}}return Math.ceil((inC||0)/2)/1e6*p[0]+Math.ceil((outC||0)/2)/1e6*p[1]+(imgs||0)*0.005;}
@@ -722,9 +730,21 @@ function hxBillToast(c){try{var d=document.createElement("div");d.textContent=hx
 function callAI(sys, usr, onOk, onErr){
   var key=aiKey();
   if(!key){ onErr('还没有 API Key。请到学习笔记/血气分析的设置里填一次（公共钱罐全家通用），或在本页粘贴：'); keyInputAsk(); return; }
-  fetch(API_URL,{method:"POST",
-    headers:{"Content-Type":"application/json","Authorization":"Bearer "+key},
-    body:JSON.stringify({model:aiModel(),messages:[{role:"system",content:sys},{role:"user",content:usr}],max_tokens:8000,temperature:0.4})
+  var model=aiModel();
+  function send(){
+    return fetch(API_URL,{method:"POST",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+key},
+      body:JSON.stringify({model:model,messages:[{role:"system",content:sys},{role:"user",content:usr}],max_tokens:16384,temperature:0.4})
+    });
+  }
+  send().then(function(r){
+    /* v0.4.3 404自动换kimi-k2.6重试一次（kimi-k2.5下架踩坑）；max_tokens升16384（k2.6思考型吃额度，怪癖#9） */
+    if(r.status===404 && model!=="kimi-k2.6"){
+      model="kimi-k2.6"; try{ localStorage.setItem('hx_aimodel',model); }catch(e){}
+      toast("原模型已被官方下架，自动改用 kimi-k2.6 重试");
+      return send();
+    }
+    return r;
   }).then(function(r){
     if(!r.ok) return r.text().then(function(t){ throw new Error("AI线路出错 HTTP "+r.status); });
     return r.json();
