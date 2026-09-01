@@ -573,7 +573,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>习题学习 v1.8.8</title>
+<title>习题学习 v1.8.9</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f2f4f8; color: #222; }
@@ -656,7 +656,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 
 <script id="embedded-data" type="application/json">null</script>
 
-<header>📖 习题学习<span class="ver">v1.8.8</span></header>
+<header>📖 习题学习<span class="ver" id="hdVer">v1.8.9</span></header>
 
 <!-- ========== 首页 ========== -->
 <div id="page-home" class="page">
@@ -2731,7 +2731,7 @@ async function callAI(sysPrompt, userText, what) {
     ]})
   });
   /* v1.8.7 404自动换模型重试一次（kimi-k2.5下架踩坑）：只有"模型不存在"才换，别的错直接报 */
-  if (r.status === 404 && model !== "kimi-k2.6"){
+  if ((r.status === 404 || r.status === 400) && model !== "kimi-k2.6"){ /* v1.8.9 400也当死模型（官方有时回400不回404） */
     model = "kimi-k2.6";
     if (store.ai){ store.ai.model = model; if(typeof saveStore==="function") saveStore(); }
     try{ localStorage.setItem("hx_aimodel", model); }catch(e){}
@@ -2746,7 +2746,7 @@ async function callAI(sysPrompt, userText, what) {
     });
   }
   if (r.status === 401) throw new Error("API key无效（401），请点「⚙ 设置」检查");
-  if (!r.ok) throw new Error("AI请求失败（HTTP " + r.status + "），可能是模型名不对或余额不足");
+  if (!r.ok){ var _et=""; try{ _et=await r.text(); }catch(e){} throw new Error("AI请求失败（HTTP " + r.status + "）" + (_et?("："+String(_et).slice(0,180)):"，可能是模型名不对或余额不足")); }
   var d = await r.json();
   var _c = d.choices[0].message.content;
   hxBillToast(hxBill("习题学习", what||"问AI", (sysPrompt||"").length+(userText||"").length, (_c||"").length, aiModel()));
@@ -2985,7 +2985,7 @@ function toast(msg) {
    完整设计思路与协同协议见学习笔记.html 代码顶部（两边以那份为准）。 */
 var XT_GH_USER = "xt_gh_user", XT_GH_TOK = "xt_gh_tok", XT_GH_REPO = "xt_gh_repo",
     XT_GH_LAST = "xt_gh_last", XT_GH_CHECK = "xt_gh_check";
-var SW_VERSION = "1.8.8"; /* v1.8.8 AI综合备课加秒表进度：每秒报已等多久，转着就不是死机 */ /* v1.8.7 修404：kimi-k2.5官方下架→死模型名单自动换kimi-k2.6+404自动重试；补title/header版本号（1.8.5/1.8.6漏改） */ /* v1.8.6 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v1.8.5 习题→PPT工坊两路（洪医生任务2026-09-01）：任务一「📊 习题→PPT」本地拼——
+var SW_VERSION = "1.8.9"; /* v1.8.9 AI报错带官方原因+400也自动换模型重试（洪医生撞HTTP400：疑moonshot-v1系列下架回400） */ /* v1.8.8 AI综合备课加秒表进度：每秒报已等多久，转着就不是死机 */ /* v1.8.7 修404：kimi-k2.5官方下架→死模型名单自动换kimi-k2.6+404自动重试；补title/header版本号（1.8.5/1.8.6漏改） */ /* v1.8.6 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v1.8.5 习题→PPT工坊两路（洪医生任务2026-09-01）：任务一「📊 习题→PPT」本地拼——
   范围(勾选/全部)×筛选(全部/陌生+一般/只陌生)×排版(题答同页自习用 / 题一页答一页课堂提问用)，不花AI钱；
   任务二「🤖 AI综合备课」——AI读全部问答提炼成课（归纳/对比表/易错点，不是堆题），可填讲课重点，可对着薄弱点，
   大纲先预览可手改再寄。两路都走ppt_inbox邮路（照抄血气分析v0.10.8格式），PPT工坊弹窗收。 */
@@ -3500,5 +3500,8 @@ renderBanks();
 ghInit(); /* v1.4 */
 </script>
 
+<script>
+(function(){ try{ document.getElementById("hdVer").textContent="v"+SW_VERSION; document.title="习题学习 v"+SW_VERSION; }catch(e){} })();
+</script>
 </body>
 </html>
