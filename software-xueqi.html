@@ -120,6 +120,11 @@
     策略拦截）；素材从unpkg下载后要验证完整性（jsdelivr经常截断）。其余代码两版完全相同。
      v0.10.2 2026-08-06 公共钱罐hx_*：GitHub Token/仓库名/API Key 四个软件+主界面一处填处处有（空的自动抄公共的）。踩坑：各软件存钱罐名不一（bg_/xt_/br_），同源也互通不了。
     同版补充：主界面刷新hxIndexRefresh——壳里打开任一软件顺带把套装主界面(index.html)也换新，主界面从此也能自动更新。
+    v0.10.12 2026-09-01 PB840入编（洪医生科室第二款呼吸机）：机型下拉新增PB840——
+        屏幕地图v1（顶部监测条七项/双波形区/蓝色设定区按栏目对号/底部触摸页签/实体键清单）
+        + 操作档案v1（关键区别：吸气保持/呼气保持是屏幕右下实体键INSP PAUSE/EXP PAUSE，
+        不在屏幕菜单里；改参数=点格子+转大旋钮）；P0.1/NIF路径标"待真机核对"。
+        地图选择逻辑改VENT_MAPS字典按机型取。
     v0.10.11 2026-09-01 SV650操作档案升v2（洪医生真机「工具」弹窗照片对账）：工具菜单
         结构核准=三页签（基本工具/高级工具/快捷键设置）；基本工具页三行按钮原文记下
         （按下 手动呼吸 / 按下并保持 吸气保持 / 按下并保持 呼气保持）——吸气保持、呼气保持
@@ -230,7 +235,7 @@
 </style>
 </head>
 <body>
-<header><span>血气分析解读助手</span><span class="ver">v0.10.11</span></header>
+<header><span>血气分析解读助手</span><span class="ver">v0.10.12</span></header>
 <main>
 
   <!-- 第1步：首页 -->
@@ -426,6 +431,7 @@
 
 ★ 如果"自动定位"提示识别引擎下载失败或一直转圈：先检查网络、换个网络（WiFi换流量）多试几次；还是不行，把这个HTML文件发回给Kimi，说一句"引擎下载失败"，它读文件开头的说明就知道原因和处理办法，会直接给您做一个不联网的离线版。
 
+v0.10.12 PB840入编：机型选择新增PB840（科室第二款呼吸机），带屏幕地图和操作档案——吸气保持/呼气保持是屏幕右下方的实体键（INSP PAUSE/EXP PAUSE），不在屏幕菜单里
 v0.10.11 SV650操作档案真机核准（v2）：吸气保持/呼气保持按键路径已和真机对上——右栏「工具」→基本工具→「按下并保持」；P0.1/NIF等力学检测在「高级工具」页（待核对）
 v0.10.10 SV650屏幕地图真机核准（v2）：底部两行、PS位置标明、右侧监测列内容明确
 v0.10.9 全部答案改鱼骨头式（短句列表，只要骨头不要肉）；结果区排版优化（表格带框、标题分色），手机上看得清
@@ -481,6 +487,7 @@ v0.1  初版：拍照→裁剪脱敏→Kimi解读→复制归档
       <b>呼吸机型号</b>
       <select id="ventModel" style="width:100%;padding:12px;font-size:16px;border:1px solid #ccc;border-radius:8px;margin:6px 0;">
         <option value="sv650">迈瑞 Mindray SV650（内置操作档案）</option>
+        <option value="pb840">PB840 Puritan Bennett（内置操作档案）</option>
         <option value="generic">其他/通用（无操作档案，只分析）</option>
       </select>
       <div style="display:flex;align-items:center;gap:8px;margin:4px 0 8px;">
@@ -2060,7 +2067,7 @@ ghBindBtn($("ghConfNo"), function(){
    与学习笔记/习题学习/文件桥同款：读 version-xueqi.json 比对版本；
    壳APP里下载新版 = applyUpdate 自更新（重启生效）+ 授权文件夹存备份；
    浏览器里 = 普通下载。 */
-var SW_VERSION = "0.10.11";
+var SW_VERSION = "0.10.12";
 /* v0.10.2 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["bg_gh_user", "hx_gh_user"], ["bg_gh_tok", "hx_gh_tok"], ["bg_gh_repo", "hx_gh_repo"], ["bg_apikey", "hx_apikey"]];
@@ -2196,6 +2203,17 @@ const VENT_PROFILES = {
       "5) 看报警回顾：右上角「报警」键。\n" +
       "注意：若档案与真机菜单位置不符，以真机为准并在追问中告诉AI实际路径，AI会记住本次说法。"
   },
+  pb840: {
+    name: "PB840 (Puritan Bennett)",
+    text: "【PB840操作档案·v1（2026-09-01洪医生真机对账，部分待核准）】\n" +
+      "PB840没有屏幕内工具菜单——吸气保持/呼气保持是屏幕右下方实体键，别在屏幕里找。\n" +
+      "1) 测平台压Pplat：按住实体键「INSP PAUSE」（吸气保持）约3秒至读数稳定，波形区显示平台期，松手恢复。\n" +
+      "2) 测内源性PEEP（PEEPi）/总PEEP：按住实体键「EXP PAUSE」（呼气保持）至呼气末暂停，显示总PEEP，减去设定PEEP即PEEPi。\n" +
+      "3) 手动呼吸：实体键「MANUAL INSP」按一次送一次；吸痰增氧：实体键「INCREASE O₂ 2min」。\n" +
+      "4) 呼吸力学检测（P0.1、NIF、RSBI）：PB840无一键菜单，NIF/P0.1需特殊操作路径（待真机核对，洪医生校正中）；RSBI可用监测条 fTOT÷VTi 粗算。\n" +
+      "5) 改参数：触屏点蓝色参数格 → 转机器右下大旋钮调数值 → 按确认；报警上下限在最底部「报警设置」页签。\n" +
+      "注意：若档案与真机不符，以真机为准并在追问中告诉AI实际路径，AI会记住本次说法。"
+  },
   generic: {
     name: "通用呼吸机",
     text: "【通用原则】吸气保持测平台压、呼气保持测内源性PEEP、呼吸力学菜单测P0.1/NIF/RSBI，具体按键位置请用户自己找，做完把结果界面拍照发来。"
@@ -2215,6 +2233,18 @@ const VENT_MAP_SV650 = [
   "右侧监测区两大列（黄色大数字）：左列=峰值压、MVe分钟通气量(L/min)、FiO₂(%，可能显示OFF)；右列=平台压、呼末正压、呼出潮气量(ml)、总频率、自主频率、TVe/IBW(ml/kg)。",
   "标签汉字认不出时按位置推断，推断的一律标\"⚠️按位置推断\"；若实际排版与地图明显不符，在版面自报里说明。"
 ].join("\n");
+
+/* v0.10.12 PB840屏幕地图 v1（2026-09-01洪医生真机照片对账·LC/PC/PS页核准，待各模式补拍） */
+const VENT_MAP_PB840 = [
+  "【PB840主界面 屏幕地图 v1（2026-09-01洪医生真机对账）】",
+  "最顶部监测条（白底黑字一排，从左到右）：模式字母（C=A/C控制通气）→ Ppeak峰值压 → Pmean平均压 → PEEP → I:E吸呼比 → fTOT总频率 → VTi吸入潮气量(ml) → VeTOT分钟通气量(L)。",
+  "中部波形区：上条=压力曲线，下条=流速曲线；波形下方一行图标工具条（波形冻结/光标/报警/声音等），右端「手动事件」。",
+  "下半屏蓝色设定区：顶部横排模式/栏目名（如 LC、PC、PS、V-TRIG、体重kg）；下面参数格分两排，常见从左到右：f呼吸频率(/min) → Pᵢ吸气压(cmH₂O) → Tᵢ吸气时间(s) → 触发灵敏度（V-TRIG流速触发L/min）→ O₂氧浓度(%)；第二排：上升时间(%) → E_SENS呼气触发(%) → PEEP呼末正压。格子随模式变，按栏目名对号入座。",
+  "再往下：蓝色信息区（显示报警/提示文字，如\"氧传感器关闭\"）；最底部触摸页签=通气设置/窒息设置/报警设置/更多。",
+  "屏幕下方实体键（不在屏幕里）：锁屏、报警静音、报警复位、?帮助、INCREASE O₂ 2min（吸痰增氧）、MANUAL INSP（手动呼吸）、EXP PAUSE（呼气保持）、INSP PAUSE（吸气保持）。",
+  "标签认不出时按位置推断并标\"⚠️按位置推断\"；排版与地图不符时在版面自报里说明。"
+].join("\n");
+const VENT_MAPS = { sv650: VENT_MAP_SV650, pb840: VENT_MAP_PB840 };
 
 const VENT_PROMPT_READ = [
   "你是ICU呼吸治疗技师。任务只有一件：把这张呼吸机控制界面照片里的信息如实抄下来。直接输出，不要过度思考。{背景}",
@@ -2504,7 +2534,7 @@ $("ventBtnSend").onclick = async () => {
     /* ===== 第1棒：读图（抄屏幕） ===== */
     const pRead = VENT_PROMPT_READ
       .replace("{背景}", bgTxt)
-      .replace("{地图}", $("ventModel").value === "sv650" ? VENT_MAP_SV650 : "（无屏幕地图，按通用逻辑读，读不出的标签如实标注）");
+      .replace("{地图}", VENT_MAPS[$("ventModel").value] || "（无屏幕地图，按通用逻辑读，读不出的标签如实标注）");
     const content = [{ type: "text", text: pRead }];
     ventShots.forEach(d => content.push({ type: "image_url", image_url: { url: d } }));
     ventConvo = [{ role: "user", content: content }];
