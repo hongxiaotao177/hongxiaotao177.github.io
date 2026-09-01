@@ -2,6 +2,9 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.3.7 2026-09-01 更新通道加免Token备用路（洪医生报"PPT没更新"查出）：旧Token作废后
+      更新引擎整段静默跳过（既没提示也不下载）。现在API不通/没填Token自动走
+      hongxiaotao177.github.io公开直链（发版时同款文件都同步推那边），更新不再被Token卡死。
     v1.3.6 2026-09-01 CUR同步：习题1.8.7/PPT0.4.3（修kimi-k2.5下架404）。
     v1.3.5 2026-09-01 「💰 AI花钱」卡片入编（洪医生家规）：首页第一屏见今日/本月估算，
       点开按软件分列+最近15条明细+每月提醒线（hx_bill_cap默认50，超了卡片变橙）。
@@ -245,21 +248,36 @@ function ghCfg(){
 }
 function ghHeaders(){ var c=ghCfg(); return {"Authorization":"token "+c.tok, "Accept":"application/vnd.github+json"}; }
 
+/* v1.3.7 免Token备用路（洪医生手机旧Token作废→更新静默卡死的踩坑）：
+   同款文件每次发版都同步推到公开站 hongxiaotao177.github.io，读它不要Token。
+   hxGetText=先走API（私有仓库），不通/没填Token就走公开直链。 */
+function hxRawGet(name){
+  return fetch("https://hongxiaotao177.github.io/"+encodeURIComponent(name), { cache:"no-store" }).then(function(r){
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    return r.text();
+  });
+}
+
 (function(){
   if(!window.LearnShell) return;  /* 浏览器/iPad：网页换不了自己，只做静态菜单 */
   var apk=document.getElementById("apkCard"); if(apk) apk.style.display="none";
   var c=ghCfg();
-  if(!(c.user && c.tok && c.repo)) return;  /* 还没填Token：安静跳过，各软件里会引导 */
-  var base="https://api.github.com/repos/"+encodeURIComponent(c.user)+"/"+encodeURIComponent(c.repo)+"/contents/";
-  var H={"Authorization":"token "+c.tok, "Accept":"application/vnd.github+json"};
+  /* v1.3.7：没填Token也要更新（走公开直链），不再静默跳过 */
+  var hasApi = !!(c.user && c.tok && c.repo);
+  var base=hasApi ? ("https://api.github.com/repos/"+encodeURIComponent(c.user)+"/"+encodeURIComponent(c.repo)+"/contents/") : "";
+  var H=ghHeaders();
   var keys=Object.keys(SUITE);
   var updated=[], failed=[];
   updMsg("🔍 正在检查" + keys.length + "个软件有没有新版…");
   function fetchJson(name){
-    return fetch(base+encodeURIComponent(name), {headers:H}).then(function(r){
-      if(!r.ok) throw new Error("HTTP "+r.status);
-      return r.json();
-    });
+    /* 统一返回"文件内容文本"：API优先，失败/没Token走公开直链 */
+    if(hasApi){
+      return fetch(base+encodeURIComponent(name), {headers:H}).then(function(r){
+        if(!r.ok) throw new Error("HTTP "+r.status);
+        return r.json().then(function(j){ return u8dec(j.content||""); });
+      }).catch(function(e){ return hxRawGet(name); });
+    }
+    return hxRawGet(name);
   }
   /* v1.1.5 踩坑：旧版把"ppt已装0.1.1"的假记忆写进了 hx_suite_ver（其实从没装上），
      光看版本记忆会永远跳过下载。所以现在"版本不用更新"还要再敲一下文件的门：
@@ -292,8 +310,7 @@ function ghHeaders(){ var c=ghCfg(); return {"Authorization":"token "+c.tok, "Ac
     try{ return !!window.LearnShell.applyUpdate(name, b64); }catch(e){ return false; }
   }
   function dl(k, info, remote, localName, next){
-    fetchJson(info.dl||remote).then(function(sf){
-      var html=u8dec(sf.content||"");
+    fetchJson(info.dl||remote).then(function(html){
       var b64=u8enc(html);
       var ok=shellWrite(localName, b64);
       try{ if(window.LearnShell.folderSet()) window.LearnShell.writeFile(localName.replace(".html","")+"_v"+info.version+".html", b64); }catch(e){}
@@ -305,9 +322,9 @@ function ghHeaders(){ var c=ghCfg(); return {"Authorization":"token "+c.tok, "Ac
   function step(i){
     if(i>=keys.length){ finish(); return; }
     var k=keys[i], remote=SUITE[k][0], localName=SUITE[k][1], verFile=SUITE[k][2];
-    fetchJson(verFile).then(function(vf){
+    fetchJson(verFile).then(function(txt){
       var info;
-      try{ info=JSON.parse(u8dec(vf.content||"")); }catch(e){ info=null; }
+      try{ info=JSON.parse(txt); }catch(e){ info=null; }
       if(!info || !info.version){ step(i+1); return; }
       if(cmpVer(info.version, CUR[k])>0){ dl(k, info, remote, localName, function(){ step(i+1); }); return; }
       /* 版本看着不新，再敲一下文件的门（v1.1.5 假记忆防御） */
