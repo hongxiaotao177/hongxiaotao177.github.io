@@ -308,7 +308,7 @@
 
 <script>
 "use strict";
-var SW_VERSION = "0.4.5"; /* v0.4.5 贴回校对结果：别的AI的校对意见贴进来，本软件AI照改大纲（原文没提到的部分不动）+秒表进度 */ /* v0.4.4 复制校对：大纲/全片一键连校对指令复制，借别的AI挑错，不花自己Key */ /* v0.4.3 修404：死模型自动换kimi-k2.6+重试；max_tokens 8000→16384（k2.6思考型） */ /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
+var SW_VERSION = "0.4.6"; /* v0.4.6 更新通道免Token备用路：自检/下载新版在API不通或没填Token时自动走github.io公开直链 */ /* v0.4.5 贴回校对结果：别的AI的校对意见贴进来，本软件AI照改大纲（原文没提到的部分不动）+秒表进度 */ /* v0.4.4 复制校对：大纲/全片一键连校对指令复制，借别的AI挑错，不花自己Key */ /* v0.4.3 修404：死模型自动换kimi-k2.6+重试；max_tokens 8000→16384（k2.6思考型） */ /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
 /* 公共钱罐：API key/GitHub配置 一处填处处有（与其他软件共享 hx_*） */
 (function(){
   var HX_MAP=[["hx_apikey","hx_apikey"],["hx_gh_user","hx_gh_user"],["hx_gh_tok","hx_gh_tok"],["hx_gh_repo","hx_gh_repo"]];
@@ -498,17 +498,31 @@ function locReconcile(manual){
 }
 /* 自检 + 下载新版 */
 var ghVerPending=null;
+/* v0.4.6 免Token备用路：API不通就fetch公开站直链（同款文件，不要Token） */
+function ghRawGet(name){
+  return fetch("https://hongxiaotao177.github.io/"+encodeURIComponent(name),{cache:"no-store"}).then(function(r){
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    return r.text();
+  });
+}
 function ghSelfCheck(manual){
-  if(!ghReady()){ if(manual) showMsg($('ghCheck'),"请先填好用户名、Token、仓库名并保存。","err"); return; }
   if(manual) showMsg($('ghCheck'),"自检：正在查…");
-  ghFetch(ghFileUrl("version-ppt.json"),{headers:ghHeaders()}).then(function(resp){
-    if(resp.status===404){ showMsg($('ghCheck'),"自检：✅ 线路通（云端还没有版本信息）","ok"); return null; }
-    if(!resp.ok) return resp.text().then(function(t){ throw new Error(ghErrText(resp.status,t)); });
-    return resp.json();
-  }).then(function(file){
+  var p;
+  if(ghReady()){
+    p=ghFetch(ghFileUrl("version-ppt.json"),{headers:ghHeaders()}).then(function(resp){
+      if(resp.status===404) return null;
+      if(!resp.ok) return resp.text().then(function(t){ throw new Error(ghErrText(resp.status,t)); });
+      return resp.json();
+    }).then(function(file){ return file?ghB64dec(file.content||""):null; })
+      .catch(function(e){ return ghRawGet("version-ppt.json"); }); /* API不通→公开直链 */
+  }else{
+    p=ghRawGet("version-ppt.json");  /* 没填Token也照样能查更新 */
+  }
+  p.then(function(txt){
+    if(txt==null){ showMsg($('ghCheck'),"自检：✅ 线路通（云端还没有版本信息）","ok"); return null; }
+    var file; try{ file=JSON.parse(txt); }catch(e){ file=null; }
     if(!file) return;
-    var info;
-    try{ info=JSON.parse(ghB64dec(file.content||"")); }catch(e){ info=null; }
+    var info=file;
     if(!info||!info.version){ showMsg($('ghCheck'),"自检：✅ 线路通（版本信息读不懂）","ok"); return; }
     if(cmpVer(info.version,SW_VERSION)>0){
       ghVerPending=info;
@@ -521,15 +535,18 @@ function ghSelfCheck(manual){
     }
     locReconcile(false); /* 自检顺手对账 */
   }).catch(function(e){
-    showMsg($('ghCheck'),"自检：❌ 连不上 GitHub（"+((e&&e.message)||"网络不通")+"）","err");
+    showMsg($('ghCheck'),"自检：❌ 两条路都不通（API和公开直链都失败："+((e&&e.message)||"网络不通")+"）——检查网络，或多试几次","err");
   });
 }
 function ghDlFile(repoName, saveName, cb){
-  ghFetch(ghFileUrl(repoName),{headers:ghHeaders()}).then(function(resp){
-    if(!resp.ok) return resp.text().then(function(t){ throw new Error(ghErrText(resp.status,t)); });
-    return resp.json();
-  }).then(function(file){
-    var html=ghB64dec(file.content||"");
+  var apiP = ghReady()
+    ? ghFetch(ghFileUrl(repoName),{headers:ghHeaders()}).then(function(resp){
+        if(!resp.ok) return resp.text().then(function(t){ throw new Error(ghErrText(resp.status,t)); });
+        return resp.json();
+      }).then(function(file){ return ghB64dec(file.content||""); })
+        .catch(function(e){ return ghRawGet(repoName); })  /* v0.4.6 API不通→公开直链 */
+    : ghRawGet(repoName);  /* 没Token照样下载 */
+  apiP.then(function(html){
     if(window.LearnShell && window.LearnShell.applyUpdate){
       var b64=ghB64enc(html);
       window.LearnShell.applyUpdate(saveName,b64);
