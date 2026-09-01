@@ -217,6 +217,7 @@
     <div class="btn-row">
       <button id="btnBuild" style="background:#b3742a;">🎬 生成PPT</button>
       <button class="ghost" id="btnCopyProof">📋 复制校对（大纲）</button>
+      <button class="ghost" id="btnProofIn">📥 贴回校对结果</button>
       <button class="ghost" id="btnBackHome">← 返回</button>
     </div>
     <div class="msg" id="editMsg"></div>
@@ -230,12 +231,27 @@
     <div class="btn-row">
       <button id="btnPlay" style="background:#b3742a;">▶️ 放映（手机横过来）</button>
       <button class="ghost" id="btnCopyProof2">📋 复制校对（全片）</button>
+      <button class="ghost" id="btnProofIn2">📥 贴回校对结果</button>
       <button class="ghost" id="btnExport">📤 导出HTML</button>
       <button class="ghost" id="btnBackEdit">← 回大纲</button>
     </div>
     <div class="msg" id="slidesMsg"></div>
   </div>
   <div id="slideList"></div>
+</div>
+
+<!-- v0.4.5 贴回校对结果：别的AI的校对意见贴进来，本软件AI照意见改大纲 -->
+<div id="proofModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;overflow:auto;">
+  <div style="background:#fff;border-radius:14px;max-width:640px;margin:8vh auto;padding:18px 20px;">
+    <h3 style="margin-bottom:6px;">📥 贴回校对结果</h3>
+    <div style="font-size:13px;color:#8a8178;margin-bottom:8px;">把别的AI给的校对意见整段贴进来 → 点「AI照改」，本软件的AI会把意见落实到大纲里（约花几分钱）。没提到的部分原样保留。</div>
+    <textarea id="proofText" placeholder="粘贴别的AI返回的校对意见…" style="width:100%;min-height:160px;font-size:14px;padding:10px;border:1px solid #ddd3c5;border-radius:8px;"></textarea>
+    <div class="btn-row" style="margin-top:8px;">
+      <button id="btnProofGo" style="background:#b3742a;">🤖 AI照改大纲</button>
+      <button class="ghost" id="btnProofClose">关闭</button>
+    </div>
+    <div class="msg" id="proofMsg"></div>
+  </div>
 </div>
 
 <!-- 播放器 -->
@@ -292,7 +308,7 @@
 
 <script>
 "use strict";
-var SW_VERSION = "0.4.4"; /* v0.4.4 复制校对：大纲/全片一键连校对指令复制，借别的AI挑错，不花自己Key */ /* v0.4.3 修404：死模型自动换kimi-k2.6+重试；max_tokens 8000→16384（k2.6思考型） */ /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
+var SW_VERSION = "0.4.5"; /* v0.4.5 贴回校对结果：别的AI的校对意见贴进来，本软件AI照改大纲（原文没提到的部分不动）+秒表进度 */ /* v0.4.4 复制校对：大纲/全片一键连校对指令复制，借别的AI挑错，不花自己Key */ /* v0.4.3 修404：死模型自动换kimi-k2.6+重试；max_tokens 8000→16384（k2.6思考型） */ /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
 /* 公共钱罐：API key/GitHub配置 一处填处处有（与其他软件共享 hx_*） */
 (function(){
   var HX_MAP=[["hx_apikey","hx_apikey"],["hx_gh_user","hx_gh_user"],["hx_gh_tok","hx_gh_tok"],["hx_gh_repo","hx_gh_repo"]];
@@ -1356,6 +1372,49 @@ function copyProof(kind, msgEl){
 }
 $('btnCopyProof').onclick=function(){ copyProof("outline", $('editMsg')); };
 $('btnCopyProof2').onclick=function(){ copyProof("slides", $('slidesMsg')); };
+
+
+/* ==================== v0.4.5 贴回校对：别的AI的意见 → 本软件AI照改大纲 ==================== */
+function proofOpen(){
+  $('proofText').value=""; $('proofMsg').textContent="";
+  $('proofModal').style.display="block";
+}
+$('btnProofIn').onclick=proofOpen;
+$('btnProofIn2').onclick=proofOpen;
+$('btnProofClose').onclick=function(){ $('proofModal').style.display="none"; };
+$('btnProofGo').onclick=function(){
+  var corr=($('proofText').value||"").replace(/^\s+|\s+$/g,"");
+  if(!corr){ showMsg($('proofMsg'),"先贴校对意见","err"); return; }
+  /* 原文来源：大纲框有字用大纲；没有就从已生成的页反推 */
+  var orig=($('outlineText').value||"").replace(/^\s+|\s+$/g,"");
+  if(!orig){
+    var p=curProj();
+    if(p && p.slides && p.slides.length) orig=p.slides.map(function(s){ return pageToMd(s); }).join("\n");
+  }
+  if(!orig){ showMsg($('proofMsg'),"大纲和幻灯片都是空的，没什么可改","err"); return; }
+  var msgEl=$('proofMsg'), t0=Date.now();
+  var tick=setInterval(function(){
+    msgEl.textContent="🤖 AI正在照改大纲…已等 "+Math.floor((Date.now()-t0)/1000)+" 秒（通常30~90秒，转着就不是死机）";
+    msgEl.className="msg ok";
+  },1000);
+  callAI(
+    "您是PPT修改助手。把校对意见逐条落实到原大纲：指出的错误改掉，没提到的部分一字不动原样保留。保持原有Markdown结构（#封面/##页/要点/表格）。只输出改后的完整大纲，不要解释。",
+    "【原大纲】\n"+orig+"\n\n【校对意见】\n"+corr+"\n\n"+MD_RULES.replace("页数8~15页。","页数维持原样，校对意见要求增删页的除外。"),
+    function(text){
+      clearInterval(tick);
+      var m=text.match(/```(?:markdown)?\s*([\s\S]*?)```/);
+      var md=(m?m[1]:text).replace(/^\s+|\s+$/g,"");
+      $('outlineText').value=md;
+      var p=curProj(); if(p){ p.outline=md; p.t=Date.now(); saveStore(); }
+      $('proofModal').style.display="none";
+      showPage('editPage');
+      showMsg($('editMsg'),"✅ 已按校对意见改好大纲（用了 "+Math.floor((Date.now()-t0)/1000)+" 秒）。检查一遍，满意再点「🎬 生成PPT」重建","ok");
+    },
+    function(err){
+      clearInterval(tick);
+      showMsg(msgEl,"❌ "+err,"err");
+    });
+};
 
 /* ==================== 事件绑定 + 初始化 ==================== */
 $('btnNew').onclick=function(){
