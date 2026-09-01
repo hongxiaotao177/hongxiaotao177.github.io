@@ -308,7 +308,7 @@
 
 <script>
 "use strict";
-var SW_VERSION = "0.4.8"; /* v0.4.8 AI报错带官方原因+400也自动换模型重试（洪医生贴回校对撞HTTP400：疑公共模型罐里存着已下架的moonshot-v1系列，400不走404重试路） */ /* v0.4.7 版本字样治病根：头顶+页脚+标题改成代码自动填SW_VERSION（v0.4.0~0.4.6期间头顶一直显示旧号，害用户以为没更新） */ /* v0.4.6 更新通道免Token备用路：自检/下载新版在API不通或没填Token时自动走github.io公开直链 */ /* v0.4.5 贴回校对结果：别的AI的校对意见贴进来，本软件AI照改大纲（原文没提到的部分不动）+秒表进度 */ /* v0.4.4 复制校对：大纲/全片一键连校对指令复制，借别的AI挑错，不花自己Key */ /* v0.4.3 修404：死模型自动换kimi-k2.6+重试；max_tokens 8000→16384（k2.6思考型） */ /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
+var SW_VERSION = "0.4.9"; /* v0.4.8 AI报错带官方原因+400也自动换模型重试（洪医生贴回校对撞HTTP400：疑公共模型罐里存着已下架的moonshot-v1系列，400不走404重试路） */ /* v0.4.7 版本字样治病根：头顶+页脚+标题改成代码自动填SW_VERSION（v0.4.0~0.4.6期间头顶一直显示旧号，害用户以为没更新） */ /* v0.4.6 更新通道免Token备用路：自检/下载新版在API不通或没填Token时自动走github.io公开直链 */ /* v0.4.5 贴回校对结果：别的AI的校对意见贴进来，本软件AI照改大纲（原文没提到的部分不动）+秒表进度 */ /* v0.4.4 复制校对：大纲/全片一键连校对指令复制，借别的AI挑错，不花自己Key */ /* v0.4.3 修404：死模型自动换kimi-k2.6+重试；max_tokens 8000→16384（k2.6思考型） */ /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
 /* 公共钱罐：API key/GitHub配置 一处填处处有（与其他软件共享 hx_*） */
 (function(){
   var HX_MAP=[["hx_apikey","hx_apikey"],["hx_gh_user","hx_gh_user"],["hx_gh_tok","hx_gh_tok"],["hx_gh_repo","hx_gh_repo"]];
@@ -769,7 +769,7 @@ function callAI(sys, usr, onOk, onErr){
   function send(){
     return fetch(API_URL,{method:"POST",
       headers:{"Content-Type":"application/json","Authorization":"Bearer "+key},
-      body:JSON.stringify({model:model,messages:[{role:"system",content:sys},{role:"user",content:usr}],max_tokens:16384,temperature:0.4})
+      body:JSON.stringify({model:model,messages:[{role:"system",content:sys},{role:"user",content:usr}],max_tokens:16384} /* v0.4.9 删掉temperature:0.4——kimi思考型模型只允许temperature=1，多设直接400（习题v1.2补丁2踩过同款坑，这次轮到PPT） */)
     });
   }
   send().then(function(r){
