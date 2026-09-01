@@ -378,17 +378,22 @@ function fmtTime(t){ return new Date(t).toLocaleString(); }
 
 /* ==================== GitHub 通信（移植学习笔记/习题学习同套） ==================== */
 var BR_GH_USER = 'br_gh_user', BR_GH_TOK = 'br_gh_tok', BR_GH_REPO = 'br_gh_repo', BR_GH_CHECK = 'br_gh_check';
-var SW_VERSION = '1.2.0';
+var SW_VERSION = '1.2.1'; /* v1.2.1 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */
 /* v1.1.2 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["br_gh_user", "hx_gh_user"], ["br_gh_tok", "hx_gh_tok"], ["br_gh_repo", "hx_gh_repo"]];
-  function hxSync(){
-    for(var i=0;i<HX_MAP.length;i++){
-      var own=localStorage.getItem(HX_MAP[i][0]), sh=localStorage.getItem(HX_MAP[i][1]);
-      if(own && own!==sh) localStorage.setItem(HX_MAP[i][1], own);
-      else if(!own && sh) localStorage.setItem(HX_MAP[i][0], sh);
-    }
+  /* 公共钱罐v2（2026-09-01 时间戳版）：新填的盖旧的，旧Token不再复活。手动保存时打时间戳 hxStamp(键)；同步时戳新的赢，平局以公共钱罐为准 */
+  function hxSync1(ownKey, shKey){
+    var o=localStorage.getItem(ownKey), s=localStorage.getItem(shKey);
+    var ot=+localStorage.getItem(ownKey+"_t")||0, st=+localStorage.getItem(shKey+"_t")||0;
+    if(o && s && o!==s){
+      if(ot>st){ localStorage.setItem(shKey,o); localStorage.setItem(shKey+"_t",ot); }
+      else { localStorage.setItem(ownKey,s); localStorage.setItem(ownKey+"_t",st); }
+    }else if(o && !s){ localStorage.setItem(shKey,o); localStorage.setItem(shKey+"_t",ot); }
+    else if(!o && s){ localStorage.setItem(ownKey,s); localStorage.setItem(ownKey+"_t",st); }
   }
+  function hxStamp(){ for(var i=0;i<arguments.length;i++) localStorage.setItem(arguments[i]+"_t", String(Date.now())); }
+  function hxSync(){ for(var i=0;i<HX_MAP.length;i++) hxSync1(HX_MAP[i][0], HX_MAP[i][1]); }
   hxSync(); setInterval(hxSync, 2000);
 })();
 /* 主界面刷新：壳里打开软件时顺带检查套装主界面(index.html)有没有新版，有就换新（解决主界面自己不会更新的鸡生蛋问题） */
@@ -1256,6 +1261,7 @@ function ghSave(){
     localStorage.setItem(BR_GH_USER, $('ghUser').value.replace(/^\s+|\s+$/g,''));
     localStorage.setItem(BR_GH_TOK,  $('ghTok').value.replace(/^\s+|\s+$/g,''));
     localStorage.setItem(BR_GH_REPO, $('ghRepo').value.replace(/^\s+|\s+$/g,''));
+    hxStamp(BR_GH_USER, BR_GH_TOK, BR_GH_REPO);
     toast('💾 已保存', 2000);
     updWizard();
   }catch(e){ toast('保存失败：浏览器禁止了本地存储', 3500); }
