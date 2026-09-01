@@ -606,7 +606,7 @@ window.addEventListener('load', function(){
 (function(){
 __bc('D脚本启动');
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.3.30';
+var SW_VERSION = '0.3.31'; /* v0.3.31 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
@@ -633,15 +633,20 @@ function strHash(s){
 
 /* ==================== 公共钱罐 hx_* ==================== */
 var HX_MAP = [['xt_gh_user','hx_gh_user'],['xt_gh_tok','hx_gh_tok'],['xt_gh_repo','hx_gh_repo'],['xt_apikey','hx_apikey'],['xt_aimodel','hx_aimodel']];
-(function(){
-  HX_MAP.forEach(function(p){
-    var own = localStorage.getItem(p[0]);
-    var shared = localStorage.getItem(p[1]);
-    if(own && own !== shared) localStorage.setItem(p[1], own);
-    else if(!own && shared) localStorage.setItem(p[0], shared);
-  });
-})();
-function hxPut(ownKey, val){ localStorage.setItem(ownKey, val); var m = HX_MAP.filter(function(p){ return p[0] === ownKey; })[0]; if(m) localStorage.setItem(m[1], val); }
+/* 公共钱罐v2（2026-09-01 时间戳版）：新填的盖旧的，旧Token不再复活；戳新的赢，平局以公共钱罐为准 */
+function hxStamp(){ for(var i=0;i<arguments.length;i++) localStorage.setItem(arguments[i]+"_t", String(Date.now())); }
+function hxSync1(ownKey, shKey){
+  var o=localStorage.getItem(ownKey), s=localStorage.getItem(shKey);
+  var ot=+localStorage.getItem(ownKey+"_t")||0, st=+localStorage.getItem(shKey+"_t")||0;
+  if(o && s && o!==s){
+    if(ot>st){ localStorage.setItem(shKey,o); localStorage.setItem(shKey+"_t",ot); }
+    else { localStorage.setItem(ownKey,s); localStorage.setItem(ownKey+"_t",st); }
+  }else if(o && !s){ localStorage.setItem(shKey,o); localStorage.setItem(shKey+"_t",ot); }
+  else if(!o && s){ localStorage.setItem(ownKey,s); localStorage.setItem(ownKey+"_t",st); }
+}
+function hxSync(){ HX_MAP.forEach(function(p){ hxSync1(p[0], p[1]); }); }
+hxSync(); setInterval(hxSync, 2000);
+function hxPut(ownKey, val){ localStorage.setItem(ownKey, val); localStorage.setItem(ownKey+"_t", String(Date.now())); var m = HX_MAP.filter(function(p){ return p[0] === ownKey; })[0]; if(m){ localStorage.setItem(m[1], val); localStorage.setItem(m[1]+"_t", String(Date.now())); } }
 
 /* ==================== 数据层 ==================== */
 var LS_NOTES = 'xt_notes_v1';
