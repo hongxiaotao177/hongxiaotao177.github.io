@@ -10,6 +10,11 @@
           → 大纲编辑页改稿 → 一键生成HTML幻灯片 → 横屏播放 → 每页可AI重做/换版式
           → 导出单个HTML（微信发别人，浏览器打开即放映）
   修改记录：
+    v0.7.5 2026-09-02 系统弹窗大扫除（洪医生拍板）：自画通用对话框hxAsk（单行/多行输入）
+      +hxConfirm（确认/取消），替换全文件剩余 6处系统prompt+3处系统confirm——
+      AI起草大纲、填Kimi Key、涂黑"自己改/AI改"、插链接"显示什么字"、单页编辑"AI改"、
+      云端恢复确认、删项目确认、删页确认。手机壳X5内核上这些曾"点了没反应"或渲染乱码。
+      （独立验证员抓到并修复：弹窗未关又来新弹窗时旧回调被吞——现在先按"取消"了结旧的再开新的）
     v0.7.4 2026-09-02 洪医生真机三报（232秒太慢/任务没完成/计时看不见）：
       复现结论：本页内容（含表格每行）本来就会发给AI，Kimi真实复现能正确加"中文名"列；
       真机"没完成"最可能是点错了页（表格在第3页，重做的是第2页），弹窗不说重做哪页是设计缺陷。
@@ -326,6 +331,18 @@
   <div id="slideList"></div>
 </div>
 
+<!-- v0.7.5 通用自画对话框（系统prompt/confirm大扫除） -->
+<div id="hxDlg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:99999;overflow:auto;">
+  <div style="background:#fff;border-radius:14px;max-width:560px;margin:14vh auto;padding:18px 20px;">
+    <h3 style="margin-bottom:8px;" id="hxDlgTitle"></h3>
+    <textarea id="hxDlgInput" style="width:100%;min-height:70px;font-size:15px;padding:10px;border:1px solid #d8d2c6;border-radius:8px;"></textarea>
+    <div style="margin-top:10px;">
+      <button id="hxDlgOk" style="background:#b3742a;">确定</button>
+      <button class="ghost" id="hxDlgCancel">取消</button>
+    </div>
+  </div>
+</div>
+
 <!-- v0.7.1 AI重做本页自画弹窗（手机壳X5不理系统prompt，必须自画） -->
 <div id="regenModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;overflow:auto;">
   <div style="background:#fff;border-radius:14px;max-width:560px;margin:14vh auto;padding:18px 20px;">
@@ -409,7 +426,7 @@
 
 <script>
 "use strict";
-var SW_VERSION = "0.7.4"; /* v0.7.4 三件套：①重做弹窗显示"正在重做第N页《标题》+内容预览"防点错页 ②小活（单页重做）优先派千问qwen-plus（几秒~20秒），没Key/失败自动退Kimi ③AI干活浮动秒表胶囊趴右下角 ④重做后验收：原有表格被AI弄丢→自动重试一次，仍丢则不覆盖原页 */ /* v0.7.3 重做全程浮动提示：开工/成功/失败都弹toast（洪医生真机反馈：进度消息在页面顶部，滚到下面看不见，像死机） */ /* v0.7.2 修数据错乱：AI重做在途时移动/删除该页，写回改认"页面对象"不认下标（独立测试t37抓到） */ /* v0.7.1 修"AI重做本页点了没反应"：病根=手机壳X5内核不理系统prompt()弹窗（直接当取消），改自画弹窗（习题学习删除确认同款药方） */ /* v0.7.0 千问自动交叉校对（愿望清单第3批）：「🤖 自动校对」一键两棒——第1棒发千问qwen-plus（公共钱罐hx_qwenkey，约1分钱）拿校对意见，第2棒自动交给贴回校对管道让Kimi照改大纲（没提到的一字不动）；开关可选千问/Kimi自查；千问答"没发现问题"就不花第2棒的钱 */ /* v0.6.1 自选背景图（愿望清单第2批）：幻灯片页「🖼️ 背景图」相册选图→canvas压缩≤1600px、JPEG逐步降质（≤200KB）→存本PPT的p.bg（不设全局）；渲染时.slide-page叠82%不透明蒙纱（米白皮用米白纱/深色皮用深色纱）保证字可读；「✕ 清除背景」一键还原；导出HTML内嵌带走。提醒：导出会把照片带出去，别夹病人信息 */ /* v0.6.0 四套皮肤（米白学术/深蓝正式/墨绿讲堂/黑板粉笔），每个PPT各选各的，导出HTML带着走；点屏翻页其实v0.2.0起就有（点左35%上页/右65%下页） */ /* v0.5.0 放映自适应：底栏实底让位+内容超高自动等比缩小（洪医生横屏讲课表格最后一行被吃） */ /* v0.4.8 AI报错带官方原因+400也自动换模型重试（洪医生贴回校对撞HTTP400：疑公共模型罐里存着已下架的moonshot-v1系列，400不走404重试路） */ /* v0.4.7 版本字样治病根：头顶+页脚+标题改成代码自动填SW_VERSION（v0.4.0~0.4.6期间头顶一直显示旧号，害用户以为没更新） */ /* v0.4.6 更新通道免Token备用路：自检/下载新版在API不通或没填Token时自动走github.io公开直链 */ /* v0.4.5 贴回校对结果：别的AI的校对意见贴进来，本软件AI照改大纲（原文没提到的部分不动）+秒表进度 */ /* v0.4.4 复制校对：大纲/全片一键连校对指令复制，借别的AI挑错，不花自己Key */ /* v0.4.3 修404：死模型自动换kimi-k2.6+重试；max_tokens 8000→16384（k2.6思考型） */ /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
+var SW_VERSION = "0.7.5"; /* v0.7.5 系统弹窗大扫除：剩下6处prompt+3处confirm全换自画对话框hxAsk/hxConfirm（AI起草大纲/填Key/涂黑改/插链接/单页AI改/云端恢复/删项目/删页），手机壳上不再"点了没反应" */ /* v0.7.4 三件套：①重做弹窗显示"正在重做第N页《标题》+内容预览"防点错页 ②小活（单页重做）优先派千问qwen-plus（几秒~20秒），没Key/失败自动退Kimi ③AI干活浮动秒表胶囊趴右下角 ④重做后验收：原有表格被AI弄丢→自动重试一次，仍丢则不覆盖原页 */ /* v0.7.3 重做全程浮动提示：开工/成功/失败都弹toast（洪医生真机反馈：进度消息在页面顶部，滚到下面看不见，像死机） */ /* v0.7.2 修数据错乱：AI重做在途时移动/删除该页，写回改认"页面对象"不认下标（独立测试t37抓到） */ /* v0.7.1 修"AI重做本页点了没反应"：病根=手机壳X5内核不理系统prompt()弹窗（直接当取消），改自画弹窗（习题学习删除确认同款药方） */ /* v0.7.0 千问自动交叉校对（愿望清单第3批）：「🤖 自动校对」一键两棒——第1棒发千问qwen-plus（公共钱罐hx_qwenkey，约1分钱）拿校对意见，第2棒自动交给贴回校对管道让Kimi照改大纲（没提到的一字不动）；开关可选千问/Kimi自查；千问答"没发现问题"就不花第2棒的钱 */ /* v0.6.1 自选背景图（愿望清单第2批）：幻灯片页「🖼️ 背景图」相册选图→canvas压缩≤1600px、JPEG逐步降质（≤200KB）→存本PPT的p.bg（不设全局）；渲染时.slide-page叠82%不透明蒙纱（米白皮用米白纱/深色皮用深色纱）保证字可读；「✕ 清除背景」一键还原；导出HTML内嵌带走。提醒：导出会把照片带出去，别夹病人信息 */ /* v0.6.0 四套皮肤（米白学术/深蓝正式/墨绿讲堂/黑板粉笔），每个PPT各选各的，导出HTML带着走；点屏翻页其实v0.2.0起就有（点左35%上页/右65%下页） */ /* v0.5.0 放映自适应：底栏实底让位+内容超高自动等比缩小（洪医生横屏讲课表格最后一行被吃） */ /* v0.4.8 AI报错带官方原因+400也自动换模型重试（洪医生贴回校对撞HTTP400：疑公共模型罐里存着已下架的moonshot-v1系列，400不走404重试路） */ /* v0.4.7 版本字样治病根：头顶+页脚+标题改成代码自动填SW_VERSION（v0.4.0~0.4.6期间头顶一直显示旧号，害用户以为没更新） */ /* v0.4.6 更新通道免Token备用路：自检/下载新版在API不通或没填Token时自动走github.io公开直链 */ /* v0.4.5 贴回校对结果：别的AI的校对意见贴进来，本软件AI照改大纲（原文没提到的部分不动）+秒表进度 */ /* v0.4.4 复制校对：大纲/全片一键连校对指令复制，借别的AI挑错，不花自己Key */ /* v0.4.3 修404：死模型自动换kimi-k2.6+重试；max_tokens 8000→16384（k2.6思考型） */ /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
 /* 公共钱罐：API key/GitHub配置 一处填处处有（与其他软件共享 hx_*） */
 (function(){
   var HX_MAP=[["hx_apikey","hx_apikey"],["hx_gh_user","hx_gh_user"],["hx_gh_tok","hx_gh_tok"],["hx_gh_repo","hx_gh_repo"]];
@@ -541,13 +558,15 @@ function ghPull(onResult){
 function ghAskRestore(payload, srcLabel){
   var when=payload.savedAt?new Date(payload.savedAt).toLocaleString():"未知时间";
   var n=payload.store.projects.length;
-  if(!confirm((srcLabel||"云端")+"有 "+n+" 个PPT（备份于 "+when+"）。恢复将覆盖本机现有PPT，确定吗？")) return;
+  hxConfirm((srcLabel||"云端")+"有 "+n+" 个PPT（备份于 "+when+"）。恢复将覆盖本机现有PPT，确定吗？", function(yes){
+  if(!yes) return;
   ghSuspend=true;
   store=payload.store;
   saveStore();
   ghSuspend=false;
   renderProjects();
   toast("✅ 已恢复 "+n+" 个PPT");
+  });
 }
 function ghStatusRender(){
   var last=localStorage.getItem('ppt_gh_last');
@@ -963,8 +982,11 @@ function smallTaskAI(sys, usr, onOk, onErr){
   });
 }
 function keyInputAsk(){
-  var k=prompt("把 Kimi API key（sk-开头）贴这里：","");
-  if(k){ localStorage.setItem('hx_apikey', k.trim()); toast("✅ key已存进公共钱罐，全家软件通用"); }
+  hxAsk("把 Kimi API key（sk-开头）贴这里：", "", "sk-...", function(k){
+    if(k===null) return;
+    k=k.replace(/^\s+|\s+$/g,'');
+    if(k){ localStorage.setItem('hx_apikey', k); toast("✅ key已存进公共钱罐，全家软件通用"); }
+  });
 }
 var MD_RULES=
 '【输出规矩（Markdown）】\n'+
@@ -980,17 +1002,18 @@ var MD_RULES=
 function aiDraftOutline(){
   var cur=$('outlineText').value;
   var topic=cur.replace(/^\s+|\s+$/g,'');
-  var ask=prompt(topic?"在此基础上重写/大改，说您的要求（留空=按现有内容重新组织）：":"您的PPT主题是什么？（一句话，如：CRAB感染的抗菌治疗策略）","");
-  if(ask===null) return;
-  var sys='您是ICU主任医师的教学助手，帮人把主题做成讲课PPT的大纲。';
-  var usr=(topic?('【现有大纲/资料】\n'+topic+'\n\n'):'')+
-    '【题目/要求】'+(ask||'按上面资料重新组织成大纲')+'\n\n'+MD_RULES;
-  showMsg($('editMsg'),'🤖 AI正在起草大纲…');
-  callAI(sys,usr,function(text){
-    var m=text.match(/```(?:markdown)?\s*([\s\S]*?)```/);
-    $('outlineText').value=(m?m[1]:text).replace(/^\s+|\s+$/g,'');
-    showMsg($('editMsg'),'✅ 大纲起草好了，改完点「🎬 生成PPT」','ok');
-  },function(err){ showMsg($('editMsg'),err,'err'); });
+  hxAsk(topic?"在此基础上重写/大改，说您的要求（留空=按现有内容重新组织）：":"您的PPT主题是什么？（一句话，如：CRAB感染的抗菌治疗策略）", "", "", function(ask){
+    if(ask===null) return;
+    var sys='您是ICU主任医师的教学助手，帮人把主题做成讲课PPT的大纲。';
+    var usr=(topic?('【现有大纲/资料】\n'+topic+'\n\n'):'')+
+      '【题目/要求】'+(ask||'按上面资料重新组织成大纲')+'\n\n'+MD_RULES;
+    showMsg($('editMsg'),'🤖 AI正在起草大纲…');
+    callAI(sys,usr,function(text){
+      var m=text.match(/```(?:markdown)?\s*([\s\S]*?)```/);
+      $('outlineText').value=(m?m[1]:text).replace(/^\s+|\s+$/g,'');
+      showMsg($('editMsg'),'✅ 大纲起草好了，改完点「🎬 生成PPT」','ok');
+    },function(err){ showMsg($('editMsg'),err,'err'); });
+  });
 }
 function aiPolishOutline(){
   var cur=$('outlineText').value.replace(/^\s+|\s+$/g,'');
@@ -1018,6 +1041,23 @@ function pageToMd(p){
   if(p.para) md+=p.para+'\n';
   return md;
 }
+/* v0.7.5 通用自画对话框：hxAsk问一句话（cb(null)=取消），hxConfirm问要不要（cb(true/false)）。
+   手机壳X5内核不理系统prompt/confirm，全家只许用这两个 */
+var hxDlgCb=null;
+function hxAsk(title, defVal, placeholder, cb, okText){
+  if($('hxDlg').style.display==='block') hxDlgClose(null); /* 防嵌套：旧弹窗按"取消"了结，回调不丢（独立验证员t49抓到） */
+  $('hxDlgTitle').textContent=title;
+  var inp=$('hxDlgInput'); inp.value=defVal||''; inp.placeholder=placeholder||'';
+  $('hxDlgOk').textContent=okText||'确定';
+  hxDlgCb=cb;
+  $('hxDlg').style.display='block';
+  setTimeout(function(){ inp.focus(); },50);
+}
+function hxConfirm(msg, cb){ hxAsk(msg, '', '（此操作不需打字，直接点按钮）', function(v){ cb(v!==null); }, '确定执行'); $('hxDlgInput').style.display='none'; }
+function hxDlgClose(v){ $('hxDlg').style.display='none'; $('hxDlgInput').style.display=''; var cb=hxDlgCb; hxDlgCb=null; if(cb) cb(v); }
+$('hxDlgOk').onclick=function(){ hxDlgClose($('hxDlgInput').value); };
+$('hxDlgCancel').onclick=function(){ hxDlgClose(null); };
+
 /* v0.7.4 浮动秒表胶囊：AI干活期间趴右下角，滚到哪都看得见；干完/报错自动没 */
 var aiFloatTimer=null;
 function aiFloatShow(label){
@@ -1104,7 +1144,7 @@ function renderProjects(){
     var b2=document.createElement('button'); b2.textContent='✏️ 编辑'; b2.className='ghost'; b2.style.fontSize='13px'; b2.style.padding='7px 10px';
     b2.onclick=function(){ openProject(p.id); };
     var b3=document.createElement('button'); b3.textContent='删除'; b3.className='danger'; b3.style.fontSize='13px'; b3.style.padding='7px 10px';
-    b3.onclick=function(){ if(confirm('删除「'+(p.title||'无题')+'」？')){ store.projects=store.projects.filter(function(x){return x.id!==p.id;}); saveStore(); renderProjects(); } };
+    b3.onclick=function(){ hxConfirm('删除「'+(p.title||'无题')+'」？', function(yes){ if(!yes) return; store.projects=store.projects.filter(function(x){return x.id!==p.id;}); saveStore(); renderProjects(); }); };
     d.appendChild(b1); d.appendChild(b2); d.appendChild(b3);
     el.appendChild(d);
   });
@@ -1153,7 +1193,7 @@ function renderSlides(){
     sel.onchange=function(){ s.cls=sel.value; p.t=Date.now(); saveStore(); };
     var bUp=document.createElement('button'); bUp.className='ghost'; bUp.textContent='↑'; bUp.onclick=function(){ if(i>0){ p.slides.splice(i-1,0,p.slides.splice(i,1)[0]); saveStore(); renderSlides(); } };
     var bDn=document.createElement('button'); bDn.className='ghost'; bDn.textContent='↓'; bDn.onclick=function(){ if(i<p.slides.length-1){ p.slides.splice(i+1,0,p.slides.splice(i,1)[0]); saveStore(); renderSlides(); } };
-    var bDel=document.createElement('button'); bDel.className='danger'; bDel.textContent='删'; bDel.onclick=function(){ if(confirm('删第'+(i+1)+'页？')){ p.slides.splice(i,1); saveStore(); renderSlides(); } };
+    var bDel=document.createElement('button'); bDel.className='danger'; bDel.textContent='删'; bDel.onclick=function(){ hxConfirm('删第'+(i+1)+'页？', function(yes){ if(!yes) return; p.slides.splice(i,1); saveStore(); renderSlides(); }); };
     ops.appendChild(bRegen); ops.appendChild(bEdit); ops.appendChild(sel); ops.appendChild(bUp); ops.appendChild(bDn); ops.appendChild(bDel);
     d.appendChild(ops);
     el.appendChild(d);
@@ -1391,13 +1431,14 @@ function outlineReplace(newText){
 }
 $('selEdit').onclick=function(){
   var sel=outlineSel(); if(!sel.text) return;
-  var t=prompt('改成什么？', sel.text);
-  if(t===null) return;
-  outlineReplace(t);
+  hxAsk('改成什么？', sel.text, '', function(t){
+    if(t===null) return;
+    outlineReplace(t);
+  }, '✏️ 改');
 };
 $('selAi').onclick=function(){
   var sel=outlineSel(); if(!sel.text) return;
-  var ask=prompt('对这段的要求？（如：更简洁 / 改成对比表 / 扩成三条要点）','');
+  hxAsk('对这段的要求？（如：更简洁 / 改成对比表 / 扩成三条要点）', '', '', function(ask){
   if(ask===null) return;
   toast('🤖 AI正在改这段…');
   callAI('您是ICU教学PPT大纲的段落编辑助手。',
@@ -1406,6 +1447,7 @@ $('selAi').onclick=function(){
       var m=text.match(/```(?:markdown)?\s*([\s\S]*?)```/); if(m) text=m[1];
       outlineReplace(text.replace(/^\s+|\s+$/g,'')); toast('✅ 改好了');
     }, function(err){ toast('⚠️ '+err); });
+  }, '🤖 AI改');
 };
 /* 文献选择窗：mode 'link'=插[[文件]]；'part'=摘一段插[[文件|标签]]并存linkNotes */
 var litMode='link', litTarget=null;  /* litTarget: 'outline' 或 'page'（单页编辑窗的textarea） */
@@ -1472,11 +1514,12 @@ function litPicked(m){
     b.onclick=function(){
       var excerpt=ta.value.replace(/^\s+|\s+$/g,'');
       if(!excerpt){ toast('摘要是空的'); return; }
-      var label=prompt('链接上显示什么字？', m.title||m.filename);
+      hxAsk('链接上显示什么字？', m.title||m.filename, '', function(label){
       if(label===null) return;
       outlineLinks[m.filename]=excerpt;
       litInsert('[['+m.filename+'|'+label+']]');
       toast('✅ 已插入，摘录已存（导出时别人点开看到的就是这段）');
+      }, '📎 插入');
     };
     el.appendChild(b);
   });
@@ -1504,7 +1547,7 @@ $('peSave').onclick=function(){
   $('pageEditModal').classList.add('hidden'); toast('✅ 第'+(peIdx+1)+'页已保存');
 };
 $('peAi').onclick=function(){
-  var ask=prompt('这页怎么改？（如：要点再精简 / 加个对比表）','');
+  hxAsk('这页怎么改？（如：要点再精简 / 加个对比表）', '', '', function(ask){
   if(ask===null) return;
   $('peMsg').textContent='🤖 AI正在改…'; $('peMsg').className='msg';
   callAI('您是ICU教学PPT的单页编辑助手。',
@@ -1514,6 +1557,7 @@ $('peAi').onclick=function(){
       $('peText').value=text.replace(/^\s+|\s+$/g,'');
       $('peMsg').textContent='✅ AI改好了，检查后点「保存」';
     }, function(err){ $('peMsg').textContent=err; $('peMsg').className='msg err'; });
+  }, '🤖 AI改');
 };
 $('peLink').onclick=function(){ openLitPicker('link','page'); };
 $('peCancel').onclick=function(){ $('pageEditModal').classList.add('hidden'); peIdx=null; };
