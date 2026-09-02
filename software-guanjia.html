@@ -8,6 +8,14 @@
   红小涛学习套装 · 病人大管家
   定位：全家资料的"管家"。按病人归堆（血气/呼吸机/脱敏病历，天然有章），
         按知识搜索（笔记/习题，全靠AI名片）。
+  v0.2.0 2026-09-02 第③步提前·病人名册（洪老师问"怎么没把病人归类"，优先做）：
+    - 自动翻血气档案柜（IndexedDB bgdb/kv：history=血气、ventHistory=呼吸机），按病人记号归堆
+    - 名册分在院/出院（点按钮切换，出院沉底）；点病人名看名下全部记录（时间+摘要）
+    - 近似名配对：床号相同+名字高度相似（如17苏外伤/17苏头外伤）→ 弹窗问"是不是同一个"，
+      是=合并（长名当正主，短名做别名），不是=记住这对以后不问；AI只起疑，合并永远您点头
+    - 没用过血气分析（没档案柜）时提示人话，不报错
+    - 独立验证员抓5缺陷全修：弹窗被顶掉绝不冤枉成"不是同一个"（顶掉标记）；合并有退路（详情页"合错了？拆开"）；
+      跨月时间排序改真时间戳；相似度先剥床号（17床张三/李四不再误问）；patient非字符串不崩
   v0.1.0 2026-09-02 第①步·名片系统（洪老师拍板"开始吧"）：
     - 扫全家：学习笔记(study_notes_v1) + 习题(xitixuexi_v01) 各多少篇/题，名片覆盖几成
     - AI做名片：每篇压成≤80字（什么病/药/操作+关键词），千问优先、千问罢工自动换Kimi
@@ -55,6 +63,17 @@
   .badge { display:inline-block; font-size:11px; padding:2px 7px; border-radius:99px; margin-right:6px; }
   .badge-notes { background:#e8eef7; color:#34567a; }
   .badge-xiti { background:#f0e8f5; color:#6a4a7c; }
+  .badge-bg { background:#e6f2ec; color:#3c6e47; }
+  .badge-vent { background:#f7eee0; color:#8a5a20; }
+  .pt { border-bottom:1px dashed #e6e0d4; padding:10px 0; }
+  .pt:last-child { border-bottom:none; }
+  .pt .pt-name { font-size:16px; font-weight:bold; cursor:pointer; }
+  .pt .pt-alias { font-size:12px; color:#8a8178; margin-left:6px; }
+  .pt .pt-sub { font-size:13px; color:#6b6257; margin-top:3px; }
+  .pt .pt-out { font-size:11px; color:#fff; background:#a89f93; border-radius:99px; padding:2px 8px; margin-left:6px; }
+  .rec { border-bottom:1px dashed #e6e0d4; padding:8px 0; font-size:14px; }
+  .rec:last-child { border-bottom:none; }
+  .rec .rec-time { font-size:12px; color:#8a8178; }
   input[type=text] { width:100%; font-size:15px; padding:9px 10px; border:1px solid #d8d2c6;
                      border-radius:9px; background:#fff; }
   .hidden { display:none !important; }
@@ -69,6 +88,22 @@
 <div class="wrap">
   <h1>🏠 病人大管家</h1>
   <div class="ver">v<span id="verTop">?</span> · 全家的资料管家：病人归堆 + 知识搜索（名片打底）</div>
+
+  <div class="card">
+    <h2>👥 病人名册 <span id="ptCount" style="font-size:13px;color:#8a8178;font-weight:normal;"></span></h2>
+    <div style="font-size:13px;color:#8a8178;margin-bottom:6px;">自动翻血气分析和呼吸机的档案柜，按病人归堆。名字像的我会问您，绝不擅自合并。</div>
+    <div id="ptList"></div>
+    <div class="msg" id="ptMsg"></div>
+  </div>
+
+  <div class="card hidden" id="ptDetailCard">
+    <h2 id="ptDetailTitle">病人</h2>
+    <div id="ptDetailList"></div>
+    <div class="btn-row" style="margin-top:8px;">
+      <button class="ghost" id="ptSplit" style="display:none;">⚠️ 合错了？拆开</button>
+      <button class="ghost" id="ptDetailClose">✕ 关上</button>
+    </div>
+  </div>
 
   <div class="card">
     <h2>📚 家底总览</h2>
@@ -112,7 +147,7 @@
 </div>
 
 <script>
-var SW_VERSION = "0.1.0";
+var SW_VERSION = "0.2.0";
 document.getElementById('verTop').textContent = SW_VERSION;
 function $(id){ return document.getElementById(id); }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -125,9 +160,9 @@ function toast(msg, ms){
 }
 
 /* ── 自画弹窗（X5不理系统prompt，全家死规矩；与PPT v0.7.5同款） ── */
-var hxDlgCb=null;
+var hxDlgCb=null, hxDlgTop=false;
 function hxAsk(title, defVal, placeholder, cb, okText){
-  if($('hxDlg').style.display==='block') hxDlgClose(null);
+  if($('hxDlg').style.display==='block'){ hxDlgTop=true; hxDlgClose(null); } /* 顶掉旧弹窗要留标记：被顶≠用户取消（验证员D1抓到） */
   $('hxDlgTitle').textContent=title;
   var inp=$('hxDlgInput'); inp.value=defVal||''; inp.placeholder=placeholder||''; inp.style.display='';
   $('hxDlgOk').textContent=okText||'确定';
@@ -135,7 +170,8 @@ function hxAsk(title, defVal, placeholder, cb, okText){
   $('hxDlg').style.display='block';
   setTimeout(function(){ inp.focus(); },50);
 }
-function hxDlgClose(v){ $('hxDlg').style.display='none'; var cb=hxDlgCb; hxDlgCb=null; if(cb) cb(v); }
+function hxConfirm(msg, cb){ hxAsk(msg, '', '（此操作不需打字，直接点按钮）', function(v, top){ cb(v!==null, top); }, '确定执行'); $('hxDlgInput').style.display='none'; }
+function hxDlgClose(v){ $('hxDlg').style.display='none'; $('hxDlgInput').style.display=''; var cb=hxDlgCb; hxDlgCb=null; var top=hxDlgTop; hxDlgTop=false; if(cb) cb(v, top); }
 $('hxDlgOk').onclick=function(){ hxDlgClose($('hxDlgInput').value); };
 $('hxDlgCancel').onclick=function(){ hxDlgClose(null); };
 
@@ -213,6 +249,187 @@ function keyInputAsk(){
 var LS_CARDS='hx_cards_v1';
 function cardsLoad(){ try{ var c=JSON.parse(localStorage.getItem(LS_CARDS)); return (c&&c.items&&typeof c.items==='object')?c:{v:1,items:{}}; }catch(e){ return {v:1,items:{}}; } }
 function cardsSave(cs){ try{ localStorage.setItem(LS_CARDS, JSON.stringify(cs)); }catch(e){ toast('名片库存储失败：'+e.message); } }
+
+/* ── 病人名册 hx_patients（v0.2.0 第③步：血气/呼吸机按病人归堆） ── */
+var LS_PTS='hx_patients';
+function ptsLoad(){ try{ var p=JSON.parse(localStorage.getItem(LS_PTS)); return (p&&Array.isArray(p.patients)&&Array.isArray(p.rejects))?p:{v:1,patients:[],rejects:[]}; }catch(e){ return {v:1,patients:[],rejects:[]}; } }
+function ptsSave(ps){ try{ localStorage.setItem(LS_PTS, JSON.stringify(ps)); }catch(e){ toast('名册存储失败：'+e.message); } }
+/* 读血气的档案柜：IndexedDB bgdb / kv仓 / 键 history(血气) 和 ventHistory(呼吸机) */
+function idbOpenBg(){
+  return new Promise(function(res){
+    if(!window.indexedDB){ res(null); return; }
+    try{
+      var r=indexedDB.open('bgdb',1);
+      r.onupgradeneeded=function(){ r.result.createObjectStore('kv'); };
+      r.onsuccess=function(){ res(r.result); };
+      r.onerror=function(){ res(null); };
+    }catch(e){ res(null); }
+  });
+}
+function idbGet(db, key){
+  return new Promise(function(res){
+    try{
+      var q=db.transaction('kv','readonly').objectStore('kv').get(key);
+      q.onsuccess=function(){ res(q.result||[]); };
+      q.onerror=function(){ res([]); };
+    }catch(e){ res([]); }
+  });
+}
+/* 归堆：返回 [{name, names:[别名], status, recs:[{type,time,text}] }] */
+function scanPatients(bgArr, ventArr){
+  var ps=ptsLoad();
+  var byName={};
+  function eat(arr, type){
+    (arr||[]).forEach(function(r){
+      var name=String(r.patient||'未命名病人').replace(/^\s+|\s+$/g,'')||'未命名病人'; /* 防非字符串patient崩名册（验证员D5抓到） */
+      if(!byName[name]) byName[name]=[];
+      byName[name].push({type:type, time:r.time||'', text:(r.text||r.bg||'').slice(0,200), model:r.model||''});
+    });
+  }
+  eat(bgArr,'bg'); eat(ventArr,'vent');
+  /* 把名册里已合并的别名归到正主名下 */
+  function canonOf(name){
+    for(var i=0;i<ps.patients.length;i++){
+      if(ps.patients[i].names.indexOf(name)>=0) return ps.patients[i];
+    }
+    return null;
+  }
+  var groups={};
+  Object.keys(byName).forEach(function(name){
+    var c=canonOf(name);
+    var key=c?c.names[0]:name;
+    if(!groups[key]) groups[key]={name:key, names:[], status:c?c.status:'in', recs:[], pid:c?c.id:null};
+    if(groups[key].names.indexOf(name)<0) groups[key].names.push(name);
+    groups[key].recs=groups[key].recs.concat(byName[name]);
+  });
+  var list=Object.keys(groups).map(function(k){ return groups[k]; });
+  function recTs(tm){ var m=String(tm||'').match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})\D+(\d{1,2})\D+(\d{1,2})/); if(!m) return 0; return new Date(+m[1],+m[2]-1,+m[3],+m[4],+m[5]).getTime(); } /* 不补零的中文日期先变时间戳再比，跨月不错乱（验证员D3抓到） */
+  list.forEach(function(g){ g.recs.sort(function(a,b){ return recTs(b.time)-recTs(a.time); }); });
+  list.sort(function(a,b){ if(a.status!==b.status) return a.status==='in'?-1:1; return b.recs.length-a.recs.length; });
+  return {list:list, ps:ps, byName:byName};
+}
+/* 近似名起疑：床号(前导数字)相同+名字不同+高度相似；拒绝过的对子不再问 */
+function bedNo(name){ var m=String(name).match(/^\s*(\d+)/); return m?m[1]:''; }
+function nameSim(a,b){
+  a=String(a).replace(/^\s*\d+/,''); b=String(b).replace(/^\s*\d+/,''); /* 剥床号再比，床号不是"共同字"（验证员D4抓到：17床张三/17床李四曾压线误问） */
+  if(a===b) return 1;
+  if(a.indexOf(b)>=0||b.indexOf(a)>=0) return 0.9;
+  var ca={}, share=0;
+  for(var i=0;i<a.length;i++) ca[a[i]]=1;
+  for(var j=0;j<b.length;j++) if(ca[b[j]]) share++;
+  return share/Math.min(a.length,b.length); /* 短名被长名盖住多少（李伤⊂李脑外伤=1.0该问；张三/李四=0.25不问） */
+}
+function findSuspect(byName, ps){
+  var names=Object.keys(byName);
+  for(var i=0;i<names.length;i++) for(var j=i+1;j<names.length;j++){
+    var a=names[i], b=names[j];
+    var ba=bedNo(a), bb=bedNo(b);
+    if(!ba||ba!==bb) continue;
+    var canonA=null, canonB=null;
+    ps.patients.forEach(function(p){ if(p.names.indexOf(a)>=0) canonA=p; if(p.names.indexOf(b)>=0) canonB=p; });
+    if(canonA&&canonB&&canonA.id===canonB.id) continue; /* 已经是一家人 */
+    var rejected=ps.rejects.some(function(r){ return (r[0]===a&&r[1]===b)||(r[0]===b&&r[1]===a); });
+    if(rejected) continue;
+    if(nameSim(a,b)>=0.6) return [a,b];
+  }
+  return null;
+}
+function askSuspect(pair, ps, onDone){
+  hxConfirm('「'+pair[0]+'」和「'+pair[1]+'」像不像同一个病人？\n像=点「确定执行」合并；不是同一个=点「取消」，我以后不再问这一对。', function(yes, top){
+    if(top){ onDone(); return; } /* 弹窗是被别的弹窗顶掉的=您根本没回答，下次再问，绝不记仇（验证员D1抓到） */
+    if(yes){
+      /* 合并：正主取名字长的那个，另一个做别名 */
+      var long=pair[0].length>=pair[1].length?pair[0]:pair[1];
+      var short=long===pair[0]?pair[1]:pair[0];
+      var found=null;
+      ps.patients.forEach(function(p){ if(p.names.indexOf(long)>=0||p.names.indexOf(short)>=0) found=p; });
+      if(!found){ found={id:'P'+String(Date.now()%1000000), names:[long], status:'in', t:Date.now()}; ps.patients.push(found); }
+      if(found.names.indexOf(short)<0) found.names.push(short);
+      if(found.names[0]!==long){ found.names.unshift(long); found.names=found.names.filter(function(v,i,a){return a.indexOf(v)===i;}); }
+      ptsSave(ps);
+      toast('✅ 已合并：「'+short+'」归到「'+long+'」名下');
+    }else{
+      ps.rejects.push([pair[0],pair[1]]); ptsSave(ps);
+      toast('好的，不是同一个，我以后不问这一对');
+    }
+    onDone();
+  });
+}
+var ptScanData=null;
+function renderPatients(){
+  idbOpenBg().then(function(db){
+    if(!db){ $('ptList').innerHTML=''; showMsg($('ptMsg'),'这台机器上还没建血气的档案柜（没用过血气分析就没柜子）。用过再来，我就能归堆。','info'); return; }
+    Promise.all([idbGet(db,'history'), idbGet(db,'ventHistory')]).then(function(rs){
+      var data=scanPatients(rs[0], rs[1]); ptScanData=data;
+      var html='', inN=0;
+      data.list.forEach(function(g,gi){
+        if(g.status==='in') inN++;
+        var bgN=g.recs.filter(function(r){return r.type==='bg';}).length;
+        var vtN=g.recs.length-bgN;
+        html+='<div class="pt"><span class="pt-name" data-gi="'+gi+'">'+esc(g.name)+'</span>'+
+          (g.names.length>1?'<span class="pt-alias">也叫：'+esc(g.names.filter(function(n){return n!==g.name;}).join('、'))+'</span>':'')+
+          (g.status==='out'?'<span class="pt-out">已出院</span>':'')+
+          '<div class="pt-sub">🩸 血气 '+bgN+' 张　🫁 呼吸机 '+vtN+' 条　'+
+          '<button class="ghost" style="font-size:12px;padding:4px 10px;" data-tg="'+gi+'">'+(g.status==='in'?'出院':'召回')+'</button></div></div>';
+      });
+      $('ptList').innerHTML=html;
+      $('ptCount').textContent=data.list.length?('在院 '+inN+' 人 / 共 '+data.list.length+' 人'):'';
+      if(!data.list.length) showMsg($('ptMsg'),'档案柜里还没有血气/呼吸机记录。在血气分析里拍一张并存病人记号，这里就自动归堆。','info');
+      else $('ptMsg').className='msg';
+      /* 绑定：点名看详情；按钮换在院/出院 */
+      Array.prototype.forEach.call(document.querySelectorAll('.pt-name'), function(el){
+        el.onclick=function(){ showPatientDetail(data.list[+el.getAttribute('data-gi')]); };
+      });
+      Array.prototype.forEach.call(document.querySelectorAll('[data-tg]'), function(el){
+        el.onclick=function(){ togglePatientStatus(data.list[+el.getAttribute('data-tg')], data.ps); };
+      });
+      /* 近似名起疑（一次只问一对，问完再扫） */
+      var pair=findSuspect(data.byName, data.ps);
+      if(pair) setTimeout(function(){ askSuspect(pair, data.ps, renderPatients); },400);
+    });
+  });
+}
+function togglePatientStatus(g, ps){
+  var p=null;
+  ps.patients.forEach(function(x){ if(x.names.indexOf(g.name)>=0) p=x; });
+  if(!p){ p={id:'P'+String(Date.now()%1000000), names:g.names.slice(), status:'in', t:Date.now()}; ps.patients.push(p); }
+  p.status=(p.status==='in')?'out':'in';
+  g.names.forEach(function(n){ if(p.names.indexOf(n)<0) p.names.push(n); });
+  ptsSave(ps); renderPatients();
+  toast(p.status==='out'?('「'+g.name+'」已标出院，名册沉底'):('「'+g.name+'」已召回在院'));
+}
+/* D2 合并退路：拆开=别名各自独立，并互记rejects免得刚拆开又来问（验证员D2抓到） */
+function splitPatient(g){
+  var ps=ptsLoad(), p=null;
+  ps.patients.forEach(function(x){ if(x.names.indexOf(g.name)>=0) p=x; });
+  if(!p||p.names.length<2){ toast('这一家没有别名，不用拆'); return; }
+  hxConfirm('把「'+p.names.join('」和「')+'」拆开各过各的？', function(yes, top){
+    if(top||!yes) return;
+    var main=p.names[0];
+    for(var i=1;i<p.names.length;i++) ps.rejects.push([main, p.names[i]]);
+    p.names=[main];
+    ptsSave(ps);
+    $('ptDetailCard').classList.add('hidden');
+    renderPatients();
+    toast('✅ 已拆开，各自独立（我不会再撮合它们）');
+  });
+}
+function showPatientDetail(g){
+  $('ptDetailCard').classList.remove('hidden');
+  $('ptDetailTitle').textContent='👤 '+g.name+(g.names.length>1?('（也叫：'+g.names.filter(function(n){return n!==g.name;}).join('、')+'）'):'');
+  $('ptSplit').style.display=g.names.length>1?'':'none';
+  $('ptSplit').onclick=function(){ splitPatient(g); };
+  var html='';
+  g.recs.forEach(function(r){
+    html+='<div class="rec"><span class="badge '+(r.type==='bg'?'badge-bg':'badge-vent')+'">'+(r.type==='bg'?'血气':'呼吸机')+'</span>'+
+      '<span class="rec-time">'+esc(r.time)+'</span>'+
+      '<div style="margin-top:3px;white-space:pre-wrap;">'+esc((r.text||'').slice(0,150))+(r.text&&r.text.length>150?'…':'')+'</div></div>';
+  });
+  if(!g.recs.length) html='<div style="font-size:13px;color:#8a8178;">名下还没有记录</div>';
+  $('ptDetailList').innerHTML=html;
+  $('ptDetailCard').scrollIntoView({block:'start'});
+}
+$('ptDetailClose').onclick=function(){ $('ptDetailCard').classList.add('hidden'); };
 
 /* ── 扫描全家资料 ── */
 function scanSources(){
@@ -352,8 +569,8 @@ function renderCardList(){
 }
 $('kwFilter').oninput=renderCardList;
 
-/* ── 开门：总览 + 自动做3篇（有Key才动） ── */
-renderOverview(); renderCardList();
+/* ── 开门：名册 + 总览 + 自动做3篇（有Key才动） ── */
+renderOverview(); renderCardList(); renderPatients();
 (function(){
   var missing=makeCardQueue(1).length;
   if(missing && (qwenKey()||kimiKey())){
