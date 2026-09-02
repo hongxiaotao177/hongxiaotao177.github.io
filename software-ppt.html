@@ -10,6 +10,12 @@
           → 大纲编辑页改稿 → 一键生成HTML幻灯片 → 横屏播放 → 每页可AI重做/换版式
           → 导出单个HTML（微信发别人，浏览器打开即放映）
   修改记录：
+    v0.7.0 2026-09-02 千问自动交叉校对（洪医生愿望清单第3批）：
+      - 大纲页/幻灯片页各加「🤖 自动校对」+「校对用哪家」开关（千问交叉/Kimi自查，存hx_ppt_proofprov）
+      - 千问路径：proofText拼校对指令→发qwen-plus（dashscope兼容端点，Key读公共钱罐hx_qwenkey，
+        没有再看血气的bg_qwen_key）→拿回校对意见→自动填进贴回校对弹窗→自动点"AI照改"（Kimi落实到大纲）
+      - 千问答"没发现问题"就止步，不花第2棒Kimi的钱；两棒各记一笔hx_aibill
+      - 非思考型qwen-plus给max_tokens:4096（怪癖#9只坑思考型）
     v0.6.1 2026-09-02 自选背景图（洪医生愿望清单第2批）：
       - 幻灯片页工具条加「🖼️ 背景图」：相册选图→canvas压到≤1600px、JPEG逐步降质到≤200KB
         →存当前PPT的p.bg（每个PPT各选各的，不设全局）
@@ -263,6 +269,11 @@
       <button id="btnBuild" style="background:#b3742a;">🎬 生成PPT</button>
       <button class="ghost" id="btnCopyProof">📋 复制校对（大纲）</button>
       <button class="ghost" id="btnProofIn">📥 贴回校对结果</button>
+      <button class="ghost" id="btnAutoProof">🤖 自动校对</button>
+      <select id="proofProv" title="校对用哪家" style="font-size:13px;padding:7px 8px;border:1px solid #ccc;border-radius:8px;background:#fff;">
+        <option value="qwen">千问交叉（约1分钱）</option>
+        <option value="kimi">Kimi自查</option>
+      </select>
       <button class="ghost" id="btnBackHome">← 返回</button>
     </div>
     <div class="msg" id="editMsg"></div>
@@ -285,6 +296,11 @@
       <input type="file" id="bgFile" accept="image/*" style="display:none">
       <button class="ghost" id="btnCopyProof2">📋 复制校对（全片）</button>
       <button class="ghost" id="btnProofIn2">📥 贴回校对结果</button>
+      <button class="ghost" id="btnAutoProof2">🤖 自动校对</button>
+      <select id="proofProv2" title="校对用哪家" style="font-size:13px;padding:7px 8px;border:1px solid #ccc;border-radius:8px;background:#fff;">
+        <option value="qwen">千问交叉（约1分钱）</option>
+        <option value="kimi">Kimi自查</option>
+      </select>
       <button class="ghost" id="btnExport">📤 导出HTML</button>
       <button class="ghost" id="btnBackEdit">← 回大纲</button>
     </div>
@@ -361,7 +377,7 @@
 
 <script>
 "use strict";
-var SW_VERSION = "0.6.1"; /* v0.6.1 自选背景图（愿望清单第2批）：幻灯片页「🖼️ 背景图」相册选图→canvas压缩≤1600px、JPEG逐步降质（≤200KB）→存本PPT的p.bg（不设全局）；渲染时.slide-page叠82%不透明蒙纱（米白皮用米白纱/深色皮用深色纱）保证字可读；「✕ 清除背景」一键还原；导出HTML内嵌带走。提醒：导出会把照片带出去，别夹病人信息 */ /* v0.6.0 四套皮肤（米白学术/深蓝正式/墨绿讲堂/黑板粉笔），每个PPT各选各的，导出HTML带着走；点屏翻页其实v0.2.0起就有（点左35%上页/右65%下页） */ /* v0.5.0 放映自适应：底栏实底让位+内容超高自动等比缩小（洪医生横屏讲课表格最后一行被吃） */ /* v0.4.8 AI报错带官方原因+400也自动换模型重试（洪医生贴回校对撞HTTP400：疑公共模型罐里存着已下架的moonshot-v1系列，400不走404重试路） */ /* v0.4.7 版本字样治病根：头顶+页脚+标题改成代码自动填SW_VERSION（v0.4.0~0.4.6期间头顶一直显示旧号，害用户以为没更新） */ /* v0.4.6 更新通道免Token备用路：自检/下载新版在API不通或没填Token时自动走github.io公开直链 */ /* v0.4.5 贴回校对结果：别的AI的校对意见贴进来，本软件AI照改大纲（原文没提到的部分不动）+秒表进度 */ /* v0.4.4 复制校对：大纲/全片一键连校对指令复制，借别的AI挑错，不花自己Key */ /* v0.4.3 修404：死模型自动换kimi-k2.6+重试；max_tokens 8000→16384（k2.6思考型） */ /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
+var SW_VERSION = "0.7.0"; /* v0.7.0 千问自动交叉校对（愿望清单第3批）：「🤖 自动校对」一键两棒——第1棒发千问qwen-plus（公共钱罐hx_qwenkey，约1分钱）拿校对意见，第2棒自动交给贴回校对管道让Kimi照改大纲（没提到的一字不动）；开关可选千问/Kimi自查；千问答"没发现问题"就不花第2棒的钱 */ /* v0.6.1 自选背景图（愿望清单第2批）：幻灯片页「🖼️ 背景图」相册选图→canvas压缩≤1600px、JPEG逐步降质（≤200KB）→存本PPT的p.bg（不设全局）；渲染时.slide-page叠82%不透明蒙纱（米白皮用米白纱/深色皮用深色纱）保证字可读；「✕ 清除背景」一键还原；导出HTML内嵌带走。提醒：导出会把照片带出去，别夹病人信息 */ /* v0.6.0 四套皮肤（米白学术/深蓝正式/墨绿讲堂/黑板粉笔），每个PPT各选各的，导出HTML带着走；点屏翻页其实v0.2.0起就有（点左35%上页/右65%下页） */ /* v0.5.0 放映自适应：底栏实底让位+内容超高自动等比缩小（洪医生横屏讲课表格最后一行被吃） */ /* v0.4.8 AI报错带官方原因+400也自动换模型重试（洪医生贴回校对撞HTTP400：疑公共模型罐里存着已下架的moonshot-v1系列，400不走404重试路） */ /* v0.4.7 版本字样治病根：头顶+页脚+标题改成代码自动填SW_VERSION（v0.4.0~0.4.6期间头顶一直显示旧号，害用户以为没更新） */ /* v0.4.6 更新通道免Token备用路：自检/下载新版在API不通或没填Token时自动走github.io公开直链 */ /* v0.4.5 贴回校对结果：别的AI的校对意见贴进来，本软件AI照改大纲（原文没提到的部分不动）+秒表进度 */ /* v0.4.4 复制校对：大纲/全片一键连校对指令复制，借别的AI挑错，不花自己Key */ /* v0.4.3 修404：死模型自动换kimi-k2.6+重试；max_tokens 8000→16384（k2.6思考型） */ /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
 /* 公共钱罐：API key/GitHub配置 一处填处处有（与其他软件共享 hx_*） */
 (function(){
   var HX_MAP=[["hx_apikey","hx_apikey"],["hx_gh_user","hx_gh_user"],["hx_gh_tok","hx_gh_tok"],["hx_gh_repo","hx_gh_repo"]];
@@ -1508,6 +1524,60 @@ function copyProof(kind, msgEl){
 $('btnCopyProof').onclick=function(){ copyProof("outline", $('editMsg')); };
 $('btnCopyProof2').onclick=function(){ copyProof("slides", $('slidesMsg')); };
 
+
+/* ==================== v0.7.0 自动交叉校对：千问挑毛病 → Kimi照改（两棒全自动） ==================== */
+function proofProvGet(){ return localStorage.getItem('hx_ppt_proofprov')||'qwen'; }
+function proofProvSync(){ var v=proofProvGet(); if($('proofProv')) $('proofProv').value=v; if($('proofProv2')) $('proofProv2').value=v; }
+['proofProv','proofProv2'].forEach(function(id){ var el=$(id); if(el) el.onchange=function(){ localStorage.setItem('hx_ppt_proofprov',this.value); proofProvSync(); toast('校对改用「'+(this.value==='qwen'?'千问交叉':'Kimi自查')+'」'); }; });
+
+function autoProof(kind, msgEl){
+  var t=proofText(kind);
+  if(!t){ showMsg(msgEl, kind==="outline"?"大纲还是空的，没什么可校对":"还没有生成幻灯片，没什么可校对", "err"); return; }
+  var prov=proofProvGet(), t0=Date.now();
+  var tick=setInterval(function(){
+    showMsg(msgEl, "🔍 第1棒：" + (prov==='qwen'?"千问":"Kimi") + "正在校对…已等 "+Math.floor((Date.now()-t0)/1000)+" 秒（转着就不是死机）", "ok");
+  },1000);
+  /* 拿到校对意见后的共同后路：没问题就止步；有问题就填进贴回校对弹窗，自动点「AI照改」让Kimi落实 */
+  function afterOpinions(ops){
+    clearInterval(tick);
+    ops=(ops||"").replace(/^\s+|\s+$/g,"");
+    if(!ops){ showMsg(msgEl,"校对的AI没说出话来，再试一次","err"); return; }
+    /* v0.7.0补丁(独立测试t27抓到)：只说"总体没问题但…"的短文本会被误判通过吞掉真意见。
+       新规矩：含"没发现问题"句式 且 全文没有任何修改动词（建议/改为/改成/应为/有误）才止步——宁可误判继续（多花几分钱），不可误判止步（吞意见） */
+    if(ops.length<300 && /(未发现|没有|无明显|没发现)[^。]{0,12}(问题|错误|矛盾|错别字)/.test(ops) && !/(建议|改为|改成|应为|有误)/.test(ops)){
+      showMsg(msgEl,"✅ "+(prov==='qwen'?"千问":"Kimi")+"校对通过：没发现问题，一字未改（"+Math.floor((Date.now()-t0)/1000)+"秒）","ok");
+      toast("✅ 校对通过，没发现问题"); return;
+    }
+    $('proofText').value=ops;
+    $('proofModal').style.display="block";
+    showMsg($('proofMsg'),"第1棒完成（"+Math.floor((Date.now()-t0)/1000)+"秒），意见如上。第2棒：Kimi正在照改大纲…","ok");
+    $('btnProofGo').onclick(); /* 复用0.4.5贴回校对管道：Kimi照改→回编辑页人工过目 */
+  }
+  function fail(e){ clearInterval(tick); showMsg(msgEl,"❌ "+e,"err"); }
+  if(prov==='kimi'){
+    callAI("您是医学校对员，严格按用户要求逐项校对并列出意见。", t, afterOpinions, fail);
+    return;
+  }
+  /* 千问路径：公共钱罐 hx_qwenkey（血气的 bg_qwen_key 也认） */
+  var qk=(localStorage.getItem('hx_qwenkey')||localStorage.getItem('bg_qwen_key')||'').replace(/^\s+|\s+$/g,"");
+  if(!qk){ clearInterval(tick); showMsg(msgEl,"还没有千问Key。去血气分析「呼吸机」页设置里填一次（全家公共钱罐），或把开关拨到「Kimi自查」","err"); return; }
+  fetch("https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",{
+    method:"POST",
+    headers:{"Content-Type":"application/json","Authorization":"Bearer "+qk},
+    body:JSON.stringify({model:"qwen-plus",messages:[{role:"user",content:t}],max_tokens:4096}) /* qwen-plus非思考型，4096够（怪癖#9只坑思考型） */
+  }).then(function(r){
+    if(!r.ok) return r.text().then(function(tx){ throw new Error("千问报错 HTTP "+r.status+"："+(tx||"").slice(0,180)); });
+    return r.json();
+  }).then(function(d){
+    var c=((d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content)||"");
+    if(!c) throw new Error("千问没说出话来，再试一次");
+    hxBillToast(hxBill("PPT工坊","千问校对(qwen-plus)",t.length,c.length,"qwen-plus")); /* 记账：约1分钱 */
+    afterOpinions(c);
+  }).catch(function(e){ fail(e.message||String(e)); });
+}
+proofProvSync();
+$('btnAutoProof').onclick=function(){ autoProof("outline", $('editMsg')); };
+$('btnAutoProof2').onclick=function(){ autoProof("slides", $('slidesMsg')); };
 
 /* ==================== v0.4.5 贴回校对：别的AI的意见 → 本软件AI照改大纲 ==================== */
 function proofOpen(){
