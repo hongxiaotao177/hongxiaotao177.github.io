@@ -8,6 +8,14 @@
   红小涛学习套装 · 病人大管家
   定位：全家资料的"管家"。按病人归堆（血气/呼吸机/脱敏病历，天然有章），
         按知识搜索（笔记/习题，全靠AI名片）。
+  v0.4.0 2026-09-03 洪医生三点单：
+    ① 只翻资料的出处变按钮，点开弹窗看原文全文（核对AI说的是不是资料里真写的）
+    ② AI答案轻排版mdLite()：**加粗**/小标题/-列表/编号 真渲染，千问答案、Kimi核查、复核、收件箱展示统一用，告别一坨字
+    ③ 核查三棒制（洪医生定）：千问搜→Kimi挑毛病→毛病发回千问复核——
+       千问认同→输出修订版合成一个观点，注释"千查·K认"；不认同→两种观点并列+复核理由，注释"两家有分歧您终审"
+       （Kimi说"未发现明显问题"且没修改动词就跳过第三棒，省1~2分钱；复核棒跟核查开关走）
+    独立验证员抓4缺陷全修：**【认同】**这种md包裹曾误判不认同（先剥星号、先判不认同）；####标题残留#；
+       "3.5mg每日一次"误判编号列表（编号后必须有空白）；只回"认同"没修订版交白卷（退用原答案）
   v0.3.0 2026-09-02 第②步·问AI查资料（方案2026-09-02洪老师拍板）：
     - 「问AI查资料」二选一：📚只翻我的资料（翻名片挑前5张→读原文→死命令总结+逐条标出处，没找到明说没找到，不花钱）
       / 🌐也上网查查（千问qwen-plus联网搜enable_search→Kimi当核查员挑毛病：事实/遗漏/来源/过时，默认开可关）
@@ -83,8 +91,17 @@
   .rec { border-bottom:1px dashed #e6e0d4; padding:8px 0; font-size:14px; }
   .rec:last-child { border-bottom:none; }
   .rec .rec-time { font-size:12px; color:#8a8178; }
-  .qa-box { background:#faf7f2; border-radius:10px; padding:10px 12px; margin-top:8px; font-size:14px; line-height:1.8; white-space:pre-wrap; }
+  .qa-box { background:#faf7f2; border-radius:10px; padding:10px 12px; margin-top:8px; font-size:14px; line-height:1.8; }
   .qa-box .qa-h { font-size:13px; font-weight:bold; color:#8a5a20; margin-bottom:4px; }
+  .qa-note { font-size:12px; color:#8a8178; margin-top:6px; }
+  /* 轻排版（v0.4.0） */
+  .md p { margin:4px 0; }
+  .md .md-h { font-weight:bold; color:#33302b; margin:8px 0 3px; font-size:15px; }
+  .md .md-li { padding-left:16px; position:relative; margin:2px 0; }
+  .md .md-li:before { content:'•'; position:absolute; left:4px; color:#b3742a; }
+  .md .md-num { padding-left:4px; margin:2px 0; }
+  .md b { color:#8a5a20; }
+  .src-btn { font-size:12px; padding:4px 10px; background:#ece7dd; color:#34567a; border-radius:99px; margin:3px 4px 0 0; }
   .red-dot { display:inline-block; min-width:20px; padding:1px 6px; border-radius:99px; background:#c0392b; color:#fff; font-size:12px; text-align:center; margin-left:6px; }
   .inbox-item { border-bottom:1px dashed #e6e0d4; padding:9px 0; }
   .inbox-item:last-child { border-bottom:none; }
@@ -193,7 +210,7 @@
 </div>
 
 <script>
-var SW_VERSION = "0.3.0";
+var SW_VERSION = "0.4.0";
 document.getElementById('verTop').textContent = SW_VERSION;
 function $(id){ return document.getElementById(id); }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -211,6 +228,7 @@ function hxAsk(title, defVal, placeholder, cb, okText){
   if($('hxDlg').style.display==='block'){ hxDlgTop=true; hxDlgClose(null); } /* 顶掉旧弹窗要留标记：被顶≠用户取消（验证员D1抓到） */
   $('hxDlgTitle').textContent=title;
   var inp=$('hxDlgInput'); inp.value=defVal||''; inp.placeholder=placeholder||''; inp.style.display='';
+  inp.removeAttribute('readonly'); inp.style.minHeight='70px'; /* 看原文弹窗设过只读，新弹窗必须复原（v0.4.0） */
   $('hxDlgOk').textContent=okText||'确定';
   hxDlgCb=cb;
   $('hxDlg').style.display='block';
@@ -646,7 +664,27 @@ function pickCards(q, n){
   scored.sort(function(a,b){ return b.sc-a.sc; });
   return scored.slice(0, n||5);
 }
+/* ── 轻排版 mdLite（v0.4.0②）：先esc再转符号，安全；只认星号加粗/井号标题/减号列表/数字编号，不搞花哨 ── */
+function mdLite(s){
+  var lines=String(s==null?'':s).split('\n'), out='';
+  lines.forEach(function(ln){
+    var t=esc(ln).replace(/^\s+|\s+$/g,'');
+    if(!t){ return; }
+    t=t.replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>');
+    if(/^#{1,6}\s*/.test(t)) out+='<div class="md-h">'+t.replace(/^#{1,6}\s*/,'')+'</div>'; /* 四级标题也剥净（验证员：####曾残留一个#） */
+    else if(/^[-*·]\s+/.test(ln.trim())) out+='<div class="md-li">'+t.replace(/^[-*·]\s+/,'')+'</div>';
+    else if(/^\d+[、\)]\s+|^\d+\.\s+/.test(t)) out+='<div class="md-num">'+t+'</div>'; /* 编号后必须有空白，"3.5mg每日一次"不误判（验证员抓到） */
+    else out+='<p>'+t+'</p>';
+  });
+  return '<div class="md">'+(out||'<p>（空）</p>')+'</div>';
+}
+/* 出处点开看原文（v0.4.0①）：复用自画弹窗，只读 */
+function viewDoc(title, text){
+  hxAsk('📄 '+title, text, '', function(){}, '关上');
+  var inp=$('hxDlgInput'); inp.setAttribute('readonly','readonly'); inp.style.minHeight='260px';
+}
 /* ── 路一：只翻我的资料 ── */
+var lastLocalDocs=[];
 function askLocal(){
   var q=$('askQ').value.replace(/^\s+|\s+$/g,'');
   if(!q){ showMsg($('askMsg'),'先把问题写上。','err'); return; }
@@ -678,9 +716,14 @@ function askLocal(){
   aiChat(sys, usr, function(ans){
     askBusy(false);
     askLogLine('✅ 答完（'+Math.round((Date.now()-t0)/1000)+'秒）','step-done');
-    var html='<div class="qa-box"><div class="qa-h">📚 只翻了您的资料（'+docs.length+'篇）：</div>'+esc(ans)+'</div>';
-    html+='<div style="font-size:12px;color:#8a8178;margin-top:6px;">出处：'+docs.map(function(d){return '《'+esc(d.title)+'》';}).join(' ')+'</div>';
+    lastLocalDocs=docs;
+    var html='<div class="qa-box"><div class="qa-h">📚 只翻了您的资料（'+docs.length+'篇）：</div>'+mdLite(ans)+'</div>';
+    html+='<div style="margin-top:6px;font-size:12px;color:#8a8178;">出处（点开看原文）：</div><div>'+
+      docs.map(function(d,i){ return '<button class="src-btn" data-doc="'+i+'">📄 '+esc(d.title)+'</button>'; }).join('')+'</div>';
     $('askResult').innerHTML=html;
+    Array.prototype.forEach.call(document.querySelectorAll('[data-doc]'), function(el){
+      el.onclick=function(){ var d=lastLocalDocs[+el.getAttribute('data-doc')]; if(d) viewDoc(d.title, d.text); };
+    });
   }, function(e){
     askBusy(false);
     askLogLine('❌ AI没答成：'+esc(String(e).slice(0,60)),'step-err');
@@ -713,18 +756,50 @@ function askWeb(){
       var csys='您是医学答案核查员。给您一个问题和一份AI答案，请您挑毛病，按四条看：①事实错误 ②重要遗漏 ③来源是否可靠 ④内容是否过时。没毛病就直说"未发现明显问题"。分条、简短、大白话。';
       var cusr='问题：'+q+'\n\n待核查的答案：\n'+String(ans).slice(0,4000);
       aiChat(csys, cusr, function(review){
-        askBusy(false);
         askLogLine('✅ 核查完（'+Math.round((Date.now()-t1)/1000)+'秒）','step-done');
-        showWebResult(q, ans, review);
+        /* Kimi说没毛病就不花第三棒的钱（沿用PPT v0.7.0教训：含修改动词=有真意见，必须复核） */
+        var hasComplaint=/建议|改为|改成|应为|有误|错误|遗漏|过时/.test(review);
+        if(!hasComplaint){
+          askBusy(false);
+          showWebResult(q, ans, review, {verdict:'agree', final:ans, note:'千查·K认（核查未发现毛病）'});
+          return;
+        }
+        /* 第三棒：毛病发回千问复核（v0.4.0③ 洪医生定） */
+        askLogLine('🔁 把Kimi挑的毛病发回千问复核（认不认账）…','step-doing');
+        var t2=Date.now();
+        var rsys='您是之前那份答案的作者（联网搜索助手）。一位核查员挑了您答案的毛病。请您复核：\n'+
+                 '第一行只写两个大字：【认同】或【不认同】\n'+
+                 '若认同：从第二行起给出修订版完整答案（把挑出的毛病改掉），末尾不要解释。\n'+
+                 '若不认同：从第二行起说清楚为什么不认同、您坚持的观点是什么，分条简短。';
+        var rusr='问题：'+q+'\n\n您之前的答案：\n'+String(ans).slice(0,3000)+'\n\n核查员挑的毛病：\n'+String(review).slice(0,2000);
+        aiChat(rsys, rusr, function(back){
+          askBusy(false);
+          askLogLine('✅ 复核完（'+Math.round((Date.now()-t2)/1000)+'秒）','step-done');
+          var head=String(back).replace(/^\s+/,'').replace(/^[*#]+/,''); /* AI爱用**【认同】**这种md包裹，先剥（验证员抓到：曾误判不认同） */
+          var disagree=/^【?不认同】?/.test(head); /* 先判不认同："不认同"里含"认同"二字，顺序不能反 */
+          var agree=!disagree && /^【?认同】?/.test(head);
+          if(agree){
+            var revised=String(back).replace(/^\s*[*#]*【?认同】?[*]*\s*[\n：:]*/,'');
+            if(!revised.replace(/^\s+|\s+$/g,'')) revised=ans; /* 只回"认同"没给修订版→用原答案，不交白卷（验证员抓到） */
+            showWebResult(q, ans, review, {verdict:'agree', final:revised, note:'千查·K认（千问联网查，Kimi挑毛病，千问认同并已修订）'});
+          }else{
+            var rebut=String(back).replace(/^\s*[*#]*【?不认同】?[*]*\s*[\n：:]*/,'');
+            showWebResult(q, ans, review, {verdict:'disagree', final:rebut, note:'两家有分歧：千问不认Kimi挑的毛病，两种观点并列，您终审'});
+          }
+        }, function(e){
+          askBusy(false);
+          askLogLine('⚠️ 复核没回来：'+esc(String(e).slice(0,40))+'（先看前两家的）','step-err');
+          showWebResult(q, ans, review, null);
+        }, {what:'复核', maxTokens:16384});
       }, function(e){
         askBusy(false);
         askLogLine('⚠️ 核查员没上班：'+esc(String(e).slice(0,40))+'（先看千问的答案）','step-err');
-        showWebResult(q, ans, null);
+        showWebResult(q, ans, null, null);
       }, {what:'交叉核查', force:'kimi', maxTokens:16384});
     }else{
       askBusy(false);
       if(crossOn()&&!kimiKey()) askLogLine('⚠️ 没有Kimi Key，核查员上不了班，只看千问一家之言','step-err');
-      showWebResult(q, ans, null);
+      showWebResult(q, ans, null, null);
     }
   }, function(e){
     askBusy(false);
@@ -733,10 +808,29 @@ function askWeb(){
   }, {what:'上网查', web:true, maxTokens:4096});
 }
 var lastWebQA=null;
-function showWebResult(q, ans, review){
-  lastWebQA={q:q, ans:ans, review:review};
-  var html='<div class="qa-box"><div class="qa-h">🌐 千问联网搜到的：</div>'+esc(ans)+'</div>';
-  if(review) html+='<div class="qa-box" style="background:#f3efe7;"><div class="qa-h">🧐 Kimi核查员的意见：</div>'+esc(review)+'</div>';
+/* final={verdict:'agree'|'disagree', final:修订版或反驳词, note:注释}；null=前两棒就止步 */
+function showWebResult(q, ans, review, final){
+  var html='';
+  if(final && final.verdict==='agree'){
+    /* 认同：合成一个观点 */
+    html='<div class="qa-box"><div class="qa-h">✅ 合成观点（'+esc(final.note)+'）：</div>'+mdLite(final.final)+'</div>';
+    html+='<div class="qa-note">原答案和核查意见已合并成上面这份。想看过程：千问原答 ↓　Kimi意见 ↓</div>';
+    html+='<div class="qa-box" style="opacity:.75;"><div class="qa-h">🌐 千问原答：</div>'+mdLite(ans)+'</div>';
+    if(review) html+='<div class="qa-box" style="opacity:.75;background:#f3efe7;"><div class="qa-h">🧐 Kimi核查意见：</div>'+mdLite(review)+'</div>';
+    lastWebQA={q:q, ans:final.final+'\n（'+final.note+'）', review:review||''};
+  }else if(final && final.verdict==='disagree'){
+    /* 不认同：两种观点并列+注释 */
+    html='<div class="qa-note" style="color:#a33;font-weight:bold;">⚠️ '+esc(final.note)+'</div>';
+    html+='<div class="qa-box"><div class="qa-h">🌐 千问的观点（联网查）：</div>'+mdLite(ans)+'</div>';
+    html+='<div class="qa-box" style="background:#f3efe7;"><div class="qa-h">🧐 Kimi挑的毛病：</div>'+mdLite(review)+'</div>';
+    html+='<div class="qa-box" style="background:#eef0f5;"><div class="qa-h">🔁 千问复核（不认同的理由）：</div>'+mdLite(final.final)+'</div>';
+    lastWebQA={q:q, ans:'【千问的观点】\n'+ans+'\n\n【Kimi挑的毛病】\n'+review+'\n\n【千问复核：不认同】\n'+final.final+'\n（'+final.note+'）', review:review||''};
+  }else{
+    /* 前两棒止步（没开核查/核查员没上班/复核没回来） */
+    html='<div class="qa-box"><div class="qa-h">🌐 千问搜到的：</div>'+mdLite(ans)+'</div>';
+    if(review) html+='<div class="qa-box" style="background:#f3efe7;"><div class="qa-h">🧐 Kimi核查员的意见：</div>'+mdLite(review)+'</div>';
+    lastWebQA={q:q, ans:ans, review:review||''};
+  }
   html+='<div class="btn-row" style="margin-top:8px;">'+
         '<button id="btnToInbox">📥 存进收件箱</button>'+
         '<button class="ghost" id="btnDropQA">不要了</button></div>';
