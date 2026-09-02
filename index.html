@@ -2,6 +2,7 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.4.0 2026-09-02 病人大管家入编成第七位成员（名片系统v0.1.0：笔记习题AI做名片，知识搜索的地基）。
     v1.3.20 2026-09-02 PPT0.8.1答案位置三选一+放映中改本页（手动/AI两招）。
     v1.3.19 2026-09-02 PPT0.8.0放映中问AI（答案一键变新页，三处防串台防护）。
     v1.3.18 2026-09-02 PPT0.7.5系统弹窗大扫除（6处prompt+3处confirm全换自画弹窗，X5不再"点了没反应"；嵌套弹窗防护）。
@@ -111,6 +112,12 @@
 
   <div id="updLine"></div>
 
+  <a class="card" href="病人大管家.html">
+    <h2>🏠 病人大管家</h2>
+    <div class="desc">全家资料的大管家：病人的血气/病历按人归堆，笔记习题由AI做"名片"（80字概括+关键词）——您说一句"农药中毒"，它翻名片几秒钟把相关资料挑出来。问它问题，只用您自己的资料回答，一字不外加。</div>
+    <div class="meta"><span class="tag">全家总管</span><span class="tag" id="tagGuanjia">v0.1.0</span></div>
+  </a>
+
   <a class="card" id="billCard" href="javascript:void(0)">
     <h2>💰 AI花钱</h2>
     <div class="desc" id="billLine">今天 ¥0.00 ｜ 本月 ¥0.00（估算）</div>
@@ -197,7 +204,7 @@
 <script>
 /* ==================== 套装主界面自检器官（v1.1.0） ==================== */
 /* 本界面对应的四个软件当前内装版本（每次发版跟着改） */
-var CUR = { notes:"2.14.2", xiti:"1.8.9", bridge:"1.2.2", xueqi:"0.10.14", ppt:"0.8.1", xiaotao:"0.3.32" };
+var CUR = { notes:"2.14.2", xiti:"1.8.9", bridge:"1.2.2", xueqi:"0.10.14", ppt:"0.8.1", xiaotao:"0.3.32", guanjia:"0.1.0" };
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
 try{ var _sv=JSON.parse(localStorage.getItem("hx_suite_ver")||"{}"); Object.keys(_sv).forEach(function(k){ if(_sv[k]) CUR[k]=_sv[k]; }); }catch(e){}
 /* key: [云端软件文件, 壳内文件名, 云端版本文件, 标签id] */
@@ -207,7 +214,8 @@ var SUITE = {
   bridge: ["software-bridge.html", "文件桥.html",   "version-bridge.json", "tagBridge"],
   xueqi:  ["software-xueqi.html",  "血气分析.html", "version-xueqi.json",  "tagXueqi"],
   ppt:    ["software-ppt.html",    "PPT工坊.html",  "version-ppt.json",    "tagPpt"],
-  xiaotao:["software-xiaotao.html","小涛笔记.html", "version-xiaotao.json","tagXiaotao"]
+  xiaotao:["software-xiaotao.html","小涛笔记.html", "version-xiaotao.json","tagXiaotao"],
+  guanjia:["software-guanjia.html","病人大管家.html","version-guanjia.json","tagGuanjia"]
 };
 /* 标签按 CUR 显示（永不落伍） */
 Object.keys(SUITE).forEach(function(k){
