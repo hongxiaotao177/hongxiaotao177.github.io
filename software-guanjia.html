@@ -8,6 +8,15 @@
   红小涛学习套装 · 病人大管家
   定位：全家资料的"管家"。按病人归堆（血气/呼吸机/脱敏病历，天然有章），
         按知识搜索（笔记/习题，全靠AI名片）。
+  v0.3.0 2026-09-02 第②步·问AI查资料（方案2026-09-02洪老师拍板）：
+    - 「问AI查资料」二选一：📚只翻我的资料（翻名片挑前5张→读原文→死命令总结+逐条标出处，没找到明说没找到，不花钱）
+      / 🌐也上网查查（千问qwen-plus联网搜enable_search→Kimi当核查员挑毛病：事实/遗漏/来源/过时，默认开可关）
+    - 资料收件箱 hx_inbox_v1：网上搜来的料「存进收件箱」后，AI比对名片建议「合并到《XXX》」或「新建一篇资料」，
+      您点保留（合并=追加进学习笔记该篇正文+刷新updatedAt，sig变了名片自动重打；新建=写进study_notes_v1标来源）/放弃
+    - 未处理小红点：收件箱标题旁红点报raw条数
+    - 独立验证员抓4缺陷全修：名片app字段不进HTML（存储型XSS）；只有Kimi Key时上网查查明说"没真联网"不装蒜；
+      保留按钮加幂等守卫（同一条不重复追加）；合并建议存整个笔记id（id含冒号不再静默改新建）；收件箱超30条明示截断
+    - 规矩照旧：千问优先Kimi兜底、记账hx_aibill、自画弹窗（X5）、分步外显秒表、max_tokens 16384、temperature不写（默认1，怪癖#12）
   v0.2.0 2026-09-02 第③步提前·病人名册（洪老师问"怎么没把病人归类"，优先做）：
     - 自动翻血气档案柜（IndexedDB bgdb/kv：history=血气、ventHistory=呼吸机），按病人记号归堆
     - 名册分在院/出院（点按钮切换，出院沉底）；点病人名看名下全部记录（时间+摘要）
@@ -49,11 +58,11 @@
   .msg.ok { display:block; background:#eef5ee; color:#3c6e47; }
   .msg.err { display:block; background:#fbeeee; color:#a33; }
   .msg.info { display:block; background:#f3efe7; color:#5b554b; }
-  #progLog { font-size:13px; line-height:1.9; max-height:260px; overflow:auto;
+  #progLog, #askLog { font-size:13px; line-height:1.9; max-height:260px; overflow:auto;
              background:#faf7f2; border-radius:8px; padding:8px 10px; margin-top:8px; display:none; }
-  #progLog .step-doing { color:#b3742a; font-weight:bold; }
-  #progLog .step-done { color:#3c6e47; }
-  #progLog .step-err { color:#a33; }
+  #progLog .step-doing, #askLog .step-doing { color:#b3742a; font-weight:bold; }
+  #progLog .step-done, #askLog .step-done { color:#3c6e47; }
+  #progLog .step-err, #askLog .step-err { color:#a33; }
   .cc { border-bottom:1px dashed #e6e0d4; padding:9px 0; }
   .cc:last-child { border-bottom:none; }
   .cc .cc-head { font-size:13px; color:#8a8178; margin-bottom:2px; }
@@ -74,6 +83,15 @@
   .rec { border-bottom:1px dashed #e6e0d4; padding:8px 0; font-size:14px; }
   .rec:last-child { border-bottom:none; }
   .rec .rec-time { font-size:12px; color:#8a8178; }
+  .qa-box { background:#faf7f2; border-radius:10px; padding:10px 12px; margin-top:8px; font-size:14px; line-height:1.8; white-space:pre-wrap; }
+  .qa-box .qa-h { font-size:13px; font-weight:bold; color:#8a5a20; margin-bottom:4px; }
+  .red-dot { display:inline-block; min-width:20px; padding:1px 6px; border-radius:99px; background:#c0392b; color:#fff; font-size:12px; text-align:center; margin-left:6px; }
+  .inbox-item { border-bottom:1px dashed #e6e0d4; padding:9px 0; }
+  .inbox-item:last-child { border-bottom:none; }
+  .inbox-item .iq { font-size:14px; font-weight:bold; }
+  .inbox-item .ia { font-size:13px; color:#4a453e; margin-top:3px; white-space:pre-wrap; }
+  .inbox-item .is { font-size:12px; color:#8a8178; margin-top:3px; }
+  textarea.ask-input { width:100%; min-height:56px; font-size:15px; padding:9px 10px; border:1px solid #d8d2c6; border-radius:9px; }
   input[type=text] { width:100%; font-size:15px; padding:9px 10px; border:1px solid #d8d2c6;
                      border-radius:9px; background:#fff; }
   .hidden { display:none !important; }
@@ -129,6 +147,34 @@
   </div>
 
   <div class="card">
+    <h2>🤖 问AI查资料</h2>
+    <div style="font-size:13px;color:#8a8178;margin-bottom:8px;">
+      问一句，两条路任选：<b>只翻我的资料</b>=翻名片挑出相关的、读原文、死命令只许用您的资料回答并标出处；
+      <b>也上网查查</b>=千问联网搜+Kimi当核查员挑毛病（多花约2分钱买放心）。
+    </div>
+    <textarea class="ask-input" id="askQ" placeholder="比如：农药中毒 阿托品怎么用？"></textarea>
+    <div class="btn-row" style="margin-top:8px;">
+      <button id="btnAskLocal">📚 只翻我的资料</button>
+      <button id="btnAskWeb">🌐 也上网查查</button>
+    </div>
+    <div class="btn-row" style="margin-top:6px;">
+      <button class="ghost" id="btnCrossTg" style="font-size:13px;padding:5px 10px;"></button>
+    </div>
+    <div id="askLog"></div>
+    <div id="askResult"></div>
+    <div class="msg" id="askMsg"></div>
+  </div>
+
+  <div class="card">
+    <h2>📥 资料收件箱<span id="inboxDot"></span></h2>
+    <div style="font-size:13px;color:#8a8178;margin-bottom:6px;">
+      上网搜来的料先放这里等您过目。我会建议「合并到《XXX》」或「新建一篇资料」，您点保留才进家底，放弃就扔。
+    </div>
+    <div id="inboxList"></div>
+    <div class="msg" id="inboxMsg"></div>
+  </div>
+
+  <div class="card">
     <h2>🔎 名片浏览</h2>
     <input type="text" id="kwFilter" placeholder="筛一筛：输入病名/药名/关键词">
     <div id="cardList" style="margin-top:8px;"></div>
@@ -147,7 +193,7 @@
 </div>
 
 <script>
-var SW_VERSION = "0.2.0";
+var SW_VERSION = "0.3.0";
 document.getElementById('verTop').textContent = SW_VERSION;
 function $(id){ return document.getElementById(id); }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -186,22 +232,24 @@ function qwenKey(){ return (localStorage.getItem('hx_qwenkey')||localStorage.get
 function kimiKey(){ return (localStorage.getItem('hx_apikey')||localStorage.getItem('bg_apikey')||'').replace(/^\s+|\s+$/g,''); }
 function kimiModel(){ return localStorage.getItem('hx_aimodel')||'kimi-k2.6'; }
 
-function aiChat(sys, usr, onOk, onErr){
-  var used={model:'', sys:sys, usr:usr};
+function aiChat(sys, usr, onOk, onErr, opt){
+  opt=opt||{};
+  var what=opt.what||'名片';
   function doQwen(){
     var k=qwenKey(); if(!k) return false;
-    used.model='qwen-plus';
+    var body={model:'qwen-plus',messages:[{role:'system',content:sys},{role:'user',content:usr}],max_tokens:opt.maxTokens||1024};
+    if(opt.web) body.enable_search=true; /* 联网搜：阿里云百炼OpenAI兼容端点开关 */
     fetch('https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+k},
-      body:JSON.stringify({model:'qwen-plus',messages:[{role:'system',content:sys},{role:'user',content:usr}],max_tokens:1024})
+      body:JSON.stringify(body)
     }).then(function(r){
       if(!r.ok) return r.text().then(function(tx){ throw new Error('千问 HTTP '+r.status+'：'+String(tx||'').slice(0,100)); });
       return r.json();
     }).then(function(j){
       var c=j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content;
       if(!c) throw new Error('千问没说出话来');
-      hxBillToast(hxBill('大管家','名片(qwen-plus)',(sys||'').length+(usr||'').length,(c||'').length,'qwen-plus'));
+      hxBillToast(hxBill('大管家',what+'(qwen-plus)',(sys||'').length+(usr||'').length,(c||'').length,'qwen-plus'));
       onOk(c);
     }).catch(function(e){
       if(kimiKey()){ toast('千问这条路不通（'+e.message.slice(0,40)+'），自动换Kimi接着干',3500); doKimi(); }
@@ -211,11 +259,11 @@ function aiChat(sys, usr, onOk, onErr){
   }
   function doKimi(){
     var k=kimiKey(); if(!k){ onErr('还没有API Key（千问、Kimi都没有）'); return; }
-    var model=kimiModel(); used.model=model;
+    var model=kimiModel();
     fetch('https://api.moonshot.cn/v1/chat/completions',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+k},
-      body:JSON.stringify({model:model,messages:[{role:'system',content:sys},{role:'user',content:usr}],max_tokens:16384})
+      body:JSON.stringify({model:model,messages:[{role:'system',content:sys},{role:'user',content:usr}],max_tokens:opt.maxTokens||16384})
     }).then(function(r){
       if(!r.ok) return r.text().then(function(tx){ throw new Error('Kimi HTTP '+r.status+'：'+String(tx||'').slice(0,100)); });
       return r.json();
@@ -224,10 +272,11 @@ function aiChat(sys, usr, onOk, onErr){
       var c=msg?msg.content:'';
       if(Array.isArray(c)) c=c.map(function(x){return x.text||x.content||'';}).join('');
       if(!c) throw new Error('Kimi没说出话来');
-      hxBillToast(hxBill('大管家','名片('+model+')',(sys||'').length+(usr||'').length,(c||'').length,model));
+      hxBillToast(hxBill('大管家',what+'('+model+')',(sys||'').length+(usr||'').length,(c||'').length,model));
       onOk(c);
     }).catch(function(e){ onErr(e.message); });
   }
+  if(opt.force==='kimi'){ doKimi(); return; } /* 交叉核查指定Kimi当核查员，不问千问 */
   if(!doQwen()) doKimi();
 }
 
@@ -559,7 +608,7 @@ function renderCardList(){
     if(f && (c.title+' '+c.card+' '+c.kw).toLowerCase().indexOf(f)<0) continue;
     shown++;
     if(shown>100){ html+='<div style="font-size:13px;color:#8a8178;padding:6px 0;">…还有，用上面筛选缩小范围</div>'; break; }
-    html+='<div class="cc"><div class="cc-head"><span class="badge badge-'+c.app+'">'+(c.app==='notes'?'笔记':'习题')+'</span></div>'+
+    html+='<div class="cc"><div class="cc-head"><span class="badge '+(c.app==='notes'?'badge-notes':'badge-xiti')+'">'+(c.app==='notes'?'笔记':'习题')+'</span></div>'+ /* app不进HTML（验证员#1：存储型XSS） */
           '<div class="cc-title">'+esc(c.title)+'</div>'+
           '<div class="cc-card">'+esc(c.card)+'</div>'+
           (c.kw?'<div class="cc-kw">🏷 '+esc(c.kw)+'</div>':'')+'</div>';
@@ -569,8 +618,231 @@ function renderCardList(){
 }
 $('kwFilter').oninput=renderCardList;
 
+/* ══════════ v0.3.0 问AI查资料 + 资料收件箱 ══════════ */
+var LS_INBOX='hx_inbox_v1';
+function inboxLoad(){ try{ var b=JSON.parse(localStorage.getItem(LS_INBOX)); return (b&&Array.isArray(b.items))?b:{v:1,items:[]}; }catch(e){ return {v:1,items:[]}; } }
+function inboxSave(b){ try{ localStorage.setItem(LS_INBOX, JSON.stringify(b)); }catch(e){ toast('收件箱存储失败：'+e.message); } }
+function askLogLine(html, cls){
+  var log=$('askLog'); log.style.display='block';
+  var d=document.createElement('div'); if(cls) d.className=cls; d.innerHTML=html;
+  log.appendChild(d); log.scrollTop=log.scrollHeight;
+}
+var askRunning=false;
+function askBusy(on){ askRunning=on; $('btnAskLocal').disabled=on; $('btnAskWeb').disabled=on; }
+/* 关键词粗筛：问题拆字词，名片命中计分，挑前N张 */
+function pickCards(q, n){
+  var cs=cardsLoad(), chunks=String(q).toLowerCase().replace(/[？?，。、！!；;\s]+/g,' ').split(' ').filter(function(t){return t.length>=1;});
+  var terms=[]; /* 中文没空格：整段照查 + 滑窗切2~4字词，"农药中毒阿托品怎么用"也能命中"阿托品" */
+  chunks.forEach(function(c){
+    if(c.length>=2) terms.push(c);
+    for(var L=2; L<=4; L++) for(var i=0; i+L<=c.length; i++) terms.push(c.substr(i,L));
+  });
+  var scored=[];
+  Object.keys(cs.items).forEach(function(k){
+    var c=cs.items[k], hay=(c.title+' '+c.card+' '+c.kw).toLowerCase(), sc=0;
+    terms.forEach(function(t){ if(t.length>=2 && hay.indexOf(t)>=0) sc+=t.length; });
+    if(sc>0) scored.push({key:k, sc:sc, card:c});
+  });
+  scored.sort(function(a,b){ return b.sc-a.sc; });
+  return scored.slice(0, n||5);
+}
+/* ── 路一：只翻我的资料 ── */
+function askLocal(){
+  var q=$('askQ').value.replace(/^\s+|\s+$/g,'');
+  if(!q){ showMsg($('askMsg'),'先把问题写上。','err'); return; }
+  if(askRunning){ toast('上一问还在答，稍等'); return; }
+  $('askLog').innerHTML=''; $('askResult').innerHTML=''; $('askMsg').className='msg';
+  askLogLine('📇 翻名片中…','step-doing');
+  var hits=pickCards(q,5);
+  if(!hits.length){
+    askLogLine('🔍 名片一张都对不上。','step-done');
+    showMsg($('askMsg'),'您的资料里没找到相关的（一张名片都没命中）。这一问没花AI的钱。可以点「🌐 也上网查查」，或先「做名片」把资料补齐。','info');
+    return;
+  }
+  askLogLine('📇 命中 '+hits.length+' 张名片，去读原文…','step-doing');
+  var src=scanSources(), srcMap={};
+  src.forEach(function(s){ srcMap[s.key]=s; });
+  var docs=[];
+  hits.forEach(function(h){ var s=srcMap[h.key]; if(s) docs.push({title:s.title, text:s.text.slice(0,3000)}); });
+  if(!docs.length){ showMsg($('askMsg'),'名片有、原文没了（可能源资料已删）。去「做名片」重打一批试试。','err'); return; }
+  if(!qwenKey()&&!kimiKey()){ showMsg($('askMsg'),'还没有API Key，先贴一个。','err'); keyInputAsk(); return; }
+  askBusy(true);
+  askLogLine('🤖 AI细读 '+docs.length+' 篇原文，总结中（死命令：只许用您的资料，一字不外加）…','step-doing');
+  var t0=Date.now();
+  var sys='您是医学资料问答助手。死命令：\n'+
+          '1. 只许用下面给的资料回答，资料里没有的就说"您的资料里没有提到"，绝不许用自己脑子里的知识补充\n'+
+          '2. 每答完一条，末尾用【出处：资料标题】标明来自哪份资料\n'+
+          '3. 大白话、分条列、别啰嗦';
+  var usr='问题：'+q+'\n\n====== 以下是我资料库里挑出的原文 ======\n'+
+          docs.map(function(d,i){ return '【资料'+(i+1)+'：'+d.title+'】\n'+d.text; }).join('\n\n');
+  aiChat(sys, usr, function(ans){
+    askBusy(false);
+    askLogLine('✅ 答完（'+Math.round((Date.now()-t0)/1000)+'秒）','step-done');
+    var html='<div class="qa-box"><div class="qa-h">📚 只翻了您的资料（'+docs.length+'篇）：</div>'+esc(ans)+'</div>';
+    html+='<div style="font-size:12px;color:#8a8178;margin-top:6px;">出处：'+docs.map(function(d){return '《'+esc(d.title)+'》';}).join(' ')+'</div>';
+    $('askResult').innerHTML=html;
+  }, function(e){
+    askBusy(false);
+    askLogLine('❌ AI没答成：'+esc(String(e).slice(0,60)),'step-err');
+    showMsg($('askMsg'),'AI这条路不通：'+e,'err');
+  }, {what:'问资料', maxTokens:16384});
+}
+/* ── 路二：也上网查查（千问联网搜+Kimi核查） ── */
+var LS_CROSS='hx_guanjia_cross';
+function crossOn(){ return localStorage.getItem(LS_CROSS)!=='0'; } /* 默认开 */
+function renderCrossTg(){ $('btnCrossTg').textContent='🧐 交叉核查（Kimi挑毛病）：'+(crossOn()?'开 ✅':'关'); }
+$('btnCrossTg').onclick=function(){ localStorage.setItem(LS_CROSS, crossOn()?'0':'1'); renderCrossTg(); toast(crossOn()?'核查员上岗：千问搜完Kimi挑毛病':'核查员下班：只看千问一家之言'); };
+function askWeb(){
+  var q=$('askQ').value.replace(/^\s+|\s+$/g,'');
+  if(!q){ showMsg($('askMsg'),'先把问题写上。','err'); return; }
+  if(askRunning){ toast('上一问还在答，稍等'); return; }
+  if(!qwenKey()&&!kimiKey()){ showMsg($('askMsg'),'还没有API Key，先贴一个。','err'); keyInputAsk(); return; }
+  var realWeb0=!!qwenKey();
+  if(!realWeb0) showMsg($('askMsg'),'注意：没填千问Key，这一问是Kimi凭记忆答的，没真联网。要真联网就去设置里贴千问Key。','info');
+  $('askLog').innerHTML=''; $('askResult').innerHTML=''; $('askMsg').className='msg';
+  askBusy(true);
+  var realWeb=!!qwenKey(); /* 只有千问Key才真联网（验证员#2：没千问时别装"联网搜"） */
+  askLogLine(realWeb?'🌐 千问联网搜索中…':'⚠️ 没有千问Key，Kimi凭自己脑内知识回答（<b>没真联网</b>），结果仅供参考…', realWeb?'step-doing':'step-err');
+  var t0=Date.now();
+  var sys='您是医学资料查询助手。用联网搜索找到的资料回答问题。规矩：分条列、大白话、写明信息来自哪些网站/来源；拿不准的地方明说。';
+  aiChat(sys, '问题：'+q, function(ans){
+    askLogLine('✅ 千问搜完（'+Math.round((Date.now()-t0)/1000)+'秒）','step-done');
+    if(crossOn() && kimiKey()){
+      askLogLine('🧐 Kimi核查员挑毛病中（事实/遗漏/来源/过时）…','step-doing');
+      var t1=Date.now();
+      var csys='您是医学答案核查员。给您一个问题和一份AI答案，请您挑毛病，按四条看：①事实错误 ②重要遗漏 ③来源是否可靠 ④内容是否过时。没毛病就直说"未发现明显问题"。分条、简短、大白话。';
+      var cusr='问题：'+q+'\n\n待核查的答案：\n'+String(ans).slice(0,4000);
+      aiChat(csys, cusr, function(review){
+        askBusy(false);
+        askLogLine('✅ 核查完（'+Math.round((Date.now()-t1)/1000)+'秒）','step-done');
+        showWebResult(q, ans, review);
+      }, function(e){
+        askBusy(false);
+        askLogLine('⚠️ 核查员没上班：'+esc(String(e).slice(0,40))+'（先看千问的答案）','step-err');
+        showWebResult(q, ans, null);
+      }, {what:'交叉核查', force:'kimi', maxTokens:16384});
+    }else{
+      askBusy(false);
+      if(crossOn()&&!kimiKey()) askLogLine('⚠️ 没有Kimi Key，核查员上不了班，只看千问一家之言','step-err');
+      showWebResult(q, ans, null);
+    }
+  }, function(e){
+    askBusy(false);
+    askLogLine('❌ 没查成：'+esc(String(e).slice(0,60)),'step-err');
+    showMsg($('askMsg'),'AI这条路不通：'+e,'err');
+  }, {what:'上网查', web:true, maxTokens:4096});
+}
+var lastWebQA=null;
+function showWebResult(q, ans, review){
+  lastWebQA={q:q, ans:ans, review:review};
+  var html='<div class="qa-box"><div class="qa-h">🌐 千问联网搜到的：</div>'+esc(ans)+'</div>';
+  if(review) html+='<div class="qa-box" style="background:#f3efe7;"><div class="qa-h">🧐 Kimi核查员的意见：</div>'+esc(review)+'</div>';
+  html+='<div class="btn-row" style="margin-top:8px;">'+
+        '<button id="btnToInbox">📥 存进收件箱</button>'+
+        '<button class="ghost" id="btnDropQA">不要了</button></div>';
+  $('askResult').innerHTML=html;
+  $('btnToInbox').onclick=function(){ saveToInbox(); };
+  $('btnDropQA').onclick=function(){ $('askResult').innerHTML=''; lastWebQA=null; toast('已扔掉'); };
+}
+function saveToInbox(){
+  if(!lastWebQA) return;
+  var b=inboxLoad();
+  b.items.unshift({id:'I'+Date.now(), q:lastWebQA.q, ans:String(lastWebQA.ans).slice(0,6000),
+                   review:lastWebQA.review?String(lastWebQA.review).slice(0,2000):'', status:'raw', t:Date.now(), sug:''});
+  if(b.items.length>100) b.items.length=100;
+  inboxSave(b);
+  lastWebQA=null; $('askResult').innerHTML='';
+  toast('📥 已进收件箱，去那里点「保留」才进家底');
+  renderInbox();
+  suggestForInbox(b.items[0]);
+}
+/* AI建议：拿问题比对名片，最像的→合并到它，都不像→新建 */
+function suggestForInbox(item){
+  var hits=pickCards(item.q,1);
+  /* 习题是题库不是笔记，合并不了 → 命中习题也建议新建（合并只认学习笔记） */
+  if(hits.length && hits[0].key.indexOf('xiti:')===0) hits=[];
+  var b=inboxLoad(), it=null;
+  b.items.forEach(function(x){ if(x.id===item.id) it=x; });
+  if(!it) return;
+  it.sug=hits.length?('merge:'+hits[0].key):'new';
+  it.sugTitle=hits.length?hits[0].card.title:'';
+  it.sugId=hits.length?hits[0].key.slice(6):''; /* 整个笔记id原样存，别再split冒号（验证员#4：id含冒号曾静默改新建） */
+  inboxSave(b); renderInbox();
+}
+/* 保留：合并=追加进学习笔记该篇正文；新建=写进study_notes_v1 */
+function inboxKeep(item){
+  try{
+    var notes=JSON.parse(localStorage.getItem('study_notes_v1'))||[];
+    if(!Array.isArray(notes)) notes=[];
+    var addTxt='\n\n---（大管家收件箱 '+new Date().toLocaleString()+' 存入）---\n问题：'+item.q+'\n'+item.ans+(item.review?('\n核查意见：'+item.review):'');
+    if(item.sug&&item.sug.indexOf('merge:')===0){
+      var nid=item.sugId||item.sug.slice(6).split(':')[1]; /* 新件用sugId原样；旧件兜底老解析 */
+      var hit=null;
+      notes.forEach(function(n){ if(String(n.id)===String(nid)) hit=n; });
+      if(hit){
+        hit.content=(hit.content||'')+addTxt;
+        hit.updatedAt=Date.now(); /* sig变了，名片自动重打 */
+        localStorage.setItem('study_notes_v1', JSON.stringify(notes));
+        return '✅ 已合并进《'+hit.title+'》（它的名片下次自动重打）';
+      }
+      /* 合并目标没了→自动改新建，不让料丢 */
+    }
+    var title=item.q.slice(0,30)||('上网查资料 '+new Date().toLocaleDateString());
+    notes.unshift({id:'gj'+Date.now(), title:title, content:'（来源：大管家上网查查）'+addTxt.replace(/^\n+/,''), updatedAt:Date.now()});
+    localStorage.setItem('study_notes_v1', JSON.stringify(notes));
+    return '✅ 已新建一篇《'+title+'》（在学习笔记里能翻到，名片下次自动补上）';
+  }catch(e){ return null; }
+}
+function renderInbox(){
+  var b=inboxLoad();
+  var raw=b.items.filter(function(x){return x.status==='raw';});
+  $('inboxDot').innerHTML=raw.length?('<span class="red-dot">'+raw.length+'</span>'):'';
+  if(!b.items.length){ $('inboxList').innerHTML=''; showMsg($('inboxMsg'),'收件箱是空的。用上面「🌐 也上网查查」，查完点「存进收件箱」就来这里。','info'); return; }
+  $('inboxMsg').className='msg';
+  var html='';
+  b.items.slice(0,30).forEach(function(it){
+    var stTxt=it.status==='raw'?'⏳ 等您过目':(it.status==='kept'?'✅ 已收进家底':'🗑 已放弃');
+    html+='<div class="inbox-item"><div class="iq">'+esc(it.q)+'</div>'+
+      '<div class="ia">'+esc(String(it.ans).slice(0,180))+(String(it.ans).length>180?'…':'')+'</div>'+
+      '<div class="is">'+new Date(it.t).toLocaleString()+'　'+stTxt+
+      (it.status==='raw'?(it.sug==='new'?'　💡 我建议：新建一篇资料':(it.sug?('　💡 我建议：合并到《'+esc(it.sugTitle)+'》'):'　💡 建议生成中…')):'')+
+      '</div>';
+    if(it.status==='raw'){
+      html+='<div class="btn-row" style="margin-top:6px;">'+
+        '<button style="font-size:13px;padding:6px 12px;" data-keep="'+esc(it.id)+'">✅ 保留（照建议办）</button>'+
+        '<button class="ghost" style="font-size:13px;padding:6px 12px;" data-drop="'+esc(it.id)+'">🗑 放弃</button></div>';
+    }
+    html+='</div>';
+  });
+  if(b.items.length>30) html+='<div style="font-size:12px;color:#8a8178;padding:6px 0;">…下面还有 '+(b.items.length-30)+' 条没显示，先把前面的处理完就轮到了</div>'; /* 验证员#5：截断要明示 */
+  $('inboxList').innerHTML=html;
+  Array.prototype.forEach.call(document.querySelectorAll('[data-keep]'), function(el){
+    el.onclick=function(){
+      var b2=inboxLoad(), it=null;
+      b2.items.forEach(function(x){ if(x.id===el.getAttribute('data-keep')) it=x; });
+      if(!it) return;
+      if(it.status!=='raw'){ renderInbox(); return; } /* 幂等守卫：已处理过的点第二次不再追加（验证员#3） */
+      if(!it.sug){ suggestForInbox(it); toast('建议刚生成好，再点一次保留'); return; }
+      var r=inboxKeep(it);
+      if(r){ it.status='kept'; inboxSave(b2); toast(r); }
+      else toast('写入学习笔记失败，料还在收件箱，没丢');
+      renderInbox(); renderOverview();
+    };
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-drop]'), function(el){
+    el.onclick=function(){
+      var b2=inboxLoad();
+      b2.items.forEach(function(x){ if(x.id===el.getAttribute('data-drop')) x.status='dropped'; });
+      inboxSave(b2); renderInbox(); toast('已放弃这条');
+    };
+  });
+}
+$('btnAskLocal').onclick=askLocal;
+$('btnAskWeb').onclick=askWeb;
+renderCrossTg();
+
 /* ── 开门：名册 + 总览 + 自动做3篇（有Key才动） ── */
-renderOverview(); renderCardList(); renderPatients();
+renderOverview(); renderCardList(); renderPatients(); renderInbox();
 (function(){
   var missing=makeCardQueue(1).length;
   if(missing && (qwenKey()||kimiKey())){
