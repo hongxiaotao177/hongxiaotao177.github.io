@@ -10,6 +10,10 @@
           → 大纲编辑页改稿 → 一键生成HTML幻灯片 → 横屏播放 → 每页可AI重做/换版式
           → 导出单个HTML（微信发别人，浏览器打开即放映）
   修改记录：
+    v0.8.1 2026-09-02 洪医生两点拍板：
+      - 答案收进PPT三选一位置：插在所问页后面（默认）/放到最后一页/插到第N页后面（页码默认填所问页，0=放最前）
+      - 放映底栏加「✏️ 改本页」：当前页内容放框里直接改字（## 标题/- 要点/| 表格 |），保存当场换上位置不动；
+        或写一句话叫AI改，改完放回框里过目点头才存；认页面对象不认下标，翻页不串；AI在途离开现场结果丢弃
     v0.8.0 2026-09-02 放映中问AI（愿望清单第4批·最后一件）：
       - 放映底栏加「🤖 问AI」：弹窗写明问的是第几页《标题》，这一页内容连同问题一起发给AI（不乱编）
       - 走小活通道smallTaskAI（千问优先≈1分钱，没千问Key自动换Kimi），答案先过目
@@ -387,7 +391,29 @@
     <span id="pvNo">1/1</span>
     <button id="pvNext">下一页 →</button>
     <button id="pvAsk">🤖 问AI</button>
+    <button id="pvEdit">✏️ 改本页</button>
     <button id="pvExit">✕ 退出</button>
+  </div>
+</div>
+
+<!-- v0.8.1 放映中改本页：自己改字 / 叫AI按一句话改，改完当场换上 -->
+<div id="pvEditModal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:102;overflow:auto;">
+  <div style="background:#fff;border-radius:14px;max-width:600px;margin:6vh auto;padding:18px 20px;">
+    <h3 style="margin-bottom:6px;">✏️ 放映中改本页</h3>
+    <div id="pvEditTarget" style="font-size:13px;background:#f3efe7;border-radius:8px;padding:8px 10px;margin-bottom:8px;color:#5b554b;"></div>
+    <textarea id="pvEditText" style="width:100%;min-height:180px;font-size:14px;line-height:1.6;padding:10px;border:1px solid #d8d2c6;border-radius:8px;font-family:inherit;"></textarea>
+    <div style="font-size:12px;color:#8a8178;margin-top:4px;">直接改上面的字就行：## 是标题，- 是要点，| 表格 |，改完点「✅ 保存我的修改」。</div>
+    <div class="btn-row" style="margin-top:8px;">
+      <button id="pvEditSave" style="background:#4a7c59;">✅ 保存我的修改</button>
+      <button class="ghost" id="pvEditClose">✕ 不改了</button>
+    </div>
+    <div style="margin-top:12px;border-top:1px dashed #d8d2c6;padding-top:10px;">
+      <div style="font-size:13px;color:#5b554b;margin-bottom:6px;">或者叫AI改——写一句话要求，改完放回上面的框里，您过目后再点保存：</div>
+      <div class="btn-row">
+        <input id="pvEditAsk" placeholder="如：这个数据不对，应该是4~6 / 精简成三条" style="flex:1;font-size:14px;padding:8px 10px;border:1px solid #d8d2c6;border-radius:8px;">
+        <button id="pvEditAiGo" style="background:#b3742a;">🤖 AI改</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -403,8 +429,22 @@
     </div>
     <div id="pvAskAns" style="display:none;margin-top:10px;font-size:14px;line-height:1.7;max-height:36vh;overflow:auto;background:#faf7f2;border-radius:8px;padding:10px 12px;white-space:pre-wrap;"></div>
     <div id="pvAskBtns" class="btn-row" style="display:none;margin-top:8px;">
-      <button id="pvAskKeep" style="background:#4a7c59;">📥 收进PPT（插在本页后面）</button>
+      <button id="pvAskKeep" style="background:#4a7c59;">📥 收进PPT</button>
       <button class="ghost" id="pvAskAgain">🔁 再问一句</button>
+    </div>
+    <div id="pvAskPlace" style="display:none;margin-top:8px;background:#f3efe7;border-radius:8px;padding:10px 12px;">
+      <div style="font-size:13px;color:#5b554b;margin-bottom:6px;">答案放哪？（默认插在"所问那页"后面）</div>
+      <div class="btn-row">
+        <button id="pvPlaceAfter" style="background:#4a7c59;">插在所问页后面</button>
+        <button class="ghost" id="pvPlaceEnd">放到最后一页</button>
+      </div>
+      <div class="btn-row" style="margin-top:6px;">
+        <span style="font-size:13px;color:#5b554b;align-self:center;">插到第</span>
+        <input id="pvPlaceN" type="number" min="1" style="width:64px;font-size:15px;padding:7px 8px;border:1px solid #d8d2c6;border-radius:8px;">
+        <span style="font-size:13px;color:#5b554b;align-self:center;">页后面</span>
+        <button class="ghost" id="pvPlaceNGo">确定</button>
+        <button class="ghost" id="pvPlaceCancel">先不收</button>
+      </div>
     </div>
   </div>
 </div>
@@ -452,7 +492,7 @@
 
 <script>
 "use strict";
-var SW_VERSION = "0.8.0"; /* v0.7.5 系统弹窗大扫除：剩下6处prompt+3处confirm全换自画对话框hxAsk/hxConfirm（AI起草大纲/填Key/涂黑改/插链接/单页AI改/云端恢复/删项目/删页），手机壳上不再"点了没反应" */ /* v0.7.4 三件套：①重做弹窗显示"正在重做第N页《标题》+内容预览"防点错页 ②小活（单页重做）优先派千问qwen-plus（几秒~20秒），没Key/失败自动退Kimi ③AI干活浮动秒表胶囊趴右下角 ④重做后验收：原有表格被AI弄丢→自动重试一次，仍丢则不覆盖原页 */ /* v0.7.3 重做全程浮动提示：开工/成功/失败都弹toast（洪医生真机反馈：进度消息在页面顶部，滚到下面看不见，像死机） */ /* v0.7.2 修数据错乱：AI重做在途时移动/删除该页，写回改认"页面对象"不认下标（独立测试t37抓到） */ /* v0.7.1 修"AI重做本页点了没反应"：病根=手机壳X5内核不理系统prompt()弹窗（直接当取消），改自画弹窗（习题学习删除确认同款药方） */ /* v0.7.0 千问自动交叉校对（愿望清单第3批）：「🤖 自动校对」一键两棒——第1棒发千问qwen-plus（公共钱罐hx_qwenkey，约1分钱）拿校对意见，第2棒自动交给贴回校对管道让Kimi照改大纲（没提到的一字不动）；开关可选千问/Kimi自查；千问答"没发现问题"就不花第2棒的钱 */ /* v0.6.1 自选背景图（愿望清单第2批）：幻灯片页「🖼️ 背景图」相册选图→canvas压缩≤1600px、JPEG逐步降质（≤200KB）→存本PPT的p.bg（不设全局）；渲染时.slide-page叠82%不透明蒙纱（米白皮用米白纱/深色皮用深色纱）保证字可读；「✕ 清除背景」一键还原；导出HTML内嵌带走。提醒：导出会把照片带出去，别夹病人信息 */ /* v0.6.0 四套皮肤（米白学术/深蓝正式/墨绿讲堂/黑板粉笔），每个PPT各选各的，导出HTML带着走；点屏翻页其实v0.2.0起就有（点左35%上页/右65%下页） */ /* v0.5.0 放映自适应：底栏实底让位+内容超高自动等比缩小（洪医生横屏讲课表格最后一行被吃） */ /* v0.4.8 AI报错带官方原因+400也自动换模型重试（洪医生贴回校对撞HTTP400：疑公共模型罐里存着已下架的moonshot-v1系列，400不走404重试路） */ /* v0.4.7 版本字样治病根：头顶+页脚+标题改成代码自动填SW_VERSION（v0.4.0~0.4.6期间头顶一直显示旧号，害用户以为没更新） */ /* v0.4.6 更新通道免Token备用路：自检/下载新版在API不通或没填Token时自动走github.io公开直链 */ /* v0.4.5 贴回校对结果：别的AI的校对意见贴进来，本软件AI照改大纲（原文没提到的部分不动）+秒表进度 */ /* v0.4.4 复制校对：大纲/全片一键连校对指令复制，借别的AI挑错，不花自己Key */ /* v0.4.3 修404：死模型自动换kimi-k2.6+重试；max_tokens 8000→16384（k2.6思考型） */ /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
+var SW_VERSION = "0.8.1"; /* v0.7.5 系统弹窗大扫除：剩下6处prompt+3处confirm全换自画对话框hxAsk/hxConfirm（AI起草大纲/填Key/涂黑改/插链接/单页AI改/云端恢复/删项目/删页），手机壳上不再"点了没反应" */ /* v0.7.4 三件套：①重做弹窗显示"正在重做第N页《标题》+内容预览"防点错页 ②小活（单页重做）优先派千问qwen-plus（几秒~20秒），没Key/失败自动退Kimi ③AI干活浮动秒表胶囊趴右下角 ④重做后验收：原有表格被AI弄丢→自动重试一次，仍丢则不覆盖原页 */ /* v0.7.3 重做全程浮动提示：开工/成功/失败都弹toast（洪医生真机反馈：进度消息在页面顶部，滚到下面看不见，像死机） */ /* v0.7.2 修数据错乱：AI重做在途时移动/删除该页，写回改认"页面对象"不认下标（独立测试t37抓到） */ /* v0.7.1 修"AI重做本页点了没反应"：病根=手机壳X5内核不理系统prompt()弹窗（直接当取消），改自画弹窗（习题学习删除确认同款药方） */ /* v0.7.0 千问自动交叉校对（愿望清单第3批）：「🤖 自动校对」一键两棒——第1棒发千问qwen-plus（公共钱罐hx_qwenkey，约1分钱）拿校对意见，第2棒自动交给贴回校对管道让Kimi照改大纲（没提到的一字不动）；开关可选千问/Kimi自查；千问答"没发现问题"就不花第2棒的钱 */ /* v0.6.1 自选背景图（愿望清单第2批）：幻灯片页「🖼️ 背景图」相册选图→canvas压缩≤1600px、JPEG逐步降质（≤200KB）→存本PPT的p.bg（不设全局）；渲染时.slide-page叠82%不透明蒙纱（米白皮用米白纱/深色皮用深色纱）保证字可读；「✕ 清除背景」一键还原；导出HTML内嵌带走。提醒：导出会把照片带出去，别夹病人信息 */ /* v0.6.0 四套皮肤（米白学术/深蓝正式/墨绿讲堂/黑板粉笔），每个PPT各选各的，导出HTML带着走；点屏翻页其实v0.2.0起就有（点左35%上页/右65%下页） */ /* v0.5.0 放映自适应：底栏实底让位+内容超高自动等比缩小（洪医生横屏讲课表格最后一行被吃） */ /* v0.4.8 AI报错带官方原因+400也自动换模型重试（洪医生贴回校对撞HTTP400：疑公共模型罐里存着已下架的moonshot-v1系列，400不走404重试路） */ /* v0.4.7 版本字样治病根：头顶+页脚+标题改成代码自动填SW_VERSION（v0.4.0~0.4.6期间头顶一直显示旧号，害用户以为没更新） */ /* v0.4.6 更新通道免Token备用路：自检/下载新版在API不通或没填Token时自动走github.io公开直链 */ /* v0.4.5 贴回校对结果：别的AI的校对意见贴进来，本软件AI照改大纲（原文没提到的部分不动）+秒表进度 */ /* v0.4.4 复制校对：大纲/全片一键连校对指令复制，借别的AI挑错，不花自己Key */ /* v0.4.3 修404：死模型自动换kimi-k2.6+重试；max_tokens 8000→16384（k2.6思考型） */ /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
 /* 公共钱罐：API key/GitHub配置 一处填处处有（与其他软件共享 hx_*） */
 (function(){
   var HX_MAP=[["hx_apikey","hx_apikey"],["hx_gh_user","hx_gh_user"],["hx_gh_tok","hx_gh_tok"],["hx_gh_repo","hx_gh_repo"]];
@@ -1266,6 +1306,7 @@ window.addEventListener('resize', function(){ if(!$('player').classList.contains
 document.addEventListener('keydown', function(e){
   if($('player').classList.contains('hidden')) return;
   if(!$('pvAskModal').classList.contains('hidden')) return; /* v0.8.0 问AI打字时，空格/方向键不许翻页 */
+  if(!$('pvEditModal').classList.contains('hidden')) return; /* v0.8.1 改本页打字同理 */
   if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){ pvIdx++; renderStage(); }
   else if(e.key==='ArrowLeft'||e.key==='PageUp'){ pvIdx--; renderStage(); }
   else if(e.key==='Escape') stopPlay();
@@ -1295,7 +1336,7 @@ $('pvAsk').onclick=function(){
   var p=curProj(); if(!p) return;
   pvAskSession++; /* 每开一次弹窗=新现场，上次发问的在途答案回来也丢弃（验证员t53a S4抓到） */
   $('pvAskTarget').textContent='正在放映第'+(pvIdx+1)+'页《'+(p.slides[pvIdx].title||'无题')+'》——这一页的内容会一起发给AI，它不会乱编';
-  $('pvAskQ').value=''; $('pvAskAns').style.display='none'; $('pvAskBtns').style.display='none';
+  $('pvAskQ').value=''; $('pvAskAns').style.display='none'; $('pvAskBtns').style.display='none'; $('pvAskPlace').style.display='none';
   $('pvAskModal').classList.remove('hidden');
   setTimeout(function(){ $('pvAskQ').focus(); },50);
 };
@@ -1305,7 +1346,7 @@ $('pvAskGo').onclick=function(){
   var q=$('pvAskQ').value.replace(/^\s+|\s+$/g,'');
   if(!q){ toast('先写个问题'); return; }
   pvAskLastQ=q; pvAskLastA=''; pvAskCtx={proj:p, slide:p.slides[pvIdx], sess:pvAskSession}; /* 记住提问现场：哪个PPT哪一页哪一场 */
-  $('pvAskAns').style.display='none'; $('pvAskBtns').style.display='none'; /* 收起旧答案，防在途收错（验证员t53a抓到） */
+  $('pvAskAns').style.display='none'; $('pvAskBtns').style.display='none'; $('pvAskPlace').style.display='none'; /* 收起旧答案和位置区，防在途收错（验证员t53a/t58抓到） */
   var ctx=pvAskCtx;
   var sys='您是重症医学讲课助手。学员看着一页PPT提了个问题，请用大白话回答，说人话，别绕弯。输出规矩：直接给答案本身，不要标题、不要解释您在干嘛；要点行首"- "（3~8条，每条不超过30字）；真有对比才画 | 表 |。';
   var usr='【这一页PPT的内容】\n'+pageToMd(p.slides[pvIdx])+'\n【学员的问题】\n'+q;
@@ -1326,19 +1367,95 @@ $('pvAskGo').onclick=function(){
     toast('AI没答成：'+e);
   });
 };
-$('pvAskAgain').onclick=function(){ $('pvAskAns').style.display='none'; $('pvAskBtns').style.display='none'; $('pvAskQ').focus(); };
-$('pvAskKeep').onclick=function(){
+$('pvAskAgain').onclick=function(){ $('pvAskAns').style.display='none'; $('pvAskBtns').style.display='none'; $('pvAskPlace').style.display='none'; $('pvAskQ').focus(); };
+/* v0.8.1 收进PPT三选一位置（洪医生：答案不能只到最后一页，想放哪放哪） */
+function pvAskCollect(at){
   var p=curProj(); if(!p||!pvAskLastA){ toast('还没有答案可收'); return; }
   if(!pvAskCtx||pvAskCtx.proj!==p){ toast('这份答案不是问这个PPT的，没敢收'); return; }
   var pages=parseOutline('## 问：'+pvAskLastQ.slice(0,18)+'\n'+pvAskLastA);
+  /* 答案自带##拆多页时，丢掉"只有标题没内容"的空壳首页，把"问："冠到答案首页上（验证员t57抓到） */
+  if(pages.length>1){
+    var f=pages[0];
+    if(!f.bullets.length && !f.table && !f.chart && !f.para && !f.big && !f.quote){
+      pages.shift(); pages[0].title='问：'+pvAskLastQ.slice(0,12)+' · '+pages[0].title;
+    }
+  }
   if(!pages.length){ toast('答案没转成页，没动您的PPT'); return; }
-  var qi=p.slides.indexOf(pvAskCtx.slide); /* 锚住"所问那页"，翻了页也插回它后面（验证员t53a抓到错位） */
-  var at=(qi>=0)? qi+1 : Math.min(pvIdx+1,p.slides.length);
+  at=Math.max(0,Math.min(at,p.slides.length));
   for(var i=0;i<pages.length;i++) p.slides.splice(at+i,0,pages[i]);
   saveStore();
+  $('pvAskPlace').style.display='none';
   $('pvAskModal').classList.add('hidden');
   pvIdx=at; renderStage(); /* 跳到答案页让它当场亮相 */
   toast('✅ 已收进PPT（第'+(at+1)+'页，共加'+pages.length+'页）');
+}
+$('pvAskKeep').onclick=function(){
+  var p=curProj(); if(!p||!pvAskLastA){ toast('还没有答案可收'); return; }
+  if(!pvAskCtx||pvAskCtx.proj!==p){ toast('这份答案不是问这个PPT的，没敢收'); return; }
+  var qi=p.slides.indexOf(pvAskCtx.slide);
+  $('pvPlaceN').value=(qi>=0)?(qi+1):''; /* 默认填所问页页码，老人一看就懂 */
+  $('pvAskPlace').style.display='block';
+};
+$('pvPlaceAfter').onclick=function(){
+  var p=curProj(); if(!p||!pvAskCtx) return;
+  var qi=p.slides.indexOf(pvAskCtx.slide); /* 锚住"所问那页"，翻了页也插回它后面（验证员t53a抓到错位） */
+  pvAskCollect((qi>=0)? qi+1 : Math.min(pvIdx+1,p.slides.length));
+};
+$('pvPlaceEnd').onclick=function(){ var p=curProj(); if(!p) return; pvAskCollect(p.slides.length); };
+$('pvPlaceNGo').onclick=function(){
+  var p=curProj(); if(!p) return;
+  var n=parseInt($('pvPlaceN').value,10);
+  if(isNaN(n)||n<0||n>p.slides.length){ toast('页码不对：一共'+p.slides.length+'页，填0~'+p.slides.length+'（0=放最前）'); return; }
+  pvAskCollect(n);
+};
+$('pvPlaceCancel').onclick=function(){ $('pvAskPlace').style.display='none'; };
+/* v0.8.1 放映中改本页（洪医生：讲到第3页发现不对，当场自己改或叫AI改） */
+var pvEditCtx=null, pvEditSession=0;
+$('pvEdit').onclick=function(){
+  var p=curProj(); if(!p) return;
+  pvEditSession++;
+  pvEditCtx={proj:p, slide:p.slides[pvIdx]};
+  $('pvEditTarget').textContent='正在改第'+(pvIdx+1)+'页《'+(p.slides[pvIdx].title||'无题')+'》——只动这一页，别的页不碰';
+  $('pvEditText').value=pageToMd(p.slides[pvIdx]);
+  $('pvEditAsk').value='';
+  $('pvEditModal').classList.remove('hidden');
+  setTimeout(function(){ $('pvEditText').focus(); },50);
+};
+$('pvEditClose').onclick=function(){ $('pvEditModal').classList.add('hidden'); };
+$('pvEditSave').onclick=function(){
+  var p=curProj(); if(!p||!pvEditCtx||pvEditCtx.proj!==p){ toast('现场对不上，没敢改'); return; }
+  var md=$('pvEditText').value;
+  if(!md.replace(/^\s+|\s+$/g,'')){ toast('内容是空的，没敢改（想删这页请退出放映用"删"钮）'); return; }
+  var pages=parseOutline(md);
+  if(!pages.length){ toast('没认出有效内容，没动您的PPT'); return; }
+  var idx=p.slides.indexOf(pvEditCtx.slide); /* 认页面对象不认下标，翻了页也改对所改那页 */
+  if(idx<0){ toast('那一页已经不在了，改动丢弃'); $('pvEditModal').classList.add('hidden'); return; }
+  p.slides.splice(idx,1);
+  for(var i=0;i<pages.length;i++) p.slides.splice(idx+i,0,pages[i]);
+  saveStore();
+  $('pvEditModal').classList.add('hidden');
+  pvIdx=idx; renderStage();
+  toast('✅ 第'+(idx+1)+'页已改好'+(pages.length>1?('（拆成了'+pages.length+'页）'):''));
+};
+$('pvEditAiGo').onclick=function(){
+  var p=curProj(); if(!p||!pvEditCtx||pvEditCtx.proj!==p) return;
+  var ask=$('pvEditAsk').value.replace(/^\s+|\s+$/g,'');
+  if(!ask){ toast('先写一句要求'); return; }
+  var ctx={proj:p, slide:pvEditCtx.slide, sess:pvEditSession};
+  var sys='您是PPT改稿助手。用户会给出一页PPT的Markdown原稿和一句修改要求，请照改并输出改后的整页Markdown（## 标题开头）。只输出Markdown本身，不要解释。保留原有格式规矩：- 要点、| 表格 |、!! 大数字、> 金句、```chart 图表。没有要删表格的明确要求，表格一行不许丢。';
+  var usr='【这页原稿】\n'+$('pvEditText').value+'\n【修改要求】\n'+ask;
+  $('pvEditAiGo').disabled=true;
+  smallTaskAI(sys,usr,function(ans){
+    $('pvEditAiGo').disabled=false;
+    if($('pvEditModal').classList.contains('hidden') || $('player').classList.contains('hidden') || curProj()!==ctx.proj || ctx.sess!==pvEditSession){
+      toast('💬 AI改好了，但您已离开修改现场，结果丢弃（没动您的PPT）'); return;
+    }
+    $('pvEditText').value=ans; /* 放回框里过目，点头才保存 */
+    toast('✅ AI改好了，在上面框里，过目后点「保存我的修改」');
+  },function(e){
+    $('pvEditAiGo').disabled=false;
+    toast('AI没改成：'+e);
+  });
 };
 /* v0.6.0 皮肤换装：即选即存，云备份跟着走 */
 $('themeSel').onchange=function(){
