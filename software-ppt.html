@@ -10,6 +10,11 @@
           → 大纲编辑页改稿 → 一键生成HTML幻灯片 → 横屏播放 → 每页可AI重做/换版式
           → 导出单个HTML（微信发别人，浏览器打开即放映）
   修改记录：
+    v0.7.4 2026-09-02 洪医生真机三报（232秒太慢/任务没完成/计时看不见）：
+      复现结论：本页内容（含表格每行）本来就会发给AI，Kimi真实复现能正确加"中文名"列；
+      真机"没完成"最可能是点错了页（表格在第3页，重做的是第2页），弹窗不说重做哪页是设计缺陷。
+      ①重做弹窗加"正在重做第N页《标题》"+内容预览 ②单页重做优先派千问（快），失败退Kimi
+      ③callAI挂浮动秒表胶囊（右下角，滚哪都看得见）④表格被AI弄丢自动重试一次，仍丢不动原页。
     v0.7.3 2026-09-02 重做全程浮动提示（洪医生真机反馈"写了要求点确定就没反应"）：
       真病根之二=进度消息只写在页面顶部通知栏，用户滚到下面就看不见，AI闷头想30~90秒像死机。
       治法：开工/成功/失败三个节点都弹浮动toast（浮在屏幕上，滚到哪都看得见），顶部秒表保留。
@@ -325,7 +330,8 @@
 <div id="regenModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;overflow:auto;">
   <div style="background:#fff;border-radius:14px;max-width:560px;margin:14vh auto;padding:18px 20px;">
     <h3 style="margin-bottom:6px;">🔄 AI重做本页</h3>
-    <div style="font-size:13px;color:#8a8178;margin-bottom:8px;">这一页哪里不满意？写一句话就行；留空=AI自由重写这一页。</div>
+    <div id="regenTarget" style="font-size:13px;background:#f3efe7;border-radius:8px;padding:8px 10px;margin-bottom:8px;color:#5b554b;"></div>
+    <div style="font-size:13px;color:#8a8178;margin-bottom:8px;">核对上面是不是您想改的那页（不是就点取消）。这一页哪里不满意？写一句话就行；留空=AI自由重写。</div>
     <textarea id="regenAsk" placeholder="例如：字数太多，精简一半；换个临床例子；加一句记忆口诀…" style="width:100%;min-height:90px;font-size:14px;padding:10px;border:1px solid #d8d2c6;border-radius:8px;"></textarea>
     <div style="margin-top:10px;">
       <button id="btnRegenGo" style="background:#b3742a;">🤖 开始重做</button>
@@ -403,7 +409,7 @@
 
 <script>
 "use strict";
-var SW_VERSION = "0.7.3"; /* v0.7.3 重做全程浮动提示：开工/成功/失败都弹toast（洪医生真机反馈：进度消息在页面顶部，滚到下面看不见，像死机） */ /* v0.7.2 修数据错乱：AI重做在途时移动/删除该页，写回改认"页面对象"不认下标（独立测试t37抓到） */ /* v0.7.1 修"AI重做本页点了没反应"：病根=手机壳X5内核不理系统prompt()弹窗（直接当取消），改自画弹窗（习题学习删除确认同款药方） */ /* v0.7.0 千问自动交叉校对（愿望清单第3批）：「🤖 自动校对」一键两棒——第1棒发千问qwen-plus（公共钱罐hx_qwenkey，约1分钱）拿校对意见，第2棒自动交给贴回校对管道让Kimi照改大纲（没提到的一字不动）；开关可选千问/Kimi自查；千问答"没发现问题"就不花第2棒的钱 */ /* v0.6.1 自选背景图（愿望清单第2批）：幻灯片页「🖼️ 背景图」相册选图→canvas压缩≤1600px、JPEG逐步降质（≤200KB）→存本PPT的p.bg（不设全局）；渲染时.slide-page叠82%不透明蒙纱（米白皮用米白纱/深色皮用深色纱）保证字可读；「✕ 清除背景」一键还原；导出HTML内嵌带走。提醒：导出会把照片带出去，别夹病人信息 */ /* v0.6.0 四套皮肤（米白学术/深蓝正式/墨绿讲堂/黑板粉笔），每个PPT各选各的，导出HTML带着走；点屏翻页其实v0.2.0起就有（点左35%上页/右65%下页） */ /* v0.5.0 放映自适应：底栏实底让位+内容超高自动等比缩小（洪医生横屏讲课表格最后一行被吃） */ /* v0.4.8 AI报错带官方原因+400也自动换模型重试（洪医生贴回校对撞HTTP400：疑公共模型罐里存着已下架的moonshot-v1系列，400不走404重试路） */ /* v0.4.7 版本字样治病根：头顶+页脚+标题改成代码自动填SW_VERSION（v0.4.0~0.4.6期间头顶一直显示旧号，害用户以为没更新） */ /* v0.4.6 更新通道免Token备用路：自检/下载新版在API不通或没填Token时自动走github.io公开直链 */ /* v0.4.5 贴回校对结果：别的AI的校对意见贴进来，本软件AI照改大纲（原文没提到的部分不动）+秒表进度 */ /* v0.4.4 复制校对：大纲/全片一键连校对指令复制，借别的AI挑错，不花自己Key */ /* v0.4.3 修404：死模型自动换kimi-k2.6+重试；max_tokens 8000→16384（k2.6思考型） */ /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
+var SW_VERSION = "0.7.4"; /* v0.7.4 三件套：①重做弹窗显示"正在重做第N页《标题》+内容预览"防点错页 ②小活（单页重做）优先派千问qwen-plus（几秒~20秒），没Key/失败自动退Kimi ③AI干活浮动秒表胶囊趴右下角 ④重做后验收：原有表格被AI弄丢→自动重试一次，仍丢则不覆盖原页 */ /* v0.7.3 重做全程浮动提示：开工/成功/失败都弹toast（洪医生真机反馈：进度消息在页面顶部，滚到下面看不见，像死机） */ /* v0.7.2 修数据错乱：AI重做在途时移动/删除该页，写回改认"页面对象"不认下标（独立测试t37抓到） */ /* v0.7.1 修"AI重做本页点了没反应"：病根=手机壳X5内核不理系统prompt()弹窗（直接当取消），改自画弹窗（习题学习删除确认同款药方） */ /* v0.7.0 千问自动交叉校对（愿望清单第3批）：「🤖 自动校对」一键两棒——第1棒发千问qwen-plus（公共钱罐hx_qwenkey，约1分钱）拿校对意见，第2棒自动交给贴回校对管道让Kimi照改大纲（没提到的一字不动）；开关可选千问/Kimi自查；千问答"没发现问题"就不花第2棒的钱 */ /* v0.6.1 自选背景图（愿望清单第2批）：幻灯片页「🖼️ 背景图」相册选图→canvas压缩≤1600px、JPEG逐步降质（≤200KB）→存本PPT的p.bg（不设全局）；渲染时.slide-page叠82%不透明蒙纱（米白皮用米白纱/深色皮用深色纱）保证字可读；「✕ 清除背景」一键还原；导出HTML内嵌带走。提醒：导出会把照片带出去，别夹病人信息 */ /* v0.6.0 四套皮肤（米白学术/深蓝正式/墨绿讲堂/黑板粉笔），每个PPT各选各的，导出HTML带着走；点屏翻页其实v0.2.0起就有（点左35%上页/右65%下页） */ /* v0.5.0 放映自适应：底栏实底让位+内容超高自动等比缩小（洪医生横屏讲课表格最后一行被吃） */ /* v0.4.8 AI报错带官方原因+400也自动换模型重试（洪医生贴回校对撞HTTP400：疑公共模型罐里存着已下架的moonshot-v1系列，400不走404重试路） */ /* v0.4.7 版本字样治病根：头顶+页脚+标题改成代码自动填SW_VERSION（v0.4.0~0.4.6期间头顶一直显示旧号，害用户以为没更新） */ /* v0.4.6 更新通道免Token备用路：自检/下载新版在API不通或没填Token时自动走github.io公开直链 */ /* v0.4.5 贴回校对结果：别的AI的校对意见贴进来，本软件AI照改大纲（原文没提到的部分不动）+秒表进度 */ /* v0.4.4 复制校对：大纲/全片一键连校对指令复制，借别的AI挑错，不花自己Key */ /* v0.4.3 修404：死模型自动换kimi-k2.6+重试；max_tokens 8000→16384（k2.6思考型） */ /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
 /* 公共钱罐：API key/GitHub配置 一处填处处有（与其他软件共享 hx_*） */
 (function(){
   var HX_MAP=[["hx_apikey","hx_apikey"],["hx_gh_user","hx_gh_user"],["hx_gh_tok","hx_gh_tok"],["hx_gh_repo","hx_gh_repo"]];
@@ -897,6 +903,10 @@ function hxBillMsg(c){return "💰 本次约¥"+(c<0.01?c.toFixed(3):c.toFixed(2
 function hxBillToast(c){try{var d=document.createElement("div");d.textContent=hxBillMsg(c);d.style.cssText="position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#4a6b4f;color:#fff;padding:10px 18px;border-radius:20px;font-size:14px;z-index:99999;box-shadow:0 2px 8px rgba(0,0,0,.25)";document.body.appendChild(d);setTimeout(function(){d.remove();},4000);}catch(e){}}
 
 function callAI(sys, usr, onOk, onErr){
+  aiFloatShow('🤖 AI干活中'); /* v0.7.4 浮动秒表：从开始包到结束（含404自动重试） */
+  var _ok=onOk, _err=onErr;
+  onOk=function(x){ aiFloatHide(); _ok(x); };
+  onErr=function(e){ aiFloatHide(); _err(e); };
   var key=aiKey();
   if(!key){ onErr('还没有 API Key。请到学习笔记/血气分析的设置里填一次（公共钱罐全家通用），或在本页粘贴：'); keyInputAsk(); return; }
   var model=aiModel();
@@ -926,6 +936,31 @@ function callAI(sys, usr, onOk, onErr){
     hxBillToast(hxBill("PPT工坊","AI",(sys||"").length+(usr||"").length,(c||"").length,aiModel()));
     onOk(c);
   }).catch(function(e){ onErr((e&&e.message)||"网络不通"); });
+}
+/* v0.7.4 小活通道：单页重做这类小任务优先派千问qwen-plus（非思考型直出，几秒~20秒，约1分钱）；
+   没千问Key或千问报错→自动退Kimi（思考型，慢但稳）。洪医生真机"232秒才干个小活"催出来的 */
+function smallTaskAI(sys, usr, onOk, onErr){
+  var qk=(localStorage.getItem('hx_qwenkey')||localStorage.getItem('bg_qwen_key')||'').replace(/^\s+|\s+$/g,'');
+  if(!qk){ callAI(sys,usr,onOk,onErr); return; }
+  aiFloatShow('🤖 千问干活中');
+  fetch("https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",{
+    method:"POST",
+    headers:{"Content-Type":"application/json","Authorization":"Bearer "+qk},
+    body:JSON.stringify({model:"qwen-plus",messages:[{role:"system",content:sys},{role:"user",content:usr}],max_tokens:4096})
+  }).then(function(r){
+    if(!r.ok) return r.text().then(function(tx){ throw new Error("HTTP "+r.status+"："+(tx||"").slice(0,120)); });
+    return r.json();
+  }).then(function(d){
+    var c=((d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content)||"");
+    if(!c) throw new Error("千问没说出话来");
+    aiFloatHide();
+    hxBillToast(hxBill("PPT工坊","千问小活(qwen-plus)",(sys||"").length+(usr||"").length,c.length,"qwen-plus"));
+    onOk(c);
+  }).catch(function(e){
+    aiFloatHide();
+    toast("千问没接上（"+(e.message||e)+"），自动换Kimi接着干",4000);
+    callAI(sys,usr,onOk,onErr);
+  });
 }
 function keyInputAsk(){
   var k=prompt("把 Kimi API key（sk-开头）贴这里：","");
@@ -983,10 +1018,24 @@ function pageToMd(p){
   if(p.para) md+=p.para+'\n';
   return md;
 }
+/* v0.7.4 浮动秒表胶囊：AI干活期间趴右下角，滚到哪都看得见；干完/报错自动没 */
+var aiFloatTimer=null;
+function aiFloatShow(label){
+  aiFloatHide();
+  var d=document.createElement('div'); d.id='aiFloat';
+  d.style.cssText='position:fixed;right:12px;bottom:70px;z-index:99999;background:rgba(46,42,38,.92);color:#fff;padding:10px 14px;border-radius:999px;font-size:14px;box-shadow:0 2px 10px rgba(0,0,0,.3);';
+  document.body.appendChild(d);
+  var t0=Date.now();
+  d.textContent=label+' 0秒';
+  aiFloatTimer=setInterval(function(){ var e=document.getElementById('aiFloat'); if(e) e.textContent=label+' '+Math.floor((Date.now()-t0)/1000)+'秒'; },1000);
+}
+function aiFloatHide(){ if(aiFloatTimer){clearInterval(aiFloatTimer); aiFloatTimer=null;} var d=document.getElementById('aiFloat'); if(d) d.remove(); }
 var regenIdx=-1; /* v0.7.1 正在重做哪一页 */
 function aiRegenPage(idx){
   var proj=curProj(); if(!proj) return;
   regenIdx=idx;
+  var tp=proj.slides[idx];
+  $('regenTarget').textContent='正在重做：第'+(idx+1)+'页《'+(tp.title||'无题')+'》'+(tp.table?'（含'+tp.table.rows.length+'行表格）':'')+'　内容开头：'+(pageToMd(tp).replace(/[#|\-\n]/g,' ').replace(/\s+/g,' ').slice(0,60))+'…';
   $('regenAsk').value=''; $('regenMsg').textContent='';
   $('regenModal').style.display='block';
 }
@@ -998,28 +1047,40 @@ $('btnRegenGo').onclick=function(){
   var idx=regenIdx, p=proj.slides[idx];
   var ask=($('regenAsk').value||'').replace(/^\s+|\s+$/g,'');
   $('regenModal').style.display='none'; regenIdx=-1;
-  toast('🤖 AI开始重做第'+(idx+1)+'页，通常30~90秒。页面顶部有秒表在走=活着；好了会再弹一条');
+  toast('🤖 AI开始重做第'+(idx+1)+'页。右下角有浮动秒表在走=活着；好了会再弹一条');
   var t0=Date.now();
   var tick=setInterval(function(){
-    showMsg($('slidesMsg'),'🤖 AI正在重做第'+(idx+1)+'页…已等 '+Math.floor((Date.now()-t0)/1000)+' 秒（转着就不是死机）','ok');
+    showMsg($('slidesMsg'),'🤖 AI正在重做第'+(idx+1)+'页…已等 '+Math.floor((Date.now()-t0)/1000)+' 秒（千问通常20秒内，Kimi要1~4分钟）','ok');
   },1000);
-  callAI('您是ICU教学PPT的单页重做助手。',
-    '【整场PPT题目】'+(proj.title||'')+'\n【本页现状】\n'+pageToMd(p)+'\n【要求】'+(ask||'自由重写，更好讲')+'\n\n只重做这一页。'+MD_RULES.replace('页数8~15页。','只输出这一页（一个##段落）。'),
-    function(text){
-      var m=text.match(/```(?:markdown)?\s*([\s\S]*?)```/);
-      var md=(m?m[1]:text).replace(/^\s+|\s+$/g,'');
-      var pages=parseOutline(md);
-      if(!pages.length){ clearInterval(tick); showMsg($('slidesMsg'),'AI给的这页读不懂，换个说法再试','err'); return; }
-      clearInterval(tick);
-      var nowIdx=proj.slides.indexOf(p); /* 这页现在搬到哪了 */
-      if(nowIdx<0){ showMsg($('slidesMsg'),'⚠️ 那一页在AI重做期间被删掉了，重做结果已丢弃（没冤枉别的页）','err'); return; }
-      pages[0].cls=p.cls;
-      proj.slides[nowIdx]=pages[0];
-      proj.t=Date.now(); saveStore();
-      renderSlides();
-      showMsg($('slidesMsg'),'✅ 第'+(nowIdx+1)+'页已重做（'+Math.floor((Date.now()-t0)/1000)+'秒）','ok');
-      toast('✅ 第'+(nowIdx+1)+'页重做完成，往上翻看效果');
-    },function(err){ clearInterval(tick); showMsg($('slidesMsg'),err,'err'); toast('❌ 重做失败：'+String(err).slice(0,80),5000); });
+  var hadTable=!!p.table; /* v0.7.4 验收用：原页有表格 */
+  var regenRun=function(attempt){
+    var extra=(attempt>1&&hadTable)?'\n\n【死命令】上次您把表格弄丢了。原页有表格，新页必须原样保留整张表格（每行每列都在），只许按要求加内容，不许删表。':'';
+    smallTaskAI('您是ICU教学PPT的单页重做助手。',
+      '【整场PPT题目】'+(proj.title||'')+'\n【本页现状】\n'+pageToMd(p)+'\n【要求】'+(ask||'自由重写，更好讲')+'\n\n只重做这一页。原有内容（尤其表格，一行一列都不许丢）保留，按要求改。'+MD_RULES.replace('页数8~15页。','只输出这一页（一个##段落）。')+extra,
+      function(text){
+        var m=text.match(/```(?:markdown)?\s*([\s\S]*?)```/);
+        var md=(m?m[1]:text).replace(/^\s+|\s+$/g,'');
+        var pages=parseOutline(md);
+        if(!pages.length){ clearInterval(tick); showMsg($('slidesMsg'),'AI给的这页读不懂，换个说法再试','err'); toast('❌ AI给的这页读不懂，换个说法再试',4000); return; }
+        /* v0.7.4 验收：原页有表格而新页没有→自动重试一次；再丢就不动原页，明说 */
+        if(hadTable && !pages[0].table){
+          if(attempt<2){ toast('⚠️ AI把表格弄丢了，自动让它重来一次…',4000); regenRun(2); return; }
+          clearInterval(tick);
+          showMsg($('slidesMsg'),'⚠️ AI两次都把表格弄丢了，本页保持原样没动。换个说法再试，或点「✏️ 编辑」手动改','err');
+          toast('⚠️ 表格两次都丢了，本页没动',5000); return;
+        }
+        clearInterval(tick);
+        var nowIdx=proj.slides.indexOf(p); /* 这页现在搬到哪了 */
+        if(nowIdx<0){ showMsg($('slidesMsg'),'⚠️ 那一页在AI重做期间被删掉了，重做结果已丢弃（没冤枉别的页）','err'); return; }
+        pages[0].cls=p.cls;
+        proj.slides[nowIdx]=pages[0];
+        proj.t=Date.now(); saveStore();
+        renderSlides();
+        showMsg($('slidesMsg'),'✅ 第'+(nowIdx+1)+'页已重做（'+Math.floor((Date.now()-t0)/1000)+'秒）','ok');
+        toast('✅ 第'+(nowIdx+1)+'页重做完成，往上翻看效果');
+      },function(err){ clearInterval(tick); showMsg($('slidesMsg'),err,'err'); toast('❌ 重做失败：'+String(err).slice(0,80),5000); });
+  };
+  regenRun(1);
 };
 </script>
 <script>
