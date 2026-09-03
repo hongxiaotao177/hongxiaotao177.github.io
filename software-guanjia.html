@@ -8,6 +8,9 @@
   红小涛学习套装 · 病人大管家
   定位：全家资料的"管家"。按病人归堆（血气/呼吸机/脱敏病历，天然有章），
         按知识搜索（笔记/习题，全靠AI名片）。
+  v0.4.3 2026-09-03 名片浏览按题库归堆（洪医生真机"一个题库占几十屏"）：
+    习题按题库折成一行（📁题库名·N题），点题库看题目行，点题目看名片内容；笔记仍一篇一行；
+    筛选时命中题目所在题库自动撑开。cc-detail改>直接子选择器，题库和题目两层开合互不串。
   v0.4.2 2026-09-03 开门全折+名片一行简历（洪医生看真机截图拍板）：
     ① 开门所有卡片全折成一行标题，点什么开什么（问AI/名册也折）；收件箱有raw料仍自动撑开（洪老师确认保留）
     ② 名片浏览每张只露一行（来源徽章+标题），点行展开看内容+关键词，再点收回；筛选照旧
@@ -87,7 +90,10 @@
   .cc .cc-card { font-size:14px; line-height:1.7; color:#4a453e; }
   .cc .cc-kw { font-size:12px; color:#b3742a; margin-top:2px; }
   .cc .cc-detail { display:none; margin-top:4px; }
-  .cc.open .cc-detail { display:block; }
+  .cc.open > .cc-detail { display:block; }
+  .cc.bank > .cc-line { font-weight:bold; }
+  .cc.bank .bank-items { margin-left:10px; border-left:2px solid #ece7dd; padding-left:8px; }
+  .cc.bank .cc-line { font-weight:normal; }
   .badge { display:inline-block; font-size:11px; padding:2px 7px; border-radius:99px; margin-right:6px; }
   .badge-notes { background:#e8eef7; color:#34567a; }
   .badge-xiti { background:#f0e8f5; color:#6a4a7c; }
@@ -226,7 +232,7 @@
 </div>
 
 <script>
-var SW_VERSION = "0.4.2";
+var SW_VERSION = "0.4.3";
 document.getElementById('verTop').textContent = SW_VERSION;
 function $(id){ return document.getElementById(id); }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -632,22 +638,49 @@ $('btnCards').onclick=function(){ runCards(10); };
 $('btnCardsAll').onclick=function(){ runCards(0); };
 
 /* ── 名片浏览 ── */
+/* 名片浏览：习题按题库归堆，一个题库一行，点开看题目行，再点题目看内容（v0.4.3 洪医生"一个题库占几十屏"） */
 function renderCardList(){
   var cs=cardsLoad(), f=$('kwFilter').value.replace(/^\s+|\s+$/g,'').toLowerCase();
   var keys=Object.keys(cs.items);
-  var html='', shown=0;
   keys.sort(function(a,b){ return (cs.items[b].t||0)-(cs.items[a].t||0); });
-  for(var i=0;i<keys.length;i++){
-    var c=cs.items[keys[i]];
-    if(f && (c.title+' '+c.card+' '+c.kw).toLowerCase().indexOf(f)<0) continue;
-    shown++;
-    if(shown>100){ html+='<div style="font-size:13px;color:#8a8178;padding:6px 0;">…还有，用上面筛选缩小范围</div>'; break; }
-    html+='<div class="cc" data-ck="1"><div class="cc-line"><span class="badge '+(c.app==='notes'?'badge-notes':'badge-xiti')+'">'+(c.app==='notes'?'笔记':'习题')+'</span>'+
-          esc(c.title)+'</div>'+ /* 只露一行：来源+标题，点开看内容（v0.4.2②） */
-          '<div class="cc-detail">'+
-          '<div class="cc-card">'+esc(c.card)+'</div>'+
-          (c.kw?'<div class="cc-kw">🏷 '+esc(c.kw)+'</div>':'')+'</div></div>';
+  /* 归堆：笔记一篇一行；习题按题库（key=xiti:题库id::序号） */
+  var notes=[], banks={}, bankOrder=[];
+  keys.forEach(function(k){
+    var c=cs.items[k];
+    if(f && (c.title+' '+c.card+' '+c.kw).toLowerCase().indexOf(f)<0) return;
+    if(k.indexOf('xiti:')===0){
+      var bid=k.slice(5).split('::')[0];
+      var m=String(c.title||'').match(/^【(.+?)】/);
+      var bn=m?m[1]:bid;
+      if(!banks[bid]){ banks[bid]={name:bn, items:[], t:0}; bankOrder.push(bid); }
+      banks[bid].items.push({key:k, c:c});
+      if((c.t||0)>banks[bid].t) banks[bid].t=c.t||0;
+    }else{
+      notes.push({key:k, c:c});
+    }
+  });
+  bankOrder.sort(function(a,b){ return banks[b].t-banks[a].t; });
+  var html='', shown=0;
+  function itemLine(it){
+    return '<div class="cc" data-ck="1"><div class="cc-line"><span class="badge '+(it.c.app==='notes'?'badge-notes':'badge-xiti')+'">'+(it.c.app==='notes'?'笔记':'习题')+'</span>'+
+      esc(it.c.title)+'</div>'+
+      '<div class="cc-detail"><div class="cc-card">'+esc(it.c.card)+'</div>'+
+      (it.c.kw?'<div class="cc-kw">🏷 '+esc(it.c.kw)+'</div>':'')+'</div></div>';
   }
+  /* 筛选时：命中题目所在题库自动撑开，一眼看到是哪题 */
+  var autoOpen=!!f;
+  notes.forEach(function(it){ shown++; if(shown<=100) html+=itemLine(it); });
+  bankOrder.forEach(function(bid){
+    var g=banks[bid]; shown+=g.items.length; if(shown>110) return;
+    html+='<div class="cc bank'+(autoOpen?' open':'')+'"><div class="cc-line bank-line"><span class="badge badge-xiti">习题</span>📁 '+esc(g.name)+' <span style="color:#8a8178;font-size:12px;">· '+g.items.length+'题</span></div>'+
+      '<div class="cc-detail bank-items">'+
+      g.items.map(function(it){
+        return '<div class="cc" data-ck="1"><div class="cc-line">'+esc(it.c.title)+'</div>'+
+          '<div class="cc-detail"><div class="cc-card">'+esc(it.c.card)+'</div>'+
+          (it.c.kw?'<div class="cc-kw">🏷 '+esc(it.c.kw)+'</div>':'')+'</div></div>';
+      }).join('')+'</div></div>';
+  });
+  if(shown>110) html+='<div style="font-size:13px;color:#8a8178;padding:6px 0;">…还有，用上面筛选缩小范围</div>';
   if(!shown) html='<div style="font-size:13px;color:#8a8178;padding:6px 0;">'+(keys.length?'没有符合筛选的名片':'还没有名片，点上面「做名片」')+'</div>';
   $('cardList').innerHTML=html;
   Array.prototype.forEach.call(document.querySelectorAll('#cardList .cc-line'), function(el){
