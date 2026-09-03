@@ -8,6 +8,14 @@
   红小涛学习套装 · 病人大管家
   定位：全家资料的"管家"。按病人归堆（血气/呼吸机/脱敏病历，天然有章），
         按知识搜索（笔记/习题，全靠AI名片）。
+  v0.4.6 2026-09-04 洪老师三件全拍板：
+    ① 收件箱改鱼骨头：每条默认只露一行（状态图标+问题，raw加粗），点行张开看摘要/时间/建议/按钮，再点收回；可张开多条。
+    ② 名片浏览加「🤖 问AI」按钮（方案A小按钮，长按菜单不做）：点了把名片标题填进问AI问题框（习题名片剥【题库】前缀）、
+       撑开问AI卡片、滚过去聚焦；不自动查，走哪条您点。
+    ③a 稽核清单：路一/路三结果顶部「📋 这一路查到了什么」，命中几张名片、读到几篇原文逐行列出；命中但原文没了明说。
+    ③b 存收件箱当场弹挑资料清单（合并/新建/先放着）：saveToInbox存完同步出AI建议后当场弹窗——
+       「照建议办」=直接inboxKeep；「我自己挑」=转openPick；「先放着」=关窗，料在收件箱等。
+    纯加法：三棒核查、inboxKeep、openPick原有代码一行未改。
   v0.4.5 2026-09-03 洪老师真机反馈"名片只能看简介看不了全文"：
     名片浏览展开后加「📄 看全文」按钮（笔记+习题题库内题目都有），弹窗看资料/题目完整原文（复用viewDoc）。
     原文没了明说"重打名片"不装蒜。纯本地不花AI钱。data-full传键，esc防引号。
@@ -147,7 +155,9 @@
   /* 自画弹窗（手机壳X5不理系统prompt，全家死规矩） */
   #hxDlg { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:99999; overflow:auto; }
   #pickDlg { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:99999; overflow:auto; }
+  #saveDlg { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:99999; overflow:auto; }
   #pickDlg .box { background:#fff; border-radius:14px; max-width:560px; margin:10vh auto; padding:18px 20px; }
+  #saveDlg .box { background:#fff; border-radius:14px; max-width:560px; margin:14vh auto; padding:18px 20px; }
   #hxDlg .box { background:#fff; border-radius:14px; max-width:560px; margin:14vh auto; padding:18px 20px; }
   #hxDlgInput { width:100%; min-height:70px; font-size:15px; padding:10px;
                 border:1px solid #d8d2c6; border-radius:8px; }
@@ -247,6 +257,18 @@
   </div>
 </div>
 
+<div id="saveDlg">
+  <div class="box">
+    <h3 style="margin-bottom:8px;">📥 这条料放哪？</h3>
+    <div id="saveDlgSug" style="font-size:14px;line-height:1.9;"></div>
+    <div class="btn-row" style="margin-top:10px;">
+      <button id="saveDlgGo">✅ 照建议办</button>
+      <button class="ghost" id="saveDlgPick">📂 我自己挑</button>
+      <button class="ghost" id="saveDlgLater">先放着</button>
+    </div>
+  </div>
+</div>
+
 <div id="hxDlg">
   <div class="box">
     <h3 id="hxDlgTitle" style="margin-bottom:8px;"></h3>
@@ -259,7 +281,7 @@
 </div>
 
 <script>
-var SW_VERSION = "0.4.5";
+var SW_VERSION = "0.4.6";
 document.getElementById('verTop').textContent = SW_VERSION;
 function $(id){ return document.getElementById(id); }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -693,7 +715,8 @@ function renderCardList(){
       esc(it.c.title)+'</div>'+
       '<div class="cc-detail"><div class="cc-card">'+esc(it.c.card)+'</div>'+
       (it.c.kw?'<div class="cc-kw">🏷 '+esc(it.c.kw)+'</div>':'')+
-      '<button class="ghost" style="font-size:13px;padding:4px 10px;margin-top:6px;" data-full="'+esc(it.key)+'">📄 看全文</button></div></div>';
+      '<button class="ghost" style="font-size:13px;padding:4px 10px;margin-top:6px;" data-full="'+esc(it.key)+'">📄 看全文</button>'+
+      '<button class="ghost" style="font-size:13px;padding:4px 10px;margin-top:6px;" data-ask="'+esc(it.key)+'">🤖 问AI</button></div></div>';
   }
   /* 筛选时：命中题目所在题库自动撑开，一眼看到是哪题 */
   var autoOpen=!!f;
@@ -706,7 +729,8 @@ function renderCardList(){
         return '<div class="cc" data-ck="1"><div class="cc-line">'+esc(it.c.title)+'</div>'+
           '<div class="cc-detail"><div class="cc-card">'+esc(it.c.card)+'</div>'+
           (it.c.kw?'<div class="cc-kw">🏷 '+esc(it.c.kw)+'</div>':'')+
-          '<button class="ghost" style="font-size:13px;padding:4px 10px;margin-top:6px;" data-full="'+esc(it.key)+'">📄 看全文</button></div></div>';
+          '<button class="ghost" style="font-size:13px;padding:4px 10px;margin-top:6px;" data-full="'+esc(it.key)+'">📄 看全文</button>'+
+          '<button class="ghost" style="font-size:13px;padding:4px 10px;margin-top:6px;" data-ask="'+esc(it.key)+'">🤖 问AI</button></div></div>';
       }).join('')+'</div></div>';
   });
   if(shown>110) html+='<div style="font-size:13px;color:#8a8178;padding:6px 0;">…还有，用上面筛选缩小范围</div>';
@@ -723,6 +747,19 @@ function renderCardList(){
       scanSources().forEach(function(s){ if(s.key===key) hit=s; });
       if(hit) viewDoc(hit.title, hit.text);
       else toast('原文没了（可能源资料已删）。去「做名片」重打一批试试。');
+    };
+  });
+  /* 问AI（v0.4.6②）：把名片标题填进问题框、撑开问AI卡片、滚过去；不自动查，走哪条您点（📚不花钱） */
+  Array.prototype.forEach.call(document.querySelectorAll('#cardList [data-ask]'), function(el){
+    el.onclick=function(ev){
+      ev.stopPropagation(); /* 别触发行开合 */
+      var key=el.getAttribute('data-ask'), cs=cardsLoad(), c=cs.items[key];
+      var title=(c&&c.title)?String(c.title).replace(/^【.+?】/,''):''; /* 习题名片的【题库名】前缀剥掉，问题更干净 */
+      if(!title){ toast('这张名片没标题，没法当问题'); return; }
+      $('askQ').value=title;
+      if(foldSetters['ask']) foldSetters['ask'](true);
+      setTimeout(function(){ $('askQ').scrollIntoView({behavior:'smooth', block:'center'}); $('askQ').focus(); },50);
+      toast('问题已填好：点「📚只翻我的资料」不花钱，要联网再点🌐');
     };
   });
 }
@@ -809,7 +846,12 @@ function askLocal(){
     askBusy(false);
     askLogLine('✅ 答完（'+Math.round((Date.now()-t0)/1000)+'秒）','step-done');
     lastLocalDocs=docs;
-    var html='<div class="qa-box"><div class="qa-h">📚 只翻了您的资料（'+docs.length+'篇）：</div>'+mdLite(ans)+'</div>';
+    /* v0.4.6③a 稽核清单：结果顶部逐行列出这一路翻了哪些名片、读了哪几篇原文（命中但没原文的也明说） */
+    var html='<div class="qa-box" style="background:#eef0f5;"><div class="qa-h">📋 这一路查到了什么（稽核清单）：</div>'+
+      '<div style="font-size:13px;line-height:1.9;">翻名片命中 '+hits.length+' 张，读到原文 '+docs.length+' 篇：<br>'+
+      docs.map(function(d,i){ return (i+1)+'. 📄 '+esc(d.title); }).join('<br>')+
+      (docs.length<hits.length?('<br><span style="color:#a33;">另有 '+(hits.length-docs.length)+' 张名片命中但原文没了（源资料已删），没读成。</span>'):'')+'</div></div>';
+    html+='<div class="qa-box"><div class="qa-h">📚 只翻了您的资料（'+docs.length+'篇）：</div>'+mdLite(ans)+'</div>';
     html+='<div style="margin-top:6px;font-size:12px;color:#8a8178;">出处（点开看原文）：</div><div>'+
       docs.map(function(d,i){ return '<button class="src-btn" data-doc="'+i+'">📄 '+esc(d.title)+'</button>'; }).join('')+'</div>';
     $('askResult').innerHTML=html;
@@ -987,6 +1029,11 @@ var lastBothDocs=[];
 function showBothResult(q, localAns, docs, webAns, cmp){
   lastBothDocs=docs||[];
   var html='';
+  /* v0.4.6③a 稽核清单：第一路翻了哪些名片逐行列出（空着手也明说） */
+  html+='<div class="qa-box" style="background:#eef0f5;"><div class="qa-h">📋 这一路查到了什么（稽核清单）：</div>'+
+    '<div style="font-size:13px;line-height:1.9;">第一路（翻您的资料）：'+
+    (lastBothDocs.length?('读到原文 '+lastBothDocs.length+' 篇：<br>'+lastBothDocs.map(function(d,i){ return (i+1)+'. 📄 '+esc(d.title); }).join('<br>')):'名片一张都对不上，空着手（这路没花AI的钱）')+
+    '<br>第二路（网上查）：'+(webAns?'查到了，见下面':'没查成')+'</div></div>';
   if(cmp){
     html+='<div class="qa-box" style="background:#eef0f5;"><div class="qa-h">⚖️ 对照结果（Kimi对照员逐条比对，【有分歧】的您终审）：</div>'+mdLite(cmp)+'</div>';
     html+='<div class="qa-note">两份原答在下面，想核对的自己翻。</div>';
@@ -1048,15 +1095,45 @@ function showWebResult(q, ans, review, final){
 function saveToInbox(){
   if(!lastWebQA) return;
   var b=inboxLoad();
-  b.items.unshift({id:'I'+Date.now(), q:lastWebQA.q, ans:String(lastWebQA.ans).slice(0,6000),
+  var newId='I'+Date.now();
+  b.items.unshift({id:newId, q:lastWebQA.q, ans:String(lastWebQA.ans).slice(0,6000),
                    review:lastWebQA.review?String(lastWebQA.review).slice(0,2000):'', status:'raw', t:Date.now(), sug:''});
   if(b.items.length>100) b.items.length=100;
   inboxSave(b);
   lastWebQA=null; $('askResult').innerHTML='';
-  toast('📥 已进收件箱，去那里点「保留」才进家底');
   if(foldSetters['inbox']) foldSetters['inbox'](true); /* 料进门时收件箱若折着就撑开，当场看得见（验证员观察项） */
   renderInbox();
-  suggestForInbox(b.items[0]);
+  suggestForInbox(b.items[0]); /* 同步的（本地翻名片不花AI钱），走完建议就有了 */
+  /* v0.4.6③b 存完当场弹挑资料清单：照建议办 / 我自己挑 / 先放着 */
+  var b2=inboxLoad(), it=null;
+  b2.items.forEach(function(x){ if(x.id===newId) it=x; });
+  if(it) openSaveDlg(it);
+  else toast('📥 已进收件箱，去那里点「保留」才进家底');
+}
+/* 存收件箱当场弹窗（v0.4.6③b 洪老师拍板）：合并/新建听建议，也可自己挑或先放着 */
+function openSaveDlg(it){
+  var sugTxt=it.sug==='new'?'💡 我建议：新建一篇资料':(it.sug?('💡 我建议：合并到《'+it.sugTitle+'》'):'💡 建议生成中…');
+  $('saveDlgSug').innerHTML='问题：'+esc(it.q)+'<br>'+esc(sugTxt);
+  $('saveDlgGo').onclick=function(){
+    if(!it.sug){ toast('建议还没生成好，请稍等再点'); return; }
+    $('saveDlg').style.display='none';
+    var b3=inboxLoad(), cur=null;
+    b3.items.forEach(function(x){ if(x.id===it.id) cur=x; });
+    if(!cur||cur.status!=='raw'){ renderInbox(); return; } /* 幂等守卫同款 */
+    var r=inboxKeep(cur);
+    if(r){ cur.status='kept'; inboxSave(b3); toast(r); }
+    else toast('写入学习笔记失败，料还在收件箱，没丢');
+    renderInbox(); renderOverview();
+  };
+  $('saveDlgPick').onclick=function(){
+    $('saveDlg').style.display='none';
+    var b3=inboxLoad(), cur=null;
+    b3.items.forEach(function(x){ if(x.id===it.id) cur=x; });
+    if(cur&&cur.status==='raw') openPick(cur);
+    else renderInbox();
+  };
+  $('saveDlgLater').onclick=function(){ $('saveDlg').style.display='none'; toast('📥 好，料在收件箱等您过目'); };
+  $('saveDlg').style.display='block';
 }
 /* AI建议：拿问题比对名片，最像的→合并到它，都不像→新建 */
 function suggestForInbox(item){
@@ -1139,10 +1216,12 @@ function renderInbox(){
   if(!b.items.length){ $('inboxList').innerHTML=''; showMsg($('inboxMsg'),'收件箱是空的。用上面「🌐 也上网查查」，查完点「存进收件箱」就来这里。','info'); return; }
   $('inboxMsg').className='msg';
   var html='';
+  /* v0.4.6① 鱼骨头：每条默认只露一行（状态+问题），点行张开看摘要/时间/按钮，再点收回；可张开多条 */
   b.items.slice(0,30).forEach(function(it){
     var stTxt=it.status==='raw'?'⏳ 等您过目':(it.status==='kept'?'✅ 已收进家底':'🗑 已放弃');
-    html+='<div class="inbox-item"><div class="iq">'+esc(it.q)+'</div>'+
-      '<div class="ia">'+esc(String(it.ans).slice(0,180))+(String(it.ans).length>180?'…':'')+'</div>'+
+    var stIco=it.status==='raw'?'⏳':(it.status==='kept'?'✅':'🗑');
+    html+='<div class="cc"><div class="cc-line"'+(it.status==='raw'?' style="font-weight:bold;"':'')+'>'+stIco+' '+esc(it.q)+'</div>'+
+      '<div class="cc-detail"><div class="ia">'+esc(String(it.ans).slice(0,180))+(String(it.ans).length>180?'…':'')+'</div>'+
       '<div class="is">'+new Date(it.t).toLocaleString()+'　'+stTxt+
       (it.status==='raw'?(it.sug==='new'?'　💡 我建议：新建一篇资料':(it.sug?('　💡 我建议：合并到《'+esc(it.sugTitle)+'》'):'　💡 建议生成中…')):'')+
       '</div>';
@@ -1152,10 +1231,14 @@ function renderInbox(){
         '<button class="ghost" style="font-size:13px;padding:6px 12px;" data-pickbtn="'+esc(it.id)+'">📂 我自己挑</button>'+
         '<button class="ghost" style="font-size:13px;padding:6px 12px;" data-drop="'+esc(it.id)+'">🗑 放弃</button></div>';
     }
-    html+='</div>';
+    html+='</div></div>';
   });
   if(b.items.length>30) html+='<div style="font-size:12px;color:#8a8178;padding:6px 0;">…下面还有 '+(b.items.length-30)+' 条没显示，先把前面的处理完就轮到了</div>'; /* 验证员#5：截断要明示 */
   $('inboxList').innerHTML=html;
+  /* 鱼骨头开合（v0.4.6①）：点行张开/收回 */
+  Array.prototype.forEach.call(document.querySelectorAll('#inboxList .cc-line'), function(el){
+    el.onclick=function(){ el.parentElement.classList.toggle('open'); };
+  });
   Array.prototype.forEach.call(document.querySelectorAll('[data-keep]'), function(el){
     el.onclick=function(){
       var b2=inboxLoad(), it=null;
