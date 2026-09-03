@@ -8,6 +8,9 @@
   红小涛学习套装 · 病人大管家
   定位：全家资料的"管家"。按病人归堆（血气/呼吸机/脱敏病历，天然有章），
         按知识搜索（笔记/习题，全靠AI名片）。
+  v0.4.5 2026-09-03 洪老师真机反馈"名片只能看简介看不了全文"：
+    名片浏览展开后加「📄 看全文」按钮（笔记+习题题库内题目都有），弹窗看资料/题目完整原文（复用viewDoc）。
+    原文没了明说"重打名片"不装蒜。纯本地不花AI钱。data-full传键，esc防引号。
   v0.4.4 2026-09-03 洪医生拍板「两路一起查+自己挑格子」：
     ① 问AI查资料加第三路「📚+🌐 两路一起查」：同一问题先翻名片读原文出一份，再千问联网搜出一份，
        然后Kimi当对照员逐条比对（【对得上】/【有分歧】/【一边独有】），对照棒默认开可关（开关hx_guanjia_cmp）。
@@ -256,7 +259,7 @@
 </div>
 
 <script>
-var SW_VERSION = "0.4.4";
+var SW_VERSION = "0.4.5";
 document.getElementById('verTop').textContent = SW_VERSION;
 function $(id){ return document.getElementById(id); }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -689,7 +692,8 @@ function renderCardList(){
     return '<div class="cc" data-ck="1"><div class="cc-line"><span class="badge '+(it.c.app==='notes'?'badge-notes':'badge-xiti')+'">'+(it.c.app==='notes'?'笔记':'习题')+'</span>'+
       esc(it.c.title)+'</div>'+
       '<div class="cc-detail"><div class="cc-card">'+esc(it.c.card)+'</div>'+
-      (it.c.kw?'<div class="cc-kw">🏷 '+esc(it.c.kw)+'</div>':'')+'</div></div>';
+      (it.c.kw?'<div class="cc-kw">🏷 '+esc(it.c.kw)+'</div>':'')+
+      '<button class="ghost" style="font-size:13px;padding:4px 10px;margin-top:6px;" data-full="'+esc(it.key)+'">📄 看全文</button></div></div>';
   }
   /* 筛选时：命中题目所在题库自动撑开，一眼看到是哪题 */
   var autoOpen=!!f;
@@ -701,7 +705,8 @@ function renderCardList(){
       g.items.map(function(it){
         return '<div class="cc" data-ck="1"><div class="cc-line">'+esc(it.c.title)+'</div>'+
           '<div class="cc-detail"><div class="cc-card">'+esc(it.c.card)+'</div>'+
-          (it.c.kw?'<div class="cc-kw">🏷 '+esc(it.c.kw)+'</div>':'')+'</div></div>';
+          (it.c.kw?'<div class="cc-kw">🏷 '+esc(it.c.kw)+'</div>':'')+
+          '<button class="ghost" style="font-size:13px;padding:4px 10px;margin-top:6px;" data-full="'+esc(it.key)+'">📄 看全文</button></div></div>';
       }).join('')+'</div></div>';
   });
   if(shown>110) html+='<div style="font-size:13px;color:#8a8178;padding:6px 0;">…还有，用上面筛选缩小范围</div>';
@@ -709,6 +714,16 @@ function renderCardList(){
   $('cardList').innerHTML=html;
   Array.prototype.forEach.call(document.querySelectorAll('#cardList .cc-line'), function(el){
     el.onclick=function(){ el.parentElement.classList.toggle('open'); };
+  });
+  /* 看全文（v0.4.5）：按名片键去资料库取原文，弹窗只读；原文没了明说 */
+  Array.prototype.forEach.call(document.querySelectorAll('#cardList [data-full]'), function(el){
+    el.onclick=function(ev){
+      ev.stopPropagation(); /* 别触发行开合 */
+      var key=el.getAttribute('data-full'), hit=null;
+      scanSources().forEach(function(s){ if(s.key===key) hit=s; });
+      if(hit) viewDoc(hit.title, hit.text);
+      else toast('原文没了（可能源资料已删）。去「做名片」重打一批试试。');
+    };
   });
 }
 $('kwFilter').oninput=renderCardList;
