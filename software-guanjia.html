@@ -8,6 +8,9 @@
   红小涛学习套装 · 病人大管家
   定位：全家资料的"管家"。按病人归堆（血气/呼吸机/脱敏病历，天然有章），
         按知识搜索（笔记/习题，全靠AI名片）。
+  v0.4.2 2026-09-03 开门全折+名片一行简历（洪医生看真机截图拍板）：
+    ① 开门所有卡片全折成一行标题，点什么开什么（问AI/名册也折）；收件箱有raw料仍自动撑开（洪老师确认保留）
+    ② 名片浏览每张只露一行（来源徽章+标题），点行展开看内容+关键词，再点收回；筛选照旧
   v0.4.1 2026-09-03 首页折叠面板（洪医生"第1页内容过多，搞鱼骨头点了再开"）：
     每张卡片标题栏点一下整卡折起/展开（▸/▾箭头），折展状态存localStorage hx_guanjia_fold 下次开门记住。
     默认展开：问AI查资料/资料收件箱/病人名册；默认折起：家底总览/做名片/名片浏览；收件箱有raw料时强制展开亮红点。
@@ -76,12 +79,15 @@
   #progLog .step-doing, #askLog .step-doing { color:#b3742a; font-weight:bold; }
   #progLog .step-done, #askLog .step-done { color:#3c6e47; }
   #progLog .step-err, #askLog .step-err { color:#a33; }
-  .cc { border-bottom:1px dashed #e6e0d4; padding:9px 0; }
+  .cc { border-bottom:1px dashed #e6e0d4; padding:7px 0; }
   .cc:last-child { border-bottom:none; }
+  .cc .cc-line { font-size:14px; cursor:pointer; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .cc .cc-head { font-size:13px; color:#8a8178; margin-bottom:2px; }
   .cc .cc-title { font-size:15px; font-weight:bold; margin-bottom:3px; }
   .cc .cc-card { font-size:14px; line-height:1.7; color:#4a453e; }
   .cc .cc-kw { font-size:12px; color:#b3742a; margin-top:2px; }
+  .cc .cc-detail { display:none; margin-top:4px; }
+  .cc.open .cc-detail { display:block; }
   .badge { display:inline-block; font-size:11px; padding:2px 7px; border-radius:99px; margin-right:6px; }
   .badge-notes { background:#e8eef7; color:#34567a; }
   .badge-xiti { background:#f0e8f5; color:#6a4a7c; }
@@ -220,7 +226,7 @@
 </div>
 
 <script>
-var SW_VERSION = "0.4.1";
+var SW_VERSION = "0.4.2";
 document.getElementById('verTop').textContent = SW_VERSION;
 function $(id){ return document.getElementById(id); }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -636,13 +642,17 @@ function renderCardList(){
     if(f && (c.title+' '+c.card+' '+c.kw).toLowerCase().indexOf(f)<0) continue;
     shown++;
     if(shown>100){ html+='<div style="font-size:13px;color:#8a8178;padding:6px 0;">…还有，用上面筛选缩小范围</div>'; break; }
-    html+='<div class="cc"><div class="cc-head"><span class="badge '+(c.app==='notes'?'badge-notes':'badge-xiti')+'">'+(c.app==='notes'?'笔记':'习题')+'</span></div>'+ /* app不进HTML（验证员#1：存储型XSS） */
-          '<div class="cc-title">'+esc(c.title)+'</div>'+
+    html+='<div class="cc" data-ck="1"><div class="cc-line"><span class="badge '+(c.app==='notes'?'badge-notes':'badge-xiti')+'">'+(c.app==='notes'?'笔记':'习题')+'</span>'+
+          esc(c.title)+'</div>'+ /* 只露一行：来源+标题，点开看内容（v0.4.2②） */
+          '<div class="cc-detail">'+
           '<div class="cc-card">'+esc(c.card)+'</div>'+
-          (c.kw?'<div class="cc-kw">🏷 '+esc(c.kw)+'</div>':'')+'</div>';
+          (c.kw?'<div class="cc-kw">🏷 '+esc(c.kw)+'</div>':'')+'</div></div>';
   }
   if(!shown) html='<div style="font-size:13px;color:#8a8178;padding:6px 0;">'+(keys.length?'没有符合筛选的名片':'还没有名片，点上面「做名片」')+'</div>';
   $('cardList').innerHTML=html;
+  Array.prototype.forEach.call(document.querySelectorAll('#cardList .cc-line'), function(el){
+    el.onclick=function(){ el.parentElement.classList.toggle('open'); };
+  });
 }
 $('kwFilter').oninput=renderCardList;
 
@@ -857,6 +867,7 @@ function saveToInbox(){
   inboxSave(b);
   lastWebQA=null; $('askResult').innerHTML='';
   toast('📥 已进收件箱，去那里点「保留」才进家底');
+  if(foldSetters['inbox']) foldSetters['inbox'](true); /* 料进门时收件箱若折着就撑开，当场看得见（验证员观察项） */
   renderInbox();
   suggestForInbox(b.items[0]);
 }
@@ -973,13 +984,13 @@ function makeFoldable(h2, key, defaultOpen){
 (function initFolds(){
   var h2s=document.querySelectorAll('.card > h2');
   var map=[
-    ['🤖 问AI查资料','ask',true],
-    ['📥 资料收件箱','inbox',true],
-    ['👥 病人名册','pts',true],
+    ['🤖 问AI查资料','ask',false],
+    ['📥 资料收件箱','inbox',false],
+    ['👥 病人名册','pts',false],
     ['📚 家底总览','ov',false],
     ['🔨 做名片','cards',false],
     ['🔎 名片浏览','browse',false]
-  ];
+  ]; /* v0.4.2：开门全折成一行标题，点什么开什么（洪医生真机拍板） */
   map.forEach(function(m){
     for(var i=0;i<h2s.length;i++){
       if(h2s[i].textContent.replace(/\s/g,'').indexOf(m[0].replace(/\s/g,''))===0){ makeFoldable(h2s[i], m[1], m[2]); break; }
