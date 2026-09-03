@@ -8,6 +8,13 @@
   红小涛学习套装 · 病人大管家
   定位：全家资料的"管家"。按病人归堆（血气/呼吸机/脱敏病历，天然有章），
         按知识搜索（笔记/习题，全靠AI名片）。
+  v0.4.4 2026-09-03 洪医生拍板「两路一起查+自己挑格子」：
+    ① 问AI查资料加第三路「📚+🌐 两路一起查」：同一问题先翻名片读原文出一份，再千问联网搜出一份，
+       然后Kimi当对照员逐条比对（【对得上】/【有分歧】/【一边独有】），对照棒默认开可关（开关hx_guanjia_cmp）。
+       图片资料放弃只看文字（本来就读的是文字原文，零额外成本）。
+    ② 收件箱加「📂 我自己挑」：不再只能听AI建议，弹清单把学习笔记篇目全列出，点哪篇聚合进哪篇；
+       清单顶上有「＋新建一篇」；AI建议照常显示但只是建议，格子您自己定。
+    纯加法：翻名片/联网搜/核查三棒原有代码一行未改，新逻辑全是调用旧函数。
   v0.4.3 2026-09-03 名片浏览按题库归堆（洪医生真机"一个题库占几十屏"）：
     习题按题库折成一行（📁题库名·N题），点题库看题目行，点题目看名片内容；笔记仍一篇一行；
     筛选时命中题目所在题库自动撑开。cc-detail改>直接子选择器，题库和题目两层开合互不串。
@@ -136,6 +143,8 @@
   .hidden { display:none !important; }
   /* 自画弹窗（手机壳X5不理系统prompt，全家死规矩） */
   #hxDlg { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:99999; overflow:auto; }
+  #pickDlg { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:99999; overflow:auto; }
+  #pickDlg .box { background:#fff; border-radius:14px; max-width:560px; margin:10vh auto; padding:18px 20px; }
   #hxDlg .box { background:#fff; border-radius:14px; max-width:560px; margin:14vh auto; padding:18px 20px; }
   #hxDlgInput { width:100%; min-height:70px; font-size:15px; padding:10px;
                 border:1px solid #d8d2c6; border-radius:8px; }
@@ -188,16 +197,19 @@
   <div class="card">
     <h2>🤖 问AI查资料</h2>
     <div style="font-size:13px;color:#8a8178;margin-bottom:8px;">
-      问一句，两条路任选：<b>只翻我的资料</b>=翻名片挑出相关的、读原文、死命令只许用您的资料回答并标出处；
-      <b>也上网查查</b>=千问联网搜+Kimi当核查员挑毛病（多花约2分钱买放心）。
+      问一句，三条路任选：<b>只翻我的资料</b>=翻名片挑出相关的、读原文、死命令只许用您的资料回答并标出处；
+      <b>也上网查查</b>=千问联网搜+Kimi当核查员挑毛病（多花约2分钱买放心）；
+      <b>两路一起查</b>=先翻您的资料、再联网搜，最后Kimi当对照员逐条比对两边说法（多花约3分钱）。
     </div>
     <textarea class="ask-input" id="askQ" placeholder="比如：农药中毒 阿托品怎么用？"></textarea>
     <div class="btn-row" style="margin-top:8px;">
       <button id="btnAskLocal">📚 只翻我的资料</button>
       <button id="btnAskWeb">🌐 也上网查查</button>
+      <button id="btnAskBoth">📚+🌐 两路一起查</button>
     </div>
     <div class="btn-row" style="margin-top:6px;">
       <button class="ghost" id="btnCrossTg" style="font-size:13px;padding:5px 10px;"></button>
+      <button class="ghost" id="btnCmpTg" style="font-size:13px;padding:5px 10px;"></button>
     </div>
     <div id="askLog"></div>
     <div id="askResult"></div>
@@ -207,7 +219,8 @@
   <div class="card">
     <h2>📥 资料收件箱<span id="inboxDot"></span></h2>
     <div style="font-size:13px;color:#8a8178;margin-bottom:6px;">
-      上网搜来的料先放这里等您过目。我会建议「合并到《XXX》」或「新建一篇资料」，您点保留才进家底，放弃就扔。
+      上网搜来的料先放这里等您过目。我会建议「合并到《XXX》」或「新建一篇资料」，您点保留照建议办；
+      也可以点「📂 我自己挑」，从清单里亲手点一篇装进去。放弃就扔。
     </div>
     <div id="inboxList"></div>
     <div class="msg" id="inboxMsg"></div>
@@ -217,6 +230,17 @@
     <h2>🔎 名片浏览</h2>
     <input type="text" id="kwFilter" placeholder="筛一筛：输入病名/药名/关键词">
     <div id="cardList" style="margin-top:8px;"></div>
+  </div>
+</div>
+
+<div id="pickDlg">
+  <div class="box">
+    <h3 style="margin-bottom:8px;">📂 挑一篇资料装进去</h3>
+    <div id="pickList" style="max-height:50vh;overflow:auto;"></div>
+    <div class="btn-row" style="margin-top:10px;">
+      <button id="pickNew">＋ 新建一篇</button>
+      <button class="ghost" id="pickCancel">取消</button>
+    </div>
   </div>
 </div>
 
@@ -232,7 +256,7 @@
 </div>
 
 <script>
-var SW_VERSION = "0.4.3";
+var SW_VERSION = "0.4.4";
 document.getElementById('verTop').textContent = SW_VERSION;
 function $(id){ return document.getElementById(id); }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -860,6 +884,121 @@ function askWeb(){
     showMsg($('askMsg'),'AI这条路不通：'+e,'err');
   }, {what:'上网查', web:true, maxTokens:4096});
 }
+
+/* ── 路三：两路一起查（v0.4.4 洪老师拍板）：翻资料+联网搜同发，Kimi当对照员逐条比对 ── */
+var LS_CMP='hx_guanjia_cmp';
+function cmpOn(){ return localStorage.getItem(LS_CMP)!=='0'; } /* 默认开 */
+function renderCmpTg(){ $('btnCmpTg').textContent='⚖️ 两路对照（Kimi当对照员）：'+(cmpOn()?'开 ✅':'关'); }
+$('btnCmpTg').onclick=function(){ localStorage.setItem(LS_CMP, cmpOn()?'0':'1'); renderCmpTg(); toast(cmpOn()?'对照员上岗：两路答案逐条比对':'对照员下班：两份答案并排放，您自己对'); };
+function askBoth(){
+  var q=$('askQ').value.replace(/^\s+|\s+$/g,'');
+  if(!q){ showMsg($('askMsg'),'先把问题写上。','err'); return; }
+  if(askRunning){ toast('上一问还在答，稍等'); return; }
+  if(!qwenKey()&&!kimiKey()){ showMsg($('askMsg'),'还没有API Key，先贴一个。','err'); keyInputAsk(); return; }
+  $('askLog').innerHTML=''; $('askResult').innerHTML=''; $('askMsg').className='msg';
+  askBusy(true);
+  /* 第一路：翻名片读原文（复用 askLocal 的挑法和死命令） */
+  askLogLine('📇 第一路：翻名片中…','step-doing');
+  var hits=pickCards(q,5);
+  var src=scanSources(), srcMap={};
+  src.forEach(function(s){ srcMap[s.key]=s; });
+  var docs=[];
+  hits.forEach(function(h){ var s=srcMap[h.key]; if(s) docs.push({title:s.title, text:s.text.slice(0,3000)}); });
+  var localAns=null;
+  function doWeb(){
+    /* 第二路：千问联网搜（没千问Key就明说Kimi凭记忆答，不装蒜） */
+    var realWeb=!!qwenKey();
+    askLogLine(realWeb?'🌐 第二路：千问联网搜索中…':'⚠️ 没有千问Key，第二路是Kimi凭脑内知识答的（<b>没真联网</b>）', realWeb?'step-doing':'step-err');
+    var t0=Date.now();
+    var wsys='您是医学资料查询助手。用联网搜索找到的资料回答问题。规矩：分条列、大白话、写明信息来自哪些网站/来源；拿不准的地方明说。';
+    aiChat(wsys, '问题：'+q, function(wans){
+      askLogLine('✅ 网上查完（'+Math.round((Date.now()-t0)/1000)+'秒）','step-done');
+      doCmp(wans, realWeb);
+    }, function(e){
+      askBusy(false);
+      askLogLine('❌ 网上没查成：'+esc(String(e).slice(0,60)),'step-err');
+      if(localAns){ showBothResult(q, localAns, docs, null, null); showMsg($('askMsg'),'网上那路没走通，先看您资料里这份。','err'); }
+      else showMsg($('askMsg'),'两路都没走通：'+e,'err');
+    }, {what:'两路查·上网', web:true, maxTokens:4096});
+  }
+  function doCmp(wans, realWeb){
+    /* 对照棒：两边都有才对照；只一边有就并排放 */
+    if(!cmpOn() || !kimiKey() || !localAns){
+      if(cmpOn()&&!kimiKey()) askLogLine('⚠️ 没有Kimi Key，对照员上不了班，两份答案并排放您自己对','step-err');
+      askBusy(false);
+      showBothResult(q, localAns, docs, wans, null);
+      return;
+    }
+    askLogLine('⚖️ 对照员Kimi逐条比对两边说法中…','step-doing');
+    var t1=Date.now();
+    var csys='您是医学资料对照员。给您一个问题和两份答案：一份来自用户自己的资料库，一份来自网上搜索。'+
+            '请您逐条比对，每条结论前必须标三选一：【对得上】=两边说法一致；【有分歧】=两边说法不一样（把两边原话都引上，不下最终结论，留给用户终审）；【一边独有】=只有一边提到。'+
+            '分条、简短、大白话。开头不用客套，直接比对。';
+    var cusr='问题：'+q+'\n\n====== 答案一：来自我的资料库 ======\n'+String(localAns).slice(0,3000)+
+             '\n\n====== 答案二：来自网上搜索 ======\n'+String(wans).slice(0,3000);
+    aiChat(csys, cusr, function(cmp){
+      askBusy(false);
+      askLogLine('✅ 对照完（'+Math.round((Date.now()-t1)/1000)+'秒）','step-done');
+      showBothResult(q, localAns, docs, wans, cmp);
+    }, function(e){
+      askBusy(false);
+      askLogLine('⚠️ 对照员没上班：'+esc(String(e).slice(0,40))+'（两份答案并排放，您自己对）','step-err');
+      showBothResult(q, localAns, docs, wans, null);
+    }, {what:'两路对照', force:'kimi', maxTokens:16384});
+  }
+  if(!docs.length){
+    askLogLine('🔍 名片一张都对不上，第一路空着手（这路没花AI的钱）','step-done');
+    doWeb();
+    return;
+  }
+  askLogLine('📇 命中 '+docs.length+' 张名片，AI细读原文总结中…','step-doing');
+  var t0=Date.now();
+  var lsys='您是医学资料问答助手。死命令：\n'+
+          '1. 只许用下面给的资料回答，资料里没有的就说"您的资料里没有提到"，绝不许用自己脑子里的知识补充\n'+
+          '2. 每答完一条，末尾用【出处：资料标题】标明来自哪份资料\n'+
+          '3. 大白话、分条列、别啰嗦';
+  var lusr='问题：'+q+'\n\n====== 以下是我资料库里挑出的原文 ======\n'+
+          docs.map(function(d,i){ return '【资料'+(i+1)+'：'+d.title+'】\n'+d.text; }).join('\n\n');
+  aiChat(lsys, lusr, function(ans){
+    localAns=ans;
+    askLogLine('✅ 您的资料读完（'+Math.round((Date.now()-t0)/1000)+'秒）','step-done');
+    doWeb();
+  }, function(e){
+    askLogLine('⚠️ 第一路没读成：'+esc(String(e).slice(0,40))+'（继续走网上那路）','step-err');
+    doWeb();
+  }, {what:'两路查·翻资料', maxTokens:16384});
+}
+var lastBothDocs=[];
+function showBothResult(q, localAns, docs, webAns, cmp){
+  lastBothDocs=docs||[];
+  var html='';
+  if(cmp){
+    html+='<div class="qa-box" style="background:#eef0f5;"><div class="qa-h">⚖️ 对照结果（Kimi对照员逐条比对，【有分歧】的您终审）：</div>'+mdLite(cmp)+'</div>';
+    html+='<div class="qa-note">两份原答在下面，想核对的自己翻。</div>';
+  }else{
+    html+='<div class="qa-note">两份答案并排放（对照员没上班或您关了开关），您自己对。</div>';
+  }
+  if(localAns){
+    html+='<div class="qa-box"><div class="qa-h">📚 您的资料里说的：</div>'+mdLite(localAns)+'</div>';
+    html+='<div style="margin-top:6px;font-size:12px;color:#8a8178;">出处（点开看原文）：</div><div>'+
+      lastBothDocs.map(function(d,i){ return '<button class="src-btn" data-bdoc="'+i+'">📄 '+esc(d.title)+'</button>'; }).join('')+'</div>';
+  }else{
+    html+='<div class="qa-box" style="opacity:.75;"><div class="qa-h">📚 您的资料：</div><p>名片一张都对不上，这路空着手。</p></div>';
+  }
+  if(webAns) html+='<div class="qa-box" style="background:#f3efe7;"><div class="qa-h">🌐 网上搜到的：</div>'+mdLite(webAns)+'</div>';
+  html+='<div class="btn-row" style="margin-top:8px;">'+
+        '<button id="btnToInbox">📥 存进收件箱</button>'+
+        '<button class="ghost" id="btnDropQA">不要了</button></div>';
+  $('askResult').innerHTML=html;
+  Array.prototype.forEach.call(document.querySelectorAll('[data-bdoc]'), function(el){
+    el.onclick=function(){ var d=lastBothDocs[+el.getAttribute('data-bdoc')]; if(d) viewDoc(d.title, d.text); };
+  });
+  lastWebQA={q:q, ans:'【我的资料里说的】\n'+(localAns||'（没命中）')+'\n\n【网上搜到的】\n'+(webAns||'（没查成）')+(cmp?('\n\n【Kimi对照结果】\n'+cmp):'')+'\n（大管家两路一起查）',
+             review:cmp?String(cmp).slice(0,2000):''};
+  $('btnToInbox').onclick=function(){ saveToInbox(); };
+  $('btnDropQA').onclick=function(){ $('askResult').innerHTML=''; lastWebQA=null; toast('已扔掉'); };
+}
+
 var lastWebQA=null;
 /* final={verdict:'agree'|'disagree', final:修订版或反驳词, note:注释}；null=前两棒就止步 */
 function showWebResult(q, ans, review, final){
@@ -917,6 +1056,43 @@ function suggestForInbox(item){
   it.sugId=hits.length?hits[0].key.slice(6):''; /* 整个笔记id原样存，别再split冒号（验证员#4：id含冒号曾静默改新建） */
   inboxSave(b); renderInbox();
 }
+/* ── 我自己挑（v0.4.4② 洪老师拍板）：资料篇目全列出，点哪篇聚合进哪篇；AI建议只是建议 ── */
+var pickTarget=null;
+function openPick(item){
+  pickTarget=item;
+  var notes=[];
+  try{ notes=JSON.parse(localStorage.getItem('study_notes_v1'))||[]; if(!Array.isArray(notes)) notes=[]; }catch(e){ notes=[]; }
+  var html='';
+  if(!notes.length) html='<div style="color:#8a8178;padding:6px 0;">资料库还是空的，点下面「＋新建一篇」。</div>';
+  notes.slice(0,200).forEach(function(n,i){
+    html+='<button class="ghost" style="display:block;width:100%;text-align:left;margin:4px 0;font-size:14px;" data-pickone="'+i+'">📄 '+esc(n.title||'（无题）')+'</button>';
+  });
+  if(notes.length>200) html+='<div style="font-size:12px;color:#8a8178;padding:4px 0;">只列了前200篇，更早的请用AI建议。</div>';
+  $('pickList').innerHTML=html;
+  Array.prototype.forEach.call(document.querySelectorAll('[data-pickone]'), function(el){
+    el.onclick=function(){ var n=notes[+el.getAttribute('data-pickone')]; $('pickDlg').style.display='none'; pickCommit('merge', n); };
+  });
+  $('pickDlg').style.display='block';
+}
+function pickCommit(mode, note){
+  /* 用户亲手定的格子：改建议字段再走老 inboxKeep（幂等守卫、新建兜底都照享） */
+  var b=inboxLoad(), it=null;
+  b.items.forEach(function(x){ if(pickTarget && x.id===pickTarget.id) it=x; });
+  pickTarget=null;
+  if(!it||it.status!=='raw'){ renderInbox(); return; }
+  if(mode==='merge' && note){
+    it.sug='merge:notes:'+note.id; it.sugId=String(note.id); it.sugTitle=note.title||'（无题）';
+  }else{
+    it.sug='new'; it.sugId=''; it.sugTitle='';
+  }
+  var r=inboxKeep(it);
+  if(r){ it.status='kept'; inboxSave(b); toast(r); }
+  else toast('写入学习笔记失败，料还在收件箱，没丢');
+  renderInbox(); renderOverview();
+}
+$('pickNew').onclick=function(){ $('pickDlg').style.display='none'; pickCommit('new', null); };
+$('pickCancel').onclick=function(){ $('pickDlg').style.display='none'; pickTarget=null; };
+
 /* 保留：合并=追加进学习笔记该篇正文；新建=写进study_notes_v1 */
 function inboxKeep(item){
   try{
@@ -958,6 +1134,7 @@ function renderInbox(){
     if(it.status==='raw'){
       html+='<div class="btn-row" style="margin-top:6px;">'+
         '<button style="font-size:13px;padding:6px 12px;" data-keep="'+esc(it.id)+'">✅ 保留（照建议办）</button>'+
+        '<button class="ghost" style="font-size:13px;padding:6px 12px;" data-pickbtn="'+esc(it.id)+'">📂 我自己挑</button>'+
         '<button class="ghost" style="font-size:13px;padding:6px 12px;" data-drop="'+esc(it.id)+'">🗑 放弃</button></div>';
     }
     html+='</div>';
@@ -977,6 +1154,15 @@ function renderInbox(){
       renderInbox(); renderOverview();
     };
   });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-pickbtn]'), function(el){
+    el.onclick=function(){
+      var b2=inboxLoad(), it=null;
+      b2.items.forEach(function(x){ if(x.id===el.getAttribute('data-pickbtn')) it=x; });
+      if(!it) return;
+      if(it.status!=='raw'){ renderInbox(); return; } /* 幂等守卫同款 */
+      openPick(it);
+    };
+  });
   Array.prototype.forEach.call(document.querySelectorAll('[data-drop]'), function(el){
     el.onclick=function(){
       var b2=inboxLoad();
@@ -987,7 +1173,8 @@ function renderInbox(){
 }
 $('btnAskLocal').onclick=askLocal;
 $('btnAskWeb').onclick=askWeb;
-renderCrossTg();
+$('btnAskBoth').onclick=askBoth;
+renderCrossTg(); renderCmpTg();
 
 /* ══════════ v0.4.1 折叠面板：点标题栏整卡折起/展开，状态记住 ══════════ */
 var LS_FOLD='hx_guanjia_fold';
