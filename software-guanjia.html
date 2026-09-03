@@ -8,6 +8,11 @@
   红小涛学习套装 · 病人大管家
   定位：全家资料的"管家"。按病人归堆（血气/呼吸机/脱敏病历，天然有章），
         按知识搜索（笔记/习题，全靠AI名片）。
+  v0.4.1 2026-09-03 首页折叠面板（洪医生"第1页内容过多，搞鱼骨头点了再开"）：
+    每张卡片标题栏点一下整卡折起/展开（▸/▾箭头），折展状态存localStorage hx_guanjia_fold 下次开门记住。
+    默认展开：问AI查资料/资料收件箱/病人名册；默认折起：家底总览/做名片/名片浏览；收件箱有raw料时强制展开亮红点。
+    纯加法：JS运行时把各卡内容区包进.fold-body，现有功能一行未改；折叠不收功能（自动做名片/红点照跑）。
+    验证员抓1低修1：强制展开只改DOM没同步闭包open（第一次点折叠无效需点两次）→ 强制展开走foldSetters登记处。
   v0.4.0 2026-09-03 洪医生三点单：
     ① 只翻资料的出处变按钮，点开弹窗看原文全文（核对AI说的是不是资料里真写的）
     ② AI答案轻排版mdLite()：**加粗**/小标题/-列表/编号 真渲染，千问答案、Kimi核查、复核、收件箱展示统一用，告别一坨字
@@ -101,6 +106,11 @@
   .md .md-li:before { content:'•'; position:absolute; left:4px; color:#b3742a; }
   .md .md-num { padding-left:4px; margin:2px 0; }
   .md b { color:#8a5a20; }
+  /* 折叠面板（v0.4.1） */
+  .card > h2.foldable { cursor:pointer; user-select:none; }
+  .fold-arrow { float:right; color:#a89f93; font-size:14px; margin-left:8px; }
+  .fold-body { overflow:hidden; }
+  .fold-body.folded { display:none; }
   .src-btn { font-size:12px; padding:4px 10px; background:#ece7dd; color:#34567a; border-radius:99px; margin:3px 4px 0 0; }
   .red-dot { display:inline-block; min-width:20px; padding:1px 6px; border-radius:99px; background:#c0392b; color:#fff; font-size:12px; text-align:center; margin-left:6px; }
   .inbox-item { border-bottom:1px dashed #e6e0d4; padding:9px 0; }
@@ -210,7 +220,7 @@
 </div>
 
 <script>
-var SW_VERSION = "0.4.0";
+var SW_VERSION = "0.4.1";
 document.getElementById('verTop').textContent = SW_VERSION;
 function $(id){ return document.getElementById(id); }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -934,6 +944,53 @@ function renderInbox(){
 $('btnAskLocal').onclick=askLocal;
 $('btnAskWeb').onclick=askWeb;
 renderCrossTg();
+
+/* ══════════ v0.4.1 折叠面板：点标题栏整卡折起/展开，状态记住 ══════════ */
+var LS_FOLD='hx_guanjia_fold';
+var foldSetters={}; /* 各卡的开关登记处，强制展开走它，闭包状态不脱节（验证员t114.10抓到） */
+function foldLoad(){ try{ return JSON.parse(localStorage.getItem(LS_FOLD))||{}; }catch(e){ return {}; } }
+function foldSave(f){ try{ localStorage.setItem(LS_FOLD, JSON.stringify(f)); }catch(e){} }
+function makeFoldable(h2, key, defaultOpen){
+  if(!h2) return;
+  var card=h2.parentElement;
+  /* 把h2之后的兄弟全包进.fold-body（运行时包壳，HTML一行不动） */
+  var body=document.createElement('div'); body.className='fold-body'; body.id='fold_'+key;
+  var n=h2.nextSibling;
+  while(n){ var nx=n.nextSibling; body.appendChild(n); n=nx; }
+  card.appendChild(body);
+  var arrow=document.createElement('span'); arrow.className='fold-arrow'; h2.appendChild(arrow);
+  h2.classList.add('foldable');
+  var fs=foldLoad();
+  var open=(key in fs)?fs[key]:defaultOpen;
+  function paint(){ body.classList.toggle('folded',!open); arrow.textContent=open?'▾':'▸'; }
+  paint();
+  foldSetters[key]=function(v){ open=v; paint(); var f2=foldLoad(); f2[key]=open; foldSave(f2); };
+  h2.addEventListener('click', function(){
+    open=!open; paint();
+    var f2=foldLoad(); f2[key]=open; foldSave(f2);
+  });
+}
+(function initFolds(){
+  var h2s=document.querySelectorAll('.card > h2');
+  var map=[
+    ['🤖 问AI查资料','ask',true],
+    ['📥 资料收件箱','inbox',true],
+    ['👥 病人名册','pts',true],
+    ['📚 家底总览','ov',false],
+    ['🔨 做名片','cards',false],
+    ['🔎 名片浏览','browse',false]
+  ];
+  map.forEach(function(m){
+    for(var i=0;i<h2s.length;i++){
+      if(h2s[i].textContent.replace(/\s/g,'').indexOf(m[0].replace(/\s/g,''))===0){ makeFoldable(h2s[i], m[1], m[2]); break; }
+    }
+  });
+  /* 收件箱有待办的料：折着也要强制展开亮红点 */
+  try{
+    var raw=inboxLoad().items.filter(function(x){return x.status==='raw';}).length;
+    if(raw>0 && foldSetters['inbox']) foldSetters['inbox'](true); /* 走登记处，闭包open同步（t114.10修复） */
+  }catch(e){}
+})();
 
 /* ── 开门：名册 + 总览 + 自动做3篇（有Key才动） ── */
 renderOverview(); renderCardList(); renderPatients(); renderInbox();
