@@ -8,6 +8,9 @@
   红小涛学习套装 · 病人大管家
   定位：全家资料的"管家"。按病人归堆（血气/呼吸机/脱敏病历，天然有章），
         按知识搜索（笔记/习题，全靠AI名片）。
+  v0.4.10 2026-09-04 真机补丁2：洪老师"菜单太敏感，轻点一下也跳"——X5轻点会自动选中一个词。
+    加轻点门禁：手指按下到抬起<350ms不亮，只认长按/拖把手；选中文少于2字不理；
+    touchend/mouseup助攻路也过同一门禁（防绕开）；mouseup路要求选区还活着防陈旧兜货误亮。
   v0.4.9 2026-09-04 真机补丁：洪老师vivo壳上竖排菜单没跳出来——X5长按选中后touchend可能不往外发。
     改主触发路：选区站稳700ms自动亮（debounce），touchend/mouseup只当助攻；位置用兜里存的rect，不依赖活选区。
   v0.4.8 2026-09-04 洪老师拍板「选中文字中心菜单·一期」：
@@ -347,7 +350,7 @@
 </div>
 
 <script>
-var SW_VERSION = "0.4.9";
+var SW_VERSION = "0.4.10";
 document.getElementById('verTop').textContent = SW_VERSION;
 function $(id){ return document.getElementById(id); }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -1011,6 +1014,7 @@ function applyAiToc(text, pairs){
    v0.4.9补丁（洪老师真机：X5壳菜单没跳出来）：X5长按选中后touchend可能不往外发 →
    改靠"选区站稳700ms"自动亮菜单（debounce），touchend只当助攻；位置用兜里存的rect，不靠活选区。 */
 var selMenuTxt='', selMenuRect=null, selMenuTimer=null;
+var selTDown=0, selTUp=0; /* 手指按下/抬起时刻：轻点（<350ms）选中不亮菜单，只认长按（v0.4.10 洪老师真机"太敏感"） */
 var SEL_MENU=[
   {ico:'🔍', name:'三路同查（资料+网上+对照）', fn:function(){ selActAsk(); }},
   {ico:'📊', name:'寄给PPT · 选中的话做新PPT', fn:function(){ selActPPT(false); }},
@@ -1020,19 +1024,37 @@ var SEL_MENU=[
 function hideSelMenu(){ clearTimeout(selMenuTimer); var m=$('selMenu'); if(m) m.style.display='none'; }
 function bindSelMenu(){
   var body=$('readBody');
+  body.addEventListener('touchstart', function(){ selTDown=Date.now(); selTUp=0; });
+  body.addEventListener('touchend', function(){ selTUp=Date.now(); });
+  body.addEventListener('mousedown', function(){ selTDown=Date.now(); selTUp=0; });
+  body.addEventListener('mouseup', function(){ selTUp=Date.now(); setTimeout(function(){
+    var s=window.getSelection(); /* 桌面：mouseup时选区还活着且≥2字才亮，防陈旧兜货误亮 */
+    if(s && !s.isCollapsed && String(s.toString()).replace(/^\s+|\s+$/g,'').length>=2) showSelMenu();
+  }, 200); });
+  /* 抬手助攻也要过门禁：轻点（<350ms）不亮，长按/拖够久才亮（v0.4.10） */
+  body.addEventListener('touchend', function(){
+    selTUp=Date.now();
+    if(selTDown && (selTUp-selTDown)>=350 && selMenuTxt) setTimeout(showSelMenu, 350);
+  });
   document.addEventListener('selectionchange', function(){
     var s=window.getSelection();
     if(!s||s.isCollapsed){ clearTimeout(selMenuTimer); return; } /* 塌了只消定时器；兜里的话留着给菜单按钮用 */
     var txt=String(s.toString()).replace(/^\s+|\s+$/g,'');
-    if(!txt){ clearTimeout(selMenuTimer); return; }
+    if(txt.length<2){ clearTimeout(selMenuTimer); return; } /* 一两个字不理，防误触 */
     if(!body.contains(s.anchorNode)) return; /* 只管阅读器里的选择 */
+    /* 轻点门禁（v0.4.10）：手指还按着且按够350ms=长按；抬手了但按得久=拖把手调整；
+       轻点一下（按下到抬起<350ms）X5也会选中一个词，不亮。没摸到触摸记录（桌面鼠标拖选）放行 */
+    if(selTDown){
+      var now=Date.now();
+      var held=!selTUp && (now-selTDown)>=350;
+      var wasLong=selTUp && (selTUp-selTDown)>=350;
+      if(!held && !wasLong) return;
+    }
     selMenuTxt=txt; /* 当场抄进兜里，选区灭了也不怕 */
     try{ selMenuRect=s.getRangeAt(0).getBoundingClientRect(); }catch(e){ selMenuRect=null; }
     /* 选区站稳700ms自动亮（X5可能不发touchend，这是主触发路） */
     clearTimeout(selMenuTimer); selMenuTimer=setTimeout(showSelMenu, 700);
   });
-  body.addEventListener('touchend', function(){ setTimeout(showSelMenu, 350); }); /* 助攻：正常浏览器抬手就亮 */
-  body.addEventListener('mouseup', function(){ setTimeout(showSelMenu, 200); });
   document.addEventListener('touchstart', function(e){
     var m=$('selMenu');
     if(m.style.display==='block' && !m.contains(e.target)) hideSelMenu(); /* 点别处收掉 */
