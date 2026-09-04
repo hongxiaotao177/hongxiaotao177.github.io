@@ -8,6 +8,11 @@
   红小涛学习套装 · 病人大管家
   定位：全家资料的"管家"。按病人归堆（血气/呼吸机/脱敏病历，天然有章），
         按知识搜索（笔记/习题，全靠AI名片）。
+  v0.4.13 2026-09-04 晚班（洪老师拍板两件大事）：
+    ①hxStore仓管员：数据存盘同步写壳授权文件夹 hxdata_*.json（文件夹可整个拷走换机），
+      开门自动对齐（文件说了算/自动搬家），左下角🗄️选/换文件夹；浏览器无壳时一切照旧。
+    ②PPT链路闭环：寄信带taskId+round；新增 guanjia_inbox 收PPT寄回的大纲样品（样品查收窗）；
+      可寄修改意见（ppt_inbox rev信）或定稿；同一任务3趟封顶防烧钱。纯加法，原有代码一行未改。
   v0.4.12 2026-09-04 PPT二期链路简化（洪老师拍板）：寄PPT前多问一句"要不要自动精做"。
     选"自动精做"→信封加 auto:true → PPT工坊v0.9.1开门收信后不问人直接全篇双AI精做
     （千问写原著+快校对，授权在寄信这一步完成）；选"只寄大纲"=老样子。
@@ -218,6 +223,40 @@
 </style>
 </head>
 <body>
+<script>
+/* ==================== hxStore 仓管员 v1（2026-09-04 新立，洪老师拍板：壳文件夹优先、localStorage兜底、开门自动对齐、自动搬家） ====================
+   规矩：壳里授权了文件夹 → 每次存数据同时写进文件夹 hxdata_<键>.json（换手机整个文件夹拷走=家当带走）；
+   开门时对齐：文件夹里有 → 搬进localStorage（文件说了算）；文件夹没有而localStorage有 → 搬进文件夹（自动搬家）。
+   没壳/没授权 → 只用localStorage，一切照旧。纯加法，原有存储代码一行未改。 */
+var hxStore=(function(){
+  var KEYS=[];
+  function bridged(){ try{ return !!(window.LearnShell&&LearnShell.folderSet&&LearnShell.folderSet()); }catch(e){ return false; } }
+  function b64(s){ return btoa(unescape(encodeURIComponent(s))); }
+  function unb64(s){ return decodeURIComponent(escape(atob(s))); }
+  function fn(key){ return 'hxdata_'+key+'.json'; }
+  function reg(key){ if(KEYS.indexOf(key)<0) KEYS.push(key); }
+  function set(key,obj){ try{ localStorage.setItem(key,JSON.stringify(obj)); }catch(e){} if(bridged()){ try{ LearnShell.writeFile(fn(key), b64(JSON.stringify(obj))); }catch(e){} } }
+  function sync(){
+    if(!bridged()) return null;
+    var moved=0, pulled=0;
+    KEYS.forEach(function(k){
+      var f=null; try{ f=LearnShell.readFile(fn(k)); }catch(e){}
+      if(f){ try{ localStorage.setItem(k, unb64(f)); pulled++; }catch(e){} }
+      else { var v=null; try{ v=localStorage.getItem(k); }catch(e){}
+        if(v){ try{ LearnShell.writeFile(fn(k), b64(v)); moved++; }catch(e){} } }
+    });
+    return {moved:moved,pulled:pulled};
+  }
+  function folderName(){ try{ return LearnShell.folderName()||''; }catch(e){ return ''; } }
+  function pick(){ try{ LearnShell.pickFolder(); }catch(e){} }
+  function pollFolder(done){ var n=0; var t=setInterval(function(){ n++;
+    if(bridged()){ clearInterval(t); done(true); } else if(n>30){ clearInterval(t); done(false); } },1000); }
+  return {bridged:bridged,reg:reg,set:set,sync:sync,folderName:folderName,pick:pick,pollFolder:pollFolder};
+})();
+/* 仓管员登记处：本软件归仓管员管的键 */
+hxStore.reg('hx_cards_v1'); hxStore.reg('hx_patients'); hxStore.reg('hx_inbox_v1'); hxStore.reg('hx_readtoc_v1'); hxStore.reg('hx_ppt_tasks');
+try{ hxStore.sync(); }catch(e){} /* 开门就对齐：桥是同步的，赶在页面各处读localStorage之前，让文件夹里的数据说了算 */
+</script>
 <div class="wrap">
   <h1>🏠 病人大管家</h1>
   <div class="ver">v<span id="verTop">?</span> · 全家的资料管家：病人归堆 + 知识搜索（名片打底）</div>
@@ -354,7 +393,7 @@
 </div>
 
 <script>
-var SW_VERSION = "0.4.12"; /* v0.4.12 寄PPT前可选"自动精做"，信封加auto（详见文件头）。注：v0.4.11选中补丁文件丢失，本版基于0.4.10 */
+var SW_VERSION = "0.4.13"; /* v0.4.13 ①hxStore仓管员：数据同步写壳文件夹（可拷走换机）②PPT链路闭环：信封带taskId、收样品（guanjia_inbox）、寄修改意见、定稿、3趟封顶 */
 document.getElementById('verTop').textContent = SW_VERSION;
 function $(id){ return document.getElementById(id); }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -459,12 +498,12 @@ function keyInputAsk(){
 /* ── 名片库 hx_cards_v1（全家共享） ── */
 var LS_CARDS='hx_cards_v1';
 function cardsLoad(){ try{ var c=JSON.parse(localStorage.getItem(LS_CARDS)); return (c&&c.items&&typeof c.items==='object')?c:{v:1,items:{}}; }catch(e){ return {v:1,items:{}}; } }
-function cardsSave(cs){ try{ localStorage.setItem(LS_CARDS, JSON.stringify(cs)); }catch(e){ toast('名片库存储失败：'+e.message); } }
+function cardsSave(cs){ try{ localStorage.setItem(LS_CARDS, JSON.stringify(cs)); }catch(e){ toast('名片库存储失败：'+e.message); } hxStore.set(LS_CARDS, cs); }
 
 /* ── 病人名册 hx_patients（v0.2.0 第③步：血气/呼吸机按病人归堆） ── */
 var LS_PTS='hx_patients';
 function ptsLoad(){ try{ var p=JSON.parse(localStorage.getItem(LS_PTS)); return (p&&Array.isArray(p.patients)&&Array.isArray(p.rejects))?p:{v:1,patients:[],rejects:[]}; }catch(e){ return {v:1,patients:[],rejects:[]}; } }
-function ptsSave(ps){ try{ localStorage.setItem(LS_PTS, JSON.stringify(ps)); }catch(e){ toast('名册存储失败：'+e.message); } }
+function ptsSave(ps){ try{ localStorage.setItem(LS_PTS, JSON.stringify(ps)); }catch(e){ toast('名册存储失败：'+e.message); } hxStore.set(LS_PTS, ps); }
 /* 读血气的档案柜：IndexedDB bgdb / kv仓 / 键 history(血气) 和 ventHistory(呼吸机) */
 function idbOpenBg(){
   return new Promise(function(res){
@@ -841,7 +880,7 @@ $('kwFilter').oninput=renderCardList;
 /* ══════════ v0.3.0 问AI查资料 + 资料收件箱 ══════════ */
 var LS_INBOX='hx_inbox_v1';
 function inboxLoad(){ try{ var b=JSON.parse(localStorage.getItem(LS_INBOX)); return (b&&Array.isArray(b.items))?b:{v:1,items:[]}; }catch(e){ return {v:1,items:[]}; } }
-function inboxSave(b){ try{ localStorage.setItem(LS_INBOX, JSON.stringify(b)); }catch(e){ toast('收件箱存储失败：'+e.message); } }
+function inboxSave(b){ try{ localStorage.setItem(LS_INBOX, JSON.stringify(b)); }catch(e){ toast('收件箱存储失败：'+e.message); } hxStore.set(LS_INBOX, b); }
 function askLogLine(html, cls){
   var log=$('askLog'); log.style.display='block';
   var d=document.createElement('div'); if(cls) d.className=cls; d.innerHTML=html;
@@ -889,7 +928,7 @@ var LS_READTOC='hx_readtoc_v1';
 function readTocLoad(){ try{ return JSON.parse(localStorage.getItem(LS_READTOC))||{}; }catch(e){ return {}; } }
 function readTocSave(o){ try{
   var ks=Object.keys(o); if(ks.length>50){ o={}; } /* 缓存别长胖：超50篇清一遍重来 */
-  localStorage.setItem(LS_READTOC, JSON.stringify(o)); }catch(e){} }
+  localStorage.setItem(LS_READTOC, JSON.stringify(o)); }catch(e){} hxStore.set(LS_READTOC, o); }
 /* 本地拆标题：认出 #井号 / 一二三、/ 第X章节 / 1. 2. （数字后必须是字不是数，"3.5mg"不算） */
 function isHeadLine(ln){
   var t=String(ln||'').replace(/^\s+|\s+$/g,'');
@@ -1125,11 +1164,16 @@ function selActPPT(whole){
     askRunning=false; toast('AI这条路不通：'+String(e).slice(0,50));
   }, {what:'拟PPT大纲', maxTokens:16384});
 }
-/* 寄信进ppt_inbox（照学习笔记邮路协议：{title,text,t}，v0.4.12起加auto=要不要自动精做）；信箱有未拆旧信先问，不许悄悄盖 */
+/* 寄信进ppt_inbox（照学习笔记邮路协议：{title,text,t}，v0.4.12起加auto=要不要自动精做；v0.4.13起加taskId+round拴住多轮往返）；信箱有未拆旧信先问，不许悄悄盖 */
+var LS_PTASKS='hx_ppt_tasks'; /* PPT任务台账：{id,title,round,status(sent/draft/final),t} */
+function ptasksLoad(){ try{ var a=JSON.parse(localStorage.getItem(LS_PTASKS)); return Array.isArray(a)?a:[]; }catch(e){ return []; } }
+function ptasksSave(a){ try{ localStorage.setItem(LS_PTASKS, JSON.stringify(a)); }catch(e){} hxStore.set(LS_PTASKS, a); }
 function mailToPPT(title, outline, auto){
   var old=null; try{ old=JSON.parse(localStorage.getItem('ppt_inbox')); }catch(e){}
   function doSend(){
-    localStorage.setItem('ppt_inbox', JSON.stringify({title:title, text:outline, t:Date.now(), from:'病人大管家', auto:!!auto}));
+    var tid='T'+Date.now();
+    localStorage.setItem('ppt_inbox', JSON.stringify({title:title, text:outline, t:Date.now(), from:'病人大管家', auto:!!auto, taskId:tid, round:0}));
+    var ts=ptasksLoad(); ts.unshift({id:tid, title:title, round:0, status:'sent', t:Date.now()}); if(ts.length>50) ts.length=50; ptasksSave(ts);
     toast('📮 已寄进PPT收件箱：「'+title.slice(0,20)+'」。'+(auto?'打开PPT工坊它会自己做好':'打开PPT工坊收下就能做'), 3500);
   }
   if(old && old.text){
@@ -1650,6 +1694,11 @@ function makeFoldable(h2, key, defaultOpen){
 /* ── 开门：名册 + 总览 + 自动做3篇（有Key才动） ── */
 renderOverview(); renderCardList(); renderPatients(); renderInbox();
 bindSelMenu(); /* v0.4.8 选中文字中心菜单上岗 */
+/* v0.4.13 开门两件事：①仓管员对齐（壳文件夹↔localStorage）②查PPT寄回的样品 */
+(function(){
+  try{ if(hxStore.bridged()){ var r=hxStore.sync(); if(r&&(r.moved||r.pulled)) toast('🗄️ 数据文件夹已对齐（搬进'+r.moved+'份/取出'+r.pulled+'份）'); } }catch(e){}
+  setTimeout(checkSamples, 100); /* 样品窗的HTML在本script后面，等它就位再查 */
+})();
 (function(){
   var missing=makeCardQueue(1).length;
   if(missing && (qwenKey()||kimiKey())){
@@ -1657,6 +1706,85 @@ bindSelMenu(); /* v0.4.8 选中文字中心菜单上岗 */
     runCards(3);
   }
 })();
+
+/* ==================== v0.4.13 PPT链路闭环：查收样品 → 寄修改意见 / 定稿 ====================
+   邮路：PPT工坊做完写 guanjia_inbox {taskId,title,outline,round,status:'draft',t,from}；
+   修改意见走 ppt_inbox 回信 {rev:true, taskId, round, note, text:大纲}；同一任务3趟封顶（洪老师拍板防烧钱）。 */
+function checkSamples(){
+  var raw=null; try{ raw=localStorage.getItem('guanjia_inbox'); }catch(e){}
+  if(!raw) return;
+  var d=null; try{ d=JSON.parse(raw); }catch(e){}
+  if(!d||!d.taskId||!d.outline){ try{ localStorage.removeItem('guanjia_inbox'); }catch(e){} return; }
+  var ts=ptasksLoad(), tk=null;
+  ts.forEach(function(x){ if(x.id===d.taskId) tk=x; });
+  $('sampTitle').textContent='📦 PPT样品到了：「'+(d.title||'无题')+'」（第'+(d.round||1)+'趟）';
+  $('sampBody').textContent=d.outline;
+  $('sampNote').value='';
+  $('sampModal').style.display='block';
+  function markTask(st){ if(tk){ tk.status=st; tk.round=d.round||tk.round; tk.t=Date.now(); ptasksSave(ts); } }
+  $('sampLater').onclick=function(){ $('sampModal').style.display='none'; toast('样品在信箱里存着，下次开门还会提醒您'); };
+  $('sampFinal').onclick=function(){
+    localStorage.removeItem('guanjia_inbox'); markTask('final');
+    $('sampModal').style.display='none';
+    toast('✅ 已定稿。去PPT工坊导出成品就行', 3500);
+  };
+  $('sampRev').onclick=function(){
+    var note=($('sampNote').value||'').replace(/^\s+|\s+$/g,'');
+    if(!note){ toast('先写修改意见，或者点「定稿」'); return; }
+    function doRev(){
+      localStorage.setItem('ppt_inbox', JSON.stringify({title:d.title, text:d.outline, rev:true, note:note, taskId:d.taskId, round:d.round||1, t:Date.now(), from:'病人大管家'}));
+      localStorage.removeItem('guanjia_inbox'); markTask('sent');
+      $('sampModal').style.display='none';
+      toast('📮 修改意见已寄回PPT工坊，它开门就照改', 3500);
+    }
+    if((d.round||1)>=3){
+      hxConfirm('这封信已来回3趟了（再改要再花AI钱）。建议「定稿」。还坚持再改一趟吗？', function(yes){ if(yes) doRev(); });
+      return;
+    }
+    var old=null; try{ old=JSON.parse(localStorage.getItem('ppt_inbox')); }catch(e){}
+    if(old && old.text){
+      hxConfirm('PPT信箱里还有一封没收下的「'+(old.title||'无题')+'」，寄修改意见会盖掉它。确定寄吗？', function(yes){ if(yes) doRev(); else toast('没寄，样品还在'); });
+    }else doRev();
+  };
+}
+/* v0.4.13 仓管员门面：左下角🗄️按钮——看状态/选文件夹/换文件夹 */
+function hxStoreAfterPick(){
+  hxStore.pollFolder(function(ok){
+    if(ok){ var r=hxStore.sync(); toast('✅ 文件夹接上了：'+hxStore.folderName()+((r&&r.moved)?'，本地数据已搬过去':'')); }
+    else toast('没选成，随时点左下角🗄️再试');
+  });
+}
+(function(){
+  var b=document.createElement('button'); b.textContent='🗄️'; b.title='数据文件夹';
+  b.style.cssText='position:fixed;left:10px;bottom:10px;z-index:9998;width:42px;height:42px;border-radius:50%;border:1px solid #d8d2c4;background:#fffdf8;font-size:20px;box-shadow:0 2px 8px rgba(0,0,0,.15);';
+  b.onclick=function(){
+    if(hxStore.bridged()){
+      hxConfirm('数据存在文件夹：'+hxStore.folderName()+'（每次存盘都写这里，整个文件夹拷走=换手机带走全部家当）。换文件夹吗？', function(yes){
+        if(yes){ hxStore.pick(); hxStoreAfterPick(); }
+      });
+    }else if(window.LearnShell){
+      hxConfirm('还没选数据文件夹。选一个后，本软件数据会存进文件夹（换手机能带走）。现在选吗？', function(yes){
+        if(yes){ hxStore.pick(); hxStoreAfterPick(); }
+      });
+    }else{
+      toast('现在是浏览器本地存储；装进安卓壳后，点这里就能选数据文件夹');
+    }
+  };
+  document.body.appendChild(b);
+})();
 </script>
+<!-- v0.4.13 PPT样品查收窗：PPT工坊做完寄回大纲样品（guanjia_inbox），这里看样品/寄修改意见/定稿 -->
+<div id="sampModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:99999;overflow:auto;">
+  <div style="background:#fffdf8;border-radius:14px;max-width:560px;margin:6vh auto;padding:16px 18px;">
+    <h3 id="sampTitle" style="margin:0 0 8px;">📦 PPT样品到了</h3>
+    <div id="sampBody" style="max-height:38vh;overflow:auto;white-space:pre-wrap;background:#faf7f2;border-radius:8px;padding:10px 12px;font-size:13px;line-height:1.6;"></div>
+    <textarea id="sampNote" rows="3" placeholder="要改就把意见写这里（大白话就行，比如：第3页剂量写错了）；不用改就点「定稿」" style="width:100%;box-sizing:border-box;margin-top:8px;border:1px solid #d8d2c4;border-radius:8px;padding:8px;font-size:14px;"></textarea>
+    <div style="display:flex;gap:8px;margin-top:10px;">
+      <button id="sampRev" style="flex:1;background:#b3742a;color:#fff;border:none;border-radius:8px;padding:10px;font-size:14px;">✏️ 寄修改意见</button>
+      <button id="sampFinal" style="flex:1;background:#5b7f5e;color:#fff;border:none;border-radius:8px;padding:10px;font-size:14px;">✅ 定稿</button>
+      <button id="sampLater" style="flex:1;border:1px solid #d8d2c4;border-radius:8px;padding:10px;font-size:14px;background:#fff;">先放着</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
