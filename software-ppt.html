@@ -10,6 +10,9 @@
           → 大纲编辑页改稿 → 一键生成HTML幻灯片 → 横屏播放 → 每页可AI重做/换版式
           → 导出单个HTML（微信发别人，浏览器打开即放映）
   修改记录：
+    v0.9.1 2026-09-04 二期链路简化（洪老师拍板）：认得大管家信封里的 auto:true——
+      收信自动出页后不问人直接全篇双AI精做（授权在大管家寄信那步已完成）；
+      没auto字段的信（学习笔记老式信）照旧只出页不花钱。polishAllRun抽公共，手动按钮照旧先弹确认。
     v0.9.0 2026-09-04 PPT双AI校对·二期（洪老师拍板，药方C：快校对管全篇、Kimi精校管重点）：
       ①开门自动收信自动开工：信箱有大管家寄来的大纲→自动收下建新项目、自动解析出页面
         直接跳到幻灯片页（纯本地解析，零API花费）；解析不出来才退回老收件卡片人工收。
@@ -480,7 +483,7 @@
 
 <script>
 "use strict";
-var SW_VERSION = "0.9.0"; /* v0.9.0 二期：自动收信自动开工+双AI逐页精做（千问原著/快校对）+每页三版开关（原著/校对/AI综合）+三版对比终审，导出剥vers（详见文件头） */ /* v0.7.5 系统弹窗大扫除：剩下6处prompt+3处confirm全换自画对话框hxAsk/hxConfirm（AI起草大纲/填Key/涂黑改/插链接/单页AI改/云端恢复/删项目/删页），手机壳上不再"点了没反应" */ /* v0.7.4 三件套：①重做弹窗显示"正在重做第N页《标题》+内容预览"防点错页 ②小活（单页重做）优先派千问qwen-plus（几秒~20秒），没Key/失败自动退Kimi ③AI干活浮动秒表胶囊趴右下角 ④重做后验收：原有表格被AI弄丢→自动重试一次，仍丢则不覆盖原页 */ /* v0.7.3 重做全程浮动提示：开工/成功/失败都弹toast（洪医生真机反馈：进度消息在页面顶部，滚到下面看不见，像死机） */ /* v0.7.2 修数据错乱：AI重做在途时移动/删除该页，写回改认"页面对象"不认下标（独立测试t37抓到） */ /* v0.7.1 修"AI重做本页点了没反应"：病根=手机壳X5内核不理系统prompt()弹窗（直接当取消），改自画弹窗（习题学习删除确认同款药方） */ /* v0.7.0 千问自动交叉校对（愿望清单第3批）：「🤖 自动校对」一键两棒——第1棒发千问qwen-plus（公共钱罐hx_qwenkey，约1分钱）拿校对意见，第2棒自动交给贴回校对管道让Kimi照改大纲（没提到的一字不动）；开关可选千问/Kimi自查；千问答"没发现问题"就不花第2棒的钱 */ /* v0.6.1 自选背景图（愿望清单第2批）：幻灯片页「🖼️ 背景图」相册选图→canvas压缩≤1600px、JPEG逐步降质（≤200KB）→存本PPT的p.bg（不设全局）；渲染时.slide-page叠82%不透明蒙纱（米白皮用米白纱/深色皮用深色纱）保证字可读；「✕ 清除背景」一键还原；导出HTML内嵌带走。提醒：导出会把照片带出去，别夹病人信息 */ /* v0.6.0 四套皮肤（米白学术/深蓝正式/墨绿讲堂/黑板粉笔），每个PPT各选各的，导出HTML带着走；点屏翻页其实v0.2.0起就有（点左35%上页/右65%下页） */ /* v0.5.0 放映自适应：底栏实底让位+内容超高自动等比缩小（洪医生横屏讲课表格最后一行被吃） */ /* v0.4.8 AI报错带官方原因+400也自动换模型重试（洪医生贴回校对撞HTTP400：疑公共模型罐里存着已下架的moonshot-v1系列，400不走404重试路） */ /* v0.4.7 版本字样治病根：头顶+页脚+标题改成代码自动填SW_VERSION（v0.4.0~0.4.6期间头顶一直显示旧号，害用户以为没更新） */ /* v0.4.6 更新通道免Token备用路：自检/下载新版在API不通或没填Token时自动走github.io公开直链 */ /* v0.4.5 贴回校对结果：别的AI的校对意见贴进来，本软件AI照改大纲（原文没提到的部分不动）+秒表进度 */ /* v0.4.4 复制校对：大纲/全片一键连校对指令复制，借别的AI挑错，不花自己Key */ /* v0.4.3 修404：死模型自动换kimi-k2.6+重试；max_tokens 8000→16384（k2.6思考型） */ /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
+var SW_VERSION = "0.9.1"; /* v0.9.1 认大管家auto信自动全篇精做（授权在寄信时），polishAllRun抽公共 */ /* v0.9.0 二期：自动收信自动开工+双AI逐页精做（千问原著/快校对）+每页三版开关（原著/校对/AI综合）+三版对比终审，导出剥vers（详见文件头） */ /* v0.7.5 系统弹窗大扫除：剩下6处prompt+3处confirm全换自画对话框hxAsk/hxConfirm（AI起草大纲/填Key/涂黑改/插链接/单页AI改/云端恢复/删项目/删页），手机壳上不再"点了没反应" */ /* v0.7.4 三件套：①重做弹窗显示"正在重做第N页《标题》+内容预览"防点错页 ②小活（单页重做）优先派千问qwen-plus（几秒~20秒），没Key/失败自动退Kimi ③AI干活浮动秒表胶囊趴右下角 ④重做后验收：原有表格被AI弄丢→自动重试一次，仍丢则不覆盖原页 */ /* v0.7.3 重做全程浮动提示：开工/成功/失败都弹toast（洪医生真机反馈：进度消息在页面顶部，滚到下面看不见，像死机） */ /* v0.7.2 修数据错乱：AI重做在途时移动/删除该页，写回改认"页面对象"不认下标（独立测试t37抓到） */ /* v0.7.1 修"AI重做本页点了没反应"：病根=手机壳X5内核不理系统prompt()弹窗（直接当取消），改自画弹窗（习题学习删除确认同款药方） */ /* v0.7.0 千问自动交叉校对（愿望清单第3批）：「🤖 自动校对」一键两棒——第1棒发千问qwen-plus（公共钱罐hx_qwenkey，约1分钱）拿校对意见，第2棒自动交给贴回校对管道让Kimi照改大纲（没提到的一字不动）；开关可选千问/Kimi自查；千问答"没发现问题"就不花第2棒的钱 */ /* v0.6.1 自选背景图（愿望清单第2批）：幻灯片页「🖼️ 背景图」相册选图→canvas压缩≤1600px、JPEG逐步降质（≤200KB）→存本PPT的p.bg（不设全局）；渲染时.slide-page叠82%不透明蒙纱（米白皮用米白纱/深色皮用深色纱）保证字可读；「✕ 清除背景」一键还原；导出HTML内嵌带走。提醒：导出会把照片带出去，别夹病人信息 */ /* v0.6.0 四套皮肤（米白学术/深蓝正式/墨绿讲堂/黑板粉笔），每个PPT各选各的，导出HTML带着走；点屏翻页其实v0.2.0起就有（点左35%上页/右65%下页） */ /* v0.5.0 放映自适应：底栏实底让位+内容超高自动等比缩小（洪医生横屏讲课表格最后一行被吃） */ /* v0.4.8 AI报错带官方原因+400也自动换模型重试（洪医生贴回校对撞HTTP400：疑公共模型罐里存着已下架的moonshot-v1系列，400不走404重试路） */ /* v0.4.7 版本字样治病根：头顶+页脚+标题改成代码自动填SW_VERSION（v0.4.0~0.4.6期间头顶一直显示旧号，害用户以为没更新） */ /* v0.4.6 更新通道免Token备用路：自检/下载新版在API不通或没填Token时自动走github.io公开直链 */ /* v0.4.5 贴回校对结果：别的AI的校对意见贴进来，本软件AI照改大纲（原文没提到的部分不动）+秒表进度 */ /* v0.4.4 复制校对：大纲/全片一键连校对指令复制，借别的AI挑错，不花自己Key */ /* v0.4.3 修404：死模型自动换kimi-k2.6+重试；max_tokens 8000→16384（k2.6思考型） */ /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
 /* 公共钱罐：API key/GitHub配置 一处填处处有（与其他软件共享 hx_*） */
 (function(){
   var HX_MAP=[["hx_apikey","hx_apikey"],["hx_gh_user","hx_gh_user"],["hx_gh_tok","hx_gh_tok"],["hx_gh_repo","hx_gh_repo"]];
@@ -1860,27 +1863,31 @@ function polishOnePage(s, proj, deep){
   }
   return tryWrite(1).then(function(){ return tryProof(1); });
 }
-/* 全篇双AI精做：先弹确认（写明页数/时间/钱），再逐页排队跑；靠页面对象引用写回，删页移页不串位 */
+/* 全篇双AI精做的实际跑法（不问人）：v0.9.1抽出来，按钮手动点和大管家auto信自动跑共用 */
+function polishAllRun(p){
+  if(polishing) return;
+  polishing=true;
+  var n=p.slides.length, fails=[], i=0, t0=Date.now();
+  toast('🤖 全篇精做开工，右下角秒表在走=活着',3000);
+  (function next(){
+    if(i>=n){
+      polishing=false; saveStore(); renderSlides();
+      var msg='✅ 全篇精做完成（'+Math.floor((Date.now()-t0)/1000)+'秒）'+(fails.length?('；'+fails.length+'页没成：第'+fails.join('、')+'页，可点那页「✨双AI」补做'):'，每页点开关切「校对」看看');
+      showMsg($('slidesMsg'),msg, fails.length?'err':'ok'); toast(msg,6000); return;
+    }
+    var s=p.slides[i], no=i+1; i++;
+    showMsg($('slidesMsg'),'🤖 精做第'+no+'/'+n+'页《'+(s.title||'无题')+'》…','ok');
+    polishOnePage(s,p,false).then(function(){ p.t=Date.now(); saveStore(); renderSlides(); next(); },
+      function(e){ fails.push(no); toast('⚠️ 第'+no+'页没成：'+String(e.message||e).slice(0,50)+'，跳过接着做',4000); next(); });
+  })();
+}
+/* 全篇双AI精做：手动点要先弹确认（写明页数/时间/钱）；靠页面对象引用写回，删页移页不串位 */
 $('btnPolishAll').onclick=function(){
   var p=curProj(); if(!p||!p.slides.length){ toast('先生成PPT'); return; }
   if(polishing){ toast('正在精做着呢，别催'); return; }
   var n=p.slides.length;
   hxConfirm('全篇双AI精做：'+n+'页 ×（千问写＋快校对），约 '+Math.max(1,Math.ceil(n*25/60))+' 分钟、几分钱。跑的时候别删页别退出。跑吗？', function(yes){
-    if(!yes) return;
-    polishing=true;
-    var fails=[], i=0, t0=Date.now();
-    toast('🤖 全篇精做开工，右下角秒表在走=活着',3000);
-    (function next(){
-      if(i>=n){
-        polishing=false; saveStore(); renderSlides();
-        var msg='✅ 全篇精做完成（'+Math.floor((Date.now()-t0)/1000)+'秒）'+(fails.length?('；'+fails.length+'页没成：第'+fails.join('、')+'页，可点那页「✨双AI」补做'):'，每页点开关切「校对」看看');
-        showMsg($('slidesMsg'),msg, fails.length?'err':'ok'); toast(msg,6000); return;
-      }
-      var s=p.slides[i], no=i+1; i++;
-      showMsg($('slidesMsg'),'🤖 精做第'+no+'/'+n+'页《'+(s.title||'无题')+'》…','ok');
-      polishOnePage(s,p,false).then(function(){ p.t=Date.now(); saveStore(); renderSlides(); next(); },
-        function(e){ fails.push(no); toast('⚠️ 第'+no+'页没成：'+String(e.message||e).slice(0,50)+'，跳过接着做',4000); next(); });
-    })();
+    if(yes) polishAllRun(p);
   });
 };
 /* 三版并排对比终审 */
@@ -1928,8 +1935,14 @@ function checkInbox(){
     var ap={id:newId(), title:(autoPages[0]&&autoPages[0].cls==='cover'?autoPages[0].title:(autoPages[0].title||'无题')), outline:d.text, slides:autoPages, linkNotes:{}, t:Date.now()};
     store.projects.push(ap); curId=ap.id; saveStore();
     renderSlides(); showPage('slidesPage');
-    showMsg($('slidesMsg'),'📬 收到「'+(d.title||'无题')+'」，已自动开工做出 '+autoPages.length+' 页（没花API钱）。要更讲究：点上面「🤖✨ 全篇双AI精做」','ok');
-    toast('📬 收到「'+(d.title||'无题')+'」，已自动做出 '+autoPages.length+' 页',5000);
+    if(d.auto){ /* v0.9.1 大管家寄信时已授权"自动精做"（信封auto:true）→ 不问人直接跑 */
+      showMsg($('slidesMsg'),'📬 收到「'+(d.title||'无题')+'」（带"自动精做"命令），已出 '+autoPages.length+' 页，现在自动精做…','ok');
+      toast('📬 收到带命令的信：自动精做开工（大管家寄信时您已同意）',5000);
+      polishAllRun(ap);
+    }else{
+      showMsg($('slidesMsg'),'📬 收到「'+(d.title||'无题')+'」，已自动开工做出 '+autoPages.length+' 页（没花API钱）。要更讲究：点上面「🤖✨ 全篇双AI精做」','ok');
+      toast('📬 收到「'+(d.title||'无题')+'」，已自动做出 '+autoPages.length+' 页',5000);
+    }
     return;
   }
   $('inboxCard').style.display='block';
