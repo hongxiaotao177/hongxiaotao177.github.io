@@ -8,6 +8,8 @@
   红小涛学习套装 · 病人大管家
   定位：全家资料的"管家"。按病人归堆（血气/呼吸机/脱敏病历，天然有章），
         按知识搜索（笔记/习题，全靠AI名片）。
+  v0.4.9 2026-09-04 真机补丁：洪老师vivo壳上竖排菜单没跳出来——X5长按选中后touchend可能不往外发。
+    改主触发路：选区站稳700ms自动亮（debounce），touchend/mouseup只当助攻；位置用兜里存的rect，不依赖活选区。
   v0.4.8 2026-09-04 洪老师拍板「选中文字中心菜单·一期」：
     ① 阅读器里点亮一段话 → 竖排中心菜单跟在选区下方（系统横菜单照旧各管各）：
        🔍三路同查（选中段当问题，资料+网上+Kimi对照三棒同发，聚合对照置顶，阅读器让位跳去问AI区看结果）
@@ -345,7 +347,7 @@
 </div>
 
 <script>
-var SW_VERSION = "0.4.8";
+var SW_VERSION = "0.4.9";
 document.getElementById('verTop').textContent = SW_VERSION;
 function $(id){ return document.getElementById(id); }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -1004,27 +1006,32 @@ function applyAiToc(text, pairs){
 
 /* ══════════ v0.4.8 选中文字·中心菜单（竖排，跟着选区走）══════════
    点亮一段话 → 系统横菜单照出（复制/分享归它管），咱们的竖排菜单出现在选区下方：
-   🔍三路同查 / 📊寄PPT两个方向 / 预留位。坑①点菜单瞬间选区会灭 → selectionchange时就把文字抄进兜里；
-   坑②滚动时菜单悬空 → 一滚就收。菜单是登记册SEL_MENU，以后加功能=添一行。 */
-var selMenuTxt='';
+   🔍三路同查 / 📊寄PPT两个方向 / 预留位。坑①点菜单瞬间选区会灭 → selectionchange时就把文字+位置都抄进兜里；
+   坑②滚动时菜单悬空 → 一滚就收。菜单是登记册SEL_MENU，以后加功能=添一行。
+   v0.4.9补丁（洪老师真机：X5壳菜单没跳出来）：X5长按选中后touchend可能不往外发 →
+   改靠"选区站稳700ms"自动亮菜单（debounce），touchend只当助攻；位置用兜里存的rect，不靠活选区。 */
+var selMenuTxt='', selMenuRect=null, selMenuTimer=null;
 var SEL_MENU=[
   {ico:'🔍', name:'三路同查（资料+网上+对照）', fn:function(){ selActAsk(); }},
   {ico:'📊', name:'寄给PPT · 选中的话做新PPT', fn:function(){ selActPPT(false); }},
   {ico:'📊', name:'寄给PPT · 整篇做PPT（选中段当中心）', fn:function(){ selActPPT(true); }},
   {ico:'＋', name:'（预留位，以后加功能）', fn:function(){ toast('这是预留位：以后新功能添在这'); }}
 ];
-function hideSelMenu(){ var m=$('selMenu'); if(m) m.style.display='none'; }
+function hideSelMenu(){ clearTimeout(selMenuTimer); var m=$('selMenu'); if(m) m.style.display='none'; }
 function bindSelMenu(){
   var body=$('readBody');
   document.addEventListener('selectionchange', function(){
     var s=window.getSelection();
-    if(!s||s.isCollapsed) return;
+    if(!s||s.isCollapsed){ clearTimeout(selMenuTimer); return; } /* 塌了只消定时器；兜里的话留着给菜单按钮用 */
     var txt=String(s.toString()).replace(/^\s+|\s+$/g,'');
-    if(!txt) return;
+    if(!txt){ clearTimeout(selMenuTimer); return; }
     if(!body.contains(s.anchorNode)) return; /* 只管阅读器里的选择 */
     selMenuTxt=txt; /* 当场抄进兜里，选区灭了也不怕 */
+    try{ selMenuRect=s.getRangeAt(0).getBoundingClientRect(); }catch(e){ selMenuRect=null; }
+    /* 选区站稳700ms自动亮（X5可能不发touchend，这是主触发路） */
+    clearTimeout(selMenuTimer); selMenuTimer=setTimeout(showSelMenu, 700);
   });
-  body.addEventListener('touchend', function(){ setTimeout(showSelMenu, 350); }); /* 等系统横菜单先站稳 */
+  body.addEventListener('touchend', function(){ setTimeout(showSelMenu, 350); }); /* 助攻：正常浏览器抬手就亮 */
   body.addEventListener('mouseup', function(){ setTimeout(showSelMenu, 200); });
   document.addEventListener('touchstart', function(e){
     var m=$('selMenu');
@@ -1032,11 +1039,13 @@ function bindSelMenu(){
   });
 }
 function showSelMenu(){
-  var s=window.getSelection();
-  if(!selMenuTxt || !s || s.isCollapsed || !String(s.toString()).replace(/^\s+|\s+$/g,'')) return;
+  if(!selMenuTxt) return;
   if($('readDlg').style.display!=='block') return;
-  var r; try{ r=s.getRangeAt(0).getBoundingClientRect(); }catch(e){ return; }
-  if(!r || (r.width===0 && r.height===0)) return;
+  /* 位置优先用活选区，塌了用兜里存的（X5点系统菜单后选区可能已塌） */
+  var r=null, s=window.getSelection();
+  try{ if(s && !s.isCollapsed) r=s.getRangeAt(0).getBoundingClientRect(); }catch(e){}
+  if(!r || (r.width===0 && r.height===0)) r=selMenuRect;
+  if(!r) return;
   $('selMenuQuote').textContent='已选中：'+selMenuTxt.slice(0,18)+(selMenuTxt.length>18?'…':'');
   var h='';
   SEL_MENU.forEach(function(it,i){ h+='<button class="sm-it" data-sm="'+i+'">'+it.ico+' '+esc(it.name)+'</button>'; });
