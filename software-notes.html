@@ -4,6 +4,16 @@
  学习笔记·双链版 —— 单文件 HTML 工具
 ====================================================================
  修改记录：
+   v2.14.4 2026-09-05 「寄件镜像备份+红绿灯」：pptSend 写完 localStorage 后调 pptBoxBackup
+        （照抄PPT工坊v0.9.4同款精简版）——打包 ppt_inbox/ppt_inbox_q/ppt_busy 三key写壳授权
+        文件夹 ppt_inbox.json（旧内容留底 .bak），有坚果云钥匙（hx_dav_user/hx_dav_pass）
+        顺手 davUp 到 /学习套装备份/；寄件按钮旁红绿灯：绿📦已备份 / 红🔴备份失败（常亮+
+        醒目toast）/ 灰未接文件夹；云状态小字☁️已同步/未同步。复用文献书架同一授权文件夹，
+        不新增授权流程。
+   v2.14.3 2026-09-05 「寄件排队+马上叫醒」：寄PPT工坊改走 pptSend——信箱有未收件或工坊
+        在干活（ppt_busy锁）时进队列 ppt_inbox_q，防连寄覆盖吃掉前一件；两处寄件点成功后
+        给「🚀 马上叫醒PPT工坊」按钮（wakePptNow）：有锁提示容后继续，无锁调壳桥
+        LearnShell.wakePpt() 直达PPT工坊（需壳v1.5.0+），浏览器里提示请在壳内用。
    v2.13.0 2026-08-11 「🌐 云端切片」（手机只当收发室）：
         - 发货：书架多选界面加「🌐发到云端切」——手机只做本地提取文字（不发AI不亮屏），
           文字+工单传到仓库 slice-inbox/（>35万字自动拆part）；AI认书/定级也挪到云端做。
@@ -1406,6 +1416,7 @@
         <textarea id="pptText"></textarea>
         <div class="btn-row">
           <button type="button" class="btn" id="pptToGongfang">📤 发送到PPT工坊</button>
+          <span id="pptBoxLight" style="display:none;align-items:center;gap:4px;font-size:12px;color:#5b554b;"><span id="pptBoxDot" style="width:10px;height:10px;border-radius:50%;display:inline-block;background:#9a938a;"></span><span id="pptBoxTx">未接文件夹</span><span id="pptBoxCloud" style="font-size:11px;color:#8a8178;"></span></span><!-- v2.14.4 寄件镜像红绿灯 -->
           <button type="button" class="btn secondary" id="pptCopy">📋 复制大纲md</button>
         </div>
         <div class="btn-row">
@@ -6031,17 +6042,116 @@ function pptSend(){
       showMsg(pptMsg, errMsg, 'err');
     }, st);
 }
+/* v2.14.4 寄件镜像备份+红绿灯（第二班，照抄PPT工坊v0.9.4 pptBox 精简版）：
+   pptSend 写完 localStorage 后调 pptBoxBackup——打包 ppt_inbox/ppt_inbox_q/ppt_busy 三key
+   → base64 → writeFile('ppt_inbox.json')（旧内容留底 .bak）；有坚果云钥匙顺手 davUp 到
+   /学习套装备份/。寄件按钮旁红绿灯：绿📦已备份 / 红🔴备份失败(常亮+醒目toast) / 灰未接文件夹。
+   复用文献书架同一授权文件夹（folderSet），不新增授权流程。无桥/没授权→灰灯静默返回false。 */
+var pptBoxBackup = (function(){
+  function bridged(){ try{ return !!(window.LearnShell && window.LearnShell.folderSet && window.LearnShell.folderSet()); }catch(e){ return false; } }
+  function light(state, txt, cloud){
+    try{
+      var box = $('pptBoxLight'); if(!box) return;
+      box.style.display = 'inline-flex';
+      $('pptBoxDot').style.background = state==='green' ? '#2e9e4f' : (state==='red' ? '#d33' : '#9a938a');
+      $('pptBoxTx').textContent = txt;
+      $('pptBoxCloud').textContent = cloud || '';
+    }catch(e){}
+  }
+  function backup(){
+    if(!bridged()){ light('gray', '未接文件夹', ''); return false; }
+    try{
+      var pkg = {
+        inbox: localStorage.getItem('ppt_inbox'),
+        queue: localStorage.getItem('ppt_inbox_q'),
+        busy: localStorage.getItem('ppt_busy'),
+        savedAt: Date.now()
+      };
+      var old = null; try{ old = window.LearnShell.readFile('ppt_inbox.json'); }catch(e){}
+      if(old){ try{ window.LearnShell.writeFile('ppt_inbox.json.bak', old); }catch(e){} }
+      var wr = window.LearnShell.writeFile('ppt_inbox.json', ghB64enc(JSON.stringify(pkg)));
+      if(typeof wr === 'string' && /err|fail/i.test(wr)) throw new Error(wr);
+      /* 云同步：公共钱罐有坚果云钥匙就顺手上传（不影响绿灯） */
+      var u = null, p = null; try{ u = localStorage.getItem('hx_dav_user'); p = localStorage.getItem('hx_dav_pass'); }catch(e){}
+      var cloud = '☁️未同步';
+      if(u && p){
+        var r = ''; try{ r = window.LearnShell.davUp(u, p, 'ppt_inbox.json', '/学习套装备份/'); }catch(e){}
+        if(/ok/i.test(String(r || ''))) cloud = '☁️已同步';
+      }
+      light('green', '📦已备份', cloud);
+      return true;
+    }catch(e){
+      light('red', '🔴备份失败', '');
+      try{ if(window.LearnShell && window.LearnShell.toast) window.LearnShell.toast('🔴 寄件镜像备份失败：' + String((e && e.message) || e)); }catch(e2){}
+      popToast('🔴 寄件镜像备份失败：' + String((e && e.message) || e) + '（寄件只在localStorage，清缓存会丢，请检查授权文件夹）', 10000);
+      return false;
+    }
+  }
+  try{ if(bridged()) light('green', '📦镜像待命', ''); }catch(e){}
+  return backup;
+})();
+/* 寄件排队（2026-09-05 第一班）：信箱有未收件或工坊在干活→进队列 ppt_inbox_q，防连寄覆盖吃掉前一件。
+   返回 'sent'（直接进信箱）或 'queued:N'（排第N位）。 */
+function pptSend(obj){
+  if(localStorage.getItem('ppt_busy') || localStorage.getItem('ppt_inbox')){
+    var q = [];
+    try{ q = JSON.parse(localStorage.getItem('ppt_inbox_q') || '[]') || []; }catch(e){ q = []; }
+    q.push(obj);
+    localStorage.setItem('ppt_inbox_q', JSON.stringify(q));
+    try{ pptBoxBackup(); }catch(e){} /* v2.14.4 寄件镜像 */
+    return 'queued:' + q.length;
+  }
+  localStorage.setItem('ppt_inbox', JSON.stringify(obj));
+  try{ pptBoxBackup(); }catch(e){} /* v2.14.4 寄件镜像 */
+  return 'sent';
+}
+/* 马上叫醒：查干活锁 ppt_busy；有锁→原地提示"有任务在做，容后继续"；无锁→调壳桥 LearnShell.wakePpt() 直达PPT工坊。浏览器里无桥→提示请在手机壳里用。 */
+function wakePptNow(){
+  var busy = null;
+  try{ busy = JSON.parse(localStorage.getItem('ppt_busy') || 'null'); }catch(e){}
+  if(busy && busy.title){
+    var since = '';
+    try{ var d = new Date(busy.since); since = '（' + (d.getMonth()+1) + '月' + d.getDate() + '日 ' + ('0'+d.getHours()).slice(-2) + ':' + ('0'+d.getMinutes()).slice(-2) + ' 开始）'; }catch(e){}
+    popToast('🔒 有任务在做：「' + busy.title + '」' + since + '，你的任务已排队，容后继续', 5000);
+    return;
+  }
+  if(window.LearnShell && window.LearnShell.wakePpt){
+    window.LearnShell.wakePpt();
+    popToast('🚀 已叫醒，正在打开PPT工坊…', 3000);
+  }else{
+    popToast('请在手机学习套装壳里使用本按钮', 3000);
+  }
+}
+/* v2.14.3 发送成功后显示「🚀 马上叫醒PPT工坊」按钮（用完即弃，最小改动） */
+function showWakePptBtn(host){
+  var btn = document.createElement('button');
+  btn.textContent = '🚀 马上叫醒PPT工坊';
+  btn.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:9999;padding:8px 16px;border:none;border-radius:8px;background:#ff7043;color:#fff;font-size:14px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.25);';
+  btn.onclick = function(){ wakePptNow(); btn.parentNode && btn.parentNode.removeChild(btn); };
+  host.appendChild(btn);
+  setTimeout(function(){ btn.parentNode && btn.parentNode.removeChild(btn); }, 15000);
+}
 /* 发送到PPT工坊收件箱（含用户改过的最新md） */
 function pptSendToGongfang(){
   var text = pptText.value.replace(/^\s+|\s+$/g, '');
   if(!text || text.indexOf('##') < 0){ showMsg(pptMsg2, '大纲里至少要有一页（## 开头），请检查格式。', 'err'); return; }
   try{
-    localStorage.setItem('ppt_inbox', JSON.stringify({
+    /* v2.14.3 改走 pptSend 排队寄件，防连寄覆盖 */
+    var obj = {
       title: pptCtx ? pptCtx.bankTitle : '学习笔记大纲',
       text: text, from: '学习笔记', t: Date.now()
-    }));
-    popToast('📤 大纲已发送——现在去打开「PPT工坊」，会自动收下这份大纲', 4500);
-    showMsg(pptMsg2, '✅ 已发送成功！现在去打开「PPT工坊」，它会弹窗问您收不收。', 'ok');
+    };
+    var r = pptSend(obj);
+    if(r === 'sent'){
+      popToast('📤 大纲已发送——现在去打开「PPT工坊」，会自动收下这份大纲', 4500);
+      showMsg(pptMsg2, '✅ 已发送成功！现在去打开「PPT工坊」，它会弹窗问您收不收。', 'ok');
+    }else{
+      var n = r.split(':')[1];
+      popToast('📤 大纲已排队第' + n + '位——PPT工坊收完前一件会自动接上', 4500);
+      showMsg(pptMsg2, '✅ 已排队第' + n + '位！PPT工坊收完前一件会自动接上。', 'ok');
+    }
+    /* v2.14.3 发送成功后给「马上叫醒」按钮 */
+    showWakePptBtn(pptMsg2.parentNode || document.body);
   }catch(e){
     showMsg(pptMsg2, '写入收件箱失败：浏览器禁止了本地存储。', 'err');
   }
@@ -6969,7 +7079,7 @@ ghBindBtn($('ghConfNo'), function(){
      不通=红条常驻（只说连不上，不影响使用）
    注意：version.json 与软件副本（dl 字段指向的文件）由交付端（AI）每次发版时
    推到备份仓库；本文件版本号改 SW_VERSION 一处即可。 */
-var SW_VERSION = '2.14.2'; /* v2.14.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v2.14.1 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */
+var SW_VERSION = '2.14.4'; /* v2.14.4 寄件镜像备份+红绿灯（pptBoxBackup+坚果云davUp） */ /* v2.14.3 寄件排队防覆盖+马上叫醒按钮 */ /* v2.14.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v2.14.1 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */
 /* v2.6.7 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["bg_gh_user", "hx_gh_user"], ["bg_gh_tok", "hx_gh_tok"], ["bg_gh_repo", "hx_gh_repo"], ["bg_apikey", "hx_apikey"]];
@@ -7732,8 +7842,15 @@ $('btnBookPpt').addEventListener('click', function(){
     md += '\n';
   });
   try{
-    localStorage.setItem('ppt_inbox', JSON.stringify({ title: b.title, text: md, from: '学习笔记·我的书', t: Date.now() }));
-    popToast('📤 已发送——现在去打开「PPT工坊」，会自动收下这本书的大纲', 4500);
+    /* v2.14.3 改走 pptSend 排队寄件，防连寄覆盖；成功后给「马上叫醒」按钮 */
+    var obj = { title: b.title, text: md, from: '学习笔记·我的书', t: Date.now() };
+    var r = pptSend(obj);
+    if(r === 'sent'){
+      popToast('📤 已发送——现在去打开「PPT工坊」，会自动收下这本书的大纲', 4500);
+    }else{
+      popToast('📤 已排队第' + r.split(':')[1] + '位——PPT工坊收完前一件会自动接上', 4500);
+    }
+    showWakePptBtn(document.body);
   }catch(e){
     popToast('写入收件箱失败：浏览器禁止了本地存储', 3000);
   }
