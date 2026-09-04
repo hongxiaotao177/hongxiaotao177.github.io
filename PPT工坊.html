@@ -3,13 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PPT工坊 v0.9.3</title>
+<title>PPT工坊 v0.9.4</title>
 <!--
   PPT工坊 —— 红小涛学习套装第五位成员
   工作流：学习笔记整理知识点 → AI生成Markdown大纲 → 内部邮路(ppt_inbox)寄到本软件
           → 大纲编辑页改稿 → 一键生成HTML幻灯片 → 横屏播放 → 每页可AI重做/换版式
           → 导出单个HTML（微信发别人，浏览器打开即放映）
   修改记录：
+    v0.9.4 2026-09-05 第二班（信箱镜像备份+红绿灯+云同步）：
+      ①pptBoxBackup镜像：ppt_inbox/ppt_inbox_q/ppt_busy 三兄弟每次写/删后，打包
+        {inbox,queue,busy,savedAt} 写壳授权文件夹 ppt_inbox.json（旧内容留底 .bak）；
+        有坚果云钥匙（hx_dav_user/hx_dav_pass）顺手 davUp 到 /学习套装备份/。
+      ②右上角红绿灯：绿📦已备份 / 红🔴备份失败（常亮+长toast醒目通知）/ 灰未接文件夹；
+        云状态小字☁️已同步/未同步（不影响绿灯）。
+      ③开门对齐：checkInbox 最先跑 pptBoxRestore——三key全空且文件夹镜像有货→写回
+        localStorage（换手机/重装后续上工作流）；有任一key非空以localStorage为准不动。
     v0.9.3 2026-09-05 第一班（寄件排队+马上叫醒配套）：
       ①收件端队列续件 pptInboxNext：收下一件后 ppt_inbox_q 队首挪进信箱接着收
         （人工收和v0.9.0自动收两条路都续），配合寄件端防连寄覆盖。
@@ -287,6 +295,95 @@ hxStore.reg('ppt_gongfang_v01');
 try{ hxStore.sync(); }catch(e){} /* 开门就对齐：必须在 loadStore 之前跑完（桥是同步的），让文件夹里的数据说了算 */
 </script>
 
+<script>
+/* ==================== v0.9.4 信箱镜像备份+红绿灯+云同步（2026-09-05 第二班，照抄hxStore风格） ====================
+   规矩：ppt_inbox / ppt_inbox_q / ppt_busy 三兄弟每次写/删后，打包成
+   {inbox,queue,busy,savedAt} → base64 → LearnShell.writeFile('ppt_inbox.json')；
+   写之前旧内容留底 ppt_inbox.json.bak。无桥/没授权文件夹 → 灰灯静默返回false。
+   本地写成功后，公共钱罐有 hx_dav_user/hx_dav_pass → davUp 到坚果云 /学习套装备份/。
+   右上角红绿灯：绿📦已备份 / 红🔴备份失败(常亮+长toast) / 灰未接文件夹；云状态小字。 */
+var pptBox=(function(){
+  var KEYS=['ppt_inbox','ppt_inbox_q','ppt_busy'];
+  var lightEl=null, cloudEl=null;
+  function bridged(){ try{ return !!(window.LearnShell&&LearnShell.folderSet&&LearnShell.folderSet()); }catch(e){ return false; } }
+  function b64(s){ return btoa(unescape(encodeURIComponent(s))); }
+  function unb64(s){ return decodeURIComponent(escape(atob(s))); }
+  function mkLight(){
+    if(lightEl||!document.body) return;
+    var d=document.createElement('div'); d.id='pptBoxLight';
+    d.style.cssText='position:fixed;top:56px;right:10px;z-index:90;display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.92);border:1px solid #d8d2c6;border-radius:999px;padding:4px 10px;font-size:12px;color:#5b554b;box-shadow:0 1px 5px rgba(0,0,0,.12);';
+    var dot=document.createElement('span');
+    dot.style.cssText='width:10px;height:10px;border-radius:50%;display:inline-block;background:#9a938a;';
+    var tx=document.createElement('span'); tx.textContent='未接文件夹';
+    var cl=document.createElement('span'); cl.style.cssText='font-size:11px;color:#8a8178;'; cl.textContent='';
+    d.appendChild(dot); d.appendChild(tx); d.appendChild(cl);
+    document.body.appendChild(d);
+    lightEl={dot:dot,tx:tx}; cloudEl=cl;
+  }
+  function light(state, txt){
+    try{ mkLight(); if(!lightEl) return;
+      lightEl.dot.style.background = state==='green' ? '#2e9e4f' : (state==='red' ? '#d33' : '#9a938a');
+      lightEl.tx.textContent = txt;
+    }catch(e){}
+  }
+  function cloudTxt(t){ try{ if(cloudEl) cloudEl.textContent=t; }catch(e){} }
+  function toastBig(msg){
+    try{ if(window.LearnShell&&LearnShell.toast) LearnShell.toast(msg); }catch(e){}
+    try{ if(typeof toast==='function') toast(msg, 10000); }catch(e){}
+  }
+  /* 备份：三key打包写文件；旧内容留底.bak；成功后试试云同步。返回 true/false */
+  function backup(){
+    if(!bridged()){ light('gray','未接文件夹'); cloudTxt(''); return false; }
+    try{
+      var pkg={
+        inbox:localStorage.getItem('ppt_inbox'),
+        queue:localStorage.getItem('ppt_inbox_q'),
+        busy:localStorage.getItem('ppt_busy'),
+        savedAt:Date.now()
+      };
+      var old=null; try{ old=LearnShell.readFile('ppt_inbox.json'); }catch(e){}
+      if(old){ try{ LearnShell.writeFile('ppt_inbox.json.bak', old); }catch(e){} }
+      var wr=LearnShell.writeFile('ppt_inbox.json', b64(JSON.stringify(pkg)));
+      if(typeof wr==='string' && /err|fail/i.test(wr)) throw new Error(wr);
+      light('green','📦已备份');
+      /* v0.9.4 云同步：公共钱罐有坚果云钥匙就顺手上传（不影响绿灯） */
+      var u=null,p=null; try{ u=localStorage.getItem('hx_dav_user'); p=localStorage.getItem('hx_dav_pass'); }catch(e){}
+      if(u&&p){
+        var r=''; try{ r=LearnShell.davUp(u,p,'ppt_inbox.json','/学习套装备份/'); }catch(e){}
+        cloudTxt(/ok/i.test(String(r||''))?'☁️已同步':'☁️未同步');
+      }else cloudTxt('☁️未同步');
+      return true;
+    }catch(e){
+      light('red','🔴备份失败'); cloudTxt('');
+      toastBig('🔴 PPT信箱镜像备份失败：'+String((e&&e.message)||e)+'（三兄弟目前只在localStorage，清缓存会丢，请检查授权文件夹）');
+      return false;
+    }
+  }
+  /* v0.9.4 开门对齐：三key全空且文件夹镜像有货→写回localStorage（换手机/重装后续上）；有任一key非空以localStorage为准不动 */
+  function restore(){
+    if(!bridged()) return false;
+    var hasAny=false;
+    for(var i=0;i<KEYS.length;i++){ try{ if(localStorage.getItem(KEYS[i])){ hasAny=true; break; } }catch(e){} }
+    if(hasAny) return false;
+    var f=null; try{ f=LearnShell.readFile('ppt_inbox.json'); }catch(e){}
+    if(!f) return false;
+    try{
+      var pkg=JSON.parse(unb64(f));
+      if(pkg&&typeof pkg==='object'){
+        if(pkg.inbox) localStorage.setItem('ppt_inbox', pkg.inbox);
+        if(pkg.queue) localStorage.setItem('ppt_inbox_q', pkg.queue);
+        if(pkg.busy) localStorage.setItem('ppt_busy', pkg.busy);
+        light('green','📦已从镜像恢复');
+        return true;
+      }
+    }catch(e){}
+    return false;
+  }
+  try{ mkLight(); if(bridged()) light('green','📦镜像待命'); else light('gray','未接文件夹'); }catch(e){}
+  return {backup:backup, restore:restore, bridged:bridged};
+})();
+</script>
+
 <header>📊 PPT工坊<span class="ver" id="hdVer">v0.4.7</span></header>
 
 <div class="page" id="homePage">
@@ -526,7 +623,7 @@ try{ hxStore.sync(); }catch(e){} /* 开门就对齐：必须在 loadStore 之前
 
 <script>
 "use strict";
-var SW_VERSION = "0.9.3"; /* v0.9.3 队列续件+干活锁 */ /* v0.9.2 ①hxStore仓管员：存盘同步写壳文件夹 ②PPT链路闭环：认taskId、做完把大纲样品寄回大管家（guanjia_inbox）、收rev修改意见自动照改再寄回、3趟封顶提醒 */ /* v0.9.1 认大管家auto信自动全篇精做（授权在寄信时），polishAllRun抽公共 */ /* v0.9.0 二期：自动收信自动开工+双AI逐页精做（千问原著/快校对）+每页三版开关（原著/校对/AI综合）+三版对比终审，导出剥vers（详见文件头） */ /* v0.7.5 系统弹窗大扫除：剩下6处prompt+3处confirm全换自画对话框hxAsk/hxConfirm（AI起草大纲/填Key/涂黑改/插链接/单页AI改/云端恢复/删项目/删页），手机壳上不再"点了没反应" */ /* v0.7.4 三件套：①重做弹窗显示"正在重做第N页《标题》+内容预览"防点错页 ②小活（单页重做）优先派千问qwen-plus（几秒~20秒），没Key/失败自动退Kimi ③AI干活浮动秒表胶囊趴右下角 ④重做后验收：原有表格被AI弄丢→自动重试一次，仍丢则不覆盖原页 */ /* v0.7.3 重做全程浮动提示：开工/成功/失败都弹toast（洪医生真机反馈：进度消息在页面顶部，滚到下面看不见，像死机） */ /* v0.7.2 修数据错乱：AI重做在途时移动/删除该页，写回改认"页面对象"不认下标（独立测试t37抓到） */ /* v0.7.1 修"AI重做本页点了没反应"：病根=手机壳X5内核不理系统prompt()弹窗（直接当取消），改自画弹窗（习题学习删除确认同款药方） */ /* v0.7.0 千问自动交叉校对（愿望清单第3批）：「🤖 自动校对」一键两棒——第1棒发千问qwen-plus（公共钱罐hx_qwenkey，约1分钱）拿校对意见，第2棒自动交给贴回校对管道让Kimi照改大纲（没提到的一字不动）；开关可选千问/Kimi自查；千问答"没发现问题"就不花第2棒的钱 */ /* v0.6.1 自选背景图（愿望清单第2批）：幻灯片页「🖼️ 背景图」相册选图→canvas压缩≤1600px、JPEG逐步降质（≤200KB）→存本PPT的p.bg（不设全局）；渲染时.slide-page叠82%不透明蒙纱（米白皮用米白纱/深色皮用深色纱）保证字可读；「✕ 清除背景」一键还原；导出HTML内嵌带走。提醒：导出会把照片带出去，别夹病人信息 */ /* v0.6.0 四套皮肤（米白学术/深蓝正式/墨绿讲堂/黑板粉笔），每个PPT各选各的，导出HTML带着走；点屏翻页其实v0.2.0起就有（点左35%上页/右65%下页） */ /* v0.5.0 放映自适应：底栏实底让位+内容超高自动等比缩小（洪医生横屏讲课表格最后一行被吃） */ /* v0.4.8 AI报错带官方原因+400也自动换模型重试（洪医生贴回校对撞HTTP400：疑公共模型罐里存着已下架的moonshot-v1系列，400不走404重试路） */ /* v0.4.7 版本字样治病根：头顶+页脚+标题改成代码自动填SW_VERSION（v0.4.0~0.4.6期间头顶一直显示旧号，害用户以为没更新） */ /* v0.4.6 更新通道免Token备用路：自检/下载新版在API不通或没填Token时自动走github.io公开直链 */ /* v0.4.5 贴回校对结果：别的AI的校对意见贴进来，本软件AI照改大纲（原文没提到的部分不动）+秒表进度 */ /* v0.4.4 复制校对：大纲/全片一键连校对指令复制，借别的AI挑错，不花自己Key */ /* v0.4.3 修404：死模型自动换kimi-k2.6+重试；max_tokens 8000→16384（k2.6思考型） */ /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
+var SW_VERSION = "0.9.4"; /* v0.9.4 信箱镜像备份+红绿灯+坚果云自动同步 */ /* v0.9.3 队列续件+干活锁 */ /* v0.9.2 ①hxStore仓管员：存盘同步写壳文件夹 ②PPT链路闭环：认taskId、做完把大纲样品寄回大管家（guanjia_inbox）、收rev修改意见自动照改再寄回、3趟封顶提醒 */ /* v0.9.1 认大管家auto信自动全篇精做（授权在寄信时），polishAllRun抽公共 */ /* v0.9.0 二期：自动收信自动开工+双AI逐页精做（千问原著/快校对）+每页三版开关（原著/校对/AI综合）+三版对比终审，导出剥vers（详见文件头） */ /* v0.7.5 系统弹窗大扫除：剩下6处prompt+3处confirm全换自画对话框hxAsk/hxConfirm（AI起草大纲/填Key/涂黑改/插链接/单页AI改/云端恢复/删项目/删页），手机壳上不再"点了没反应" */ /* v0.7.4 三件套：①重做弹窗显示"正在重做第N页《标题》+内容预览"防点错页 ②小活（单页重做）优先派千问qwen-plus（几秒~20秒），没Key/失败自动退Kimi ③AI干活浮动秒表胶囊趴右下角 ④重做后验收：原有表格被AI弄丢→自动重试一次，仍丢则不覆盖原页 */ /* v0.7.3 重做全程浮动提示：开工/成功/失败都弹toast（洪医生真机反馈：进度消息在页面顶部，滚到下面看不见，像死机） */ /* v0.7.2 修数据错乱：AI重做在途时移动/删除该页，写回改认"页面对象"不认下标（独立测试t37抓到） */ /* v0.7.1 修"AI重做本页点了没反应"：病根=手机壳X5内核不理系统prompt()弹窗（直接当取消），改自画弹窗（习题学习删除确认同款药方） */ /* v0.7.0 千问自动交叉校对（愿望清单第3批）：「🤖 自动校对」一键两棒——第1棒发千问qwen-plus（公共钱罐hx_qwenkey，约1分钱）拿校对意见，第2棒自动交给贴回校对管道让Kimi照改大纲（没提到的一字不动）；开关可选千问/Kimi自查；千问答"没发现问题"就不花第2棒的钱 */ /* v0.6.1 自选背景图（愿望清单第2批）：幻灯片页「🖼️ 背景图」相册选图→canvas压缩≤1600px、JPEG逐步降质（≤200KB）→存本PPT的p.bg（不设全局）；渲染时.slide-page叠82%不透明蒙纱（米白皮用米白纱/深色皮用深色纱）保证字可读；「✕ 清除背景」一键还原；导出HTML内嵌带走。提醒：导出会把照片带出去，别夹病人信息 */ /* v0.6.0 四套皮肤（米白学术/深蓝正式/墨绿讲堂/黑板粉笔），每个PPT各选各的，导出HTML带着走；点屏翻页其实v0.2.0起就有（点左35%上页/右65%下页） */ /* v0.5.0 放映自适应：底栏实底让位+内容超高自动等比缩小（洪医生横屏讲课表格最后一行被吃） */ /* v0.4.8 AI报错带官方原因+400也自动换模型重试（洪医生贴回校对撞HTTP400：疑公共模型罐里存着已下架的moonshot-v1系列，400不走404重试路） */ /* v0.4.7 版本字样治病根：头顶+页脚+标题改成代码自动填SW_VERSION（v0.4.0~0.4.6期间头顶一直显示旧号，害用户以为没更新） */ /* v0.4.6 更新通道免Token备用路：自检/下载新版在API不通或没填Token时自动走github.io公开直链 */ /* v0.4.5 贴回校对结果：别的AI的校对意见贴进来，本软件AI照改大纲（原文没提到的部分不动）+秒表进度 */ /* v0.4.4 复制校对：大纲/全片一键连校对指令复制，借别的AI挑错，不花自己Key */ /* v0.4.3 修404：死模型自动换kimi-k2.6+重试；max_tokens 8000→16384（k2.6思考型） */ /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
 /* 公共钱罐：API key/GitHub配置 一处填处处有（与其他软件共享 hx_*） */
 (function(){
   var HX_MAP=[["hx_apikey","hx_apikey"],["hx_gh_user","hx_gh_user"],["hx_gh_tok","hx_gh_tok"],["hx_gh_repo","hx_gh_repo"]];
@@ -1268,6 +1365,7 @@ function buildFromOutline(){
   if(!p){ p={id:newId(), title:'', outline:'', slides:[], t:Date.now()}; store.projects.push(p); curId=p.id; }
   /* v0.9.3 干活锁：生成开工挂 ppt_busy，寄件端见此锁→寄件排队/叫醒按钮提示容后继续 */
   try{ localStorage.setItem('ppt_busy', JSON.stringify({title:(pages[0]&&pages[0].title)||p.title||'无题', since:Date.now()})); }catch(e){}
+  try{ pptBox.backup(); }catch(e){} /* v0.9.4 信箱镜像 */
   p.outline=md;
   p.slides=pages;
   pages.forEach(function(s){ if(!s.vers) s.vers={orig:pageToMd(s),proof:null,merged:null}; if(!s.use) s.use='orig'; }); /* v0.9.0 三版初始化（此处不调ensureVers：它在后面的script块定义，点击时其实已可用，但手写初始化更稳） */
@@ -1277,6 +1375,7 @@ function buildFromOutline(){
   saveStore(); renderSlides(); showPage('slidesPage');
   /* v0.9.3 干活锁：生成完摘锁 */
   try{ localStorage.removeItem('ppt_busy'); }catch(e){}
+  try{ pptBox.backup(); }catch(e){} /* v0.9.4 信箱镜像 */
   showMsg($('slidesMsg'),'✅ 生成 '+pages.length+' 页。哪页不满意就点那页的「🔄AI重做」','ok');
 }
 function renderSlidesIfReady(){ var p=curProj(); if(p&&p.slides.length){ renderSlides(); showPage('slidesPage'); } }
@@ -1928,12 +2027,14 @@ function polishAllRun(p){
   polishing=true;
   /* v0.9.3 干活锁：全篇精做是真正的长活（几分钟），开工挂 ppt_busy，做完（含中途每页失败但跑完）摘锁 */
   try{ localStorage.setItem('ppt_busy', JSON.stringify({title:p.title||'无题', since:Date.now()})); }catch(e){}
+  try{ pptBox.backup(); }catch(e){} /* v0.9.4 信箱镜像 */
   var n=p.slides.length, fails=[], i=0, t0=Date.now();
   toast('🤖 全篇精做开工，右下角秒表在走=活着',3000);
   (function next(){
     if(i>=n){
       polishing=false; saveStore(); renderSlides();
       try{ localStorage.removeItem('ppt_busy'); }catch(e){} /* v0.9.3 摘干活锁 */
+      try{ pptBox.backup(); }catch(e){} /* v0.9.4 信箱镜像 */
       var msg='✅ 全篇精做完成（'+Math.floor((Date.now()-t0)/1000)+'秒）'+(fails.length?('；'+fails.length+'页没成：第'+fails.join('、')+'页，可点那页「✨双AI」补做'):'，每页点开关切「校对」看看');
       showMsg($('slidesMsg'),msg, fails.length?'err':'ok'); toast(msg,6000); return;
     }
@@ -2055,16 +2156,19 @@ function hxStoreAfterPick(){
 function pptInboxNext(){
   var q=[]; try{ q=JSON.parse(localStorage.getItem('ppt_inbox_q')||'[]'); }catch(e){}
   if(q.length){ var nxt=q.shift(); localStorage.setItem('ppt_inbox_q',JSON.stringify(q)); localStorage.setItem('ppt_inbox',JSON.stringify(nxt)); setTimeout(checkInbox,300); }
+  try{ pptBox.backup(); }catch(e){} /* v0.9.4 信箱镜像 */
 }
 function checkInbox(){
+  try{ pptBox.restore(); }catch(e){} /* v0.9.4 开门对齐：三key全空且镜像有货→写回localStorage */
   try{ store.projects.forEach(function(p){ if(p.pendingSample) mailSample(p); }); }catch(e){} /* v0.9.2 补寄暂存样品 */
   var raw=localStorage.getItem('ppt_inbox');
   if(!raw) return;
   var d=null; try{ d=JSON.parse(raw); }catch(e){}
-  if(!d||!d.text){ localStorage.removeItem('ppt_inbox'); return; }
+  if(!d||!d.text){ localStorage.removeItem('ppt_inbox'); try{ pptBox.backup(); }catch(e){} /* v0.9.4 信箱镜像 */ return; }
   /* v0.9.2 修改意见信（rev:true）：不新建项目，找原项目交给照改管道，改完出页再寄回样品 */
   if(d.rev){
     localStorage.removeItem('ppt_inbox');
+    try{ pptBox.backup(); }catch(e){} /* v0.9.4 信箱镜像 */
     var tp=null; store.projects.forEach(function(x){ if(x.taskId===d.taskId) tp=x; });
     if(!tp){
       $('outlineText').value=d.text+'\n\n【大管家修改意见（没找到原任务，请人工处理）】\n'+(d.note||'');
@@ -2082,6 +2186,7 @@ function checkInbox(){
   var autoPages=parseOutline(d.text);
   if(autoPages.length){
     localStorage.removeItem('ppt_inbox');
+    try{ pptBox.backup(); }catch(e){} /* v0.9.4 信箱镜像（v0.9.0自动收信路径） */
     pptInboxNext(); /* v0.9.3 队列续件：自动收下也接排队件，防连寄卡住 */
     autoPages.forEach(ensureVers);
     var ap={id:newId(), title:(autoPages[0]&&autoPages[0].cls==='cover'?autoPages[0].title:(autoPages[0].title||'无题')), outline:d.text, slides:autoPages, linkNotes:{}, t:Date.now()};
@@ -2103,6 +2208,7 @@ function checkInbox(){
   $('inboxInfo').textContent='「'+(d.title||'无题')+'」（'+d.text.length+'字，'+new Date(d.t||Date.now()).toLocaleString()+'）';
   $('inboxAccept').onclick=function(){
     localStorage.removeItem('ppt_inbox');
+    try{ pptBox.backup(); }catch(e){} /* v0.9.4 信箱镜像 */
     pptInboxNext(); /* v0.9.3 队列续件 */
     $('inboxCard').style.display='none';
     var p={id:newId(), title:d.title||'来自学习笔记', outline:d.text, slides:[], linkNotes:{}, t:Date.now()};
@@ -2111,7 +2217,7 @@ function checkInbox(){
     showPage('editPage');
     showMsg($('editMsg'),'📬 大纲已收下，改完点「🎬 生成PPT」','ok');
   };
-  $('inboxDrop').onclick=function(){ localStorage.removeItem('ppt_inbox'); $('inboxCard').style.display='none'; };
+  $('inboxDrop').onclick=function(){ localStorage.removeItem('ppt_inbox'); try{ pptBox.backup(); }catch(e){} /* v0.9.4 信箱镜像 */ $('inboxCard').style.display='none'; };
 }
 
 /* ==================== v0.4.4 复制校对（借别的AI挑错，不花自己Key） ====================
