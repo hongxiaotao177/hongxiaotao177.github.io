@@ -10,6 +10,13 @@
           → 大纲编辑页改稿 → 一键生成HTML幻灯片 → 横屏播放 → 每页可AI重做/换版式
           → 导出单个HTML（微信发别人，浏览器打开即放映）
   修改记录：
+    v0.9.2 2026-09-04 晚班（洪老师拍板两件大事）：
+      ①hxStore仓管员：存盘同步写壳授权文件夹 hxdata_ppt_gongfang_v01.json，开门先对齐再loadStore；
+        左下角🗄️选/换文件夹。
+      ②PPT链路闭环：认信封taskId/round；出页即把大纲样品寄回大管家（guanjia_inbox，零花费）；
+        收rev修改意见信→照改管道改大纲重出页→再寄回样品；3趟封顶弹确认；别的任务样品未拆不盖信
+        （pendingSample暂存，开门补寄）。③修大病根：快校对写死的moonshot-v1-32k已下架（404），
+        v1全系进黑名单，callFastAI自动换hx_aimodel重试（此前全篇精做的校对棒全在悄悄失败）。纯加法。
     v0.9.1 2026-09-04 二期链路简化（洪老师拍板）：认得大管家信封里的 auto:true——
       收信自动出页后不问人直接全篇双AI精做（授权在大管家寄信那步已完成）；
       没auto字段的信（学习笔记老式信）照旧只出页不花钱。polishAllRun抽公共，手动按钮照旧先弹确认。
@@ -243,6 +250,37 @@
 </style>
 </head>
 <body>
+<script>
+/* ==================== hxStore 仓管员 v1（2026-09-04 新立，洪老师拍板：壳文件夹优先、localStorage兜底、开门自动对齐、自动搬家） ====================
+   规矩与大管家同款：壳里授权了文件夹 → 每次存盘同时写 hxdata_<键>.json；开门对齐（文件说了算；文件没有则本地搬过去=自动搬家）。纯加法。 */
+var hxStore=(function(){
+  var KEYS=[];
+  function bridged(){ try{ return !!(window.LearnShell&&LearnShell.folderSet&&LearnShell.folderSet()); }catch(e){ return false; } }
+  function b64(s){ return btoa(unescape(encodeURIComponent(s))); }
+  function unb64(s){ return decodeURIComponent(escape(atob(s))); }
+  function fn(key){ return 'hxdata_'+key+'.json'; }
+  function reg(key){ if(KEYS.indexOf(key)<0) KEYS.push(key); }
+  function set(key,obj){ try{ localStorage.setItem(key,JSON.stringify(obj)); }catch(e){} if(bridged()){ try{ LearnShell.writeFile(fn(key), b64(JSON.stringify(obj))); }catch(e){} } }
+  function sync(){
+    if(!bridged()) return null;
+    var moved=0, pulled=0;
+    KEYS.forEach(function(k){
+      var f=null; try{ f=LearnShell.readFile(fn(k)); }catch(e){}
+      if(f){ try{ localStorage.setItem(k, unb64(f)); pulled++; }catch(e){} }
+      else { var v=null; try{ v=localStorage.getItem(k); }catch(e){}
+        if(v){ try{ LearnShell.writeFile(fn(k), b64(v)); moved++; }catch(e){} } }
+    });
+    return {moved:moved,pulled:pulled};
+  }
+  function folderName(){ try{ return LearnShell.folderName()||''; }catch(e){ return ''; } }
+  function pick(){ try{ LearnShell.pickFolder(); }catch(e){} }
+  function pollFolder(done){ var n=0; var t=setInterval(function(){ n++;
+    if(bridged()){ clearInterval(t); done(true); } else if(n>30){ clearInterval(t); done(false); } },1000); }
+  return {bridged:bridged,reg:reg,set:set,sync:sync,folderName:folderName,pick:pick,pollFolder:pollFolder};
+})();
+hxStore.reg('ppt_gongfang_v01');
+try{ hxStore.sync(); }catch(e){} /* 开门就对齐：必须在 loadStore 之前跑完（桥是同步的），让文件夹里的数据说了算 */
+</script>
 
 <header>📊 PPT工坊<span class="ver" id="hdVer">v0.4.7</span></header>
 
@@ -483,7 +521,7 @@
 
 <script>
 "use strict";
-var SW_VERSION = "0.9.1"; /* v0.9.1 认大管家auto信自动全篇精做（授权在寄信时），polishAllRun抽公共 */ /* v0.9.0 二期：自动收信自动开工+双AI逐页精做（千问原著/快校对）+每页三版开关（原著/校对/AI综合）+三版对比终审，导出剥vers（详见文件头） */ /* v0.7.5 系统弹窗大扫除：剩下6处prompt+3处confirm全换自画对话框hxAsk/hxConfirm（AI起草大纲/填Key/涂黑改/插链接/单页AI改/云端恢复/删项目/删页），手机壳上不再"点了没反应" */ /* v0.7.4 三件套：①重做弹窗显示"正在重做第N页《标题》+内容预览"防点错页 ②小活（单页重做）优先派千问qwen-plus（几秒~20秒），没Key/失败自动退Kimi ③AI干活浮动秒表胶囊趴右下角 ④重做后验收：原有表格被AI弄丢→自动重试一次，仍丢则不覆盖原页 */ /* v0.7.3 重做全程浮动提示：开工/成功/失败都弹toast（洪医生真机反馈：进度消息在页面顶部，滚到下面看不见，像死机） */ /* v0.7.2 修数据错乱：AI重做在途时移动/删除该页，写回改认"页面对象"不认下标（独立测试t37抓到） */ /* v0.7.1 修"AI重做本页点了没反应"：病根=手机壳X5内核不理系统prompt()弹窗（直接当取消），改自画弹窗（习题学习删除确认同款药方） */ /* v0.7.0 千问自动交叉校对（愿望清单第3批）：「🤖 自动校对」一键两棒——第1棒发千问qwen-plus（公共钱罐hx_qwenkey，约1分钱）拿校对意见，第2棒自动交给贴回校对管道让Kimi照改大纲（没提到的一字不动）；开关可选千问/Kimi自查；千问答"没发现问题"就不花第2棒的钱 */ /* v0.6.1 自选背景图（愿望清单第2批）：幻灯片页「🖼️ 背景图」相册选图→canvas压缩≤1600px、JPEG逐步降质（≤200KB）→存本PPT的p.bg（不设全局）；渲染时.slide-page叠82%不透明蒙纱（米白皮用米白纱/深色皮用深色纱）保证字可读；「✕ 清除背景」一键还原；导出HTML内嵌带走。提醒：导出会把照片带出去，别夹病人信息 */ /* v0.6.0 四套皮肤（米白学术/深蓝正式/墨绿讲堂/黑板粉笔），每个PPT各选各的，导出HTML带着走；点屏翻页其实v0.2.0起就有（点左35%上页/右65%下页） */ /* v0.5.0 放映自适应：底栏实底让位+内容超高自动等比缩小（洪医生横屏讲课表格最后一行被吃） */ /* v0.4.8 AI报错带官方原因+400也自动换模型重试（洪医生贴回校对撞HTTP400：疑公共模型罐里存着已下架的moonshot-v1系列，400不走404重试路） */ /* v0.4.7 版本字样治病根：头顶+页脚+标题改成代码自动填SW_VERSION（v0.4.0~0.4.6期间头顶一直显示旧号，害用户以为没更新） */ /* v0.4.6 更新通道免Token备用路：自检/下载新版在API不通或没填Token时自动走github.io公开直链 */ /* v0.4.5 贴回校对结果：别的AI的校对意见贴进来，本软件AI照改大纲（原文没提到的部分不动）+秒表进度 */ /* v0.4.4 复制校对：大纲/全片一键连校对指令复制，借别的AI挑错，不花自己Key */ /* v0.4.3 修404：死模型自动换kimi-k2.6+重试；max_tokens 8000→16384（k2.6思考型） */ /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
+var SW_VERSION = "0.9.2"; /* v0.9.2 ①hxStore仓管员：存盘同步写壳文件夹 ②PPT链路闭环：认taskId、做完把大纲样品寄回大管家（guanjia_inbox）、收rev修改意见自动照改再寄回、3趟封顶提醒 */ /* v0.9.1 认大管家auto信自动全篇精做（授权在寄信时），polishAllRun抽公共 */ /* v0.9.0 二期：自动收信自动开工+双AI逐页精做（千问原著/快校对）+每页三版开关（原著/校对/AI综合）+三版对比终审，导出剥vers（详见文件头） */ /* v0.7.5 系统弹窗大扫除：剩下6处prompt+3处confirm全换自画对话框hxAsk/hxConfirm（AI起草大纲/填Key/涂黑改/插链接/单页AI改/云端恢复/删项目/删页），手机壳上不再"点了没反应" */ /* v0.7.4 三件套：①重做弹窗显示"正在重做第N页《标题》+内容预览"防点错页 ②小活（单页重做）优先派千问qwen-plus（几秒~20秒），没Key/失败自动退Kimi ③AI干活浮动秒表胶囊趴右下角 ④重做后验收：原有表格被AI弄丢→自动重试一次，仍丢则不覆盖原页 */ /* v0.7.3 重做全程浮动提示：开工/成功/失败都弹toast（洪医生真机反馈：进度消息在页面顶部，滚到下面看不见，像死机） */ /* v0.7.2 修数据错乱：AI重做在途时移动/删除该页，写回改认"页面对象"不认下标（独立测试t37抓到） */ /* v0.7.1 修"AI重做本页点了没反应"：病根=手机壳X5内核不理系统prompt()弹窗（直接当取消），改自画弹窗（习题学习删除确认同款药方） */ /* v0.7.0 千问自动交叉校对（愿望清单第3批）：「🤖 自动校对」一键两棒——第1棒发千问qwen-plus（公共钱罐hx_qwenkey，约1分钱）拿校对意见，第2棒自动交给贴回校对管道让Kimi照改大纲（没提到的一字不动）；开关可选千问/Kimi自查；千问答"没发现问题"就不花第2棒的钱 */ /* v0.6.1 自选背景图（愿望清单第2批）：幻灯片页「🖼️ 背景图」相册选图→canvas压缩≤1600px、JPEG逐步降质（≤200KB）→存本PPT的p.bg（不设全局）；渲染时.slide-page叠82%不透明蒙纱（米白皮用米白纱/深色皮用深色纱）保证字可读；「✕ 清除背景」一键还原；导出HTML内嵌带走。提醒：导出会把照片带出去，别夹病人信息 */ /* v0.6.0 四套皮肤（米白学术/深蓝正式/墨绿讲堂/黑板粉笔），每个PPT各选各的，导出HTML带着走；点屏翻页其实v0.2.0起就有（点左35%上页/右65%下页） */ /* v0.5.0 放映自适应：底栏实底让位+内容超高自动等比缩小（洪医生横屏讲课表格最后一行被吃） */ /* v0.4.8 AI报错带官方原因+400也自动换模型重试（洪医生贴回校对撞HTTP400：疑公共模型罐里存着已下架的moonshot-v1系列，400不走404重试路） */ /* v0.4.7 版本字样治病根：头顶+页脚+标题改成代码自动填SW_VERSION（v0.4.0~0.4.6期间头顶一直显示旧号，害用户以为没更新） */ /* v0.4.6 更新通道免Token备用路：自检/下载新版在API不通或没填Token时自动走github.io公开直链 */ /* v0.4.5 贴回校对结果：别的AI的校对意见贴进来，本软件AI照改大纲（原文没提到的部分不动）+秒表进度 */ /* v0.4.4 复制校对：大纲/全片一键连校对指令复制，借别的AI挑错，不花自己Key */ /* v0.4.3 修404：死模型自动换kimi-k2.6+重试；max_tokens 8000→16384（k2.6思考型） */ /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
 /* 公共钱罐：API key/GitHub配置 一处填处处有（与其他软件共享 hx_*） */
 (function(){
   var HX_MAP=[["hx_apikey","hx_apikey"],["hx_gh_user","hx_gh_user"],["hx_gh_tok","hx_gh_tok"],["hx_gh_repo","hx_gh_repo"]];
@@ -507,6 +545,7 @@ function loadStore(){
 var ghSuspend=false, ghAutoTimer=null;
 function saveStore(){
   try{ localStorage.setItem(LS_STORE, JSON.stringify(store)); }catch(e){ toast('存储失败：'+e.message); }
+  hxStore.set(LS_STORE, store); /* v0.9.2 仓管员：同步写壳文件夹 */
   scheduleGhAutoBackup();
 }
 function curProj(){ for(var i=0;i<store.projects.length;i++) if(store.projects[i].id===curId) return store.projects[i]; return null; }
@@ -962,7 +1001,7 @@ function slideHTML(p){
 var API_URL="https://api.moonshot.cn/v1/chat/completions";
 function aiKey(){ return (localStorage.getItem('hx_apikey')||'').replace(/^\s+|\s+$/g,''); }
 /* 死模型回退（2026-09-01：kimi-k2.5被官方下架404，踩坑）——名单里的自动换kimi-k2.6并写回，不傻等 */
-var DEAD_MODELS=["kimi-k2.5","kimi-latest","moonshot-v1-8k-vision-preview","moonshot-v1-32k-vision-preview","moonshot-v1-128k-vision-preview"];
+var DEAD_MODELS=["kimi-k2.5","kimi-latest","moonshot-v1-8k-vision-preview","moonshot-v1-32k-vision-preview","moonshot-v1-128k-vision-preview","moonshot-v1-32k","moonshot-v1-8k","moonshot-v1-128k"]; /* 2026-09-04晚：v1全系实测已下架（这个Key的/models只剩k2.6/k2.7-code/k3） */
 function liveModel(m){ return (m && DEAD_MODELS.indexOf(m)<0) ? m : "kimi-k2.6"; }
 function aiModel(){
   var m=localStorage.getItem('hx_aimodel')||'';
@@ -1799,26 +1838,37 @@ function applyUse(s){
 function extractMd(text){ var m=String(text||'').match(/```(?:markdown)?\s*([\s\S]*?)```/); return (m?m[1]:text).replace(/^\s+|\s+$/g,''); }
 /* 把回调式AI包成Promise，方便逐页排队 */
 function aiP(fn,sys,usr){ return new Promise(function(res,rej){ fn(sys,usr,res,function(e){ rej(new Error(String(e))); }); }); }
-/* 快校对通道：moonshot-v1-32k（非思考型直出，10~20秒/页；怪癖#9只坑思考型，4096够） */
+/* 快校对通道：原写死moonshot-v1-32k；v1全系已下架 → v0.9.2起它在黑名单就直接用hx_aimodel；404也自动换hx_aimodel重试（思考型给16384，怪癖#9） */
 function callFastAI(sys, usr, onOk, onErr){
   var key=aiKey();
   if(!key){ onErr('还没有 API Key'); keyInputAsk(); return; }
   aiFloatShow('🔍 快校对干活中');
-  fetch(API_URL,{method:"POST",
-    headers:{"Content-Type":"application/json","Authorization":"Bearer "+key},
-    body:JSON.stringify({model:"moonshot-v1-32k",messages:[{role:"system",content:sys},{role:"user",content:usr}],max_tokens:4096})
-  }).then(function(r){
-    if(!r.ok) return r.text().then(function(t){ throw new Error("HTTP "+r.status+"："+String(t||"").slice(0,150)); });
-    return r.json();
-  }).then(function(j){
-    var msg=j.choices&&j.choices[0]&&j.choices[0].message;
-    var c=msg?msg.content:"";
-    if(Array.isArray(c)) c=c.map(function(x){return x.text||x.content||"";}).join("");
-    if(!c) throw new Error("快校对没说出话来");
-    aiFloatHide();
-    hxBillToast(hxBill("PPT工坊","快校对(moonshot-v1-32k)",(sys||"").length+(usr||"").length,c.length,"moonshot-v1-32k"));
-    onOk(c);
-  }).catch(function(e){ aiFloatHide(); onErr((e&&e.message)||"网络不通"); });
+  var FAST="moonshot-v1-32k";
+  var first=(DEAD_MODELS.indexOf(FAST)>=0)?(localStorage.getItem('hx_aimodel')||'kimi-k2.6'):FAST;
+  function attempt(model, retried){
+    var mt=(model===FAST)?4096:16384;
+    fetch(API_URL,{method:"POST",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+key},
+      body:JSON.stringify({model:model,messages:[{role:"system",content:sys},{role:"user",content:usr}],max_tokens:mt})
+    }).then(function(r){
+      if(r.status===404 && !retried){
+        var fb=localStorage.getItem('hx_aimodel')||'kimi-k2.6';
+        if(fb!==model){ attempt(fb,true); return null; }
+      }
+      if(!r.ok) return r.text().then(function(t){ throw new Error("HTTP "+r.status+"："+String(t||"").slice(0,150)); });
+      return r.json();
+    }).then(function(j){
+      if(!j) return;
+      var msg=j.choices&&j.choices[0]&&j.choices[0].message;
+      var c=msg?msg.content:"";
+      if(Array.isArray(c)) c=c.map(function(x){return x.text||x.content||"";}).join("");
+      if(!c) throw new Error("快校对没说出话来");
+      aiFloatHide();
+      hxBillToast(hxBill("PPT工坊","快校对("+model+")",(sys||"").length+(usr||"").length,c.length,model));
+      onOk(c);
+    }).catch(function(e){ aiFloatHide(); onErr((e&&e.message)||"网络不通"); });
+  }
+  attempt(first,false);
 }
 var P9_RULES='\n输出规矩：一个"## 页标题"开头；页内"- "列要点（短、口语、适合讲课）；真有对比才画 | 表格 |；只输出这一页本身，别的话一个字不写。';
 function writePrompt(proj, baseMd){
@@ -1920,12 +1970,96 @@ function cmpOpen(i){
 }
 $('cmpClose').onclick=function(){ $('cmpModal').classList.add('hidden'); };
 
+/* ==================== v0.9.2 PPT链路闭环：寄样品 + 收修改意见照改 ====================
+   邮路：完工写 guanjia_inbox {taskId,title,outline,round,status:'draft',t,from:'PPT工坊'}；
+   大管家意见走 ppt_inbox {rev:true,...}；别的任务样品没拆不盖信（暂存pendingSample，下次开门补寄）。 */
+function mailSample(p){
+  if(!p || !p.taskId) return;
+  var letter={taskId:p.taskId, title:p.title||'无题', outline:p.outline||'', round:(p.round||0)+1, status:'draft', t:Date.now(), from:'PPT工坊'};
+  var old=null; try{ old=JSON.parse(localStorage.getItem('guanjia_inbox')); }catch(e){}
+  if(old && old.taskId && old.taskId!==p.taskId){
+    p.pendingSample=true; saveStore();
+    toast('⚠️ 大管家样品信箱有别的任务没看，这封暂存，下次开门补寄（不盖信）', 4000); return;
+  }
+  try{ localStorage.setItem('guanjia_inbox', JSON.stringify(letter)); p.pendingSample=false; toast('📮 样品（大纲）已寄回大管家', 3000); }catch(e){}
+}
+var revRunning=false;
+function revApply(p, d){
+  if(revRunning){ toast('上一封修改意见还在改，稍等'); return; }
+  revRunning=true;
+  showPage('slidesPage'); curId=p.id; renderSlides();
+  showMsg($('slidesMsg'),'📬 收到大管家修改意见，AI照改中（约30~90秒，转着就不是死机）…','ok');
+  toast('📬 收到修改意见，AI照改中…', 4000);
+  callAI(
+    "您是PPT修改助手。把修改意见逐条落实到原大纲：指出的错误改掉，没提到的部分一字不动原样保留。保持原有Markdown结构（#封面/##页/要点/表格）。只输出改后的完整大纲，不要解释。",
+    "【原大纲】\n"+(p.outline||'')+"\n\n【修改意见】\n"+(d.note||'')+"\n\n"+MD_RULES.replace("页数8~15页。","页数维持原样，修改意见要求增删页的除外。"),
+    function(text){
+      revRunning=false;
+      var m=text.match(/```(?:markdown)?\s*([\s\S]*?)```/);
+      var md=(m?m[1]:text).replace(/^\s+|\s+$/g,"");
+      var pages=parseOutline(md);
+      if(!pages.length){ showMsg($('slidesMsg'),'⚠️ AI改完的大纲解析不出页，原稿没动','err'); return; }
+      pages.forEach(ensureVers);
+      p.outline=md; p.slides=pages;
+      p.title=pages[0]&&pages[0].cls==='cover'?pages[0].title:(pages[0].title||p.title);
+      p.round=d.round||0; p.t=Date.now();
+      saveStore(); renderSlides();
+      showMsg($('slidesMsg'),'✅ 已按大管家意见改完，重出 '+pages.length+' 页，样品已寄回','ok');
+      toast('✅ 照改完成，样品已寄回大管家', 4000);
+      mailSample(p);
+    },
+    function(e){ revRunning=false; showMsg($('slidesMsg'),'⚠️ AI照改没成：'+String(e&&e.message||e).slice(0,60)+'。意见内容在大纲框，可手动处理','err');
+      $('outlineText').value=(p.outline||'')+'\n\n【大管家修改意见（AI没改成，请人工）】\n'+(d.note||''); }
+  );
+}
+/* v0.9.2 仓管员门面：左下角🗄️按钮 */
+function hxStoreAfterPick(){
+  hxStore.pollFolder(function(ok){
+    if(ok){ var r=hxStore.sync(); toast('✅ 文件夹接上了：'+hxStore.folderName()+((r&&r.moved)?'，本地数据已搬过去':'')); }
+    else toast('没选成，随时点左下角🗄️再试');
+  });
+}
+(function(){
+  var b=document.createElement('button'); b.textContent='🗄️'; b.title='数据文件夹';
+  b.style.cssText='position:fixed;left:10px;bottom:10px;z-index:9998;width:42px;height:42px;border-radius:50%;border:1px solid #d8d2c4;background:#fffdf8;font-size:20px;box-shadow:0 2px 8px rgba(0,0,0,.15);';
+  b.onclick=function(){
+    if(hxStore.bridged()){
+      hxConfirm('数据存在文件夹：'+hxStore.folderName()+'（每次存盘都写这里，整个文件夹拷走=换手机带走全部家当）。换文件夹吗？', function(yes){
+        if(yes){ hxStore.pick(); hxStoreAfterPick(); }
+      });
+    }else if(window.LearnShell){
+      hxConfirm('还没选数据文件夹。选一个后，本软件数据会存进文件夹（换手机能带走）。现在选吗？', function(yes){
+        if(yes){ hxStore.pick(); hxStoreAfterPick(); }
+      });
+    }else{
+      toast('现在是浏览器本地存储；装进安卓壳后，点这里就能选数据文件夹');
+    }
+  };
+  document.body.appendChild(b);
+})();
+
 /* ==================== 收件箱（学习笔记/病人大管家寄大纲来） ==================== */
 function checkInbox(){
+  try{ store.projects.forEach(function(p){ if(p.pendingSample) mailSample(p); }); }catch(e){} /* v0.9.2 补寄暂存样品 */
   var raw=localStorage.getItem('ppt_inbox');
   if(!raw) return;
   var d=null; try{ d=JSON.parse(raw); }catch(e){}
   if(!d||!d.text){ localStorage.removeItem('ppt_inbox'); return; }
+  /* v0.9.2 修改意见信（rev:true）：不新建项目，找原项目交给照改管道，改完出页再寄回样品 */
+  if(d.rev){
+    localStorage.removeItem('ppt_inbox');
+    var tp=null; store.projects.forEach(function(x){ if(x.taskId===d.taskId) tp=x; });
+    if(!tp){
+      $('outlineText').value=d.text+'\n\n【大管家修改意见（没找到原任务，请人工处理）】\n'+(d.note||'');
+      showPage('editPage');
+      toast('⚠️ 收到修改意见但找不到原任务，已贴进大纲框人工处理', 5000); return;
+    }
+    if((d.round||0)>=3){
+      hxConfirm('「'+(d.title||'无题')+'」已来回'+(d.round)+'趟了（再改再花AI钱）。建议去大管家点「定稿」。还坚持再改一趟吗？', function(yes){ if(yes) revApply(tp,d); });
+      return;
+    }
+    revApply(tp,d); return;
+  }
   /* v0.9.0 二期①：自动收信自动开工——直接收下建新项目并解析出页面（纯本地，零API花费）；
      解析不出任何一页才退回老卡片人工收 */
   var autoPages=parseOutline(d.text);
@@ -1933,7 +2067,9 @@ function checkInbox(){
     localStorage.removeItem('ppt_inbox');
     autoPages.forEach(ensureVers);
     var ap={id:newId(), title:(autoPages[0]&&autoPages[0].cls==='cover'?autoPages[0].title:(autoPages[0].title||'无题')), outline:d.text, slides:autoPages, linkNotes:{}, t:Date.now()};
+    if(d.taskId){ ap.taskId=d.taskId; ap.round=d.round||0; } /* v0.9.2 认任务编号，完工寄样品 */
     store.projects.push(ap); curId=ap.id; saveStore();
+    if(ap.taskId) mailSample(ap); /* v0.9.2 出页即把大纲样品寄回大管家（零API花费） */
     renderSlides(); showPage('slidesPage');
     if(d.auto){ /* v0.9.1 大管家寄信时已授权"自动精做"（信封auto:true）→ 不问人直接跑 */
       showMsg($('slidesMsg'),'📬 收到「'+(d.title||'无题')+'」（带"自动精做"命令），已出 '+autoPages.length+' 页，现在自动精做…','ok');
