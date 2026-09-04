@@ -8,6 +8,10 @@
   红小涛学习套装 · 病人大管家
   定位：全家资料的"管家"。按病人归堆（血气/呼吸机/脱敏病历，天然有章），
         按知识搜索（笔记/习题，全靠AI名片）。
+  v0.4.12 2026-09-04 PPT二期链路简化（洪老师拍板）：寄PPT前多问一句"要不要自动精做"。
+    选"自动精做"→信封加 auto:true → PPT工坊v0.9.1开门收信后不问人直接全篇双AI精做
+    （千问写原著+快校对，授权在寄信这一步完成）；选"只寄大纲"=老样子。
+    注：上一班v0.4.11选中补丁的文件随对话环境丢失，本版基于云端v0.4.10，不含那个补丁。
   v0.4.10 2026-09-04 真机补丁2：洪老师"菜单太敏感，轻点一下也跳"——X5轻点会自动选中一个词。
     加轻点门禁：手指按下到抬起<350ms不亮，只认长按/拖把手；选中文少于2字不理；
     touchend/mouseup助攻路也过同一门禁（防绕开）；mouseup路要求选区还活着防陈旧兜货误亮。
@@ -350,7 +354,7 @@
 </div>
 
 <script>
-var SW_VERSION = "0.4.10";
+var SW_VERSION = "0.4.12"; /* v0.4.12 寄PPT前可选"自动精做"，信封加auto（详见文件头）。注：v0.4.11选中补丁文件丢失，本版基于0.4.10 */
 document.getElementById('verTop').textContent = SW_VERSION;
 function $(id){ return document.getElementById(id); }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -1113,17 +1117,20 @@ function selActPPT(whole){
     : '把下面这段话做成PPT大纲：\n'+sel.slice(0,2000);
   aiChat(sys, usr, function(ans){
     askRunning=false;
-    mailToPPT(whole?('整篇：'+title):('节选：'+sel.slice(0,16)), ans);
+    /* v0.4.12 寄信前多问一句：要不要PPT开门后自动精做（授权在这一步完成，PPT那边就不再问） */
+    hxConfirm('大纲拟好了。寄出后，打开PPT工坊时要不要它【自动精做】（千问写原著＋快校对，每页约半分钟、全篇几分钱）？\n\n确定=自动精做；取消=只寄大纲（到那边想精做再手动点）', function(okBtn){
+      mailToPPT(whole?('整篇：'+title):('节选：'+sel.slice(0,16)), ans, !!okBtn);
+    });
   }, function(e){
     askRunning=false; toast('AI这条路不通：'+String(e).slice(0,50));
   }, {what:'拟PPT大纲', maxTokens:16384});
 }
-/* 寄信进ppt_inbox（照学习笔记邮路协议：{title,text,t}）；信箱有未拆旧信先问，不许悄悄盖 */
-function mailToPPT(title, outline){
+/* 寄信进ppt_inbox（照学习笔记邮路协议：{title,text,t}，v0.4.12起加auto=要不要自动精做）；信箱有未拆旧信先问，不许悄悄盖 */
+function mailToPPT(title, outline, auto){
   var old=null; try{ old=JSON.parse(localStorage.getItem('ppt_inbox')); }catch(e){}
   function doSend(){
-    localStorage.setItem('ppt_inbox', JSON.stringify({title:title, text:outline, t:Date.now(), from:'病人大管家'}));
-    toast('📮 已寄进PPT收件箱：「'+title.slice(0,20)+'」。打开PPT工坊收下就能做', 3500);
+    localStorage.setItem('ppt_inbox', JSON.stringify({title:title, text:outline, t:Date.now(), from:'病人大管家', auto:!!auto}));
+    toast('📮 已寄进PPT收件箱：「'+title.slice(0,20)+'」。'+(auto?'打开PPT工坊它会自己做好':'打开PPT工坊收下就能做'), 3500);
   }
   if(old && old.text){
     hxConfirm('PPT信箱里还有一封没收下的「'+(old.title||'无题')+'」，寄新信会盖掉它。确定寄吗？', function(okBtn){
