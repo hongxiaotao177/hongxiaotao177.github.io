@@ -8,6 +8,13 @@
   红小涛学习套装 · 病人大管家
   定位：全家资料的"管家"。按病人归堆（血气/呼吸机/脱敏病历，天然有章），
         按知识搜索（笔记/习题，全靠AI名片）。
+  v0.4.7 2026-09-04 洪老师拍板「看全文做成书一样」：
+    ① 阅读窗升级：借输入弹窗看长文的时代结束 → 接近全屏的大窗（96vh）、大字16px、行距1.9，独立#readDlg。
+    ② 本地鱼骨头目录（不花钱）：扫 #标题/一二三、/第X章/1.2.（数字后必须是字，"3.5mg"不误判）出目录抽屉，
+       点目录跳段+闪一下；头顶常显「第X节/共Y节」，滚到哪心里有数。
+    ③ AI理目录（备用，缓存）：纯文字拆不出标题时点「🤖 AI理目录」，AI只回"节标题||开头句"（不重写原文防截断），
+       开头句回原文定位出真锚点；对不上的节丢掉不装；结果存hx_readtoc_v1，同篇再看不再花钱。
+    viewDoc留壳转openReader，全家调用点（名片看全文/出处按钮）零改动自动升级。
   v0.4.6 2026-09-04 洪老师三件全拍板：
     ① 收件箱改鱼骨头：每条默认只露一行（状态图标+问题，raw加粗），点行张开看摘要/时间/建议/按钮，再点收回；可张开多条。
     ② 名片浏览加「🤖 问AI」按钮（方案A小按钮，长按菜单不做）：点了把名片标题填进问AI问题框（习题名片剥【题库】前缀）、
@@ -161,6 +168,26 @@
   #hxDlg .box { background:#fff; border-radius:14px; max-width:560px; margin:14vh auto; padding:18px 20px; }
   #hxDlgInput { width:100%; min-height:70px; font-size:15px; padding:10px;
                 border:1px solid #d8d2c6; border-radius:8px; }
+  /* 全屏阅读器（v0.4.7）：书式目录+大窗大字+位置提示 */
+  #readDlg { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:99997; }
+  #readDlg .rbox { background:#faf7f2; max-width:680px; height:96vh; margin:2vh auto; border-radius:14px;
+                   display:flex; flex-direction:column; overflow:hidden; }
+  #readDlg .rhead { display:flex; align-items:center; gap:8px; padding:10px 14px; background:#fff;
+                    border-bottom:1px solid #e6e0d4; flex:none; flex-wrap:wrap; }
+  #readDlg .rhead .rt { font-size:16px; font-weight:bold; flex:1; min-width:120px;
+                        overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  #readDlg .rhead .rpos { font-size:12px; color:#8a8178; flex:none; }
+  #readDlg .rhead button { font-size:13px; padding:5px 10px; flex:none; }
+  #readToc { display:none; background:#fff; border-bottom:1px solid #e6e0d4; max-height:40vh; overflow:auto;
+             padding:8px 14px; flex:none; }
+  #readToc .toc-it { display:block; width:100%; text-align:left; background:none; border:none;
+                     font-size:14px; padding:7px 4px; border-bottom:1px dashed #ece7dd; color:#34567a; cursor:pointer; }
+  #readToc .toc-it.lv2 { padding-left:18px; font-size:13px; }
+  #readBody { flex:1; overflow:auto; padding:14px 18px 40px; font-size:16px; line-height:1.9; }
+  #readBody .rh { font-weight:bold; color:#33302b; margin:14px 0 4px; font-size:17px;
+                  border-left:4px solid #b3742a; padding-left:8px; border-radius:2px; }
+  #readBody .rh.flash { background:#fdf0d5; }
+  #readBody p { margin:6px 0; white-space:pre-wrap; }
 </style>
 </head>
 <body>
@@ -280,8 +307,22 @@
   </div>
 </div>
 
+<div id="readDlg">
+  <div class="rbox">
+    <div class="rhead">
+      <span class="rt" id="readTitle"></span>
+      <span class="rpos" id="readPos"></span>
+      <button class="ghost" id="readTocBtn">📑 目录</button>
+      <button class="ghost" id="readAiBtn">🤖 AI理目录</button>
+      <button class="ghost" id="readClose">✕ 关上</button>
+    </div>
+    <div id="readToc"></div>
+    <div id="readBody"></div>
+  </div>
+</div>
+
 <script>
-var SW_VERSION = "0.4.6";
+var SW_VERSION = "0.4.7";
 document.getElementById('verTop').textContent = SW_VERSION;
 function $(id){ return document.getElementById(id); }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -807,10 +848,135 @@ function mdLite(s){
   });
   return '<div class="md">'+(out||'<p>（空）</p>')+'</div>';
 }
-/* 出处点开看原文（v0.4.0①）：复用自画弹窗，只读 */
-function viewDoc(title, text){
-  hxAsk('📄 '+title, text, '', function(){}, '关上');
-  var inp=$('hxDlgInput'); inp.setAttribute('readonly','readonly'); inp.style.minHeight='260px';
+/* ══════════ v0.4.7 全屏阅读器（书式目录）══════════
+   小弹窗看长文太憋屈 → 接近全屏的大窗+大字；本地扫标题出目录（#、一、二、第X章、1.2.），
+   点目录跳段+闪一下；头顶常显"第X节/共Y节"。本地拆不出标题的纯文字 → 「🤖 AI理目录」：
+   AI只回"标题||开头句"几行（不重写原文，防偷懒截断），拿开头句回原文定位出真目录；结果缓存同篇只花一次钱。 */
+var readSec=[]; /* 当前篇目的节 [{h,lv,anchorIdx}] */
+var LS_READTOC='hx_readtoc_v1';
+function readTocLoad(){ try{ return JSON.parse(localStorage.getItem(LS_READTOC))||{}; }catch(e){ return {}; } }
+function readTocSave(o){ try{
+  var ks=Object.keys(o); if(ks.length>50){ o={}; } /* 缓存别长胖：超50篇清一遍重来 */
+  localStorage.setItem(LS_READTOC, JSON.stringify(o)); }catch(e){} }
+/* 本地拆标题：认出 #井号 / 一二三、/ 第X章节 / 1. 2. （数字后必须是字不是数，"3.5mg"不算） */
+function isHeadLine(ln){
+  var t=String(ln||'').replace(/^\s+|\s+$/g,'');
+  if(!t || t.length>40) return null;
+  var m;
+  if(m=t.match(/^(#{1,6})\s*(.+)$/)) return {h:m[2], lv:m[1].length>1?2:1};
+  if(m=t.match(/^(第[一二三四五六七八九十百\d]+[章节篇部分][、．.：:\s]*.*)$/)) return {h:m[1], lv:1};
+  if(m=t.match(/^([一二三四五六七八九十]+[、．.]\s*.+)$/)) return {h:m[1], lv:1};
+  if(m=t.match(/^(\d{1,2})[、．.]\s*([^\d].*)$/)) return {h:m[0], lv:2};
+  if(m=t.match(/^【(.{2,30})】$/)) return {h:m[1], lv:1};
+  return null;
+}
+function parseSections(text){
+  var lines=String(text||'').split('\n'), secs=[];
+  lines.forEach(function(ln,i){ var h=isHeadLine(ln); if(h){ h.idx=i; secs.push(h); } });
+  return secs;
+}
+/* viewDoc 改名留壳：全家老调用一律进新阅读器 */
+function viewDoc(title, text){ openReader(title, text); }
+function openReader(title, text){
+  $('readTitle').textContent='📄 '+title;
+  $('readBody').dataset.raw=String(text||'');
+  $('readBody').dataset.title=title;
+  $('readDlg').style.display='block'; /* 先开窗再排版，rect才量得准（位置提示曾因此开局就"第5节"） */
+  var secs=parseSections(text);
+  renderReader(text, secs, false);
+  $('readBody').scrollTop=0; updReadPos();
+}
+function renderReader(text, secs, fromCache){
+  readSec=secs;
+  var lines=String(text||'').split('\n'), html='', si=0;
+  lines.forEach(function(ln,i){
+    var h=(si<secs.length && secs[si].idx===i)?secs[si]:null;
+    var t=esc(ln).replace(/^\s+|\s+$/g,'');
+    if(h){
+      html+='<div class="rh lv'+h.lv+'" id="rsec_'+si+'">'+esc(h.h)+'</div>';
+      si++;
+    }else if(t){
+      t=t.replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>');
+      html+='<p>'+t+'</p>';
+    }
+  });
+  $('readBody').innerHTML=html||'<p style="color:#8a8178;">（空）</p>';
+  /* 目录抽屉 */
+  var th='';
+  secs.forEach(function(s,k){
+    th+='<button class="toc-it lv'+s.lv+'" data-toc="'+k+'">'+esc(s.h)+'</button>';
+  });
+  $('readToc').innerHTML=th;
+  Array.prototype.forEach.call(document.querySelectorAll('#readToc [data-toc]'), function(el){
+    el.onclick=function(){
+      var t=$('rsec_'+el.getAttribute('data-toc'));
+      if(t){ t.scrollIntoView({behavior:'smooth', block:'start'}); t.classList.add('flash');
+             setTimeout(function(){ t.classList.remove('flash'); },1200); }
+      $('readToc').style.display='none';
+    };
+  });
+  /* 头顶按钮状态：有本地目录→目录按钮可用；没有→目录按钮藏起来，AI按钮顶上 */
+  $('readTocBtn').style.display=secs.length?'':'none';
+  $('readToc').style.display='none';
+  var cached=readTocLoad()[$('readBody').dataset.title+'/'+$('readBody').dataset.raw.length];
+  $('readAiBtn').style.display=(secs.length>=3)?'none':''; /* 本地目录够用了就不勾引花钱 */
+  $('readAiBtn').textContent=cached?'🤖 AI目录（已备好，不花钱）':'🤖 AI理目录';
+  updReadPos();
+}
+/* 位置提示：滚动时算当前在第几节 */
+function updReadPos(){
+  var total=readSec.length;
+  if(!total){ $('readPos').textContent=''; return; }
+  var body=$('readBody'), cur=1, base=body.getBoundingClientRect().top;
+  for(var k=0;k<total;k++){
+    var el=$('rsec_'+k);
+    if(el && el.getBoundingClientRect().top<=base+60) cur=k+1;
+  }
+  $('readPos').textContent='第'+cur+'节/共'+total+'节';
+}
+$('readBody').onscroll=updReadPos;
+$('readTocBtn').onclick=function(){ var t=$('readToc'); t.style.display=(t.style.display==='block')?'none':'block'; };
+$('readClose').onclick=function(){ $('readDlg').style.display='none'; };
+/* AI理目录：回"标题||开头句"，开头句回原文找位置，找不到就丢，不装 */
+$('readAiBtn').onclick=function(){
+  var title=$('readBody').dataset.title, text=$('readBody').dataset.raw;
+  var ck=title+'/'+text.length, cache=readTocLoad();
+  if(cache[ck]){ applyAiToc(text, cache[ck]); return; } /* 缓存命中不花钱 */
+  if(!qwenKey()&&!kimiKey()){ toast('还没有API Key，先去设置里贴一个'); keyInputAsk(); return; }
+  if(askRunning){ toast('AI正忙着，稍等'); return; }
+  askRunning=true; $('readAiBtn').textContent='🤖 AI整理中…';
+  var sys='您是图书编辑。给您一篇文章，请把它分成若干节，每节输出一行，格式严格为：节标题||该节开头第一句话（原文照抄，前15个字）。只输出这些行，别的什么都别写。节数3~8节。';
+  var usr='文章标题：'+title+'\n\n'+String(text).slice(0,4000);
+  aiChat(sys, usr, function(ans){
+    askRunning=false;
+    var pairs=[];
+    String(ans).split('\n').forEach(function(ln){
+      var m=ln.replace(/^\s*[-*\d.、]+\s*/,'').split('||');
+      if(m.length===2 && m[0].trim() && m[1].trim()) pairs.push({h:m[0].trim().slice(0,40), first:m[1].trim().slice(0,15)});
+    });
+    if(!pairs.length){ $('readAiBtn').textContent='🤖 AI理目录'; toast('AI没整理出像样的目录，原文照看不影响'); return; }
+    var cache2=readTocLoad(); cache2[ck]=pairs; readTocSave(cache2);
+    applyAiToc(text, pairs);
+    toast('📑 目录整理好了（这篇以后再看不花钱）');
+  }, function(e){
+    askRunning=false; $('readAiBtn').textContent='🤖 AI理目录';
+    toast('AI这条路不通：'+String(e).slice(0,40));
+  }, {what:'理目录', maxTokens:16384});
+};
+function applyAiToc(text, pairs){
+  /* 拿"开头句"回原文逐行定位，变成节锚点；定位不到的节丢掉 */
+  var lines=String(text||'').split('\n'), secs=[], used={};
+  pairs.forEach(function(p){
+    var key=p.first.replace(/\s+/g,'');
+    for(var i=0;i<lines.length;i++){
+      if(used[i]) continue;
+      if(lines[i].replace(/\s+/g,'').indexOf(key)>=0){ used[i]=1; secs.push({h:p.h, lv:1, idx:i}); break; }
+    }
+  });
+  secs.sort(function(a,b){ return a.idx-b.idx; });
+  if(!secs.length){ toast('AI给的目录对不上原文，没敢用'); return; }
+  renderReader(text, secs, true);
+  $('readTocBtn').style.display=''; /* 目录来了，按钮上岗 */
 }
 /* ── 路一：只翻我的资料 ── */
 var lastLocalDocs=[];
