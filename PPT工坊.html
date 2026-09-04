@@ -3,13 +3,82 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PPT工坊 v0.4.0</title>
+<title>PPT工坊 v0.9.3</title>
 <!--
   PPT工坊 —— 红小涛学习套装第五位成员
   工作流：学习笔记整理知识点 → AI生成Markdown大纲 → 内部邮路(ppt_inbox)寄到本软件
           → 大纲编辑页改稿 → 一键生成HTML幻灯片 → 横屏播放 → 每页可AI重做/换版式
           → 导出单个HTML（微信发别人，浏览器打开即放映）
   修改记录：
+    v0.9.3 2026-09-05 第一班（寄件排队+马上叫醒配套）：
+      ①收件端队列续件 pptInboxNext：收下一件后 ppt_inbox_q 队首挪进信箱接着收
+        （人工收和v0.9.0自动收两条路都续），配合寄件端防连寄覆盖。
+      ②干活锁 ppt_busy：🎬生成（buildFromOutline）和全篇精做（polishAllRun）开工挂锁、
+        收工摘锁；寄件端见锁→寄件排队、「马上叫醒」按钮提示容后继续。生成逻辑本身一行没动。
+    v0.9.2 2026-09-04 晚班（洪老师拍板两件大事）：
+      ①hxStore仓管员：存盘同步写壳授权文件夹 hxdata_ppt_gongfang_v01.json，开门先对齐再loadStore；
+        左下角🗄️选/换文件夹。
+      ②PPT链路闭环：认信封taskId/round；出页即把大纲样品寄回大管家（guanjia_inbox，零花费）；
+        收rev修改意见信→照改管道改大纲重出页→再寄回样品；3趟封顶弹确认；别的任务样品未拆不盖信
+        （pendingSample暂存，开门补寄）。③修大病根：快校对写死的moonshot-v1-32k已下架（404），
+        v1全系进黑名单，callFastAI自动换hx_aimodel重试（此前全篇精做的校对棒全在悄悄失败）。纯加法。
+    v0.9.1 2026-09-04 二期链路简化（洪老师拍板）：认得大管家信封里的 auto:true——
+      收信自动出页后不问人直接全篇双AI精做（授权在大管家寄信那步已完成）；
+      没auto字段的信（学习笔记老式信）照旧只出页不花钱。polishAllRun抽公共，手动按钮照旧先弹确认。
+    v0.9.0 2026-09-04 PPT双AI校对·二期（洪老师拍板，药方C：快校对管全篇、Kimi精校管重点）：
+      ①开门自动收信自动开工：信箱有大管家寄来的大纲→自动收下建新项目、自动解析出页面
+        直接跳到幻灯片页（纯本地解析，零API花费）；解析不出来才退回老收件卡片人工收。
+      ②双AI逐页精做：千问当原著者写页（smallTaskAI，约1分钱/页）→快校对moonshot-v1-32k
+        当校对员挑错出校对版（非思考型，10~20秒/页，约1分钱/页）；每页可再单点「🔍精校」
+        换Kimi思考型精校（1~4分钟）。表格丢行/丢列自动重试一次，再丢不动旧版（同v0.7.4验收）。
+      ③每页三版开关：📝原著/🔍校对/🤝AI综合。综合=AI当和事佬（原著为底、校对指错必改、
+        两版择优），按需单页点，不自动全篇跑。三版都存markdown在页面对象vers里。
+      ④三版并排对比终审（👁对比弹窗，点哪版用哪版）；切版=把选中版解析进页面对象
+        （applyUse），渲染/放映/导出老代码零改动自动用选中版；导出HTML自动剥掉vers不带走。
+      ⑤手动编辑（peSave）/AI重做写回时同步更新"在用那一版"的vers，三版不丢。
+      全篇精做先弹确认（写明页数×约25秒、几分钱），跑的时候靠页面对象引用写回，删页不串位。
+    v0.8.0 2026-09-02 放映中问AI（愿望清单第4批·最后一件）：
+      - 放映底栏加「🤖 问AI」：弹窗写明问的是第几页《标题》，这一页内容连同问题一起发给AI（不乱编）
+      - 走小活通道smallTaskAI（千问优先≈1分钱，没千问Key自动换Kimi），答案先过目
+      - 「📥 收进PPT」：答案经parseOutline转成新的一页插在本页后面并当场亮相；「🔁 再问一句」接着聊
+      - 问AI弹窗打开时，空格/方向键不许翻页（打字不串台）
+      - 三处防护（独立验证员抓到）：答案回来时校验"还在提问现场"否则丢弃；再发新题先收起旧答案；
+        收进PPT锚住"所问那页"（翻了页也插回它后面），答案和当前PPT对不上坚决不收
+    v0.7.5 2026-09-02 系统弹窗大扫除（洪医生拍板）：自画通用对话框hxAsk（单行/多行输入）
+      +hxConfirm（确认/取消），替换全文件剩余 6处系统prompt+3处系统confirm——
+      AI起草大纲、填Kimi Key、涂黑"自己改/AI改"、插链接"显示什么字"、单页编辑"AI改"、
+      云端恢复确认、删项目确认、删页确认。手机壳X5内核上这些曾"点了没反应"或渲染乱码。
+      （独立验证员抓到并修复：弹窗未关又来新弹窗时旧回调被吞——现在先按"取消"了结旧的再开新的）
+    v0.7.4 2026-09-02 洪医生真机三报（232秒太慢/任务没完成/计时看不见）：
+      复现结论：本页内容（含表格每行）本来就会发给AI，Kimi真实复现能正确加"中文名"列；
+      真机"没完成"最可能是点错了页（表格在第3页，重做的是第2页），弹窗不说重做哪页是设计缺陷。
+      ①重做弹窗加"正在重做第N页《标题》"+内容预览 ②单页重做优先派千问（快），失败退Kimi
+      ③callAI挂浮动秒表胶囊（右下角，滚哪都看得见）④表格被AI弄丢自动重试一次，仍丢不动原页。
+    v0.7.3 2026-09-02 重做全程浮动提示（洪医生真机反馈"写了要求点确定就没反应"）：
+      真病根之二=进度消息只写在页面顶部通知栏，用户滚到下面就看不见，AI闷头想30~90秒像死机。
+      治法：开工/成功/失败三个节点都弹浮动toast（浮在屏幕上，滚到哪都看得见），顶部秒表保留。
+      注：真机实测X5壳其实能弹系统prompt（截图证实），"没反应"主因是没进度反馈；自画弹窗保留（更稳）。
+    v0.7.2 2026-09-02 修"重做写错页"（独立测试t37抓到）：AI重做在途时把页移动/删除，
+      回调按下标写回会顶掉无辜页。治法：抓页面对象引用，写回时用indexOf找它现在的位置；
+      页已被删则丢弃结果并明说。另登记：全文件还有6处系统prompt+4处confirm同款病根
+      （AI起草大纲940行等），清单已交洪医生拍板，本版未动。
+    v0.7.1 2026-09-02 修"AI重做本页点了没反应"（洪医生真机报告）：
+      病根=aiRegenPage用系统prompt()问"哪里不满意"，手机壳X5内核不理系统弹窗直接返回取消→静默退出。
+      治法=自画弹窗regenModal（文本框+[开始重做][取消]），与习题学习v1.8.8自画确认窗同款药方。
+      顺带登记：项目列表的删除还用着系统confirm()，暂未报告问题，先不动（等洪医生发落）。
+    v0.7.0 2026-09-02 千问自动交叉校对（洪医生愿望清单第3批）：
+      - 大纲页/幻灯片页各加「🤖 自动校对」+「校对用哪家」开关（千问交叉/Kimi自查，存hx_ppt_proofprov）
+      - 千问路径：proofText拼校对指令→发qwen-plus（dashscope兼容端点，Key读公共钱罐hx_qwenkey，
+        没有再看血气的bg_qwen_key）→拿回校对意见→自动填进贴回校对弹窗→自动点"AI照改"（Kimi落实到大纲）
+      - 千问答"没发现问题"就止步，不花第2棒Kimi的钱；两棒各记一笔hx_aibill
+      - 非思考型qwen-plus给max_tokens:4096（怪癖#9只坑思考型）
+    v0.6.1 2026-09-02 自选背景图（洪医生愿望清单第2批）：
+      - 幻灯片页工具条加「🖼️ 背景图」：相册选图→canvas压到≤1600px、JPEG逐步降质到≤200KB
+        →存当前PPT的p.bg（每个PPT各选各的，不设全局）
+      - 渲染：.slide-page叠82%不透明蒙纱（米白学术用米白纱，深蓝/墨绿/黑板用深色纱），
+        照片隐约可见、字绝对清楚
+      - 「✕ 清除背景」有背景时才露面；导出HTML把照片内嵌带走（slideHTML原样序列化，导出文件同款效果）
+      - 提醒：亮色素照片效果好；导出会把照片带出去，别夹病人信息
     v0.4.0 2026-08-07 链接某段升级成洪老师方案：涂黑观点→点链接某段→AI拿观点读文献正文，
       摘出最相关的1~2段原文+一句大白话"这段凭啥支持"；您过目可改才插入。文献库没正文就老实
       退回端总结（老样子）。没涂黑就点也退回老样子。
@@ -89,7 +158,7 @@
   .slide-ops button, .slide-ops select { font-size:13px; padding:6px 10px; width:auto; }
   /* 播放器 */
   #player { position:fixed; inset:0; background:#1c1a17; z-index:100; display:flex;
-    align-items:center; justify-content:center; }
+    align-items:center; justify-content:center; padding-bottom:56px; box-sizing:border-box; } /* v0.5.0 底栏让位 */
   #stage { position:relative; background:#faf7f2; overflow:hidden; }
   .slide-page { position:absolute; inset:0; padding:5% 6%; display:flex; flex-direction:column; }
   .sp-cover { justify-content:center; text-align:center; }
@@ -110,13 +179,51 @@
   .sp-quote { flex:1; display:flex; align-items:center; justify-content:center; }
   .sp-quote .q { font-size:1.5em; color:#2e2a26; line-height:1.9; text-align:center; padding:0 1em; }
   .sp-quote .q::before { content:"“"; color:#5b7f5e; } .sp-quote .q::after { content:"”"; color:#5b7f5e; }
-  #playerBar { position:fixed; bottom:10px; left:50%; transform:translateX(-50%); z-index:101;
-    color:#cfc8bd; font-size:13px; display:flex; gap:14px; align-items:center; }
+  #playerBar { position:fixed; bottom:8px; left:50%; transform:translateX(-50%); z-index:101;
+    color:#e8e2d8; font-size:13px; display:flex; gap:14px; align-items:center;
+    background:#2e2a26; padding:7px 16px; border-radius:999px; box-shadow:0 2px 12px rgba(0,0,0,.45); } /* v0.5.0 实底不再透内容 */
   #playerBar button { font-size:13px; padding:6px 12px; background:rgba(255,255,255,.14); }
   .chart-box { flex:1; display:flex; align-items:center; justify-content:center; }
   .chart-title { text-align:center; font-size:1em; color:#8a8178; margin-bottom:.4em; }
   /* v0.2.0 双链[[]]：放映/导出时括号不露，显示为下划线链接（Obsidian规矩） */
   .plnk { color:#2f5f8f; text-decoration:underline; cursor:pointer; }
+  /* ===== v0.6.0 四套皮肤：只管配色不动结构，随每个PPT的theme存 ===== */
+  #stage.t-deep { background:#16283f; }
+  #stage.t-deep .slide-page { background:#16283f; }
+  #stage.t-deep .slide-page h2 { color:#eef3f9; border-left-color:#d9a441; }
+  #stage.t-deep .slide-page ul, #stage.t-deep .slide-page td, #stage.t-deep .sp-para { color:#d3dde8; }
+  #stage.t-deep .slide-page table { background:rgba(255,255,255,.05); }
+  #stage.t-deep .slide-page th { background:#2b4a6b; color:#f0e6cf; }
+  #stage.t-deep .slide-page td { border-bottom-color:#2b4a6b; }
+  #stage.t-deep .slide-page tr:nth-child(even) td { background:rgba(255,255,255,.06); }
+  #stage.t-deep .sp-cover h1, #stage.t-deep .sp-quote .q { color:#f2ecdd; }
+  #stage.t-deep .sp-cover .sp-sub, #stage.t-deep .sp-big .t, #stage.t-deep .chart-title { color:#9db2c6; }
+  #stage.t-deep .sp-big .n { color:#d9a441; }
+  #stage.t-deep .sp-quote .q::before, #stage.t-deep .sp-quote .q::after { color:#d9a441; }
+  #stage.t-ink { background:#21362a; }
+  #stage.t-ink .slide-page { background:#21362a; }
+  #stage.t-ink .slide-page h2 { color:#f1f4e8; border-left-color:#e3c878; }
+  #stage.t-ink .slide-page ul, #stage.t-ink .slide-page td, #stage.t-ink .sp-para { color:#d9e2cf; }
+  #stage.t-ink .slide-page table { background:rgba(255,255,255,.05); }
+  #stage.t-ink .slide-page th { background:#33523e; color:#f4e9c9; }
+  #stage.t-ink .slide-page td { border-bottom-color:#33523e; }
+  #stage.t-ink .slide-page tr:nth-child(even) td { background:rgba(255,255,255,.06); }
+  #stage.t-ink .sp-cover h1, #stage.t-ink .sp-quote .q { color:#f4f1e2; }
+  #stage.t-ink .sp-cover .sp-sub, #stage.t-ink .sp-big .t, #stage.t-ink .chart-title { color:#a9bda4; }
+  #stage.t-ink .sp-big .n { color:#e3c878; }
+  #stage.t-ink .sp-quote .q::before, #stage.t-ink .sp-quote .q::after { color:#e3c878; }
+  #stage.t-chalk { background:#2e2e2c; }
+  #stage.t-chalk .slide-page { background:#2e2e2c; }
+  #stage.t-chalk .slide-page h2 { color:#f5f1de; border-left-color:#f0e6bd; }
+  #stage.t-chalk .slide-page ul, #stage.t-chalk .slide-page td, #stage.t-chalk .sp-para { color:#e2ddca; }
+  #stage.t-chalk .slide-page table { background:rgba(255,255,255,.04); }
+  #stage.t-chalk .slide-page th { background:transparent; color:#f0e6bd; border-bottom:2px dashed #f0e6bd; }
+  #stage.t-chalk .slide-page td { border-bottom:1px dashed #6a685f; }
+  #stage.t-chalk .slide-page tr:nth-child(even) td { background:rgba(255,255,255,.04); }
+  #stage.t-chalk .sp-cover h1, #stage.t-chalk .sp-quote .q { color:#f7f3e4; }
+  #stage.t-chalk .sp-cover .sp-sub, #stage.t-chalk .sp-big .t, #stage.t-chalk .chart-title { color:#b3ae9c; }
+  #stage.t-chalk .sp-big .n { color:#f0e6bd; }
+  #stage.t-chalk .sp-quote .q::before, #stage.t-chalk .sp-quote .q::after { color:#f0e6bd; }
   /* 文件查看器（工坊与导出的HTML共用样式，导出时随<style>一起带走） */
   #fileViewer { position:fixed; inset:0; z-index:110; /* 要比播放器(z100)还高，放映中点链接才打得开 */ background:rgba(40,34,26,.55); display:flex; align-items:center; justify-content:center; padding:10px; }
   #fileViewer.hidden { display:none !important; }
@@ -139,11 +246,48 @@
   .mini-modal .mm-card { background:#fffdf8; border-radius:14px; width:100%; max-width:640px; max-height:86vh; overflow:auto; padding:14px; }
   .mini-modal .mm-item { padding:11px 6px; border-bottom:1px solid #eee5d8; cursor:pointer; font-size:15px; }
   .mini-modal textarea { width:100%; min-height:200px; font-size:15px; padding:10px; border:1px solid #e5ddd0; border-radius:10px; box-sizing:border-box; }
+  /* v0.9.0 三版对比：宽屏三列并排，手机竖屏上下堆叠 */
+  .cmp-cols { display:flex; gap:10px; align-items:stretch; }
+  .cmp-col { flex:1; min-width:0; border:1px solid #e5ddd0; border-radius:10px; padding:8px; background:#fff; display:flex; flex-direction:column; }
+  .cmp-col .cmp-head { font-size:13px; font-weight:600; margin-bottom:6px; color:#4a3f30; }
+  .cmp-col .cmp-prev { font-size:9px; overflow:hidden; max-height:320px; border:1px dashed #e5ddd0; border-radius:6px; margin-bottom:8px; }
+  @media (max-width:640px){ .cmp-cols { flex-direction:column; } .cmp-col { width:100%; } }
 </style>
 </head>
 <body>
+<script>
+/* ==================== hxStore 仓管员 v1（2026-09-04 新立，洪老师拍板：壳文件夹优先、localStorage兜底、开门自动对齐、自动搬家） ====================
+   规矩与大管家同款：壳里授权了文件夹 → 每次存盘同时写 hxdata_<键>.json；开门对齐（文件说了算；文件没有则本地搬过去=自动搬家）。纯加法。 */
+var hxStore=(function(){
+  var KEYS=[];
+  function bridged(){ try{ return !!(window.LearnShell&&LearnShell.folderSet&&LearnShell.folderSet()); }catch(e){ return false; } }
+  function b64(s){ return btoa(unescape(encodeURIComponent(s))); }
+  function unb64(s){ return decodeURIComponent(escape(atob(s))); }
+  function fn(key){ return 'hxdata_'+key+'.json'; }
+  function reg(key){ if(KEYS.indexOf(key)<0) KEYS.push(key); }
+  function set(key,obj){ try{ localStorage.setItem(key,JSON.stringify(obj)); }catch(e){} if(bridged()){ try{ LearnShell.writeFile(fn(key), b64(JSON.stringify(obj))); }catch(e){} } }
+  function sync(){
+    if(!bridged()) return null;
+    var moved=0, pulled=0;
+    KEYS.forEach(function(k){
+      var f=null; try{ f=LearnShell.readFile(fn(k)); }catch(e){}
+      if(f){ try{ localStorage.setItem(k, unb64(f)); pulled++; }catch(e){} }
+      else { var v=null; try{ v=localStorage.getItem(k); }catch(e){}
+        if(v){ try{ LearnShell.writeFile(fn(k), b64(v)); moved++; }catch(e){} } }
+    });
+    return {moved:moved,pulled:pulled};
+  }
+  function folderName(){ try{ return LearnShell.folderName()||''; }catch(e){ return ''; } }
+  function pick(){ try{ LearnShell.pickFolder(); }catch(e){} }
+  function pollFolder(done){ var n=0; var t=setInterval(function(){ n++;
+    if(bridged()){ clearInterval(t); done(true); } else if(n>30){ clearInterval(t); done(false); } },1000); }
+  return {bridged:bridged,reg:reg,set:set,sync:sync,folderName:folderName,pick:pick,pollFolder:pollFolder};
+})();
+hxStore.reg('ppt_gongfang_v01');
+try{ hxStore.sync(); }catch(e){} /* 开门就对齐：必须在 loadStore 之前跑完（桥是同步的），让文件夹里的数据说了算 */
+</script>
 
-<header>📊 PPT工坊<span class="ver">v0.4.0</span></header>
+<header>📊 PPT工坊<span class="ver" id="hdVer">v0.4.7</span></header>
 
 <div class="page" id="homePage">
 
@@ -196,7 +340,7 @@
     </div>
   </details>
 
-  <div class="hint" style="text-align:center; margin-top:14px;">PPT工坊 v0.1.0 · 红小涛的学习套装</div>
+  <div class="hint" style="text-align:center; margin-top:14px;">PPT工坊 <span id="ftVer">v0.4.7</span> · 红小涛的学习套装</div>
 </div>
 
 <!-- 大纲编辑页 -->
@@ -218,6 +362,11 @@
       <button id="btnBuild" style="background:#b3742a;">🎬 生成PPT</button>
       <button class="ghost" id="btnCopyProof">📋 复制校对（大纲）</button>
       <button class="ghost" id="btnProofIn">📥 贴回校对结果</button>
+      <button class="ghost" id="btnAutoProof">🤖 自动校对</button>
+      <select id="proofProv" title="校对用哪家" style="font-size:13px;padding:7px 8px;border:1px solid #ccc;border-radius:8px;background:#fff;">
+        <option value="qwen">千问交叉（约1分钱）</option>
+        <option value="kimi">Kimi自查</option>
+      </select>
       <button class="ghost" id="btnBackHome">← 返回</button>
     </div>
     <div class="msg" id="editMsg"></div>
@@ -229,15 +378,65 @@
   <div class="card">
     <h3 id="slidesTitle">🎞 幻灯片</h3>
     <div class="btn-row">
-      <button id="btnPlay" style="background:#b3742a;">▶️ 放映（手机横过来）</button>
+      <button id="btnPlay" style="background:#b3742a;">▶️ 放映（手机横过来）</button> <select id="themeSel" title="版面皮肤" style="font-size:14px;padding:8px 10px;border:1px solid #ccc;border-radius:8px;background:#fff;">
+        <option value="t-academic">🎨 米白学术（默认）</option>
+        <option value="t-deep">🎨 深蓝正式</option>
+        <option value="t-ink">🎨 墨绿讲堂</option>
+        <option value="t-chalk">🎨 黑板粉笔</option>
+      </select>
+      <button class="ghost" id="btnBgImg">🖼️ 背景图</button>
+      <button class="ghost" id="btnBgClear" style="display:none">✕ 清除背景</button>
+      <input type="file" id="bgFile" accept="image/*" style="display:none">
       <button class="ghost" id="btnCopyProof2">📋 复制校对（全片）</button>
       <button class="ghost" id="btnProofIn2">📥 贴回校对结果</button>
+      <button class="ghost" id="btnAutoProof2">🤖 自动校对</button>
+      <select id="proofProv2" title="校对用哪家" style="font-size:13px;padding:7px 8px;border:1px solid #ccc;border-radius:8px;background:#fff;">
+        <option value="qwen">千问交叉（约1分钱）</option>
+        <option value="kimi">Kimi自查</option>
+      </select>
+      <button id="btnPolishAll" style="background:#5b7f5e;" title="每页：千问写原著＋快校对出校对版，全篇自动跑一遍">🤖✨ 全篇双AI精做</button>
       <button class="ghost" id="btnExport">📤 导出HTML</button>
       <button class="ghost" id="btnBackEdit">← 回大纲</button>
     </div>
     <div class="msg" id="slidesMsg"></div>
   </div>
   <div id="slideList"></div>
+</div>
+
+<!-- v0.9.0 二期：三版并排对比终审弹窗（点哪版用哪版） -->
+<div id="cmpModal" class="mini-modal hidden">
+  <div class="mm-card" style="max-width:1100px;">
+    <h3 id="cmpTitle" style="margin-bottom:8px;font-size:15px;"></h3>
+    <div class="cmp-cols" id="cmpCols"></div>
+    <div class="btn-row" style="margin-top:10px;"><button class="ghost" id="cmpClose">关闭（不改动）</button></div>
+  </div>
+</div>
+
+<!-- v0.7.5 通用自画对话框（系统prompt/confirm大扫除） -->
+<div id="hxDlg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:99999;overflow:auto;">
+  <div style="background:#fff;border-radius:14px;max-width:560px;margin:14vh auto;padding:18px 20px;">
+    <h3 style="margin-bottom:8px;" id="hxDlgTitle"></h3>
+    <textarea id="hxDlgInput" style="width:100%;min-height:70px;font-size:15px;padding:10px;border:1px solid #d8d2c6;border-radius:8px;"></textarea>
+    <div style="margin-top:10px;">
+      <button id="hxDlgOk" style="background:#b3742a;">确定</button>
+      <button class="ghost" id="hxDlgCancel">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- v0.7.1 AI重做本页自画弹窗（手机壳X5不理系统prompt，必须自画） -->
+<div id="regenModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;overflow:auto;">
+  <div style="background:#fff;border-radius:14px;max-width:560px;margin:14vh auto;padding:18px 20px;">
+    <h3 style="margin-bottom:6px;">🔄 AI重做本页</h3>
+    <div id="regenTarget" style="font-size:13px;background:#f3efe7;border-radius:8px;padding:8px 10px;margin-bottom:8px;color:#5b554b;"></div>
+    <div style="font-size:13px;color:#8a8178;margin-bottom:8px;">核对上面是不是您想改的那页（不是就点取消）。这一页哪里不满意？写一句话就行；留空=AI自由重写。</div>
+    <textarea id="regenAsk" placeholder="例如：字数太多，精简一半；换个临床例子；加一句记忆口诀…" style="width:100%;min-height:90px;font-size:14px;padding:10px;border:1px solid #d8d2c6;border-radius:8px;"></textarea>
+    <div style="margin-top:10px;">
+      <button id="btnRegenGo" style="background:#b3742a;">🤖 开始重做</button>
+      <button class="ghost" id="btnRegenCancel">取消</button>
+    </div>
+    <div class="msg" id="regenMsg"></div>
+  </div>
 </div>
 
 <!-- v0.4.5 贴回校对结果：别的AI的校对意见贴进来，本软件AI照意见改大纲 -->
@@ -261,7 +460,26 @@
     <button id="pvPrev">← 上一页</button>
     <span id="pvNo">1/1</span>
     <button id="pvNext">下一页 →</button>
+    <button id="pvAsk">🤖 问AI</button>
     <button id="pvExit">✕ 退出</button>
+  </div>
+</div>
+
+<!-- v0.8.0 放映中问AI：答案可一键变成新的一页 -->
+<div id="pvAskModal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:102;overflow:auto;">
+  <div style="background:#fff;border-radius:14px;max-width:560px;margin:8vh auto;padding:18px 20px;">
+    <h3 style="margin-bottom:6px;">🤖 放映中问AI</h3>
+    <div id="pvAskTarget" style="font-size:13px;background:#f3efe7;border-radius:8px;padding:8px 10px;margin-bottom:8px;color:#5b554b;"></div>
+    <textarea id="pvAskQ" placeholder="就这一页，有什么想问的？（如：这个指标多少算异常？）" style="width:100%;min-height:60px;font-size:15px;padding:10px;border:1px solid #d8d2c6;border-radius:8px;"></textarea>
+    <div class="btn-row" style="margin-top:8px;">
+      <button id="pvAskGo" style="background:#b3742a;">发送</button>
+      <button class="ghost" id="pvAskClose">✕ 关闭</button>
+    </div>
+    <div id="pvAskAns" style="display:none;margin-top:10px;font-size:14px;line-height:1.7;max-height:36vh;overflow:auto;background:#faf7f2;border-radius:8px;padding:10px 12px;white-space:pre-wrap;"></div>
+    <div id="pvAskBtns" class="btn-row" style="display:none;margin-top:8px;">
+      <button id="pvAskKeep" style="background:#4a7c59;">📥 收进PPT（插在本页后面）</button>
+      <button class="ghost" id="pvAskAgain">🔁 再问一句</button>
+    </div>
   </div>
 </div>
 
@@ -308,7 +526,7 @@
 
 <script>
 "use strict";
-var SW_VERSION = "0.4.6"; /* v0.4.6 更新通道免Token备用路：自检/下载新版在API不通或没填Token时自动走github.io公开直链 */ /* v0.4.5 贴回校对结果：别的AI的校对意见贴进来，本软件AI照改大纲（原文没提到的部分不动）+秒表进度 */ /* v0.4.4 复制校对：大纲/全片一键连校对指令复制，借别的AI挑错，不花自己Key */ /* v0.4.3 修404：死模型自动换kimi-k2.6+重试；max_tokens 8000→16384（k2.6思考型） */ /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
+var SW_VERSION = "0.9.3"; /* v0.9.3 队列续件+干活锁 */ /* v0.9.2 ①hxStore仓管员：存盘同步写壳文件夹 ②PPT链路闭环：认taskId、做完把大纲样品寄回大管家（guanjia_inbox）、收rev修改意见自动照改再寄回、3趟封顶提醒 */ /* v0.9.1 认大管家auto信自动全篇精做（授权在寄信时），polishAllRun抽公共 */ /* v0.9.0 二期：自动收信自动开工+双AI逐页精做（千问原著/快校对）+每页三版开关（原著/校对/AI综合）+三版对比终审，导出剥vers（详见文件头） */ /* v0.7.5 系统弹窗大扫除：剩下6处prompt+3处confirm全换自画对话框hxAsk/hxConfirm（AI起草大纲/填Key/涂黑改/插链接/单页AI改/云端恢复/删项目/删页），手机壳上不再"点了没反应" */ /* v0.7.4 三件套：①重做弹窗显示"正在重做第N页《标题》+内容预览"防点错页 ②小活（单页重做）优先派千问qwen-plus（几秒~20秒），没Key/失败自动退Kimi ③AI干活浮动秒表胶囊趴右下角 ④重做后验收：原有表格被AI弄丢→自动重试一次，仍丢则不覆盖原页 */ /* v0.7.3 重做全程浮动提示：开工/成功/失败都弹toast（洪医生真机反馈：进度消息在页面顶部，滚到下面看不见，像死机） */ /* v0.7.2 修数据错乱：AI重做在途时移动/删除该页，写回改认"页面对象"不认下标（独立测试t37抓到） */ /* v0.7.1 修"AI重做本页点了没反应"：病根=手机壳X5内核不理系统prompt()弹窗（直接当取消），改自画弹窗（习题学习删除确认同款药方） */ /* v0.7.0 千问自动交叉校对（愿望清单第3批）：「🤖 自动校对」一键两棒——第1棒发千问qwen-plus（公共钱罐hx_qwenkey，约1分钱）拿校对意见，第2棒自动交给贴回校对管道让Kimi照改大纲（没提到的一字不动）；开关可选千问/Kimi自查；千问答"没发现问题"就不花第2棒的钱 */ /* v0.6.1 自选背景图（愿望清单第2批）：幻灯片页「🖼️ 背景图」相册选图→canvas压缩≤1600px、JPEG逐步降质（≤200KB）→存本PPT的p.bg（不设全局）；渲染时.slide-page叠82%不透明蒙纱（米白皮用米白纱/深色皮用深色纱）保证字可读；「✕ 清除背景」一键还原；导出HTML内嵌带走。提醒：导出会把照片带出去，别夹病人信息 */ /* v0.6.0 四套皮肤（米白学术/深蓝正式/墨绿讲堂/黑板粉笔），每个PPT各选各的，导出HTML带着走；点屏翻页其实v0.2.0起就有（点左35%上页/右65%下页） */ /* v0.5.0 放映自适应：底栏实底让位+内容超高自动等比缩小（洪医生横屏讲课表格最后一行被吃） */ /* v0.4.8 AI报错带官方原因+400也自动换模型重试（洪医生贴回校对撞HTTP400：疑公共模型罐里存着已下架的moonshot-v1系列，400不走404重试路） */ /* v0.4.7 版本字样治病根：头顶+页脚+标题改成代码自动填SW_VERSION（v0.4.0~0.4.6期间头顶一直显示旧号，害用户以为没更新） */ /* v0.4.6 更新通道免Token备用路：自检/下载新版在API不通或没填Token时自动走github.io公开直链 */ /* v0.4.5 贴回校对结果：别的AI的校对意见贴进来，本软件AI照改大纲（原文没提到的部分不动）+秒表进度 */ /* v0.4.4 复制校对：大纲/全片一键连校对指令复制，借别的AI挑错，不花自己Key */ /* v0.4.3 修404：死模型自动换kimi-k2.6+重试；max_tokens 8000→16384（k2.6思考型） */ /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
 /* 公共钱罐：API key/GitHub配置 一处填处处有（与其他软件共享 hx_*） */
 (function(){
   var HX_MAP=[["hx_apikey","hx_apikey"],["hx_gh_user","hx_gh_user"],["hx_gh_tok","hx_gh_tok"],["hx_gh_repo","hx_gh_repo"]];
@@ -332,6 +550,7 @@ function loadStore(){
 var ghSuspend=false, ghAutoTimer=null;
 function saveStore(){
   try{ localStorage.setItem(LS_STORE, JSON.stringify(store)); }catch(e){ toast('存储失败：'+e.message); }
+  hxStore.set(LS_STORE, store); /* v0.9.2 仓管员：同步写壳文件夹 */
   scheduleGhAutoBackup();
 }
 function curProj(){ for(var i=0;i<store.projects.length;i++) if(store.projects[i].id===curId) return store.projects[i]; return null; }
@@ -440,13 +659,15 @@ function ghPull(onResult){
 function ghAskRestore(payload, srcLabel){
   var when=payload.savedAt?new Date(payload.savedAt).toLocaleString():"未知时间";
   var n=payload.store.projects.length;
-  if(!confirm((srcLabel||"云端")+"有 "+n+" 个PPT（备份于 "+when+"）。恢复将覆盖本机现有PPT，确定吗？")) return;
+  hxConfirm((srcLabel||"云端")+"有 "+n+" 个PPT（备份于 "+when+"）。恢复将覆盖本机现有PPT，确定吗？", function(yes){
+  if(!yes) return;
   ghSuspend=true;
   store=payload.store;
   saveStore();
   ghSuspend=false;
   renderProjects();
   toast("✅ 已恢复 "+n+" 个PPT");
+  });
 }
 function ghStatusRender(){
   var last=localStorage.getItem('ppt_gh_last');
@@ -714,12 +935,51 @@ function linkify(escaped){
     return '<a class="plnk" data-f="'+encodeURIComponent(fn)+'">'+label+'</a>';
   });
 }
+/* v0.6.1 自选背景图：PPT_BG=当前PPT的背景照片(dataURL)。bgStyleStr会被原样序列化进导出HTML */
+var PPT_BG=null, PPT_BG_DARK=false;
+function bgStyleStr(){
+  if(typeof PPT_BG==='undefined'||!PPT_BG) return '';
+  var veil=(typeof PPT_BG_DARK!=='undefined'&&PPT_BG_DARK)?'rgba(22,28,38,0.82)':'rgba(250,247,242,0.82)';
+  return ' style="background:linear-gradient('+veil+','+veil+'),url('+PPT_BG+') center/cover no-repeat"';
+}
+function syncBgGlobals(){
+  var p=curProj();
+  PPT_BG=(p&&p.bg)?p.bg:null;
+  PPT_BG_DARK=!!(p&&(p.theme==='t-deep'||p.theme==='t-ink'||p.theme==='t-chalk'));
+}
+function pickBgImage(file){
+  var p=curProj(); if(!p) return;
+  if(!/^image\//.test(file.type)){ toast('请选图片文件'); return; }
+  var url=URL.createObjectURL(file);
+  var img=new Image();
+  img.onload=function(){
+    var w=img.width,h=img.height, mx=1600;
+    if(w>mx||h>mx){ var r=mx/Math.max(w,h); w=Math.round(w*r); h=Math.round(h*r); }
+    var cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+    cv.getContext('2d').drawImage(img,0,0,w,h);
+    URL.revokeObjectURL(url);
+    var qs=[0.7,0.6,0.5,0.4], du=null;
+    for(var i=0;i<qs.length;i++){ du=cv.toDataURL('image/jpeg',qs[i]); if(du.length<270000) break; } /* dataURL长度×3/4≈二进制，27万≈200KB */
+    /* v0.6.1补丁(独立测试t20抓到)：噪点大图q0.4仍超200KB→继续降质+每轮尺寸打85折，直到达标或小到320px */
+    while(du.length>=270000 && w>320){
+      w=Math.round(w*0.85); h=Math.round(h*0.85);
+      cv.width=w; cv.height=h; cv.getContext('2d').drawImage(img,0,0,w,h);
+      var q2=[0.4,0.3,0.25];
+      for(var j=0;j<q2.length;j++){ du=cv.toDataURL('image/jpeg',q2[j]); if(du.length<270000) break; }
+    }
+    p.bg=du; saveStore(); syncBgGlobals(); renderSlides(); renderStage();
+    var kb=Math.round(du.length*3/4/1024);
+    toast('🖼️ 背景图已上好（约'+kb+'KB）。提醒：导出会把照片带出去，别夹病人信息',5000);
+  };
+  img.onerror=function(){ URL.revokeObjectURL(url); toast('这张图读不出来，换一张试试'); };
+  img.src=url;
+}
 function slideHTML(p){
   var kind=pageKind(p);
   if(kind==="cover"){
-    return '<div class="slide-page sp-cover"><h1>'+linkify(esc(p.title))+'</h1>'+(p.para?'<div class="sp-sub">'+linkify(esc(p.para))+'</div>':'')+'</div>';
+    return '<div class="slide-page sp-cover"'+bgStyleStr()+'><h1>'+linkify(esc(p.title))+'</h1>'+(p.para?'<div class="sp-sub">'+linkify(esc(p.para))+'</div>':'')+'</div>';
   }
-  var h='<div class="slide-page">';
+  var h='<div class="slide-page"'+bgStyleStr()+'>';
   if(p.title) h+='<h2>'+linkify(esc(p.title))+'</h2>';
   if(kind==="big"){
     h+='<div class="sp-big"><div class="n">'+esc(p.big)+'</div><div class="t">'+esc(p.bigText||"")+'</div></div>';
@@ -746,7 +1006,7 @@ function slideHTML(p){
 var API_URL="https://api.moonshot.cn/v1/chat/completions";
 function aiKey(){ return (localStorage.getItem('hx_apikey')||'').replace(/^\s+|\s+$/g,''); }
 /* 死模型回退（2026-09-01：kimi-k2.5被官方下架404，踩坑）——名单里的自动换kimi-k2.6并写回，不傻等 */
-var DEAD_MODELS=["kimi-k2.5","kimi-latest","moonshot-v1-8k-vision-preview","moonshot-v1-32k-vision-preview","moonshot-v1-128k-vision-preview"];
+var DEAD_MODELS=["kimi-k2.5","kimi-latest","moonshot-v1-8k-vision-preview","moonshot-v1-32k-vision-preview","moonshot-v1-128k-vision-preview","moonshot-v1-32k","moonshot-v1-8k","moonshot-v1-128k"]; /* 2026-09-04晚：v1全系实测已下架（这个Key的/models只剩k2.6/k2.7-code/k3） */
 function liveModel(m){ return (m && DEAD_MODELS.indexOf(m)<0) ? m : "kimi-k2.6"; }
 function aiModel(){
   var m=localStorage.getItem('hx_aimodel')||'';
@@ -763,25 +1023,30 @@ function hxBillMsg(c){return "💰 本次约¥"+(c<0.01?c.toFixed(3):c.toFixed(2
 function hxBillToast(c){try{var d=document.createElement("div");d.textContent=hxBillMsg(c);d.style.cssText="position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#4a6b4f;color:#fff;padding:10px 18px;border-radius:20px;font-size:14px;z-index:99999;box-shadow:0 2px 8px rgba(0,0,0,.25)";document.body.appendChild(d);setTimeout(function(){d.remove();},4000);}catch(e){}}
 
 function callAI(sys, usr, onOk, onErr){
+  aiFloatShow('🤖 AI干活中'); /* v0.7.4 浮动秒表：从开始包到结束（含404自动重试） */
+  var _ok=onOk, _err=onErr;
+  onOk=function(x){ aiFloatHide(); _ok(x); };
+  onErr=function(e){ aiFloatHide(); _err(e); };
   var key=aiKey();
   if(!key){ onErr('还没有 API Key。请到学习笔记/血气分析的设置里填一次（公共钱罐全家通用），或在本页粘贴：'); keyInputAsk(); return; }
   var model=aiModel();
   function send(){
     return fetch(API_URL,{method:"POST",
       headers:{"Content-Type":"application/json","Authorization":"Bearer "+key},
-      body:JSON.stringify({model:model,messages:[{role:"system",content:sys},{role:"user",content:usr}],max_tokens:16384,temperature:0.4})
+      body:JSON.stringify({model:model,messages:[{role:"system",content:sys},{role:"user",content:usr}],max_tokens:16384} /* v0.4.9 删掉temperature:0.4——kimi思考型模型只允许temperature=1，多设直接400（习题v1.2补丁2踩过同款坑，这次轮到PPT） */)
     });
   }
   send().then(function(r){
-    /* v0.4.3 404自动换kimi-k2.6重试一次（kimi-k2.5下架踩坑）；max_tokens升16384（k2.6思考型吃额度，怪癖#9） */
-    if(r.status===404 && model!=="kimi-k2.6"){
+    /* v0.4.3 404自动换kimi-k2.6重试一次（kimi-k2.5下架踩坑）；max_tokens升16384（k2.6思考型吃额度，怪癖#9）
+       v0.4.8 400也重试：官方下架旧模型有时回400不回404（怪癖#10补记） */
+    if((r.status===404||r.status===400) && model!=="kimi-k2.6"){
       model="kimi-k2.6"; try{ localStorage.setItem('hx_aimodel',model); }catch(e){}
-      toast("原模型已被官方下架，自动改用 kimi-k2.6 重试");
+      toast("原模型已被官方下架，自动改用 kimi-k2.6 重试（全家模型罐已纠正）");
       return send();
     }
     return r;
   }).then(function(r){
-    if(!r.ok) return r.text().then(function(t){ throw new Error("AI线路出错 HTTP "+r.status); });
+    if(!r.ok) return r.text().then(function(t){ throw new Error("AI线路出错 HTTP "+r.status+"："+String(t||"").slice(0,180)); });
     return r.json();
   }).then(function(j){
     var msg=j.choices&&j.choices[0]&&j.choices[0].message;
@@ -792,9 +1057,37 @@ function callAI(sys, usr, onOk, onErr){
     onOk(c);
   }).catch(function(e){ onErr((e&&e.message)||"网络不通"); });
 }
+/* v0.7.4 小活通道：单页重做这类小任务优先派千问qwen-plus（非思考型直出，几秒~20秒，约1分钱）；
+   没千问Key或千问报错→自动退Kimi（思考型，慢但稳）。洪医生真机"232秒才干个小活"催出来的 */
+function smallTaskAI(sys, usr, onOk, onErr){
+  var qk=(localStorage.getItem('hx_qwenkey')||localStorage.getItem('bg_qwen_key')||'').replace(/^\s+|\s+$/g,'');
+  if(!qk){ callAI(sys,usr,onOk,onErr); return; }
+  aiFloatShow('🤖 千问干活中');
+  fetch("https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",{
+    method:"POST",
+    headers:{"Content-Type":"application/json","Authorization":"Bearer "+qk},
+    body:JSON.stringify({model:"qwen-plus",messages:[{role:"system",content:sys},{role:"user",content:usr}],max_tokens:4096})
+  }).then(function(r){
+    if(!r.ok) return r.text().then(function(tx){ throw new Error("HTTP "+r.status+"："+(tx||"").slice(0,120)); });
+    return r.json();
+  }).then(function(d){
+    var c=((d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content)||"");
+    if(!c) throw new Error("千问没说出话来");
+    aiFloatHide();
+    hxBillToast(hxBill("PPT工坊","千问小活(qwen-plus)",(sys||"").length+(usr||"").length,c.length,"qwen-plus"));
+    onOk(c);
+  }).catch(function(e){
+    aiFloatHide();
+    toast("千问没接上（"+(e.message||e)+"），自动换Kimi接着干",4000);
+    callAI(sys,usr,onOk,onErr);
+  });
+}
 function keyInputAsk(){
-  var k=prompt("把 Kimi API key（sk-开头）贴这里：","");
-  if(k){ localStorage.setItem('hx_apikey', k.trim()); toast("✅ key已存进公共钱罐，全家软件通用"); }
+  hxAsk("把 Kimi API key（sk-开头）贴这里：", "", "sk-...", function(k){
+    if(k===null) return;
+    k=k.replace(/^\s+|\s+$/g,'');
+    if(k){ localStorage.setItem('hx_apikey', k); toast("✅ key已存进公共钱罐，全家软件通用"); }
+  });
 }
 var MD_RULES=
 '【输出规矩（Markdown）】\n'+
@@ -810,17 +1103,18 @@ var MD_RULES=
 function aiDraftOutline(){
   var cur=$('outlineText').value;
   var topic=cur.replace(/^\s+|\s+$/g,'');
-  var ask=prompt(topic?"在此基础上重写/大改，说您的要求（留空=按现有内容重新组织）：":"您的PPT主题是什么？（一句话，如：CRAB感染的抗菌治疗策略）","");
-  if(ask===null) return;
-  var sys='您是ICU主任医师的教学助手，帮人把主题做成讲课PPT的大纲。';
-  var usr=(topic?('【现有大纲/资料】\n'+topic+'\n\n'):'')+
-    '【题目/要求】'+(ask||'按上面资料重新组织成大纲')+'\n\n'+MD_RULES;
-  showMsg($('editMsg'),'🤖 AI正在起草大纲…');
-  callAI(sys,usr,function(text){
-    var m=text.match(/```(?:markdown)?\s*([\s\S]*?)```/);
-    $('outlineText').value=(m?m[1]:text).replace(/^\s+|\s+$/g,'');
-    showMsg($('editMsg'),'✅ 大纲起草好了，改完点「🎬 生成PPT」','ok');
-  },function(err){ showMsg($('editMsg'),err,'err'); });
+  hxAsk(topic?"在此基础上重写/大改，说您的要求（留空=按现有内容重新组织）：":"您的PPT主题是什么？（一句话，如：CRAB感染的抗菌治疗策略）", "", "", function(ask){
+    if(ask===null) return;
+    var sys='您是ICU主任医师的教学助手，帮人把主题做成讲课PPT的大纲。';
+    var usr=(topic?('【现有大纲/资料】\n'+topic+'\n\n'):'')+
+      '【题目/要求】'+(ask||'按上面资料重新组织成大纲')+'\n\n'+MD_RULES;
+    showMsg($('editMsg'),'🤖 AI正在起草大纲…');
+    callAI(sys,usr,function(text){
+      var m=text.match(/```(?:markdown)?\s*([\s\S]*?)```/);
+      $('outlineText').value=(m?m[1]:text).replace(/^\s+|\s+$/g,'');
+      showMsg($('editMsg'),'✅ 大纲起草好了，改完点「🎬 生成PPT」','ok');
+    },function(err){ showMsg($('editMsg'),err,'err'); });
+  });
 }
 function aiPolishOutline(){
   var cur=$('outlineText').value.replace(/^\s+|\s+$/g,'');
@@ -848,26 +1142,89 @@ function pageToMd(p){
   if(p.para) md+=p.para+'\n';
   return md;
 }
+/* v0.7.5 通用自画对话框：hxAsk问一句话（cb(null)=取消），hxConfirm问要不要（cb(true/false)）。
+   手机壳X5内核不理系统prompt/confirm，全家只许用这两个 */
+var hxDlgCb=null;
+function hxAsk(title, defVal, placeholder, cb, okText){
+  if($('hxDlg').style.display==='block') hxDlgClose(null); /* 防嵌套：旧弹窗按"取消"了结，回调不丢（独立验证员t49抓到） */
+  $('hxDlgTitle').textContent=title;
+  var inp=$('hxDlgInput'); inp.value=defVal||''; inp.placeholder=placeholder||'';
+  $('hxDlgOk').textContent=okText||'确定';
+  hxDlgCb=cb;
+  $('hxDlg').style.display='block';
+  setTimeout(function(){ inp.focus(); },50);
+}
+function hxConfirm(msg, cb){ hxAsk(msg, '', '（此操作不需打字，直接点按钮）', function(v){ cb(v!==null); }, '确定执行'); $('hxDlgInput').style.display='none'; }
+function hxDlgClose(v){ $('hxDlg').style.display='none'; $('hxDlgInput').style.display=''; var cb=hxDlgCb; hxDlgCb=null; if(cb) cb(v); }
+$('hxDlgOk').onclick=function(){ hxDlgClose($('hxDlgInput').value); };
+$('hxDlgCancel').onclick=function(){ hxDlgClose(null); };
+
+/* v0.7.4 浮动秒表胶囊：AI干活期间趴右下角，滚到哪都看得见；干完/报错自动没 */
+var aiFloatTimer=null;
+function aiFloatShow(label){
+  aiFloatHide();
+  var d=document.createElement('div'); d.id='aiFloat';
+  d.style.cssText='position:fixed;right:12px;bottom:70px;z-index:99999;background:rgba(46,42,38,.92);color:#fff;padding:10px 14px;border-radius:999px;font-size:14px;box-shadow:0 2px 10px rgba(0,0,0,.3);';
+  document.body.appendChild(d);
+  var t0=Date.now();
+  d.textContent=label+' 0秒';
+  aiFloatTimer=setInterval(function(){ var e=document.getElementById('aiFloat'); if(e) e.textContent=label+' '+Math.floor((Date.now()-t0)/1000)+'秒'; },1000);
+}
+function aiFloatHide(){ if(aiFloatTimer){clearInterval(aiFloatTimer); aiFloatTimer=null;} var d=document.getElementById('aiFloat'); if(d) d.remove(); }
+var regenIdx=-1; /* v0.7.1 正在重做哪一页 */
 function aiRegenPage(idx){
   var proj=curProj(); if(!proj) return;
-  var p=proj.slides[idx];
-  var ask=prompt('这一页哪里不满意？（留空=AI自由重写本页）','');
-  if(ask===null) return;
-  showMsg($('slidesMsg'),'🤖 AI正在重做第'+(idx+1)+'页…');
-  callAI('您是ICU教学PPT的单页重做助手。',
-    '【整场PPT题目】'+(proj.title||'')+'\n【本页现状】\n'+pageToMd(p)+'\n【要求】'+(ask||'自由重写，更好讲')+'\n\n只重做这一页。'+MD_RULES.replace('页数8~15页。','只输出这一页（一个##段落）。'),
-    function(text){
-      var m=text.match(/```(?:markdown)?\s*([\s\S]*?)```/);
-      var md=(m?m[1]:text).replace(/^\s+|\s+$/g,'');
-      var pages=parseOutline(md);
-      if(!pages.length){ showMsg($('slidesMsg'),'AI给的这页读不懂，换个说法再试','err'); return; }
-      pages[0].cls=p.cls;
-      proj.slides[idx]=pages[0];
-      proj.t=Date.now(); saveStore();
-      renderSlides();
-      showMsg($('slidesMsg'),'✅ 第'+(idx+1)+'页已重做','ok');
-    },function(err){ showMsg($('slidesMsg'),err,'err'); });
+  regenIdx=idx;
+  var tp=proj.slides[idx];
+  $('regenTarget').textContent='正在重做：第'+(idx+1)+'页《'+(tp.title||'无题')+'》'+(tp.table?'（含'+tp.table.rows.length+'行表格）':'')+'　内容开头：'+(pageToMd(tp).replace(/[#|\-\n]/g,' ').replace(/\s+/g,' ').slice(0,60))+'…';
+  $('regenAsk').value=''; $('regenMsg').textContent='';
+  $('regenModal').style.display='block';
 }
+$('btnRegenCancel').onclick=function(){ $('regenModal').style.display='none'; regenIdx=-1; };
+$('btnRegenGo').onclick=function(){
+  var proj=curProj(); if(!proj||regenIdx<0){ $('regenModal').style.display='none'; return; }
+  /* v0.7.2 独立测试t37抓到：AI在途时用户移动/删除了页，按下标写回会写错页。
+     治法：抓住"那一页本身"（对象引用），写回时重新找它现在在哪；找不到=已被删，老实丢弃不冤枉别的页 */
+  var idx=regenIdx, p=proj.slides[idx];
+  var ask=($('regenAsk').value||'').replace(/^\s+|\s+$/g,'');
+  $('regenModal').style.display='none'; regenIdx=-1;
+  toast('🤖 AI开始重做第'+(idx+1)+'页。右下角有浮动秒表在走=活着；好了会再弹一条');
+  var t0=Date.now();
+  var tick=setInterval(function(){
+    showMsg($('slidesMsg'),'🤖 AI正在重做第'+(idx+1)+'页…已等 '+Math.floor((Date.now()-t0)/1000)+' 秒（千问通常20秒内，Kimi要1~4分钟）','ok');
+  },1000);
+  var hadTable=!!p.table; /* v0.7.4 验收用：原页有表格 */
+  var regenRun=function(attempt){
+    var extra=(attempt>1&&hadTable)?'\n\n【死命令】上次您把表格弄丢了。原页有表格，新页必须原样保留整张表格（每行每列都在），只许按要求加内容，不许删表。':'';
+    smallTaskAI('您是ICU教学PPT的单页重做助手。',
+      '【整场PPT题目】'+(proj.title||'')+'\n【本页现状】\n'+pageToMd(p)+'\n【要求】'+(ask||'自由重写，更好讲')+'\n\n只重做这一页。原有内容（尤其表格，一行一列都不许丢）保留，按要求改。'+MD_RULES.replace('页数8~15页。','只输出这一页（一个##段落）。')+extra,
+      function(text){
+        var m=text.match(/```(?:markdown)?\s*([\s\S]*?)```/);
+        var md=(m?m[1]:text).replace(/^\s+|\s+$/g,'');
+        var pages=parseOutline(md);
+        if(!pages.length){ clearInterval(tick); showMsg($('slidesMsg'),'AI给的这页读不懂，换个说法再试','err'); toast('❌ AI给的这页读不懂，换个说法再试',4000); return; }
+        /* v0.7.4 验收：原页有表格而新页没有→自动重试一次；再丢就不动原页，明说 */
+        if(hadTable && !pages[0].table){
+          if(attempt<2){ toast('⚠️ AI把表格弄丢了，自动让它重来一次…',4000); regenRun(2); return; }
+          clearInterval(tick);
+          showMsg($('slidesMsg'),'⚠️ AI两次都把表格弄丢了，本页保持原样没动。换个说法再试，或点「✏️ 编辑」手动改','err');
+          toast('⚠️ 表格两次都丢了，本页没动',5000); return;
+        }
+        clearInterval(tick);
+        var nowIdx=proj.slides.indexOf(p); /* 这页现在搬到哪了 */
+        if(nowIdx<0){ showMsg($('slidesMsg'),'⚠️ 那一页在AI重做期间被删掉了，重做结果已丢弃（没冤枉别的页）','err'); return; }
+        pages[0].cls=p.cls;
+        /* v0.9.0 AI重做=改"在用那一版"：三版档案跟着页走，当前版同步更新 */
+        if(p.vers){ pages[0].vers=p.vers; pages[0].use=p.use||'orig'; pages[0].vers[pages[0].use]=pageToMd(pages[0]); }
+        proj.slides[nowIdx]=pages[0];
+        proj.t=Date.now(); saveStore();
+        renderSlides();
+        showMsg($('slidesMsg'),'✅ 第'+(nowIdx+1)+'页已重做（'+Math.floor((Date.now()-t0)/1000)+'秒）','ok');
+        toast('✅ 第'+(nowIdx+1)+'页重做完成，往上翻看效果');
+      },function(err){ clearInterval(tick); showMsg($('slidesMsg'),err,'err'); toast('❌ 重做失败：'+String(err).slice(0,80),5000); });
+  };
+  regenRun(1);
+};
 </script>
 <script>
 "use strict";
@@ -890,7 +1247,7 @@ function renderProjects(){
     var b2=document.createElement('button'); b2.textContent='✏️ 编辑'; b2.className='ghost'; b2.style.fontSize='13px'; b2.style.padding='7px 10px';
     b2.onclick=function(){ openProject(p.id); };
     var b3=document.createElement('button'); b3.textContent='删除'; b3.className='danger'; b3.style.fontSize='13px'; b3.style.padding='7px 10px';
-    b3.onclick=function(){ if(confirm('删除「'+(p.title||'无题')+'」？')){ store.projects=store.projects.filter(function(x){return x.id!==p.id;}); saveStore(); renderProjects(); } };
+    b3.onclick=function(){ hxConfirm('删除「'+(p.title||'无题')+'」？', function(yes){ if(!yes) return; store.projects=store.projects.filter(function(x){return x.id!==p.id;}); saveStore(); renderProjects(); }); };
     d.appendChild(b1); d.appendChild(b2); d.appendChild(b3);
     el.appendChild(d);
   });
@@ -909,18 +1266,25 @@ function buildFromOutline(){
   if(!pages.length){ showMsg($('editMsg'),'没解析出任何一页，检查格式','err'); return; }
   var p=curProj();
   if(!p){ p={id:newId(), title:'', outline:'', slides:[], t:Date.now()}; store.projects.push(p); curId=p.id; }
+  /* v0.9.3 干活锁：生成开工挂 ppt_busy，寄件端见此锁→寄件排队/叫醒按钮提示容后继续 */
+  try{ localStorage.setItem('ppt_busy', JSON.stringify({title:(pages[0]&&pages[0].title)||p.title||'无题', since:Date.now()})); }catch(e){}
   p.outline=md;
   p.slides=pages;
+  pages.forEach(function(s){ if(!s.vers) s.vers={orig:pageToMd(s),proof:null,merged:null}; if(!s.use) s.use='orig'; }); /* v0.9.0 三版初始化（此处不调ensureVers：它在后面的script块定义，点击时其实已可用，但手写初始化更稳） */
   p.linkNotes=outlineLinks;  /* v0.3.0 摘录跟着项目走 */
   p.title=pages[0]&&pages[0].cls==='cover'?pages[0].title:(pages[0].title||'无题');
   p.t=Date.now();
   saveStore(); renderSlides(); showPage('slidesPage');
+  /* v0.9.3 干活锁：生成完摘锁 */
+  try{ localStorage.removeItem('ppt_busy'); }catch(e){}
   showMsg($('slidesMsg'),'✅ 生成 '+pages.length+' 页。哪页不满意就点那页的「🔄AI重做」','ok');
 }
 function renderSlidesIfReady(){ var p=curProj(); if(p&&p.slides.length){ renderSlides(); showPage('slidesPage'); } }
 function renderSlides(){
   var p=curProj(); if(!p) return;
   $('slidesTitle').textContent='🎞 '+(p.title||'无题')+'（'+p.slides.length+'页）';
+  $('themeSel').value=p.theme||'t-academic'; /* v0.6.0 皮肤回显 */
+  $('btnBgClear').style.display=p.bg?'':'none'; /* v0.6.1 有背景才露清除钮 */
   var el=$('slideList'); el.innerHTML='';
   p.slides.forEach(function(s,i){
     var d=document.createElement('div'); d.className='slide-item';
@@ -937,9 +1301,56 @@ function renderSlides(){
     sel.onchange=function(){ s.cls=sel.value; p.t=Date.now(); saveStore(); };
     var bUp=document.createElement('button'); bUp.className='ghost'; bUp.textContent='↑'; bUp.onclick=function(){ if(i>0){ p.slides.splice(i-1,0,p.slides.splice(i,1)[0]); saveStore(); renderSlides(); } };
     var bDn=document.createElement('button'); bDn.className='ghost'; bDn.textContent='↓'; bDn.onclick=function(){ if(i<p.slides.length-1){ p.slides.splice(i+1,0,p.slides.splice(i,1)[0]); saveStore(); renderSlides(); } };
-    var bDel=document.createElement('button'); bDel.className='danger'; bDel.textContent='删'; bDel.onclick=function(){ if(confirm('删第'+(i+1)+'页？')){ p.slides.splice(i,1); saveStore(); renderSlides(); } };
+    var bDel=document.createElement('button'); bDel.className='danger'; bDel.textContent='删'; bDel.onclick=function(){ hxConfirm('删第'+(i+1)+'页？', function(yes){ if(!yes) return; p.slides.splice(i,1); saveStore(); renderSlides(); }); };
     ops.appendChild(bRegen); ops.appendChild(bEdit); ops.appendChild(sel); ops.appendChild(bUp); ops.appendChild(bDn); ops.appendChild(bDel);
+    /* v0.9.0 二期：每页三版开关（原著/校对/综合）+双AI精做/Kimi精校/综合/对比 */
+    ensureVers(s);
+    var ops2=document.createElement('div'); ops2.className='slide-ops';
+    var vsel=document.createElement('select');
+    vsel.title='这页用哪版进真PPT（放映/导出都认它）';
+    vsel.style.cssText='font-size:13px;padding:6px 6px;border:1px solid #5b7f5e;border-radius:8px;background:#fff;';
+    vsel.innerHTML='<option value="orig">📝原著</option><option value="proof">🔍校对</option><option value="merged">🤝综合</option>';
+    if(!s.vers.proof) vsel.options[1].disabled=true;
+    if(!s.vers.merged) vsel.options[2].disabled=true;
+    vsel.value=s.use;
+    vsel.onchange=function(){ s.use=vsel.value; applyUse(s); p.t=Date.now(); saveStore(); renderSlides(); toast('第'+(i+1)+'页改用「'+vsel.options[vsel.selectedIndex].text+'」版'); };
+    var bDual=document.createElement('button'); bDual.className='ghost'; bDual.textContent='✨双AI'; bDual.title='本页：千问写原著＋快校对出校对版（约半分钟、约2分钱）';
+    bDual.onclick=function(){
+      if(polishing){ toast('有AI活正在干，稍等'); return; }
+      polishing=true; toast('✨ 双AI精做第'+(i+1)+'页…');
+      polishOnePage(s,p,false).then(function(){ polishing=false; p.t=Date.now(); saveStore(); renderSlides(); toast('✅ 第'+(i+1)+'页精做好了：开关切「🔍校对」对比看',5000); },
+        function(e){ polishing=false; toast('❌ 第'+(i+1)+'页没成：'+String(e.message||e).slice(0,60),5000); });
+    };
+    var bDeep=document.createElement('button'); bDeep.className='ghost'; bDeep.textContent='🔍精校'; bDeep.title='Kimi思考型精校本页（1~4分钟），刷新校对版';
+    bDeep.onclick=function(){
+      if(polishing){ toast('有AI活正在干，稍等'); return; }
+      ensureVers(s);
+      polishing=true; toast('🔍 Kimi精校第'+(i+1)+'页（思考型慢工，1~4分钟）…',4000);
+      aiP(callAI,SYS9_PROOF,proofPrompt(p,s.vers.orig)).then(function(text){
+        var md=extractMd(text), pg=parseOutline(md);
+        if(pg.length && !(s.vers.orig.indexOf('|')>=0 && !pg[0].table)){ s.vers.proof=md; if(s.use==='proof') applyUse(s); p.t=Date.now(); saveStore(); renderSlides(); toast('✅ 第'+(i+1)+'页精校回来，开关切「🔍校对」看',4000); }
+        else toast('⚠️ 精校结果读不懂或弄丢表格，校对版没动',5000);
+        polishing=false;
+      },function(e){ polishing=false; toast('❌ 精校没成：'+String(e.message||e).slice(0,60),5000); });
+    };
+    var bMerge=document.createElement('button'); bMerge.className='ghost'; bMerge.textContent='🤝综合'; bMerge.title='AI当和事佬：原著为底、校对指错必改、两版择优（不到1分钱）';
+    bMerge.onclick=function(){
+      ensureVers(s);
+      if(!s.vers.orig||!s.vers.proof){ toast('要先有原著和校对两版（点「✨双AI」）'); return; }
+      if(polishing){ toast('有AI活正在干，稍等'); return; }
+      polishing=true; toast('🤝 AI综合第'+(i+1)+'页…');
+      aiP(smallTaskAI,SYS9_MERGE,mergePrompt(p,s.vers.orig,s.vers.proof)).then(function(text){
+        var md=extractMd(text), pg=parseOutline(md);
+        if(pg.length && !(s.vers.orig.indexOf('|')>=0 && !pg[0].table)){ s.vers.merged=md; if(s.use==='merged') applyUse(s); p.t=Date.now(); saveStore(); renderSlides(); toast('✅ 综合版好了，开关切「🤝综合」看',4000); }
+        else toast('⚠️ 综合结果读不懂或弄丢表格，没存',5000);
+        polishing=false;
+      },function(e){ polishing=false; toast('❌ 综合没成：'+String(e.message||e).slice(0,50),4000); });
+    };
+    var bCmp=document.createElement('button'); bCmp.className='ghost'; bCmp.textContent='👁对比'; bCmp.title='三版并排看，点哪版用哪版';
+    bCmp.onclick=function(){ cmpOpen(i); };
+    ops2.appendChild(vsel); ops2.appendChild(bDual); ops2.appendChild(bDeep); ops2.appendChild(bMerge); ops2.appendChild(bCmp);
     d.appendChild(ops);
+    d.appendChild(ops2); /* v0.9.0 三版开关行排在老按钮行下面 */
     el.appendChild(d);
   });
 }
@@ -947,7 +1358,7 @@ function renderSlides(){
 var pvIdx=0;
 function fitStage(){
   var st=$('stage');
-  var w=window.innerWidth, h=window.innerHeight;
+  var w=window.innerWidth, h=window.innerHeight-56; /* v0.5.0 扣底栏 */
   var sw=w, sh=w*9/16;
   if(sh>h){ sh=h; sw=h*16/9; }
   st.style.width=sw+'px'; st.style.height=sh+'px';
@@ -956,8 +1367,23 @@ function fitStage(){
 function renderStage(){
   var p=curProj(); if(!p||!p.slides.length) return;
   pvIdx=Math.max(0,Math.min(pvIdx,p.slides.length-1));
+  $('stage').className=(p.theme&&p.theme!=='t-academic')?p.theme:''; /* v0.6.0 皮肤 */
+  syncBgGlobals(); /* v0.6.1 背景图：渲染前同步当前PPT的bg给slideHTML用 */
   $('stage').innerHTML=slideHTML(p.slides[pvIdx]);
   $('pvNo').textContent=(pvIdx+1)+'/'+p.slides.length;
+  autoFitStage();
+}
+/* v0.5.0 放映自适应：内容（em单位）超高就逐步缩小字号，最多缩到35%，横屏表格不再被吃 */
+function autoFitStage(){
+  var st=$('stage'); if(!st) return;
+  var pg=st.querySelector('.slide-page'); if(!pg) return;
+  var f=parseFloat(st.style.fontSize)||(st.clientHeight/22);
+  var min=(st.clientHeight/22)*0.35;
+  for(var i=0;i<40;i++){
+    if(pg.scrollHeight<=pg.clientHeight+2 && pg.scrollWidth<=pg.clientWidth+2) break;
+    if(f<=min) break;
+    f=Math.max(min,f*0.93); st.style.fontSize=f+'px';
+  }
 }
 function startPlay(){
   var p=curProj(); if(!p||!p.slides.length){ toast('先生成PPT'); return; }
@@ -968,6 +1394,7 @@ function stopPlay(){ $('player').classList.add('hidden'); }
 window.addEventListener('resize', function(){ if(!$('player').classList.contains('hidden')){ fitStage(); renderStage(); } });
 document.addEventListener('keydown', function(e){
   if($('player').classList.contains('hidden')) return;
+  if(!$('pvAskModal').classList.contains('hidden')) return; /* v0.8.0 问AI打字时，空格/方向键不许翻页 */
   if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){ pvIdx++; renderStage(); }
   else if(e.key==='ArrowLeft'||e.key==='PageUp'){ pvIdx--; renderStage(); }
   else if(e.key==='Escape') stopPlay();
@@ -991,6 +1418,63 @@ $('player').addEventListener('click',function(e){
 $('pvPrev').onclick=function(){ pvIdx--; renderStage(); };
 $('pvNext').onclick=function(){ pvIdx++; renderStage(); };
 $('pvExit').onclick=stopPlay;
+/* v0.8.0 放映中问AI（愿望清单第4批·最后一件）：讲课卡壳当场问，答案一键变新的一页 */
+var pvAskLastQ='', pvAskLastA='', pvAskCtx=null, pvAskSession=0;
+$('pvAsk').onclick=function(){
+  var p=curProj(); if(!p) return;
+  pvAskSession++; /* 每开一次弹窗=新现场，上次发问的在途答案回来也丢弃（验证员t53a S4抓到） */
+  $('pvAskTarget').textContent='正在放映第'+(pvIdx+1)+'页《'+(p.slides[pvIdx].title||'无题')+'》——这一页的内容会一起发给AI，它不会乱编';
+  $('pvAskQ').value=''; $('pvAskAns').style.display='none'; $('pvAskBtns').style.display='none';
+  $('pvAskModal').classList.remove('hidden');
+  setTimeout(function(){ $('pvAskQ').focus(); },50);
+};
+$('pvAskClose').onclick=function(){ $('pvAskModal').classList.add('hidden'); };
+$('pvAskGo').onclick=function(){
+  var p=curProj(); if(!p) return;
+  var q=$('pvAskQ').value.replace(/^\s+|\s+$/g,'');
+  if(!q){ toast('先写个问题'); return; }
+  pvAskLastQ=q; pvAskLastA=''; pvAskCtx={proj:p, slide:p.slides[pvIdx], sess:pvAskSession}; /* 记住提问现场：哪个PPT哪一页哪一场 */
+  $('pvAskAns').style.display='none'; $('pvAskBtns').style.display='none'; /* 收起旧答案，防在途收错（验证员t53a抓到） */
+  var ctx=pvAskCtx;
+  var sys='您是重症医学讲课助手。学员看着一页PPT提了个问题，请用大白话回答，说人话，别绕弯。输出规矩：直接给答案本身，不要标题、不要解释您在干嘛；要点行首"- "（3~8条，每条不超过30字）；真有对比才画 | 表 |。';
+  var usr='【这一页PPT的内容】\n'+pageToMd(p.slides[pvIdx])+'\n【学员的问题】\n'+q;
+  $('pvAskGo').disabled=true;
+  smallTaskAI(sys,usr,function(ans){
+    $('pvAskGo').disabled=false;
+    /* 答案回来时若已离开提问现场（关了弹窗/退出放映/换了PPT），丢弃不展示更不收（验证员t53a抓到A的答案漏进B） */
+    if($('pvAskModal').classList.contains('hidden') || $('player').classList.contains('hidden') || curProj()!==ctx.proj || ctx.sess!==pvAskSession){
+      toast('💬 答案回来了，但您已离开提问的那个现场，已丢弃（没动您的PPT）');
+      return;
+    }
+    pvAskLastA=ans;
+    $('pvAskAns').textContent=ans;
+    $('pvAskAns').style.display='block';
+    $('pvAskBtns').style.display='flex';
+  },function(e){
+    $('pvAskGo').disabled=false;
+    toast('AI没答成：'+e);
+  });
+};
+$('pvAskAgain').onclick=function(){ $('pvAskAns').style.display='none'; $('pvAskBtns').style.display='none'; $('pvAskQ').focus(); };
+$('pvAskKeep').onclick=function(){
+  var p=curProj(); if(!p||!pvAskLastA){ toast('还没有答案可收'); return; }
+  if(!pvAskCtx||pvAskCtx.proj!==p){ toast('这份答案不是问这个PPT的，没敢收'); return; }
+  var pages=parseOutline('## 问：'+pvAskLastQ.slice(0,18)+'\n'+pvAskLastA);
+  if(!pages.length){ toast('答案没转成页，没动您的PPT'); return; }
+  var qi=p.slides.indexOf(pvAskCtx.slide); /* 锚住"所问那页"，翻了页也插回它后面（验证员t53a抓到错位） */
+  var at=(qi>=0)? qi+1 : Math.min(pvIdx+1,p.slides.length);
+  for(var i=0;i<pages.length;i++) p.slides.splice(at+i,0,pages[i]);
+  saveStore();
+  $('pvAskModal').classList.add('hidden');
+  pvIdx=at; renderStage(); /* 跳到答案页让它当场亮相 */
+  toast('✅ 已收进PPT（第'+(at+1)+'页，共加'+pages.length+'页）');
+};
+/* v0.6.0 皮肤换装：即选即存，云备份跟着走 */
+$('themeSel').onchange=function(){
+  var p=curProj(); if(!p) return;
+  p.theme=this.value; saveStore();
+  toast('🎨 皮肤已换成「'+this.options[this.selectedIndex].text.replace('🎨 ','')+'」，放映即见，导出也带着');
+};
 </script>
 <script>
 "use strict";
@@ -1154,13 +1638,14 @@ function outlineReplace(newText){
 }
 $('selEdit').onclick=function(){
   var sel=outlineSel(); if(!sel.text) return;
-  var t=prompt('改成什么？', sel.text);
-  if(t===null) return;
-  outlineReplace(t);
+  hxAsk('改成什么？', sel.text, '', function(t){
+    if(t===null) return;
+    outlineReplace(t);
+  }, '✏️ 改');
 };
 $('selAi').onclick=function(){
   var sel=outlineSel(); if(!sel.text) return;
-  var ask=prompt('对这段的要求？（如：更简洁 / 改成对比表 / 扩成三条要点）','');
+  hxAsk('对这段的要求？（如：更简洁 / 改成对比表 / 扩成三条要点）', '', '', function(ask){
   if(ask===null) return;
   toast('🤖 AI正在改这段…');
   callAI('您是ICU教学PPT大纲的段落编辑助手。',
@@ -1169,6 +1654,7 @@ $('selAi').onclick=function(){
       var m=text.match(/```(?:markdown)?\s*([\s\S]*?)```/); if(m) text=m[1];
       outlineReplace(text.replace(/^\s+|\s+$/g,'')); toast('✅ 改好了');
     }, function(err){ toast('⚠️ '+err); });
+  }, '🤖 AI改');
 };
 /* 文献选择窗：mode 'link'=插[[文件]]；'part'=摘一段插[[文件|标签]]并存linkNotes */
 var litMode='link', litTarget=null;  /* litTarget: 'outline' 或 'page'（单页编辑窗的textarea） */
@@ -1235,11 +1721,12 @@ function litPicked(m){
     b.onclick=function(){
       var excerpt=ta.value.replace(/^\s+|\s+$/g,'');
       if(!excerpt){ toast('摘要是空的'); return; }
-      var label=prompt('链接上显示什么字？', m.title||m.filename);
+      hxAsk('链接上显示什么字？', m.title||m.filename, '', function(label){
       if(label===null) return;
       outlineLinks[m.filename]=excerpt;
       litInsert('[['+m.filename+'|'+label+']]');
       toast('✅ 已插入，摘录已存（导出时别人点开看到的就是这段）');
+      }, '📎 插入');
     };
     el.appendChild(b);
   });
@@ -1263,11 +1750,14 @@ $('peSave').onclick=function(){
   var pages=parseOutline($('peText').value);
   if(!pages.length){ $('peMsg').textContent='认不出这一页（至少留个##标题或要点）'; $('peMsg').className='msg err'; return; }
   pages[0].cls=p.slides[peIdx].cls;
+  /* v0.9.0 手动编辑=改"在用那一版"：三版档案跟着页走，当前版同步更新 */
+  var peOld=p.slides[peIdx];
+  if(peOld.vers){ pages[0].vers=peOld.vers; pages[0].use=peOld.use||'orig'; pages[0].vers[pages[0].use]=pageToMd(pages[0]); }
   p.slides[peIdx]=pages[0]; p.t=Date.now(); saveStore(); renderSlides();
   $('pageEditModal').classList.add('hidden'); toast('✅ 第'+(peIdx+1)+'页已保存');
 };
 $('peAi').onclick=function(){
-  var ask=prompt('这页怎么改？（如：要点再精简 / 加个对比表）','');
+  hxAsk('这页怎么改？（如：要点再精简 / 加个对比表）', '', '', function(ask){
   if(ask===null) return;
   $('peMsg').textContent='🤖 AI正在改…'; $('peMsg').className='msg';
   callAI('您是ICU教学PPT的单页编辑助手。',
@@ -1277,6 +1767,7 @@ $('peAi').onclick=function(){
       $('peText').value=text.replace(/^\s+|\s+$/g,'');
       $('peMsg').textContent='✅ AI改好了，检查后点「保存」';
     }, function(err){ $('peMsg').textContent=err; $('peMsg').className='msg err'; });
+  }, '🤖 AI改');
 };
 $('peLink').onclick=function(){ openLitPicker('link','page'); };
 $('peCancel').onclick=function(){ $('pageEditModal').classList.add('hidden'); peIdx=null; };
@@ -1302,23 +1793,27 @@ async function exportHTML(){
     }
   }
   var css=document.querySelector('style').textContent;
-  var slidesJson=JSON.stringify(p.slides).replace(/<\/script>/gi,'<\\/script>');
+  /* v0.9.0 导出剥掉三版档案（vers/use）——放映只带"在用版"，文件小一半 */
+  var slidesClean=p.slides.map(function(s){ var c={}; for(var k in s){ if(k!=='vers'&&k!=='use') c[k]=s[k]; } return c; });
+  var slidesJson=JSON.stringify(slidesClean).replace(/<\/script>/gi,'<\\/script>');
   var linksJson=JSON.stringify(LINKS).replace(/<\/script>/gi,'<\\/script>');
-  var fn=slideHTML.toString(), fn2=chartSVG.toString(), fn3=esc.toString(), fn4=pageKind.toString(), fn5=linkify.toString();
+  var fn=slideHTML.toString(), fn2=chartSVG.toString(), fn3=esc.toString(), fn4=pageKind.toString(), fn5=linkify.toString(), fn6=bgStyleStr.toString(); /* v0.6.1 bgStyleStr一起带走 */
   var doc='<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">'+
     '<meta name="viewport" content="width=device-width, initial-scale=1.0">'+
     '<title>'+esc(p.title||'PPT')+'</title><style>'+css+'</style></head><body>'+
-    '<div id="player" style="display:flex"><div id="stage"></div>'+
+    '<div id="player" style="display:flex"><div id="stage"'+((p.theme&&p.theme!=='t-academic')?(' class="'+p.theme+'"'):'')+'></div>'+
     '<div id="playerBar"><button onclick="pv(-1)">← 上一页</button><span id="pvNo"></span>'+
     '<button onclick="pv(1)">下一页 →</button></div></div>'+
     '<div id="fileViewer" class="hidden"><div class="fv-card"><div class="fv-head"><div class="fv-title" id="fvTitle"></div><button onclick="fvClose2()">✕ 关闭</button></div><div class="fv-body" id="fvBody"></div><div class="fv-src" id="fvSrc"></div></div></div>'+
     '<script>var slides='+slidesJson+';var pvIdx=0;'+
     'var PPT_LINKS='+linksJson+';'+
+    'var PPT_BG='+(p.bg?JSON.stringify(p.bg):'null')+';var PPT_BG_DARK='+((p.theme==='t-deep'||p.theme==='t-ink'||p.theme==='t-chalk')?'true':'false')+';var bgStyleStr='+fn6+'; /* v0.6.1 背景图内嵌 */'+
     'var esc='+fn3+';var pageKind='+fn4+';var chartSVG='+fn2+';var linkify='+fn5+';var slideHTML='+fn+';'+
     'function fvClose2(){document.getElementById("fileViewer").classList.add("hidden");}'+
     'function fvLink(name){document.getElementById("fvTitle").textContent="📎 "+name;var txt=PPT_LINKS[name];var b=document.getElementById("fvBody");if(txt){b.innerHTML="<pre>"+esc(txt)+"</pre>";document.getElementById("fvSrc").textContent="内嵌摘要（导出时自动抓取），这份HTML自己带着，不用联网";}else{b.innerHTML="<div style=color:#a89f93>这份HTML没有内嵌该文件的摘要</div>";document.getElementById("fvSrc").textContent="";}document.getElementById("fileViewer").classList.remove("hidden");}'+
-    'function fit(){var st=document.getElementById("stage");var w=innerWidth,h=innerHeight;var sw=w,sh=w*9/16;if(sh>h){sh=h;sw=h*16/9;}st.style.width=sw+"px";st.style.height=sh+"px";st.style.fontSize=(sh/22)+"px";}'+
-    'function render(){pvIdx=Math.max(0,Math.min(pvIdx,slides.length-1));document.getElementById("stage").innerHTML=slideHTML(slides[pvIdx]);document.getElementById("pvNo").textContent=(pvIdx+1)+"/"+slides.length;}'+
+    'function fit(){var st=document.getElementById("stage");var w=innerWidth,h=innerHeight-56;var sw=w,sh=w*9/16;if(sh>h){sh=h;sw=h*16/9;}st.style.width=sw+"px";st.style.height=sh+"px";st.style.fontSize=(sh/22)+"px";}'+
+    'function render(){pvIdx=Math.max(0,Math.min(pvIdx,slides.length-1));var st=document.getElementById("stage");st.innerHTML=slideHTML(slides[pvIdx]);document.getElementById("pvNo").textContent=(pvIdx+1)+"/"+slides.length;autoFit();}'+
+    'function autoFit(){var st=document.getElementById("stage");var pg=st.querySelector(".slide-page");if(!pg)return;var f=parseFloat(st.style.fontSize)||(st.clientHeight/22);var min=(st.clientHeight/22)*0.35;for(var i=0;i<40;i++){if(pg.scrollHeight<=pg.clientHeight+2&&pg.scrollWidth<=pg.clientWidth+2)break;if(f<=min)break;f=Math.max(min,f*0.93);st.style.fontSize=f+"px";}} /* v0.5.0 导出同款自适应 */'+
     'function pv(d){pvIdx+=d;render();}onresize=function(){fit();render();};'+
     'document.addEventListener("keydown",function(e){if(e.key==="ArrowRight"||e.key===" ")pv(1);else if(e.key==="ArrowLeft")pv(-1);});'+
     'document.getElementById("player").addEventListener("click",function(e){if(e.target.tagName==="BUTTON")return;var a=e.target.closest?e.target.closest(".plnk"):null;if(a){fvLink(decodeURIComponent(a.getAttribute("data-f")||""));return;}var x=e.clientX;if(x<innerWidth*0.35)pv(-1);else if(x>innerWidth*0.65)pv(1);});'+
@@ -1335,16 +1830,280 @@ async function exportHTML(){
   setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },1000);
   toast('📤 已导出 '+fname+'（浏览器下载目录；壳里也存了文件夹一份）',4000);
 }
-/* ==================== 收件箱（学习笔记寄大纲来） ==================== */
+/* ==================== v0.9.0 二期：双AI逐页精做 + 三版开关（洪老师拍板药方C） ====================
+   数据：每页 s.vers={orig:markdown, proof:markdown|null, merged:markdown|null}，s.use=在用哪版。
+   渲染/放映/导出只认页面对象本身——切版时applyUse把选中版解析进页面对象，老代码零改动。
+   钱：原著=千问(约1分/页)；快校对=moonshot-v1-32k(约1分/页)；精校=Kimi思考型(贵些，单页按需)；综合=千问(不到1分/页)。 */
+function ensureVers(s){ if(!s.vers) s.vers={orig:pageToMd(s),proof:null,merged:null}; if(!s.use) s.use='orig'; }
+function applyUse(s){
+  ensureVers(s);
+  var md=s.vers[s.use]||s.vers.orig;
+  var pages=parseOutline(md);
+  if(!pages.length) return;
+  var q=pages[0];
+  s.title=q.title; s.bullets=q.bullets; s.table=q.table; s.chart=q.chart;
+  s.para=q.para; s.big=q.big; s.bigText=q.bigText; s.quote=q.quote;
+}
+function extractMd(text){ var m=String(text||'').match(/```(?:markdown)?\s*([\s\S]*?)```/); return (m?m[1]:text).replace(/^\s+|\s+$/g,''); }
+/* 把回调式AI包成Promise，方便逐页排队 */
+function aiP(fn,sys,usr){ return new Promise(function(res,rej){ fn(sys,usr,res,function(e){ rej(new Error(String(e))); }); }); }
+/* 快校对通道：原写死moonshot-v1-32k；v1全系已下架 → v0.9.2起它在黑名单就直接用hx_aimodel；404也自动换hx_aimodel重试（思考型给16384，怪癖#9） */
+function callFastAI(sys, usr, onOk, onErr){
+  var key=aiKey();
+  if(!key){ onErr('还没有 API Key'); keyInputAsk(); return; }
+  aiFloatShow('🔍 快校对干活中');
+  var FAST="moonshot-v1-32k";
+  var first=(DEAD_MODELS.indexOf(FAST)>=0)?(localStorage.getItem('hx_aimodel')||'kimi-k2.6'):FAST;
+  function attempt(model, retried){
+    var mt=(model===FAST)?4096:16384;
+    fetch(API_URL,{method:"POST",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer "+key},
+      body:JSON.stringify({model:model,messages:[{role:"system",content:sys},{role:"user",content:usr}],max_tokens:mt})
+    }).then(function(r){
+      if(r.status===404 && !retried){
+        var fb=localStorage.getItem('hx_aimodel')||'kimi-k2.6';
+        if(fb!==model){ attempt(fb,true); return null; }
+      }
+      if(!r.ok) return r.text().then(function(t){ throw new Error("HTTP "+r.status+"："+String(t||"").slice(0,150)); });
+      return r.json();
+    }).then(function(j){
+      if(!j) return;
+      var msg=j.choices&&j.choices[0]&&j.choices[0].message;
+      var c=msg?msg.content:"";
+      if(Array.isArray(c)) c=c.map(function(x){return x.text||x.content||"";}).join("");
+      if(!c) throw new Error("快校对没说出话来");
+      aiFloatHide();
+      hxBillToast(hxBill("PPT工坊","快校对("+model+")",(sys||"").length+(usr||"").length,c.length,model));
+      onOk(c);
+    }).catch(function(e){ aiFloatHide(); onErr((e&&e.message)||"网络不通"); });
+  }
+  attempt(first,false);
+}
+var P9_RULES='\n输出规矩：一个"## 页标题"开头；页内"- "列要点（短、口语、适合讲课）；真有对比才画 | 表格 |；只输出这一页本身，别的话一个字不写。';
+function writePrompt(proj, baseMd){
+  return '【整场PPT题目】'+(proj.title||'')+'\n【这一页的大纲草稿】\n'+baseMd+'\n\n把这一页写成正式讲课内容：要点更准、更口语；原有表格一行一列不许丢。'+P9_RULES;
+}
+function proofPrompt(proj, origMd){
+  return '【整场PPT题目】'+(proj.title||'')+'\n【本页原著】\n'+origMd+'\n\n逐条检查：事实错误、数字矛盾、错别字、表格丢行丢列。挑出问题的必须改对；没问题的部分一字不动。'+P9_RULES;
+}
+function mergePrompt(proj, origMd, proofMd){
+  return '【整场PPT题目】'+(proj.title||'')+'\n【原著版】\n'+origMd+'\n【校对版】\n'+proofMd+'\n\n以原著版为底；校对版指出的错误必须采纳；两版都好说法不同的地方择优。'+P9_RULES;
+}
+var SYS9_ORIG='您是ICU教学PPT的原著者，把大纲草稿写成正式讲课页。';
+var SYS9_PROOF='您是ICU教学PPT的校对员，只挑错改错，不动文风。';
+var SYS9_MERGE='您是两位AI的和事佬，主持定稿。';
+var polishing=false; /* 有精做/精校/综合在途=true，防重入 */
+/* 精做一页：千问写原著 → （deep?Kimi思考型:快校对）出校对版。表格被弄丢自动重试一次，再丢不动旧版。 */
+function polishOnePage(s, proj, deep){
+  ensureVers(s);
+  var baseMd=s.vers.orig||pageToMd(s);
+  var hadTable=baseMd.indexOf('|')>=0;
+  function tryWrite(attempt){
+    return aiP(smallTaskAI, SYS9_ORIG, writePrompt(proj, baseMd)).then(function(text){
+      var md=extractMd(text), pg=parseOutline(md);
+      if(!pg.length) throw new Error('千问写的这页读不懂');
+      if(hadTable && !pg[0].table){
+        if(attempt<2) return tryWrite(2);
+        throw new Error('千问把表格弄丢了两次，本页原著没动');
+      }
+      s.vers.orig=md; if(s.use==='orig') applyUse(s);
+    });
+  }
+  function tryProof(attempt){
+    return aiP(deep?callAI:callFastAI, SYS9_PROOF, proofPrompt(proj, s.vers.orig)).then(function(text){
+      var md=extractMd(text), pg=parseOutline(md);
+      if(!pg.length) throw new Error('校对给的这页读不懂');
+      if(s.vers.orig.indexOf('|')>=0 && !pg[0].table){
+        if(attempt<2) return tryProof(2);
+        throw new Error('校对把表格弄丢了两次，校对版没存');
+      }
+      s.vers.proof=md; if(s.use==='proof') applyUse(s);
+    });
+  }
+  return tryWrite(1).then(function(){ return tryProof(1); });
+}
+/* 全篇双AI精做的实际跑法（不问人）：v0.9.1抽出来，按钮手动点和大管家auto信自动跑共用 */
+function polishAllRun(p){
+  if(polishing) return;
+  polishing=true;
+  /* v0.9.3 干活锁：全篇精做是真正的长活（几分钟），开工挂 ppt_busy，做完（含中途每页失败但跑完）摘锁 */
+  try{ localStorage.setItem('ppt_busy', JSON.stringify({title:p.title||'无题', since:Date.now()})); }catch(e){}
+  var n=p.slides.length, fails=[], i=0, t0=Date.now();
+  toast('🤖 全篇精做开工，右下角秒表在走=活着',3000);
+  (function next(){
+    if(i>=n){
+      polishing=false; saveStore(); renderSlides();
+      try{ localStorage.removeItem('ppt_busy'); }catch(e){} /* v0.9.3 摘干活锁 */
+      var msg='✅ 全篇精做完成（'+Math.floor((Date.now()-t0)/1000)+'秒）'+(fails.length?('；'+fails.length+'页没成：第'+fails.join('、')+'页，可点那页「✨双AI」补做'):'，每页点开关切「校对」看看');
+      showMsg($('slidesMsg'),msg, fails.length?'err':'ok'); toast(msg,6000); return;
+    }
+    var s=p.slides[i], no=i+1; i++;
+    showMsg($('slidesMsg'),'🤖 精做第'+no+'/'+n+'页《'+(s.title||'无题')+'》…','ok');
+    polishOnePage(s,p,false).then(function(){ p.t=Date.now(); saveStore(); renderSlides(); next(); },
+      function(e){ fails.push(no); toast('⚠️ 第'+no+'页没成：'+String(e.message||e).slice(0,50)+'，跳过接着做',4000); next(); });
+  })();
+}
+/* 全篇双AI精做：手动点要先弹确认（写明页数/时间/钱）；靠页面对象引用写回，删页移页不串位 */
+$('btnPolishAll').onclick=function(){
+  var p=curProj(); if(!p||!p.slides.length){ toast('先生成PPT'); return; }
+  if(polishing){ toast('正在精做着呢，别催'); return; }
+  var n=p.slides.length;
+  hxConfirm('全篇双AI精做：'+n+'页 ×（千问写＋快校对），约 '+Math.max(1,Math.ceil(n*25/60))+' 分钟、几分钱。跑的时候别删页别退出。跑吗？', function(yes){
+    if(yes) polishAllRun(p);
+  });
+};
+/* 三版并排对比终审 */
+function cmpOpen(i){
+  var p=curProj(); if(!p) return;
+  var s=p.slides[i]; ensureVers(s);
+  syncBgGlobals(); /* 预览跟当前皮肤/背景走 */
+  $('cmpTitle').textContent='👁 第'+(i+1)+'页《'+(s.title||'无题')+'》三版对比——点哪版用哪版';
+  var box=$('cmpCols'); box.innerHTML='';
+  [['orig','📝 原著（千问写）'],['proof','🔍 校对（挑错后）'],['merged','🤝 AI综合']].forEach(function(pair){
+    var k=pair[0];
+    var col=document.createElement('div'); col.className='cmp-col';
+    var h=document.createElement('div'); h.className='cmp-head';
+    h.textContent=pair[1]+(s.use===k?' ✅当前在用':'');
+    col.appendChild(h);
+    if(!s.vers[k]){
+      var em=document.createElement('div'); em.className='hint'; em.textContent='（还没有这版：先点「✨双AI」/「🤝综合」）'; col.appendChild(em);
+    }else{
+      var pages=parseOutline(s.vers[k]);
+      var pv=document.createElement('div'); pv.className='cmp-prev';
+      if(pages.length){ pages[0].cls=s.cls; pv.innerHTML=slideHTML(pages[0]); }
+      col.appendChild(pv);
+      var bu=document.createElement('button'); bu.textContent='用这版';
+      bu.onclick=function(){ s.use=k; applyUse(s); p.t=Date.now(); saveStore(); renderSlides(); $('cmpModal').classList.add('hidden'); toast('第'+(i+1)+'页改用「'+pair[1]+'」'); };
+      col.appendChild(bu);
+    }
+    box.appendChild(col);
+  });
+  $('cmpModal').classList.remove('hidden');
+}
+$('cmpClose').onclick=function(){ $('cmpModal').classList.add('hidden'); };
+
+/* ==================== v0.9.2 PPT链路闭环：寄样品 + 收修改意见照改 ====================
+   邮路：完工写 guanjia_inbox {taskId,title,outline,round,status:'draft',t,from:'PPT工坊'}；
+   大管家意见走 ppt_inbox {rev:true,...}；别的任务样品没拆不盖信（暂存pendingSample，下次开门补寄）。 */
+function mailSample(p){
+  if(!p || !p.taskId) return;
+  var letter={taskId:p.taskId, title:p.title||'无题', outline:p.outline||'', round:(p.round||0)+1, status:'draft', t:Date.now(), from:'PPT工坊'};
+  var old=null; try{ old=JSON.parse(localStorage.getItem('guanjia_inbox')); }catch(e){}
+  if(old && old.taskId && old.taskId!==p.taskId){
+    p.pendingSample=true; saveStore();
+    toast('⚠️ 大管家样品信箱有别的任务没看，这封暂存，下次开门补寄（不盖信）', 4000); return;
+  }
+  try{ localStorage.setItem('guanjia_inbox', JSON.stringify(letter)); p.pendingSample=false; toast('📮 样品（大纲）已寄回大管家', 3000); }catch(e){}
+}
+var revRunning=false;
+function revApply(p, d){
+  if(revRunning){ toast('上一封修改意见还在改，稍等'); return; }
+  revRunning=true;
+  showPage('slidesPage'); curId=p.id; renderSlides();
+  showMsg($('slidesMsg'),'📬 收到大管家修改意见，AI照改中（约30~90秒，转着就不是死机）…','ok');
+  toast('📬 收到修改意见，AI照改中…', 4000);
+  callAI(
+    "您是PPT修改助手。把修改意见逐条落实到原大纲：指出的错误改掉，没提到的部分一字不动原样保留。保持原有Markdown结构（#封面/##页/要点/表格）。只输出改后的完整大纲，不要解释。",
+    "【原大纲】\n"+(p.outline||'')+"\n\n【修改意见】\n"+(d.note||'')+"\n\n"+MD_RULES.replace("页数8~15页。","页数维持原样，修改意见要求增删页的除外。"),
+    function(text){
+      revRunning=false;
+      var m=text.match(/```(?:markdown)?\s*([\s\S]*?)```/);
+      var md=(m?m[1]:text).replace(/^\s+|\s+$/g,"");
+      var pages=parseOutline(md);
+      if(!pages.length){ showMsg($('slidesMsg'),'⚠️ AI改完的大纲解析不出页，原稿没动','err'); return; }
+      pages.forEach(ensureVers);
+      p.outline=md; p.slides=pages;
+      p.title=pages[0]&&pages[0].cls==='cover'?pages[0].title:(pages[0].title||p.title);
+      p.round=d.round||0; p.t=Date.now();
+      saveStore(); renderSlides();
+      showMsg($('slidesMsg'),'✅ 已按大管家意见改完，重出 '+pages.length+' 页，样品已寄回','ok');
+      toast('✅ 照改完成，样品已寄回大管家', 4000);
+      mailSample(p);
+    },
+    function(e){ revRunning=false; showMsg($('slidesMsg'),'⚠️ AI照改没成：'+String(e&&e.message||e).slice(0,60)+'。意见内容在大纲框，可手动处理','err');
+      $('outlineText').value=(p.outline||'')+'\n\n【大管家修改意见（AI没改成，请人工）】\n'+(d.note||''); }
+  );
+}
+/* v0.9.2 仓管员门面：左下角🗄️按钮 */
+function hxStoreAfterPick(){
+  hxStore.pollFolder(function(ok){
+    if(ok){ var r=hxStore.sync(); toast('✅ 文件夹接上了：'+hxStore.folderName()+((r&&r.moved)?'，本地数据已搬过去':'')); }
+    else toast('没选成，随时点左下角🗄️再试');
+  });
+}
+(function(){
+  var b=document.createElement('button'); b.textContent='🗄️'; b.title='数据文件夹';
+  b.style.cssText='position:fixed;left:10px;bottom:10px;z-index:9998;width:42px;height:42px;border-radius:50%;border:1px solid #d8d2c4;background:#fffdf8;font-size:20px;box-shadow:0 2px 8px rgba(0,0,0,.15);';
+  b.onclick=function(){
+    if(hxStore.bridged()){
+      hxConfirm('数据存在文件夹：'+hxStore.folderName()+'（每次存盘都写这里，整个文件夹拷走=换手机带走全部家当）。换文件夹吗？', function(yes){
+        if(yes){ hxStore.pick(); hxStoreAfterPick(); }
+      });
+    }else if(window.LearnShell){
+      hxConfirm('还没选数据文件夹。选一个后，本软件数据会存进文件夹（换手机能带走）。现在选吗？', function(yes){
+        if(yes){ hxStore.pick(); hxStoreAfterPick(); }
+      });
+    }else{
+      toast('现在是浏览器本地存储；装进安卓壳后，点这里就能选数据文件夹');
+    }
+  };
+  document.body.appendChild(b);
+})();
+
+/* ==================== 收件箱（学习笔记/病人大管家寄大纲来） ==================== */
+/* v0.9.3 队列续件：收下一件后，若 ppt_inbox_q 有排队的，队首挪进信箱接着弹卡 */
+function pptInboxNext(){
+  var q=[]; try{ q=JSON.parse(localStorage.getItem('ppt_inbox_q')||'[]'); }catch(e){}
+  if(q.length){ var nxt=q.shift(); localStorage.setItem('ppt_inbox_q',JSON.stringify(q)); localStorage.setItem('ppt_inbox',JSON.stringify(nxt)); setTimeout(checkInbox,300); }
+}
 function checkInbox(){
+  try{ store.projects.forEach(function(p){ if(p.pendingSample) mailSample(p); }); }catch(e){} /* v0.9.2 补寄暂存样品 */
   var raw=localStorage.getItem('ppt_inbox');
   if(!raw) return;
   var d=null; try{ d=JSON.parse(raw); }catch(e){}
   if(!d||!d.text){ localStorage.removeItem('ppt_inbox'); return; }
+  /* v0.9.2 修改意见信（rev:true）：不新建项目，找原项目交给照改管道，改完出页再寄回样品 */
+  if(d.rev){
+    localStorage.removeItem('ppt_inbox');
+    var tp=null; store.projects.forEach(function(x){ if(x.taskId===d.taskId) tp=x; });
+    if(!tp){
+      $('outlineText').value=d.text+'\n\n【大管家修改意见（没找到原任务，请人工处理）】\n'+(d.note||'');
+      showPage('editPage');
+      toast('⚠️ 收到修改意见但找不到原任务，已贴进大纲框人工处理', 5000); return;
+    }
+    if((d.round||0)>=3){
+      hxConfirm('「'+(d.title||'无题')+'」已来回'+(d.round)+'趟了（再改再花AI钱）。建议去大管家点「定稿」。还坚持再改一趟吗？', function(yes){ if(yes) revApply(tp,d); });
+      return;
+    }
+    revApply(tp,d); return;
+  }
+  /* v0.9.0 二期①：自动收信自动开工——直接收下建新项目并解析出页面（纯本地，零API花费）；
+     解析不出任何一页才退回老卡片人工收 */
+  var autoPages=parseOutline(d.text);
+  if(autoPages.length){
+    localStorage.removeItem('ppt_inbox');
+    pptInboxNext(); /* v0.9.3 队列续件：自动收下也接排队件，防连寄卡住 */
+    autoPages.forEach(ensureVers);
+    var ap={id:newId(), title:(autoPages[0]&&autoPages[0].cls==='cover'?autoPages[0].title:(autoPages[0].title||'无题')), outline:d.text, slides:autoPages, linkNotes:{}, t:Date.now()};
+    if(d.taskId){ ap.taskId=d.taskId; ap.round=d.round||0; } /* v0.9.2 认任务编号，完工寄样品 */
+    store.projects.push(ap); curId=ap.id; saveStore();
+    if(ap.taskId) mailSample(ap); /* v0.9.2 出页即把大纲样品寄回大管家（零API花费） */
+    renderSlides(); showPage('slidesPage');
+    if(d.auto){ /* v0.9.1 大管家寄信时已授权"自动精做"（信封auto:true）→ 不问人直接跑 */
+      showMsg($('slidesMsg'),'📬 收到「'+(d.title||'无题')+'」（带"自动精做"命令），已出 '+autoPages.length+' 页，现在自动精做…','ok');
+      toast('📬 收到带命令的信：自动精做开工（大管家寄信时您已同意）',5000);
+      polishAllRun(ap);
+    }else{
+      showMsg($('slidesMsg'),'📬 收到「'+(d.title||'无题')+'」，已自动开工做出 '+autoPages.length+' 页（没花API钱）。要更讲究：点上面「🤖✨ 全篇双AI精做」','ok');
+      toast('📬 收到「'+(d.title||'无题')+'」，已自动做出 '+autoPages.length+' 页',5000);
+    }
+    return;
+  }
   $('inboxCard').style.display='block';
   $('inboxInfo').textContent='「'+(d.title||'无题')+'」（'+d.text.length+'字，'+new Date(d.t||Date.now()).toLocaleString()+'）';
   $('inboxAccept').onclick=function(){
     localStorage.removeItem('ppt_inbox');
+    pptInboxNext(); /* v0.9.3 队列续件 */
     $('inboxCard').style.display='none';
     var p={id:newId(), title:d.title||'来自学习笔记', outline:d.text, slides:[], linkNotes:{}, t:Date.now()};
     store.projects.push(p); curId=p.id; saveStore();
@@ -1390,6 +2149,60 @@ function copyProof(kind, msgEl){
 $('btnCopyProof').onclick=function(){ copyProof("outline", $('editMsg')); };
 $('btnCopyProof2').onclick=function(){ copyProof("slides", $('slidesMsg')); };
 
+
+/* ==================== v0.7.0 自动交叉校对：千问挑毛病 → Kimi照改（两棒全自动） ==================== */
+function proofProvGet(){ return localStorage.getItem('hx_ppt_proofprov')||'qwen'; }
+function proofProvSync(){ var v=proofProvGet(); if($('proofProv')) $('proofProv').value=v; if($('proofProv2')) $('proofProv2').value=v; }
+['proofProv','proofProv2'].forEach(function(id){ var el=$(id); if(el) el.onchange=function(){ localStorage.setItem('hx_ppt_proofprov',this.value); proofProvSync(); toast('校对改用「'+(this.value==='qwen'?'千问交叉':'Kimi自查')+'」'); }; });
+
+function autoProof(kind, msgEl){
+  var t=proofText(kind);
+  if(!t){ showMsg(msgEl, kind==="outline"?"大纲还是空的，没什么可校对":"还没有生成幻灯片，没什么可校对", "err"); return; }
+  var prov=proofProvGet(), t0=Date.now();
+  var tick=setInterval(function(){
+    showMsg(msgEl, "🔍 第1棒：" + (prov==='qwen'?"千问":"Kimi") + "正在校对…已等 "+Math.floor((Date.now()-t0)/1000)+" 秒（转着就不是死机）", "ok");
+  },1000);
+  /* 拿到校对意见后的共同后路：没问题就止步；有问题就填进贴回校对弹窗，自动点「AI照改」让Kimi落实 */
+  function afterOpinions(ops){
+    clearInterval(tick);
+    ops=(ops||"").replace(/^\s+|\s+$/g,"");
+    if(!ops){ showMsg(msgEl,"校对的AI没说出话来，再试一次","err"); return; }
+    /* v0.7.0补丁(独立测试t27抓到)：只说"总体没问题但…"的短文本会被误判通过吞掉真意见。
+       新规矩：含"没发现问题"句式 且 全文没有任何修改动词（建议/改为/改成/应为/有误）才止步——宁可误判继续（多花几分钱），不可误判止步（吞意见） */
+    if(ops.length<300 && /(未发现|没有|无明显|没发现)[^。]{0,12}(问题|错误|矛盾|错别字)/.test(ops) && !/(建议|改为|改成|应为|有误)/.test(ops)){
+      showMsg(msgEl,"✅ "+(prov==='qwen'?"千问":"Kimi")+"校对通过：没发现问题，一字未改（"+Math.floor((Date.now()-t0)/1000)+"秒）","ok");
+      toast("✅ 校对通过，没发现问题"); return;
+    }
+    $('proofText').value=ops;
+    $('proofModal').style.display="block";
+    showMsg($('proofMsg'),"第1棒完成（"+Math.floor((Date.now()-t0)/1000)+"秒），意见如上。第2棒：Kimi正在照改大纲…","ok");
+    $('btnProofGo').onclick(); /* 复用0.4.5贴回校对管道：Kimi照改→回编辑页人工过目 */
+  }
+  function fail(e){ clearInterval(tick); showMsg(msgEl,"❌ "+e,"err"); }
+  if(prov==='kimi'){
+    callAI("您是医学校对员，严格按用户要求逐项校对并列出意见。", t, afterOpinions, fail);
+    return;
+  }
+  /* 千问路径：公共钱罐 hx_qwenkey（血气的 bg_qwen_key 也认） */
+  var qk=(localStorage.getItem('hx_qwenkey')||localStorage.getItem('bg_qwen_key')||'').replace(/^\s+|\s+$/g,"");
+  if(!qk){ clearInterval(tick); showMsg(msgEl,"还没有千问Key。去血气分析「呼吸机」页设置里填一次（全家公共钱罐），或把开关拨到「Kimi自查」","err"); return; }
+  fetch("https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",{
+    method:"POST",
+    headers:{"Content-Type":"application/json","Authorization":"Bearer "+qk},
+    body:JSON.stringify({model:"qwen-plus",messages:[{role:"user",content:t}],max_tokens:4096}) /* qwen-plus非思考型，4096够（怪癖#9只坑思考型） */
+  }).then(function(r){
+    if(!r.ok) return r.text().then(function(tx){ throw new Error("千问报错 HTTP "+r.status+"："+(tx||"").slice(0,180)); });
+    return r.json();
+  }).then(function(d){
+    var c=((d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content)||"");
+    if(!c) throw new Error("千问没说出话来，再试一次");
+    hxBillToast(hxBill("PPT工坊","千问校对(qwen-plus)",t.length,c.length,"qwen-plus")); /* 记账：约1分钱 */
+    afterOpinions(c);
+  }).catch(function(e){ fail(e.message||String(e)); });
+}
+proofProvSync();
+$('btnAutoProof').onclick=function(){ autoProof("outline", $('editMsg')); };
+$('btnAutoProof2').onclick=function(){ autoProof("slides", $('slidesMsg')); };
 
 /* ==================== v0.4.5 贴回校对：别的AI的意见 → 本软件AI照改大纲 ==================== */
 function proofOpen(){
@@ -1449,6 +2262,10 @@ $('btnBackHome').onclick=function(){ renderProjects(); showPage('homePage'); };
 $('btnBackEdit').onclick=function(){ showPage('editPage'); };
 $('btnPlay').onclick=startPlay;
 $('btnExport').onclick=exportHTML;
+/* v0.6.1 自选背景图 */
+$('btnBgImg').onclick=function(){ var p=curProj(); if(!p){toast('先打开一个PPT');return;} $('bgFile').click(); };
+$('btnBgClear').onclick=function(){ var p=curProj(); if(!p) return; delete p.bg; saveStore(); syncBgGlobals(); renderSlides(); renderStage(); toast('背景已清除，回到纯色皮肤'); };
+$('bgFile').onchange=function(){ var f=this.files&&this.files[0]; this.value=''; if(f) pickBgImage(f); };
 $('ghSave').onclick=function(){
   localStorage.setItem('hx_gh_user',$('ghUser').value.trim());
   localStorage.setItem('hx_gh_tok',$('ghTok').value.trim());
@@ -1495,6 +2312,9 @@ $('ghDlBtn').onclick=function(){
     ghPull(function(err,payload){ if(!err&&payload) ghAskRestore(payload); });
   }
 })();
+</script>
+<script>
+(function(){ try{ document.getElementById("hdVer").textContent="v"+SW_VERSION; var f=document.getElementById("ftVer"); if(f) f.textContent="v"+SW_VERSION; document.title="PPT工坊 v"+SW_VERSION; }catch(e){} })();
 </script>
 </body>
 </html>
