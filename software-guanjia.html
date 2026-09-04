@@ -8,6 +8,15 @@
   红小涛学习套装 · 病人大管家
   定位：全家资料的"管家"。按病人归堆（血气/呼吸机/脱敏病历，天然有章），
         按知识搜索（笔记/习题，全靠AI名片）。
+  v0.4.8 2026-09-04 洪老师拍板「选中文字中心菜单·一期」：
+    ① 阅读器里点亮一段话 → 竖排中心菜单跟在选区下方（系统横菜单照旧各管各）：
+       🔍三路同查（选中段当问题，资料+网上+Kimi对照三棒同发，聚合对照置顶，阅读器让位跳去问AI区看结果）
+       📊寄给PPT两个方向（纯选中段/整篇带中心句），寄信前AI先拟好大纲（##分页-要点规矩），
+       写进ppt_inbox；信箱有未拆旧信先弹确认，不许悄悄盖。
+    ② 菜单是登记册SEL_MENU：以后加功能=添一行，含一个「预留位」占位。
+    ③ 防坑：selectionchange当场把选中文字抄进selMenuTxt（点菜单选区灭了也不怕）；阅读器一滚动菜单收掉；
+       点菜单外任意处收掉；下方没地方菜单翻到选区上方。
+    二期（记在交接说明待办）：PPT工坊开门自动收信自动开工+双AI逐页校对（原著/校对/AI综合三选一）。
   v0.4.7 2026-09-04 洪老师拍板「看全文做成书一样」：
     ① 阅读窗升级：借输入弹窗看长文的时代结束 → 接近全屏的大窗（96vh）、大字16px、行距1.9，独立#readDlg。
     ② 本地鱼骨头目录（不花钱）：扫 #标题/一二三、/第X章/1.2.（数字后必须是字，"3.5mg"不误判）出目录抽屉，
@@ -188,6 +197,15 @@
                   border-left:4px solid #b3742a; padding-left:8px; border-radius:2px; }
   #readBody .rh.flash { background:#fdf0d5; }
   #readBody p { margin:6px 0; white-space:pre-wrap; }
+  /* 选中文字中心菜单（v0.4.8）：竖排，跟在选中文字下方，与系统横菜单上下错开 */
+  #selMenu { display:none; position:fixed; z-index:99998; background:#fff; border-radius:12px;
+             box-shadow:0 6px 24px rgba(0,0,0,.25); padding:8px; max-width:240px; }
+  #selMenu #selMenuQuote { font-size:12px; color:#8a8178; padding:2px 6px 8px;
+             border-bottom:1px dashed #e6e0d4; margin-bottom:6px; }
+  #selMenu .sm-it { display:block; width:100%; text-align:left; background:none; border:none;
+             font-size:15px; padding:10px 8px; border-radius:8px; color:#33302b; cursor:pointer; }
+  #selMenu .sm-it:active { background:#f3efe7; }
+  #selMenu .sm-it.sm-x { color:#8a8178; font-size:13px; }
 </style>
 </head>
 <body>
@@ -321,8 +339,13 @@
   </div>
 </div>
 
+<div id="selMenu">
+  <div id="selMenuQuote"></div>
+  <div id="selMenuItems"></div>
+</div>
+
 <script>
-var SW_VERSION = "0.4.7";
+var SW_VERSION = "0.4.8";
 document.getElementById('verTop').textContent = SW_VERSION;
 function $(id){ return document.getElementById(id); }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -934,9 +957,9 @@ function updReadPos(){
   }
   $('readPos').textContent='第'+cur+'节/共'+total+'节';
 }
-$('readBody').onscroll=updReadPos;
+$('readBody').onscroll=function(){ updReadPos(); hideSelMenu(); };
 $('readTocBtn').onclick=function(){ var t=$('readToc'); t.style.display=(t.style.display==='block')?'none':'block'; };
-$('readClose').onclick=function(){ $('readDlg').style.display='none'; };
+$('readClose').onclick=function(){ $('readDlg').style.display='none'; hideSelMenu(); };
 /* AI理目录：回"标题||开头句"，开头句回原文找位置，找不到就丢，不装 */
 $('readAiBtn').onclick=function(){
   var title=$('readBody').dataset.title, text=$('readBody').dataset.raw;
@@ -977,6 +1000,105 @@ function applyAiToc(text, pairs){
   if(!secs.length){ toast('AI给的目录对不上原文，没敢用'); return; }
   renderReader(text, secs, true);
   $('readTocBtn').style.display=''; /* 目录来了，按钮上岗 */
+}
+
+/* ══════════ v0.4.8 选中文字·中心菜单（竖排，跟着选区走）══════════
+   点亮一段话 → 系统横菜单照出（复制/分享归它管），咱们的竖排菜单出现在选区下方：
+   🔍三路同查 / 📊寄PPT两个方向 / 预留位。坑①点菜单瞬间选区会灭 → selectionchange时就把文字抄进兜里；
+   坑②滚动时菜单悬空 → 一滚就收。菜单是登记册SEL_MENU，以后加功能=添一行。 */
+var selMenuTxt='';
+var SEL_MENU=[
+  {ico:'🔍', name:'三路同查（资料+网上+对照）', fn:function(){ selActAsk(); }},
+  {ico:'📊', name:'寄给PPT · 选中的话做新PPT', fn:function(){ selActPPT(false); }},
+  {ico:'📊', name:'寄给PPT · 整篇做PPT（选中段当中心）', fn:function(){ selActPPT(true); }},
+  {ico:'＋', name:'（预留位，以后加功能）', fn:function(){ toast('这是预留位：以后新功能添在这'); }}
+];
+function hideSelMenu(){ var m=$('selMenu'); if(m) m.style.display='none'; }
+function bindSelMenu(){
+  var body=$('readBody');
+  document.addEventListener('selectionchange', function(){
+    var s=window.getSelection();
+    if(!s||s.isCollapsed) return;
+    var txt=String(s.toString()).replace(/^\s+|\s+$/g,'');
+    if(!txt) return;
+    if(!body.contains(s.anchorNode)) return; /* 只管阅读器里的选择 */
+    selMenuTxt=txt; /* 当场抄进兜里，选区灭了也不怕 */
+  });
+  body.addEventListener('touchend', function(){ setTimeout(showSelMenu, 350); }); /* 等系统横菜单先站稳 */
+  body.addEventListener('mouseup', function(){ setTimeout(showSelMenu, 200); });
+  document.addEventListener('touchstart', function(e){
+    var m=$('selMenu');
+    if(m.style.display==='block' && !m.contains(e.target)) hideSelMenu(); /* 点别处收掉 */
+  });
+}
+function showSelMenu(){
+  var s=window.getSelection();
+  if(!selMenuTxt || !s || s.isCollapsed || !String(s.toString()).replace(/^\s+|\s+$/g,'')) return;
+  if($('readDlg').style.display!=='block') return;
+  var r; try{ r=s.getRangeAt(0).getBoundingClientRect(); }catch(e){ return; }
+  if(!r || (r.width===0 && r.height===0)) return;
+  $('selMenuQuote').textContent='已选中：'+selMenuTxt.slice(0,18)+(selMenuTxt.length>18?'…':'');
+  var h='';
+  SEL_MENU.forEach(function(it,i){ h+='<button class="sm-it" data-sm="'+i+'">'+it.ico+' '+esc(it.name)+'</button>'; });
+  h+='<button class="sm-it sm-x" data-sm="x">✕ 收起</button>';
+  $('selMenuItems').innerHTML=h;
+  Array.prototype.forEach.call(document.querySelectorAll('#selMenu [data-sm]'), function(el){
+    el.onclick=function(){
+      var i=el.getAttribute('data-sm');
+      if(i==='x'){ hideSelMenu(); return; }
+      SEL_MENU[+i].fn();
+    };
+  });
+  var m=$('selMenu');
+  m.style.display='block';
+  var mw=m.offsetWidth, mh=m.offsetHeight;
+  var x=Math.min(Math.max(8, r.left), window.innerWidth-mw-8);
+  var y=r.bottom+8;
+  if(y+mh>window.innerHeight-8) y=Math.max(8, r.top-mh-8); /* 下方没地方就翻到上方 */
+  m.style.left=x+'px'; m.style.top=y+'px';
+}
+/* 🔍三路同查：选中的话当问题，资料+网上+Kimi对照三棒同发，聚合对照置顶 */
+function selActAsk(){
+  var q=selMenuTxt.slice(0,200);
+  hideSelMenu();
+  $('readDlg').style.display='none'; /* 阅读器让位，结果在问AI区看 */
+  $('askQ').value=q;
+  if(foldSetters['ask']) foldSetters['ask'](true);
+  setTimeout(function(){ $('askQ').scrollIntoView({block:'center'}); },50);
+  askBoth();
+}
+/* 📊寄PPT：先让AI拟好大纲再寄信，到PPT工坊收下就快做好了。whole=true带整篇+选中段当中心 */
+function selActPPT(whole){
+  var sel=selMenuTxt;
+  hideSelMenu();
+  var title=$('readBody').dataset.title||'资料';
+  var raw=$('readBody').dataset.raw||'';
+  if(!qwenKey()&&!kimiKey()){ toast('还没有API Key，先贴一个'); keyInputAsk(); return; }
+  if(askRunning){ toast('AI正忙着，稍等'); return; }
+  askRunning=true; toast('🤖 AI拟PPT大纲中（几秒钟）…');
+  var sys='您是医学教学PPT大纲员。把给您的内容写成PPT大纲，规矩：第一行"# 标题"当封面；每页以"## 页标题"分页；页内用"- "列要点，要点要短、口语、适合讲课；一共5到10页。只输出大纲本身，别的话一个字不写。';
+  var usr=whole
+    ? '请围绕这个中心：「'+sel.slice(0,200)+'」\n把下面整篇资料做成PPT大纲：\n'+raw.slice(0,4000)
+    : '把下面这段话做成PPT大纲：\n'+sel.slice(0,2000);
+  aiChat(sys, usr, function(ans){
+    askRunning=false;
+    mailToPPT(whole?('整篇：'+title):('节选：'+sel.slice(0,16)), ans);
+  }, function(e){
+    askRunning=false; toast('AI这条路不通：'+String(e).slice(0,50));
+  }, {what:'拟PPT大纲', maxTokens:16384});
+}
+/* 寄信进ppt_inbox（照学习笔记邮路协议：{title,text,t}）；信箱有未拆旧信先问，不许悄悄盖 */
+function mailToPPT(title, outline){
+  var old=null; try{ old=JSON.parse(localStorage.getItem('ppt_inbox')); }catch(e){}
+  function doSend(){
+    localStorage.setItem('ppt_inbox', JSON.stringify({title:title, text:outline, t:Date.now(), from:'病人大管家'}));
+    toast('📮 已寄进PPT收件箱：「'+title.slice(0,20)+'」。打开PPT工坊收下就能做', 3500);
+  }
+  if(old && old.text){
+    hxConfirm('PPT信箱里还有一封没收下的「'+(old.title||'无题')+'」，寄新信会盖掉它。确定寄吗？', function(okBtn){
+      if(okBtn) doSend(); else toast('没寄，旧信保住了');
+    });
+  }else doSend();
 }
 /* ── 路一：只翻我的资料 ── */
 var lastLocalDocs=[];
@@ -1489,6 +1611,7 @@ function makeFoldable(h2, key, defaultOpen){
 
 /* ── 开门：名册 + 总览 + 自动做3篇（有Key才动） ── */
 renderOverview(); renderCardList(); renderPatients(); renderInbox();
+bindSelMenu(); /* v0.4.8 选中文字中心菜单上岗 */
 (function(){
   var missing=makeCardQueue(1).length;
   if(missing && (qwenKey()||kimiKey())){
