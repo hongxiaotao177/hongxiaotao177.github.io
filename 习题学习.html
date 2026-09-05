@@ -441,6 +441,11 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 - 间隔重复（熟悉的题隔几天再现）
 - 老.doc支持、选择题(A/B/C/D)题型
 ================================================================================
+    v1.9.0 2026-09-05 hxStore仓管员接入（全家推广第3家，照抄大管家v0.4.13/PPT v0.9.2同款）：
+    ①习题库+做题进度（xitixuexi_v01）每次存盘同步写壳授权文件夹 hxdata_xitixuexi_v01.json；
+    ②开门自动对齐（文件夹说了算/本地有就自动搬进文件夹）；③左下角🗄️按钮选文件夹；
+    ④无壳浏览器一切照旧（纯加法，原有存储一行未改）。
+    （v1.8.4~v1.8.9记录见代码里 SW_VERSION 注释链）
     v1.8.3 2026-08-26 瘦身三项（依据功能重叠调研：重复入口让老用户犯迷糊）：
     ①砍掉"分身"备份整套：三个面板6个「💾 导出分身/📥 从分身恢复」按钮、
       exportClone/restoreFromClone/restoreFromText/closeExportModal/copyExportCode
@@ -573,7 +578,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>习题学习 v1.8.8</title>
+<title>习题学习 v1.9.0</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f2f4f8; color: #222; }
@@ -656,7 +661,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 
 <script id="embedded-data" type="application/json">null</script>
 
-<header>📖 习题学习<span class="ver">v1.8.8</span></header>
+<header>📖 习题学习<span class="ver" id="hdVer">v1.9.0</span></header>
 
 <!-- ========== 首页 ========== -->
 <div id="page-home" class="page">
@@ -1206,6 +1211,39 @@ function xmlToLines(xml) {
 "use strict";
 window.onerror = function (msg, src, line) { toast("出错：" + msg + "（第" + line + "行）"); };
 
+/* ==================== hxStore 仓管员 v1（v1.9.0 接入，全家推广第3家，代码与大管家/PPT同款） ====================
+   规矩：壳里授权了文件夹 → 每次存数据同时写进文件夹 hxdata_<键>.json（换手机整个文件夹拷走=家当带走）；
+   开门时对齐：文件夹里有 → 搬进localStorage（文件说了算）；文件夹没有而localStorage有 → 搬进文件夹（自动搬家）。
+   没壳/没授权 → 只用localStorage，一切照旧。纯加法，原有存储代码一行未改。 */
+var hxStore=(function(){
+  var KEYS=[];
+  function bridged(){ try{ return !!(window.LearnShell&&LearnShell.folderSet&&LearnShell.folderSet()); }catch(e){ return false; } }
+  function b64(s){ return btoa(unescape(encodeURIComponent(s))); }
+  function unb64(s){ return decodeURIComponent(escape(atob(s))); }
+  function fn(key){ return 'hxdata_'+key+'.json'; }
+  function reg(key){ if(KEYS.indexOf(key)<0) KEYS.push(key); }
+  function set(key,obj){ try{ localStorage.setItem(key,JSON.stringify(obj)); }catch(e){} if(bridged()){ try{ LearnShell.writeFile(fn(key), b64(JSON.stringify(obj))); }catch(e){} } }
+  function sync(){
+    if(!bridged()) return null;
+    var moved=0, pulled=0;
+    KEYS.forEach(function(k){
+      var f=null; try{ f=LearnShell.readFile(fn(k)); }catch(e){}
+      if(f){ try{ localStorage.setItem(k, unb64(f)); pulled++; }catch(e){} }
+      else { var v=null; try{ v=localStorage.getItem(k); }catch(e){}
+        if(v){ try{ LearnShell.writeFile(fn(k), b64(v)); moved++; }catch(e){} } }
+    });
+    return {moved:moved,pulled:pulled};
+  }
+  function folderName(){ try{ return LearnShell.folderName()||''; }catch(e){ return ''; } }
+  function pick(){ try{ LearnShell.pickFolder(); }catch(e){} }
+  function pollFolder(done){ var n=0; var t=setInterval(function(){ n++;
+    if(bridged()){ clearInterval(t); done(true); } else if(n>30){ clearInterval(t); done(false); } },1000); }
+  return {bridged:bridged,reg:reg,set:set,sync:sync,folderName:folderName,pick:pick,pollFolder:pollFolder};
+})();
+/* 仓管员登记处：本软件归仓管员管的键 */
+hxStore.reg('xitixuexi_v01');
+try{ hxStore.sync(); }catch(e){} /* 开门就对齐：桥是同步的，赶在 loadStore 之前跑完，让文件夹里的数据说了算 */
+
 /* ================= 数据层 ================= */
 var LS_KEY = "xitixuexi_v01";
 var store = loadStore();
@@ -1226,6 +1264,7 @@ function loadStore() {
 }
 function saveStore() {
   try { localStorage.setItem(LS_KEY, JSON.stringify(store)); } catch (e) { toast("存储失败：" + e.message); }
+  hxStore.set(LS_KEY, store); /* v1.9.0 仓管员：同步写壳文件夹（无壳自动跳过） */
   if (!ghSuspend) scheduleGhAutoBackup(); /* v1.4：改动收口挂钩子，10秒后自动云备份 */
 }
 function pKey(bankId, idx) { return bankId + "::" + idx; }
@@ -2731,7 +2770,7 @@ async function callAI(sysPrompt, userText, what) {
     ]})
   });
   /* v1.8.7 404自动换模型重试一次（kimi-k2.5下架踩坑）：只有"模型不存在"才换，别的错直接报 */
-  if (r.status === 404 && model !== "kimi-k2.6"){
+  if ((r.status === 404 || r.status === 400) && model !== "kimi-k2.6"){ /* v1.8.9 400也当死模型（官方有时回400不回404） */
     model = "kimi-k2.6";
     if (store.ai){ store.ai.model = model; if(typeof saveStore==="function") saveStore(); }
     try{ localStorage.setItem("hx_aimodel", model); }catch(e){}
@@ -2746,7 +2785,7 @@ async function callAI(sysPrompt, userText, what) {
     });
   }
   if (r.status === 401) throw new Error("API key无效（401），请点「⚙ 设置」检查");
-  if (!r.ok) throw new Error("AI请求失败（HTTP " + r.status + "），可能是模型名不对或余额不足");
+  if (!r.ok){ var _et=""; try{ _et=await r.text(); }catch(e){} throw new Error("AI请求失败（HTTP " + r.status + "）" + (_et?("："+String(_et).slice(0,180)):"，可能是模型名不对或余额不足")); }
   var d = await r.json();
   var _c = d.choices[0].message.content;
   hxBillToast(hxBill("习题学习", what||"问AI", (sysPrompt||"").length+(userText||"").length, (_c||"").length, aiModel()));
@@ -2980,12 +3019,34 @@ function toast(msg) {
   toastTimer = setTimeout(function () { t.remove(); }, 2200);
 }
 
+/* v1.9.0 仓管员门面：左下角🗄️按钮（本软件没有自画确认窗，选文件夹是无害动作，点了直接选） */
+function hxStoreAfterPick(){
+  hxStore.pollFolder(function(ok){
+    if(ok){ var r=hxStore.sync(); toast('✅ 文件夹接上了：'+hxStore.folderName()+((r&&r.moved)?'，本地数据已搬过去':'')); }
+    else toast('没选成，随时点左下角🗄️再试');
+  });
+}
+(function(){
+  var b=document.createElement('button'); b.textContent='🗄️'; b.title='数据文件夹';
+  b.style.cssText='position:fixed;left:10px;bottom:10px;z-index:9998;width:42px;height:42px;border-radius:50%;border:1px solid #d8d2c4;background:#fffdf8;font-size:20px;box-shadow:0 2px 8px rgba(0,0,0,.15);';
+  b.onclick=function(){
+    if(hxStore.bridged()){
+      toast('数据存在文件夹：'+hxStore.folderName()+'（换手机整个文件夹拷走=家当带走）');
+    }else if(window.LearnShell){
+      hxStore.pick(); hxStoreAfterPick();
+    }else{
+      toast('现在是浏览器本地存储；装进安卓壳后，点这里就能选数据文件夹');
+    }
+  };
+  document.body.appendChild(b);
+})();
+
 /* ================= v1.4 GitHub云备份 + 开机自检 + 收件箱 + 下载整套 =================
    移植自学习笔记 v2.0/v2.1/v2.2，键名 xt_gh_*（学习笔记用 bg_gh_*，互不干扰）。
    完整设计思路与协同协议见学习笔记.html 代码顶部（两边以那份为准）。 */
 var XT_GH_USER = "xt_gh_user", XT_GH_TOK = "xt_gh_tok", XT_GH_REPO = "xt_gh_repo",
     XT_GH_LAST = "xt_gh_last", XT_GH_CHECK = "xt_gh_check";
-var SW_VERSION = "1.8.8"; /* v1.8.8 AI综合备课加秒表进度：每秒报已等多久，转着就不是死机 */ /* v1.8.7 修404：kimi-k2.5官方下架→死模型名单自动换kimi-k2.6+404自动重试；补title/header版本号（1.8.5/1.8.6漏改） */ /* v1.8.6 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v1.8.5 习题→PPT工坊两路（洪医生任务2026-09-01）：任务一「📊 习题→PPT」本地拼——
+var SW_VERSION = "1.9.0"; /* v1.9.0 hxStore仓管员接入（全家推广第3家）：习题库+做题进度每次存盘同步写壳授权文件夹 hxdata_xitixuexi_v01.json，开门自动对齐（文件说了算/自动搬家），左下角🗄️选/换文件夹；无壳浏览器照旧 */ /* v1.8.9 AI报错带官方原因+400也自动换模型重试（洪医生撞HTTP400：疑moonshot-v1系列下架回400） */ /* v1.8.8 AI综合备课加秒表进度：每秒报已等多久，转着就不是死机 */ /* v1.8.7 修404：kimi-k2.5官方下架→死模型名单自动换kimi-k2.6+404自动重试；补title/header版本号（1.8.5/1.8.6漏改） */ /* v1.8.6 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v1.8.5 习题→PPT工坊两路（洪医生任务2026-09-01）：任务一「📊 习题→PPT」本地拼——
   范围(勾选/全部)×筛选(全部/陌生+一般/只陌生)×排版(题答同页自习用 / 题一页答一页课堂提问用)，不花AI钱；
   任务二「🤖 AI综合备课」——AI读全部问答提炼成课（归纳/对比表/易错点，不是堆题），可填讲课重点，可对着薄弱点，
   大纲先预览可手改再寄。两路都走ppt_inbox邮路（照抄血气分析v0.10.8格式），PPT工坊弹窗收。 */
@@ -3500,5 +3561,8 @@ renderBanks();
 ghInit(); /* v1.4 */
 </script>
 
+<script>
+(function(){ try{ document.getElementById("hdVer").textContent="v"+SW_VERSION; document.title="习题学习 v"+SW_VERSION; }catch(e){} })();
+</script>
 </body>
 </html>
