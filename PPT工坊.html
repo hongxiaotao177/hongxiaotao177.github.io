@@ -10,6 +10,48 @@
           → 大纲编辑页改稿 → 一键生成HTML幻灯片 → 横屏播放 → 每页可AI重做/换版式
           → 导出单个HTML（微信发别人，浏览器打开即放映）
   修改记录：
+    v0.11.0 2026-09-05 晚班 弹窗兜底+风格分轨：
+      ①弹窗兜底（洪老师真机"对话框跳出来关不掉、按钮全失灵"）：真病根抓到——.slide-page是
+        position:absolute;inset:0，三版对比弹窗的cmp-prev没定位，预览透明铺满整个视口盖住
+        所有按钮（独立测试A6实锤：elementFromPoint全是slide-page）。治法：cmp-prev加
+        relative+定高220px。另加三道保险：6个弹窗（cmpModal/litModal/pageEditModal/
+        regenModal/proofModal/pvAskModal）点遮罩空白处一律可关；window.onerror全局弹toast
+        （手机没console，以后报错截图给AI就能断案）；启动init每步独立try/catch。
+      ②风格分轨（洪老师"做的PPT全是大白话，没有严肃医学选项"）：幻灯片页绿色主按钮旁加
+        「🗣️大白话科普 / 🏥严肃医学」选择（存localStorage ppt_style，默认大白话）。严肃版：
+        术语保留规范名+英文缩写不翻白话、鼓励机制/数据/试验名/指南出处、语气面向同行；
+        内容契约放宽（正文≤200字或8行、要点≤6条、表格≤6行×5列）。作用于新主路（整形+校对）、
+        AI起草、AI润色；本地数格子contractOver同步换尺子。病人大管家v0.4.14寄PPT提示词
+        同读此开关。
+      ③提示词档案说明更新（2026-09-05晚：风格分轨），严肃/大白话两套提示词的差别打开档案可见。
+    v0.10.0 2026-09-05 大纲契约主路+提示词档案diff+失败原因名单：
+      ①新主按钮「📋✨ 大纲定稿+出页（约2分钱）」（放在原全篇精做位置，亮绿色）：
+        第1步 大纲整形（callFastAI快AI 1次，按内容契约排页：标题≤20字、正文≤120字或≤6行、
+        要点≤5条、表格≤4行×4列，超了让AI自己拆成两页）→ 第2步 交叉校对（callAI 1次，整份
+        挑医学事实/术语/逻辑错+逐页数格子，直接回修订版替换；校对稿读不懂就老实用整形稿）
+        → 第3步 本地出页（parseOutline纯本地不花钱，完工照旧shipDone传坚果云）。
+        全程进度牌workBoard显示三步；本地保险丝：某页仍超契约→打shrink标记，
+        slideHTML给该页加sp-shrink类字号缩一档，不报错不打扰。
+      ②「📜提示词档案」页（首页入口）：分段列出全部提示词+大白话说明；localStorage存
+        ppt_prompts_cur/prev两份，打开时逐行对照，本次新加/改动的句子红底标出，顶部写
+        修改说明+日期（2026-09-05：新增大纲整形/校对提示词（内容契约版））。
+      ③失败原因存名单：polishAllRun的fails从存页码改为存{no,reason}（e.message截100字），
+        同步存localStorage「ppt_fail_list」；完结总结里页码变可点，点页码弹原因；
+        单页「✨双AI」补做成功的页自动从名单划掉。
+      ④老办法降级：「🤖✨全篇双AI精做」挪进页底「🔧 高级功能」折叠区（默认收起）+小字
+        说明（约30次调用、网络不好后半程易失败、一般不用）。单页「✨双AI」原位不动。
+      ⑤钱罐源分裂排查结论（只读排查 android-shell MainActivity.java，壳代码未动）：
+        - 端口不分裂：httpPort首启8931~8951选定后存SharedPreferences，之后永用同一端口，
+          不会静默换端口换源；唯一风险是端口被别的程序长期占用→服务器起不来页面打不开
+          （会明着坏，不是静默分裂）。
+        - 确凿隐患1（跨内核）：X5内核下载完点火前用系统WebView渲染、点火后永久换X5，
+          两者的localStorage不互通（X5存tbs私有目录）——换内核那一刻钱罐会"凭空消失"，
+          且 mig_http_v1 搬家只搬 app.local→127.0.0.1，不跨内核搬。建议修法：点火前后
+          各存一份关键hx_*到壳私有文件，开门由壳桥对齐（或点火成功后重复一次跨内核搬家）。
+        - 确凿隐患2（搬家失败被吞）：migDump里migSaveChunk写盘失败仅break，照样
+          migSaveEnd+migProceed；restore端JSON.parse失败进catch也照样migDone立
+          mig_http_v1=true——旧源数据变永久孤儿再也搬不了。建议修法：migProceed前校验
+          块数/校验和，restore成功落地后才许立mig_http_v1标记。
     v0.9.4 2026-09-05 第二班（信箱镜像备份+红绿灯+云同步）：
       ①pptBoxBackup镜像：ppt_inbox/ppt_inbox_q/ppt_busy 三兄弟每次写/删后，打包
         {inbox,queue,busy,savedAt} 写壳授权文件夹 ppt_inbox.json（旧内容留底 .bak）；
@@ -119,6 +161,9 @@
         + hxIndexRefresh顺带刷新主界面 + 下载整套五件套
       踩坑备忘：习题学习确认框在壳里弹不出是壳没WebChromeClient（壳v1.0.4已修），
         本软件确认一律用confirm；vivo上壳的JS写法一律老式（不用lambda是Java侧的事）。
+    v0.10.0 2026-09-05 修复（测试抓到）：①提示词档案首启全标红——首次打开时prev不存在，
+      现改为首启即把当前提示词存为prev基线并写入本次说明，全新用户打开无红；
+      ②全篇精做/补做全部页有失败页时总结仍以✅开头，改为有失败用⚠️开头，零失败才✅。
 -->
 <style>
   * { box-sizing:border-box; margin:0; padding:0; }
@@ -181,6 +226,8 @@
   .slide-page td { padding:.5em .7em; border-bottom:1px solid #ece6db; color:#4a463f; }
   .slide-page tr:nth-child(even) td { background:#f6f2ea; }
   .sp-para { font-size:1.05em; line-height:2.0; color:#4a463f; }
+  /* v0.10.0 本地保险丝：某页字仍超契约→整页字号缩一档，不报错不打扰（导出HTML共用本样式表，自动带走） */
+  .slide-page.sp-shrink { font-size:0.82em; }
   .sp-big { flex:1; display:flex; flex-direction:column; justify-content:center; text-align:center; }
   .sp-big .n { font-size:3.2em; font-weight:700; color:#5b7f5e; line-height:1.2; }
   .sp-big .t { font-size:1.1em; color:#8a8178; margin-top:.6em; }
@@ -258,7 +305,8 @@
   .cmp-cols { display:flex; gap:10px; align-items:stretch; }
   .cmp-col { flex:1; min-width:0; border:1px solid #e5ddd0; border-radius:10px; padding:8px; background:#fff; display:flex; flex-direction:column; }
   .cmp-col .cmp-head { font-size:13px; font-weight:600; margin-bottom:6px; color:#4a3f30; }
-  .cmp-col .cmp-prev { font-size:9px; overflow:hidden; max-height:320px; border:1px dashed #e5ddd0; border-radius:6px; margin-bottom:8px; }
+  .cmp-col .cmp-prev { position:relative; height:220px; font-size:9px; overflow:hidden; border:1px dashed #e5ddd0; border-radius:6px; margin-bottom:8px; }
+  /* v0.11.0 修"对话框关不掉"真病根：.slide-page是position:absolute;inset:0，cmp-prev没定位时预览会铺满整个视口，透明盖住所有按钮（洪老师真机+独立测试A6双实锤）。cmp-prev加relative+定高，预览老老实实缩回虚线框里 */
   @media (max-width:640px){ .cmp-cols { flex-direction:column; } .cmp-col { width:100%; } }
 </style>
 </head>
@@ -384,6 +432,86 @@ var pptBox=(function(){
 })();
 </script>
 
+<script>
+/* ==================== v0.9.5 干活进度牌 + 完工自动传坚果云（洪老师拍板2026-09-05） ====================
+   ①进度牌：ppt_busy 锁扩字段 {title,since,stage,page,total}；牌每1.5秒读锁刷新，常亮不消失——
+     干活中显示「阶段+第x/共y页+干了几分钟」，无锁且没完工记录才隐藏。
+   ②完工（全篇精做完/手动导出HTML）→ shipDone：成品HTML+工程.json 写手机文件夹 →
+     有坚果云钥匙就 davUp 到 /PPT成品/（壳v1.5.1+会自动建目录）；结果写 ppt_done，
+     进度牌定格「✅做完了+本地结果+云端结果（失败写原因）」，亲手点×才关（关=清ppt_done）。 */
+var workBoard=(function(){
+  var el=null, txEl=null, cbEl=null;
+  function mk(){
+    if(el||!document.body) return;
+    var d=document.createElement('div'); d.id='pptWorkBoard';
+    d.style.cssText='position:fixed;top:56px;left:10px;right:10px;z-index:95;display:none;background:#f5f1e8;border:1px solid #ddd5c5;border-radius:10px;padding:10px 12px;font-size:13px;color:#5b554b;box-shadow:0 2px 8px rgba(0,0,0,.15);';
+    d.innerHTML='<div style="display:flex;align-items:flex-start;gap:8px;"><span id="wbMain" style="flex:1;line-height:1.6;"></span><button type="button" id="wbClose" style="flex:none;border:none;background:none;font-size:18px;color:#8a8178;padding:0 4px;line-height:1.2;cursor:pointer;display:none;">×</button></div>';
+    document.body.appendChild(d);
+    el=d; txEl=d.querySelector('#wbMain'); cbEl=d.querySelector('#wbClose');
+    cbEl.addEventListener('click',function(){ el.style.display='none'; try{ localStorage.removeItem('ppt_done'); }catch(e){} });
+  }
+  function setBusy(stage, page, total, title){
+    try{
+      var old={}; try{ old=JSON.parse(localStorage.getItem('ppt_busy')||'{}')||{}; }catch(e){}
+      localStorage.setItem('ppt_busy', JSON.stringify({
+        title:title||old.title||'无题', since:old.since||Date.now(),
+        stage:stage||'', page:page||0, total:total||0 }));
+    }catch(e){}
+  }
+  function tick(){
+    try{
+      mk(); if(!el) return;
+      var busy=null; try{ busy=JSON.parse(localStorage.getItem('ppt_busy')||'null'); }catch(e){}
+      if(busy){
+        var mins=Math.max(0,Math.floor((Date.now()-(busy.since||Date.now()))/60000));
+        var line='⏳ '+(busy.stage||'干活中')+'——《'+String(busy.title||'无题')+'》';
+        if(busy.total) line+='（第'+(busy.page||0)+'/'+busy.total+'页）';
+        line+='　已干'+(mins<1?'不到1':mins)+'分钟';
+        txEl.textContent=line; cbEl.style.display='none'; el.style.display='block'; return;
+      }
+      var done=null; try{ done=JSON.parse(localStorage.getItem('ppt_done')||'null'); }catch(e){}
+      if(done){
+        var h='✅ 做完了：《'+String(done.title||'无题')+'》（'+done.pages+'页）';
+        if(done.local) h+='<br>'+done.local;
+        if(done.cloud) h+='<br>'+done.cloud;
+        txEl.innerHTML=h; cbEl.style.display=''; el.style.display='block'; return;
+      }
+      el.style.display='none';
+    }catch(e){}
+  }
+  try{ setInterval(tick,1500); tick(); }catch(e){}
+  return {setBusy:setBusy, tick:tick};
+})();
+/* 完工传坚果云：成品HTML+工程备份。u/p读公共钱罐 hx_dav_user/hx_dav_pass（文件桥里填一次）。
+   结果写 ppt_done 让进度牌定格显示；不挡主流程，任何一步出错只记录不炸。 */
+function shipDone(p){
+  var rec={title:(p&&p.title)||'无题', pages:(p&&p.slides)?p.slides.length:0, when:Date.now(), local:'', cloud:''};
+  function fin(){ try{ localStorage.setItem('ppt_done', JSON.stringify(rec)); }catch(e){} try{ workBoard.tick(); }catch(e){} }
+  try{
+    if(!(window.LearnShell&&LearnShell.folderSet&&LearnShell.folderSet())){
+      rec.local='📦未接文件夹：成品只在手机内存（到壳首页授权文件夹后，手动「📤 导出HTML」可补传）'; fin(); return;
+    }
+    makeExportDoc(p).then(function(ex){
+      var safe=ex.fname.replace(/[\\\/:*?"<>|]/g,'_');
+      try{ LearnShell.writeFile(safe, ghB64enc(ex.doc)); rec.local='📦成品已存手机文件夹：'+safe; }
+      catch(e){ rec.local='📦手机文件夹没存成：'+String(e.message||e); }
+      var bakName=safe.replace(/\.html$/,'')+'.工程.json';
+      try{ LearnShell.writeFile(bakName, ghB64enc(JSON.stringify(p))); }catch(e){}
+      var u=null,pw=null; try{ u=localStorage.getItem('hx_dav_user'); pw=localStorage.getItem('hx_dav_pass'); }catch(e){}
+      if(!u||!pw){ rec.cloud='☁️没传：没填坚果云钥匙（去「文件桥」填一次账号+应用密码）'; }
+      else{
+        var r=''; try{ r=LearnShell.davUp(u,pw,safe,'/PPT成品/'); }catch(e){ r='err:'+String((e&&e.message)||e); }
+        if(/ok/i.test(String(r||''))){
+          try{ LearnShell.davUp(u,pw,bakName,'/PPT成品/'); }catch(e){}
+          rec.cloud='☁️成品+工程备份已传坚果云「PPT成品」文件夹';
+        }else rec.cloud='☁️没传成：'+String(r||'上传没回音').replace(/^err:/,'');
+      }
+      fin();
+    }, function(e){ rec.local='📦成品生成失败：'+String((e&&e.message)||e); fin(); });
+  }catch(e){ rec.local='完工上传出错：'+String(e.message||e); fin(); }
+}
+</script>
+
 <header>📊 PPT工坊<span class="ver" id="hdVer">v0.4.7</span></header>
 
 <div class="page" id="homePage">
@@ -405,6 +533,11 @@ var pptBox=(function(){
   <div class="card" id="projCard">
     <h3>📁 我的PPT</h3>
     <div id="projList"><div class="hint">还没有，点上面新建一个。</div></div>
+  </div>
+
+  <!-- v0.10.0 提示词档案入口 -->
+  <div class="card">
+    <button class="ghost" id="btnPrompts" style="width:100%;">📜 提示词档案（看看AI都被吩咐了什么）</button>
   </div>
 
   <details class="card" id="ghCard">
@@ -491,13 +624,36 @@ var pptBox=(function(){
         <option value="qwen">千问交叉（约1分钱）</option>
         <option value="kimi">Kimi自查</option>
       </select>
-      <button id="btnPolishAll" style="background:#5b7f5e;" title="每页：千问写原著＋快校对出校对版，全篇自动跑一遍">🤖✨ 全篇双AI精做</button>
+      <select id="styleSel" title="PPT语言风格：大白话科普=说人话给患者/家属听；严肃医学=术语不翻白话、带数据指南，给同行汇报。大管家寄PPT也跟随这个开关" style="font-size:13px;padding:7px 8px;border:1px solid #ccc;border-radius:8px;background:#fff;">
+        <option value="plain">🗣️ 大白话科普</option>
+        <option value="strict">🏥 严肃医学</option>
+      </select>
+      <button id="btnOutlineShip" style="background:#3d9a50;color:#fff;" title="新主路：AI先把大纲排整齐（每页字不超格），再请另一家AI整份校对一遍，最后本地出页。共3步，约2分钱">📋✨ 大纲定稿+出页（约2分钱）</button>
       <button class="ghost" id="btnExport">📤 导出HTML</button>
       <button class="ghost" id="btnBackEdit">← 回大纲</button>
     </div>
     <div class="msg" id="slidesMsg"></div>
   </div>
   <div id="slideList"></div>
+  <!-- v0.10.0 老办法降级：全篇双AI精做挪进高级功能折叠区（默认收起）；按钮id不变，老逻辑一行没动 -->
+  <details class="card" id="advCard" style="margin-top:12px;">
+    <summary>🔧 高级功能（一般不用点开）</summary>
+    <div style="margin-top:12px;">
+      <button id="btnPolishAll" style="background:#5b7f5e;" title="每页：千问写原著＋快校对出校对版，全篇自动跑一遍">🤖✨ 全篇双AI精做</button>
+      <div class="hint" style="margin-top:6px;">老办法：逐页精修，约30次调用，网络不好时容易后半程失败，一般不用。推荐用上面绿色大按钮「📋✨ 大纲定稿+出页」。</div>
+    </div>
+  </details>
+</div>
+
+<!-- v0.10.0 提示词档案：分段列出所有提示词+本次改动自动标红 -->
+<div class="page hidden" id="promptPage">
+  <div class="card">
+    <h3>📜 提示词档案</h3>
+    <div class="hint" id="promptNote"></div>
+    <div class="hint">这里是本软件吩咐AI干活的全部原话（提示词）。红底的句子=这次改版新加或改过的。</div>
+    <div class="btn-row"><button class="ghost" id="btnPromptsBack">← 返回首页</button></div>
+  </div>
+  <div id="promptList"></div>
 </div>
 
 <!-- v0.9.0 二期：三版并排对比终审弹窗（点哪版用哪版） -->
@@ -623,7 +779,7 @@ var pptBox=(function(){
 
 <script>
 "use strict";
-var SW_VERSION = "0.9.4"; /* v0.9.4 信箱镜像备份+红绿灯+坚果云自动同步 */ /* v0.9.3 队列续件+干活锁 */ /* v0.9.2 ①hxStore仓管员：存盘同步写壳文件夹 ②PPT链路闭环：认taskId、做完把大纲样品寄回大管家（guanjia_inbox）、收rev修改意见自动照改再寄回、3趟封顶提醒 */ /* v0.9.1 认大管家auto信自动全篇精做（授权在寄信时），polishAllRun抽公共 */ /* v0.9.0 二期：自动收信自动开工+双AI逐页精做（千问原著/快校对）+每页三版开关（原著/校对/AI综合）+三版对比终审，导出剥vers（详见文件头） */ /* v0.7.5 系统弹窗大扫除：剩下6处prompt+3处confirm全换自画对话框hxAsk/hxConfirm（AI起草大纲/填Key/涂黑改/插链接/单页AI改/云端恢复/删项目/删页），手机壳上不再"点了没反应" */ /* v0.7.4 三件套：①重做弹窗显示"正在重做第N页《标题》+内容预览"防点错页 ②小活（单页重做）优先派千问qwen-plus（几秒~20秒），没Key/失败自动退Kimi ③AI干活浮动秒表胶囊趴右下角 ④重做后验收：原有表格被AI弄丢→自动重试一次，仍丢则不覆盖原页 */ /* v0.7.3 重做全程浮动提示：开工/成功/失败都弹toast（洪医生真机反馈：进度消息在页面顶部，滚到下面看不见，像死机） */ /* v0.7.2 修数据错乱：AI重做在途时移动/删除该页，写回改认"页面对象"不认下标（独立测试t37抓到） */ /* v0.7.1 修"AI重做本页点了没反应"：病根=手机壳X5内核不理系统prompt()弹窗（直接当取消），改自画弹窗（习题学习删除确认同款药方） */ /* v0.7.0 千问自动交叉校对（愿望清单第3批）：「🤖 自动校对」一键两棒——第1棒发千问qwen-plus（公共钱罐hx_qwenkey，约1分钱）拿校对意见，第2棒自动交给贴回校对管道让Kimi照改大纲（没提到的一字不动）；开关可选千问/Kimi自查；千问答"没发现问题"就不花第2棒的钱 */ /* v0.6.1 自选背景图（愿望清单第2批）：幻灯片页「🖼️ 背景图」相册选图→canvas压缩≤1600px、JPEG逐步降质（≤200KB）→存本PPT的p.bg（不设全局）；渲染时.slide-page叠82%不透明蒙纱（米白皮用米白纱/深色皮用深色纱）保证字可读；「✕ 清除背景」一键还原；导出HTML内嵌带走。提醒：导出会把照片带出去，别夹病人信息 */ /* v0.6.0 四套皮肤（米白学术/深蓝正式/墨绿讲堂/黑板粉笔），每个PPT各选各的，导出HTML带着走；点屏翻页其实v0.2.0起就有（点左35%上页/右65%下页） */ /* v0.5.0 放映自适应：底栏实底让位+内容超高自动等比缩小（洪医生横屏讲课表格最后一行被吃） */ /* v0.4.8 AI报错带官方原因+400也自动换模型重试（洪医生贴回校对撞HTTP400：疑公共模型罐里存着已下架的moonshot-v1系列，400不走404重试路） */ /* v0.4.7 版本字样治病根：头顶+页脚+标题改成代码自动填SW_VERSION（v0.4.0~0.4.6期间头顶一直显示旧号，害用户以为没更新） */ /* v0.4.6 更新通道免Token备用路：自检/下载新版在API不通或没填Token时自动走github.io公开直链 */ /* v0.4.5 贴回校对结果：别的AI的校对意见贴进来，本软件AI照改大纲（原文没提到的部分不动）+秒表进度 */ /* v0.4.4 复制校对：大纲/全片一键连校对指令复制，借别的AI挑错，不花自己Key */ /* v0.4.3 修404：死模型自动换kimi-k2.6+重试；max_tokens 8000→16384（k2.6思考型） */ /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
+var SW_VERSION = "0.11.0"; /* v0.11.0 弹窗兜底（遮罩可关+onerror可见+init分步容错）+风格分轨（大白话科普/严肃医学，严肃版术语不翻白话、格子放宽，大管家寄PPT跟随） */ /* v0.10.0 大纲契约主路（整形1次+校对1次+本地出页）+提示词档案diff+失败原因名单+老精做降级高级区（详见文件头） */ /* v0.9.5 干活进度牌（阶段常亮）+完工自动传坚果云PPT成品（成品+工程备份）+手动导出也顺手传 */ /* v0.9.4 信箱镜像备份+红绿灯+坚果云自动同步 */ /* v0.9.3 队列续件+干活锁 */ /* v0.9.2 ①hxStore仓管员：存盘同步写壳文件夹 ②PPT链路闭环：认taskId、做完把大纲样品寄回大管家（guanjia_inbox）、收rev修改意见自动照改再寄回、3趟封顶提醒 */ /* v0.9.1 认大管家auto信自动全篇精做（授权在寄信时），polishAllRun抽公共 */ /* v0.9.0 二期：自动收信自动开工+双AI逐页精做（千问原著/快校对）+每页三版开关（原著/校对/AI综合）+三版对比终审，导出剥vers（详见文件头） */ /* v0.7.5 系统弹窗大扫除：剩下6处prompt+3处confirm全换自画对话框hxAsk/hxConfirm（AI起草大纲/填Key/涂黑改/插链接/单页AI改/云端恢复/删项目/删页），手机壳上不再"点了没反应" */ /* v0.7.4 三件套：①重做弹窗显示"正在重做第N页《标题》+内容预览"防点错页 ②小活（单页重做）优先派千问qwen-plus（几秒~20秒），没Key/失败自动退Kimi ③AI干活浮动秒表胶囊趴右下角 ④重做后验收：原有表格被AI弄丢→自动重试一次，仍丢则不覆盖原页 */ /* v0.7.3 重做全程浮动提示：开工/成功/失败都弹toast（洪医生真机反馈：进度消息在页面顶部，滚到下面看不见，像死机） */ /* v0.7.2 修数据错乱：AI重做在途时移动/删除该页，写回改认"页面对象"不认下标（独立测试t37抓到） */ /* v0.7.1 修"AI重做本页点了没反应"：病根=手机壳X5内核不理系统prompt()弹窗（直接当取消），改自画弹窗（习题学习删除确认同款药方） */ /* v0.7.0 千问自动交叉校对（愿望清单第3批）：「🤖 自动校对」一键两棒——第1棒发千问qwen-plus（公共钱罐hx_qwenkey，约1分钱）拿校对意见，第2棒自动交给贴回校对管道让Kimi照改大纲（没提到的一字不动）；开关可选千问/Kimi自查；千问答"没发现问题"就不花第2棒的钱 */ /* v0.6.1 自选背景图（愿望清单第2批）：幻灯片页「🖼️ 背景图」相册选图→canvas压缩≤1600px、JPEG逐步降质（≤200KB）→存本PPT的p.bg（不设全局）；渲染时.slide-page叠82%不透明蒙纱（米白皮用米白纱/深色皮用深色纱）保证字可读；「✕ 清除背景」一键还原；导出HTML内嵌带走。提醒：导出会把照片带出去，别夹病人信息 */ /* v0.6.0 四套皮肤（米白学术/深蓝正式/墨绿讲堂/黑板粉笔），每个PPT各选各的，导出HTML带着走；点屏翻页其实v0.2.0起就有（点左35%上页/右65%下页） */ /* v0.5.0 放映自适应：底栏实底让位+内容超高自动等比缩小（洪医生横屏讲课表格最后一行被吃） */ /* v0.4.8 AI报错带官方原因+400也自动换模型重试（洪医生贴回校对撞HTTP400：疑公共模型罐里存着已下架的moonshot-v1系列，400不走404重试路） */ /* v0.4.7 版本字样治病根：头顶+页脚+标题改成代码自动填SW_VERSION（v0.4.0~0.4.6期间头顶一直显示旧号，害用户以为没更新） */ /* v0.4.6 更新通道免Token备用路：自检/下载新版在API不通或没填Token时自动走github.io公开直链 */ /* v0.4.5 贴回校对结果：别的AI的校对意见贴进来，本软件AI照改大纲（原文没提到的部分不动）+秒表进度 */ /* v0.4.4 复制校对：大纲/全片一键连校对指令复制，借别的AI挑错，不花自己Key */ /* v0.4.3 修404：死模型自动换kimi-k2.6+重试；max_tokens 8000→16384（k2.6思考型） */ /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
 /* 公共钱罐：API key/GitHub配置 一处填处处有（与其他软件共享 hx_*） */
 (function(){
   var HX_MAP=[["hx_apikey","hx_apikey"],["hx_gh_user","hx_gh_user"],["hx_gh_tok","hx_gh_tok"],["hx_gh_repo","hx_gh_repo"]];
@@ -1074,9 +1230,9 @@ function pickBgImage(file){
 function slideHTML(p){
   var kind=pageKind(p);
   if(kind==="cover"){
-    return '<div class="slide-page sp-cover"'+bgStyleStr()+'><h1>'+linkify(esc(p.title))+'</h1>'+(p.para?'<div class="sp-sub">'+linkify(esc(p.para))+'</div>':'')+'</div>';
+    return '<div class="slide-page sp-cover'+(p.shrink?' sp-shrink':'')+'"'+bgStyleStr()+'><h1>'+linkify(esc(p.title))+'</h1>'+(p.para?'<div class="sp-sub">'+linkify(esc(p.para))+'</div>':'')+'</div>';
   }
-  var h='<div class="slide-page"'+bgStyleStr()+'>';
+  var h='<div class="slide-page'+(p.shrink?' sp-shrink':'')+'"'+bgStyleStr()+'>'; /* v0.10.0 保险丝：超契约页字号缩一档 */
   if(p.title) h+='<h2>'+linkify(esc(p.title))+'</h2>';
   if(kind==="big"){
     h+='<div class="sp-big"><div class="n">'+esc(p.big)+'</div><div class="t">'+esc(p.bigText||"")+'</div></div>';
@@ -1204,7 +1360,7 @@ function aiDraftOutline(){
     if(ask===null) return;
     var sys='您是ICU主任医师的教学助手，帮人把主题做成讲课PPT的大纲。';
     var usr=(topic?('【现有大纲/资料】\n'+topic+'\n\n'):'')+
-      '【题目/要求】'+(ask||'按上面资料重新组织成大纲')+'\n\n'+MD_RULES;
+      '【题目/要求】'+(ask||'按上面资料重新组织成大纲')+'\n\n'+styleClause()+MD_RULES; /* v0.11.0 严肃医学风格时注入学术版条款 */
     showMsg($('editMsg'),'🤖 AI正在起草大纲…');
     callAI(sys,usr,function(text){
       var m=text.match(/```(?:markdown)?\s*([\s\S]*?)```/);
@@ -1218,7 +1374,7 @@ function aiPolishOutline(){
   if(!cur){ showMsg($('editMsg'),'大纲还是空的，先写点或让AI起草','err'); return; }
   showMsg($('editMsg'),'✨ AI正在润色…');
   callAI('您是ICU教学PPT大纲润色助手。',
-    '【现有大纲】\n'+cur+'\n\n请在不增减事实的前提下润色：表述更精炼、口语化、适合讲课；结构不变。\n'+MD_RULES,
+    '【现有大纲】\n'+cur+'\n\n请在不增减事实的前提下润色：'+(pptStyle()==='strict'?'表述更精炼、学术化、术语保留英文缩写、适合同行汇报':'表述更精炼、口语化、适合讲课')+'；结构不变。\n'+styleClause()+MD_RULES, /* v0.11.0 润色口吻跟随风格开关 */
     function(text){
       var m=text.match(/```(?:markdown)?\s*([\s\S]*?)```/);
       $('outlineText').value=(m?m[1]:text).replace(/^\s+|\s+$/g,'');
@@ -1327,7 +1483,7 @@ $('btnRegenGo').onclick=function(){
 "use strict";
 /* ==================== 页面流转 ==================== */
 function showPage(id){
-  ['homePage','editPage','slidesPage'].forEach(function(p){ $(p).classList.add('hidden'); });
+  ['homePage','editPage','slidesPage','promptPage'].forEach(function(p){ $(p).classList.add('hidden'); }); /* v0.10.0 提示词档案页一起管 */
   $(id).classList.remove('hidden');
   window.scrollTo(0,0);
 }
@@ -1364,7 +1520,7 @@ function buildFromOutline(){
   var p=curProj();
   if(!p){ p={id:newId(), title:'', outline:'', slides:[], t:Date.now()}; store.projects.push(p); curId=p.id; }
   /* v0.9.3 干活锁：生成开工挂 ppt_busy，寄件端见此锁→寄件排队/叫醒按钮提示容后继续 */
-  try{ localStorage.setItem('ppt_busy', JSON.stringify({title:(pages[0]&&pages[0].title)||p.title||'无题', since:Date.now()})); }catch(e){}
+  try{ localStorage.setItem('ppt_busy', JSON.stringify({title:(pages[0]&&pages[0].title)||p.title||'无题', since:Date.now(), stage:'🎬 初稿出页中（本地排版，不花钱）', page:0, total:pages.length})); }catch(e){}
   try{ pptBox.backup(); }catch(e){} /* v0.9.4 信箱镜像 */
   p.outline=md;
   p.slides=pages;
@@ -1387,7 +1543,7 @@ function renderSlides(){
   var el=$('slideList'); el.innerHTML='';
   p.slides.forEach(function(s,i){
     var d=document.createElement('div'); d.className='slide-item';
-    var prev=s.title+'　'+(s.bullets.slice(0,2).join('；'))+(s.table?('　[表'+s.table.rows.length+'行]'):'')+(s.chart?'　[图表]':'')+(s.big?('　!!'+s.big):'')+(s.quote?'　[金句]':'');
+    var prev=s.title+'　'+(s.bullets.slice(0,2).join('；'))+(s.table?('　[表'+s.table.rows.length+'行]'):'')+(s.chart?'　[图表]':'')+(s.big?('　!!'+s.big):'')+(s.quote?'　[金句]':'')+(s.shrink?'　[字偏多·已自动缩字号]':''); /* v0.10.0 保险丝标记露面 */
     d.innerHTML='<div class="slide-head"><span class="slide-no">第'+(i+1)+'页</span>'+
       '<span class="slide-title">'+esc(s.title||'（'+pageKind(s)+'）')+'</span></div>'+
       '<div class="slide-preview">'+esc(prev)+'</div>';
@@ -1417,7 +1573,14 @@ function renderSlides(){
     bDual.onclick=function(){
       if(polishing){ toast('有AI活正在干，稍等'); return; }
       polishing=true; toast('✨ 双AI精做第'+(i+1)+'页…');
-      polishOnePage(s,p,false).then(function(){ polishing=false; p.t=Date.now(); saveStore(); renderSlides(); toast('✅ 第'+(i+1)+'页精做好了：开关切「🔍校对」对比看',5000); },
+      polishOnePage(s,p,false).then(function(){ polishing=false; p.t=Date.now(); saveStore(); renderSlides(); toast('✅ 第'+(i+1)+'页精做好了：开关切「🔍校对」对比看',5000);
+        /* v0.10.0 补做成功→从失败名单里划掉这页 */
+        try{ var rec=JSON.parse(localStorage.getItem('ppt_fail_list')||'null');
+          if(rec&&rec.fails){ var before=rec.fails.length;
+            rec.fails=rec.fails.filter(function(f){ return f.no!==(i+1); });
+            if(rec.fails.length!==before){ if(rec.fails.length) localStorage.setItem('ppt_fail_list',JSON.stringify(rec)); else localStorage.removeItem('ppt_fail_list');
+              toast('✅ 第'+(i+1)+'页补做成功，已从失败名单里划掉',4000); } } }catch(e){}
+      },
         function(e){ polishing=false; toast('❌ 第'+(i+1)+'页没成：'+String(e.message||e).slice(0,60),5000); });
     };
     var bDeep=document.createElement('button'); bDeep.className='ghost'; bDeep.textContent='🔍精校'; bDeep.title='Kimi思考型精校本页（1~4分钟），刷新校对版';
@@ -1872,8 +2035,8 @@ $('peLink').onclick=function(){ openLitPicker('link','page'); };
 $('peCancel').onclick=function(){ $('pageEditModal').classList.add('hidden'); peIdx=null; };
 
 /* ==================== 导出单个HTML（自带播放器） ==================== */
-async function exportHTML(){
-  var p=curProj(); if(!p||!p.slides.length){ toast('先生成PPT'); return; }
+/* v0.9.5 拆出 makeExportDoc：成品HTML正文生成（手动导出与完工自动传坚果云共用），返回 {doc,fname} */
+async function makeExportDoc(p){
   /* v0.2.0 抓所有[[]]链接的文件名，给每个链接内嵌"影子副本"（文献库AI总结/全文节选），
      发给别人点开链接也能看到内容——HTML自己带着，不用联网 */
   var linkNames=[], seen={};
@@ -1920,6 +2083,11 @@ async function exportHTML(){
     'fit();render();'+
     '</'+'script></body></html>';
   var fname=(p.title||'PPT')+'.html';
+  return {doc:doc, fname:fname};
+}
+async function exportHTML(){
+  var p=curProj(); if(!p||!p.slides.length){ toast('先生成PPT'); return; }
+  var _ex=await makeExportDoc(p); var doc=_ex.doc, fname=_ex.fname;
   if(window.LearnShell && window.LearnShell.folderSet && window.LearnShell.folderSet()){
     try{ window.LearnShell.writeFile(fname, ghB64enc(doc)); toast('✅ 已存进您的文件夹：'+fname,4000); }catch(e){}
   }
@@ -1928,6 +2096,8 @@ async function exportHTML(){
   document.body.appendChild(a); a.click();
   setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },1000);
   toast('📤 已导出 '+fname+'（浏览器下载目录；壳里也存了文件夹一份）',4000);
+  /* v0.9.5 手动导出=我认为做完了：顺手传坚果云「PPT成品」（成品+工程备份），结果写进进度牌 */
+  try{ shipDone(p); }catch(e){}
 }
 /* ==================== v0.9.0 二期：双AI逐页精做 + 三版开关（洪老师拍板药方C） ====================
    数据：每页 s.vers={orig:markdown, proof:markdown|null, merged:markdown|null}，s.use=在用哪版。
@@ -2026,7 +2196,7 @@ function polishAllRun(p){
   if(polishing) return;
   polishing=true;
   /* v0.9.3 干活锁：全篇精做是真正的长活（几分钟），开工挂 ppt_busy，做完（含中途每页失败但跑完）摘锁 */
-  try{ localStorage.setItem('ppt_busy', JSON.stringify({title:p.title||'无题', since:Date.now()})); }catch(e){}
+  try{ localStorage.setItem('ppt_busy', JSON.stringify({title:p.title||'无题', since:Date.now(), stage:'🔍 交叉校对精做中', page:0, total:p.slides.length})); }catch(e){}
   try{ pptBox.backup(); }catch(e){} /* v0.9.4 信箱镜像 */
   var n=p.slides.length, fails=[], i=0, t0=Date.now();
   toast('🤖 全篇精做开工，右下角秒表在走=活着',3000);
@@ -2035,13 +2205,28 @@ function polishAllRun(p){
       polishing=false; saveStore(); renderSlides();
       try{ localStorage.removeItem('ppt_busy'); }catch(e){} /* v0.9.3 摘干活锁 */
       try{ pptBox.backup(); }catch(e){} /* v0.9.4 信箱镜像 */
-      var msg='✅ 全篇精做完成（'+Math.floor((Date.now()-t0)/1000)+'秒）'+(fails.length?('；'+fails.length+'页没成：第'+fails.join('、')+'页，可点那页「✨双AI」补做'):'，每页点开关切「校对」看看');
-      showMsg($('slidesMsg'),msg, fails.length?'err':'ok'); toast(msg,6000); return;
+      /* v0.10.0 失败原因存名单：fails存{no,reason}，同步存localStorage「ppt_fail_list」；总结里页码可点，点了弹原因 */
+      var secs=Math.floor((Date.now()-t0)/1000);
+      if(fails.length){
+        try{ localStorage.setItem('ppt_fail_list', JSON.stringify({proj:p.id, when:Date.now(), fails:fails})); }catch(e){}
+        var mEl=$('slidesMsg'); mEl.className='msg err';
+        mEl.innerHTML='⚠️ 全篇精做跑完（'+secs+'秒）；'+fails.length+'页没成：'
+          +fails.map(function(f){ return '<a class="failNo" data-no="'+f.no+'" style="color:#b3543f;text-decoration:underline;cursor:pointer;">第'+f.no+'页</a>'; }).join('、')
+          +'（点页码看原因），可点那页「✨双AI」补做';
+        toast('⚠️ 全篇精做跑完（'+secs+'秒）；'+fails.length+'页没成，点总结里的页码看原因',6000);
+      }else{
+        try{ localStorage.removeItem('ppt_fail_list'); }catch(e){}
+        var msg='✅ 全篇精做完成（'+secs+'秒），每页点开关切「校对」看看';
+        showMsg($('slidesMsg'),msg,'ok'); toast(msg,6000);
+      }
+      try{ shipDone(p); }catch(e){} /* v0.9.5 完工自动传坚果云+进度牌定格 */
+      return;
     }
     var s=p.slides[i], no=i+1; i++;
     showMsg($('slidesMsg'),'🤖 精做第'+no+'/'+n+'页《'+(s.title||'无题')+'》…','ok');
+    try{ workBoard.setBusy('🔍 交叉校对精做中', no, n, p.title); }catch(e){} /* v0.9.5 进度牌每页刷新 */
     polishOnePage(s,p,false).then(function(){ p.t=Date.now(); saveStore(); renderSlides(); next(); },
-      function(e){ fails.push(no); toast('⚠️ 第'+no+'页没成：'+String(e.message||e).slice(0,50)+'，跳过接着做',4000); next(); });
+      function(e){ fails.push({no:no, reason:String((e&&e.message)||e).slice(0,100)}); toast('⚠️ 第'+no+'页没成：'+String((e&&e.message)||e).slice(0,50)+'，跳过接着做',4000); next(); }); /* v0.10.0 失败连原因一起记 */
   })();
 }
 /* 全篇双AI精做：手动点要先弹确认（写明页数/时间/钱）；靠页面对象引用写回，删页移页不串位 */
@@ -2053,6 +2238,162 @@ $('btnPolishAll').onclick=function(){
     if(yes) polishAllRun(p);
   });
 };
+/* ==================== v0.10.0 新主路：📋大纲定稿 → 🔍交叉校对 → 🎬本地出页（内容契约版） ====================
+   只调2次AI（整形1次+校对1次，约2分钱），不再逐页30次调用；出页纯本地。
+   内容契约：标题≤20字、正文≤120字或≤6行（先到为准）、要点≤5条、表格≤4行×4列；超了让AI拆成两页。 */
+var PPT_CONTRACT='【每页内容契约（哪页超了，就把那页拆成两页）】\n- 标题不超过20字\n- 正文不超过120字或6行（先到为准）\n- 要点（- 开头）不超过5条\n- 表格不超过4行×4列\n';
+/* v0.11.0 风格分轨：plain大白话科普（老样子一字不动） / strict严肃医学（术语不翻白话、格子放宽） */
+function pptStyle(){ try{ return localStorage.getItem('ppt_style')||'plain'; }catch(e){ return 'plain'; } }
+var STYLE_CLAUSE_STRICT='【风格：严肃医学学术版】术语保留规范中文名与英文缩写（如CRAB、VAP、PK/PD），不翻成大白话；鼓励写清机制、关键数据、临床试验名与指南出处；语气正式，面向同行汇报。\n';
+function styleClause(){ return pptStyle()==='strict'?STYLE_CLAUSE_STRICT:''; }
+function contractRules(){
+  return pptStyle()==='strict'
+    ? '【每页内容契约（哪页超了，就把那页拆成两页）】\n- 标题不超过20字\n- 正文不超过200字或8行（先到为准）\n- 要点（- 开头）不超过6条\n- 表格不超过6行×5列\n'
+    : PPT_CONTRACT;
+}
+var SYS_SHAPE='您是ICU教学PPT的大纲整形师，只负责把大纲排成守规矩的分页；医学事实一个不编、一个不丢。';
+var SYS_CONTRACT_PROOF='您是ICU教学PPT的总校对，医学事实和每页格子两头都管，直接给改好的全稿。';
+function shapePrompt(md){
+  return '【原始大纲】\n'+md+'\n\n把这份大纲整理成严格的讲课PPT分页大纲（Markdown）。\n'+styleClause()+contractRules()+'\n'+MD_RULES;
+}
+function proofContractPrompt(md){
+  return '【整份大纲】\n'+md+'\n\n请您通篇校对：①医学事实、术语、逻辑有没有错，有错直接改对 ②逐页数格子：哪页违反下面的内容契约，就拆成两页或精简到达标。\n'+styleClause()+contractRules()+'\n直接输出修订后的完整大纲，解释一个字都不要。\n'+MD_RULES;
+}
+/* 数格子：这页超没超契约（返回超在哪，空数组=达标）。封面页不数。 */
+function contractOver(s){
+  var why=[];
+  if(!s) return why;
+  if((s.cls||'')==='cover'||pageKind(s)==='cover') return why;
+  if((s.title||'').length>20) why.push('标题超20字');
+  var para=s.para||'';
+  if(pptStyle()==='strict'){ /* v0.11.0 严肃医学版换放宽的尺子 */
+    if(para.length>200||para.split('\n').length>8) why.push('正文超200字/8行');
+    if((s.bullets||[]).length>6) why.push('要点超6条');
+    if(s.table&&((s.table.rows||[]).length>6||(s.table.headers||[]).length>5)) why.push('表格超6行×5列');
+  }else{
+    if(para.length>120||para.split('\n').length>6) why.push('正文超120字/6行');
+    if((s.bullets||[]).length>5) why.push('要点超5条');
+    if(s.table&&((s.table.rows||[]).length>4||(s.table.headers||[]).length>4)) why.push('表格超4行×4列');
+  }
+  return why;
+}
+/* 新主路实际跑法：整形(快AI) → 校对(Kimi) → 本地出页。任何一步AI读不懂就退一步用上一稿，不卡壳。 */
+function outlineShipRun(p){
+  if(polishing){ toast('有AI活正在干，稍等'); return; }
+  var md=((p&&p.outline)||($('outlineText')&&$('outlineText').value)||'').replace(/^\s+|\s+$/g,'');
+  if(!md){ toast('大纲还是空的，先写一份或收一份'); return; }
+  polishing=true;
+  try{ localStorage.setItem('ppt_busy', JSON.stringify({title:(p&&p.title)||'无题', since:Date.now(), stage:'📋 第1步/共3步：大纲整形中（AI排格子）', page:1, total:3})); }catch(e){}
+  try{ pptBox.backup(); }catch(e){} /* 信箱镜像 */
+  toast('📋 大纲定稿+出页开工：共3步，只有前两步花AI钱（约2分钱）',4000);
+  aiP(callFastAI, SYS_SHAPE, shapePrompt(md)).then(function(t1){
+    var md2=extractMd(t1);
+    if(!parseOutline(md2).length) md2=md; /* 整形稿读不懂→用原大纲接着走 */
+    try{ workBoard.setBusy('🔍 第2步/共3步：交叉校对中（医学事实+数格子）',2,3,(p&&p.title)||'无题'); }catch(e){}
+    return aiP(callAI, SYS_CONTRACT_PROOF, proofContractPrompt(md2)).then(function(t2){
+      var md3=extractMd(t2);
+      return parseOutline(md3).length?md3:md2; /* 校对稿读不懂→老实用整形稿 */
+    }, function(e2){
+      toast('⚠️ 第2步校对没接上（'+String((e2&&e2.message)||e2).slice(0,50)+'），用整形稿直接出页',5000);
+      return md2;
+    });
+  }).then(function(mdFinal){
+    try{ workBoard.setBusy('🎬 第3步/共3步：本地出页（不花钱）',3,3,(p&&p.title)||'无题'); }catch(e){}
+    var pages=parseOutline(mdFinal);
+    if(!pages.length) throw new Error('定稿大纲解析不出任何一页，原大纲没动');
+    if(!p){ p={id:newId(), title:'', outline:'', slides:[], t:Date.now()}; store.projects.push(p); curId=p.id; }
+    pages.forEach(function(s){
+      if(!s.vers) s.vers={orig:pageToMd(s),proof:null,merged:null}; if(!s.use) s.use='orig';
+      s.shrink=contractOver(s).length>0; /* v0.10.0 本地保险丝：仍超契约→渲染时字号缩一档 */
+    });
+    p.outline=mdFinal; p.slides=pages; p.linkNotes=outlineLinks;
+    p.title=pages[0]&&pages[0].cls==='cover'?pages[0].title:(pages[0].title||'无题');
+    p.t=Date.now(); saveStore(); renderSlides(); showPage('slidesPage');
+    polishing=false;
+    try{ localStorage.removeItem('ppt_busy'); }catch(e){}
+    try{ pptBox.backup(); }catch(e){}
+    var shrunk=0; pages.forEach(function(s){ if(s.shrink) shrunk++; });
+    showMsg($('slidesMsg'),'✅ 大纲定稿+出页完成，共 '+pages.length+' 页'+(shrunk?('（'+shrunk+'页字偏多，已自动把字缩小一号）'):'')+'。点「▶️ 放映」或「📤 导出HTML」都行','ok');
+    toast('✅ 定稿出页完成：'+pages.length+'页',5000);
+    try{ shipDone(p); }catch(e){} /* 完工照旧传坚果云+进度牌定格 */
+  }, function(e){
+    polishing=false;
+    try{ localStorage.removeItem('ppt_busy'); }catch(e){}
+    try{ pptBox.backup(); }catch(e){}
+    showMsg($('slidesMsg'),'❌ 大纲定稿没成：'+String((e&&e.message)||e).slice(0,80)+'。大纲没动，稍后再试','err');
+    toast('❌ 大纲定稿没成：'+String((e&&e.message)||e).slice(0,60),5000);
+  });
+}
+/* v0.11.0 风格选择器：开门回填上次选择，换了就存 */
+try{ $('styleSel').value=pptStyle(); }catch(e){}
+$('styleSel').onchange=function(){ try{ localStorage.setItem('ppt_style', this.value); }catch(e){} toast(this.value==='strict'?'🏥 已切严肃医学风：术语不翻白话，格子放宽':'🗣️ 已切大白话风：说人话，给患者/家属听', 3000); };
+$('btnOutlineShip').onclick=function(){
+  var p=curProj();
+  var md=((p&&p.outline)||($('outlineText').value||'')).replace(/^\s+|\s+$/g,'');
+  if(!md){ toast('大纲还是空的，先点「← 回大纲」写一份'); return; }
+  hxConfirm('大纲定稿+出页：第1步AI把大纲排整齐（每页字不超格），第2步换一家AI整份校对（医学事实+数格子），第3步本地出页。共3步、约2分钱。跑吗？', function(yes){
+    if(yes) outlineShipRun(p);
+  });
+};
+/* v0.10.0 失败名单：点总结里的页码→弹当时失败原因（读localStorage「ppt_fail_list」） */
+$('slidesMsg').addEventListener('click', function(e){
+  var t=e.target;
+  if(!(t&&t.classList&&t.classList.contains('failNo'))) return;
+  var no=+t.getAttribute('data-no'), reason='（没找到这页的原因记录，可能已被补做成功划掉了）';
+  try{ var rec=JSON.parse(localStorage.getItem('ppt_fail_list')||'null');
+    if(rec&&rec.fails) rec.fails.forEach(function(f){ if(f.no===no) reason=f.reason; }); }catch(err){}
+  toast('第'+no+'页当时没成的原因：'+reason, 8000);
+});
+/* ==================== v0.10.0 提示词档案：全提示词分段陈列 + 上一版逐行对照标红 ====================
+   localStorage两份：ppt_prompts_cur（当前版）/ppt_prompts_prev（上一版）+ ppt_prompts_note（修改说明）。
+   提示词有变动时自动把旧cur挪进prev；档案页逐行对照，prev里没有的行红底标出。 */
+function pptPromptsList(){
+  return [
+    {k:'shape', name:'📋 大纲整形（新主路第1步）', desc:'管什么：把您的大纲排成规矩的分页，每页字不超格。由快AI干，约1分钱。', text:SYS_SHAPE+'\n\n'+shapePrompt('（这里装您的原始大纲全文）')},
+    {k:'proofall', name:'🔍 交叉校对（新主路第2步）', desc:'管什么：换一家AI把整份大纲通篇校对——医学事实挑错+逐页数格子，直接给改好的全稿。约1分钱。', text:SYS_CONTRACT_PROOF+'\n\n'+proofContractPrompt('（这里装整形后的大纲全文）')},
+    {k:'write', name:'✍️ 单页写原著（老双AI精做用）', desc:'管什么：把一页大纲草稿写成正式讲课页。', text:SYS9_ORIG+'\n\n'+writePrompt({title:'（整场PPT题目）'},'（这里装这一页的大纲草稿）')},
+    {k:'proof', name:'🔍 单页校对（老双AI精做用）', desc:'管什么：只挑错改错，不动文风。', text:SYS9_PROOF+'\n\n'+proofPrompt({title:'（整场PPT题目）'},'（这里装本页原著）')},
+    {k:'merge', name:'🤝 三版综合（单页按需）', desc:'管什么：原著为底、校对指错必改、两版择优。', text:SYS9_MERGE+'\n\n'+mergePrompt({title:'（整场PPT题目）'},'（原著版）','（校对版）')},
+    {k:'rules', name:'📐 出页格式总规矩', desc:'管什么：告诉AI大纲的Markdown画法（#封面 ##分页 -要点 |表格| 等），凡是让AI出大纲的活儿都带着它。', text:MD_RULES},
+    {k:'proofcopy', name:'📋 复制校对指令（借别的AI挑错）', desc:'管什么：一键连同大纲/全片复制，拿去豆包/DeepSeek等粘贴校对，不花自己Key。', text:'请您当医学校对员，校对下面这份ICU教学PPT（大纲/全片）。请逐项检查：①医学事实有没有错（药名/剂量/指南数字/适应证）②错别字和用词 ③前后矛盾 ④说法过时的地方。按「位置→原文→问题→建议改法」列出，没说错的部分不用提。\n\n=====要校对的内容=====\n（这里装大纲或全片文字）'}
+  ];
+}
+/* 提示词有变动→旧值挪prev新值存cur，写修改说明（本次：2026-09-05 新增大纲整形/校对提示词（内容契约版）） */
+function pptPromptsSyncVer(){
+  try{
+    var cur=JSON.stringify(pptPromptsList());
+    var old=localStorage.getItem('ppt_prompts_cur');
+    if(old!==cur){
+      if(old) localStorage.setItem('ppt_prompts_prev',old);
+      else localStorage.setItem('ppt_prompts_prev',cur); /* v0.10.0修复：首启把当前版当基线存prev，避免全新用户打开全部标红 */
+      localStorage.setItem('ppt_prompts_cur',cur);
+      localStorage.setItem('ppt_prompts_note','2026-09-05晚：新增风格分轨——幻灯片页绿色主按钮旁可选「大白话科普/严肃医学」，严肃版术语不翻白话、格子放宽；档案里显示的是当前所选风格的提示词，切风格后再来看会变红');
+    }
+  }catch(e){}
+}
+function promptsPageShow(){
+  pptPromptsSyncVer();
+  var prev={}; try{ (JSON.parse(localStorage.getItem('ppt_prompts_prev')||'[]')||[]).forEach(function(x){ if(x&&x.k) prev[x.k]=x.text||''; }); }catch(e){}
+  var note=''; try{ note=localStorage.getItem('ppt_prompts_note')||''; }catch(e){}
+  $('promptNote').textContent='🗓 本次修改说明：'+(note||'（提示词还没改过版，暂无前后对照）');
+  var box=$('promptList'); box.innerHTML='';
+  pptPromptsList().forEach(function(x){
+    var seg=document.createElement('div'); seg.className='card';
+    var h='<h3 style="font-size:15px;margin-bottom:4px;">'+esc(x.name)+'</h3><div class="hint">'+esc(x.desc)+'</div>';
+    var oldText=prev[x.k]||'';
+    h+='<pre style="white-space:pre-wrap;word-break:break-all;font-size:12.5px;background:#faf7f2;border:1px solid #e5ded2;border-radius:8px;padding:10px;line-height:1.7;max-height:320px;overflow:auto;margin-top:8px;">';
+    x.text.split('\n').forEach(function(ln){
+      if(ln.replace(/\s+/g,'') && oldText.indexOf(ln)<0) h+='<span style="background:#ffd9d9;color:#a33;">'+esc(ln)+'</span>\n';
+      else h+=esc(ln)+'\n';
+    });
+    h+='</pre>';
+    seg.innerHTML=h;
+    box.appendChild(seg);
+  });
+  showPage('promptPage');
+}
+$('btnPrompts').onclick=promptsPageShow;
+$('btnPromptsBack').onclick=function(){ showPage('homePage'); };
 /* 三版并排对比终审 */
 function cmpOpen(i){
   var p=curProj(); if(!p) return;
@@ -2199,7 +2540,7 @@ function checkInbox(){
       toast('📬 收到带命令的信：自动精做开工（大管家寄信时您已同意）',5000);
       polishAllRun(ap);
     }else{
-      showMsg($('slidesMsg'),'📬 收到「'+(d.title||'无题')+'」，已自动开工做出 '+autoPages.length+' 页（没花API钱）。要更讲究：点上面「🤖✨ 全篇双AI精做」','ok');
+      showMsg($('slidesMsg'),'📬 收到「'+(d.title||'无题')+'」，已自动开工做出 '+autoPages.length+' 页（没花API钱）。要更讲究：点上面绿色大按钮「📋✨ 大纲定稿+出页」（约2分钱）','ok'); /* v0.10.0 指路改指新主按钮 */
       toast('📬 收到「'+(d.title||'无题')+'」，已自动做出 '+autoPages.length+' 页',5000);
     }
     return;
@@ -2405,18 +2746,34 @@ $('ghDlBtn').onclick=function(){
   });
 };
 /* 初始化：预填设置 + 状态行 + 收件箱 + 自检 + 主界面刷新 */
+/* ==================== v0.11.0 弹窗兜底+全局报错可见 ====================
+   病根（洪老师真机2026-09-05）：某处JS一炸，弹窗关闭钮没绑上→对话框关不掉、全页像死机，
+   手机又没console，死无对证。三味药：①所有弹窗点遮罩空白处一律可关 ②onerror弹红toast
+   （报错内容截图发AI就能断案） ③init分步try/catch，一步炸不拖死后面绑定。 */
+window.onerror=function(msg,src,line){
+  try{ toast('⚠️ 程序报错（请截图发给AI）：'+String(msg).slice(0,80)+(line?(' 第'+line+'行'):''), 8000); }catch(e){}
+  return false;
+};
+['cmpModal','litModal','pageEditModal','pvAskModal','regenModal','proofModal'].forEach(function(id){
+  var m=$(id); if(!m) return;
+  m.addEventListener('click', function(e){
+    if(e.target!==m) return; /* 只认点遮罩空白，点卡片内容不关 */
+    if(m.id==='regenModal'||m.id==='proofModal') m.style.display='none'; /* 这俩靠inline style开关 */
+    else m.classList.add('hidden'); /* mini-modal/pvAskModal靠hidden类开关 */
+  });
+});
+/* 初始化：预填设置 + 状态行 + 收件箱 + 自检 + 主界面刷新 */
 (function init(){
-  $('ghUser').value=ghCfg().user;
-  $('ghTok').value=ghCfg().tok;
-  $('ghRepo').value=ghCfg().repo;
-  ghStatusRender(); locRender(); renderProjects(); checkInbox();
-  setTimeout(function(){ if(ghReady()) ghSelfCheck(false); },3000);
-  setTimeout(function(){ if(ghReady()) locReconcile(false); },4000);
-  setTimeout(hxIndexRefresh,6000);
+  function step(f){ try{ f(); }catch(e){ try{ toast('⚠️ 启动有一步没跑成（截图发AI）：'+String((e&&e.message)||e).slice(0,60), 6000); }catch(e2){} } }
+  step(function(){ $('ghUser').value=ghCfg().user; $('ghTok').value=ghCfg().tok; $('ghRepo').value=ghCfg().repo; });
+  step(ghStatusRender); step(locRender); step(renderProjects); step(checkInbox);
+  setTimeout(function(){ try{ if(ghReady()) ghSelfCheck(false); }catch(e){} },3000);
+  setTimeout(function(){ try{ if(ghReady()) locReconcile(false); }catch(e){} },4000);
+  setTimeout(function(){ try{ hxIndexRefresh(); }catch(e){} },6000);
   /* 本机空+配置齐全 → 自动pull（confirm防误覆盖） */
-  if(store.projects.length===0 && ghReady()){
+  step(function(){ if(store.projects.length===0 && ghReady()){
     ghPull(function(err,payload){ if(!err&&payload) ghAskRestore(payload); });
-  }
+  } });
 })();
 </script>
 <script>

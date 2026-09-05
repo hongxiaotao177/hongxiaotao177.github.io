@@ -8,6 +8,10 @@
   红小涛学习套装 · 病人大管家
   定位：全家资料的"管家"。按病人归堆（血气/呼吸机/脱敏病历，天然有章），
         按知识搜索（笔记/习题，全靠AI名片）。
+  v0.4.14 2026-09-05 晚班：
+    ①修选中菜单"关不掉"（洪老师真机）：hideSelMenu清空selMenuTxt，收起后长按不再复活；
+    ②寄PPT两个方向的提示词跟随PPT工坊风格（localStorage ppt_style=strict → 严肃学术版，
+      术语保留英文缩写、写机制/数据/指南，去掉"口语"要求；默认仍大白话教学版）。
   v0.4.13 2026-09-04 晚班（洪老师拍板两件大事）：
     ①hxStore仓管员：数据存盘同步写壳授权文件夹 hxdata_*.json（文件夹可整个拷走换机），
       开门自动对齐（文件说了算/自动搬家），左下角🗄️选/换文件夹；浏览器无壳时一切照旧。
@@ -393,7 +397,7 @@ try{ hxStore.sync(); }catch(e){} /* 开门就对齐：桥是同步的，赶在�
 </div>
 
 <script>
-var SW_VERSION = "0.4.13"; /* v0.4.13 ①hxStore仓管员：数据同步写壳文件夹（可拷走换机）②PPT链路闭环：信封带taskId、收样品（guanjia_inbox）、寄修改意见、定稿、3趟封顶 */
+var SW_VERSION = "0.4.14"; /* v0.4.14 ①修选中菜单"关不掉"：收起/点别处后清空兜里选中文字，不再被长按顶出来 ②寄PPT提示词跟随PPT工坊风格开关（ppt_style=strict时用严肃学术版，去掉强制口语） */ /* v0.4.13 ①hxStore仓管员：数据同步写壳文件夹（可拷走换机）②PPT链路闭环：信封带taskId、收样品（guanjia_inbox）、寄修改意见、定稿、3趟封顶 */
 document.getElementById('verTop').textContent = SW_VERSION;
 function $(id){ return document.getElementById(id); }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -1064,7 +1068,7 @@ var SEL_MENU=[
   {ico:'📊', name:'寄给PPT · 整篇做PPT（选中段当中心）', fn:function(){ selActPPT(true); }},
   {ico:'＋', name:'（预留位，以后加功能）', fn:function(){ toast('这是预留位：以后新功能添在这'); }}
 ];
-function hideSelMenu(){ clearTimeout(selMenuTimer); var m=$('selMenu'); if(m) m.style.display='none'; }
+function hideSelMenu(){ clearTimeout(selMenuTimer); var m=$('selMenu'); if(m) m.style.display='none'; selMenuTxt=''; /* v0.4.14 洪老师真机：收起/点别处后兜里的话不清空，下次长按又把旧菜单顶出来（"关不掉"）。三个功能按钮都是先抄走再调本函数，清空安全 */ }
 function bindSelMenu(){
   var body=$('readBody');
   body.addEventListener('touchstart', function(){ selTDown=Date.now(); selTUp=0; });
@@ -1150,7 +1154,11 @@ function selActPPT(whole){
   if(!qwenKey()&&!kimiKey()){ toast('还没有API Key，先贴一个'); keyInputAsk(); return; }
   if(askRunning){ toast('AI正忙着，稍等'); return; }
   askRunning=true; toast('🤖 AI拟PPT大纲中（几秒钟）…');
-  var sys='您是医学教学PPT大纲员。把给您的内容写成PPT大纲，规矩：第一行"# 标题"当封面；每页以"## 页标题"分页；页内用"- "列要点，要点要短、口语、适合讲课；一共5到10页。只输出大纲本身，别的话一个字不写。';
+  /* v0.4.14 风格跟随PPT工坊（同壳localStorage互通）：那边选了"严肃医学"，这边寄出的大纲也用学术腔，不再强制口语 */
+  var pptStrict=false; try{ pptStrict=(localStorage.getItem('ppt_style')==='strict'); }catch(e){}
+  var sys=pptStrict
+    ? '您是医学学术PPT大纲员。把给您的内容写成PPT大纲，规矩：第一行"# 标题"当封面；每页以"## 页标题"分页；页内用"- "列要点，要点精炼、术语保留规范中文名与英文缩写（如CRAB、VAP），写清机制、关键数据、试验名与指南出处，语气正式、面向同行汇报；一共5到10页。只输出大纲本身，别的话一个字不写。'
+    : '您是医学教学PPT大纲员。把给您的内容写成PPT大纲，规矩：第一行"# 标题"当封面；每页以"## 页标题"分页；页内用"- "列要点，要点要短、口语、适合讲课；一共5到10页。只输出大纲本身，别的话一个字不写。';
   var usr=whole
     ? '请围绕这个中心：「'+sel.slice(0,200)+'」\n把下面整篇资料做成PPT大纲：\n'+raw.slice(0,4000)
     : '把下面这段话做成PPT大纲：\n'+sel.slice(0,2000);
