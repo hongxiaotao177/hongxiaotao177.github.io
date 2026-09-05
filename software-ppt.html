@@ -3,13 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PPT工坊 v0.9.4</title>
+<title>PPT工坊</title>
 <!--
   PPT工坊 —— 红小涛学习套装第五位成员
   工作流：学习笔记整理知识点 → AI生成Markdown大纲 → 内部邮路(ppt_inbox)寄到本软件
           → 大纲编辑页改稿 → 一键生成HTML幻灯片 → 横屏播放 → 每页可AI重做/换版式
           → 导出单个HTML（微信发别人，浏览器打开即放映）
   修改记录：
+    v0.11.3 2026-09-05 深夜班2 更新通道根治：下载新版分块写入+对账+验货（治假报喜），标题自动填版本号。
     v0.11.0 2026-09-05 晚班 弹窗兜底+风格分轨：
       ①弹窗兜底（洪老师真机"对话框跳出来关不掉、按钮全失灵"）：真病根抓到——.slide-page是
         position:absolute;inset:0，三版对比弹窗的cmp-prev没定位，预览透明铺满整个视口盖住
@@ -782,7 +783,8 @@ function shipDone(p){
 
 <script>
 "use strict";
-var SW_VERSION = "0.11.2"; /* v0.11.2 对比弹窗根治：预览改iframe隔离(pointer-events:none)+大红✕关闭click/touchend双绑+遮罩补touchend+弹窗探针(遮挡toast报名)+渲染try/catch错误写进弹窗 */ /* v0.11.0 弹窗兜底（遮罩可关+onerror可见+init分步容错）+风格分轨（大白话科普/严肃医学，严肃版术语不翻白话、格子放宽，大管家寄PPT跟随） */ /* v0.10.0 大纲契约主路（整形1次+校对1次+本地出页）+提示词档案diff+失败原因名单+老精做降级高级区（详见文件头） */ /* v0.9.5 干活进度牌（阶段常亮）+完工自动传坚果云PPT成品（成品+工程备份）+手动导出也顺手传 */ /* v0.9.4 信箱镜像备份+红绿灯+坚果云自动同步 */ /* v0.9.3 队列续件+干活锁 */ /* v0.9.2 ①hxStore仓管员：存盘同步写壳文件夹 ②PPT链路闭环：认taskId、做完把大纲样品寄回大管家（guanjia_inbox）、收rev修改意见自动照改再寄回、3趟封顶提醒 */ /* v0.9.1 认大管家auto信自动全篇精做（授权在寄信时），polishAllRun抽公共 */ /* v0.9.0 二期：自动收信自动开工+双AI逐页精做（千问原著/快校对）+每页三版开关（原著/校对/AI综合）+三版对比终审，导出剥vers（详见文件头） */ /* v0.7.5 系统弹窗大扫除：剩下6处prompt+3处confirm全换自画对话框hxAsk/hxConfirm（AI起草大纲/填Key/涂黑改/插链接/单页AI改/云端恢复/删项目/删页），手机壳上不再"点了没反应" */ /* v0.7.4 三件套：①重做弹窗显示"正在重做第N页《标题》+内容预览"防点错页 ②小活（单页重做）优先派千问qwen-plus（几秒~20秒），没Key/失败自动退Kimi ③AI干活浮动秒表胶囊趴右下角 ④重做后验收：原有表格被AI弄丢→自动重试一次，仍丢则不覆盖原页 */ /* v0.7.3 重做全程浮动提示：开工/成功/失败都弹toast（洪医生真机反馈：进度消息在页面顶部，滚到下面看不见，像死机） */ /* v0.7.2 修数据错乱：AI重做在途时移动/删除该页，写回改认"页面对象"不认下标（独立测试t37抓到） */ /* v0.7.1 修"AI重做本页点了没反应"：病根=手机壳X5内核不理系统prompt()弹窗（直接当取消），改自画弹窗（习题学习删除确认同款药方） */ /* v0.7.0 千问自动交叉校对（愿望清单第3批）：「🤖 自动校对」一键两棒——第1棒发千问qwen-plus（公共钱罐hx_qwenkey，约1分钱）拿校对意见，第2棒自动交给贴回校对管道让Kimi照改大纲（没提到的一字不动）；开关可选千问/Kimi自查；千问答"没发现问题"就不花第2棒的钱 */ /* v0.6.1 自选背景图（愿望清单第2批）：幻灯片页「🖼️ 背景图」相册选图→canvas压缩≤1600px、JPEG逐步降质（≤200KB）→存本PPT的p.bg（不设全局）；渲染时.slide-page叠82%不透明蒙纱（米白皮用米白纱/深色皮用深色纱）保证字可读；「✕ 清除背景」一键还原；导出HTML内嵌带走。提醒：导出会把照片带出去，别夹病人信息 */ /* v0.6.0 四套皮肤（米白学术/深蓝正式/墨绿讲堂/黑板粉笔），每个PPT各选各的，导出HTML带着走；点屏翻页其实v0.2.0起就有（点左35%上页/右65%下页） */ /* v0.5.0 放映自适应：底栏实底让位+内容超高自动等比缩小（洪医生横屏讲课表格最后一行被吃） */ /* v0.4.8 AI报错带官方原因+400也自动换模型重试（洪医生贴回校对撞HTTP400：疑公共模型罐里存着已下架的moonshot-v1系列，400不走404重试路） */ /* v0.4.7 版本字样治病根：头顶+页脚+标题改成代码自动填SW_VERSION（v0.4.0~0.4.6期间头顶一直显示旧号，害用户以为没更新） */ /* v0.4.6 更新通道免Token备用路：自检/下载新版在API不通或没填Token时自动走github.io公开直链 */ /* v0.4.5 贴回校对结果：别的AI的校对意见贴进来，本软件AI照改大纲（原文没提到的部分不动）+秒表进度 */ /* v0.4.4 复制校对：大纲/全片一键连校对指令复制，借别的AI挑错，不花自己Key */ /* v0.4.3 修404：死模型自动换kimi-k2.6+重试；max_tokens 8000→16384（k2.6思考型） */ /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
+var SW_VERSION = "0.11.3"; /* v0.11.3 更新通道根治：下载新版改分块写入+字节对账+写完回读验版本号（治JS桥截断假报喜）；标题自动填版本号 */ /* v0.11.2 对比弹窗根治：预览改iframe隔离(pointer-events:none)+大红✕关闭click/touchend双绑+遮罩补touchend+弹窗探针(遮挡toast报名)+渲染try/catch错误写进弹窗 */ /* v0.11.0 弹窗兜底（遮罩可关+onerror可见+init分步容错）+风格分轨（大白话科普/严肃医学，严肃版术语不翻白话、格子放宽，大管家寄PPT跟随） */ /* v0.10.0 大纲契约主路（整形1次+校对1次+本地出页）+提示词档案diff+失败原因名单+老精做降级高级区（详见文件头） */ /* v0.9.5 干活进度牌（阶段常亮）+完工自动传坚果云PPT成品（成品+工程备份）+手动导出也顺手传 */ /* v0.9.4 信箱镜像备份+红绿灯+坚果云自动同步 */ /* v0.9.3 队列续件+干活锁 */ /* v0.9.2 ①hxStore仓管员：存盘同步写壳文件夹 ②PPT链路闭环：认taskId、做完把大纲样品寄回大管家（guanjia_inbox）、收rev修改意见自动照改再寄回、3趟封顶提醒 */ /* v0.9.1 认大管家auto信自动全篇精做（授权在寄信时），polishAllRun抽公共 */ /* v0.9.0 二期：自动收信自动开工+双AI逐页精做（千问原著/快校对）+每页三版开关（原著/校对/AI综合）+三版对比终审，导出剥vers（详见文件头） */ /* v0.7.5 系统弹窗大扫除：剩下6处prompt+3处confirm全换自画对话框hxAsk/hxConfirm（AI起草大纲/填Key/涂黑改/插链接/单页AI改/云端恢复/删项目/删页），手机壳上不再"点了没反应" */ /* v0.7.4 三件套：①重做弹窗显示"正在重做第N页《标题》+内容预览"防点错页 ②小活（单页重做）优先派千问qwen-plus（几秒~20秒），没Key/失败自动退Kimi ③AI干活浮动秒表胶囊趴右下角 ④重做后验收：原有表格被AI弄丢→自动重试一次，仍丢则不覆盖原页 */ /* v0.7.3 重做全程浮动提示：开工/成功/失败都弹toast（洪医生真机反馈：进度消息在页面顶部，滚到下面看不见，像死机） */ /* v0.7.2 修数据错乱：AI重做在途时移动/删除该页，写回改认"页面对象"不认下标（独立测试t37抓到） */ /* v0.7.1 修"AI重做本页点了没反应"：病根=手机壳X5内核不理系统prompt()弹窗（直接当取消），改自画弹窗（习题学习删除确认同款药方） */ /* v0.7.0 千问自动交叉校对（愿望清单第3批）：「🤖 自动校对」一键两棒——第1棒发千问qwen-plus（公共钱罐hx_qwenkey，约1分钱）拿校对意见，第2棒自动交给贴回校对管道让Kimi照改大纲（没提到的一字不动）；开关可选千问/Kimi自查；千问答"没发现问题"就不花第2棒的钱 */ /* v0.6.1 自选背景图（愿望清单第2批）：幻灯片页「🖼️ 背景图」相册选图→canvas压缩≤1600px、JPEG逐步降质（≤200KB）→存本PPT的p.bg（不设全局）；渲染时.slide-page叠82%不透明蒙纱（米白皮用米白纱/深色皮用深色纱）保证字可读；「✕ 清除背景」一键还原；导出HTML内嵌带走。提醒：导出会把照片带出去，别夹病人信息 */ /* v0.6.0 四套皮肤（米白学术/深蓝正式/墨绿讲堂/黑板粉笔），每个PPT各选各的，导出HTML带着走；点屏翻页其实v0.2.0起就有（点左35%上页/右65%下页） */ /* v0.5.0 放映自适应：底栏实底让位+内容超高自动等比缩小（洪医生横屏讲课表格最后一行被吃） */ /* v0.4.8 AI报错带官方原因+400也自动换模型重试（洪医生贴回校对撞HTTP400：疑公共模型罐里存着已下架的moonshot-v1系列，400不走404重试路） */ /* v0.4.7 版本字样治病根：头顶+页脚+标题改成代码自动填SW_VERSION（v0.4.0~0.4.6期间头顶一直显示旧号，害用户以为没更新） */ /* v0.4.6 更新通道免Token备用路：自检/下载新版在API不通或没填Token时自动走github.io公开直链 */ /* v0.4.5 贴回校对结果：别的AI的校对意见贴进来，本软件AI照改大纲（原文没提到的部分不动）+秒表进度 */ /* v0.4.4 复制校对：大纲/全片一键连校对指令复制，借别的AI挑错，不花自己Key */ /* v0.4.3 修404：死模型自动换kimi-k2.6+重试；max_tokens 8000→16384（k2.6思考型） */ /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
+try{ document.title="PPT工坊 v"+SW_VERSION; }catch(e){} /* v0.11.3 标题不再写死 */
 /* 公共钱罐：API key/GitHub配置 一处填处处有（与其他软件共享 hx_*） */
 (function(){
   var HX_MAP=[["hx_apikey","hx_apikey"],["hx_gh_user","hx_gh_user"],["hx_gh_tok","hx_gh_tok"],["hx_gh_repo","hx_gh_repo"]];
@@ -828,6 +830,28 @@ function ghFileUrl(name){
 }
 function ghB64enc(s){ return btoa(unescape(encodeURIComponent(s))); }
 function ghB64dec(b){ return decodeURIComponent(escape(atob(String(b).replace(/\s+/g,'')))); }
+/* v0.11.3 分块写入（照抄主界面shellWrite）：新壳一块64KB过桥+对账实收字节，老壳退回一次性 */
+function hxShellWrite(name, b64){
+  if(!window.LearnShell) return false;
+  if(typeof window.LearnShell.applyUpdateBegin === 'function'){
+    try{
+      if(window.LearnShell.applyUpdateBegin(name) !== 'ok') return false;
+      var CH = 60000, ok = true;
+      for(var i = 0; i < b64.length; i += CH){
+        var r = window.LearnShell.applyUpdateChunk(b64.substr(i, CH));
+        if(typeof r !== 'string' || r.indexOf('ok:') !== 0){ ok = false; break; }
+      }
+      if(!ok){ try{ window.LearnShell.applyUpdateAbort(); }catch(e){} return false; }
+      var end = window.LearnShell.applyUpdateEnd();
+      if(typeof end !== 'string' || end.indexOf('ok:') !== 0) return false;
+      var pt = end.split(':');
+      var pad = b64.slice(-2) === '==' ? 2 : (b64.slice(-1) === '=' ? 1 : 0);
+      var expect = Math.floor(b64.length * 3 / 4) - pad;
+      return (+pt[1] === expect) && (+pt[2] === expect);
+    }catch(e){ return false; }
+  }
+  try{ return !!window.LearnShell.applyUpdate(name, b64); }catch(e){ return false; }
+}
 function ghFetch(url, options){
   return new Promise(function(resolve,reject){
     var ctrl=new AbortController();
@@ -1026,8 +1050,20 @@ function ghDlFile(repoName, saveName, cb){
   apiP.then(function(html){
     if(window.LearnShell && window.LearnShell.applyUpdate){
       var b64=ghB64enc(html);
-      window.LearnShell.applyUpdate(saveName,b64);
+      var wOk=hxShellWrite(saveName,b64); /* v0.11.3 分块写入+字节对账，治JS桥截断 */
       try{ if(window.LearnShell.folderSet()) window.LearnShell.writeFile(saveName.replace(".html","")+"_新版.html",b64); }catch(e){}
+      if(!wOk){ cb("写入手机壳失败（大文件过桥被截断，已拦下没装半截货）"); return; }
+      /* v0.11.3 写完开箱验货：回读壳里文件核对真实版本号，不对就明说失败，不再假报喜 */
+      fetch(encodeURI(saveName),{cache:"no-store"}).then(function(r){
+        if(!r.ok){ cb("写完回读失败（HTTP "+r.status+"）"); return null; }
+        return r.text();
+      }).then(function(txt){
+        if(txt==null) return;
+        var mNew=html.match(/SW_VERSION\s*=\s*['"]([\d.]+)['"]/), mGot=txt.match(/SW_VERSION\s*=\s*['"]([\d.]+)['"]/);
+        if(mNew&&mGot&&mNew[1]===mGot[1]){ cb(null); }
+        else{ cb("验货不通过：壳里现在是"+(mGot?("v"+mGot[1]):"（读不到版本号）")+"，应为"+(mNew?("v"+mNew[1]):"新版")+"——请回主界面等自动更新，或截图找AI"); }
+      }).catch(function(e){ cb("验货读文件出错："+((e&&e.message)||e)); });
+      return;
     }else{
       var blob=new Blob([html],{type:"text/html;charset=utf-8"});
       var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=saveName;

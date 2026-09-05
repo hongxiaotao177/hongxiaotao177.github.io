@@ -2,6 +2,7 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.4.7 2026-09-05 深夜班2 更新通道根治：①记忆说"已最新"不算数，开文件验身抓真实SW_VERSION比对（治"文件在但内容旧"，洪老师真机PPT工坊v0.9.5被误报最新）②版本文件读不到不再静默跳过，结论里点名谁没查成。
     v1.4.6 2026-09-03 大管家升0.4.3（名片浏览按题库归堆：一个题库一行，点题库看题目，点题目看内容；筛选命中自动撑开题库）。
     v1.4.5 2026-09-03 大管家升0.4.2（开门全折成一行标题点什么开什么；名片浏览只露一行"来源+标题"，点行展开看内容；存收件箱自动撑开）。
     v1.4.4 2026-09-03 大管家升0.4.1（首页折叠面板：点标题整卡折起/展开，状态记住；问AI/收件箱/名册默认开，家底/做名片/浏览默认折；收件箱有料强制展开）。
@@ -295,7 +296,7 @@ function hxRawGet(name){
   var base=hasApi ? ("https://api.github.com/repos/"+encodeURIComponent(c.user)+"/"+encodeURIComponent(c.repo)+"/contents/") : "";
   var H=ghHeaders();
   var keys=Object.keys(SUITE);
-  var updated=[], failed=[];
+  var updated=[], failed=[], unchecked=[];
   updMsg("🔍 正在检查" + keys.length + "个软件有没有新版…");
   function fetchJson(name){
     /* 统一返回"文件内容文本"：API优先，失败/没Token走公开直链 */
@@ -310,9 +311,18 @@ function hxRawGet(name){
   /* v1.1.5 踩坑：旧版把"ppt已装0.1.1"的假记忆写进了 hx_suite_ver（其实从没装上），
      光看版本记忆会永远跳过下载。所以现在"版本不用更新"还要再敲一下文件的门：
      壳里 fetch 本地文件，404=没装→照样下载（记忆不可信，实物为准） */
-  function reallyMissing(localName, cb){
-    fetch(encodeURI(localName), { cache: "no-store" }).then(function(r){ cb(!r.ok); })
-      .catch(function(){ cb(false); });  /* 探不动就不折腾，按没缺处理 */
+  /* v1.4.7 开箱验货：记忆/版本看着不新不算数，读本地文件里的真实SW_VERSION跟云端比；
+     文件没装、读不到版本号（疑坏）、版本旧——三种都重下 */
+  function reallyOld(localName, cloudVer, cb){
+    fetch(encodeURI(localName), { cache: "no-store" }).then(function(r){
+      if(!r.ok){ cb(true); return null; }  /* 文件没装→照样下载 */
+      return r.text();
+    }).then(function(txt){
+      if(txt==null) return;
+      var m=txt.match(/SW_VERSION\s*=\s*['"]([\d.]+)['"]/);
+      if(!m){ cb(true); return; }  /* 读不到版本号，疑坏→重下 */
+      cb(cmpVer(cloudVer, m[1])>0);  /* 云端比本地新→重下 */
+    }).catch(function(){ cb(false); });  /* 探不动就不折腾 */
   }
   /* v1.3.4 当面点清：壳v1.1.1起有分块写入（一块64KB，写完对账实收字节数），
      治"大字符串过JS桥被悄悄截断→半截文件全空白"。老壳没有就退回老办法。 */
@@ -355,21 +365,24 @@ function hxRawGet(name){
       try{ info=JSON.parse(txt); }catch(e){ info=null; }
       if(!info || !info.version){ step(i+1); return; }
       if(cmpVer(info.version, CUR[k])>0){ dl(k, info, remote, localName, function(){ step(i+1); }); return; }
-      /* 版本看着不新，再敲一下文件的门（v1.1.5 假记忆防御） */
-      reallyMissing(localName, function(missing){
-        if(missing) dl(k, info, remote, localName, function(){ step(i+1); });
+      /* v1.4.7 版本看着不新也要开文件验身（v1.1.5只防"文件缺失"，没防"文件在但内容旧"） */
+      reallyOld(localName, info.version, function(old){
+        if(old) dl(k, info, remote, localName, function(){ step(i+1); });
         else step(i+1);
       });
-    }).catch(function(e){ step(i+1); });  /* 单个版本文件读不到不拖累别人 */
+    }).catch(function(e){ unchecked.push(localName.replace(".html","")); step(i+1); });  /* v1.4.7 读不到不许装没看见：结论里点名 */
   }
   function finish(){
     if(updated.length){
-      updMsg("✅ 已自动更新："+updated.join("、")+"\n旧版不用管，新版备份已存进您的文件夹。正在刷新…");
+      updMsg("✅ 已自动更新："+updated.join("、")+(unchecked.length?("；另："+unchecked.join("、")+"的版本文件没读到，下次再复查"):"")+"\n旧版不用管，新版备份已存进您的文件夹。正在刷新…");
       try{ window.LearnShell.toast("✅ 套装已自动更新"); }catch(e){}
       setTimeout(function(){ location.reload(); }, 1600);
     }else if(failed.length){
       updMsg("⚠️ 有新版但下载没成功："+failed.join("、")+"\n不影响使用，下次打开会再试。");
       setTimeout(function(){ document.getElementById("updLine").style.display="none"; }, 6000);
+    }else if(unchecked.length){
+      updMsg("⚠️ 查完了，但这几个的版本文件没读到（网络抖了），不敢打包票："+unchecked.join("、")+"——网络好时再开一次主界面复查");
+      setTimeout(function(){ document.getElementById("updLine").style.display="none"; }, 8000);
     }else{
       updMsg("✅ " + keys.length + "个软件都是最新版");
       setTimeout(function(){ document.getElementById("updLine").style.display="none"; }, 2500);
