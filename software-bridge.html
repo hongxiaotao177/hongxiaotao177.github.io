@@ -86,6 +86,10 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
       （queryPermission/requestPermission 兜底，仍要用户手势）
    ④ 手机没有"批命令"——打包/搬家功能必须做成软件内按钮（本卡已做）
 ====================================================================
+    v1.2.3 (2026-09-06) 备份自理班补课（洪老师手机主界面卡在1.4.7查出来的病根）：
+        ①主界面刷新hxIndexRefresh加免Token备用路（旧路只走GitHub API+Token，Token作废就静默失败，
+          主界面永远旧版还一声不吭；现与软件更新同款：API优先，不通走公开站直链），成功/失败都toast一句；
+        ②「⬆️送上去」列表加「☑️全选/⬜全不选」按钮（一个个勾会累死人）。
     v1.2.0 (2026-08-12) 「☁️ 坚果云直通车」上线（壳APP专属，需壳≥1.1.0）：
         坚果云WebDAV直连授权文件夹：列目录(可进子文件夹)/打勾取下来/打勾送上去，
         不经过坚果云APP；钥匙=邮箱+应用密码(存公共钱罐hx_dav_user/hx_dav_pass)。
@@ -241,6 +245,7 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
         <div id="davUpList"></div>
         <div class="btn-row">
           <button id="davUpBtn">⬆️ 送上去</button>
+          <button class="ghost" id="davUpAllBtn">☑️ 全选</button>
         </div>
       </div>
     </div>
@@ -378,7 +383,7 @@ function fmtTime(t){ return new Date(t).toLocaleString(); }
 
 /* ==================== GitHub 通信（移植学习笔记/习题学习同套） ==================== */
 var BR_GH_USER = 'br_gh_user', BR_GH_TOK = 'br_gh_tok', BR_GH_REPO = 'br_gh_repo', BR_GH_CHECK = 'br_gh_check';
-var SW_VERSION = '1.2.2'; /* v1.2.2 版本字样治病根：头顶+标题代码自动填SW_VERSION（此前硬编码v1.2.0忘了跟） */ /* v1.2.1 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */
+var SW_VERSION = window.SW_VERSION = '1.2.3'; /* v1.2.3补：挂window治第二个script块拿不到（ReferenceError被try静默吞，页头永远旧版字样） */ /* v1.2.2 版本字样治病根：头顶+标题代码自动填SW_VERSION（此前硬编码v1.2.0忘了跟） */ /* v1.2.1 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */ /* v1.2.3 主界面刷新免Token备用路+送上去全选 */
 /* v1.1.2 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["br_gh_user", "hx_gh_user"], ["br_gh_tok", "hx_gh_tok"], ["br_gh_repo", "hx_gh_repo"]];
@@ -400,20 +405,32 @@ var SW_VERSION = '1.2.2'; /* v1.2.2 版本字样治病根：头顶+标题代码�
 function hxIndexRefresh(){
   if(!window.LearnShell || !window.LearnShell.applyUpdate) return;
   if(typeof ghCfg!=="function" || typeof cmpVer!=="function") return;
-  var c=ghCfg(); if(!(c.user && c.tok && c.repo)) return;
+  /* v1.2.3 备份自理班补课：加免Token备用路（公开站直链，和主界面软件更新同款）——旧路只走API+Token，
+     Token作废/网络抖动就静默失败，主界面永远旧版还一声不吭；现成功/失败都toast一句。 */
+  var c=ghCfg(), hasApi=!!(c.user && c.tok && c.repo);
   var H={"Authorization":"token "+c.tok, "Accept":"application/vnd.github+json"};
   var _base="https://api.github.com/repos/"+encodeURIComponent(c.user)+"/"+encodeURIComponent(c.repo)+"/contents/";
-  fetch(_base+encodeURIComponent("version-index.json"), { headers: H }).then(function(r){ if(!r.ok) return null; return r.json(); }).then(function(vf){
-    if(!vf) return;
-    var info; try{ info=JSON.parse(ghB64dec(vf.content||"")); }catch(e){ return; }
+  function getText(name){ /* API优先，失败/没Token走公开直链 */
+    var raw=function(){ return fetch("https://hongxiaotao177.github.io/"+encodeURIComponent(name), { cache:"no-store" }).then(function(r){ if(!r.ok) throw 0; return r.text(); }); };
+    if(hasApi){
+      return fetch(_base+encodeURIComponent(name), { headers: H }).then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(j){ return ghB64dec(j.content||""); }).catch(raw);
+    }
+    return raw();
+  }
+  getText("version-index.json").then(function(txt){
+    var info; try{ info=JSON.parse(txt); }catch(e){ return; }
     var cur=localStorage.getItem("hx_index_ver")||"1.0.0";
     if(!info || !info.version || cmpVer(info.version, cur)<=0) return;
-    fetch(_base+encodeURIComponent("index.html"), { headers: H }).then(function(r){ if(!r.ok) return null; return r.json(); }).then(function(sf){
-      if(!sf) return;
-      var b64=ghB64enc(ghB64dec(sf.content||""));
-      try{ if(window.LearnShell.applyUpdate("index.html", b64)) localStorage.setItem("hx_index_ver", info.version); }catch(e){}
-    });
-  }).catch(function(){});
+    getText("index.html").then(function(html){
+      var b64=ghB64enc(html);
+      try{
+        if(window.LearnShell.applyUpdate("index.html", b64)){
+          localStorage.setItem("hx_index_ver", info.version);
+          toast("✅ 套装主界面已悄悄更新到 v"+info.version+"，回首页就见到新版", 4000);
+        }else{ toast("⚠️ 主界面有新版但没写进去，下次再试", 3500); }
+      }catch(e){ toast("⚠️ 主界面更新出错（不影响使用）", 3500); }
+    }).catch(function(){ toast("⚠️ 主界面新版下载没成功，下次再试", 3500); });
+  }).catch(function(){ toast("⚠️ 主界面查新版没成功（不影响使用）", 3000); });
 }
 setTimeout(hxIndexRefresh, 6000);
 
@@ -1407,6 +1424,14 @@ $('davUpBtn').addEventListener('click', function(){
     }, 50);
   }
   step();
+});
+/* v1.2.3 备份自理班：送上去列表加「全选/全不选」（洪老师：一个个勾会累死人） */
+$('davUpAllBtn').addEventListener('click', function(){
+  var cks = document.querySelectorAll('.dav-upck');
+  if(!cks.length){ toast('列表是空的', 2000); return; }
+  var all = Array.prototype.every.call(cks, function(c){ return c.checked; });
+  Array.prototype.forEach.call(cks, function(c){ c.checked = !all; });
+  $('davUpAllBtn').textContent = all ? '☑️ 全选' : '⬜ 全不选';
 });
 davInit();
 $('updDlBtn').addEventListener('click', ghDownloadNew);
