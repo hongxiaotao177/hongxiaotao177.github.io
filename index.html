@@ -2,6 +2,11 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.6.1 2026-09-06 卡10秒修复（总待办🟡①号）：
+      ①新增 ghFetch：所有访问GitHub的fetch统一走它，8秒没回话就当失败（AbortController超时），
+        不再干等浏览器默认超时（可达数分钟）——版本自检/公开直链/同步/文件柜共11处全换；
+      ②点「🔍 检查新版本」立刻亮「正在查…」再刷新，不再白等。
+      只动GitHub网络请求和这一个按钮，本地文件探测（壳内fetch）及其他逻辑一行未动。
     v1.6.0 2026-09-06 鱼骨头化第二刀（洪老师三点指示）：
       ①各软件介绍默认收起，软件名后加「ⓘ 说明」按钮，点开看/再点收起（默认收，不记状态）；
       ②一二级菜单视觉区分：一级「🛠管理工具」卡加粗左框+深底，抽屉内二级卡缩进+浅底+左竖线；
@@ -248,7 +253,7 @@
     <div style="margin-top:12px;"><button class="tag" style="padding:10px 14px; border:none; cursor:pointer;" id="bkDavBtn">📤 开始备份</button></div>
     <!-- v1.4.8 备份自理班：手动检查更新按钮（点=清标记+刷新重查，自检IIFE自然重跑） -->
     <div style="margin-top:10px;">
-      <button class="tag" style="padding:10px 14px; border:none; cursor:pointer;" onclick="try{sessionStorage.removeItem('hx_ver_checked');}catch(e){};location.reload();">🔍 检查新版本</button>
+      <button class="tag" style="padding:10px 14px; border:none; cursor:pointer;" onclick="try{sessionStorage.removeItem('hx_ver_checked');}catch(e){};updMsg('🔍 正在查新版本，请稍等…');setTimeout(function(){location.reload();},120);">🔍 检查新版本</button>
       <div class="desc" style="margin-top:6px; font-size:12px;">每次开门自动查一次；等不及就点我。</div>
     </div>
   </div>
@@ -334,11 +339,21 @@ function ghCfg(){
 }
 function ghHeaders(){ var c=ghCfg(); return {"Authorization":"token "+c.tok, "Accept":"application/vnd.github+json"}; }
 
+/* v1.6.1 卡10秒修复：访问GitHub的fetch统一走这里，8秒没回话就当超时失败，
+   不再干等浏览器默认超时（可达数分钟）。用法和fetch一模一样，失败照常走原catch。 */
+function ghFetch(url, opts){
+  opts = opts || {};
+  var ctrl = new AbortController();
+  var timer = setTimeout(function(){ ctrl.abort(); }, 8000);
+  opts.signal = ctrl.signal;
+  return fetch(url, opts).then(function(r){ clearTimeout(timer); return r; }, function(e){ clearTimeout(timer); throw e; });
+}
+
 /* v1.3.7 免Token备用路（洪医生手机旧Token作废→更新静默卡死的踩坑）：
    同款文件每次发版都同步推到公开站 hongxiaotao177.github.io，读它不要Token。
    hxGetText=先走API（私有仓库），不通/没填Token就走公开直链。 */
 function hxRawGet(name){
-  return fetch("https://hongxiaotao177.github.io/"+encodeURIComponent(name), { cache:"no-store" }).then(function(r){
+  return ghFetch("https://hongxiaotao177.github.io/"+encodeURIComponent(name), { cache:"no-store" }).then(function(r){
     if(!r.ok) throw new Error("HTTP "+r.status);
     return r.text();
   });
@@ -361,7 +376,7 @@ function hxRawGet(name){
   function fetchJson(name){
     /* 统一返回"文件内容文本"：API优先，失败/没Token走公开直链 */
     if(hasApi){
-      return fetch(base+encodeURIComponent(name), {headers:H}).then(function(r){
+      return ghFetch(base+encodeURIComponent(name), {headers:H}).then(function(r){
         if(!r.ok) throw new Error("HTTP "+r.status);
         return r.json().then(function(j){ return u8dec(j.content||""); });
       }).catch(function(e){ return hxRawGet(name); });
@@ -462,14 +477,14 @@ function syncShared(manual){
   var folderFiles=[], repoFiles=[], meta={files:{}};
   Promise.resolve().then(function(){
     try{ folderFiles=JSON.parse(window.LearnShell.listFiles()||'[]'); }catch(e){ folderFiles=[]; }
-    return fetch(base+encodeURIComponent('shared'),{headers:H}).then(function(r){
+    return ghFetch(base+encodeURIComponent('shared'),{headers:H}).then(function(r){
       if(r.status===404) return [];
       if(!r.ok) throw new Error('仓库清单读不到 HTTP '+r.status);
       return r.json();
     });
   }).then(function(list){
     repoFiles=(list||[]).filter(function(f){ return f.type==='file'; });
-    return fetch(base+encodeURIComponent('shared-meta.json'),{headers:H}).then(function(r){
+    return ghFetch(base+encodeURIComponent('shared-meta.json'),{headers:H}).then(function(r){
       if(!r.ok) return;
       return r.json().then(function(j){ try{ meta=JSON.parse(u8dec(j.content||'')); }catch(e){} });
     });
@@ -503,15 +518,15 @@ function syncShared(manual){
         if(it.act==='up'){
           var b64=window.LearnShell.readFile(it.name);
           if(!b64){ done.fail++; return; }
-          return fetch(base+encodeURIComponent('shared/'+it.name),{headers:H}).then(function(r){ return r.ok? r.json(): null; }).then(function(j){
+          return ghFetch(base+encodeURIComponent('shared/'+it.name),{headers:H}).then(function(r){ return r.ok? r.json(): null; }).then(function(j){
             var body={message:'sync '+it.name, content:b64.replace(/\s+/g,'')};
             if(j&&j.sha) body.sha=j.sha;
-            return fetch(base+encodeURIComponent('shared/'+it.name),{method:'PUT',headers:H,body:JSON.stringify(body)}).then(function(r2){
+            return ghFetch(base+encodeURIComponent('shared/'+it.name),{method:'PUT',headers:H,body:JSON.stringify(body)}).then(function(r2){
               if(r2.ok){ done.up++; meta.files[it.name]={t:it.t}; } else done.fail++;
             });
           });
         }else{
-          return fetch(base+encodeURIComponent('shared/'+it.name),{headers:H}).then(function(r){
+          return ghFetch(base+encodeURIComponent('shared/'+it.name),{headers:H}).then(function(r){
             if(!r.ok){ done.fail++; return; }
             return r.json().then(function(j){
               try{ if(window.LearnShell.writeFile(it.name, j.content)){ done.down++; meta.files[it.name]={t:it.t}; } else done.fail++; }catch(e){ done.fail++; }
@@ -523,12 +538,12 @@ function syncShared(manual){
     return seq.then(function(){
       /* 写台账到仓库（内容变了才写） */
       var metaStr=JSON.stringify(meta);
-      return fetch(base+encodeURIComponent('shared-meta.json'),{headers:H}).then(function(r){ return r.ok? r.json(): null; }).then(function(j){
+      return ghFetch(base+encodeURIComponent('shared-meta.json'),{headers:H}).then(function(r){ return r.ok? r.json(): null; }).then(function(j){
         var old=''; if(j&&j.content){ try{ old=u8dec(j.content); }catch(e){} }
         if(old===metaStr) return;
         var body={message:'sync meta', content:u8enc(metaStr)};
         if(j&&j.sha) body.sha=j.sha;
-        return fetch(base+encodeURIComponent('shared-meta.json'),{method:'PUT',headers:H,body:JSON.stringify(body)});
+        return ghFetch(base+encodeURIComponent('shared-meta.json'),{method:'PUT',headers:H,body:JSON.stringify(body)});
       }).then(function(){
         syncStateSet({okT:Date.now(), up:done.up, down:done.down});
         var msg='✅ 同步完成：上传'+done.up+'件、下载'+done.down+'件'+(done.fail?'、失败'+done.fail+'件（下次再试）':'');
@@ -556,7 +571,7 @@ function cabLoad(){
   var c=ghCfg();
   if(!(c.user&&c.tok&&c.repo)){ line.textContent='还没填Token——随便打开一个软件（如学习笔记）在云设置里填一次，全家通用。'; return; }
   line.textContent='正在读仓库文件清单…';
-  fetch('https://api.github.com/repos/'+encodeURIComponent(c.user)+'/'+encodeURIComponent(c.repo)+'/contents/'+encodeURIComponent('shared'),{headers:ghHeaders()}).then(function(r){
+  ghFetch('https://api.github.com/repos/'+encodeURIComponent(c.user)+'/'+encodeURIComponent(c.repo)+'/contents/'+encodeURIComponent('shared'),{headers:ghHeaders()}).then(function(r){
     if(r.status===404){ line.textContent='文件柜还是空的。把文件放进坚果云授权文件夹（PDF除外），手机壳打开主界面就会自动上架。'; list.innerHTML=''; return null; }
     if(!r.ok) throw new Error('HTTP '+r.status);
     return r.json();
@@ -576,7 +591,7 @@ function cabLoad(){
 }
 function cabDownload(name){
   var c=ghCfg();
-  fetch('https://api.github.com/repos/'+encodeURIComponent(c.user)+'/'+encodeURIComponent(c.repo)+'/contents/'+encodeURIComponent('shared/'+name),{headers:ghHeaders()}).then(function(r){
+  ghFetch('https://api.github.com/repos/'+encodeURIComponent(c.user)+'/'+encodeURIComponent(c.repo)+'/contents/'+encodeURIComponent('shared/'+name),{headers:ghHeaders()}).then(function(r){
     if(!r.ok) throw new Error('HTTP '+r.status); return r.json();
   }).then(function(j){
     if(window.LearnShell && window.LearnShell.folderSet && window.LearnShell.folderSet()){
