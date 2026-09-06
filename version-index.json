@@ -1,1 +1,1 @@
-{"version": "1.4.7", "dl": "index.html", "note": "同步体检卡代码落地（此前仅注释）：开门12秒静默对账+手动体检，本地listFiles.t vs 坚果云davList.mtime，✅/⏳/❌只报告不改数据，效率统计存hx_sync_check_v1"}
+{"version": "1.4.8", "dl": "index.html", "note": "备份自理班：版本自检每次开APP只查一次（进出软件不再重查）+📤备份到坚果云按钮（一键全传+结果报告）+🔍检查新版本手动按钮"}
