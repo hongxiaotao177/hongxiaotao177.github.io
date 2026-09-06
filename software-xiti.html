@@ -3046,7 +3046,7 @@ function hxStoreAfterPick(){
    完整设计思路与协同协议见学习笔记.html 代码顶部（两边以那份为准）。 */
 var XT_GH_USER = "xt_gh_user", XT_GH_TOK = "xt_gh_tok", XT_GH_REPO = "xt_gh_repo",
     XT_GH_LAST = "xt_gh_last", XT_GH_CHECK = "xt_gh_check";
-var SW_VERSION = "1.9.0"; /* v1.9.0 hxStore仓管员接入（全家推广第3家）：习题库+做题进度每次存盘同步写壳授权文件夹 hxdata_xitixuexi_v01.json，开门自动对齐（文件说了算/自动搬家），左下角🗄️选/换文件夹；无壳浏览器照旧 */ /* v1.8.9 AI报错带官方原因+400也自动换模型重试（洪医生撞HTTP400：疑moonshot-v1系列下架回400） */ /* v1.8.8 AI综合备课加秒表进度：每秒报已等多久，转着就不是死机 */ /* v1.8.7 修404：kimi-k2.5官方下架→死模型名单自动换kimi-k2.6+404自动重试；补title/header版本号（1.8.5/1.8.6漏改） */ /* v1.8.6 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v1.8.5 习题→PPT工坊两路（洪医生任务2026-09-01）：任务一「📊 习题→PPT」本地拼——
+var SW_VERSION = "1.9.1"; /* v1.9.1 hxIndexRefresh加免Token备用路（API/没Token自动走公开站直链，治主界面卡旧版静默失败；成功/失败都toast一句） */ /* v1.9.0 hxStore仓管员接入（全家推广第3家）：习题库+做题进度每次存盘同步写壳授权文件夹 hxdata_xitixuexi_v01.json，开门自动对齐（文件说了算/自动搬家），左下角🗄️选/换文件夹；无壳浏览器照旧 */ /* v1.8.9 AI报错带官方原因+400也自动换模型重试（洪医生撞HTTP400：疑moonshot-v1系列下架回400） */ /* v1.8.8 AI综合备课加秒表进度：每秒报已等多久，转着就不是死机 */ /* v1.8.7 修404：kimi-k2.5官方下架→死模型名单自动换kimi-k2.6+404自动重试；补title/header版本号（1.8.5/1.8.6漏改） */ /* v1.8.6 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v1.8.5 习题→PPT工坊两路（洪医生任务2026-09-01）：任务一「📊 习题→PPT」本地拼——
   范围(勾选/全部)×筛选(全部/陌生+一般/只陌生)×排版(题答同页自习用 / 题一页答一页课堂提问用)，不花AI钱；
   任务二「🤖 AI综合备课」——AI读全部问答提炼成课（归纳/对比表/易错点，不是堆题），可填讲课重点，可对着薄弱点，
   大纲先预览可手改再寄。两路都走ppt_inbox邮路（照抄血气分析v0.10.8格式），PPT工坊弹窗收。 */
@@ -3087,20 +3087,32 @@ var SW_VERSION = "1.9.0"; /* v1.9.0 hxStore仓管员接入（全家推广第3家
 function hxIndexRefresh(){
   if(!window.LearnShell || !window.LearnShell.applyUpdate) return;
   if(typeof ghCfg!=="function" || typeof cmpVer!=="function") return;
-  var c=ghCfg(); if(!(c.user && c.tok && c.repo)) return;
+  function say(m){ try{ toast(m); }catch(e){} }
+  /* v1.9.1 加免Token备用路（公开站直链，和软件更新同款）——旧路只走API+Token，Token作废就静默失败，主界面永远旧版 */
+  var c=ghCfg(), hasApi=!!(c.user && c.tok && c.repo);
   var H={"Authorization":"token "+c.tok, "Accept":"application/vnd.github+json"};
   var _base="https://api.github.com/repos/"+encodeURIComponent(c.user)+"/"+encodeURIComponent(c.repo)+"/contents/";
-  fetch(_base+encodeURIComponent("version-index.json"), { headers: H }).then(function(r){ if(!r.ok) return null; return r.json(); }).then(function(vf){
-    if(!vf) return;
-    var info; try{ info=JSON.parse(ghB64dec(vf.content||"")); }catch(e){ return; }
+  function getText(name){ /* API优先，失败/没Token走公开直链 */
+    var raw=function(){ return fetch("https://hongxiaotao177.github.io/"+encodeURIComponent(name), { cache:"no-store" }).then(function(r){ if(!r.ok) throw 0; return r.text(); }); };
+    if(hasApi){
+      return fetch(_base+encodeURIComponent(name), { headers: H }).then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(j){ return ghB64dec(j.content||""); }).catch(raw);
+    }
+    return raw();
+  }
+  getText("version-index.json").then(function(txt){
+    var info; try{ info=JSON.parse(txt); }catch(e){ return; }
     var cur=localStorage.getItem("hx_index_ver")||"1.0.0";
     if(!info || !info.version || cmpVer(info.version, cur)<=0) return;
-    fetch(_base+encodeURIComponent("index.html"), { headers: H }).then(function(r){ if(!r.ok) return null; return r.json(); }).then(function(sf){
-      if(!sf) return;
-      var b64=ghB64enc(ghB64dec(sf.content||""));
-      try{ if(window.LearnShell.applyUpdate("index.html", b64)) localStorage.setItem("hx_index_ver", info.version); }catch(e){}
-    });
-  }).catch(function(){});
+    getText("index.html").then(function(html){
+      var b64=ghB64enc(html);
+      try{
+        if(window.LearnShell.applyUpdate("index.html", b64)){
+          localStorage.setItem("hx_index_ver", info.version);
+          say("✅ 套装主界面已悄悄更新到 v"+info.version+"，回首页就见到新版");
+        }else{ say("⚠️ 主界面有新版但没写进去，下次再试"); }
+      }catch(e){ say("⚠️ 主界面更新出错（不影响使用）"); }
+    }).catch(function(){ say("⚠️ 主界面新版下载没成功，下次再试"); });
+  }).catch(function(){ say("⚠️ 主界面查新版没成功（不影响使用）"); });
 }
 setTimeout(hxIndexRefresh, 6000);
 

@@ -1416,9 +1416,10 @@
         <textarea id="pptText"></textarea>
         <div class="btn-row">
           <button type="button" class="btn" id="pptToGongfang">📤 发送到PPT工坊</button>
-          <span id="pptBoxLight" style="display:none;align-items:center;gap:4px;font-size:12px;color:#5b554b;"><span id="pptBoxDot" style="width:10px;height:10px;border-radius:50%;display:inline-block;background:#9a938a;"></span><span id="pptBoxTx">未接文件夹</span><span id="pptBoxCloud" style="font-size:11px;color:#8a8178;"></span></span><!-- v2.14.4 寄件镜像红绿灯 -->
-          <button type="button" class="btn secondary" id="pptCopy">📋 复制大纲md</button>
+                    <button type="button" class="btn secondary" id="pptCopy">📋 复制大纲md</button>
         </div>
+        <!-- v2.14.5 寄件链路状态卡：寄件后常亮不消失，亲手点×才关；云端失败显示具体原因 -->
+        <div id="pptBoxLight" style="display:none;align-items:flex-start;gap:8px;font-size:13px;color:#5b554b;background:#f5f1e8;border:1px solid #ddd5c5;border-radius:8px;padding:10px;margin-top:8px;"><span id="pptBoxDot" style="width:12px;height:12px;border-radius:50%;display:inline-block;background:#9a938a;margin-top:3px;flex:none;"></span><span style="flex:1;line-height:1.6;"><span id="pptBoxTx">未接文件夹</span><br><span id="pptBoxCloud" style="font-size:12px;color:#8a8178;"></span></span><button type="button" id="pptBoxClose" style="flex:none;border:none;background:none;font-size:18px;color:#8a8178;padding:0 2px;line-height:1;cursor:pointer;">×</button></div>
         <div class="btn-row">
           <button type="button" class="btn secondary" id="pptRetry">🔄 重新生成</button>
           <button type="button" class="btn secondary" id="pptDone">✅ 完成</button>
@@ -6052,14 +6053,16 @@ var pptBoxBackup = (function(){
   function light(state, txt, cloud){
     try{
       var box = $('pptBoxLight'); if(!box) return;
-      box.style.display = 'inline-flex';
+      box.style.display = 'flex'; /* v2.14.5 状态卡常亮，只有点×才关 */
       $('pptBoxDot').style.background = state==='green' ? '#2e9e4f' : (state==='red' ? '#d33' : '#9a938a');
       $('pptBoxTx').textContent = txt;
       $('pptBoxCloud').textContent = cloud || '';
+      var cb = $('pptBoxClose');
+      if(cb && !cb._bound){ cb._bound = 1; cb.addEventListener('click', function(){ box.style.display = 'none'; }); }
     }catch(e){}
   }
   function backup(){
-    if(!bridged()){ light('gray', '未接文件夹', ''); return false; }
+    if(!bridged()){ light('gray', '未接文件夹（寄件只在手机内存，清缓存会丢）', '请到壳首页授权文件夹后重试'); return false; }
     try{
       var pkg = {
         inbox: localStorage.getItem('ppt_inbox'),
@@ -6073,12 +6076,16 @@ var pptBoxBackup = (function(){
       if(typeof wr === 'string' && /err|fail/i.test(wr)) throw new Error(wr);
       /* 云同步：公共钱罐有坚果云钥匙就顺手上传（不影响绿灯） */
       var u = null, p = null; try{ u = localStorage.getItem('hx_dav_user'); p = localStorage.getItem('hx_dav_pass'); }catch(e){}
-      var cloud = '☁️未同步';
-      if(u && p){
-        var r = ''; try{ r = window.LearnShell.davUp(u, p, 'ppt_inbox.json', '/学习套装备份/'); }catch(e){}
-        if(/ok/i.test(String(r || ''))) cloud = '☁️已同步';
+      /* v2.14.5 云端结果写明原因，不再只显示"未同步"三个字 */
+      var cloud = '';
+      if(!u || !p){
+        cloud = '☁️未同步：没填坚果云钥匙（去「文件桥」里填一次账号+应用密码）';
+      }else{
+        var r = ''; try{ r = window.LearnShell.davUp(u, p, 'ppt_inbox.json', '/学习套装备份/'); }catch(e){ r = 'err:' + String((e && e.message) || e); }
+        if(/ok/i.test(String(r || ''))) cloud = '☁️已同步到坚果云「学习套装备份」';
+        else cloud = '☁️未同步：' + String(r || '上传没回音').replace(/^err:/, '');
       }
-      light('green', '📦已备份', cloud);
+      light('green', '📦已备份到手机文件夹', cloud);
       return true;
     }catch(e){
       light('red', '🔴备份失败', '');
@@ -6087,7 +6094,7 @@ var pptBoxBackup = (function(){
       return false;
     }
   }
-  try{ if(bridged()) light('green', '📦镜像待命', ''); }catch(e){}
+  /* v2.14.5 不再自动亮'镜像待命'：状态卡只在寄件后出现，避免常亮占版面 */
   return backup;
 })();
 /* 寄件排队（2026-09-05 第一班）：信箱有未收件或工坊在干活→进队列 ppt_inbox_q，防连寄覆盖吃掉前一件。
@@ -7079,7 +7086,7 @@ ghBindBtn($('ghConfNo'), function(){
      不通=红条常驻（只说连不上，不影响使用）
    注意：version.json 与软件副本（dl 字段指向的文件）由交付端（AI）每次发版时
    推到备份仓库；本文件版本号改 SW_VERSION 一处即可。 */
-var SW_VERSION = '2.14.4'; /* v2.14.4 寄件镜像备份+红绿灯（pptBoxBackup+坚果云davUp） */ /* v2.14.3 寄件排队防覆盖+马上叫醒按钮 */ /* v2.14.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v2.14.1 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */
+var SW_VERSION = '2.14.6'; /* v2.14.6 hxIndexRefresh加免Token备用路（API/没Token自动走公开站直链，治主界面卡旧版静默失败；成功/失败都popToast一句） */ /* v2.14.5 寄件链路状态卡常亮+点×才关+云端失败写明原因 */ /* v2.14.4 寄件镜像备份+红绿灯（pptBoxBackup+坚果云davUp） */ /* v2.14.3 寄件排队防覆盖+马上叫醒按钮 */ /* v2.14.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v2.14.1 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */
 /* v2.6.7 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["bg_gh_user", "hx_gh_user"], ["bg_gh_tok", "hx_gh_tok"], ["bg_gh_repo", "hx_gh_repo"], ["bg_apikey", "hx_apikey"]];
@@ -7101,20 +7108,32 @@ var SW_VERSION = '2.14.4'; /* v2.14.4 寄件镜像备份+红绿灯（pptBoxBacku
 function hxIndexRefresh(){
   if(!window.LearnShell || !window.LearnShell.applyUpdate) return;
   if(typeof ghCfg!=="function" || typeof cmpVer!=="function") return;
-  var c=ghCfg(); if(!(c.user && c.tok && c.repo)) return;
+  function say(m){ if(typeof popToast==="function"){ try{ popToast(m, 3500); }catch(e){} } }
+  /* v2.14.6 加免Token备用路（公开站直链，和软件更新同款）——旧路只走API+Token，Token作废就静默失败，主界面永远旧版 */
+  var c=ghCfg(), hasApi=!!(c.user && c.tok && c.repo);
   var H={"Authorization":"token "+c.tok, "Accept":"application/vnd.github+json"};
   var _base="https://api.github.com/repos/"+encodeURIComponent(c.user)+"/"+encodeURIComponent(c.repo)+"/contents/";
-  fetch(_base+encodeURIComponent("version-index.json"), { headers: H }).then(function(r){ if(!r.ok) return null; return r.json(); }).then(function(vf){
-    if(!vf) return;
-    var info; try{ info=JSON.parse(ghB64dec(vf.content||"")); }catch(e){ return; }
+  function getText(name){ /* API优先，失败/没Token走公开直链 */
+    var raw=function(){ return fetch("https://hongxiaotao177.github.io/"+encodeURIComponent(name), { cache:"no-store" }).then(function(r){ if(!r.ok) throw 0; return r.text(); }); };
+    if(hasApi){
+      return fetch(_base+encodeURIComponent(name), { headers: H }).then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(j){ return ghB64dec(j.content||""); }).catch(raw);
+    }
+    return raw();
+  }
+  getText("version-index.json").then(function(txt){
+    var info; try{ info=JSON.parse(txt); }catch(e){ return; }
     var cur=localStorage.getItem("hx_index_ver")||"1.0.0";
     if(!info || !info.version || cmpVer(info.version, cur)<=0) return;
-    fetch(_base+encodeURIComponent("index.html"), { headers: H }).then(function(r){ if(!r.ok) return null; return r.json(); }).then(function(sf){
-      if(!sf) return;
-      var b64=ghB64enc(ghB64dec(sf.content||""));
-      try{ if(window.LearnShell.applyUpdate("index.html", b64)) localStorage.setItem("hx_index_ver", info.version); }catch(e){}
-    });
-  }).catch(function(){});
+    getText("index.html").then(function(html){
+      var b64=ghB64enc(html);
+      try{
+        if(window.LearnShell.applyUpdate("index.html", b64)){
+          localStorage.setItem("hx_index_ver", info.version);
+          say("✅ 套装主界面已悄悄更新到 v"+info.version+"，回首页就见到新版");
+        }else{ say("⚠️ 主界面有新版但没写进去，下次再试"); }
+      }catch(e){ say("⚠️ 主界面更新出错（不影响使用）"); }
+    }).catch(function(){ say("⚠️ 主界面新版下载没成功，下次再试"); });
+  }).catch(function(){ say("⚠️ 主界面查新版没成功（不影响使用）"); });
 }
 setTimeout(hxIndexRefresh, 6000);
 
