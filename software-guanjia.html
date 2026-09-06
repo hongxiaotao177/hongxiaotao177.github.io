@@ -12,6 +12,13 @@
     ①修选中菜单"关不掉"（洪老师真机）：hideSelMenu清空selMenuTxt，收起后长按不再复活；
     ②寄PPT两个方向的提示词跟随PPT工坊风格（localStorage ppt_style=strict → 严肃学术版，
       术语保留英文缩写、写机制/数据/指南，去掉"口语"要求；默认仍大白话教学版）。
+  v0.5.1 2026-09-06 点亮三级菜单（照小涛笔记v0.5.0样板，洪老师拍板）：
+    ①选中文字菜单升级为三级：第1层5选项（🔍三路同查/📊寄PPT·选中的话/📊寄PPT·整篇/🤖问AI这段/✏️自定义）
+      → 第2层该选项3套提示词 → 第3层提示词全文可编辑 + 🚀执行 + 💾存为默认 + ←返回；
+      问AI这段/自定义的结果显示在菜单结果层（📋复制结果/✏️再改一次/✕关闭）。
+    ②提示词配置存全家公用钥匙 hx_glow_v1 的 guanjia 分支（{xiaotao:{...},guanjia:{...}}各管各的）。
+    ③三路同查=提示词当问题引导语拼在选中文字前走原通道；寄PPT=第3层选中的提示词替换原内置大纲提示词，寄信协议不变。
+    ④菜单亮起触发机制（轻点350ms门禁/少于2字不理/700ms站稳亮/抄兜/收起清空防复活）一行未动。
   v0.5.0 2026-09-06 鱼骨头化（与文件桥v1.3.0/主界面v1.6.0同款，纯界面，功能逻辑一行未动）：
     ①四张卡的长介绍默认收起，标题上加「ⓘ 说明」点开看/再点收起（不记状态；卡折着时点说明顺手撑开）；
     ②「📚 家底总览」和新设「🔑 API Key」（贴/换Key走原keyInputAsk）收进「🛠 设置与工具」折叠抽屉
@@ -237,6 +244,13 @@
              font-size:15px; padding:10px 8px; border-radius:8px; color:#33302b; cursor:pointer; }
   #selMenu .sm-it:active { background:#f3efe7; }
   #selMenu .sm-it.sm-x { color:#8a8178; font-size:13px; }
+  /* v0.5.1 点亮三级菜单：第2/3层画在原#selMenu浮层里（此时挪成底部条），样式照抄小涛笔记 gl-* */
+  #selMenu .sm-row { display:flex; gap:6px; margin-top:6px; flex-wrap:wrap; }
+  #selMenu .sm-row .sm-it { width:auto; border:1px solid #d8cfba; }
+  #selMenu textarea { width:100%; box-sizing:border-box; font-size:14px; padding:8px;
+             border:1px solid #d8cfba; border-radius:8px; line-height:1.6; }
+  #selMenu .sm-ans { background:#fdfbf8; border:1px solid #e0d5bd; border-radius:8px; padding:8px;
+             font-size:14px; line-height:1.7; max-height:40vh; overflow:auto; white-space:pre-wrap; }
 </style>
 </head>
 <body>
@@ -426,7 +440,7 @@ try{ hxStore.sync(); }catch(e){} /* 开门就对齐：桥是同步的，赶在�
 </div>
 
 <script>
-var SW_VERSION = "0.5.0"; /* v0.5.0 鱼骨头化：ⓘ说明默认收起 + 家底总览/API Key收进「🛠 设置与工具」抽屉（hx_gj_tool_open），与文件桥v1.3.0同款；纯界面，功能逻辑未动 */ /* v0.4.14 ①修选中菜单"关不掉"：收起/点别处后清空兜里选中文字，不再被长按顶出来 ②寄PPT提示词跟随PPT工坊风格开关（ppt_style=strict时用严肃学术版，去掉强制口语） */ /* v0.4.13 ①hxStore仓管员：数据同步写壳文件夹（可拷走换机）②PPT链路闭环：信封带taskId、收样品（guanjia_inbox）、寄修改意见、定稿、3趟封顶 */
+var SW_VERSION = "0.5.1"; /* v0.5.1 点亮三级菜单：选中菜单第1层5选项→第2层3套提示词→第3层可编辑+执行+存为默认；提示词存全家公用钥匙hx_glow_v1的guanjia分支；亮起触发机制未动 */ /* v0.5.0 鱼骨头化：ⓘ说明默认收起 + 家底总览/API Key收进「🛠 设置与工具」抽屉（hx_gj_tool_open），与文件桥v1.3.0同款；纯界面，功能逻辑未动 */ /* v0.4.14 ①修选中菜单"关不掉"：收起/点别处后清空兜里选中文字，不再被长按顶出来 ②寄PPT提示词跟随PPT工坊风格开关（ppt_style=strict时用严肃学术版，去掉强制口语） */ /* v0.4.13 ①hxStore仓管员：数据同步写壳文件夹（可拷走换机）②PPT链路闭环：信封带taskId、收样品（guanjia_inbox）、寄修改意见、定稿、3趟封顶 */
 document.getElementById('verTop').textContent = SW_VERSION;
 function $(id){ return document.getElementById(id); }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -1091,13 +1105,15 @@ function applyAiToc(text, pairs){
    改靠"选区站稳700ms"自动亮菜单（debounce），touchend只当助攻；位置用兜里存的rect，不靠活选区。 */
 var selMenuTxt='', selMenuRect=null, selMenuTimer=null;
 var selTDown=0, selTUp=0; /* 手指按下/抬起时刻：轻点（<350ms）选中不亮菜单，只认长按（v0.4.10 洪老师真机"太敏感"） */
+/* v0.5.1 点亮三级菜单：第1层只负责"开门"进第2层（3套提示词），干活挪到第3层🚀执行（selGlowSend） */
 var SEL_MENU=[
-  {ico:'🔍', name:'三路同查（资料+网上+对照）', fn:function(){ selActAsk(); }},
-  {ico:'📊', name:'寄给PPT · 选中的话做新PPT', fn:function(){ selActPPT(false); }},
-  {ico:'📊', name:'寄给PPT · 整篇做PPT（选中段当中心）', fn:function(){ selActPPT(true); }},
-  {ico:'＋', name:'（预留位，以后加功能）', fn:function(){ toast('这是预留位：以后新功能添在这'); }}
+  {ico:'🔍', name:'三路同查（资料+网上+对照）', fn:function(){ selGlowOpen('ask3'); }},
+  {ico:'📊', name:'寄给PPT · 选中的话做新PPT', fn:function(){ selGlowOpen('pptSel'); }},
+  {ico:'📊', name:'寄给PPT · 整篇做PPT（选中段当中心）', fn:function(){ selGlowOpen('pptWhole'); }},
+  {ico:'🤖', name:'问AI这段', fn:function(){ selGlowOpen('ask'); }},
+  {ico:'✏️', name:'自定义（自己填提示词）', fn:function(){ selGlowOpen('custom'); }}
 ];
-function hideSelMenu(){ clearTimeout(selMenuTimer); var m=$('selMenu'); if(m) m.style.display='none'; selMenuTxt=''; /* v0.4.14 洪老师真机：收起/点别处后兜里的话不清空，下次长按又把旧菜单顶出来（"关不掉"）。三个功能按钮都是先抄走再调本函数，清空安全 */ }
+function hideSelMenu(){ clearTimeout(selMenuTimer); var m=$('selMenu'); if(m) m.style.display='none'; selMenuTxt=''; gjGlowOpt=null; /* v0.5.1 收起时三级菜单状态也归零（原清空防复活逻辑照旧） */ /* v0.4.14 洪老师真机：收起/点别处后兜里的话不清空，下次长按又把旧菜单顶出来（"关不掉"）。三个功能按钮都是先抄走再调本函数，清空安全 */ }
 function bindSelMenu(){
   var body=$('readBody');
   body.addEventListener('touchstart', function(){ selTDown=Date.now(); selTUp=0; });
@@ -1138,6 +1154,7 @@ function bindSelMenu(){
 }
 function showSelMenu(){
   if(!selMenuTxt) return;
+  if(gjGlowOpt) return; /* v0.5.1 已点进三级菜单（第2/3层），迟到的助攻触发不许把它重置回第1层 */
   if($('readDlg').style.display!=='block') return;
   /* 位置优先用活选区，塌了用兜里存的（X5点系统菜单后选区可能已塌） */
   var r=null, s=window.getSelection();
@@ -1158,6 +1175,7 @@ function showSelMenu(){
   });
   var m=$('selMenu');
   m.style.display='block';
+  m.style.right='auto'; m.style.bottom='auto'; m.style.maxWidth=''; /* v0.5.1 三级菜单用过底部条样式，回第1层前洗掉 */
   var mw=m.offsetWidth, mh=m.offsetHeight;
   var x=Math.min(Math.max(8, r.left), window.innerWidth-mw-8);
   var y=r.bottom+8;
@@ -1165,8 +1183,8 @@ function showSelMenu(){
   m.style.left=x+'px'; m.style.top=y+'px';
 }
 /* 🔍三路同查：选中的话当问题，资料+网上+Kimi对照三棒同发，聚合对照置顶 */
-function selActAsk(){
-  var q=selMenuTxt.slice(0,200);
+function selActAsk(guide){
+  var q=(guide?guide+'\n':'')+selMenuTxt.slice(0,200); /* v0.5.1 三级菜单选中的提示词当"问题引导语"拼在选中文字前，走原三路同查通道 */
   hideSelMenu();
   $('readDlg').style.display='none'; /* 阅读器让位，结果在问AI区看 */
   $('askQ').value=q;
@@ -1175,7 +1193,7 @@ function selActAsk(){
   askBoth();
 }
 /* 📊寄PPT：先让AI拟好大纲再寄信，到PPT工坊收下就快做好了。whole=true带整篇+选中段当中心 */
-function selActPPT(whole){
+function selActPPT(whole, customPrompt){
   var sel=selMenuTxt;
   hideSelMenu();
   var title=$('readBody').dataset.title||'资料';
@@ -1188,6 +1206,7 @@ function selActPPT(whole){
   var sys=pptStrict
     ? '您是医学学术PPT大纲员。把给您的内容写成PPT大纲，规矩：第一行"# 标题"当封面；每页以"## 页标题"分页；页内用"- "列要点，要点精炼、术语保留规范中文名与英文缩写（如CRAB、VAP），写清机制、关键数据、试验名与指南出处，语气正式、面向同行汇报；一共5到10页。只输出大纲本身，别的话一个字不写。'
     : '您是医学教学PPT大纲员。把给您的内容写成PPT大纲，规矩：第一行"# 标题"当封面；每页以"## 页标题"分页；页内用"- "列要点，要点要短、口语、适合讲课；一共5到10页。只输出大纲本身，别的话一个字不写。';
+  if(customPrompt) sys=customPrompt; /* v0.5.1 三级菜单第3层选中的提示词顶替内置大纲提示词（usr拼料与寄信协议照旧） */
   var usr=whole
     ? '请围绕这个中心：「'+sel.slice(0,200)+'」\n把下面整篇资料做成PPT大纲：\n'+raw.slice(0,4000)
     : '把下面这段话做成PPT大纲：\n'+sel.slice(0,2000);
@@ -1200,6 +1219,141 @@ function selActPPT(whole){
   }, function(e){
     askRunning=false; toast('AI这条路不通：'+String(e).slice(0,50));
   }, {what:'拟PPT大纲', maxTokens:16384});
+}
+/* ══════════ v0.5.1 点亮三级菜单（照小涛笔记v0.5.0样板）══════════
+   第1层（SEL_MENU登记册）点下不直接干活 → 第2层该选项3套提示词 → 第3层提示词全文可编辑
+   + 🚀执行 + 💾存为默认 + ←返回。三层都画在原#selMenu浮层里（进第2层起挪成底部条），收起照旧走hideSelMenu。
+   提示词配置存全家公用钥匙 hx_glow_v1 的 guanjia 分支：{xiaotao:{opts:[...]}, guanjia:{opts:[...]}}，
+   与小涛笔记同一把钥匙、各读写各的分支互不踩。 */
+var GLOW_HX='hx_glow_v1';
+function glowDefaultGj(){
+  return { opts: [
+    { id:'ask3', icon:'🔍', name:'三路同查', prompts:[
+      { name:'直接查', text:'请把下面这段话当作我的问题来查：先判断我最关心什么，再给出结论。' },
+      { name:'病情相关', text:'下面这段是我关心的病情资料。请查清楚：这说的严重吗？常见原因和处理办法是什么？' },
+      { name:'核实对错', text:'请核实下面这段说法对不对：给出明确结论，有争议的地方指出来。' } ] },
+    { id:'pptSel', icon:'📊', name:'寄PPT·选中的话', prompts:[
+      { name:'学术讲座', text:'您是医学学术PPT大纲员。把给您的内容写成PPT大纲，规矩：第一行"# 标题"当封面；每页以"## 页标题"分页；页内用"- "列要点，要点精炼、术语保留规范中文名与英文缩写，写清机制、关键数据与指南出处，语气正式、面向同行汇报；一共5到10页。只输出大纲本身，别的话一个字不写。' },
+      { name:'大白话教学', text:'您是医学教学PPT大纲员。把给您的内容写成PPT大纲，规矩：第一行"# 标题"当封面；每页以"## 页标题"分页；页内用"- "列要点，要点要短、口语、适合讲课；一共5到10页。只输出大纲本身，别的话一个字不写。' },
+      { name:'病例讨论', text:'您是医学PPT大纲员。把给您的内容按"病例引入→知识点→讨论问题→总结"做成PPT大纲，规矩：第一行"# 标题"当封面；每页以"## 页标题"分页；页内用"- "列要点，最后留3个讨论题；一共5到10页。只输出大纲本身，别的话一个字不写。' } ] },
+    { id:'pptWhole', icon:'📊', name:'寄PPT·整篇', prompts:[
+      { name:'学术讲座', text:'您是医学学术PPT大纲员。围绕给您的中心句，把整篇资料写成PPT大纲，规矩：第一行"# 标题"当封面；每页以"## 页标题"分页；页内用"- "列要点，要点精炼、术语规范，写清机制、关键数据与指南出处；一共5到10页。只输出大纲本身，别的话一个字不写。' },
+      { name:'大白话教学', text:'您是医学教学PPT大纲员。围绕给您的中心句，把整篇资料写成PPT大纲，规矩：第一行"# 标题"当封面；每页以"## 页标题"分页；页内用"- "列要点，要点要短、口语、适合讲课；一共5到10页。只输出大纲本身，别的话一个字不写。' },
+      { name:'速览讲义', text:'您是医学PPT大纲员。围绕给您的中心句，把整篇资料压缩成一份速览讲义大纲，规矩：第一行"# 标题"当封面；每页以"## 页标题"分页；页内用"- "列要点，只留数字、标准、要点；一共5到8页。只输出大纲本身，别的话一个字不写。' } ] },
+    { id:'ask', icon:'🤖', name:'问AI这段', prompts:[
+      { name:'讲明白', text:'请用大白话讲清下面这段：它说了什么、为什么重要、实际上怎么用，最后指出拿不准的地方。' },
+      { name:'挑毛病', text:'请批判性审视下面这段内容：说法靠谱吗？有没有过时或与权威指南冲突的地方？适用边界在哪？' },
+      { name:'联系实际', text:'结合下面这段内容，给我3个实际应用场景，每个场景说明怎么做、注意什么。' } ] },
+    { id:'custom', icon:'✏️', name:'自定义', prompts:[
+      { name:'自定义1', text:'' }, { name:'自定义2', text:'' }, { name:'自定义3', text:'' } ] }
+  ] };
+}
+function glowCfgGj(){
+  try{
+    var all=JSON.parse(localStorage.getItem(GLOW_HX)||'null');
+    var v=all&&all.guanjia;
+    if(v&&Array.isArray(v.opts)&&v.opts.length) return v;
+  }catch(e){}
+  return glowDefaultGj();
+}
+function glowSaveCfgGj(c){
+  /* 只写guanjia分支，xiaotao等其他分支原样保留 */
+  try{
+    var all=JSON.parse(localStorage.getItem(GLOW_HX)||'null')||{};
+    all.guanjia=c;
+    localStorage.setItem(GLOW_HX,JSON.stringify(all));
+  }catch(e){}
+}
+var gjGlowOpt=null, gjGlowSetIdx=-1;
+function glowOptByIdGj(id){
+  var cfg=glowCfgGj(), o=null;
+  cfg.opts.forEach(function(x){ if(x.id===id) o=x; });
+  return o||cfg.opts[0];
+}
+/* 进第2层：菜单挪成底部条（ textarea 弹键盘时稳当），第1层的位置跟随逻辑不受影响 */
+function selGlowOpen(id){
+  gjGlowOpt=glowOptByIdGj(id); gjGlowSetIdx=-1;
+  var m=$('selMenu');
+  m.style.left='8px'; m.style.right='8px'; m.style.top='auto'; m.style.bottom='8px'; m.style.maxWidth='none';
+  selGlowL2();
+}
+function selGlowL2(){
+  $('selMenuQuote').textContent=gjGlowOpt.icon+' '+gjGlowOpt.name+' —— 选一套提示词：';
+  var h='';
+  gjGlowOpt.prompts.forEach(function(p,i){ h+='<button class="sm-it" data-gs="'+i+'">'+(i+1)+'️⃣ '+esc(p.name)+'</button>'; });
+  h+='<button class="sm-it" data-gs="b">← 返回</button>';
+  h+='<button class="sm-it sm-x" data-gs="x">✕ 收起</button>';
+  $('selMenuItems').innerHTML=h;
+  Array.prototype.forEach.call(document.querySelectorAll('#selMenu [data-gs]'), function(el){
+    el.onclick=function(){
+      var i=el.getAttribute('data-gs');
+      if(i==='x'){ hideSelMenu(); return; }
+      if(i==='b'){ gjGlowOpt=null; showSelMenu(); return; }
+      gjGlowSetIdx=+i; selGlowL3();
+    };
+  });
+}
+function selGlowL3(){
+  $('selMenuQuote').textContent=gjGlowOpt.icon+' '+gjGlowOpt.name+' · 第'+(gjGlowSetIdx+1)+'套 —— 提示词可改：';
+  $('selMenuItems').innerHTML='<textarea id="gjGlowTa" rows="5" placeholder="在这里写/改提示词，改完可直接执行或存为默认"></textarea>'+
+    '<div class="sm-row"><button class="sm-it" id="gjGlowGo">🚀 执行</button>'+
+    '<button class="sm-it" id="gjGlowSave">💾 存为默认</button>'+
+    '<button class="sm-it" id="gjGlowBk">← 返回</button></div>';
+  $('gjGlowTa').value=gjGlowOpt.prompts[gjGlowSetIdx].text||'';
+  $('gjGlowGo').onclick=function(){ selGlowSend($('gjGlowTa').value); };
+  $('gjGlowSave').onclick=function(){
+    var c=glowCfgGj();
+    c.opts.forEach(function(o){ if(o.id===gjGlowOpt.id) o.prompts[gjGlowSetIdx].text=$('gjGlowTa').value; });
+    glowSaveCfgGj(c); gjGlowOpt.prompts[gjGlowSetIdx].text=$('gjGlowTa').value;
+    toast('💾 已存为默认');
+  };
+  $('gjGlowBk').onclick=selGlowL2;
+}
+/* 🚀执行：按选项分路——三路同查/寄PPT走原函数（提示词传进去），问AI这段/自定义在菜单结果层出结果 */
+function selGlowSend(promptText){
+  if(!promptText.replace(/^\s+|\s+$/g,'')){ toast('提示词是空的，先写一句'); return; }
+  if(gjGlowOpt.id==='ask3'){ selActAsk(promptText); }
+  else if(gjGlowOpt.id==='pptSel'){ selActPPT(false, promptText); }
+  else if(gjGlowOpt.id==='pptWhole'){ selActPPT(true, promptText); }
+  else selGlowAsk(promptText);
+}
+function selGlowAsk(promptText){
+  var sel=selMenuTxt;
+  if(!qwenKey()&&!kimiKey()){ toast('还没有API Key，先贴一个'); keyInputAsk(); return; }
+  if(askRunning){ toast('AI正忙着，稍等'); return; }
+  askRunning=true;
+  $('selMenuQuote').textContent='⏳ AI干活中…（'+gjGlowOpt.name+'）';
+  $('selMenuItems').innerHTML='<div class="sm-ans">已选中 '+sel.length+' 字发送中，请稍候…</div>';
+  aiChat('您是医学学习助手，回答用大白话、分条清楚。', promptText+'\n\n【选中的原文】\n'+sel, function(ans){
+    askRunning=false; selGlowResult(String(ans||''));
+  }, function(e){
+    askRunning=false;
+    $('selMenuQuote').textContent='❌ AI报错';
+    $('selMenuItems').innerHTML='<div class="sm-ans">失败原因：'+esc(String(e).slice(0,80))+'\n\n点下方按钮返回重试。</div>'+
+      '<div class="sm-row"><button class="sm-it" id="gjGlowRe">← 返回改提示词</button>'+
+      '<button class="sm-it sm-x" id="gjGlowX">✕ 关闭</button></div>';
+    $('gjGlowRe').onclick=selGlowL3;
+    $('gjGlowX').onclick=hideSelMenu;
+  }, {what:'点亮问AI', maxTokens:4000});
+}
+function selGlowResult(txt){
+  $('selMenuQuote').textContent='✅ '+gjGlowOpt.icon+' '+gjGlowOpt.name+' · AI回信（可全选复制）';
+  $('selMenuItems').innerHTML='<div class="sm-ans">'+esc(txt)+'</div>'+
+    '<div class="sm-row"><button class="sm-it" id="gjGlowCp">📋 复制结果</button>'+
+    '<button class="sm-it" id="gjGlowRe">✏️ 再改一次</button>'+
+    '<button class="sm-it sm-x" id="gjGlowX">✕ 关闭</button></div>';
+  $('gjGlowCp').onclick=function(){
+    function ok(){ toast('📋 已复制'); }
+    if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(ok, function(){ toast('复制失败，请长按结果手动复制'); }); }
+    else{
+      var ta=document.createElement('textarea'); ta.value=txt; ta.style.cssText='position:fixed;opacity:0';
+      document.body.appendChild(ta); ta.select();
+      try{ document.execCommand('copy'); ok(); }catch(e){ toast('复制失败，请长按结果手动复制'); }
+      document.body.removeChild(ta);
+    }
+  };
+  $('gjGlowRe').onclick=selGlowL3;
+  $('gjGlowX').onclick=hideSelMenu;
 }
 /* 寄信进ppt_inbox（照学习笔记邮路协议：{title,text,t}，v0.4.12起加auto=要不要自动精做；v0.4.13起加taskId+round拴住多轮往返）；信箱有未拆旧信先问，不许悄悄盖 */
 var LS_PTASKS='hx_ppt_tasks'; /* PPT任务台账：{id,title,round,status(sent/draft/final),t} */

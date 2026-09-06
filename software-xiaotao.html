@@ -42,6 +42,9 @@ window.addEventListener('load', function(){
   小涛笔记（学习笔记2代）· 单文件版
 ==========================================================
   修改记录：
+   v0.5.1 2026-09-06 点亮菜单提示词配置搬家全家公用钥匙 hx_glow_v1（xiaotao分支，
+        与病人大管家同一把钥匙各存各的）；读取顺序：hx_glow_v1.xiaotao→旧xt_glow_v1
+        自动搬家（旧钥匙保留不删）→默认三套。其余一行未动。
    v0.3.30 2026-08-14 三期「📚 我的书」上线：
         ①建书三条路拟目录——Kimi拟(callAI·what='拟目录')/本地AI拟(Ollama，设置页加
           "本地AI地址"默认 http://127.0.0.1:11434 + 模型名默认 qwen2.5:3b，调/api/generate，
@@ -647,7 +650,7 @@ window.addEventListener('load', function(){
 (function(){
 __bc('D脚本启动');
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.5.0'; /* v0.5.0 点亮三级菜单：点亮切块/笔记正文→底部浮条5选项（变笔记/问AI/做新PPT/出题/自定义）→每选项3套提示词→可编辑发送；提示词存xt_glow_v1可随时改；做PPT走ppt_inbox邮路寄PPT工坊；变笔记可一键存笔记（洪老师2026-09-06晚拍板，提示词AI先编三套待调） */ /* v0.4.1 排版修复：资料库列表「自动切失败」报错条从右栏搬出单独占一行，书名不再被挤成一字一行（洪老师真机截图报案）；纯排版，切片逻辑未动 */ /* v0.4.0 鱼骨头化：ⓘ说明默认收起 + 设置/关于收进「🛠 设置与工具」抽屉（hx_xiaotao_tool_open），照管家v0.5.0样板；纯界面，功能逻辑未动 */ /* v0.3.32 账本桥进全家hx_aibill（主界面💰卡片汇总） */ /* v0.3.31 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */
+var SW_VERSION = '0.5.1'; /* v0.5.1 提示词配置搬家全家公用钥匙：点亮三级菜单的提示词从 xt_glow_v1 迁到 hx_glow_v1 的 xiaotao 分支（与大管家共用一把钥匙、各存各的分支互不踩）；读取顺序 hx_glow_v1.xiaotao→旧xt_glow_v1搬家（旧钥匙保留不删）→默认三套；其余一行未动 */ /* v0.5.0 点亮三级菜单：点亮切块/笔记正文→底部浮条5选项（变笔记/问AI/做新PPT/出题/自定义）→每选项3套提示词→可编辑发送；提示词存xt_glow_v1可随时改；做PPT走ppt_inbox邮路寄PPT工坊；变笔记可一键存笔记（洪老师2026-09-06晚拍板，提示词AI先编三套待调） */ /* v0.4.1 排版修复：资料库列表「自动切失败」报错条从右栏搬出单独占一行，书名不再被挤成一字一行（洪老师真机截图报案）；纯排版，切片逻辑未动 */ /* v0.4.0 鱼骨头化：ⓘ说明默认收起 + 设置/关于收进「🛠 设置与工具」抽屉（hx_xiaotao_tool_open），照管家v0.5.0样板；纯界面，功能逻辑未动 */ /* v0.3.32 账本桥进全家hx_aibill（主界面💰卡片汇总） */ /* v0.3.31 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
@@ -3174,7 +3177,8 @@ window.__xt = { ensureJDB: ensureJDB, refTag: refTag, refSplitLocal: refSplitLoc
    → 第3层（提示词全文可编辑：改本次/存为默认）→ 发送AI。
    提示词由AI先编三套（医学ICU口味），洪老师慢慢调；存 localStorage xt_glow_v1。
    底部浮条避开手机系统长按菜单的覆盖；选中文字存 glowSel，点按钮丢选中也不怕。 */
-var GLOW_LS = 'xt_glow_v1';
+var GLOW_LS = 'hx_glow_v1'; /* v0.5.1 全家公用钥匙：{xiaotao:{opts:[...]}, guanjia:{opts:[...]}}，本软件只读写xiaotao分支 */
+var GLOW_LS_OLD = 'xt_glow_v1'; /* v0.5.1 旧钥匙：只用来搬家，保留不删 */
 function glowDefault(){
   return { opts: [
     { id:'note', icon:'📝', name:'变笔记', prompts:[
@@ -3198,13 +3202,26 @@ function glowDefault(){
   ] };
 }
 function glowCfg(){
+  /* v0.5.1 读取顺序：hx_glow_v1.xiaotao 有→用它；没有但旧 xt_glow_v1 有→搬过来写入hx_glow_v1（旧钥匙保留）；都没有→默认三套 */
   try{
-    var v = JSON.parse(localStorage.getItem(GLOW_LS) || 'null');
+    var all = JSON.parse(localStorage.getItem(GLOW_LS) || 'null');
+    var v = all && all.xiaotao;
     if(v && Array.isArray(v.opts) && v.opts.length) return v;
+  }catch(e){}
+  try{
+    var old = JSON.parse(localStorage.getItem(GLOW_LS_OLD) || 'null');
+    if(old && Array.isArray(old.opts) && old.opts.length){ glowSaveCfg(old); return old; }
   }catch(e){}
   return glowDefault();
 }
-function glowSaveCfg(c){ try{ localStorage.setItem(GLOW_LS, JSON.stringify(c)); }catch(e){} }
+function glowSaveCfg(c){
+  /* v0.5.1 只写xiaotao分支，guanjia等其他分支原样保留 */
+  try{
+    var all = JSON.parse(localStorage.getItem(GLOW_LS) || 'null') || {};
+    all.xiaotao = c;
+    localStorage.setItem(GLOW_LS, JSON.stringify(all));
+  }catch(e){}
+}
 var glowSel = '', glowOpt = null, glowSetIdx = -1, glowLevel = 0;
 function glowEl(tag, cls, txt){ var d = document.createElement(tag); if(cls) d.className = cls; if(txt != null) d.textContent = txt; return d; }
 function glowHide(){ glowLevel = 0; $('glowBar').style.display = 'none'; }
