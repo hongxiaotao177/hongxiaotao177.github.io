@@ -10,6 +10,23 @@
           → 大纲编辑页改稿 → 一键生成HTML幻灯片 → 横屏播放 → 每页可AI重做/换版式
           → 导出单个HTML（微信发别人，浏览器打开即放映）
   修改记录：
+    v0.12.0 2026-09-05 信箱搬家hxStore双写（本班新增）：
+      ①ppt_inbox三兄弟（ppt_inbox/ppt_inbox_q/ppt_busy）以壳授权文件夹里的 ppt_inbox.json
+        为正本，localStorage降级为缓存兜底；开门对齐改为"文件夹说了算"：文件夹有镜像→无条件
+        灌回localStorage再渲染信箱；文件夹没有镜像但本地有数据→自动搬家写入文件夹。
+      ②写前备份升级：每次写 ppt_inbox.json 前，旧文件三级轮转 ppt_inbox.bak→.bak2→.bak3，
+        只留最近3份。壳桥没有改名/复制接口（只有readFile/writeFile/deleteFile），用
+        "读旧文件→写入新名"实现；万一壳连readFile都没有→降级只写单个 .bak（代码里有注释）。
+      ③写入时机不变：信箱状态一变（增/删/改/收下/丢弃/队列续件）照旧调 pptBox.backup() 立即写。
+      ④无壳纯浏览器打开一切照旧只用localStorage，JS零报错；🗄️按钮沿用v0.9.2原有那枚。
+    v0.11.4 2026-09-05 深夜班3 卡死三处方（真机199分钟死锁报案）：
+      ①堵漏网：大管家auto信（自动精做命令）改走「📋大纲定稿+出页」新主路（整形1次+校对1次，
+        约2分钱），不再跑老逐页精做（30次调用，熄屏必卡死）；老按钮仍在高级区备着。
+      ②锁加心跳beat：进度牌每页/每步刷新盖时间戳；锁超10分钟没心跳→牌变⚠️疑似卡死，
+        右边×变强行解锁；两处开工直接挂锁也带beat。
+      ③开门验尸：App打开发现锁超15分钟→弹「上次干活疑似中断」确认，一键解锁。
+      病根备忘：请求虽有30秒超时，但熄屏冻结整个JS引擎，活死锁存localStorage永久留存，
+        重启后牌子读旧锁继续涨时间=播报尸体。
     v0.11.3 2026-09-05 深夜班2 更新通道根治：下载新版分块写入+对账+验货（治假报喜），标题自动填版本号。
     v0.11.0 2026-09-05 晚班 弹窗兜底+风格分轨：
       ①弹窗兜底（洪老师真机"对话框跳出来关不掉、按钮全失灵"）：真病根抓到——.slide-page是
@@ -352,7 +369,12 @@ try{ hxStore.sync(); }catch(e){} /* 开门就对齐：必须在 loadStore 之前
    {inbox,queue,busy,savedAt} → base64 → LearnShell.writeFile('ppt_inbox.json')；
    写之前旧内容留底 ppt_inbox.json.bak。无桥/没授权文件夹 → 灰灯静默返回false。
    本地写成功后，公共钱罐有 hx_dav_user/hx_dav_pass → davUp 到坚果云 /学习套装备份/。
-   右上角红绿灯：绿📦已备份 / 红🔴备份失败(常亮+长toast) / 灰未接文件夹；云状态小字。 */
+   右上角红绿灯：绿📦已备份 / 红🔴备份失败(常亮+长toast) / 灰未接文件夹；云状态小字。
+   v0.12.0 升级（信箱搬家hxStore双写，本班新增，只加不改）：
+   ①ppt_inbox.json 由"镜像备份"升为正本，localStorage 降为缓存兜底；
+   ②写前备份改三级轮转：ppt_inbox.bak→ppt_inbox.bak2→ppt_inbox.bak3，只留最近3份
+     （v0.9.4 旧名单个 ppt_inbox.json.bak 不再续写，老文件留文件夹里不删，无害）；
+   ③开门对齐改"文件夹说了算"（见 restore 注释）。 */
 var pptBox=(function(){
   var KEYS=['ppt_inbox','ppt_inbox_q','ppt_busy'];
   var lightEl=null, cloudEl=null;
@@ -382,7 +404,26 @@ var pptBox=(function(){
     try{ if(window.LearnShell&&LearnShell.toast) LearnShell.toast(msg); }catch(e){}
     try{ if(typeof toast==='function') toast(msg, 10000); }catch(e){}
   }
-  /* 备份：三key打包写文件；旧内容留底.bak；成功后试试云同步。返回 true/false */
+  /* v0.12.0 写前三级轮转备份：写 ppt_inbox.json 前，旧文件按 .bak→.bak2→.bak3 轮转，只留最近3份。
+     壳桥没有改名/复制接口（切片_壳与套件机制.md：只有 readFile/writeFile/deleteFile），
+     用"读旧文件→写入新名"实现；万一壳连 readFile 都没有（老到家的壳）→ 降级为只写单个 .bak，
+     还写不了就静默跳过，绝不影响正本写入。全部 try/catch 包裹，浏览器无壳时 bridged() 已先拦。 */
+  function rotBak(){
+    try{
+      if(typeof LearnShell.readFile!=='function' || typeof LearnShell.writeFile!=='function'){
+        /* 降级路：没有读文件能力，读不到旧内容，单个 .bak 也写不出来——跳过并在灯上留痕 */
+        cloudTxt('备份轮转跳过：壳太老没有读文件接口');
+        return;
+      }
+      var b2=null; try{ b2=LearnShell.readFile('ppt_inbox.bak2'); }catch(e){}
+      if(b2){ try{ LearnShell.writeFile('ppt_inbox.bak3', b2); }catch(e){} }
+      var b1=null; try{ b1=LearnShell.readFile('ppt_inbox.bak'); }catch(e){}
+      if(b1){ try{ LearnShell.writeFile('ppt_inbox.bak2', b1); }catch(e){} }
+      var cur=null; try{ cur=LearnShell.readFile('ppt_inbox.json'); }catch(e){}
+      if(cur){ try{ LearnShell.writeFile('ppt_inbox.bak', cur); }catch(e){} }
+    }catch(e){}
+  }
+  /* 备份：三key打包写文件；v0.12.0 写前先 rotBak() 三级轮转；成功后试试云同步。返回 true/false */
   function backup(){
     if(!bridged()){ light('gray','未接文件夹'); cloudTxt(''); return false; }
     try{
@@ -392,8 +433,7 @@ var pptBox=(function(){
         busy:localStorage.getItem('ppt_busy'),
         savedAt:Date.now()
       };
-      var old=null; try{ old=LearnShell.readFile('ppt_inbox.json'); }catch(e){}
-      if(old){ try{ LearnShell.writeFile('ppt_inbox.json.bak', old); }catch(e){} }
+      rotBak(); /* v0.12.0 写前备份：.bak→.bak2→.bak3 轮转（替代v0.9.4单个 ppt_inbox.json.bak 旧写） */
       var wr=LearnShell.writeFile('ppt_inbox.json', b64(JSON.stringify(pkg)));
       if(typeof wr==='string' && /err|fail/i.test(wr)) throw new Error(wr);
       light('green','📦已备份');
@@ -410,24 +450,36 @@ var pptBox=(function(){
       return false;
     }
   }
-  /* v0.9.4 开门对齐：三key全空且文件夹镜像有货→写回localStorage（换手机/重装后续上）；有任一key非空以localStorage为准不动 */
+  /* v0.12.0 开门对齐（信箱搬家hxStore双写）：文件夹 ppt_inbox.json 是正本、说了算——
+     ①文件夹有镜像：无条件灌回localStorage（pkg里null的键=正本说空，removeItem清掉缓存），
+       返回true让调用处接着按新内容渲染信箱；
+     ②文件夹没有镜像但本地三兄弟有数据：自动搬家，立刻 backup() 写进文件夹（含三级轮转）；
+     ③两边都空：没事干。无壳/未授权 → 直接返回false，一切照旧只用localStorage。
+     （替代v0.9.4旧规矩"三key全空才恢复"；旧注释保留在上方版本链里备查） */
   function restore(){
     if(!bridged()) return false;
+    var f=null; try{ f=LearnShell.readFile('ppt_inbox.json'); }catch(e){}
+    if(f){
+      try{
+        var pkg=JSON.parse(unb64(f));
+        if(pkg&&typeof pkg==='object'){
+          var fields={ppt_inbox:'inbox', ppt_inbox_q:'queue', ppt_busy:'busy'};
+          for(var k in fields){
+            try{
+              if(typeof pkg[fields[k]]==='string') localStorage.setItem(k, pkg[fields[k]]);
+              else localStorage.removeItem(k); /* 正本说这个键是空的 → 缓存也清掉，文件夹说了算 */
+            }catch(e){}
+          }
+          light('green','📦已按文件夹正本对齐');
+          return true;
+        }
+      }catch(e){}
+      /* 镜像读不懂：不灌不搬，保持localStorage现状，避免烂文件冲掉好数据 */
+      return false;
+    }
     var hasAny=false;
     for(var i=0;i<KEYS.length;i++){ try{ if(localStorage.getItem(KEYS[i])){ hasAny=true; break; } }catch(e){} }
-    if(hasAny) return false;
-    var f=null; try{ f=LearnShell.readFile('ppt_inbox.json'); }catch(e){}
-    if(!f) return false;
-    try{
-      var pkg=JSON.parse(unb64(f));
-      if(pkg&&typeof pkg==='object'){
-        if(pkg.inbox) localStorage.setItem('ppt_inbox', pkg.inbox);
-        if(pkg.queue) localStorage.setItem('ppt_inbox_q', pkg.queue);
-        if(pkg.busy) localStorage.setItem('ppt_busy', pkg.busy);
-        light('green','📦已从镜像恢复');
-        return true;
-      }
-    }catch(e){}
+    if(hasAny){ try{ backup(); }catch(e){} light('green','📦本地数据已搬进文件夹'); return true; } /* 自动搬家 */
     return false;
   }
   try{ mkLight(); if(bridged()) light('green','📦镜像待命'); else light('gray','未接文件夹'); }catch(e){}
@@ -451,13 +503,18 @@ var workBoard=(function(){
     d.innerHTML='<div style="display:flex;align-items:flex-start;gap:8px;"><span id="wbMain" style="flex:1;line-height:1.6;"></span><button type="button" id="wbClose" style="flex:none;border:none;background:none;font-size:18px;color:#8a8178;padding:0 4px;line-height:1.2;cursor:pointer;display:none;">×</button></div>';
     document.body.appendChild(d);
     el=d; txEl=d.querySelector('#wbMain'); cbEl=d.querySelector('#wbClose');
-    cbEl.addEventListener('click',function(){ el.style.display='none'; try{ localStorage.removeItem('ppt_done'); }catch(e){} });
+    cbEl.addEventListener('click',function(){ el.style.display='none';
+      try{ localStorage.removeItem('ppt_done'); }catch(e){}
+      /* v0.11.4 疑似卡死时这枚×兼做强行解锁 */
+      try{ var b=JSON.parse(localStorage.getItem('ppt_busy')||'null');
+        if(b && (Date.now()-(b.beat||b.since||Date.now()))>600000){ localStorage.removeItem('ppt_busy'); toast('🔓 死锁已解开，可以重新开工',4000); }
+      }catch(e){} });
   }
   function setBusy(stage, page, total, title){
     try{
       var old={}; try{ old=JSON.parse(localStorage.getItem('ppt_busy')||'{}')||{}; }catch(e){}
       localStorage.setItem('ppt_busy', JSON.stringify({
-        title:title||old.title||'无题', since:old.since||Date.now(),
+        title:title||old.title||'无题', since:old.since||Date.now(), beat:Date.now(), /* v0.11.4 心跳：每次进度刷新盖时间戳，牌凭它判死活 */
         stage:stage||'', page:page||0, total:total||0 }));
     }catch(e){}
   }
@@ -470,6 +527,12 @@ var workBoard=(function(){
         var line='⏳ '+(busy.stage||'干活中')+'——《'+String(busy.title||'无题')+'》';
         if(busy.total) line+='（第'+(busy.page||0)+'/'+busy.total+'页）';
         line+='　已干'+(mins<1?'不到1':mins)+'分钟';
+        /* v0.11.4 死锁识别：心跳超10分钟没动=活已死（熄屏冻结等），牌变警告+×变"解锁" */
+        var beatAge=Date.now()-(busy.beat||busy.since||Date.now());
+        if(beatAge>600000){
+          txEl.textContent='⚠️ 疑似卡死：「'+(busy.stage||'干活')+'」已超过10分钟没动静（多半是熄屏把活冻住了）。点右边×强行解锁，再重新开工';
+          cbEl.style.display=''; el.style.display='block'; return;
+        }
         txEl.textContent=line; cbEl.style.display='none'; el.style.display='block'; return;
       }
       var done=null; try{ done=JSON.parse(localStorage.getItem('ppt_done')||'null'); }catch(e){}
@@ -783,7 +846,7 @@ function shipDone(p){
 
 <script>
 "use strict";
-var SW_VERSION = "0.11.3"; /* v0.11.3 更新通道根治：下载新版改分块写入+字节对账+写完回读验版本号（治JS桥截断假报喜）；标题自动填版本号 */ /* v0.11.2 对比弹窗根治：预览改iframe隔离(pointer-events:none)+大红✕关闭click/touchend双绑+遮罩补touchend+弹窗探针(遮挡toast报名)+渲染try/catch错误写进弹窗 */ /* v0.11.0 弹窗兜底（遮罩可关+onerror可见+init分步容错）+风格分轨（大白话科普/严肃医学，严肃版术语不翻白话、格子放宽，大管家寄PPT跟随） */ /* v0.10.0 大纲契约主路（整形1次+校对1次+本地出页）+提示词档案diff+失败原因名单+老精做降级高级区（详见文件头） */ /* v0.9.5 干活进度牌（阶段常亮）+完工自动传坚果云PPT成品（成品+工程备份）+手动导出也顺手传 */ /* v0.9.4 信箱镜像备份+红绿灯+坚果云自动同步 */ /* v0.9.3 队列续件+干活锁 */ /* v0.9.2 ①hxStore仓管员：存盘同步写壳文件夹 ②PPT链路闭环：认taskId、做完把大纲样品寄回大管家（guanjia_inbox）、收rev修改意见自动照改再寄回、3趟封顶提醒 */ /* v0.9.1 认大管家auto信自动全篇精做（授权在寄信时），polishAllRun抽公共 */ /* v0.9.0 二期：自动收信自动开工+双AI逐页精做（千问原著/快校对）+每页三版开关（原著/校对/AI综合）+三版对比终审，导出剥vers（详见文件头） */ /* v0.7.5 系统弹窗大扫除：剩下6处prompt+3处confirm全换自画对话框hxAsk/hxConfirm（AI起草大纲/填Key/涂黑改/插链接/单页AI改/云端恢复/删项目/删页），手机壳上不再"点了没反应" */ /* v0.7.4 三件套：①重做弹窗显示"正在重做第N页《标题》+内容预览"防点错页 ②小活（单页重做）优先派千问qwen-plus（几秒~20秒），没Key/失败自动退Kimi ③AI干活浮动秒表胶囊趴右下角 ④重做后验收：原有表格被AI弄丢→自动重试一次，仍丢则不覆盖原页 */ /* v0.7.3 重做全程浮动提示：开工/成功/失败都弹toast（洪医生真机反馈：进度消息在页面顶部，滚到下面看不见，像死机） */ /* v0.7.2 修数据错乱：AI重做在途时移动/删除该页，写回改认"页面对象"不认下标（独立测试t37抓到） */ /* v0.7.1 修"AI重做本页点了没反应"：病根=手机壳X5内核不理系统prompt()弹窗（直接当取消），改自画弹窗（习题学习删除确认同款药方） */ /* v0.7.0 千问自动交叉校对（愿望清单第3批）：「🤖 自动校对」一键两棒——第1棒发千问qwen-plus（公共钱罐hx_qwenkey，约1分钱）拿校对意见，第2棒自动交给贴回校对管道让Kimi照改大纲（没提到的一字不动）；开关可选千问/Kimi自查；千问答"没发现问题"就不花第2棒的钱 */ /* v0.6.1 自选背景图（愿望清单第2批）：幻灯片页「🖼️ 背景图」相册选图→canvas压缩≤1600px、JPEG逐步降质（≤200KB）→存本PPT的p.bg（不设全局）；渲染时.slide-page叠82%不透明蒙纱（米白皮用米白纱/深色皮用深色纱）保证字可读；「✕ 清除背景」一键还原；导出HTML内嵌带走。提醒：导出会把照片带出去，别夹病人信息 */ /* v0.6.0 四套皮肤（米白学术/深蓝正式/墨绿讲堂/黑板粉笔），每个PPT各选各的，导出HTML带着走；点屏翻页其实v0.2.0起就有（点左35%上页/右65%下页） */ /* v0.5.0 放映自适应：底栏实底让位+内容超高自动等比缩小（洪医生横屏讲课表格最后一行被吃） */ /* v0.4.8 AI报错带官方原因+400也自动换模型重试（洪医生贴回校对撞HTTP400：疑公共模型罐里存着已下架的moonshot-v1系列，400不走404重试路） */ /* v0.4.7 版本字样治病根：头顶+页脚+标题改成代码自动填SW_VERSION（v0.4.0~0.4.6期间头顶一直显示旧号，害用户以为没更新） */ /* v0.4.6 更新通道免Token备用路：自检/下载新版在API不通或没填Token时自动走github.io公开直链 */ /* v0.4.5 贴回校对结果：别的AI的校对意见贴进来，本软件AI照改大纲（原文没提到的部分不动）+秒表进度 */ /* v0.4.4 复制校对：大纲/全片一键连校对指令复制，借别的AI挑错，不花自己Key */ /* v0.4.3 修404：死模型自动换kimi-k2.6+重试；max_tokens 8000→16384（k2.6思考型） */ /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
+var SW_VERSION = "0.12.0"; /* v0.12.0 ppt_inbox信箱搬家hxStore双写：文件夹ppt_inbox.json升为正本、开门对齐"文件夹说了算"+自动搬家、写前三级轮转备份(.bak→.bak2→.bak3，读旧写新名实现，壳无读文件能力降级单.bak) */ /* v0.11.4 卡死三处方（洪老师真机199分钟死锁报案）：①auto信堵漏改走大纲定稿新主路（不再逐页30次调用）②锁加心跳beat，进度牌见10分钟没心跳显示"疑似卡死"+×强行解锁 ③开门验尸：>15分钟旧锁弹确认解锁 */ /* v0.11.3 更新通道根治：下载新版改分块写入+字节对账+写完回读验版本号（治JS桥截断假报喜）；标题自动填版本号 */ /* v0.11.2 对比弹窗根治：预览改iframe隔离(pointer-events:none)+大红✕关闭click/touchend双绑+遮罩补touchend+弹窗探针(遮挡toast报名)+渲染try/catch错误写进弹窗 */ /* v0.11.0 弹窗兜底（遮罩可关+onerror可见+init分步容错）+风格分轨（大白话科普/严肃医学，严肃版术语不翻白话、格子放宽，大管家寄PPT跟随） */ /* v0.10.0 大纲契约主路（整形1次+校对1次+本地出页）+提示词档案diff+失败原因名单+老精做降级高级区（详见文件头） */ /* v0.9.5 干活进度牌（阶段常亮）+完工自动传坚果云PPT成品（成品+工程备份）+手动导出也顺手传 */ /* v0.9.4 信箱镜像备份+红绿灯+坚果云自动同步 */ /* v0.9.3 队列续件+干活锁 */ /* v0.9.2 ①hxStore仓管员：存盘同步写壳文件夹 ②PPT链路闭环：认taskId、做完把大纲样品寄回大管家（guanjia_inbox）、收rev修改意见自动照改再寄回、3趟封顶提醒 */ /* v0.9.1 认大管家auto信自动全篇精做（授权在寄信时），polishAllRun抽公共 */ /* v0.9.0 二期：自动收信自动开工+双AI逐页精做（千问原著/快校对）+每页三版开关（原著/校对/AI综合）+三版对比终审，导出剥vers（详见文件头） */ /* v0.7.5 系统弹窗大扫除：剩下6处prompt+3处confirm全换自画对话框hxAsk/hxConfirm（AI起草大纲/填Key/涂黑改/插链接/单页AI改/云端恢复/删项目/删页），手机壳上不再"点了没反应" */ /* v0.7.4 三件套：①重做弹窗显示"正在重做第N页《标题》+内容预览"防点错页 ②小活（单页重做）优先派千问qwen-plus（几秒~20秒），没Key/失败自动退Kimi ③AI干活浮动秒表胶囊趴右下角 ④重做后验收：原有表格被AI弄丢→自动重试一次，仍丢则不覆盖原页 */ /* v0.7.3 重做全程浮动提示：开工/成功/失败都弹toast（洪医生真机反馈：进度消息在页面顶部，滚到下面看不见，像死机） */ /* v0.7.2 修数据错乱：AI重做在途时移动/删除该页，写回改认"页面对象"不认下标（独立测试t37抓到） */ /* v0.7.1 修"AI重做本页点了没反应"：病根=手机壳X5内核不理系统prompt()弹窗（直接当取消），改自画弹窗（习题学习删除确认同款药方） */ /* v0.7.0 千问自动交叉校对（愿望清单第3批）：「🤖 自动校对」一键两棒——第1棒发千问qwen-plus（公共钱罐hx_qwenkey，约1分钱）拿校对意见，第2棒自动交给贴回校对管道让Kimi照改大纲（没提到的一字不动）；开关可选千问/Kimi自查；千问答"没发现问题"就不花第2棒的钱 */ /* v0.6.1 自选背景图（愿望清单第2批）：幻灯片页「🖼️ 背景图」相册选图→canvas压缩≤1600px、JPEG逐步降质（≤200KB）→存本PPT的p.bg（不设全局）；渲染时.slide-page叠82%不透明蒙纱（米白皮用米白纱/深色皮用深色纱）保证字可读；「✕ 清除背景」一键还原；导出HTML内嵌带走。提醒：导出会把照片带出去，别夹病人信息 */ /* v0.6.0 四套皮肤（米白学术/深蓝正式/墨绿讲堂/黑板粉笔），每个PPT各选各的，导出HTML带着走；点屏翻页其实v0.2.0起就有（点左35%上页/右65%下页） */ /* v0.5.0 放映自适应：底栏实底让位+内容超高自动等比缩小（洪医生横屏讲课表格最后一行被吃） */ /* v0.4.8 AI报错带官方原因+400也自动换模型重试（洪医生贴回校对撞HTTP400：疑公共模型罐里存着已下架的moonshot-v1系列，400不走404重试路） */ /* v0.4.7 版本字样治病根：头顶+页脚+标题改成代码自动填SW_VERSION（v0.4.0~0.4.6期间头顶一直显示旧号，害用户以为没更新） */ /* v0.4.6 更新通道免Token备用路：自检/下载新版在API不通或没填Token时自动走github.io公开直链 */ /* v0.4.5 贴回校对结果：别的AI的校对意见贴进来，本软件AI照改大纲（原文没提到的部分不动）+秒表进度 */ /* v0.4.4 复制校对：大纲/全片一键连校对指令复制，借别的AI挑错，不花自己Key */ /* v0.4.3 修404：死模型自动换kimi-k2.6+重试；max_tokens 8000→16384（k2.6思考型） */ /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
 try{ document.title="PPT工坊 v"+SW_VERSION; }catch(e){} /* v0.11.3 标题不再写死 */
 /* 公共钱罐：API key/GitHub配置 一处填处处有（与其他软件共享 hx_*） */
 (function(){
@@ -2235,7 +2298,7 @@ function polishAllRun(p){
   if(polishing) return;
   polishing=true;
   /* v0.9.3 干活锁：全篇精做是真正的长活（几分钟），开工挂 ppt_busy，做完（含中途每页失败但跑完）摘锁 */
-  try{ localStorage.setItem('ppt_busy', JSON.stringify({title:p.title||'无题', since:Date.now(), stage:'🔍 交叉校对精做中', page:0, total:p.slides.length})); }catch(e){}
+  try{ localStorage.setItem('ppt_busy', JSON.stringify({title:p.title||'无题', since:Date.now(), beat:Date.now(), stage:'🔍 交叉校对精做中', page:0, total:p.slides.length})); }catch(e){} /* v0.11.4 带心跳 */
   try{ pptBox.backup(); }catch(e){} /* v0.9.4 信箱镜像 */
   var n=p.slides.length, fails=[], i=0, t0=Date.now();
   toast('🤖 全篇精做开工，右下角秒表在走=活着',3000);
@@ -2322,7 +2385,7 @@ function outlineShipRun(p){
   var md=((p&&p.outline)||($('outlineText')&&$('outlineText').value)||'').replace(/^\s+|\s+$/g,'');
   if(!md){ toast('大纲还是空的，先写一份或收一份'); return; }
   polishing=true;
-  try{ localStorage.setItem('ppt_busy', JSON.stringify({title:(p&&p.title)||'无题', since:Date.now(), stage:'📋 第1步/共3步：大纲整形中（AI排格子）', page:1, total:3})); }catch(e){}
+  try{ localStorage.setItem('ppt_busy', JSON.stringify({title:(p&&p.title)||'无题', since:Date.now(), beat:Date.now(), stage:'📋 第1步/共3步：大纲整形中（AI排格子）', page:1, total:3})); }catch(e){} /* v0.11.4 带心跳 */
   try{ pptBox.backup(); }catch(e){} /* 信箱镜像 */
   toast('📋 大纲定稿+出页开工：共3步，只有前两步花AI钱（约2分钱）',4000);
   aiP(callFastAI, SYS_SHAPE, shapePrompt(md)).then(function(t1){
@@ -2578,7 +2641,7 @@ function pptInboxNext(){
   try{ pptBox.backup(); }catch(e){} /* v0.9.4 信箱镜像 */
 }
 function checkInbox(){
-  try{ pptBox.restore(); }catch(e){} /* v0.9.4 开门对齐：三key全空且镜像有货→写回localStorage */
+  try{ pptBox.restore(); }catch(e){} /* v0.12.0 开门对齐：文件夹ppt_inbox.json是正本说了算，灌回localStorage；文件夹没有则自动搬家（v0.9.4旧规矩"三key全空才恢复"已废止） */
   try{ store.projects.forEach(function(p){ if(p.pendingSample) mailSample(p); }); }catch(e){} /* v0.9.2 补寄暂存样品 */
   var raw=localStorage.getItem('ppt_inbox');
   if(!raw) return;
@@ -2614,9 +2677,9 @@ function checkInbox(){
     if(ap.taskId) mailSample(ap); /* v0.9.2 出页即把大纲样品寄回大管家（零API花费） */
     renderSlides(); showPage('slidesPage');
     if(d.auto){ /* v0.9.1 大管家寄信时已授权"自动精做"（信封auto:true）→ 不问人直接跑 */
-      showMsg($('slidesMsg'),'📬 收到「'+(d.title||'无题')+'」（带"自动精做"命令），已出 '+autoPages.length+' 页，现在自动精做…','ok');
-      toast('📬 收到带命令的信：自动精做开工（大管家寄信时您已同意）',5000);
-      polishAllRun(ap);
+      showMsg($('slidesMsg'),'📬 收到「'+(d.title||'无题')+'」（带"自动精做"命令），已出 '+autoPages.length+' 页，现在走大纲定稿主路（约2分钱）…','ok');
+      toast('📬 收到带命令的信：大纲定稿开工（大管家寄信时您已同意）',5000);
+      outlineShipRun(ap); /* v0.11.4 堵漏网：auto信不再走老逐页精做（30次调用易卡死），改走新主路（2次调用） */
     }else{
       showMsg($('slidesMsg'),'📬 收到「'+(d.title||'无题')+'」，已自动开工做出 '+autoPages.length+' 页（没花API钱）。要更讲究：点上面绿色大按钮「📋✨ 大纲定稿+出页」（约2分钱）','ok'); /* v0.10.0 指路改指新主按钮 */
       toast('📬 收到「'+(d.title||'无题')+'」，已自动做出 '+autoPages.length+' 页',5000);
@@ -2847,6 +2910,17 @@ window.onerror=function(msg,src,line){
   function step(f){ try{ f(); }catch(e){ try{ toast('⚠️ 启动有一步没跑成（截图发AI）：'+String((e&&e.message)||e).slice(0,60), 6000); }catch(e2){} } }
   step(function(){ $('ghUser').value=ghCfg().user; $('ghTok').value=ghCfg().tok; $('ghRepo').value=ghCfg().repo; });
   step(ghStatusRender); step(locRender); step(renderProjects); step(checkInbox);
+  /* v0.11.4 开门验尸：发现上次的锁超15分钟→活不可能还活着（重启过JS早死了），问一句再解锁 */
+  step(function(){
+    try{
+      var b=JSON.parse(localStorage.getItem('ppt_busy')||'null'); if(!b) return;
+      var age=Date.now()-(b.beat||b.since||Date.now()); if(age<=900000) return;
+      var mins=Math.floor(age/60000);
+      hxConfirm('⚰️ 上次干活《'+String(b.title||'无题')+'》的锁是'+mins+'分钟前挂的，重启过App=活早就死了（牌子一直涨时间是在播报尸体）。解开这把死锁吗？', function(yes){
+        if(yes){ try{ localStorage.removeItem('ppt_busy'); }catch(e){} toast('🔓 死锁已解开，可以重新开工',4000); }
+      });
+    }catch(e){}
+  });
   setTimeout(function(){ try{ if(ghReady()) ghSelfCheck(false); }catch(e){} },3000);
   setTimeout(function(){ try{ if(ghReady()) locReconcile(false); }catch(e){} },4000);
   setTimeout(function(){ try{ hxIndexRefresh(); }catch(e){} },6000);
