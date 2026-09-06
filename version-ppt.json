@@ -1,1 +1,1 @@
-{"version": "0.11.3", "dl": "software-ppt.html", "note": "更新通道根治：下载新版分块写入+对账+验货（治假报喜），标题自动填版本号"}
+{"version": "0.12.0", "dl": "software-ppt.html", "note": "信箱搬家：ppt_inbox从localStorage搬壳授权文件夹ppt_inbox.json为正本（base64），状态一变就写，写前3份bak轮转，localStorage当缓存兜底，无壳浏览器照旧"}
