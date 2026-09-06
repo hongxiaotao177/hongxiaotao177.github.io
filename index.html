@@ -2,6 +2,11 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.5.0 2026-09-06 版面鱼骨头化（铁律#39第一刀，洪老师已过目"藏/留清单"）：
+      首页只留7张日常卡（大管家/血气/小涛笔记/学习笔记双链/习题/文件桥/PPT工坊）+1张「🛠管理工具」折叠卡；
+      AI花钱/仓库文件柜/同步体检/备份到坚果云(含检查新版本)/壳APP下载 5项原样挪进 admZone 抽屉
+      （点开可见、再点收起，开合状态记 localStorage hx_adm_open，下次开门保持）；
+      删除"资料存档·整理中"空占位卡。所有功能代码/绑定一行未改，纯挪位+1个开合函数。
     v1.4.8 2026-09-05 备份自理班（纯加法）：
       ①版本自检每次开APP只查一次：自检器官用 sessionStorage(hx_ver_checked) 记档，
         同一会话第二次加载主界面跳过自动查版本；手动触发不受影响；
@@ -138,16 +143,6 @@
     <div class="meta"><span class="tag">全家总管</span><span class="tag" id="tagGuanjia">v0.1.0</span></div>
   </a>
 
-  <a class="card" id="billCard" href="javascript:void(0)">
-    <h2>💰 AI花钱</h2>
-    <div class="desc" id="billLine">今天 ¥0.00 ｜ 本月 ¥0.00（估算）</div>
-    <div class="meta"><span class="tag">点我看明细</span></div>
-  </a>
-  <div class="card" id="billPanel" style="display:none;">
-    <div id="billDetail" style="font-size:13px;line-height:1.9;color:#6b6257;white-space:pre-wrap;"></div>
-    <div style="margin-top:10px;font-size:13px;color:#8a8178;">每月提醒线：¥<input id="billCap" type="number" min="1" style="width:70px;font-size:14px;padding:4px 6px;border:1px solid #ddd3c5;border-radius:8px;">　超过卡片变橙（默认50）</div>
-  </div>
-
   <div class="section-title">临床工具</div>
 
   <a class="card" href="血气分析.html">
@@ -187,6 +182,23 @@
     <div class="desc">把知识变成幻灯片：学习笔记一键发来Markdown大纲（也能自己贴/让AI起草），改完大纲一键生成HTML版PPT——对比表格、大数字、金句、柱/饼/折线图表都认识；哪页不满意就单独让AI重做哪页；横屏放映、可导出单个HTML发给别人。大纲和作品自动云备份。</div>
     <div class="meta"><span class="tag">网页工具</span><span class="tag" id="tagPpt">v0.2.0</span></div>
   </a>
+
+  <!-- v1.5.0 鱼骨头化：管理工具折叠抽屉（点开可见、再点收起，状态记住） -->
+  <a class="card" id="admCard" href="javascript:void(0)">
+    <h2>🛠 管理工具 <span id="admArrow" style="font-size:13px; color:#a89f93;">▸ 点开</span></h2>
+    <div class="desc">AI花钱、仓库文件柜、同步体检、备份到坚果云、壳APP下载——偶尔才用的都收在这里。</div>
+  </a>
+  <div id="admZone" style="display:none;">
+
+  <a class="card" id="billCard" href="javascript:void(0)">
+    <h2>💰 AI花钱</h2>
+    <div class="desc" id="billLine">今天 ¥0.00 ｜ 本月 ¥0.00（估算）</div>
+    <div class="meta"><span class="tag">点我看明细</span></div>
+  </a>
+  <div class="card" id="billPanel" style="display:none;">
+    <div id="billDetail" style="font-size:13px;line-height:1.9;color:#6b6257;white-space:pre-wrap;"></div>
+    <div style="margin-top:10px;font-size:13px;color:#8a8178;">每月提醒线：¥<input id="billCap" type="number" min="1" style="width:70px;font-size:14px;padding:4px 6px;border:1px solid #ddd3c5;border-radius:8px;">　超过卡片变橙（默认50）</div>
+  </div>
 
   <div class="section-title">文件柜</div>
 
@@ -235,12 +247,7 @@
     <div class="meta"><span class="tag">APP安装包</span><span class="tag">v1.0.5</span></div>
   </a>
 
-  <div class="section-title">资料存档</div>
-
-  <div class="card empty">
-    <h2>整理中，即将上线</h2>
-    <div class="desc" style="margin-top:6px;">常用资料会陆续放在这里</div>
-  </div>
+  </div><!-- /admZone v1.5.0 -->
 
 </main>
 
@@ -598,6 +605,13 @@ function billRender(){
     return (t.getMonth()+1)+"/"+t.getDate()+" "+("0"+t.getHours()).slice(-2)+":"+("0"+t.getMinutes()).slice(-2)+"  "+e.app+"·"+(e.what||"")+"  ¥"+(e.cost||0).toFixed(3); }).join("\n")||"（空）");
   document.getElementById("billDetail").textContent=h;
 }
+/* v1.5.0 鱼骨头化：管理工具抽屉开合（状态记 localStorage，下次开门保持） */
+try{
+  var _admZ=document.getElementById("admZone"), _admA=document.getElementById("admArrow");
+  function admSet(open){ _admZ.style.display=open?"block":"none"; _admA.textContent=open?"▾ 收起":"▸ 点开"; try{localStorage.setItem("hx_adm_open",open?"1":"0");}catch(e){} }
+  document.getElementById("admCard").onclick=function(){ admSet(_admZ.style.display==="none"); };
+  admSet(localStorage.getItem("hx_adm_open")==="1");
+}catch(e){}
 document.getElementById("billCard").onclick=function(){ var p=document.getElementById("billPanel"); p.style.display=p.style.display==="none"?"block":"none"; billRender(); };
 document.getElementById("billCap").value=localStorage.getItem("hx_bill_cap")||50;
 document.getElementById("billCap").onchange=function(){ localStorage.setItem("hx_bill_cap",this.value||50); billRender(); };
