@@ -2,7 +2,12 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
-    v1.4.7 2026-09-05 深夜班2 更新通道根治：①记忆说"已最新"不算数，开文件验身抓真实SW_VERSION比对（治"文件在但内容旧"，洪老师真机PPT工坊v0.9.5被误报最新）②版本文件读不到不再静默跳过，结论里点名谁没查成。
+    v1.4.7 2026-09-05 🔄同步体检卡片入编（洪老师拍板：心跳对账、只报告不自动改数据、不轮询）：
+      开门12秒后静默对账一次（全好不吭声，异常才亮黄条），点开卡片手动对账；
+      逐文件比「授权文件夹修改时间（listFiles.t）vs 坚果云云端修改时间（davList.mtime）」，
+      云端候选目录=/学习套装备份/（ppt_inbox寄件备份）+ /授权文件夹名/（坚果云APP同步区）；
+      ✅已同步(落后≤2分钟容差)/⏳同步中(≤10分钟)/❌同步失败(>10分钟或云端查无此文件)；
+      底部效率统计；体检记录存localStorage hx_sync_check_v1（只留最近20条）。纯加法。（本班代码落地，此前仅注释）
     v1.4.6 2026-09-03 大管家升0.4.3（名片浏览按题库归堆：一个题库一行，点题库看题目，点题目看内容；筛选命中自动撑开题库）。
     v1.4.5 2026-09-03 大管家升0.4.2（开门全折成一行标题点什么开什么；名片浏览只露一行"来源+标题"，点行展开看内容；存收件箱自动撑开）。
     v1.4.4 2026-09-03 大管家升0.4.1（首页折叠面板：点标题整卡折起/展开，状态记住；问AI/收件箱/名册默认开，家底/做名片/浏览默认折；收件箱有料强制展开）。
@@ -191,6 +196,18 @@
     </div>
   </div>
 
+  <a class="card" id="scCard" href="javascript:void(0)">
+    <h2>🔄 同步体检</h2>
+    <div class="desc" id="scLine">心跳对账：逐个比对授权文件夹和坚果云的修改时间，只报告，绝不动数据。点我手动对账。</div>
+    <div class="meta"><span class="tag">只报告不改数据</span><span class="tag">开门12秒自动体检一次</span></div>
+  </a>
+  <div class="card" id="scPanel" style="display:none;">
+    <div class="desc" id="scStatus">……</div>
+    <div id="scList" style="margin-top:10px;font-size:13px;line-height:1.9;color:#6b6257;"></div>
+    <div id="scStats" style="margin-top:12px;font-size:12px;color:#a89f93;border-top:1px dashed #eee5d8;padding-top:10px;"></div>
+    <div style="margin-top:12px;"><button class="tag" style="padding:10px 14px; border:none; cursor:pointer;" id="scRun">🔄 手动对账一次</button></div>
+  </div>
+
   <a class="card" id="apkCard" href="https://github.com/hongxiaotao177/xuexi-backup/releases/download/shell-v1.0.5/LearnShell-v1.0.5.apk">
     <h2>📱 学习套装·壳APP（推荐）</h2>
     <div class="desc">把整套软件装进一个APP（成员加了自动跟着装）：文件夹授权一次永久有效；打开主界面就自动更新，不用管。点我下载安装包（华为提示"未知来源"点允许即可）。iPad不适用。</div>
@@ -296,7 +313,7 @@ function hxRawGet(name){
   var base=hasApi ? ("https://api.github.com/repos/"+encodeURIComponent(c.user)+"/"+encodeURIComponent(c.repo)+"/contents/") : "";
   var H=ghHeaders();
   var keys=Object.keys(SUITE);
-  var updated=[], failed=[], unchecked=[];
+  var updated=[], failed=[];
   updMsg("🔍 正在检查" + keys.length + "个软件有没有新版…");
   function fetchJson(name){
     /* 统一返回"文件内容文本"：API优先，失败/没Token走公开直链 */
@@ -311,18 +328,9 @@ function hxRawGet(name){
   /* v1.1.5 踩坑：旧版把"ppt已装0.1.1"的假记忆写进了 hx_suite_ver（其实从没装上），
      光看版本记忆会永远跳过下载。所以现在"版本不用更新"还要再敲一下文件的门：
      壳里 fetch 本地文件，404=没装→照样下载（记忆不可信，实物为准） */
-  /* v1.4.7 开箱验货：记忆/版本看着不新不算数，读本地文件里的真实SW_VERSION跟云端比；
-     文件没装、读不到版本号（疑坏）、版本旧——三种都重下 */
-  function reallyOld(localName, cloudVer, cb){
-    fetch(encodeURI(localName), { cache: "no-store" }).then(function(r){
-      if(!r.ok){ cb(true); return null; }  /* 文件没装→照样下载 */
-      return r.text();
-    }).then(function(txt){
-      if(txt==null) return;
-      var m=txt.match(/SW_VERSION\s*=\s*['"]([\d.]+)['"]/);
-      if(!m){ cb(true); return; }  /* 读不到版本号，疑坏→重下 */
-      cb(cmpVer(cloudVer, m[1])>0);  /* 云端比本地新→重下 */
-    }).catch(function(){ cb(false); });  /* 探不动就不折腾 */
+  function reallyMissing(localName, cb){
+    fetch(encodeURI(localName), { cache: "no-store" }).then(function(r){ cb(!r.ok); })
+      .catch(function(){ cb(false); });  /* 探不动就不折腾，按没缺处理 */
   }
   /* v1.3.4 当面点清：壳v1.1.1起有分块写入（一块64KB，写完对账实收字节数），
      治"大字符串过JS桥被悄悄截断→半截文件全空白"。老壳没有就退回老办法。 */
@@ -365,24 +373,21 @@ function hxRawGet(name){
       try{ info=JSON.parse(txt); }catch(e){ info=null; }
       if(!info || !info.version){ step(i+1); return; }
       if(cmpVer(info.version, CUR[k])>0){ dl(k, info, remote, localName, function(){ step(i+1); }); return; }
-      /* v1.4.7 版本看着不新也要开文件验身（v1.1.5只防"文件缺失"，没防"文件在但内容旧"） */
-      reallyOld(localName, info.version, function(old){
-        if(old) dl(k, info, remote, localName, function(){ step(i+1); });
+      /* 版本看着不新，再敲一下文件的门（v1.1.5 假记忆防御） */
+      reallyMissing(localName, function(missing){
+        if(missing) dl(k, info, remote, localName, function(){ step(i+1); });
         else step(i+1);
       });
-    }).catch(function(e){ unchecked.push(localName.replace(".html","")); step(i+1); });  /* v1.4.7 读不到不许装没看见：结论里点名 */
+    }).catch(function(e){ step(i+1); });  /* 单个版本文件读不到不拖累别人 */
   }
   function finish(){
     if(updated.length){
-      updMsg("✅ 已自动更新："+updated.join("、")+(unchecked.length?("；另："+unchecked.join("、")+"的版本文件没读到，下次再复查"):"")+"\n旧版不用管，新版备份已存进您的文件夹。正在刷新…");
+      updMsg("✅ 已自动更新："+updated.join("、")+"\n旧版不用管，新版备份已存进您的文件夹。正在刷新…");
       try{ window.LearnShell.toast("✅ 套装已自动更新"); }catch(e){}
       setTimeout(function(){ location.reload(); }, 1600);
     }else if(failed.length){
       updMsg("⚠️ 有新版但下载没成功："+failed.join("、")+"\n不影响使用，下次打开会再试。");
       setTimeout(function(){ document.getElementById("updLine").style.display="none"; }, 6000);
-    }else if(unchecked.length){
-      updMsg("⚠️ 查完了，但这几个的版本文件没读到（网络抖了），不敢打包票："+unchecked.join("、")+"——网络好时再开一次主界面复查");
-      setTimeout(function(){ document.getElementById("updLine").style.display="none"; }, 8000);
     }else{
       updMsg("✅ " + keys.length + "个软件都是最新版");
       setTimeout(function(){ document.getElementById("updLine").style.display="none"; }, 2500);
@@ -573,6 +578,130 @@ document.getElementById("billCard").onclick=function(){ var p=document.getElemen
 document.getElementById("billCap").value=localStorage.getItem("hx_bill_cap")||50;
 document.getElementById("billCap").onchange=function(){ localStorage.setItem("hx_bill_cap",this.value||50); billRender(); };
 billRender();
+
+/* ==================== v1.4.7 🔄同步体检卡片（只报告，绝不自动改任何数据） ====================
+   开门12秒后静默对账一次（全好不吭声，异常才亮黄条），点开卡片手动对账；
+   逐文件比「listFiles 返回的 t（毫秒）vs davList 返回的 mtime（HTTP日期，Date.parse）」；
+   云端候选目录=/学习套装备份/ + /授权文件夹名/（folderName()，坚果云APP双向同步区），
+   任一目录有同名文件且时间达标即算同步（同名取较新的mtime）；
+   ✅已同步(云端mtime≥本地t−2分钟容差)/⏳同步中(落后≤10分钟)/❌同步失败(>10分钟或云端查无)；
+   体检记录存 localStorage hx_sync_check_v1（只留最近20条）。 */
+var SC_KEY='hx_sync_check_v1';
+function scEsc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function scHist(){ try{ return JSON.parse(localStorage.getItem(SC_KEY)||'[]'); }catch(e){ return []; } }
+function scRemember(rec){ var h=scHist(); h.unshift(rec); if(h.length>20) h=h.slice(0,20); try{ localStorage.setItem(SC_KEY, JSON.stringify(h)); }catch(e){} }
+function scFmtLag(ms){ var m=Math.round(Math.abs(ms)/60000); if(m<1) return '不到1分钟'; if(m<60) return m+'分钟'; var h=Math.floor(m/60); return h+'小时'+(m%60? (m%60)+'分钟':''); }
+function scShellReady(){ return !!(window.LearnShell && window.LearnShell.folderSet && window.LearnShell.davList && window.LearnShell.listFiles); }
+function scDavList(u,p,path){
+  return new Promise(function(res){
+    var out;
+    try{ out=window.LearnShell.davList(u,p,path); }catch(e){ return res({error:String(e)}); }
+    var j; try{ j=JSON.parse(out||'{}'); }catch(e){ return res({error:'davList 返回的不是JSON'}); }
+    if(j && j.error) return res({error:String(j.error)});
+    res(Array.isArray(j)? j : []);
+  });
+}
+function scCheck(manual){
+  var line=document.getElementById('scLine'), status=document.getElementById('scStatus');
+  if(!scShellReady()){
+    line.textContent='只在壳APP里能体检（浏览器/iPad打开只是看看）。';
+    if(manual) status.textContent='只在壳APP里能体检——请用学习套装·壳APP打开主界面再点。';
+    return;
+  }
+  if(!window.LearnShell.folderSet()){
+    if(manual) status.textContent='还没授权文件夹——先到「📂 文件桥」授权一个文件夹再体检。';
+    return;
+  }
+  var du=localStorage.getItem('hx_dav_user')||'', dp=localStorage.getItem('hx_dav_pass')||'';
+  if(!du || !dp){
+    if(manual) status.textContent='先到「📂 文件桥」填坚果云邮箱和应用密码，填完全家通用，这里直接读那套。';
+    return;
+  }
+  var files=[];
+  try{ files=JSON.parse(window.LearnShell.listFiles()||'[]'); }catch(e){ files=[]; }
+  files=files.filter(function(f){ return f && f.name && /\.(json|bak)$/i.test(f.name); });
+  if(!files.length){ if(manual) status.textContent='授权文件夹里还没有要对账的数据文件（.json/.bak）。'; return; }
+  var folder=''; try{ folder=window.LearnShell.folderName()||''; }catch(e){}
+  var paths=['/学习套装备份/'];
+  if(folder) paths.push('/'+folder.replace(/^\/+|\/+$/g,'')+'/');
+  if(manual) status.textContent='正在对账：读坚果云目录…';
+  Promise.all(paths.map(function(pth){
+    return scDavList(du,dp,pth).then(function(r){ return {path:pth, res:r}; });
+  })).then(function(dirs){
+    var cloud={}, errs=[];
+    dirs.forEach(function(d){
+      if(d.res.error){ errs.push(d.path+'：'+d.res.error); return; }
+      d.res.forEach(function(f){
+        if(f.isDir || !f.name) return;
+        var mt=Date.parse(f.mtime||'')||0;
+        if(!mt) return;
+        if(!cloud[f.name] || cloud[f.name]<mt) cloud[f.name]=mt;
+      });
+    });
+    if(errs.length===dirs.length){
+      /* 两个目录都报错：直接显示错误原文，不算崩溃 */
+      if(manual) status.textContent='⚠️ 坚果云目录都读不到：'+errs.join('；');
+      else updMsg('⚠️ 同步体检没跑成：'+errs.join('；'));
+      return;
+    }
+    var TOL=2*60000, SLOW=10*60000;
+    var rows=[], okN=0, slowN=0, failN=0, lagSum=0, lagN=0;
+    files.forEach(function(f){
+      var t=f.t||0, ct=cloud[f.name]||0, st, lag=null;
+      if(!ct){ st='❌'; failN++; }
+      else{
+        lag=t-ct; lagSum+=Math.max(lag,0); lagN++;
+        if(ct>=t-TOL){ st='✅'; okN++; }
+        else if(lag<=SLOW){ st='⏳'; slowN++; }
+        else{ st='❌'; failN++; }
+      }
+      rows.push({name:f.name, st:st, lag:lag, t:t, ct:ct});
+    });
+    var rec={t:Date.now(), n:files.length, ok:okN, slow:slowN, fail:failN, avgLag:(lagN? Math.round(lagSum/lagN):0), err:(errs.join('；')||null)};
+    scRemember(rec);
+    /* 渲染明细（.bak 归一组折叠） */
+    var mains=rows.filter(function(r){ return !/\.bak$/i.test(r.name); });
+    var baks=rows.filter(function(r){ return /\.bak$/i.test(r.name); });
+    function rowHtml(r){
+      var s=r.st+' '+scEsc(r.name)+'　<span style="color:#b5aa9c;font-size:12px;">';
+      if(r.ct){
+        s+='本地 '+new Date(r.t).toLocaleString()+' / 云端 '+new Date(r.ct).toLocaleString();
+        s+= r.lag>0 ? ('（云端落后'+scFmtLag(r.lag)+'）') : '（云端不落后）';
+      }else s+='两个云端目录都查无此文件';
+      return '<div style="padding:6px 0;border-bottom:1px solid #f5efe6;">'+s+'</span></div>';
+    }
+    var h=mains.map(rowHtml).join('');
+    if(baks.length) h+='<details style="margin-top:6px;"><summary style="cursor:pointer;color:#a89f93;">.bak 备份文件（'+baks.length+'件，点开看）</summary>'+baks.map(rowHtml).join('')+'</details>';
+    document.getElementById('scList').innerHTML=h;
+    /* 效率统计：历史平均落后+❌次数+最近记录 */
+    var hist=scHist(), totLag=0, totFail=0;
+    hist.forEach(function(r){ totLag+=r.avgLag||0; totFail+=r.fail||0; });
+    var st='共体检 '+hist.length+' 次 ｜ 平均落后 '+scFmtLag(hist.length? Math.round(totLag/hist.length):0)+' ｜ ❌累计 '+totFail+' 次';
+    var recent=hist.slice(0,5).map(function(r){ var d=new Date(r.t);
+      return (d.getMonth()+1)+'/'+d.getDate()+' '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)+'　✅'+r.ok+' ⏳'+r.slow+' ❌'+r.fail; }).join('\n');
+    document.getElementById('scStats').textContent=st+(recent? '\n最近记录：\n'+recent : '');
+    /* 汇报 */
+    var sum='✅'+okN+'件已同步　⏳'+slowN+'件同步中　❌'+failN+'件失败';
+    if(errs.length) sum+='（另有目录报错：'+errs.join('；')+'）';
+    if(manual){ status.textContent='对账完成：'+sum; }
+    line.textContent='上次体检：'+(failN? '❌有'+failN+'件同步失败' : (slowN? '⏳有'+slowN+'件同步中' : '全部已同步 ✅'))+'（'+files.length+'件数据文件，点我看明细）';
+    /* 静默档：全好不吭声，异常才亮黄条 */
+    if(!manual && (failN>0 || slowN>0)){
+      var el=document.getElementById('updLine');
+      el.style.display='block'; el.style.background='#fdf6e3'; el.style.border='1px solid #e8d9b0'; el.style.color='#8a6d1f';
+      el.textContent='⚠️ 同步体检发现异常：'+sum+'——点开「🔄 同步体检」看明细（只报告，没动任何数据）';
+    }
+  });
+}
+document.getElementById('scCard').addEventListener('click', function(){
+  var p=document.getElementById('scPanel');
+  var opening=(p.style.display==='none');
+  p.style.display=opening?'block':'none';
+  if(opening) scCheck(true);
+});
+document.getElementById('scRun').addEventListener('click', function(){ scCheck(true); });
+/* 开门12秒后静默对账一次（不抢更新/同步队列） */
+setTimeout(function(){ try{ scCheck(false); }catch(e){} }, 12000);
 </script>
 
 </body>
