@@ -86,6 +86,13 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
       （queryPermission/requestPermission 兜底，仍要用户手势）
    ④ 手机没有"批命令"——打包/搬家功能必须做成软件内按钮（本卡已做）
 ====================================================================
+    v1.3.0 (2026-09-06) 鱼骨头化（洪老师指示：藏/留清单不用再给他看，AI自己定）：
+        ①首页只留日常三张卡：📁我的文件夹 / 📮AI往来 / ☁️坚果云直通车(壳里才显示)；
+        ②❓使用说明、📦打包分享、☁️云设置(GitHub) 收进「🛠 设置与工具」折叠抽屉
+          （一级卡粗左框+深底、抽屉内二级卡缩进+浅底+左竖线，与主界面v1.6.0同款；
+          开合状态记 localStorage hx_br_tool_open，下次开门保持）；
+        ③各卡长段介绍默认收起，软件名后加「ⓘ 说明」按钮点开看/再点收起（默认收，不记状态）；
+        ④纯界面改动，功能代码零改动；自检行等动态数据照常显示。
     v1.2.3 (2026-09-06) 备份自理班补课（洪老师手机主界面卡在1.4.7查出来的病根）：
         ①主界面刷新hxIndexRefresh加免Token备用路（旧路只走GitHub API+Token，Token作废就静默失败，
           主界面永远旧版还一声不吭；现与软件更新同款：API优先，不通走公开站直链），成功/失败都toast一句；
@@ -173,18 +180,18 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
   .help-sec h4 { font-size: 15px; color: #6a5b47; margin-bottom: 6px; }
   .help-sec p { font-size: 14px; line-height: 1.8; margin: 3px 0; }
   .gh-lab { display:block; margin-top: 6px; }
+  /* v1.3.0 鱼骨头化：介绍收起(ⓘ说明按钮) + 设置与工具抽屉（与主界面v1.6.0同款） */
+  .infoBtn { font-size:12px; color:#8a7a63; border:1px solid #e0d6c4; border-radius:8px;
+    padding:2px 9px; margin-left:8px; font-weight:400; background:#faf7f1; vertical-align:2px; cursor:pointer; }
+  .intro { display:none; }
+  #toolCard { border-left:5px solid #b09a76; background:#faf6ef; cursor:pointer; }
+  #toolZone { border-left:3px solid #e6ddcd; margin-left:8px; padding-left:12px; }
+  #toolZone .card { background:#fdfbf8; box-shadow:none; }
 </style>
 </head>
 <body>
 <header>📂 文件桥<span class="ver" id="hdVer">v1.2.2</span></header>
 <div class="page">
-
-  <!-- 使用说明入口 -->
-  <div class="card" style="padding:10px 16px;">
-    <div class="btn-row" style="margin:0;">
-      <button class="ghost" id="btnHelp">❓ 使用说明（取Kimi Key / 取GitHub Token / 文件桥用法）</button>
-    </div>
-  </div>
 
   <!-- 开机向导卡：缺啥提醒啥 -->
   <div class="card hidden" id="wizard">
@@ -195,24 +202,24 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
 
   <!-- 文件夹 -->
   <div class="card">
-    <h2>📁 我的文件夹</h2>
+    <h2>📁 我的文件夹<span class="infoBtn">ⓘ 说明</span></h2>
     <div id="dirStatus" class="hint">还没授权文件夹</div>
     <div class="btn-row">
       <button id="btnAuth">📁 授权文件夹</button>
       <button class="ghost" id="btnRefresh">🔄 刷新列表</button>
     </div>
     <div id="fileList"></div>
-    <div class="hint">授权「医学软件」文件夹后，这里列出里面的文件。「⬆️ 传给AI」= 文件送进 GitHub 中转站，跟 AI 说一声文件名它就能读到（读完会删掉中转，不占仓库）。</div>
+    <div class="hint intro">授权「医学软件」文件夹后，这里列出里面的文件。「⬆️ 传给AI」= 文件送进 GitHub 中转站，跟 AI 说一声文件名它就能读到（读完会删掉中转，不占仓库）。</div>
   </div>
 
   <!-- AI 往来 -->
   <div class="card">
-    <h2>📮 AI 往来</h2>
+    <h2>📮 AI 往来<span class="infoBtn">ⓘ 说明</span></h2>
     <div class="btn-row">
       <button id="btnRecv">📥 检查AI发来的文件</button>
     </div>
     <div class="log" id="ioLog"></div>
-    <div class="hint">AI 要给你文件时会往仓库贴"任务单"，点这里照单收进文件夹。</div>
+    <div class="hint intro">AI 要给你文件时会往仓库贴"任务单"，点这里照单收进文件夹。</div>
   </div>
 
   <!-- 坚果云直通车（v1.2.0，仅壳APP里显示） -->
@@ -251,18 +258,32 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
     </div>
   </div>
 
+  <!-- v1.3.0 鱼骨头化：偶尔才用的收进「🛠 设置与工具」抽屉 -->
+  <div class="card" id="toolCard">
+    <h2>🛠 设置与工具 <span id="toolArrow" style="font-size:13px; color:#a89f93; font-weight:normal;">▸ 点开</span></h2>
+    <div class="hint" style="margin-top:2px;">使用说明、打包分享、云设置（GitHub）——偶尔才用的都收在这里。</div>
+  </div>
+  <div id="toolZone" style="display:none;">
+
+  <!-- 使用说明入口 -->
+  <div class="card" style="padding:10px 16px;">
+    <div class="btn-row" style="margin:0;">
+      <button class="ghost" id="btnHelp">❓ 使用说明（取Kimi Key / 取GitHub Token / 文件桥用法）</button>
+    </div>
+  </div>
+
   <!-- 打包分享 -->
   <div class="card">
-    <h2>📦 打包分享</h2>
+    <h2>📦 打包分享<span class="infoBtn">ⓘ 说明</span></h2>
     <div class="btn-row">
       <button id="btnPack">📦 打包这个文件夹</button>
     </div>
-    <div class="hint">把文件夹里的软件打成 zip：给自己用会多带一张"随行配置卡"（新手机免填Token）；给别人只装干净软件。</div>
+    <div class="hint intro">把文件夹里的软件打成 zip：给自己用会多带一张"随行配置卡"（新手机免填Token）；给别人只装干净软件。</div>
   </div>
 
   <!-- 云设置 -->
   <div class="card">
-    <h2>☁️ 云设置（GitHub）</h2>
+    <h2>☁️ 云设置（GitHub）<span class="infoBtn">ⓘ 说明</span></h2>
     <label class="gh-lab">GitHub 用户名</label>
     <input type="text" id="ghUser" autocomplete="off">
     <label class="gh-lab">Token（只存本机浏览器，不外传）</label>
@@ -277,10 +298,12 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
       <button class="ghost" id="ghDlAllBtn">⬇️ 下载整套软件</button>
     </div>
     <div class="hint" id="ghCheck">自检：还没查过（每次打开会自动查一次）</div>
-    <div class="hint">「下载整套」= 学习笔记 + 习题学习 + 文件桥 + 血气分析 + PPT工坊 + 小涛笔记，六个最新版一起下载（浏览器首次可能问"允许下载多个文件"，点允许）。</div>
+    <div class="hint intro">「下载整套」= 学习笔记 + 习题学习 + 文件桥 + 血气分析 + PPT工坊 + 小涛笔记，六个最新版一起下载（浏览器首次可能问"允许下载多个文件"，点允许）。</div>
   </div>
 
-  <div class="hint" style="text-align:center;padding:8px 0 20px;">文件桥 v1.0 · AI 与文件夹之间的桥 · 只认 Chrome</div>
+  </div><!-- /toolZone -->
+
+  <div class="hint" style="text-align:center;padding:8px 0 20px;">文件桥 · AI 与文件夹之间的桥 · 只认 Chrome</div>
 </div>
 
 <!-- 自检/随行配置条 -->
@@ -383,7 +406,7 @@ function fmtTime(t){ return new Date(t).toLocaleString(); }
 
 /* ==================== GitHub 通信（移植学习笔记/习题学习同套） ==================== */
 var BR_GH_USER = 'br_gh_user', BR_GH_TOK = 'br_gh_tok', BR_GH_REPO = 'br_gh_repo', BR_GH_CHECK = 'br_gh_check';
-var SW_VERSION = window.SW_VERSION = '1.2.3'; /* v1.2.3补：挂window治第二个script块拿不到（ReferenceError被try静默吞，页头永远旧版字样） */ /* v1.2.2 版本字样治病根：头顶+标题代码自动填SW_VERSION（此前硬编码v1.2.0忘了跟） */ /* v1.2.1 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */ /* v1.2.3 主界面刷新免Token备用路+送上去全选 */
+var SW_VERSION = window.SW_VERSION = '1.3.0'; /* v1.2.3补：挂window治第二个script块拿不到（ReferenceError被try静默吞，页头永远旧版字样） */ /* v1.2.2 版本字样治病根：头顶+标题代码自动填SW_VERSION（此前硬编码v1.2.0忘了跟） */ /* v1.2.1 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */ /* v1.2.3 主界面刷新免Token备用路+送上去全选 */
 /* v1.1.2 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["br_gh_user", "hx_gh_user"], ["br_gh_tok", "hx_gh_tok"], ["br_gh_repo", "hx_gh_repo"]];
@@ -1442,6 +1465,31 @@ $('updCfgNo').addEventListener('click', updHide);
 $('btnHelp').addEventListener('click', function(){ $('helpMask').classList.remove('hidden'); });
 $('helpClose').addEventListener('click', function(){ $('helpMask').classList.add('hidden'); });
 $('helpMask').addEventListener('click', function(e){ if(e.target === this) this.classList.add('hidden'); });
+
+/* v1.3.0 鱼骨头化：ⓘ说明开合（默认收，不记状态）+ 设置与工具抽屉（开合记 hx_br_tool_open） */
+try{
+  var _btns = document.querySelectorAll('.infoBtn');
+  for(var _i = 0; _i < _btns.length; _i++){ (function(btn){
+    btn.addEventListener('click', function(e){
+      e.preventDefault(); e.stopPropagation();
+      var card = btn; while(card && !(card.classList && card.classList.contains('card'))) card = card.parentElement;
+      var d = card ? card.querySelector('.intro') : null; if(!d) return;
+      var open = d.style.display !== 'block';
+      d.style.display = open ? 'block' : 'none';
+      btn.textContent = open ? 'ⓘ 收起' : 'ⓘ 说明';
+    });
+  })(_btns[_i]); }
+}catch(e){}
+try{
+  var toolCard = $('toolCard'), toolZone = $('toolZone'), toolArrow = $('toolArrow');
+  function toolSet(open){
+    toolZone.style.display = open ? 'block' : 'none';
+    toolArrow.textContent = open ? '▾ 收起' : '▸ 点开';
+    try{ localStorage.setItem('hx_br_tool_open', open ? '1' : ''); }catch(e){}
+  }
+  toolCard.addEventListener('click', function(){ toolSet(toolZone.style.display !== 'block'); });
+  toolSet(localStorage.getItem('hx_br_tool_open') === '1');
+}catch(e){}
 
 fillGhInputs();
 try{
