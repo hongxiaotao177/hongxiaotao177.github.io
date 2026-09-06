@@ -262,10 +262,12 @@ window.addEventListener('load', function(){
                    padding: 4px 10px; font-size: 13px; color: #5a4f38; cursor: pointer; }
   .chunk-body { font-size: 14px; line-height: 1.7; background: #faf6ec; border-radius: 8px;
                 padding: 8px 10px; margin-top: 6px; white-space: pre-wrap; }
-  .lib-row { padding: 10px 4px; border-bottom: 1px dashed #eee4d4; display: flex; align-items: center; gap: 8px; }
+  .lib-row { padding: 10px 4px; border-bottom: 1px dashed #eee4d4; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .lib-row:last-child { border-bottom: none; }
-  .lib-row .t { flex: 1; font-size: 15px; cursor: pointer; word-break: break-all; }
+  .lib-row .t { flex: 1; min-width: 60%; font-size: 15px; cursor: pointer; word-break: break-all; }
   .lib-row .d { font-size: 12px; color: #b5aa9c; flex: none; }
+  /* v0.4.1 排版修复：报错条从右栏搬出来单独占一行，不再把书名挤成一字一行 */
+  .lib-row .lib-err { width: 100%; font-size: 12px; color: #b3261e; word-break: break-all; }
   /* v0.3.6 参考文献 */
   .ref-row { padding: 8px 2px; border-bottom: 1px dashed #eee4d4; font-size: 14px; line-height: 1.5; }
   .ref-row .rl { cursor: pointer; margin-right: 6px; font-size: 15px; }
@@ -280,6 +282,20 @@ window.addEventListener('load', function(){
   #toolCard { border-left:5px solid #b09a76; background:#faf6ef; cursor:pointer; }
   #toolZone { border-left:3px solid #e6ddcd; margin-left:8px; padding-left:12px; }
   #toolZone .card { background:#fdfbf8; box-shadow:none; }
+  /* v0.5.0 点亮三级菜单：底部浮条（躲开系统菜单覆盖），z600压过header(400)/updBar(500) */
+  #glowBar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 600; background: #fdfbf8;
+    border-top: 2px solid #8a7a5a; box-shadow: 0 -4px 16px rgba(0,0,0,.18); padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+    display: none; max-height: 62vh; overflow-y: auto; }
+  #glowBar .gl-title { font-size: 13px; color: #8a7a5a; margin-bottom: 8px; }
+  #glowBar .gl-opts { display: flex; flex-wrap: wrap; gap: 8px; }
+  #glowBar .gl-btn { padding: 10px 14px; font-size: 15px; border: 1px solid #c9bfa8; border-radius: 10px;
+    background: #faf6ec; cursor: pointer; }
+  #glowBar .gl-btn:active { background: #efe6d2; }
+  #glowBar textarea { width: 100%; box-sizing: border-box; font-size: 14px; padding: 8px;
+    border: 1px solid #c9bfa8; border-radius: 8px; background: #fff; }
+  #glowBar .gl-ans { background: #fff; border: 1px solid #e0d5bd; border-radius: 8px; padding: 10px;
+    font-size: 14px; line-height: 1.7; max-height: 30vh; overflow-y: auto; white-space: pre-wrap; }
+  #glowBar .gl-row { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
 </style>
 </head>
 <body>
@@ -617,6 +633,12 @@ window.addEventListener('load', function(){
   </div>
 </div>
 
+<!-- v0.5.0 点亮三级菜单浮条：点亮文字→第1层选项→第2层三套提示词→第3层编辑发送 -->
+<div id="glowBar">
+  <div class="gl-title" id="glowTitle"></div>
+  <div id="glowBody"></div>
+</div>
+
 <div id="toast"></div>
 
 <script>__bc('C主脚本前');</script>
@@ -625,7 +647,7 @@ window.addEventListener('load', function(){
 (function(){
 __bc('D脚本启动');
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.4.0'; /* v0.4.0 鱼骨头化：ⓘ说明默认收起 + 设置/关于收进「🛠 设置与工具」抽屉（hx_xiaotao_tool_open），照管家v0.5.0样板；纯界面，功能逻辑未动 */ /* v0.3.32 账本桥进全家hx_aibill（主界面💰卡片汇总） */ /* v0.3.31 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */
+var SW_VERSION = '0.5.0'; /* v0.5.0 点亮三级菜单：点亮切块/笔记正文→底部浮条5选项（变笔记/问AI/做新PPT/出题/自定义）→每选项3套提示词→可编辑发送；提示词存xt_glow_v1可随时改；做PPT走ppt_inbox邮路寄PPT工坊；变笔记可一键存笔记（洪老师2026-09-06晚拍板，提示词AI先编三套待调） */ /* v0.4.1 排版修复：资料库列表「自动切失败」报错条从右栏搬出单独占一行，书名不再被挤成一字一行（洪老师真机截图报案）；纯排版，切片逻辑未动 */ /* v0.4.0 鱼骨头化：ⓘ说明默认收起 + 设置/关于收进「🛠 设置与工具」抽屉（hx_xiaotao_tool_open），照管家v0.5.0样板；纯界面，功能逻辑未动 */ /* v0.3.32 账本桥进全家hx_aibill（主界面💰卡片汇总） */ /* v0.3.31 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
@@ -1945,9 +1967,9 @@ function renderLib(){
     row.className = 'lib-row';
     row.innerHTML = '<span class="gtag">' + (GRADES[x.grade] || '📘') + '</span>' +
       '<div class="t">' + esc(x.title) + (x.done ? '' : ' <span style="color:#b08a4a;">（切片中/未完）</span>') + '</div>' +
-      '<div class="d">' + (x.chunks || []).length + '块' +
-      /* v0.3.29 黄牌带原因：一眼分清是网络/AI/额度问题，不用点进去猜 */
-      (x.autoFail ? '<br><span style="color:#b3261e;">⚠️自动切失败：' + esc(String(x.autoFail).slice(0, 40)) + '（点详情手动重试）</span>' : '') + '</div>';
+      '<div class="d">' + (x.chunks || []).length + '块</div>' +
+      /* v0.4.1 排版修复：报错条单独一行（v0.3.29 黄牌带原因内容不变） */
+      (x.autoFail ? '<div class="lib-err">⚠️自动切失败：' + esc(String(x.autoFail).slice(0, 40)) + '（点详情手动重试）</div>' : '');
     row.querySelector('.t').addEventListener('click', function(){ openLib(x.id); });
     box.appendChild(row);
   });
@@ -3147,6 +3169,196 @@ window.__xt = { ensureJDB: ensureJDB, refTag: refTag, refSplitLocal: refSplitLoc
   bookExportFiles: bookExportFiles, bookChapKey: bookChapKey, idbGet: idbGet, idbPut: idbPut,
   jdbSet: function(cn, en){ JDB_CN = cn; JDB_EN = en; _jdbEnLow = null; } };
 
+/* ══════════ v0.5.0 点亮三级菜单（洪老师最重视项·2026-09-06晚拍板）══════════
+   点亮切块/笔记正文一段文字 → 底部浮条第1层（5个选项）→ 第2层（该选项3套提示词）
+   → 第3层（提示词全文可编辑：改本次/存为默认）→ 发送AI。
+   提示词由AI先编三套（医学ICU口味），洪老师慢慢调；存 localStorage xt_glow_v1。
+   底部浮条避开手机系统长按菜单的覆盖；选中文字存 glowSel，点按钮丢选中也不怕。 */
+var GLOW_LS = 'xt_glow_v1';
+function glowDefault(){
+  return { opts: [
+    { id:'note', icon:'📝', name:'变笔记', prompts:[
+      { name:'通俗笔记', text:'把下面这段医学原文整理成一篇学习笔记：先一句话说清核心，再分条列要点（有骨头没有肉），专业术语保留但用大白话解释，结尾给一个临床记忆钩子。用Markdown格式。' },
+      { name:'考试提纲', text:'把下面这段整理成考试复习提纲：分级标题+要点列表，标注常考点和易错点，结尾出3个自测问题并附答案。' },
+      { name:'速记卡片', text:'把下面这段压缩成一张速记卡片：不超过10行，每行一个要点，只留数字、标准、阈值、推荐级别，能直接背下来那种。' } ] },
+    { id:'ask', icon:'🤖', name:'问AI这段', prompts:[
+      { name:'讲明白', text:'我是一名ICU医生。请用大白话讲清下面这段：它说了什么、为什么重要、临床上怎么用，最后指出可能的争议点。' },
+      { name:'挑毛病', text:'请批判性审视下面这段内容：证据等级够吗？有没有过时或与最新指南冲突的地方？适用边界在哪？' },
+      { name:'联系实际', text:'结合下面这段内容，给我3个ICU床旁的具体应用场景，每个场景说明怎么做、注意什么。' } ] },
+    { id:'ppt', icon:'📊', name:'做新PPT', prompts:[
+      { name:'学术讲座', text:'把下面这段内容做成PPT大纲，用Markdown格式（# 封面标题、## 每页标题、- 要点、| 表格 |、> 金句）。风格严肃学术，每页3~5个要点，总共8~12页。' },
+      { name:'科室内训', text:'把下面这段做成科室内训PPT大纲，用Markdown格式（# 封面、## 分页、- 要点）。风格大白话接地气，多举临床例子，每页要点不超过5条，8~10页。' },
+      { name:'教学查房', text:'把下面这段做成教学查房PPT大纲，用Markdown格式（# 封面、## 分页、- 要点）。按"病例引入→知识点→讨论问题→总结"结构，最后留3个讨论题。' } ] },
+    { id:'quiz', icon:'📖', name:'出道题', prompts:[
+      { name:'选择题', text:'根据下面这段出5道单选题（每题4个选项），附答案和一句话解析，难度面向ICU主治医生。' },
+      { name:'简答题', text:'根据下面这段出3道简答题，附参考答案要点。' },
+      { name:'病例题', text:'根据下面这段编1个病例分析题（病史+提问+参考答案），病例要贴近ICU真实场景。' } ] },
+    { id:'custom', icon:'✏️', name:'自定义', prompts:[
+      { name:'自定义1', text:'' }, { name:'自定义2', text:'' }, { name:'自定义3', text:'' } ] }
+  ] };
+}
+function glowCfg(){
+  try{
+    var v = JSON.parse(localStorage.getItem(GLOW_LS) || 'null');
+    if(v && Array.isArray(v.opts) && v.opts.length) return v;
+  }catch(e){}
+  return glowDefault();
+}
+function glowSaveCfg(c){ try{ localStorage.setItem(GLOW_LS, JSON.stringify(c)); }catch(e){} }
+var glowSel = '', glowOpt = null, glowSetIdx = -1, glowLevel = 0;
+function glowEl(tag, cls, txt){ var d = document.createElement(tag); if(cls) d.className = cls; if(txt != null) d.textContent = txt; return d; }
+function glowHide(){ glowLevel = 0; $('glowBar').style.display = 'none'; }
+function glowRender(){
+  var bar = $('glowBar'), body = $('glowBody'), title = $('glowTitle');
+  body.innerHTML = '';
+  bar.style.display = 'block';
+  if(glowLevel === 1){
+    title.textContent = '✨ 已点亮 ' + glowSel.length + ' 字：「' + glowSel.slice(0, 24) + (glowSel.length > 24 ? '…' : '') + '」';
+    var row = glowEl('div', 'gl-opts');
+    glowCfg().opts.forEach(function(o){
+      var b = glowEl('button', 'gl-btn', o.icon + ' ' + o.name);
+      b.addEventListener('click', function(){ glowOpt = o; glowLevel = 2; glowRender(); });
+      row.appendChild(b);
+    });
+    var x = glowEl('button', 'gl-btn', '✕ 收起');
+    x.addEventListener('click', glowHide);
+    row.appendChild(x);
+    body.appendChild(row);
+  }else if(glowLevel === 2){
+    title.textContent = glowOpt.icon + ' ' + glowOpt.name + ' —— 选一套提示词：';
+    var row2 = glowEl('div', 'gl-opts');
+    glowOpt.prompts.forEach(function(p, i){
+      var b = glowEl('button', 'gl-btn', (i + 1) + '️⃣ ' + p.name);
+      b.addEventListener('click', function(){ glowSetIdx = i; glowLevel = 3; glowRender(); });
+      row2.appendChild(b);
+    });
+    var bk = glowEl('button', 'gl-btn', '← 返回');
+    bk.addEventListener('click', function(){ glowLevel = 1; glowRender(); });
+    row2.appendChild(bk);
+    body.appendChild(row2);
+  }else if(glowLevel === 3){
+    title.textContent = glowOpt.icon + ' ' + glowOpt.name + ' · 第' + (glowSetIdx + 1) + '套 —— 提示词可改：';
+    var ta = glowEl('textarea'); ta.rows = 5; ta.id = 'glowTa';
+    ta.value = glowOpt.prompts[glowSetIdx].text || '';
+    ta.placeholder = '在这里写/改提示词，改完可直接发送或存为默认';
+    body.appendChild(ta);
+    var row3 = glowEl('div', 'gl-row');
+    var go = glowEl('button', 'gl-btn', '🚀 发送给AI');
+    go.addEventListener('click', function(){ glowSend(ta.value); });
+    var sv = glowEl('button', 'gl-btn', '💾 存为默认');
+    sv.addEventListener('click', function(){
+      var c = glowCfg();
+      c.opts.forEach(function(o){ if(o.id === glowOpt.id) o.prompts[glowSetIdx].text = ta.value; });
+      glowSaveCfg(c); glowOpt.prompts[glowSetIdx].text = ta.value;
+      toast('💾 已存为默认', 2000);
+    });
+    var bk3 = glowEl('button', 'gl-btn', '← 返回');
+    bk3.addEventListener('click', function(){ glowLevel = 2; glowRender(); });
+    row3.appendChild(go); row3.appendChild(sv); row3.appendChild(bk3);
+    body.appendChild(row3);
+  }
+}
+function glowSend(promptText){
+  if(!promptText.trim()){ toast('提示词是空的，先写一句', 2500); return; }
+  var body = $('glowBody');
+  body.innerHTML = '';
+  $('glowTitle').textContent = '⏳ AI干活中…（' + glowOpt.name + '）';
+  var wait = glowEl('div', 'gl-ans', '已点亮 ' + glowSel.length + ' 字发送中，请稍候…');
+  body.appendChild(wait);
+  callAI('你是医学学习助手，回答用大白话、分条清楚。', promptText + '\n\n【点亮的原文】\n' + glowSel, 4000, 60000, '点亮')
+    .then(function(txt){ glowResult(String(txt || '')); })
+    .catch(function(e){
+      $('glowTitle').textContent = '❌ AI报错';
+      wait.textContent = '失败原因：' + (e && e.message ? e.message : e) + '\n\n点下方按钮返回重试。';
+      var row = glowEl('div', 'gl-row');
+      var bk = glowEl('button', 'gl-btn', '← 返回改提示词');
+      bk.addEventListener('click', function(){ glowLevel = 3; glowRender(); });
+      var xx = glowEl('button', 'gl-btn', '✕ 关闭');
+      xx.addEventListener('click', glowHide);
+      row.appendChild(bk); row.appendChild(xx);
+      body.appendChild(row);
+    });
+}
+function glowResult(txt){
+  glowLevel = 4;
+  var body = $('glowBody');
+  body.innerHTML = '';
+  $('glowTitle').textContent = '✅ ' + glowOpt.icon + ' ' + glowOpt.name + ' · AI回信（可全选复制）';
+  var ans = glowEl('div', 'gl-ans', txt);
+  body.appendChild(ans);
+  var row = glowEl('div', 'gl-row');
+  var cp = glowEl('button', 'gl-btn', '📋 复制结果');
+  cp.addEventListener('click', function(){
+    function ok(){ toast('📋 已复制', 2000); }
+    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(ok, function(){ toast('复制失败，请长按结果手动复制', 2500); }); }
+    else{
+      var ta = document.createElement('textarea'); ta.value = txt; ta.style.cssText = 'position:fixed;opacity:0';
+      document.body.appendChild(ta); ta.select();
+      try{ document.execCommand('copy'); ok(); }catch(e){ toast('复制失败，请长按结果手动复制', 2500); }
+      document.body.removeChild(ta);
+    }
+  });
+  row.appendChild(cp);
+  if(glowOpt.id === 'note'){
+    var bn = glowEl('button', 'gl-btn', '📝 存成笔记');
+    bn.addEventListener('click', function(){
+      var t = '点亮笔记·' + glowSel.slice(0, 12).replace(/\n/g, ' ');
+      var n = makeNote(t, txt + '\n\n> 📖 点亮自：' + glowSel.slice(0, 80) + (glowSel.length > 80 ? '…' : ''));
+      if(n){ toast('📝 已存进我的笔记', 2500); }
+    });
+    row.appendChild(bn);
+  }
+  if(glowOpt.id === 'ppt'){
+    var bp = glowEl('button', 'gl-btn', '📤 送到PPT工坊');
+    bp.addEventListener('click', function(){
+      if(txt.indexOf('##') < 0){ toast('大纲里要有「##」分页才认，可先让AI按格式重出', 3000); return; }
+      var r = glowPptSend(txt);
+      toast(r === 'sent' ? '📤 已发送——打开PPT工坊自动收下' : '📤 已排队第' + r.split(':')[1] + '位', 3500);
+    });
+    row.appendChild(bp);
+  }
+  var re = glowEl('button', 'gl-btn', '✏️ 再改一次');
+  re.addEventListener('click', function(){ glowLevel = 3; glowRender(); });
+  var xx = glowEl('button', 'gl-btn', '✕ 关闭');
+  xx.addEventListener('click', glowHide);
+  row.appendChild(re); row.appendChild(xx);
+  body.appendChild(row);
+}
+/* 寄PPT工坊：ppt_inbox 邮路精简版（照学习笔记pptSend的协议，壳文件夹镜像备份二期再补） */
+function glowPptSend(text){
+  var obj = { title: '点亮·' + glowSel.slice(0, 18).replace(/\n/g, ' '), text: text, from: '小涛笔记点亮', t: Date.now() };
+  if(localStorage.getItem('ppt_busy') || localStorage.getItem('ppt_inbox')){
+    var q = [];
+    try{ q = JSON.parse(localStorage.getItem('ppt_inbox_q') || '[]') || []; }catch(e){ q = []; }
+    q.push(obj);
+    localStorage.setItem('ppt_inbox_q', JSON.stringify(q));
+    return 'queued:' + q.length;
+  }
+  localStorage.setItem('ppt_inbox', JSON.stringify(obj));
+  return 'sent';
+}
+/* 点亮监听：切块正文(.chunk-body)/笔记正文(.md-body)/章节正文 里选中文字就亮浮条；
+   进入第2层后选中丢了也不收摊（glowLevel>1时忽略空选中） */
+document.addEventListener('selectionchange', function(){
+  var s = window.getSelection ? window.getSelection() : null;
+  var txt = s ? String(s.toString()).trim() : '';
+  if(!txt){
+    /* 测试抓到：点浮条按钮会先清空选中（selectionchange比click先到），
+       立刻收摊会连按钮一起拆掉、点击丢失。延迟300ms再收，click已把level升到2就不收。 */
+    setTimeout(function(){ if(glowLevel <= 1) glowHide(); }, 300);
+    return;
+  }
+  var node = s.anchorNode;
+  var el = node && node.nodeType === 1 ? node : (node ? node.parentNode : null);
+  var inText = false;
+  while(el && el !== document.body){
+    if(el.classList && (el.classList.contains('chunk-body') || el.classList.contains('md-body') || el.classList.contains('cs-open'))){ inText = true; break; }
+    el = el.parentNode;
+  }
+  if(!inText) return;
+  glowSel = txt;
+  if(glowLevel === 0 || glowLevel === 1){ glowLevel = 1; glowRender(); }
+});
 })();
 </script>
 </body>
