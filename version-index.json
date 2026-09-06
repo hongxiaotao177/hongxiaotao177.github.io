@@ -1,1 +1,1 @@
-{"version": "1.4.7", "dl": "index.html", "note": "全家更新开箱验身+没查成点名"}
+{"version": "1.4.7", "dl": "index.html", "note": "同步体检卡代码落地（此前仅注释）：开门12秒静默对账+手动体检，本地listFiles.t vs 坚果云davList.mtime，✅/⏳/❌只报告不改数据，效率统计存hx_sync_check_v1"}
