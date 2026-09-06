@@ -2,6 +2,14 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.4.8 2026-09-05 备份自理班（纯加法）：
+      ①版本自检每次开APP只查一次：自检器官用 sessionStorage(hx_ver_checked) 记档，
+        同一会话第二次加载主界面跳过自动查版本；手动触发不受影响；
+      ②新增「📤 备份到坚果云」卡片（在🔄同步体检卡片旁边）：一键把授权文件夹里的
+        .json/.bak 数据文件逐个 davUp 到坚果云「/学习套装备份/」（.html 网页文件不传），
+        过程显示"第几件/共几件"，结束报告 ✅成功X件 ❌失败Y件+失败文件名+原因(err原文)；
+        没壳/没授权文件夹/没填坚果云账号时给引导语，不报错。
+      ③手动检查更新按钮入编（点=清标记+刷新重查）。
     v1.4.7 2026-09-05 🔄同步体检卡片入编（洪老师拍板：心跳对账、只报告不自动改数据、不轮询）：
       开门12秒后静默对账一次（全好不吭声，异常才亮黄条），点开卡片手动对账；
       逐文件比「授权文件夹修改时间（listFiles.t）vs 坚果云云端修改时间（davList.mtime）」，
@@ -208,6 +216,19 @@
     <div style="margin-top:12px;"><button class="tag" style="padding:10px 14px; border:none; cursor:pointer;" id="scRun">🔄 手动对账一次</button></div>
   </div>
 
+  <!-- v1.4.8 备份自理班：📤备份到坚果云卡片（纯新增，不动上面同步体检卡一行） -->
+  <div class="card" id="bkDavCard">
+    <h2>📤 备份到坚果云</h2>
+    <div class="desc" id="bkDavLine">一键把授权文件夹里的 .json/.bak 数据文件全部传到坚果云「/学习套装备份/」存档（.html 网页文件不传）。</div>
+    <div class="meta"><span class="tag">手动全量备份</span><span class="tag">只传数据文件</span></div>
+    <div style="margin-top:12px;"><button class="tag" style="padding:10px 14px; border:none; cursor:pointer;" id="bkDavBtn">📤 开始备份</button></div>
+    <!-- v1.4.8 备份自理班：手动检查更新按钮（点=清标记+刷新重查，自检IIFE自然重跑） -->
+    <div style="margin-top:10px;">
+      <button class="tag" style="padding:10px 14px; border:none; cursor:pointer;" onclick="try{sessionStorage.removeItem('hx_ver_checked');}catch(e){};location.reload();">🔍 检查新版本</button>
+      <div class="desc" style="margin-top:6px; font-size:12px;">每次开门自动查一次；等不及就点我。</div>
+    </div>
+  </div>
+
   <a class="card" id="apkCard" href="https://github.com/hongxiaotao177/xuexi-backup/releases/download/shell-v1.0.5/LearnShell-v1.0.5.apk">
     <h2>📱 学习套装·壳APP（推荐）</h2>
     <div class="desc">把整套软件装进一个APP（成员加了自动跟着装）：文件夹授权一次永久有效；打开主界面就自动更新，不用管。点我下载安装包（华为提示"未知来源"点允许即可）。iPad不适用。</div>
@@ -307,6 +328,9 @@ function hxRawGet(name){
 (function(){
   if(!window.LearnShell) return;  /* 浏览器/iPad：网页换不了自己，只做静态菜单 */
   var apk=document.getElementById("apkCard"); if(apk) apk.style.display="none";
+  /* v1.4.8 备份自理班：版本自检每次开APP只查一次——同一会话第二次加载主界面跳过自动查版本；
+     手动点「🔍 检查新版本」按钮不受此限（按钮先清标记再刷新重查）。只拦下面查版本，不拦上面藏卡片。 */
+  try{ if(sessionStorage.getItem("hx_ver_checked")==="1") return; sessionStorage.setItem("hx_ver_checked","1"); }catch(e){}
   var c=ghCfg();
   /* v1.3.7：没填Token也要更新（走公开直链），不再静默跳过 */
   var hasApi = !!(c.user && c.tok && c.repo);
@@ -702,6 +726,61 @@ document.getElementById('scCard').addEventListener('click', function(){
 document.getElementById('scRun').addEventListener('click', function(){ scCheck(true); });
 /* 开门12秒后静默对账一次（不抢更新/同步队列） */
 setTimeout(function(){ try{ scCheck(false); }catch(e){} }, 12000);
+/* ==================== v1.4.8 备份自理班：📤备份到坚果云（纯新增） ====================
+   点按钮→listFiles() 取授权文件夹里的 .json/.bak 文件（.html 不传）→逐个 davUp 到
+   坚果云「/学习套装备份/」；过程报"第几件/共几件"，结束报 ✅成功X件 ❌失败Y件
+   +失败文件名+失败原因(err原文)。无壳/未授权/没填坚果云账号 → 给引导语，不报错。 */
+function bkDavGo(){
+  var line=document.getElementById('bkDavLine');
+  if(!line) return;
+  if(!window.LearnShell || typeof window.LearnShell.listFiles!=='function' || typeof window.LearnShell.davUp!=='function'){
+    line.textContent='ℹ️ 这个按钮要在「学习套装·壳APP」里用：网页浏览器碰不到您的文件夹，请装壳APP打开本页再来备份。';
+    return;
+  }
+  if(!(window.LearnShell.folderSet && window.LearnShell.folderSet())){
+    line.textContent='ℹ️ 还没授权文件夹：请先在壳APP里授权一个文件夹（壳会问您选哪个），授权好了再回来点我。';
+    return;
+  }
+  var u='', p='';
+  try{ u=localStorage.getItem('hx_dav_user')||''; p=localStorage.getItem('hx_dav_pass')||''; }catch(e){}
+  if(!u || !p){
+    line.textContent='ℹ️ 还没填坚果云账号：请到「文件桥」里填坚果云账号和应用密码，填好再回来点我。';
+    return;
+  }
+  var files=[];
+  try{ files=JSON.parse(window.LearnShell.listFiles()||'[]'); }catch(e){ files=[]; }
+  var list=[];
+  for(var i=0;i<files.length;i++){
+    var f=files[i];
+    if(f && f.name && /\.(json|bak)$/i.test(f.name) && !/\.html?$/i.test(f.name)) list.push(f);
+  }
+  if(!list.length){ line.textContent='ℹ️ 文件夹里没有 .json/.bak 数据文件，没什么可传的。'; return; }
+  var okN=0, fails=[], idx=0, total=list.length;
+  var btn=document.getElementById('bkDavBtn'); if(btn) btn.disabled=true;
+  function bkStep(){
+    if(idx>=total){
+      var msg='📤 备份完成：✅成功'+okN+'件';
+      if(fails.length) msg+=' ❌失败'+fails.length+'件（'+fails.join('；')+'）';
+      line.textContent=msg;
+      if(btn) btn.disabled=false;
+      return;
+    }
+    var f=list[idx];
+    line.textContent='📤 正在备份到坚果云… '+(idx+1)+'/'+total+'（'+f.name+'）';
+    setTimeout(function(){ /* 让进度先画到屏上再传 */
+      idx++;
+      var r='';
+      try{ r=window.LearnShell.davUp(u,p,f.name,'/学习套装备份/'); }catch(e){ r='err:'+String((e&&e.message)||e); }
+      if(/ok/i.test(String(r||''))) okN++;
+      else fails.push(f.name+'：'+String(r||'无返回'));
+      bkStep();
+    },30);
+  }
+  bkStep();
+}
+document.getElementById('bkDavBtn').addEventListener('click', function(){ try{ bkDavGo(); }catch(e){
+  var line=document.getElementById('bkDavLine'); if(line) line.textContent='⚠️ 备份没跑成：'+String((e&&e.message)||e);
+} });
 </script>
 
 </body>
