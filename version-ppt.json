@@ -1,1 +1,1 @@
-{"version": "0.12.0", "dl": "software-ppt.html", "note": "信箱搬家：ppt_inbox从localStorage搬壳授权文件夹ppt_inbox.json为正本（base64），状态一变就写，写前3份bak轮转，localStorage当缓存兜底，无壳浏览器照旧"}
+{"version": "0.13.0", "dl": "software-ppt.html", "note": "备份自理班：信箱三写（存盘顺手防抖30秒传坚果云/学习套装备份/）+开门时云端较新自动拉回，双向闭环；断网无账号自动跳过不碍事"}
