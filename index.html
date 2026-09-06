@@ -2,6 +2,10 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.6.0 2026-09-06 鱼骨头化第二刀（洪老师三点指示）：
+      ①各软件介绍默认收起，软件名后加「ⓘ 说明」按钮，点开看/再点收起（默认收，不记状态）；
+      ②一二级菜单视觉区分：一级「🛠管理工具」卡加粗左框+深底，抽屉内二级卡缩进+浅底+左竖线；
+      ③AI花钱花费行/同步体检状态行是动态数据，照常显示不动。功能代码零改动。
     v1.5.0 2026-09-06 版面鱼骨头化（铁律#39第一刀，洪老师已过目"藏/留清单"）：
       首页只留7张日常卡（大管家/血气/小涛笔记/学习笔记双链/习题/文件桥/PPT工坊）+1张「🛠管理工具」折叠卡；
       AI花钱/仓库文件柜/同步体检/备份到坚果云(含检查新版本)/壳APP下载 5项原样挪进 admZone 抽屉
@@ -124,6 +128,14 @@
     border-radius:12px; padding:12px 16px; font-size:13px; line-height:1.7;
     margin-bottom:8px; white-space:pre-wrap;
   }
+
+  /* v1.6.0 鱼骨头化第二刀：介绍收起(ⓘ说明按钮) + 一二级菜单视觉区分 */
+  .infoBtn { font-size:12px; color:#8a7a63; border:1px solid #e0d6c4; border-radius:8px;
+    padding:2px 9px; margin-left:8px; font-weight:400; background:#faf7f1; vertical-align:2px; }
+  .intro { display:none; }
+  #admCard { border-left:5px solid #b09a76; background:#faf6ef; }
+  #admZone { border-left:3px solid #e6ddcd; margin-left:8px; padding-left:12px; margin-bottom:14px; }
+  #admZone .card { background:#fdfbf8; box-shadow:none; }
 </style>
 </head>
 <body>
@@ -138,48 +150,48 @@
   <div id="updLine"></div>
 
   <a class="card" href="病人大管家.html">
-    <h2>🏠 病人大管家</h2>
-    <div class="desc">全家资料的大管家：病人的血气/病历按人归堆，笔记习题由AI做"名片"（80字概括+关键词）——您说一句"农药中毒"，它翻名片几秒钟把相关资料挑出来。问它问题，只用您自己的资料回答，一字不外加。</div>
+    <h2>🏠 病人大管家<span class="infoBtn">ⓘ 说明</span></h2>
+    <div class="desc intro">全家资料的大管家：病人的血气/病历按人归堆，笔记习题由AI做"名片"（80字概括+关键词）——您说一句"农药中毒"，它翻名片几秒钟把相关资料挑出来。问它问题，只用您自己的资料回答，一字不外加。</div>
     <div class="meta"><span class="tag">全家总管</span><span class="tag" id="tagGuanjia">v0.1.0</span></div>
   </a>
 
   <div class="section-title">临床工具</div>
 
   <a class="card" href="血气分析.html">
-    <h2>🩸 血气分析解读助手</h2>
-    <div class="desc">拍摄血气报告单，自动裁切脱敏，AI按六步法解读；拍呼吸机屏幕，AI读数+看波形+按机型档案教您按哪个键做哪种检查。手机打开即用。</div>
+    <h2>🩸 血气分析解读助手<span class="infoBtn">ⓘ 说明</span></h2>
+    <div class="desc intro">拍摄血气报告单，自动裁切脱敏，AI按六步法解读；拍呼吸机屏幕，AI读数+看波形+按机型档案教您按哪个键做哪种检查。手机打开即用。</div>
     <div class="meta"><span class="tag">网页工具</span><span class="tag" id="tagXueqi">v0.10.2</span></div>
   </a>
 
   <div class="section-title">学习记录</div>
 
   <a class="card" href="小涛笔记.html">
-    <h2>📒 小涛笔记 <span style="font-size:12px; color:#b08a4a;">（学习笔记2代·全新）</span></h2>
-    <div class="desc">新一代笔记：AI 是主力——输入主题 AI 备课，写完 AI 改稿；[[]] 双链+反链；所有笔记真身是 Obsidian 标准 Markdown，自动存进仓库 vault/ 区，随时零损失搬进 Obsidian；二期上资料库（文献+书统一管理、云端自动切片），三期上我的书。</div>
+    <h2>📒 小涛笔记 <span style="font-size:12px; color:#b08a4a;">（学习笔记2代·全新）</span><span class="infoBtn">ⓘ 说明</span></h2>
+    <div class="desc intro">新一代笔记：AI 是主力——输入主题 AI 备课，写完 AI 改稿；[[]] 双链+反链；所有笔记真身是 Obsidian 标准 Markdown，自动存进仓库 vault/ 区，随时零损失搬进 Obsidian；二期上资料库（文献+书统一管理、云端自动切片），三期上我的书。</div>
     <div class="meta"><span class="tag">网页工具</span><span class="tag" id="tagXiaotao">v0.1.0</span></div>
   </a>
 
   <a class="card" href="学习笔记.html">
-    <h2>🔗 学习笔记·双链版</h2>
-    <div class="desc">输入主题，AI 生成学习笔记和关联线索；[[]] 双链跳转、词条角标、AI改稿、折叠标签、一键出复习题发送到习题学习、✍️ 自己手写空白笔记（不用AI）、📄 文献库导入PDF自动归类、词条挂文献点读全文、文献AI总结/出题/找相关笔记、💰查额度；笔记自动云备份到您的 GitHub 私有仓库。</div>
+    <h2>🔗 学习笔记·双链版<span class="infoBtn">ⓘ 说明</span></h2>
+    <div class="desc intro">输入主题，AI 生成学习笔记和关联线索；[[]] 双链跳转、词条角标、AI改稿、折叠标签、一键出复习题发送到习题学习、✍️ 自己手写空白笔记（不用AI）、📄 文献库导入PDF自动归类、词条挂文献点读全文、文献AI总结/出题/找相关笔记、💰查额度；笔记自动云备份到您的 GitHub 私有仓库。</div>
     <div class="meta"><span class="tag">网页工具</span><span class="tag" id="tagNotes">v2.6.9</span></div>
   </a>
 
   <a class="card" href="习题学习.html">
-    <h2>📖 习题学习</h2>
-    <div class="desc">碎片时间刷题：导入/粘贴题库，复习时标记陌生/一般/熟悉，导出错题。能自动接收「学习笔记」发来的复习题；题库和学习记录自动云备份。</div>
+    <h2>📖 习题学习<span class="infoBtn">ⓘ 说明</span></h2>
+    <div class="desc intro">碎片时间刷题：导入/粘贴题库，复习时标记陌生/一般/熟悉，导出错题。能自动接收「学习笔记」发来的复习题；题库和学习记录自动云备份。</div>
     <div class="meta"><span class="tag">网页工具</span><span class="tag" id="tagXiti">v1.4.10</span></div>
   </a>
 
   <a class="card" href="文件桥.html">
-    <h2>📂 文件桥</h2>
-    <div class="desc">AI 和手机文件夹之间的桥：授权文件夹后，文件一键传给AI、AI发来的文件自动收进文件夹；还能把整个软件包打包带走（换新手机免填Token）。</div>
+    <h2>📂 文件桥<span class="infoBtn">ⓘ 说明</span></h2>
+    <div class="desc intro">AI 和手机文件夹之间的桥：授权文件夹后，文件一键传给AI、AI发来的文件自动收进文件夹；还能把整个软件包打包带走（换新手机免填Token）。</div>
     <div class="meta"><span class="tag">网页工具</span><span class="tag" id="tagBridge">v1.1.3</span></div>
   </a>
 
   <a class="card" href="PPT工坊.html">
-    <h2>📊 PPT工坊</h2>
-    <div class="desc">把知识变成幻灯片：学习笔记一键发来Markdown大纲（也能自己贴/让AI起草），改完大纲一键生成HTML版PPT——对比表格、大数字、金句、柱/饼/折线图表都认识；哪页不满意就单独让AI重做哪页；横屏放映、可导出单个HTML发给别人。大纲和作品自动云备份。</div>
+    <h2>📊 PPT工坊<span class="infoBtn">ⓘ 说明</span></h2>
+    <div class="desc intro">把知识变成幻灯片：学习笔记一键发来Markdown大纲（也能自己贴/让AI起草），改完大纲一键生成HTML版PPT——对比表格、大数字、金句、柱/饼/折线图表都认识；哪页不满意就单独让AI重做哪页；横屏放映、可导出单个HTML发给别人。大纲和作品自动云备份。</div>
     <div class="meta"><span class="tag">网页工具</span><span class="tag" id="tagPpt">v0.2.0</span></div>
   </a>
 
@@ -203,8 +215,8 @@
   <div class="section-title">文件柜</div>
 
   <a class="card" id="cabCard" href="javascript:void(0)">
-    <h2>🗄️ 仓库文件柜</h2>
-    <div class="desc">坚果云文件夹和仓库 shared 区的"对账窗口"：列出仓库里的共享文件，点哪个取哪个（iPad 从这里拿文件）；安卓壳里自动同步两边（新盖旧、只增不删、PDF不进仓库）。</div>
+    <h2>🗄️ 仓库文件柜<span class="infoBtn">ⓘ 说明</span></h2>
+    <div class="desc intro">坚果云文件夹和仓库 shared 区的"对账窗口"：列出仓库里的共享文件，点哪个取哪个（iPad 从这里拿文件）；安卓壳里自动同步两边（新盖旧、只增不删、PDF不进仓库）。</div>
     <div class="meta"><span class="tag">网页工具</span><span class="tag" id="tagCab">点我打开</span></div>
   </a>
   <div class="card" id="cabPanel" style="display:none;">
@@ -230,8 +242,8 @@
 
   <!-- v1.4.8 备份自理班：📤备份到坚果云卡片（纯新增，不动上面同步体检卡一行） -->
   <div class="card" id="bkDavCard">
-    <h2>📤 备份到坚果云</h2>
-    <div class="desc" id="bkDavLine">一键把授权文件夹里的 .json/.bak 数据文件全部传到坚果云「/学习套装备份/」存档（.html 网页文件不传）。</div>
+    <h2>📤 备份到坚果云<span class="infoBtn">ⓘ 说明</span></h2>
+    <div class="desc intro" id="bkDavLine">一键把授权文件夹里的 .json/.bak 数据文件全部传到坚果云「/学习套装备份/」存档（.html 网页文件不传）。</div>
     <div class="meta"><span class="tag">手动全量备份</span><span class="tag">只传数据文件</span></div>
     <div style="margin-top:12px;"><button class="tag" style="padding:10px 14px; border:none; cursor:pointer;" id="bkDavBtn">📤 开始备份</button></div>
     <!-- v1.4.8 备份自理班：手动检查更新按钮（点=清标记+刷新重查，自检IIFE自然重跑） -->
@@ -242,8 +254,8 @@
   </div>
 
   <a class="card" id="apkCard" href="https://github.com/hongxiaotao177/xuexi-backup/releases/download/shell-v1.0.5/LearnShell-v1.0.5.apk">
-    <h2>📱 学习套装·壳APP（推荐）</h2>
-    <div class="desc">把整套软件装进一个APP（成员加了自动跟着装）：文件夹授权一次永久有效；打开主界面就自动更新，不用管。点我下载安装包（华为提示"未知来源"点允许即可）。iPad不适用。</div>
+    <h2>📱 学习套装·壳APP（推荐）<span class="infoBtn">ⓘ 说明</span></h2>
+    <div class="desc intro">把整套软件装进一个APP（成员加了自动跟着装）：文件夹授权一次永久有效；打开主界面就自动更新，不用管。点我下载安装包（华为提示"未知来源"点允许即可）。iPad不适用。</div>
     <div class="meta"><span class="tag">APP安装包</span><span class="tag">v1.0.5</span></div>
   </a>
 
@@ -611,6 +623,20 @@ try{
   function admSet(open){ _admZ.style.display=open?"block":"none"; _admA.textContent=open?"▾ 收起":"▸ 点开"; try{localStorage.setItem("hx_adm_open",open?"1":"0");}catch(e){} }
   document.getElementById("admCard").onclick=function(){ admSet(_admZ.style.display==="none"); };
   admSet(localStorage.getItem("hx_adm_open")==="1");
+}catch(e){}
+/* v1.6.0 说明按钮：点 ⓘ 展开/收起本卡介绍（阻止跳页，默认收起） */
+try{
+  var _btns=document.querySelectorAll('.infoBtn');
+  for(var _i=0;_i<_btns.length;_i++){ (function(btn){
+    btn.addEventListener('click', function(e){
+      e.preventDefault(); e.stopPropagation();
+      var card=btn; while(card && !(card.classList && card.classList.contains('card'))) card=card.parentElement;
+      var d=card? card.querySelector('.intro') : null; if(!d) return;
+      var open = d.style.display!=='block';
+      d.style.display = open?'block':'none';
+      btn.textContent = open?'ⓘ 收起':'ⓘ 说明';
+    });
+  })(_btns[_i]); }
 }catch(e){}
 document.getElementById("billCard").onclick=function(){ var p=document.getElementById("billPanel"); p.style.display=p.style.display==="none"?"block":"none"; billRender(); };
 document.getElementById("billCap").value=localStorage.getItem("hx_bill_cap")||50;
