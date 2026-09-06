@@ -441,6 +441,15 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 - 间隔重复（熟悉的题隔几天再现）
 - 老.doc支持、选择题(A/B/C/D)题型
 ================================================================================
+    v1.10.0 2026-09-07 鱼骨头化界面改造（照抄大管家v0.5.0完工样板，纯界面，功能逻辑零改动）：
+    ①首页最底下新增「🛠 设置与工具」折叠抽屉：一级卡5px粗左框+深底 rgb(250,246,239)，
+      抽屉内二级卡缩进+浅底+3px左竖线+无阴影；开合记 localStorage hx_xiti_tool_open，
+      刷新保持；箭头「▸ 点开/▾ 收起」。
+    ②藏进抽屉：☁️ 云备份卡（ghCard，原<details>折叠机制复用，DOM原样搬家ID未动）、
+      新增「🤖 AI设置」卡（按钮走原 openAiKey() 弹窗，原来首页没有AI设置入口，借抽屉补上）。
+    ③留首页：模式三标签、导入/粘贴导入、复习勾选/反复学/丢出题/合并/导出错题、
+      习题→PPT/AI综合备课、题库列表（高频功能一个不动）。
+    ④版本号 1.9.1→1.10.0，与 version-xiti.json 同步；hdVer静态文字一并改。
     v1.9.0 2026-09-05 hxStore仓管员接入（全家推广第3家，照抄大管家v0.4.13/PPT v0.9.2同款）：
     ①习题库+做题进度（xitixuexi_v01）每次存盘同步写壳授权文件夹 hxdata_xitixuexi_v01.json；
     ②开门自动对齐（文件夹说了算/本地有就自动搬进文件夹）；③左下角🗄️按钮选文件夹；
@@ -655,13 +664,17 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
   .shift-dir { display: flex; gap: 6px; margin-bottom: 10px; }
   .shift-dir button { flex: 1; padding: 8px 0; font-size: 14px; }
   .prompt-box { background: #f0f4f8; border-radius: 8px; padding: 12px; font-size: 13px; color: #333; white-space: pre-wrap; line-height: 1.6; max-height: 300px; overflow-y: auto; }
+  /* v1.10.0 鱼骨头化（与大管家v0.5.0同款）：「🛠 设置与工具」抽屉——一级卡5px粗左框+深底，抽屉内二级卡缩进+浅底+3px左竖线+无阴影 */
+  #toolCard { border-left: 5px solid #b09a76; background: #faf6ef; cursor: pointer; }
+  #toolZone { border-left: 3px solid #e6ddcd; margin-left: 8px; padding-left: 12px; display: none; }
+  #toolZone .card { background: #fdfbf8; box-shadow: none; }
 </style>
 </head>
 <body>
 
 <script id="embedded-data" type="application/json">null</script>
 
-<header>📖 习题学习<span class="ver" id="hdVer">v1.9.0</span></header>
+<header>📖 习题学习<span class="ver" id="hdVer">v1.10.0</span></header>
 
 <!-- ========== 首页 ========== -->
 <div id="page-home" class="page">
@@ -690,38 +703,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
       <button class="ghost" onclick="openPptAI()">🤖 AI综合备课</button>
     </div>
     <div id="bank-list"></div>
-
-    <!-- v1.4 云备份卡片（GitHub 私有仓库；与学习笔记同一仓库，文件名 xiti-backup.json） -->
-    <details class="card" id="ghCard" style="margin-top:14px;">
-      <summary style="font-weight:bold;cursor:pointer;padding:4px 0;">☁️ 云备份（GitHub 私有仓库）</summary>
-      <div style="margin-top:10px;">
-        <label style="font-size:13px;color:#888;">GitHub 用户名</label>
-        <input type="text" id="ghUser" placeholder="如 hongxiaotao177" autocomplete="off" style="width:100%;font-size:16px;padding:10px 12px;margin:4px 0 8px;border:1px solid #ccc;border-radius:8px;">
-        <label style="font-size:13px;color:#888;">Token（个人访问令牌，只存本机浏览器，不外传）</label>
-        <input type="password" id="ghTok" placeholder="github_pat_ 开头的令牌" autocomplete="off" style="width:100%;font-size:16px;padding:10px 12px;margin:4px 0 8px;border:1px solid #ccc;border-radius:8px;">
-        <label style="font-size:13px;color:#888;">备份仓库名（私有仓库）</label>
-        <input type="text" id="ghRepo" placeholder="如 xuexi-backup" autocomplete="off" style="width:100%;font-size:16px;padding:10px 12px;margin:4px 0 8px;border:1px solid #ccc;border-radius:8px;">
-        <div class="btn-row">
-          <button onclick="ghSaveCfg()">💾 保存设置</button>
-        </div>
-        <div class="btn-row">
-          <button onclick="ghManualPush()">☁️ 立即备份</button>
-          <button class="ghost" onclick="ghManualPull()">📥 从云端恢复</button>
-        </div>
-        <div class="btn-row">
-          <button class="ghost" onclick="ghSelfCheck(true); locReconcile(true);">🔍 自检：线路 + 新版本</button>
-          <button class="ghost" onclick="ghDownloadAll()">⬇️ 下载整套软件</button>
-        </div>
-        <div class="btn-row">
-          <button class="ghost" onclick="locManualPull()">📂 从文件夹恢复</button>
-        </div>
-        <div id="locStatus" style="font-size:13px;color:#888;line-height:1.8;margin-top:4px;">本地备份：读取中…</div>
-        <div id="recStatus" style="font-size:13px;color:#888;line-height:1.8;margin-top:2px;">对账：还没查过</div>
-        <div id="ghCheck" style="font-size:13px;color:#888;line-height:1.8;margin-top:6px;white-space:pre-line;">自检：还没查过（每次打开软件会自动查一次）</div>
-        <div id="ghStatus" style="font-size:13px;color:#888;margin-top:4px;">上次备份：未备份过</div>
-        <div style="font-size:12px;color:#aaa;margin-top:6px;">「下载整套」= 学习笔记 + 习题学习 + 文件桥 + 血气分析，四个最新版一起下载（浏览器首次可能问"允许下载多个文件"，点允许）。备份含题库+学习记录+AI设置，存您自己的私有仓库。</div>
-      </div>
-    </details>
+    <!-- v1.10.0：云备份卡收进页底「🛠 设置与工具」抽屉（DOM原样搬家，ID/逻辑未动） -->
   </div>
 
   <!-- v1.4 开机自检结果条（固定顶部，可关闭） -->
@@ -783,6 +765,54 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
     </div>
     <div id="bank-list-shift"></div>
   </div>
+
+  <!-- v1.10.0 鱼骨头化：偶尔才用的收进最底下「🛠 设置与工具」抽屉（与大管家v0.5.0同款；开合记 localStorage hx_xiti_tool_open） -->
+  <div class="card" id="toolCard" style="margin-top:14px;">
+    <div style="font-weight:bold;">🛠 设置与工具 <span id="toolArrow" style="font-size:13px;color:#a89f93;font-weight:normal;">▸ 点开</span></div>
+    <div style="font-size:13px;color:#8a8178;margin-top:2px;">云备份、AI设置——偶尔才用的都收在这里。</div>
+  </div>
+  <div id="toolZone">
+
+    <div class="card">
+      <div style="font-weight:bold;margin-bottom:8px;">🤖 AI设置</div>
+      <div class="btn-row" style="margin:0;">
+        <button class="ghost" id="btnAiKeyHome">🔑 API Key / 模型设置</button>
+      </div>
+    </div>
+
+    <!-- v1.4 云备份卡片（GitHub 私有仓库；与学习笔记同一仓库，文件名 xiti-backup.json）；v1.10.0 从普通题库面板原样搬入抽屉，内部一字未改 -->
+    <details class="card" id="ghCard">
+      <summary style="font-weight:bold;cursor:pointer;padding:4px 0;">☁️ 云备份（GitHub 私有仓库）</summary>
+      <div style="margin-top:10px;">
+        <label style="font-size:13px;color:#888;">GitHub 用户名</label>
+        <input type="text" id="ghUser" placeholder="如 hongxiaotao177" autocomplete="off" style="width:100%;font-size:16px;padding:10px 12px;margin:4px 0 8px;border:1px solid #ccc;border-radius:8px;">
+        <label style="font-size:13px;color:#888;">Token（个人访问令牌，只存本机浏览器，不外传）</label>
+        <input type="password" id="ghTok" placeholder="github_pat_ 开头的令牌" autocomplete="off" style="width:100%;font-size:16px;padding:10px 12px;margin:4px 0 8px;border:1px solid #ccc;border-radius:8px;">
+        <label style="font-size:13px;color:#888;">备份仓库名（私有仓库）</label>
+        <input type="text" id="ghRepo" placeholder="如 xuexi-backup" autocomplete="off" style="width:100%;font-size:16px;padding:10px 12px;margin:4px 0 8px;border:1px solid #ccc;border-radius:8px;">
+        <div class="btn-row">
+          <button onclick="ghSaveCfg()">💾 保存设置</button>
+        </div>
+        <div class="btn-row">
+          <button onclick="ghManualPush()">☁️ 立即备份</button>
+          <button class="ghost" onclick="ghManualPull()">📥 从云端恢复</button>
+        </div>
+        <div class="btn-row">
+          <button class="ghost" onclick="ghSelfCheck(true); locReconcile(true);">🔍 自检：线路 + 新版本</button>
+          <button class="ghost" onclick="ghDownloadAll()">⬇️ 下载整套软件</button>
+        </div>
+        <div class="btn-row">
+          <button class="ghost" onclick="locManualPull()">📂 从文件夹恢复</button>
+        </div>
+        <div id="locStatus" style="font-size:13px;color:#888;line-height:1.8;margin-top:4px;">本地备份：读取中…</div>
+        <div id="recStatus" style="font-size:13px;color:#888;line-height:1.8;margin-top:2px;">对账：还没查过</div>
+        <div id="ghCheck" style="font-size:13px;color:#888;line-height:1.8;margin-top:6px;white-space:pre-line;">自检：还没查过（每次打开软件会自动查一次）</div>
+        <div id="ghStatus" style="font-size:13px;color:#888;margin-top:4px;">上次备份：未备份过</div>
+        <div style="font-size:12px;color:#aaa;margin-top:6px;">「下载整套」= 学习笔记 + 习题学习 + 文件桥 + 血气分析，四个最新版一起下载（浏览器首次可能问"允许下载多个文件"，点允许）。备份含题库+学习记录+AI设置，存您自己的私有仓库。</div>
+      </div>
+    </details>
+
+  </div><!-- /toolZone -->
 </div>
 
 <!-- ========== 学习页 ========== -->
@@ -3046,7 +3076,7 @@ function hxStoreAfterPick(){
    完整设计思路与协同协议见学习笔记.html 代码顶部（两边以那份为准）。 */
 var XT_GH_USER = "xt_gh_user", XT_GH_TOK = "xt_gh_tok", XT_GH_REPO = "xt_gh_repo",
     XT_GH_LAST = "xt_gh_last", XT_GH_CHECK = "xt_gh_check";
-var SW_VERSION = "1.9.1"; /* v1.9.1 hxIndexRefresh加免Token备用路（API/没Token自动走公开站直链，治主界面卡旧版静默失败；成功/失败都toast一句） */ /* v1.9.0 hxStore仓管员接入（全家推广第3家）：习题库+做题进度每次存盘同步写壳授权文件夹 hxdata_xitixuexi_v01.json，开门自动对齐（文件说了算/自动搬家），左下角🗄️选/换文件夹；无壳浏览器照旧 */ /* v1.8.9 AI报错带官方原因+400也自动换模型重试（洪医生撞HTTP400：疑moonshot-v1系列下架回400） */ /* v1.8.8 AI综合备课加秒表进度：每秒报已等多久，转着就不是死机 */ /* v1.8.7 修404：kimi-k2.5官方下架→死模型名单自动换kimi-k2.6+404自动重试；补title/header版本号（1.8.5/1.8.6漏改） */ /* v1.8.6 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v1.8.5 习题→PPT工坊两路（洪医生任务2026-09-01）：任务一「📊 习题→PPT」本地拼——
+var SW_VERSION = "1.10.0"; /* v1.10.0 鱼骨头化（照抄大管家v0.5.0样板）：①最底下新增「🛠 设置与工具」折叠抽屉（一级卡5px粗左框+深底，二级卡缩进+浅底+3px左竖线+无阴影；开合记 localStorage hx_xiti_tool_open，刷新保持，箭头▸点开/▾收起）②云备份卡（ghCard，原<details>折叠复用）从普通题库面板原样搬入抽屉，另加「🤖 AI设置」卡走原 openAiKey() 弹窗；纯界面折叠结构与样式，功能逻辑零改动 */ /* v1.9.1 hxIndexRefresh加免Token备用路（API/没Token自动走公开站直链，治主界面卡旧版静默失败；成功/失败都toast一句） */ /* v1.9.0 hxStore仓管员接入（全家推广第3家）：习题库+做题进度每次存盘同步写壳授权文件夹 hxdata_xitixuexi_v01.json，开门自动对齐（文件说了算/自动搬家），左下角🗄️选/换文件夹；无壳浏览器照旧 */ /* v1.8.9 AI报错带官方原因+400也自动换模型重试（洪医生撞HTTP400：疑moonshot-v1系列下架回400） */ /* v1.8.8 AI综合备课加秒表进度：每秒报已等多久，转着就不是死机 */ /* v1.8.7 修404：kimi-k2.5官方下架→死模型名单自动换kimi-k2.6+404自动重试；补title/header版本号（1.8.5/1.8.6漏改） */ /* v1.8.6 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v1.8.5 习题→PPT工坊两路（洪医生任务2026-09-01）：任务一「📊 习题→PPT」本地拼——
   范围(勾选/全部)×筛选(全部/陌生+一般/只陌生)×排版(题答同页自习用 / 题一页答一页课堂提问用)，不花AI钱；
   任务二「🤖 AI综合备课」——AI读全部问答提炼成课（归纳/对比表/易错点，不是堆题），可填讲课重点，可对着薄弱点，
   大纲先预览可手改再寄。两路都走ppt_inbox邮路（照抄血气分析v0.10.8格式），PPT工坊弹窗收。 */
@@ -3575,6 +3605,19 @@ ghInit(); /* v1.4 */
 
 <script>
 (function(){ try{ document.getElementById("hdVer").textContent="v"+SW_VERSION; document.title="习题学习 v"+SW_VERSION; }catch(e){} })();
+
+/* ══════════ v1.10.0 鱼骨头化：「🛠 设置与工具」抽屉（记 hx_xiti_tool_open，刷新保持），与大管家v0.5.0同款 ══════════ */
+try{
+  var toolCard=document.getElementById('toolCard'), toolZone=document.getElementById('toolZone'), toolArrow=document.getElementById('toolArrow');
+  function toolSet(open){
+    toolZone.style.display=open?'block':'none';
+    toolArrow.textContent=open?'▾ 收起':'▸ 点开';
+    try{ localStorage.setItem('hx_xiti_tool_open', open?'1':''); }catch(e){}
+  }
+  toolCard.addEventListener('click', function(){ toolSet(toolZone.style.display!=='block'); });
+  toolSet(localStorage.getItem('hx_xiti_tool_open')==='1');
+  document.getElementById('btnAiKeyHome').addEventListener('click', function(e){ e.stopPropagation(); openAiKey(); }); /* 走原AI设置弹窗，逻辑一行未动 */
+}catch(e){}
 </script>
 </body>
 </html>

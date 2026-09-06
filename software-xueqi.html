@@ -237,11 +237,18 @@
   #ghConfirm { border:1px solid #4a6b5d; border-radius:8px; padding:10px; margin:8px 0; background:#eef3f0; }
   #ghConfText { font-size:15px; line-height:1.6; margin-bottom:6px; }
   #ghToast { position:fixed; left:50%; bottom:70px; transform:translateX(-50%); background:rgba(0,0,0,.82); color:#fff; padding:10px 20px; border-radius:22px; font-size:15px; z-index:120; max-width:86%; text-align:center; }
+  /* v0.11.0 鱼骨头化（与管家v0.5.0/文件桥v1.3.0同款）：ⓘ说明默认收起 + 「🛠 设置与工具」抽屉 */
+  .infoBtn { font-size:12px; color:#8a7a63; border:1px solid #e0d6c4; border-radius:8px;
+    padding:2px 9px; margin-left:8px; font-weight:400; background:#faf7f1; vertical-align:2px; cursor:pointer; }
+  .intro { display:none; font-size:13px; color:#888; margin:6px 0; }
+  #toolCard { border-left:5px solid #b09a76; background:rgb(250,246,239); cursor:pointer; }
+  #toolZone { border-left:3px solid #e6ddcd; margin-left:8px; padding-left:12px; }
+  #toolZone .card { background:#fdfbf8; box-shadow:none; }
   [hidden] { display:none !important; }
 </style>
 </head>
 <body>
-<header><span>血气分析解读助手</span><span class="ver">v0.10.14</span></header>
+<header><span>血气分析解读助手</span><span class="ver">v0.11.0</span></header>
 <main>
 
   <!-- 第1步：首页 -->
@@ -263,8 +270,15 @@
       <button class="btn secondary" id="btnVent" style="margin-top:8px;border-color:#4a6b5d;color:#4a6b5d;font-weight:bold;">🫁 呼吸机屏幕分析（拍照→AI读数+波形分析→指导做检测）</button>
       <input type="file" id="fileCamera" accept="image/*" capture="environment" hidden>
       <input type="file" id="fileAlbum" accept="image/*" hidden>
-      <p class="hint">拍照/查看都针对上方选中的病人；软件会裁掉含姓名/住院号的抬头和底部签名行，只把检验结果表格发给AI解读。</p>
+      <button type="button" class="infoBtn" id="infoBtnHome">ⓘ 说明</button>
+      <p class="intro" id="introHome">拍照/查看都针对上方选中的病人；软件会裁掉含姓名/住院号的抬头和底部签名行，只把检验结果表格发给AI解读。</p>
     </div>
+    <!-- v0.11.0 鱼骨头化：低频/设置类收进「🛠 设置与工具」折叠抽屉（hx_xueqi_tool_open），与管家v0.5.0同款 -->
+    <div class="card" id="toolCard">
+      <b style="font-size:16px;">🛠 设置与工具 <span id="toolArrow" style="font-size:13px;color:#a89f93;font-weight:normal;">▸ 点开</span></b>
+      <p class="hint">API Key、AI厂商/模型、提示词、记录备份、云备份——偶尔才动的都收在这里。</p>
+    </div>
+    <div id="toolZone" style="display:none;">
     <div class="card">
       <b>设置</b>
       <input type="password" id="apiKeyInput" placeholder="Kimi API Key（只需填一次，保存在本机）">
@@ -342,6 +356,7 @@
         <p class="hint">备份内容=本软件的设置（含 API Key、模型、提示词等），保存到您的 GitHub 私有仓库，和学习笔记的备份互不干扰。换设备/清缓存后：填一次 Token → 点「📥 从云端恢复」即可。</p>
       </details>
     </div>
+    </div><!-- /toolZone -->
   </section>
 
   <!-- 第2步：定位与裁剪 -->
@@ -437,6 +452,7 @@
 
 ★ 如果"自动定位"提示识别引擎下载失败或一直转圈：先检查网络、换个网络（WiFi换流量）多试几次；还是不行，把这个HTML文件发回给Kimi，说一句"引擎下载失败"，它读文件开头的说明就知道原因和处理办法，会直接给您做一个不联网的离线版。
 
+v0.11.0 首页鱼骨头化：API Key/AI厂商模型/提示词/备份等低频项收进最底下「🛠 设置与工具」抽屉（点开一次以后都记得）；首页长说明改「ⓘ 说明」点开才看。功能逻辑零改动
 v0.10.14 AI花钱看得见：每次用AI弹一句花了多少钱（估算），主界面新增「💰 AI花钱」卡片看全家汇总
 v0.10.13 公共钱罐v2：GitHub Token/API Key 改成"新的盖旧的"——在一处填新的，全家软件自动跟新，旧的不会再复活（以前要到处手动改）
 v0.10.12 PB840入编：机型选择新增PB840（科室第二款呼吸机），带屏幕地图和操作档案——吸气保持/呼气保持是屏幕右下方的实体键（INSP PAUSE/EXP PAUSE），不在屏幕菜单里
@@ -2086,7 +2102,7 @@ ghBindBtn($("ghConfNo"), function(){
    与学习笔记/习题学习/文件桥同款：读 version-xueqi.json 比对版本；
    壳APP里下载新版 = applyUpdate 自更新（重启生效）+ 授权文件夹存备份；
    浏览器里 = 普通下载。 */
-var SW_VERSION = "0.10.15"; /* v0.10.15 hxIndexRefresh加免Token备用路（API/没Token自动走公开站直链，治主界面卡旧版静默失败；本页无toast浮层，提示保持静默） */
+var SW_VERSION = "0.11.0"; /* v0.11.0 鱼骨头化：设置/备份等低频项收进「🛠 设置与工具」抽屉（hx_xueqi_tool_open），主卡说明改ⓘ收起；纯界面，功能逻辑未动（首段script保持原样） */ /* v0.10.15 hxIndexRefresh加免Token备用路（API/没Token自动走公开站直链，治主界面卡旧版静默失败；本页无toast浮层，提示保持静默） */
 /* v0.10.2 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["bg_gh_user", "hx_gh_user"], ["bg_gh_tok", "hx_gh_tok"], ["bg_gh_repo", "hx_gh_repo"], ["bg_apikey", "hx_apikey"]];
@@ -2808,6 +2824,27 @@ show("step1");
   });
   document.getElementById("previewImg").addEventListener("click", () => { if(document.getElementById("previewImg").src) openViewer(document.getElementById("previewImg").src); });
 })();
+
+/* v0.11.0 鱼骨头化：ⓘ说明开合（默认收，不记状态）+ 设置与工具抽屉（记 hx_xueqi_tool_open），与管家v0.5.0同款；纯界面，功能逻辑未动 */
+try{
+  var toolCard=document.getElementById("toolCard"), toolZone=document.getElementById("toolZone"), toolArrow=document.getElementById("toolArrow");
+  function toolSet(open){
+    toolZone.style.display=open?"block":"none";
+    toolArrow.textContent=open?"▾ 收起":"▸ 点开";
+    try{ localStorage.setItem("hx_xueqi_tool_open", open?"1":""); }catch(e){}
+  }
+  toolCard.addEventListener("click", function(){ toolSet(toolZone.style.display!=="block"); });
+  toolSet(localStorage.getItem("hx_xueqi_tool_open")==="1");
+}catch(e){}
+try{
+  var ib=document.getElementById("infoBtnHome"), ih=document.getElementById("introHome");
+  ib.addEventListener("click", function(e){
+    e.preventDefault(); e.stopPropagation();
+    var open=ih.style.display!=="block";
+    ih.style.display=open?"block":"none";
+    ib.textContent=open?"ⓘ 收起":"ⓘ 说明";
+  });
+}catch(e){}
 </script>
 </body>
 </html>

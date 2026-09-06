@@ -273,10 +273,17 @@ window.addEventListener('load', function(){
   .ref-top { background: #faf6ec; border-radius: 10px; padding: 8px 12px; margin: 8px 0;
              font-size: 14px; line-height: 1.7; }
   .ref-top b { color: #8a6d1a; }
+  /* v0.4.0 鱼骨头化（照管家v0.5.0样板）：ⓘ说明默认收起 + 「🛠 设置与工具」抽屉 */
+  .infoBtn { font-size:12px; color:#8a7a63; border:1px solid #e0d6c4; border-radius:8px;
+    padding:2px 9px; margin-left:8px; font-weight:400; background:#faf7f1; vertical-align:2px; cursor:pointer; }
+  .intro { display:none; }
+  #toolCard { border-left:5px solid #b09a76; background:#faf6ef; cursor:pointer; }
+  #toolZone { border-left:3px solid #e6ddcd; margin-left:8px; padding-left:12px; }
+  #toolZone .card { background:#fdfbf8; box-shadow:none; }
 </style>
 </head>
 <body>
-<header>📒 小涛笔记<span class="ver">v0.3.21</span></header>
+<header>📒 小涛笔记<span class="ver">v0.4.0</span></header>
 <div id="updBar" class="hidden">
   <div class="upd-row" id="updRow">
     <div class="upd-body" id="updText"></div>
@@ -312,7 +319,10 @@ window.addEventListener('load', function(){
       <div id="shelfList"></div>
       <button class="btn" id="btnShelfGo" style="margin-top:6px;">📥 导入选中的</button>
     </div>
-    <div class="hint">导入后全自动：AI 认书 → 定级（🟢指南/📄期刊/📘书籍/🟠AI生成·待核）→ 切片 → 五段式总结。没填 Key 也能导入（本地粗切、手动起名）。</div>
+    <div class="hint">导入后全自动：<span class="infoBtn" id="infoBtnLib">ⓘ 说明</span></div>
+    <div class="intro" id="introLib" style="font-size:13px;color:#8a8178;margin-bottom:6px;">
+      AI 认书 → 定级（🟢指南/📄期刊/📘书籍/🟠AI生成·待核）→ 切片 → 五段式总结。没填 Key 也能导入（本地粗切、手动起名）。
+    </div>
     <div class="msg" id="libMsg"></div>
     <div id="libProg" class="hint" style="margin-top:6px;"></div>
     <!-- v0.3.28 自动切片巡逻（本地，跟设置里的"云端切片巡逻兵"两码事） -->
@@ -358,6 +368,13 @@ window.addEventListener('load', function(){
     </div>
     <div id="bookList" style="margin-top:8px;"></div>
   </details>
+
+  <!-- v0.4.0 鱼骨头化：设置/关于收进「🛠 设置与工具」抽屉（照管家v0.5.0样板） -->
+  <div class="card" id="toolCard">
+    <h2>🛠 设置与工具 <span id="toolArrow" style="font-size:13px; color:#a89f93; font-weight:normal;">▸ 点开</span></h2>
+    <div style="font-size:13px;color:#8a8178;margin-top:2px;">⚙️ 设置、📋 关于——偶尔才用的都收在这里。</div>
+  </div>
+  <div id="toolZone" style="display:none;">
 
   <!-- ⚙️ 设置 -->
   <details class="card">
@@ -437,6 +454,8 @@ window.addEventListener('load', function(){
       <b>修改记录：</b>v0.2.0 二期资料库；v0.1.0 一期骨架（新建/编辑/双链/搜索/设置/云备份/vault真身/版本自检）。
     </div>
   </details>
+
+  </div><!-- /toolZone -->
 
 </div>
 
@@ -606,7 +625,7 @@ window.addEventListener('load', function(){
 (function(){
 __bc('D脚本启动');
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.3.32'; /* v0.3.32 账本桥进全家hx_aibill（主界面💰卡片汇总） */ /* v0.3.31 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */
+var SW_VERSION = '0.4.0'; /* v0.4.0 鱼骨头化：ⓘ说明默认收起 + 设置/关于收进「🛠 设置与工具」抽屉（hx_xiaotao_tool_open），照管家v0.5.0样板；纯界面，功能逻辑未动 */ /* v0.3.32 账本桥进全家hx_aibill（主界面💰卡片汇总） */ /* v0.3.31 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
@@ -3071,6 +3090,31 @@ $('btnRefs').addEventListener('click', function(){
     });
   });
 });
+
+/* ══════════ v0.4.0 鱼骨头化：ⓘ说明开合（默认收，不记状态）+ 设置与工具抽屉（记 hx_xiaotao_tool_open），照管家v0.5.0样板 ══════════ */
+try{
+  var _ibtns=document.querySelectorAll('.infoBtn');
+  for(var _i=0;_i<_ibtns.length;_i++){ (function(btn){
+    btn.addEventListener('click', function(e){
+      e.preventDefault(); e.stopPropagation();
+      var card=btn; while(card && !(card.classList && card.classList.contains('card'))) card=card.parentElement;
+      var d=card ? card.querySelector('.intro') : null; if(!d) return;
+      var open=d.style.display!=='block';
+      d.style.display=open?'block':'none';
+      btn.textContent=open?'ⓘ 收起':'ⓘ 说明';
+    });
+  })(_ibtns[_i]); }
+}catch(e){}
+try{
+  var toolCard=$('toolCard'), toolZone=$('toolZone'), toolArrow=$('toolArrow');
+  function toolSet(open){
+    toolZone.style.display=open?'block':'none';
+    toolArrow.textContent=open?'▾ 收起':'▸ 点开';
+    try{ localStorage.setItem('hx_xiaotao_tool_open', open?'1':''); }catch(e){}
+  }
+  toolCard.addEventListener('click', function(){ toolSet(toolZone.style.display!=='block'); });
+  toolSet(localStorage.getItem('hx_xiaotao_tool_open')==='1');
+}catch(e){}
 
 __bc('E脚本跑完');
 /* v0.3.26 标题栏只留版本号（X5路线已判死，引擎标记退役；裸奔开关留用） */
