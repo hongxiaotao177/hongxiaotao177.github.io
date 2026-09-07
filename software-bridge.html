@@ -5,6 +5,7 @@
 ====================================================================
  修改记录：
    v1.1.1 (2026-08-06)「下载整套」三件套→四件套：血气分析入编（software-xueqi.html）。
+v1.3.1 (2026-09-07) 开门静默化：davInit不再开门自动davGo('/')列坚果云根目录（davList走壳网络桥，开门会愣几秒）——改为秒开+提示「钥匙在手，点刷新列目录」；手动点「🔄刷新」「🔍测试连接」「保存钥匙」通路照旧一行未动。问题清单+最小改动：共两处：①davInit不自动davGo ②开门refreshAll的refreshFiles挪3秒闲时。
    v1.1.0 (2026-08-05) 壳APP直连模式：在套壳App（学习套装）里检测到
   window.LearnShell 就走原生桥——授权文件夹用安卓 SAF 持久授权（装APP时授一次，
   永不 stale，没有浏览器 MediaStore 写禁忌）；收发/打包/下载整套全部直连文件夹；
@@ -406,7 +407,7 @@ function fmtTime(t){ return new Date(t).toLocaleString(); }
 
 /* ==================== GitHub 通信（移植学习笔记/习题学习同套） ==================== */
 var BR_GH_USER = 'br_gh_user', BR_GH_TOK = 'br_gh_tok', BR_GH_REPO = 'br_gh_repo', BR_GH_CHECK = 'br_gh_check';
-var SW_VERSION = window.SW_VERSION = '1.3.0'; /* v1.2.3补：挂window治第二个script块拿不到（ReferenceError被try静默吞，页头永远旧版字样） */ /* v1.2.2 版本字样治病根：头顶+标题代码自动填SW_VERSION（此前硬编码v1.2.0忘了跟） */ /* v1.2.1 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */ /* v1.2.3 主界面刷新免Token备用路+送上去全选 */
+var SW_VERSION = window.SW_VERSION = '1.3.1'; /* v1.2.3补：挂window治第二个script块拿不到（ReferenceError被try静默吞，页头永远旧版字样） */ /* v1.2.2 版本字样治病根：头顶+标题代码自动填SW_VERSION（此前硬编码v1.2.0忘了跟） */ /* v1.2.1 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */ /* v1.2.3 主界面刷新免Token备用路+送上去全选 */
 /* v1.1.2 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["br_gh_user", "hx_gh_user"], ["br_gh_tok", "hx_gh_tok"], ["br_gh_repo", "hx_gh_repo"]];
@@ -1343,7 +1344,8 @@ function davInit(){
   $('davCard').classList.remove('hidden');
   $('davUser').value = davUser();
   $('davPass').value = davPass();
-  if(davUser() && davPass()){ $('davMain').style.display = ''; davGo('/'); }
+  if(davUser() && davPass()){ $('davMain').style.display = ''; $('davProg').textContent = '🔑 钥匙在手，点「🔄 刷新」列目录'; }
+  /* v1.3.1 开门不再自动davGo('/')：davList走网络会愣几秒，改为秒开+提示，手动点刷新/测试才连（与主界面停开门自动同步同款思路） */
 }
 $('davSave').addEventListener('click', function(){
   localStorage.setItem('hx_dav_user', $('davUser').value.trim());
@@ -1497,7 +1499,8 @@ try{
   if(lastCheck) $('ghCheck').textContent = lastCheck;
 }catch(e){}
 dirRestore().then(function(){
-  refreshAll();
+  updWizard(); scanConfigJson(); /* v1.3.1 开门静默化：refreshAll里的refreshFiles走SAF慢桥listFiles，挪3秒闲时再列文件夹，先秒开 */
+  setTimeout(function(){ refreshFiles(); }, 3000);
   /* 打开 3 秒后自动自检一次（配置齐全才查） */
   setTimeout(function(){ if(ghReady()) ghSelfCheck(false); }, 3000);
 });

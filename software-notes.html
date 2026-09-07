@@ -7157,7 +7157,7 @@ ghBindBtn($('ghConfNo'), function(){
      不通=红条常驻（只说连不上，不影响使用）
    注意：version.json 与软件副本（dl 字段指向的文件）由交付端（AI）每次发版时
    推到备份仓库；本文件版本号改 SW_VERSION 一处即可。 */
-var SW_VERSION = '2.16.0'; /* v2.16.0 预切闸按模型定批量（32k→8000字/128k与k2.6→15000字留30%余量）+400自动一分为二递归3次+人话报错（bklibErrHuman）；聚合二期 */ /* v2.15.0 鱼骨头化：API设置/云备份收进「🛠 设置与工具」抽屉（hx_notes_tool_open），文献库/书库长说明收进ⓘ说明；纯界面，功能逻辑未动 */ /* v2.14.6 hxIndexRefresh加免Token备用路（API/没Token自动走公开站直链，治主界面卡旧版静默失败；成功/失败都popToast一句） */ /* v2.14.5 寄件链路状态卡常亮+点×才关+云端失败写明原因 */ /* v2.14.4 寄件镜像备份+红绿灯（pptBoxBackup+坚果云davUp） */ /* v2.14.3 寄件排队防覆盖+马上叫醒按钮 */ /* v2.14.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v2.14.1 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */
+var SW_VERSION = '2.16.1'; /* v2.16.1 (2026-09-07) 开门静默化：locStatusRender(SAF慢桥)从开门直跑挪进4秒闲时趟，治开门愣几秒；其余一行未动 */ /* v2.16.0 预切闸按模型定批量（32k→8000字/128k与k2.6→15000字留30%余量）+400自动一分为二递归3次+人话报错（bklibErrHuman）；聚合二期 */ /* v2.15.0 鱼骨头化：API设置/云备份收进「🛠 设置与工具」抽屉（hx_notes_tool_open），文献库/书库长说明收进ⓘ说明；纯界面，功能逻辑未动 */ /* v2.14.6 hxIndexRefresh加免Token备用路（API/没Token自动走公开站直链，治主界面卡旧版静默失败；成功/失败都popToast一句） */ /* v2.14.5 寄件链路状态卡常亮+点×才关+云端失败写明原因 */ /* v2.14.4 寄件镜像备份+红绿灯（pptBoxBackup+坚果云davUp） */ /* v2.14.3 寄件排队防覆盖+马上叫醒按钮 */ /* v2.14.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v2.14.1 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */
 /* v2.6.7 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["bg_gh_user", "hx_gh_user"], ["bg_gh_tok", "hx_gh_tok"], ["bg_gh_repo", "hx_gh_repo"], ["bg_apikey", "hx_apikey"]];
@@ -7397,9 +7397,8 @@ ghUserInput.value = localStorage.getItem(LS_GH_USER) || 'hongxiaotao177';
 ghRepoInput.value = localStorage.getItem(LS_GH_REPO) || 'xuexi-backup';
 ghTokInput.value = localStorage.getItem(LS_GH_TOK) || '';
 ghStatusRender();
-locStatusRender(); /* v2.6.4 打开软件就亮出本地备份状态 */
-/* v2.6.5 打开软件 4 秒后自动对账一次（壳APP+云配置齐全才查） */
-setTimeout(function(){ if(locBackupAvailable() && ghReady()) locReconcile(false); }, 4000);
+/* v2.16.1 开门静默化：locStatusRender 挪进4秒闲时趟（它走SAF慢桥listFiles+readFile，开门直跑会愣几秒）——先秒开，状态行晚几秒显示 */
+setTimeout(function(){ locStatusRender(); if(locBackupAvailable() && ghReady()) locReconcile(false); }, 4000);
 if(loadNotes().length === 0 && ghReady()){
   ghPull(function(err, payload){ if(!err && payload) ghAskRestore(payload); });
 }
