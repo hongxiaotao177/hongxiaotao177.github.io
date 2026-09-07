@@ -1258,7 +1258,7 @@ var hxStore=(function(){
     var moved=0, pulled=0;
     KEYS.forEach(function(k){
       var f=null; try{ f=LearnShell.readFile(fn(k)); }catch(e){}
-      if(f){ try{ localStorage.setItem(k, unb64(f)); pulled++; }catch(e){} }
+      if(f){ try{ var nv=unb64(f); if(localStorage.getItem(k)!==nv){ localStorage.setItem(k,nv); pulled++; } }catch(e){} }  /* v1.6.2班修：内容没变不算"拉到"，防闲时对齐误判刷新 */
       else { var v=null; try{ v=localStorage.getItem(k); }catch(e){}
         if(v){ try{ LearnShell.writeFile(fn(k), b64(v)); moved++; }catch(e){} } }
     });
@@ -1272,7 +1272,19 @@ var hxStore=(function(){
 })();
 /* 仓管员登记处：本软件归仓管员管的键 */
 hxStore.reg('xitixuexi_v01');
-try{ hxStore.sync(); }catch(e){} /* 开门就对齐：桥是同步的，赶在 loadStore 之前跑完，让文件夹里的数据说了算 */
+/* v1.10.1 开门零等待（洪老师拍板2026-09-07：打开先用本机数据，对齐挪到闲时）：
+   不再开门就同步hxStore.sync（SAF查文件夹慢，会卡住开门）——先秒开，
+   等你安静3秒再对齐；文件夹真拉来了新数据→提示后自动刷新一次给你看最新的。 */
+(function(){
+  var lastAct=Date.now();
+  try{ ['touchstart','click','keydown','scroll'].forEach(function(ev){ document.addEventListener(ev,function(){ lastAct=Date.now(); },{passive:true,capture:true}); }); }catch(e){}
+  (function w(){ if(Date.now()-lastAct>=3000){
+    try{ var r=hxStore.sync();
+      if(r&&r.pulled){ try{ toast('🗄️ 文件夹里有新数据，已对齐，刷新一下看最新的',3000); }catch(e){} setTimeout(function(){ location.reload(); },2000); }
+      else if(r&&r.moved){ try{ toast('🗄️ 本地数据已搬进文件夹（'+r.moved+'份）'); }catch(e){} }
+    }catch(e){}
+  } else setTimeout(w,400); })();
+})();
 
 /* ================= 数据层 ================= */
 var LS_KEY = "xitixuexi_v01";
@@ -3076,7 +3088,7 @@ function hxStoreAfterPick(){
    完整设计思路与协同协议见学习笔记.html 代码顶部（两边以那份为准）。 */
 var XT_GH_USER = "xt_gh_user", XT_GH_TOK = "xt_gh_tok", XT_GH_REPO = "xt_gh_repo",
     XT_GH_LAST = "xt_gh_last", XT_GH_CHECK = "xt_gh_check";
-var SW_VERSION = "1.10.0"; /* v1.10.0 鱼骨头化（照抄大管家v0.5.0样板）：①最底下新增「🛠 设置与工具」折叠抽屉（一级卡5px粗左框+深底，二级卡缩进+浅底+3px左竖线+无阴影；开合记 localStorage hx_xiti_tool_open，刷新保持，箭头▸点开/▾收起）②云备份卡（ghCard，原<details>折叠复用）从普通题库面板原样搬入抽屉，另加「🤖 AI设置」卡走原 openAiKey() 弹窗；纯界面折叠结构与样式，功能逻辑零改动 */ /* v1.9.1 hxIndexRefresh加免Token备用路（API/没Token自动走公开站直链，治主界面卡旧版静默失败；成功/失败都toast一句） */ /* v1.9.0 hxStore仓管员接入（全家推广第3家）：习题库+做题进度每次存盘同步写壳授权文件夹 hxdata_xitixuexi_v01.json，开门自动对齐（文件说了算/自动搬家），左下角🗄️选/换文件夹；无壳浏览器照旧 */ /* v1.8.9 AI报错带官方原因+400也自动换模型重试（洪医生撞HTTP400：疑moonshot-v1系列下架回400） */ /* v1.8.8 AI综合备课加秒表进度：每秒报已等多久，转着就不是死机 */ /* v1.8.7 修404：kimi-k2.5官方下架→死模型名单自动换kimi-k2.6+404自动重试；补title/header版本号（1.8.5/1.8.6漏改） */ /* v1.8.6 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v1.8.5 习题→PPT工坊两路（洪医生任务2026-09-01）：任务一「📊 习题→PPT」本地拼——
+var SW_VERSION = "1.10.1"; /* v1.10.1 hxStore开门对齐挪闲时跑（同大管家v0.5.2药方：先秒开，闲3秒再对齐，拉到新数据自动刷新一次） */ /* v1.10.0 鱼骨头化（照抄大管家v0.5.0样板）：①最底下新增「🛠 设置与工具」折叠抽屉（一级卡5px粗左框+深底，二级卡缩进+浅底+3px左竖线+无阴影；开合记 localStorage hx_xiti_tool_open，刷新保持，箭头▸点开/▾收起）②云备份卡（ghCard，原<details>折叠复用）从普通题库面板原样搬入抽屉，另加「🤖 AI设置」卡走原 openAiKey() 弹窗；纯界面折叠结构与样式，功能逻辑零改动 */ /* v1.9.1 hxIndexRefresh加免Token备用路（API/没Token自动走公开站直链，治主界面卡旧版静默失败；成功/失败都toast一句） */ /* v1.9.0 hxStore仓管员接入（全家推广第3家）：习题库+做题进度每次存盘同步写壳授权文件夹 hxdata_xitixuexi_v01.json，开门自动对齐（文件说了算/自动搬家），左下角🗄️选/换文件夹；无壳浏览器照旧 */ /* v1.8.9 AI报错带官方原因+400也自动换模型重试（洪医生撞HTTP400：疑moonshot-v1系列下架回400） */ /* v1.8.8 AI综合备课加秒表进度：每秒报已等多久，转着就不是死机 */ /* v1.8.7 修404：kimi-k2.5官方下架→死模型名单自动换kimi-k2.6+404自动重试；补title/header版本号（1.8.5/1.8.6漏改） */ /* v1.8.6 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v1.8.5 习题→PPT工坊两路（洪医生任务2026-09-01）：任务一「📊 习题→PPT」本地拼——
   范围(勾选/全部)×筛选(全部/陌生+一般/只陌生)×排版(题答同页自习用 / 题一页答一页课堂提问用)，不花AI钱；
   任务二「🤖 AI综合备课」——AI读全部问答提炼成课（归纳/对比表/易错点，不是堆题），可填讲课重点，可对着薄弱点，
   大纲先预览可手改再寄。两路都走ppt_inbox邮路（照抄血气分析v0.10.8格式），PPT工坊弹窗收。 */

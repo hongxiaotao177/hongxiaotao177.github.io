@@ -2,6 +2,12 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.6.2 2026-09-07 闲时才干活（洪老师拍板：优先级=你>同步>查版本，打开先用、后台闲时才跑）：
+      ①新增 hxIdle：记录你最后碰屏时间，干活每一步前先等"安静3秒"，你在用就让路；
+      ②自动查版本：不再开门就冲，等你闲3秒才起步，每查一个软件前再看你闲不闲；
+      ③自动同步shared区：闲时才起步，每搬一个文件前看你闲不闲；手动点按钮照旧立刻干；
+      ④同步体检（scCheck）开门静默对账也改闲时跑。
+      只动"何时跑"，跑什么、怎么跑一行未改；界面只改了两句提示语。
     v1.6.1 2026-09-06 卡10秒修复（总待办🟡①号）：
       ①新增 ghFetch：所有访问GitHub的fetch统一走它，8秒没回话就当失败（AbortController超时），
         不再干等浏览器默认超时（可达数分钟）——版本自检/公开直链/同步/文件柜共11处全换；
@@ -349,6 +355,15 @@ function ghFetch(url, opts){
   return fetch(url, opts).then(function(r){ clearTimeout(timer); return r; }, function(e){ clearTimeout(timer); throw e; });
 }
 
+/* v1.6.2 闲时才干活（洪老师拍板2026-09-07）：优先级=你>同步>查版本。
+   你一碰屏幕就记时间；后台活每一步开跑前先等到"安静3秒"，你在用就让路。 */
+var hxLastAct=Date.now();
+try{ ['touchstart','click','keydown','scroll'].forEach(function(ev){
+  document.addEventListener(ev, function(){ hxLastAct=Date.now(); }, {passive:true, capture:true});
+}); }catch(e){}
+function hxIdle(gap){ gap=gap||3000; return new Promise(function(res){ (function w(){ if(Date.now()-hxLastAct>=gap) res(); else setTimeout(w,400); })(); }); }
+function hxIdle0(){ return hxIdle(); }
+
 /* v1.3.7 免Token备用路（洪医生手机旧Token作废→更新静默卡死的踩坑）：
    同款文件每次发版都同步推到公开站 hongxiaotao177.github.io，读它不要Token。
    hxGetText=先走API（私有仓库），不通/没填Token就走公开直链。 */
@@ -372,7 +387,7 @@ function hxRawGet(name){
   var H=ghHeaders();
   var keys=Object.keys(SUITE);
   var updated=[], failed=[];
-  updMsg("🔍 正在检查" + keys.length + "个软件有没有新版…");
+  updMsg("🔍 正在检查" + keys.length + "个软件有没有新版…（闲时才查，你操作会让路）");
   function fetchJson(name){
     /* 统一返回"文件内容文本"：API优先，失败/没Token走公开直链 */
     if(hasApi){
@@ -426,7 +441,7 @@ function hxRawGet(name){
   function step(i){
     if(i>=keys.length){ finish(); return; }
     var k=keys[i], remote=SUITE[k][0], localName=SUITE[k][1], verFile=SUITE[k][2];
-    fetchJson(verFile).then(function(txt){
+    hxIdle0().then(function(){ return fetchJson(verFile); }).then(function(txt){  /* v1.6.2 每查一个软件前先等你闲下来 */
       var info;
       try{ info=JSON.parse(txt); }catch(e){ info=null; }
       if(!info || !info.version){ step(i+1); return; }
@@ -451,7 +466,7 @@ function hxRawGet(name){
       setTimeout(function(){ document.getElementById("updLine").style.display="none"; }, 2500);
     }
   }
-  step(0);
+  hxIdle0().then(function(){ step(0); });  /* v1.6.2 查版本不抢开门：先等你安静3秒 */
 })();
 
 /* ==================== v1.2.0 坚果云↔仓库shared 同步官 + 仓库文件柜 ====================
@@ -473,9 +488,9 @@ function syncShared(manual){
   if(!manual && st.okT && (Date.now()-st.okT)<6*3600*1000) return;  /* 6小时内刚同步过 */
   var base='https://api.github.com/repos/'+encodeURIComponent(c.user)+'/'+encodeURIComponent(c.repo)+'/contents/';
   var H=ghHeaders();
-  updMsg('⇅ 正在同步：点名文件夹和仓库shared区…');
+  updMsg('⇅ 正在同步：点名文件夹和仓库shared区…（闲时才干，你操作会暂停）');
   var folderFiles=[], repoFiles=[], meta={files:{}};
-  Promise.resolve().then(function(){
+  (manual?Promise.resolve():hxIdle0()).then(function(){  /* v1.6.2 自动同步先等你闲下来；手动点的立刻干 */
     try{ folderFiles=JSON.parse(window.LearnShell.listFiles()||'[]'); }catch(e){ folderFiles=[]; }
     return ghFetch(base+encodeURIComponent('shared'),{headers:H}).then(function(r){
       if(r.status===404) return [];
@@ -514,7 +529,7 @@ function syncShared(manual){
     var done={up:0, down:0, fail:0};
     var seq=Promise.resolve();
     plan.forEach(function(it){
-      seq=seq.then(function(){
+      seq=seq.then(hxIdle0).then(function(){  /* v1.6.2 每搬一个文件前看你闲不闲，你在操作就让路 */
         if(it.act==='up'){
           var b64=window.LearnShell.readFile(it.name);
           if(!b64){ done.fail++; return; }
@@ -779,8 +794,8 @@ document.getElementById('scCard').addEventListener('click', function(){
   if(opening) scCheck(true);
 });
 document.getElementById('scRun').addEventListener('click', function(){ scCheck(true); });
-/* 开门12秒后静默对账一次（不抢更新/同步队列） */
-setTimeout(function(){ try{ scCheck(false); }catch(e){} }, 12000);
+/* 开门静默对账一次：v1.6.2 改闲时才跑（不等死秒数，等你安静），不抢开门 */
+hxIdle0().then(function(){ try{ scCheck(false); }catch(e){} });
 /* ==================== v1.4.8 备份自理班：📤备份到坚果云（纯新增） ====================
    点按钮→listFiles() 取授权文件夹里的 .json/.bak 文件（.html 不传）→逐个 davUp 到
    坚果云「/学习套装备份/」；过程报"第几件/共几件"，结束报 ✅成功X件 ❌失败Y件

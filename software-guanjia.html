@@ -272,7 +272,7 @@ var hxStore=(function(){
     var moved=0, pulled=0;
     KEYS.forEach(function(k){
       var f=null; try{ f=LearnShell.readFile(fn(k)); }catch(e){}
-      if(f){ try{ localStorage.setItem(k, unb64(f)); pulled++; }catch(e){} }
+      if(f){ try{ var nv=unb64(f); if(localStorage.getItem(k)!==nv){ localStorage.setItem(k,nv); pulled++; } }catch(e){} }  /* v1.6.2班修：内容没变不算"拉到"，防闲时对齐误判刷新 */
       else { var v=null; try{ v=localStorage.getItem(k); }catch(e){}
         if(v){ try{ LearnShell.writeFile(fn(k), b64(v)); moved++; }catch(e){} } }
     });
@@ -286,7 +286,19 @@ var hxStore=(function(){
 })();
 /* 仓管员登记处：本软件归仓管员管的键 */
 hxStore.reg('hx_cards_v1'); hxStore.reg('hx_patients'); hxStore.reg('hx_inbox_v1'); hxStore.reg('hx_readtoc_v1'); hxStore.reg('hx_ppt_tasks');
-try{ hxStore.sync(); }catch(e){} /* 开门就对齐：桥是同步的，赶在页面各处读localStorage之前，让文件夹里的数据说了算 */
+/* v0.5.2 开门零等待（洪老师拍板2026-09-07：打开先用本机数据，对齐挪到闲时）：
+   不再开门就同步hxStore.sync（SAF查文件夹慢，曾把开门卡10秒）——先秒开，
+   等你安静3秒再对齐；文件夹真拉来了新数据→提示后自动刷新一次给你看最新的。 */
+(function(){
+  var lastAct=Date.now();
+  try{ ['touchstart','click','keydown','scroll'].forEach(function(ev){ document.addEventListener(ev,function(){ lastAct=Date.now(); },{passive:true,capture:true}); }); }catch(e){}
+  (function w(){ if(Date.now()-lastAct>=3000){
+    try{ var r=hxStore.sync();
+      if(r&&r.pulled){ try{ toast('🗄️ 文件夹里有新数据，已对齐，刷新一下看最新的',3000); }catch(e){} setTimeout(function(){ location.reload(); },2000); }
+      else if(r&&r.moved){ try{ toast('🗄️ 本地数据已搬进文件夹（'+r.moved+'份）'); }catch(e){} }
+    }catch(e){}
+  } else setTimeout(w,400); })();
+})();
 </script>
 <div class="wrap">
   <h1>🏠 病人大管家</h1>
@@ -440,7 +452,7 @@ try{ hxStore.sync(); }catch(e){} /* 开门就对齐：桥是同步的，赶在�
 </div>
 
 <script>
-var SW_VERSION = "0.5.1"; /* v0.5.1 点亮三级菜单：选中菜单第1层5选项→第2层3套提示词→第3层可编辑+执行+存为默认；提示词存全家公用钥匙hx_glow_v1的guanjia分支；亮起触发机制未动 */ /* v0.5.0 鱼骨头化：ⓘ说明默认收起 + 家底总览/API Key收进「🛠 设置与工具」抽屉（hx_gj_tool_open），与文件桥v1.3.0同款；纯界面，功能逻辑未动 */ /* v0.4.14 ①修选中菜单"关不掉"：收起/点别处后清空兜里选中文字，不再被长按顶出来 ②寄PPT提示词跟随PPT工坊风格开关（ppt_style=strict时用严肃学术版，去掉强制口语） */ /* v0.4.13 ①hxStore仓管员：数据同步写壳文件夹（可拷走换机）②PPT链路闭环：信封带taskId、收样品（guanjia_inbox）、寄修改意见、定稿、3趟封顶 */
+var SW_VERSION = "0.5.2"; /* v0.5.2 开门零等待：hxStore仓管员对齐挪到闲时跑（你安静3秒才动），先秒开页面；文件夹拉到新数据→提示并自动刷新一次；治"点大管家愣10秒" */ /* v0.5.1 点亮三级菜单：选中菜单第1层5选项→第2层3套提示词→第3层可编辑+执行+存为默认；提示词存全家公用钥匙hx_glow_v1的guanjia分支；亮起触发机制未动 */ /* v0.5.0 鱼骨头化：ⓘ说明默认收起 + 家底总览/API Key收进「🛠 设置与工具」抽屉（hx_gj_tool_open），与文件桥v1.3.0同款；纯界面，功能逻辑未动 */ /* v0.4.14 ①修选中菜单"关不掉"：收起/点别处后清空兜里选中文字，不再被长按顶出来 ②寄PPT提示词跟随PPT工坊风格开关（ppt_style=strict时用严肃学术版，去掉强制口语） */ /* v0.4.13 ①hxStore仓管员：数据同步写壳文件夹（可拷走换机）②PPT链路闭环：信封带taskId、收样品（guanjia_inbox）、寄修改意见、定稿、3趟封顶 */
 document.getElementById('verTop').textContent = SW_VERSION;
 function $(id){ return document.getElementById(id); }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -1912,9 +1924,8 @@ try{
 /* ── 开门：名册 + 总览 + 自动做3篇（有Key才动） ── */
 renderOverview(); renderCardList(); renderPatients(); renderInbox();
 bindSelMenu(); /* v0.4.8 选中文字中心菜单上岗 */
-/* v0.4.13 开门两件事：①仓管员对齐（壳文件夹↔localStorage）②查PPT寄回的样品 */
+/* v0.4.13 开门查PPT寄回的样品（仓管员对齐已挪v0.5.2闲时统一跑，这里不再重复） */
 (function(){
-  try{ if(hxStore.bridged()){ var r=hxStore.sync(); if(r&&(r.moved||r.pulled)) toast('🗄️ 数据文件夹已对齐（搬进'+r.moved+'份/取出'+r.pulled+'份）'); } }catch(e){}
   setTimeout(checkSamples, 100); /* 样品窗的HTML在本script后面，等它就位再查 */
 })();
 (function(){
