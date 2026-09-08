@@ -1,1 +1,1 @@
-{"version":"0.7.0","dl":"software-guanjia.html","note":"2026-09-08 脱敏间合并：脱敏工具搬入成折叠卡（dsm_前缀零冲突）+pdf.js内嵌懒加载（开门不解码）+三种进件（拖放/选文件夹/看文件选文件）+脱敏完一键收进病历库hx_pdocs_v1进名册"}
+{"version": "0.8.0", "dl": "software-guanjia.html", "engine": "guanjia-pdf-engine.js", "note": "引擎拆出瘦身200KB：pdf.js移到独立包guanjia-pdf-engine.js(装一次)+首次用自动找/装+设置里引擎管理+导出完整单文件塞引擎(大也没关系)"}
