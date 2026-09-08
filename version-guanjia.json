@@ -1,1 +1,1 @@
-{"version": "0.8.1", "dl": "software-guanjia.html", "engine": "guanjia-pdf-engine.js", "note": "真机补丁：壳内引擎查找fetch挂起死转→装8秒超时亮安装按钮；安装下载60秒超时"}
+{"version": "0.8.2", "dl": "software-guanjia.html", "engine": "guanjia-pdf-engine.js", "note": "假转圈修复：进度条默认安静文案+spinner隐藏（以前CSS常转装样子吓人）；真加载才转"}
