@@ -1,1 +1,1 @@
-{"version": "0.8.2", "dl": "software-guanjia.html", "engine": "guanjia-pdf-engine.js", "note": "假转圈修复：进度条默认安静文案+spinner隐藏（以前CSS常转装样子吓人）；真加载才转"}
+{"version": "0.8.3", "dl": "software-guanjia.html", "engine": "guanjia-pdf-engine.js", "note": "没收清单改一行条：白底卡片「有N份没收（点我看原因）✕」，点字展开逐行明细，✕关掉不烦人"}
