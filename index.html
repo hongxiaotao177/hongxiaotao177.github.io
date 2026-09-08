@@ -2,6 +2,13 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.7.1 2026-09-08 同步收权+直播（洪老师拍板）：
+      ①删掉闲时自动同步体检（scCheck）——同步只认第一行「🔄 同步」按钮，不按绝不同步
+        （点开同步体检卡片看明细=手动，仍会自动跑一次；坚果云7天提醒只读不联网，保留）；
+      ②第一行常驻「🔄 同步」按钮+状态行，点了跑syncShared全程4步直播：
+        第1步点名→第2步对账（要传几件收几件）→第3步逐件搬（⬆️/⬇️文件名 x/N）→第4步写台账→✅完成汇总；
+      ③更新写入提示：下载完写壳占线几秒（点卡片没反应是正常的），黄条先亮"💾正在写入…别点"
+        再动手（setTimeout 80ms让提示先画出来）。其余一行未动。
     v1.7.0 2026-09-08 升级链路大修（洪老师拍板）：
       ①防缓存尾巴：hxRawGet所有公开直链加?t=时间戳（治WebView/X5无视no-store缓存旧版→"发了版手机还是旧版"频发）；
       ②2MB炸弹修复：GitHub API对>1MB文件不给content，读空自动换download_url直取再落公开直链；
@@ -167,6 +174,12 @@
 <main>
 
   <div id="updLine"></div>
+
+  <!-- v1.7.1 洪老师拍板：第一行常驻同步键——不按绝不同步；按了全程直播每一步 -->
+  <div id="syncBar" style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+    <button class="tag" id="btnSyncTop" style="padding:10px 16px;border:none;cursor:pointer;">🔄 同步</button>
+    <span id="syncTopMsg" style="font-size:13px;color:#8a8178;">不按它，绝不同步</span>
+  </div>
 
   <a class="card" href="病人大管家.html">
     <h2>🏠 病人大管家<span class="infoBtn">ⓘ 说明</span></h2>
@@ -451,17 +464,24 @@ function hxRawGet(name){
   }
   function dl(k, info, remote, localName, next){
     fetchJson(info.dl||remote).then(function(html){
+      /* v1.7.1 写入提示：编码+写壳会占线几秒（点卡片没反应是正常的），先亮话再动手，
+         setTimeout让黄条先画出来再阻塞 */
+      progLog[progLog.length-1]="💾 "+localName.replace(".html","")+"：下载完，正在写进壳里…（这几秒点卡片没反应是正常的，别点）";
+      updMsg("🔍 检查新版本\n"+progLog.join("\n"));
+      setTimeout(function(){ dlWrite(k, info, localName, html, next); }, 80);
+    }).catch(function(e){ failed.push(localName);
+      progLog[progLog.length-1]="❌ "+localName.replace(".html","")+"：下载没成功（"+((e&&e.message)||"网络不通")+"），下次再试"; updMsg("🔍 检查新版本\n"+progLog.join("\n"));
+      next(); });
+  }
+  function dlWrite(k, info, localName, html, next){
       var b64=u8enc(html);
       var ok=shellWrite(localName, b64);
       try{ if(window.LearnShell.folderSet()) window.LearnShell.writeFile(localName.replace(".html","")+"_v"+info.version+".html", b64); }catch(e){}
       if(ok){ CUR[k]=info.version; try{ localStorage.setItem("hx_suite_ver", JSON.stringify(CUR)); }catch(e){} updated.push(localName.replace(".html","")+"→v"+info.version);
         progLog[progLog.length-1]="✅ "+localName.replace(".html","")+"：已装上 v"+info.version; updMsg("🔍 检查新版本\n"+progLog.join("\n")); }
       else{ failed.push(localName);
-        progLog[progLog.length-1]="❌ "+localName.replace(".html","")+"：下载没成功，下次再试"; updMsg("🔍 检查新版本\n"+progLog.join("\n")); }
+        progLog[progLog.length-1]="❌ "+localName.replace(".html","")+"：写入没成功，下次再试"; updMsg("🔍 检查新版本\n"+progLog.join("\n")); }
       next();
-    }).catch(function(e){ failed.push(localName);
-      progLog[progLog.length-1]="❌ "+localName.replace(".html","")+"：下载没成功（"+((e&&e.message)||"网络不通")+"），下次再试"; updMsg("🔍 检查新版本\n"+progLog.join("\n"));
-      next(); });
   }
   var progLog=[]; /* v1.7.0 进度直播：每一步都记一行，第一屏全程可见 */
   function prog(line){ progLog.push(line); updMsg("🔍 检查新版本（"+Math.min(progLog.length,keys.length)+"/"+keys.length+"）\n"+progLog.join("\n")); }
@@ -511,13 +531,15 @@ function syncSkip(name, size){
   return null;
 }
 function syncShared(manual){
-  if(!window.LearnShell || !window.LearnShell.folderSet || !window.LearnShell.folderSet()){ if(manual) updMsg('⚠️ 同步只在壳APP里、且授权文件夹之后才能跑'); return; }
-  var c=ghCfg(); if(!(c.user&&c.tok&&c.repo)){ if(manual) updMsg('⚠️ 还没填Token，同步跑不了'); return; }
+  /* v1.7.1 全程直播：同步的每一步同时写黄条和顶部同步行 */
+  function sprog(t){ updMsg(t); var s=document.getElementById('syncTopMsg'); if(s) s.textContent=t; }
+  if(!window.LearnShell || !window.LearnShell.folderSet || !window.LearnShell.folderSet()){ if(manual) sprog('⚠️ 同步只在壳APP里、且授权文件夹之后才能跑'); return; }
+  var c=ghCfg(); if(!(c.user&&c.tok&&c.repo)){ if(manual) sprog('⚠️ 还没填Token，同步跑不了'); return; }
   var st=syncStateGet();
   if(!manual && st.okT && (Date.now()-st.okT)<6*3600*1000) return;  /* 6小时内刚同步过 */
   var base='https://api.github.com/repos/'+encodeURIComponent(c.user)+'/'+encodeURIComponent(c.repo)+'/contents/';
   var H=ghHeaders();
-  updMsg('⇅ 正在同步：点名文件夹和仓库shared区…（闲时才干，你操作会暂停）');
+  sprog('⇅ 同步 第1步/共4步：点名文件夹和仓库shared区…');
   var folderFiles=[], repoFiles=[], meta={files:{}};
   (manual?Promise.resolve():hxIdle0()).then(function(){  /* v1.6.2 自动同步先等你闲下来；手动点的立刻干 */
     try{ folderFiles=JSON.parse(window.LearnShell.listFiles()||'[]'); }catch(e){ folderFiles=[]; }
@@ -554,11 +576,14 @@ function syncShared(manual){
       if(f.name==='shared-meta.json') return;
       if(!folderByName[f.name] && !syncSkip(f.name, f.size||0)) plan.push({act:'down', name:f.name, t:(meta.files[f.name]&&meta.files[f.name].t)||Date.now()});
     });
-    /* 执行（逐个来，失败不拖累） */
+    sprog('⇅ 同步 第2步/共4步：对账完——要上传'+plan.filter(function(p){return p.act==='up';}).length+'件、下载'+plan.filter(function(p){return p.act==='down';}).length+'件'+(plan.length?'，开始搬…':'，没啥要搬'));
+    /* 执行（逐个来，失败不拖累；v1.7.1 每搬一件报一步） */
     var done={up:0, down:0, fail:0};
+    var total=plan.length;
     var seq=Promise.resolve();
     plan.forEach(function(it){
       seq=seq.then(hxIdle0).then(function(){  /* v1.6.2 每搬一个文件前看你闲不闲，你在操作就让路 */
+        sprog('⇅ 同步 第3步/共4步：正在搬（'+(done.up+done.down+done.fail+1)+'/'+total+'）'+(it.act==='up'?'⬆️上传 ':'⬇️下载 ')+it.name+'…');
         if(it.act==='up'){
           var b64=window.LearnShell.readFile(it.name);
           if(!b64){ done.fail++; return; }
@@ -581,6 +606,7 @@ function syncShared(manual){
     });
     return seq.then(function(){
       /* 写台账到仓库（内容变了才写） */
+      sprog('⇅ 同步 第4步/共4步：写台账收尾…');
       var metaStr=JSON.stringify(meta);
       return ghFetch(base+encodeURIComponent('shared-meta.json'),{headers:H}).then(function(r){ return r.ok? r.json(): null; }).then(function(j){
         var old=''; if(j&&j.content){ try{ old=u8dec(j.content); }catch(e){} }
@@ -592,11 +618,11 @@ function syncShared(manual){
         syncStateSet({okT:Date.now(), up:done.up, down:done.down});
         var msg='✅ 同步完成：上传'+done.up+'件、下载'+done.down+'件'+(done.fail?'、失败'+done.fail+'件（下次再试）':'');
         if(skipped.length) msg+='；跳过'+skipped.length+'件：'+skipped.slice(0,3).join('、')+(skipped.length>3?'等':'');
-        updMsg(msg);
+        sprog(msg);
       });
     });
   }).catch(function(e){
-    updMsg('⚠️ 同步没跑成：'+((e&&e.message)||'网络不通')+'——不影响使用，下次打开再试');
+    sprog('⚠️ 同步没跑成：'+((e&&e.message)||'网络不通')+'——不影响使用，下次再点🔄试试');
   });
 }
 /* 自检：壳里且超7天没同步成→黄条 */
@@ -831,8 +857,13 @@ document.getElementById('scCard').addEventListener('click', function(){
   if(opening) scCheck(true);
 });
 document.getElementById('scRun').addEventListener('click', function(){ scCheck(true); });
-/* 开门静默对账一次：v1.6.2 改闲时才跑（不等死秒数，等你安静），不抢开门 */
-hxIdle0().then(function(){ try{ scCheck(false); }catch(e){} });
+/* v1.7.1 顶部同步键：点了才同步，全程4步直播 */
+document.getElementById('btnSyncTop').addEventListener('click', function(){
+  var s=document.getElementById('syncTopMsg'); if(s) s.textContent='⇅ 起步…';
+  try{ syncShared(true); }catch(e){ if(s) s.textContent='⚠️ 同步没跑成：'+e.message; }
+});
+/* v1.7.1 洪老师拍板：闲时自动对账也删掉——同步只认顶部「🔄 同步」按钮，不按绝不同步。
+   （点开同步体检卡片看明细=手动，仍会自动跑一次；那条没动） */
 /* ==================== v1.4.8 备份自理班：📤备份到坚果云（纯新增） ====================
    点按钮→listFiles() 取授权文件夹里的 .json/.bak 文件（.html 不传）→逐个 davUp 到
    坚果云「/学习套装备份/」；过程报"第几件/共几件"，结束报 ✅成功X件 ❌失败Y件
