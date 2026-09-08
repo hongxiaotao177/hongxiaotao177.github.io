@@ -2,6 +2,12 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.8.0 2026-09-08 对账+清缓存+主界面自我更新（洪老师拍板）：
+      ①主界面自己入更新名单（SUITE加index）——破冰前旧主界面永远不自更新的断根修法；
+      ②更新流程跑完→自动对账一次（重查一遍版本+文件在不在）；5秒无操作→再对账一次（🧾对账②）；
+      ③闲时对账降频：满3天才自动对一次（localStorage hx_audit3 记档）；
+      ④管理抽屉加「🧹 清缓存重来」按钮：清版本记忆+自检标记→刷新强制全量重查重下
+        （壳缓存壳每次开门已自清LOAD_NO_CACHE，网页只能清到这一层，交接说明如实交代）。其余一行未动。
     v1.7.1 2026-09-08 同步收权+直播（洪老师拍板）：
       ①删掉闲时自动同步体检（scCheck）——同步只认第一行「🔄 同步」按钮，不按绝不同步
         （点开同步体检卡片看明细=手动，仍会自动跑一次；坚果云7天提醒只读不联网，保留）；
@@ -283,6 +289,11 @@
       <button class="tag" style="padding:10px 14px; border:none; cursor:pointer;" onclick="try{sessionStorage.removeItem('hx_ver_checked');}catch(e){};updMsg('🔍 正在查新版本，请稍等…');setTimeout(function(){location.reload();},120);">🔍 检查新版本</button>
       <div class="desc" style="margin-top:6px; font-size:12px;">每次开门自动查一次；等不及就点我。</div>
     </div>
+    <!-- v1.8.0 清缓存按钮（洪老师拍板）：发了版手机还是旧版时点我——清本机版本记忆+自检标记，刷新后8个全重查重下 -->
+    <div style="margin-top:10px;">
+      <button class="tag" style="padding:10px 14px; border:none; cursor:pointer;" onclick="try{localStorage.removeItem('hx_suite_ver');sessionStorage.removeItem('hx_ver_checked');localStorage.removeItem('hx_audit3');}catch(e){};updMsg('🧹 已清本机版本记忆，刷新后全部重新检查下载…');setTimeout(function(){location.reload();},300);">🧹 清缓存重来</button>
+      <div class="desc" style="margin-top:6px; font-size:12px;">"发了版手机还是旧版"时点我：清掉本机版本记忆，全部重查重下。壳自己的缓存每次开门已自动清，我能清的就是这一层。</div>
+    </div>
   </div>
 
   <a class="card" id="apkCard" href="https://github.com/hongxiaotao177/xuexi-backup/releases/download/shell-v1.0.5/LearnShell-v1.0.5.apk">
@@ -295,12 +306,12 @@
 
 </main>
 
-<footer>红小涛的学习园地 · 由 Kimi 协助维护</footer>
+<footer>红小涛的学习园地 · 主界面 v1.8.0 · 由 Kimi 协助维护</footer>  <!-- v1.8.0 页脚亮版本号：真机验收一眼看清自己是不是新版 -->
 
 <script>
 /* ==================== 套装主界面自检器官（v1.1.0） ==================== */
 /* 本界面对应的四个软件当前内装版本（每次发版跟着改） */
-var CUR = { notes:"2.14.2", xiti:"1.8.9", bridge:"1.2.2", xueqi:"0.10.14", ppt:"0.8.1", xiaotao:"0.3.32", guanjia:"0.4.3" };
+var CUR = { notes:"2.16.2", xiti:"1.10.3", bridge:"1.3.1", xueqi:"0.12.0", ppt:"0.14.3", xiaotao:"0.5.1", guanjia:"0.9.0", index:"1.8.0" };
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
 try{ var _sv=JSON.parse(localStorage.getItem("hx_suite_ver")||"{}"); Object.keys(_sv).forEach(function(k){ if(_sv[k]) CUR[k]=_sv[k]; }); }catch(e){}
 /* key: [云端软件文件, 壳内文件名, 云端版本文件, 标签id] */
@@ -311,7 +322,8 @@ var SUITE = {
   xueqi:  ["software-xueqi.html",  "血气分析.html", "version-xueqi.json",  "tagXueqi"],
   ppt:    ["software-ppt.html",    "PPT工坊.html",  "version-ppt.json",    "tagPpt"],
   xiaotao:["software-xiaotao.html","小涛笔记.html", "version-xiaotao.json","tagXiaotao"],
-  guanjia:["software-guanjia.html","病人大管家.html","version-guanjia.json","tagGuanjia"]
+  guanjia:["software-guanjia.html","病人大管家.html","version-guanjia.json","tagGuanjia"],
+  index:  ["index.html",          "index.html",     "version-index.json", ""]
 };
 /* 标签按 CUR 显示（永不落伍） */
 Object.keys(SUITE).forEach(function(k){
@@ -405,6 +417,8 @@ function hxRawGet(name){
   var apk=document.getElementById("apkCard"); if(apk) apk.style.display="none";
   /* v1.4.8 备份自理班：版本自检每次开APP只查一次——同一会话第二次加载主界面跳过自动查版本；
      手动点「🔍 检查新版本」按钮不受此限（按钮先清标记再刷新重查）。只拦下面查版本，不拦上面藏卡片。 */
+  /* v1.8.0 对账①：刚装完更新刷新回来时（hx_postaudit），清掉自检标记让下面流程重跑一遍=对账 */
+  try{ if(sessionStorage.getItem("hx_postaudit")==="1"){ sessionStorage.removeItem("hx_postaudit"); sessionStorage.removeItem("hx_ver_checked"); } }catch(e){}
   try{ if(sessionStorage.getItem("hx_ver_checked")==="1") return; sessionStorage.setItem("hx_ver_checked","1"); }catch(e){}
   var c=ghCfg();
   /* v1.3.7：没填Token也要更新（走公开直链），不再静默跳过 */
@@ -488,7 +502,7 @@ function hxRawGet(name){
   function step(i){
     if(i>=keys.length){ finish(); return; }
     var k=keys[i], remote=SUITE[k][0], localName=SUITE[k][1], verFile=SUITE[k][2];
-    var cnName=localName.replace(".html","");
+    var cnName=(k==="index"?"主界面自己":localName.replace(".html",""));  /* v1.8.0 主界面入名单后报进度说人话 */
     prog("⏳ "+cnName+"：正在查…");
     hxIdle0().then(function(){ return fetchJson(verFile); }).then(function(txt){  /* v1.6.2 每查一个软件前先等你闲下来 */
       var info;
@@ -503,9 +517,13 @@ function hxRawGet(name){
       });
     }).catch(function(e){ step(i+1); });  /* 单个版本文件读不到不拖累别人 */
   }
+  var _audit2=false; /* v1.8.0 对账②只跑一次，不循环 */
   function finish(){
     /* v1.7.0 进度直播定格：结果常驻第一屏不消失，您看清了再点进去（洪老师拍板2026-09-08） */
+    /* v1.8.0 对账②：更新流程跑完5秒后再对一遍（只排一次；对账②自己跑完不再排） */
+    if(!_audit2){ _audit2=true; setTimeout(function(){ progLog.length=0; updated.length=0; failed.length=0; step(0); }, 5000); }
     if(updated.length){
+      try{ sessionStorage.setItem("hx_postaudit","1"); }catch(e){}  /* v1.8.0 刷新回来后自动对账① */
       updMsg(progLog.join("\n")+"\n\n✅ 已自动更新："+updated.join("、")+"\n旧版不用管，新版备份已存进您的文件夹。3秒后自动刷新…");
       try{ window.LearnShell.toast("✅ 套装已自动更新"); }catch(e){}
       setTimeout(function(){ location.reload(); }, 3000);
@@ -516,6 +534,29 @@ function hxRawGet(name){
     }
   }
   hxIdle0().then(function(){ step(0); });  /* v1.6.2 查版本不抢开门：先等你安静3秒 */
+})();
+
+/* v1.8.0 闲时对账（洪老师拍板：满3天才自动对一次，不每次闲时都烦）：
+   只拉8个版本表（几十字节）和本机记忆对一遍；对不上→清自检标记刷新，让自检流程重查重下 */
+(function(){
+  if(!window.LearnShell) return;
+  var last=0; try{ last=+(localStorage.getItem("hx_audit3")||0); }catch(e){}
+  if(Date.now()-last < 3*86400000) return;
+  try{ localStorage.setItem("hx_audit3", String(Date.now())); }catch(e){}
+  hxIdle0().then(function(){
+    var ks=Object.keys(SUITE), bad=false, i=0;
+    (function one(){
+      if(i>=ks.length){
+        if(bad){ try{ sessionStorage.removeItem("hx_ver_checked"); }catch(e){}; location.reload(); }
+        return;
+      }
+      var k=ks[i++];
+      hxRawGet(SUITE[k][2]).then(function(txt){
+        try{ var info=JSON.parse(txt); if(info && info.version && cmpVer(info.version, CUR[k])!==0) bad=true; }catch(e){}
+        one();
+      }).catch(function(){ one(); });
+    })();
+  });
 })();
 
 /* ==================== v1.2.0 坚果云↔仓库shared 同步官 + 仓库文件柜 ====================
