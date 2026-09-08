@@ -1,1 +1,1 @@
-{"version": "0.8.3", "dl": "software-guanjia.html", "engine": "guanjia-pdf-engine.js", "note": "没收清单改一行条：白底卡片「有N份没收（点我看原因）✕」，点字展开逐行明细，✕关掉不烦人"}
+{"version": "0.9.0", "dl": "software-guanjia.html", "engine": "guanjia-pdf-engine.js", "note": "工具箱：折叠卡直达五个软件，带当前病人过去，各软件亮「← 返回大管家」顶条"}

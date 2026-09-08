@@ -2102,7 +2102,7 @@ ghBindBtn($("ghConfNo"), function(){
    与学习笔记/习题学习/文件桥同款：读 version-xueqi.json 比对版本；
    壳APP里下载新版 = applyUpdate 自更新（重启生效）+ 授权文件夹存备份；
    浏览器里 = 普通下载。 */
-var SW_VERSION = "0.11.0"; /* v0.11.0 鱼骨头化：设置/备份等低频项收进「🛠 设置与工具」抽屉（hx_xueqi_tool_open），主卡说明改ⓘ收起；纯界面，功能逻辑未动（首段script保持原样） */ /* v0.10.15 hxIndexRefresh加免Token备用路（API/没Token自动走公开站直链，治主界面卡旧版静默失败；本页无toast浮层，提示保持静默） */
+var SW_VERSION = "0.12.0" /* v0.12.0 大管家回程票：从病人大管家点过来（?from=guanjia&pt=病人名）亮顶条「← 返回大管家」，且自动把该病人设为「当前病人」（setSelectedPatient），之后拍的血气/呼吸机记录自动挂他名下，大管家名册照旧自动归堆；不带参数打开零影响 */; /* v0.11.0 鱼骨头化：设置/备份等低频项收进「🛠 设置与工具」抽屉（hx_xueqi_tool_open），主卡说明改ⓘ收起；纯界面，功能逻辑未动（首段script保持原样） */ /* v0.10.15 hxIndexRefresh加免Token备用路（API/没Token自动走公开站直链，治主界面卡旧版静默失败；本页无toast浮层，提示保持静默） */
 /* v0.10.2 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["bg_gh_user", "hx_gh_user"], ["bg_gh_tok", "hx_gh_tok"], ["bg_gh_repo", "hx_gh_repo"], ["bg_apikey", "hx_apikey"]];
@@ -2845,6 +2845,33 @@ try{
     ib.textContent=open?"ⓘ 收起":"ⓘ 说明";
   });
 }catch(e){}
+</script>
+
+<!-- 大管家回程票：从病人大管家点过来（?from=guanjia&pt=病人名）时亮顶条，「← 返回大管家」一键回家，不经过主界面；不带参数正常打开零影响。v0.12.0 大管家回程票 -->
+<script>
+(function(){
+  var GJ_PT='';
+  try{
+    var q=new URLSearchParams(location.search||'');
+    if(q.get('from')!=='guanjia') return;
+    GJ_PT=q.get('pt')||'';
+    var repo=(location.pathname.split('/').pop()||'').indexOf('software-')===0;
+    var back=repo?'software-guanjia.html':'病人大管家.html';
+    var bar=document.createElement('div');
+    bar.id='gjBar';
+    bar.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#fdf9f3;border-bottom:1px solid #e5ddd0;padding:7px 10px;font-size:13px;display:flex;align-items:center;gap:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);';
+    var a=document.createElement('a');
+    a.href=back; a.textContent='← 返回大管家';
+    a.style.cssText='color:#7a5c3e;font-weight:bold;text-decoration:none;white-space:nowrap;';
+    var sp=document.createElement('span');
+    sp.style.cssText='color:#8a8178;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+    sp.textContent=GJ_PT?('🏥 当前病人：'+GJ_PT):'🏥 大管家模式';
+    bar.appendChild(a); bar.appendChild(sp);
+    document.body.appendChild(bar);
+    document.body.style.paddingTop='36px';
+    if(GJ_PT){ try{ setSelectedPatient(GJ_PT); var pi=document.getElementById("patientInput"); if(pi) pi.value=GJ_PT; }catch(e){} }
+  }catch(e){}
+})();
 </script>
 </body>
 </html>

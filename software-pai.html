@@ -319,7 +319,7 @@ table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:
 
 <script>
 'use strict';
-const SW_VERSION='0.4.5';
+const SW_VERSION='0.4.6' /* v0.4.6 大管家回程票：从病人大管家点过来（?from=guanjia）亮顶条「← 返回大管家」一键回家；不带参数打开零影响 */;
 const $=id=>document.getElementById(id);
 const esc=s=>s; // 一律textContent渲染
 function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',2200);}
@@ -1496,6 +1496,33 @@ window.__pj={
   _ls:LS
 };
 renderHome();
+</script>
+
+<!-- 大管家回程票：从病人大管家点过来（?from=guanjia&pt=病人名）时亮顶条，「← 返回大管家」一键回家，不经过主界面；不带参数正常打开零影响。v0.4.6 大管家回程票 -->
+<script>
+(function(){
+  var GJ_PT='';
+  try{
+    var q=new URLSearchParams(location.search||'');
+    if(q.get('from')!=='guanjia') return;
+    GJ_PT=q.get('pt')||'';
+    var repo=(location.pathname.split('/').pop()||'').indexOf('software-')===0;
+    var back=repo?'software-guanjia.html':'病人大管家.html';
+    var bar=document.createElement('div');
+    bar.id='gjBar';
+    bar.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#fdf9f3;border-bottom:1px solid #e5ddd0;padding:7px 10px;font-size:13px;display:flex;align-items:center;gap:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);';
+    var a=document.createElement('a');
+    a.href=back; a.textContent='← 返回大管家';
+    a.style.cssText='color:#7a5c3e;font-weight:bold;text-decoration:none;white-space:nowrap;';
+    var sp=document.createElement('span');
+    sp.style.cssText='color:#8a8178;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+    sp.textContent=GJ_PT?('🏥 当前病人：'+GJ_PT):'🏥 大管家模式';
+    bar.appendChild(a); bar.appendChild(sp);
+    document.body.appendChild(bar);
+    document.body.style.paddingTop='36px';
+
+  }catch(e){}
+})();
 </script>
 </body>
 </html>

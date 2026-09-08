@@ -1880,7 +1880,8 @@ function generateNote(topic, done){
       for(var i=0;i<notes.length;i++) if(notes[i].id === existing.id) notes[i] = existing;
       saveNotes(notes);
     }else{
-      note = { id: uid(), title: parsed.title, content: parsed.content,
+      note = { id: uid(), title: (window.GJ_PT?('['+window.GJ_PT+']'):'')+parsed.title, /* v2.16.2 大管家模式挂病人前缀 */
+               content: parsed.content,
                links: parsed.links, createdAt: now, updatedAt: now };
       var notes2 = loadNotes(); notes2.unshift(note); saveNotes(notes2);
     }
@@ -2963,7 +2964,8 @@ $('btnHandSave').addEventListener('click', function(){
 /* v2.3 首页「✍️ 自己手写」：建空白笔记 → 进详情页直接开手写模式 */
 $('btnBlank').addEventListener('click', function(){
   var now = Date.now();
-  var note = { id: uid(), title: '未命名笔记', content: '', links: [],
+  var note = { id: uid(), title: (window.GJ_PT?('['+window.GJ_PT+']'):'')+'未命名笔记', /* v2.16.2 大管家模式挂病人前缀 */
+               content: '', links: [],
                createdAt: now, updatedAt: now };
   var notes = loadNotes(); notes.unshift(note); saveNotes(notes);
   openDetail(note.id);
@@ -7157,7 +7159,7 @@ ghBindBtn($('ghConfNo'), function(){
      不通=红条常驻（只说连不上，不影响使用）
    注意：version.json 与软件副本（dl 字段指向的文件）由交付端（AI）每次发版时
    推到备份仓库；本文件版本号改 SW_VERSION 一处即可。 */
-var SW_VERSION = '2.16.1'; /* v2.16.1 (2026-09-07) 开门静默化：locStatusRender(SAF慢桥)从开门直跑挪进4秒闲时趟，治开门愣几秒；其余一行未动 */ /* v2.16.0 预切闸按模型定批量（32k→8000字/128k与k2.6→15000字留30%余量）+400自动一分为二递归3次+人话报错（bklibErrHuman）；聚合二期 */ /* v2.15.0 鱼骨头化：API设置/云备份收进「🛠 设置与工具」抽屉（hx_notes_tool_open），文献库/书库长说明收进ⓘ说明；纯界面，功能逻辑未动 */ /* v2.14.6 hxIndexRefresh加免Token备用路（API/没Token自动走公开站直链，治主界面卡旧版静默失败；成功/失败都popToast一句） */ /* v2.14.5 寄件链路状态卡常亮+点×才关+云端失败写明原因 */ /* v2.14.4 寄件镜像备份+红绿灯（pptBoxBackup+坚果云davUp） */ /* v2.14.3 寄件排队防覆盖+马上叫醒按钮 */ /* v2.14.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v2.14.1 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */
+var SW_VERSION = '2.16.2' /* v2.16.2 大管家回程票：从病人大管家点过来（?from=guanjia&pt=病人名）亮顶条「← 返回大管家」；新建笔记（AI生成/空白手写）标题自动挂「[病人名]」前缀，笔记仍存本软件大本营（study_notes_v1），两边都查得到；不带参数打开零影响 */; /* v2.16.1 (2026-09-07) 开门静默化：locStatusRender(SAF慢桥)从开门直跑挪进4秒闲时趟，治开门愣几秒；其余一行未动 */ /* v2.16.0 预切闸按模型定批量（32k→8000字/128k与k2.6→15000字留30%余量）+400自动一分为二递归3次+人话报错（bklibErrHuman）；聚合二期 */ /* v2.15.0 鱼骨头化：API设置/云备份收进「🛠 设置与工具」抽屉（hx_notes_tool_open），文献库/书库长说明收进ⓘ说明；纯界面，功能逻辑未动 */ /* v2.14.6 hxIndexRefresh加免Token备用路（API/没Token自动走公开站直链，治主界面卡旧版静默失败；成功/失败都popToast一句） */ /* v2.14.5 寄件链路状态卡常亮+点×才关+云端失败写明原因 */ /* v2.14.4 寄件镜像备份+红绿灯（pptBoxBackup+坚果云davUp） */ /* v2.14.3 寄件排队防覆盖+马上叫醒按钮 */ /* v2.14.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v2.14.1 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */
 /* v2.6.7 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["bg_gh_user", "hx_gh_user"], ["bg_gh_tok", "hx_gh_tok"], ["bg_gh_repo", "hx_gh_repo"], ["bg_apikey", "hx_apikey"]];
@@ -7973,6 +7975,33 @@ try{
   toolCard.addEventListener('click', function(){ toolSet(toolZone.style.display!=='block'); });
   toolSet(localStorage.getItem('hx_notes_tool_open')==='1');
 }catch(e){}
+})();
+</script>
+
+<!-- 大管家回程票：从病人大管家点过来（?from=guanjia&pt=病人名）时亮顶条，「← 返回大管家」一键回家，不经过主界面；不带参数正常打开零影响。v2.16.2 大管家回程票 -->
+<script>
+(function(){
+  var GJ_PT='';
+  try{
+    var q=new URLSearchParams(location.search||'');
+    if(q.get('from')!=='guanjia') return;
+    GJ_PT=q.get('pt')||'';
+    var repo=(location.pathname.split('/').pop()||'').indexOf('software-')===0;
+    var back=repo?'software-guanjia.html':'病人大管家.html';
+    var bar=document.createElement('div');
+    bar.id='gjBar';
+    bar.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#fdf9f3;border-bottom:1px solid #e5ddd0;padding:7px 10px;font-size:13px;display:flex;align-items:center;gap:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);';
+    var a=document.createElement('a');
+    a.href=back; a.textContent='← 返回大管家';
+    a.style.cssText='color:#7a5c3e;font-weight:bold;text-decoration:none;white-space:nowrap;';
+    var sp=document.createElement('span');
+    sp.style.cssText='color:#8a8178;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+    sp.textContent=GJ_PT?('🏥 当前病人：'+GJ_PT):'🏥 大管家模式';
+    bar.appendChild(a); bar.appendChild(sp);
+    document.body.appendChild(bar);
+    document.body.style.paddingTop='36px';
+    window.GJ_PT=GJ_PT; /* 供新建笔记挂前缀 */
+  }catch(e){}
 })();
 </script>
 </body>

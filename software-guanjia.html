@@ -553,6 +553,13 @@ hxStore.reg('hx_cards_v1'); hxStore.reg('hx_patients'); hxStore.reg('hx_inbox_v1
     <div class="msg" id="ptMsg"></div>
   </div>
 
+  <!-- v0.9.0 工具箱：从大管家直达各软件，带病人上下文；折起就一行 -->
+  <div class="card">
+    <h2>🧰 工具箱 <span id="tbCurPt" style="font-size:13px;color:#8a8178;font-weight:normal;"></span></h2>
+    <div class="intro" style="font-size:13px;color:#8a8178;margin-bottom:6px;">点下面软件直接过去，办完事点顶上的「← 返回大管家」回来，不经过主界面。在名册里点开过谁，过去就挂在谁名下（没点过就不挂）。这些软件要和大管家放在同一个文件夹里；点不开=文件名对不上，把它们改成同名放一起。</div>
+    <div id="tbList"></div>
+  </div>
+
   <div class="card hidden" id="ptDetailCard">
     <h2 id="ptDetailTitle">病人</h2>
     <div id="ptDetailList"></div>
@@ -694,7 +701,7 @@ hxStore.reg('hx_cards_v1'); hxStore.reg('hx_patients'); hxStore.reg('hx_inbox_v1
 </div>
 
 <script>
-var SW_VERSION = "0.8.3"; /* v0.7.0 脱敏间合并：脱敏工具v5.0整张搬入成「🛡 脱敏间」折叠卡（dsm_前缀防冲突，#dsmWrap收样式作用域，规则引擎一个字符未改）；三种进件（拖放递归遍历+选文件夹+看文件选文件）；pdf.js内嵌文件末尾base64首次遇PDF才解码（Blob URL插script+workerSrc），开门不解码，cdnjs删光；「📥 收进病历库」直接调parseDocFname/pdocsLoad/pdocsSave/docHm/renderPatients进hx_pdocs_v1 */ /* v0.6.0 病历自动收件：脱敏txt/pdf拷进授权文件夹→闲时自动按「床号+姓+诊断+日期」解析收件进hx_pdocs_v1→并入名册时间线（中文床号自动折阿拉伯起疑合并）→收完删原件；详情页看全文+AI找错复制按钮 */ /* v0.5.2 开门零等待：hxStore仓管员对齐挪到闲时跑（你安静3秒才动），先秒开页面；文件夹拉到新数据→提示并自动刷新一次；治"点大管家愣10秒" */ /* v0.5.1 点亮三级菜单：选中菜单第1层5选项→第2层3套提示词→第3层可编辑+执行+存为默认；提示词存全家公用钥匙hx_glow_v1的guanjia分支；亮起触发机制未动 */ /* v0.5.0 鱼骨头化：ⓘ说明默认收起 + 家底总览/API Key收进「🛠 设置与工具」抽屉（hx_gj_tool_open），与文件桥v1.3.0同款；纯界面，功能逻辑未动 */ /* v0.4.14 ①修选中菜单"关不掉"：收起/点别处后清空兜里选中文字，不再被长按顶出来 ②寄PPT提示词跟随PPT工坊风格开关（ppt_style=strict时用严肃学术版，去掉强制口语） */ /* v0.4.13 ①hxStore仓管员：数据同步写壳文件夹（可拷走换机）②PPT链路闭环：信封带taskId、收样品（guanjia_inbox）、寄修改意见、定稿、3趟封顶 */
+var SW_VERSION = "0.9.0"; /* v0.9.0 工具箱：新折叠卡「🧰 工具箱」（走makeFoldable，默认折起），五个软件链接直达（学习笔记/血气分析/习题学习/PPT工坊/拍病历），链接带?from=guanjia&pt=当前病人——各软件认from亮「← 返回大管家」顶条，血气认pt自动设为当前病人，学习笔记新建笔记标题自动挂[病人]前缀；当前病人=名册里最近点开详情的那个（存hx_gj_curpt），工具箱标题旁实时显示；文件名自适应：仓库/公开站环境用software-*.html，壳内/桌面用中文名 */ /* v0.7.0 脱敏间合并：脱敏工具v5.0整张搬入成「🛡 脱敏间」折叠卡（dsm_前缀防冲突，#dsmWrap收样式作用域，规则引擎一个字符未改）；三种进件（拖放递归遍历+选文件夹+看文件选文件）；pdf.js内嵌文件末尾base64首次遇PDF才解码（Blob URL插script+workerSrc），开门不解码，cdnjs删光；「📥 收进病历库」直接调parseDocFname/pdocsLoad/pdocsSave/docHm/renderPatients进hx_pdocs_v1 */ /* v0.6.0 病历自动收件：脱敏txt/pdf拷进授权文件夹→闲时自动按「床号+姓+诊断+日期」解析收件进hx_pdocs_v1→并入名册时间线（中文床号自动折阿拉伯起疑合并）→收完删原件；详情页看全文+AI找错复制按钮 */ /* v0.5.2 开门零等待：hxStore仓管员对齐挪到闲时跑（你安静3秒才动），先秒开页面；文件夹拉到新数据→提示并自动刷新一次；治"点大管家愣10秒" */ /* v0.5.1 点亮三级菜单：选中菜单第1层5选项→第2层3套提示词→第3层可编辑+执行+存为默认；提示词存全家公用钥匙hx_glow_v1的guanjia分支；亮起触发机制未动 */ /* v0.5.0 鱼骨头化：ⓘ说明默认收起 + 家底总览/API Key收进「🛠 设置与工具」抽屉（hx_gj_tool_open），与文件桥v1.3.0同款；纯界面，功能逻辑未动 */ /* v0.4.14 ①修选中菜单"关不掉"：收起/点别处后清空兜里选中文字，不再被长按顶出来 ②寄PPT提示词跟随PPT工坊风格开关（ppt_style=strict时用严肃学术版，去掉强制口语） */ /* v0.4.13 ①hxStore仓管员：数据同步写壳文件夹（可拷走换机）②PPT链路闭环：信封带taskId、收样品（guanjia_inbox）、寄修改意见、定稿、3趟封顶 */
 document.getElementById('verTop').textContent = SW_VERSION;
 function $(id){ return document.getElementById(id); }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -1000,6 +1007,8 @@ function splitPatient(g){
   });
 }
 function showPatientDetail(g){
+  try{ localStorage.setItem('hx_gj_curpt', g.name); }catch(e){} /* v0.9.0 记当前病人给工具箱用 */
+  tbRender();
   $('ptDetailCard').classList.remove('hidden');
   $('ptDetailTitle').textContent='👤 '+g.name+(g.names.length>1?('（也叫：'+g.names.filter(function(n){return n!==g.name;}).join('、')+'）'):'');
   $('ptSplit').style.display=g.names.length>1?'':'none';
@@ -2269,12 +2278,36 @@ function makeFoldable(h2, key, defaultOpen){
     var f2=foldLoad(); f2[key]=open; foldSave(f2);
   });
 }
+/* ── v0.9.0 工具箱：链接带from+pt，文件名随环境自适应 ── */
+function tbLinks(){
+  var repo=(location.pathname.split('/').pop()||'').indexOf('software-')===0;
+  return [
+    ['📒 学习笔记', repo?'software-notes.html':'学习笔记.html'],
+    ['🩸 血气分析', repo?'software-xueqi.html':'血气分析.html'],
+    ['📝 习题学习', repo?'software-xiti.html':'习题学习.html'],
+    ['📽 PPT工坊', repo?'software-ppt.html':'PPT工坊.html'],
+    ['📷 拍病历', repo?'software-pai.html':'拍病历.html']
+  ];
+}
+function tbRender(){
+  var el=$('tbList'); if(!el) return;
+  var pt=''; try{ pt=localStorage.getItem('hx_gj_curpt')||''; }catch(e){}
+  var cp=$('tbCurPt'); if(cp) cp.textContent=pt?('· 当前病人：'+pt):'· 未选病人（名册里点一个）';
+  var html='';
+  tbLinks().forEach(function(L){
+    var href=L[1]+'?from=guanjia'+(pt?'&pt='+encodeURIComponent(pt):'');
+    html+='<a class="ghost" style="display:inline-block;margin:3px 6px 3px 0;padding:8px 14px;text-decoration:none;" href="'+href+'">'+L[0]+'</a>';
+  });
+  el.innerHTML=html;
+}
+
 (function initFolds(){
   var h2s=document.querySelectorAll('.card > h2');
   var map=[
     ['🤖 问AI查资料','ask',false],
     ['📥 资料收件箱','inbox',false],
     ['👥 病人名册','pts',false],
+    ['🧰 工具箱','toolbox',false],
     ['🔨 做名片','cards',false],
     ['🔎 名片浏览','browse',false]
   ]; /* v0.4.2：开门全折成一行标题，点什么开什么（洪医生真机拍板）；v0.5.0：家底总览收进设置抽屉，退出本名册 */
@@ -2319,7 +2352,7 @@ try{
 }catch(e){}
 
 /* ── 开门：名册 + 总览 + 自动做3篇（有Key才动） ── */
-renderOverview(); renderCardList(); renderPatients(); renderInbox();
+renderOverview(); renderCardList(); renderPatients(); renderInbox(); tbRender(); /* v0.9.0 */
 bindSelMenu(); /* v0.4.8 选中文字中心菜单上岗 */
 /* v0.4.13 开门查PPT寄回的样品（仓管员对齐已挪v0.5.2闲时统一跑，这里不再重复） */
 (function(){
