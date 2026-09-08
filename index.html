@@ -2,6 +2,11 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.7.0 2026-09-08 升级链路大修（洪老师拍板）：
+      ①防缓存尾巴：hxRawGet所有公开直链加?t=时间戳（治WebView/X5无视no-store缓存旧版→"发了版手机还是旧版"频发）；
+      ②2MB炸弹修复：GitHub API对>1MB文件不给content，读空自动换download_url直取再落公开直链；
+      ③进度直播：第一屏updLine逐软件滚动报进度（查→发现新版→下载→装上），结果定格常驻不消失；
+      ④保底闹钟：闲时优先但最长等10秒强制开查。其余一行未动。
     v1.6.3 2026-09-07 停开门自动同步（洪老师拍板方案A：真机反馈"刚开门还主动同步，同步完才能开软件"）：
       开门不再自动跑 syncShared——开门=纯秒开，同步只在手动点「⇅ 立即同步（壳）」时跑；
       闲时查版本、闲时同步体检（scCheck）保留（只读不挡开门）。其余一行未动。
@@ -350,10 +355,11 @@ function ghHeaders(){ var c=ghCfg(); return {"Authorization":"token "+c.tok, "Ac
 
 /* v1.6.1 卡10秒修复：访问GitHub的fetch统一走这里，8秒没回话就当超时失败，
    不再干等浏览器默认超时（可达数分钟）。用法和fetch一模一样，失败照常走原catch。 */
-function ghFetch(url, opts){
+function ghFetch(url, opts, timeoutMs){
   opts = opts || {};
+  /* v1.7.0 超时分档：默认8秒不变；软件html本体大（大管家2MB+），下载给60秒（治"有新版但下载没成功"） */
   var ctrl = new AbortController();
-  var timer = setTimeout(function(){ ctrl.abort(); }, 8000);
+  var timer = setTimeout(function(){ ctrl.abort(); }, timeoutMs||8000);
   opts.signal = ctrl.signal;
   return fetch(url, opts).then(function(r){ clearTimeout(timer); return r; }, function(e){ clearTimeout(timer); throw e; });
 }
@@ -365,13 +371,17 @@ try{ ['touchstart','click','keydown','scroll'].forEach(function(ev){
   document.addEventListener(ev, function(){ hxLastAct=Date.now(); }, {passive:true, capture:true});
 }); }catch(e){}
 function hxIdle(gap){ gap=gap||3000; return new Promise(function(res){ (function w(){ if(Date.now()-hxLastAct>=gap) res(); else setTimeout(w,400); })(); }); }
-function hxIdle0(){ return hxIdle(); }
+function hxIdle0(){ /* v1.7.0 保底闹钟：闲时优先，但最长等10秒强制开查，不无限等（治检查永远排不上） */
+  return Promise.race([hxIdle(), new Promise(function(res){ setTimeout(res,10000); })]); }
 
 /* v1.3.7 免Token备用路（洪医生手机旧Token作废→更新静默卡死的踩坑）：
    同款文件每次发版都同步推到公开站 hongxiaotao177.github.io，读它不要Token。
    hxGetText=先走API（私有仓库），不通/没填Token就走公开直链。 */
 function hxRawGet(name){
-  return ghFetch("https://hongxiaotao177.github.io/"+encodeURIComponent(name), { cache:"no-store" }).then(function(r){
+  /* v1.7.0 防缓存尾巴：手机WebView/X5常无视no-store把旧响应缓存数天（治"发了版手机还是旧版"频发），
+     每次请求URL带时间戳=永远是新地址，缓存存不住 */
+  var isHtml=/\.html$/i.test(name);
+  return ghFetch("https://hongxiaotao177.github.io/"+encodeURIComponent(name)+"?t="+Date.now(), { cache:"no-store" }, isHtml?60000:8000).then(function(r){
     if(!r.ok) throw new Error("HTTP "+r.status);
     return r.text();
   });
@@ -390,13 +400,21 @@ function hxRawGet(name){
   var H=ghHeaders();
   var keys=Object.keys(SUITE);
   var updated=[], failed=[];
-  updMsg("🔍 正在检查" + keys.length + "个软件有没有新版…（闲时才查，你操作会让路）");
+  window.__hxVerActive=true; /* v1.7.0 版本直播优先：坚果云提醒等不得覆盖updLine */
+  updMsg("🔍 正在检查" + keys.length + "个软件有没有新版…");
   function fetchJson(name){
     /* 统一返回"文件内容文本"：API优先，失败/没Token走公开直链 */
     if(hasApi){
       return ghFetch(base+encodeURIComponent(name), {headers:H}).then(function(r){
         if(!r.ok) throw new Error("HTTP "+r.status);
-        return r.json().then(function(j){ return u8dec(j.content||""); });
+        return r.json().then(function(j){
+          /* v1.7.0 2MB炸弹修复：GitHub API对>1MB文件不给content（返回空串），
+             空content就换download_url直取，拿不到再落公开直链 */
+          if(j.content) return u8dec(j.content);
+          if(j.download_url) return ghFetch(j.download_url,{headers:H},/\.html$/i.test(name)?60000:8000).then(function(r2){
+            if(!r2.ok) throw new Error("HTTP "+r2.status); return r2.text(); });
+          throw new Error("empty content");
+        });
       }).catch(function(e){ return hxRawGet(name); });
     }
     return hxRawGet(name);
@@ -436,19 +454,28 @@ function hxRawGet(name){
       var b64=u8enc(html);
       var ok=shellWrite(localName, b64);
       try{ if(window.LearnShell.folderSet()) window.LearnShell.writeFile(localName.replace(".html","")+"_v"+info.version+".html", b64); }catch(e){}
-      if(ok){ CUR[k]=info.version; try{ localStorage.setItem("hx_suite_ver", JSON.stringify(CUR)); }catch(e){} updated.push(localName.replace(".html","")+"→v"+info.version); }
-      else{ failed.push(localName); }
+      if(ok){ CUR[k]=info.version; try{ localStorage.setItem("hx_suite_ver", JSON.stringify(CUR)); }catch(e){} updated.push(localName.replace(".html","")+"→v"+info.version);
+        progLog[progLog.length-1]="✅ "+localName.replace(".html","")+"：已装上 v"+info.version; updMsg("🔍 检查新版本\n"+progLog.join("\n")); }
+      else{ failed.push(localName);
+        progLog[progLog.length-1]="❌ "+localName.replace(".html","")+"：下载没成功，下次再试"; updMsg("🔍 检查新版本\n"+progLog.join("\n")); }
       next();
-    }).catch(function(e){ failed.push(localName); next(); });
+    }).catch(function(e){ failed.push(localName);
+      progLog[progLog.length-1]="❌ "+localName.replace(".html","")+"：下载没成功（"+((e&&e.message)||"网络不通")+"），下次再试"; updMsg("🔍 检查新版本\n"+progLog.join("\n"));
+      next(); });
   }
+  var progLog=[]; /* v1.7.0 进度直播：每一步都记一行，第一屏全程可见 */
+  function prog(line){ progLog.push(line); updMsg("🔍 检查新版本（"+Math.min(progLog.length,keys.length)+"/"+keys.length+"）\n"+progLog.join("\n")); }
   function step(i){
     if(i>=keys.length){ finish(); return; }
     var k=keys[i], remote=SUITE[k][0], localName=SUITE[k][1], verFile=SUITE[k][2];
+    var cnName=localName.replace(".html","");
+    prog("⏳ "+cnName+"：正在查…");
     hxIdle0().then(function(){ return fetchJson(verFile); }).then(function(txt){  /* v1.6.2 每查一个软件前先等你闲下来 */
       var info;
       try{ info=JSON.parse(txt); }catch(e){ info=null; }
-      if(!info || !info.version){ step(i+1); return; }
-      if(cmpVer(info.version, CUR[k])>0){ dl(k, info, remote, localName, function(){ step(i+1); }); return; }
+      if(!info || !info.version){ progLog[progLog.length-1]="⚠️ "+cnName+"：版本文件没读到，跳过"; updMsg("🔍 检查新版本\n"+progLog.join("\n")); step(i+1); return; }
+      if(cmpVer(info.version, CUR[k])>0){ progLog[progLog.length-1]="📥 "+cnName+"：发现新版 v"+info.version+"，正在下载…"; updMsg("🔍 检查新版本\n"+progLog.join("\n")); dl(k, info, remote, localName, function(){ step(i+1); }); return; }
+      progLog[progLog.length-1]="✅ "+cnName+"：已是最新 v"+info.version; updMsg("🔍 检查新版本\n"+progLog.join("\n"));
       /* 版本看着不新，再敲一下文件的门（v1.1.5 假记忆防御） */
       reallyMissing(localName, function(missing){
         if(missing) dl(k, info, remote, localName, function(){ step(i+1); });
@@ -457,16 +484,15 @@ function hxRawGet(name){
     }).catch(function(e){ step(i+1); });  /* 单个版本文件读不到不拖累别人 */
   }
   function finish(){
+    /* v1.7.0 进度直播定格：结果常驻第一屏不消失，您看清了再点进去（洪老师拍板2026-09-08） */
     if(updated.length){
-      updMsg("✅ 已自动更新："+updated.join("、")+"\n旧版不用管，新版备份已存进您的文件夹。正在刷新…");
+      updMsg(progLog.join("\n")+"\n\n✅ 已自动更新："+updated.join("、")+"\n旧版不用管，新版备份已存进您的文件夹。3秒后自动刷新…");
       try{ window.LearnShell.toast("✅ 套装已自动更新"); }catch(e){}
-      setTimeout(function(){ location.reload(); }, 1600);
+      setTimeout(function(){ location.reload(); }, 3000);
     }else if(failed.length){
-      updMsg("⚠️ 有新版但下载没成功："+failed.join("、")+"\n不影响使用，下次打开会再试。");
-      setTimeout(function(){ document.getElementById("updLine").style.display="none"; }, 6000);
+      updMsg(progLog.join("\n")+"\n\n⚠️ 有新版但下载没成功："+failed.join("、")+"\n不影响使用，下次打开会再试。");
     }else{
-      updMsg("✅ " + keys.length + "个软件都是最新版");
-      setTimeout(function(){ document.getElementById("updLine").style.display="none"; }, 2500);
+      updMsg(progLog.join("\n")+"\n\n✅ " + keys.length + "个软件全部是最新版，放心用");
     }
   }
   hxIdle0().then(function(){ step(0); });  /* v1.6.2 查版本不抢开门：先等你安静3秒 */
@@ -578,7 +604,12 @@ function syncShared(manual){
   if(!window.LearnShell) return;
   var st=syncStateGet();
   if(!st.okT || (Date.now()-st.okT)>7*24*3600*1000){
-    setTimeout(function(){ updMsg('⚠️ 坚果云↔仓库 '+(st.okT? '已经 '+Math.floor((Date.now()-st.okT)/86400000)+' 天没同步了' : '还一次都没同步成功过')+'——这不是毛病，是要先在壳APP里配好坚果云（装新壳+填应用密码），再打开「🗄️ 仓库文件柜」点「立即同步」'); }, 9000);
+    setTimeout(function(){
+      var tip='⚠️ 坚果云↔仓库 '+(st.okT? '已经 '+Math.floor((Date.now()-st.okT)/86400000)+' 天没同步了' : '还一次都没同步成功过')+'——这不是毛病，是要先在壳APP里配好坚果云（装新壳+填应用密码），再打开「🗄️ 仓库文件柜」点「立即同步」';
+      /* v1.7.0 版本直播优先：updLine正播版本进度/定格结果时，坚果云提醒追加一行不覆盖 */
+      if(window.__hxVerActive){ var el=document.getElementById("updLine"); if(el && el.style.display!=="none"){ el.textContent=el.textContent+"\n"+tip; return; } }
+      updMsg(tip);
+    }, 9000);
   }
   /* v1.6.3 2026-09-07 洪老师拍板（方案A）：开门自动同步shared区正式停掉——开门=纯秒开，
      同步只在手动点「🗄️ 仓库文件柜」里的「⇅ 立即同步（壳）」按钮时跑（见 cabSync 绑定，未动）。
