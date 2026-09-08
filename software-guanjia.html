@@ -8,6 +8,19 @@
   红小涛学习套装 · 病人大管家
   定位：全家资料的"管家"。按病人归堆（血气/呼吸机/脱敏病历，天然有章），
         按知识搜索（笔记/习题，全靠AI名片）。
+  v0.6.0 2026-09-08 病历自动收件（洪老师拍板：方案A共用授权文件夹 + 收完即删原件）：
+    ①脱敏病历txt/pdf拷进大管家授权文件夹 → 开门闲时（安静5秒）自动扫描收件：
+      文件名按「床号+姓+诊断+日期」解析（床号中文/阿拉伯都行：十七/17；日期尾数8位=年月日、
+      4位=月日、2位=日，缺少年月的用文件修改时间补）；同名pdf记档不读字（读不了），只有pdf没txt会提示。
+    ②收进 hx_pdocs_v1（hxStore管，文件夹有 hxdata_hx_pdocs_v1.json 备份）；
+      txt正文入库（超300KB截断防撑爆localStorage），收完即删文件夹里的原件。
+    ③病历并入病人名册：同「床号+姓+诊断」自动进同一病人时间线；中文床号自动折成阿拉伯再比对，
+      和血气的「17苏外伤」式记号走原「像不像同一个病人，您点头才合并」机制，绝不擅自并。
+    ④详情页病历记录带「📄看全文」（原阅读器）和「🤖AI找错」（复制该份病历全文到剪贴板，
+      等AI找错软件到位再对接直发）；名册行显示📄病历份数；名册卡加「🔄现在收一次」手动按钮。
+    必要改动说明（非纯加法处）：scanPatients加第3参数docsArr；findSuspect换用支持中文床号的
+      bedNoX/nameSimX（原bedNo/nameSim保留未删，仅名册起疑链路改走新函数）；renderPatients
+      传入病历数组。其余原有代码一行未动。
   v0.4.14 2026-09-05 晚班：
     ①修选中菜单"关不掉"（洪老师真机）：hideSelMenu清空selMenuTxt，收起后长按不再复活；
     ②寄PPT两个方向的提示词跟随PPT工坊风格（localStorage ppt_style=strict → 严肃学术版，
@@ -163,6 +176,7 @@
   .badge-notes { background:#e8eef7; color:#34567a; }
   .badge-xiti { background:#f0e8f5; color:#6a4a7c; }
   .badge-bg { background:#e6f2ec; color:#3c6e47; }
+  .badge-doc { background:#ece7f7; color:#5a4a8a; } /* v0.6.0 病历徽章 */
   .badge-vent { background:#f7eee0; color:#8a5a20; }
   .pt { border-bottom:1px dashed #e6e0d4; padding:10px 0; }
   .pt:last-child { border-bottom:none; }
@@ -305,8 +319,8 @@ hxStore.reg('hx_cards_v1'); hxStore.reg('hx_patients'); hxStore.reg('hx_inbox_v1
   <div class="ver">v<span id="verTop">?</span> · 全家的资料管家：病人归堆 + 知识搜索（名片打底）</div>
 
   <div class="card">
-    <h2>👥 病人名册 <span id="ptCount" style="font-size:13px;color:#8a8178;font-weight:normal;"></span><span class="infoBtn" data-fk="pts">ⓘ 说明</span></h2>
-    <div class="intro" style="font-size:13px;color:#8a8178;margin-bottom:6px;">自动翻血气分析和呼吸机的档案柜，按病人归堆。名字像的我会问您，绝不擅自合并。</div>
+    <h2>👥 病人名册 <span id="ptCount" style="font-size:13px;color:#8a8178;font-weight:normal;"></span><span class="infoBtn" data-fk="pts">ⓘ 说明</span> <button class="ghost" id="btnDocInbox" style="font-size:12px;padding:3px 9px;">🔄 现在收一次病历</button></h2>
+    <div class="intro" style="font-size:13px;color:#8a8178;margin-bottom:6px;">自动翻血气/呼吸机档案柜+授权文件夹里的脱敏病历（txt/pdf），按病人归堆。名字像的我会问您，绝不擅自合并。病历拷进🗄️那个文件夹就行，我开门闲时自动收，收完删原件。</div>
     <div id="ptList"></div>
     <div class="msg" id="ptMsg"></div>
   </div>
@@ -452,7 +466,7 @@ hxStore.reg('hx_cards_v1'); hxStore.reg('hx_patients'); hxStore.reg('hx_inbox_v1
 </div>
 
 <script>
-var SW_VERSION = "0.5.2"; /* v0.5.2 开门零等待：hxStore仓管员对齐挪到闲时跑（你安静3秒才动），先秒开页面；文件夹拉到新数据→提示并自动刷新一次；治"点大管家愣10秒" */ /* v0.5.1 点亮三级菜单：选中菜单第1层5选项→第2层3套提示词→第3层可编辑+执行+存为默认；提示词存全家公用钥匙hx_glow_v1的guanjia分支；亮起触发机制未动 */ /* v0.5.0 鱼骨头化：ⓘ说明默认收起 + 家底总览/API Key收进「🛠 设置与工具」抽屉（hx_gj_tool_open），与文件桥v1.3.0同款；纯界面，功能逻辑未动 */ /* v0.4.14 ①修选中菜单"关不掉"：收起/点别处后清空兜里选中文字，不再被长按顶出来 ②寄PPT提示词跟随PPT工坊风格开关（ppt_style=strict时用严肃学术版，去掉强制口语） */ /* v0.4.13 ①hxStore仓管员：数据同步写壳文件夹（可拷走换机）②PPT链路闭环：信封带taskId、收样品（guanjia_inbox）、寄修改意见、定稿、3趟封顶 */
+var SW_VERSION = "0.6.0"; /* v0.6.0 病历自动收件：脱敏txt/pdf拷进授权文件夹→闲时自动按「床号+姓+诊断+日期」解析收件进hx_pdocs_v1→并入名册时间线（中文床号自动折阿拉伯起疑合并）→收完删原件；详情页看全文+AI找错复制按钮 */ /* v0.5.2 开门零等待：hxStore仓管员对齐挪到闲时跑（你安静3秒才动），先秒开页面；文件夹拉到新数据→提示并自动刷新一次；治"点大管家愣10秒" */ /* v0.5.1 点亮三级菜单：选中菜单第1层5选项→第2层3套提示词→第3层可编辑+执行+存为默认；提示词存全家公用钥匙hx_glow_v1的guanjia分支；亮起触发机制未动 */ /* v0.5.0 鱼骨头化：ⓘ说明默认收起 + 家底总览/API Key收进「🛠 设置与工具」抽屉（hx_gj_tool_open），与文件桥v1.3.0同款；纯界面，功能逻辑未动 */ /* v0.4.14 ①修选中菜单"关不掉"：收起/点别处后清空兜里选中文字，不再被长按顶出来 ②寄PPT提示词跟随PPT工坊风格开关（ppt_style=strict时用严肃学术版，去掉强制口语） */ /* v0.4.13 ①hxStore仓管员：数据同步写壳文件夹（可拷走换机）②PPT链路闭环：信封带taskId、收样品（guanjia_inbox）、寄修改意见、定稿、3趟封顶 */
 document.getElementById('verTop').textContent = SW_VERSION;
 function $(id){ return document.getElementById(id); }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -584,8 +598,8 @@ function idbGet(db, key){
     }catch(e){ res([]); }
   });
 }
-/* 归堆：返回 [{name, names:[别名], status, recs:[{type,time,text}] }] */
-function scanPatients(bgArr, ventArr){
+/* 归堆：返回 [{name, names:[别名], status, recs:[{type,time,text}] }]；v0.6.0 加第3参数docsArr（病历并入归堆） */
+function scanPatients(bgArr, ventArr, docsArr){
   var ps=ptsLoad();
   var byName={};
   function eat(arr, type){
@@ -596,6 +610,13 @@ function scanPatients(bgArr, ventArr){
     });
   }
   eat(bgArr,'bg'); eat(ventArr,'vent');
+  /* v0.6.0 病历入堆：type:'doc'，did指向hx_pdocs_v1条目；pkey=文件名去掉日期段（如"十七廖脑出血"） */
+  (docsArr||[]).forEach(function(dc){
+    var name=String(dc.pkey||'未命名病人');
+    if(!byName[name]) byName[name]=[];
+    byName[name].push({type:'doc', time:dc.timeStr||dc.date||'', did:dc.id, kind:dc.kind,
+      text:(dc.kind==='txt'?(dc.text||''):('[同名pdf已随收，原件已删] '+dc.fname)).slice(0,200)});
+  });
   /* 把名册里已合并的别名归到正主名下 */
   function canonOf(name){
     for(var i=0;i<ps.patients.length;i++){
@@ -632,14 +653,14 @@ function findSuspect(byName, ps){
   var names=Object.keys(byName);
   for(var i=0;i<names.length;i++) for(var j=i+1;j<names.length;j++){
     var a=names[i], b=names[j];
-    var ba=bedNo(a), bb=bedNo(b);
+    var ba=bedNoX(a), bb=bedNoX(b); /* v0.6.0 改走支持中文床号的bedNoX（原bedNo保留未删） */
     if(!ba||ba!==bb) continue;
     var canonA=null, canonB=null;
     ps.patients.forEach(function(p){ if(p.names.indexOf(a)>=0) canonA=p; if(p.names.indexOf(b)>=0) canonB=p; });
     if(canonA&&canonB&&canonA.id===canonB.id) continue; /* 已经是一家人 */
     var rejected=ps.rejects.some(function(r){ return (r[0]===a&&r[1]===b)||(r[0]===b&&r[1]===a); });
     if(rejected) continue;
-    if(nameSim(a,b)>=0.6) return [a,b];
+    if(nameSimX(a,b)>=0.6) return [a,b]; /* v0.6.0 改走支持中文床号的nameSimX（剥床号规则一致） */
   }
   return null;
 }
@@ -669,16 +690,17 @@ function renderPatients(){
   idbOpenBg().then(function(db){
     if(!db){ $('ptList').innerHTML=''; showMsg($('ptMsg'),'这台机器上还没建血气的档案柜（没用过血气分析就没柜子）。用过再来，我就能归堆。','info'); return; }
     Promise.all([idbGet(db,'history'), idbGet(db,'ventHistory')]).then(function(rs){
-      var data=scanPatients(rs[0], rs[1]); ptScanData=data;
+      var data=scanPatients(rs[0], rs[1], pdocsLoad().docs); ptScanData=data; /* v0.6.0 病历并入归堆 */
       var html='', inN=0;
       data.list.forEach(function(g,gi){
         if(g.status==='in') inN++;
         var bgN=g.recs.filter(function(r){return r.type==='bg';}).length;
-        var vtN=g.recs.length-bgN;
+        var dcN=g.recs.filter(function(r){return r.type==='doc';}).length; /* v0.6.0 */
+        var vtN=g.recs.length-bgN-dcN; /* v0.6.0 原算法会把病历算进呼吸机，扣掉 */
         html+='<div class="pt"><span class="pt-name" data-gi="'+gi+'">'+esc(g.name)+'</span>'+
           (g.names.length>1?'<span class="pt-alias">也叫：'+esc(g.names.filter(function(n){return n!==g.name;}).join('、'))+'</span>':'')+
           (g.status==='out'?'<span class="pt-out">已出院</span>':'')+
-          '<div class="pt-sub">🩸 血气 '+bgN+' 张　🫁 呼吸机 '+vtN+' 条　'+
+          '<div class="pt-sub">🩸 血气 '+bgN+' 张　🫁 呼吸机 '+vtN+' 条　'+(dcN?('📄 病历 '+dcN+' 份　'):'')+
           '<button class="ghost" style="font-size:12px;padding:4px 10px;" data-tg="'+gi+'">'+(g.status==='in'?'出院':'召回')+'</button></div></div>';
       });
       $('ptList').innerHTML=html;
@@ -730,15 +752,136 @@ function showPatientDetail(g){
   $('ptSplit').onclick=function(){ splitPatient(g); };
   var html='';
   g.recs.forEach(function(r){
-    html+='<div class="rec"><span class="badge '+(r.type==='bg'?'badge-bg':'badge-vent')+'">'+(r.type==='bg'?'血气':'呼吸机')+'</span>'+
-      '<span class="rec-time">'+esc(r.time)+'</span>'+
-      '<div style="margin-top:3px;white-space:pre-wrap;">'+esc((r.text||'').slice(0,150))+(r.text&&r.text.length>150?'…':'')+'</div></div>';
+    if(r.type==='doc'){ /* v0.6.0 病历记录：看全文+AI找错复制 */
+      html+='<div class="rec"><span class="badge badge-doc">病历</span>'+
+        '<span class="rec-time">'+esc(r.time)+'</span>'+
+        '<div style="margin-top:3px;white-space:pre-wrap;">'+esc((r.text||'').slice(0,150))+(r.text&&r.text.length>150?'…':'')+'</div>'+
+        '<div style="margin-top:4px;">'+(r.kind==='txt'?
+          '<button class="ghost" style="font-size:12px;padding:4px 10px;" data-docview="'+r.did+'">📄 看全文</button> '+
+          '<button class="ghost" style="font-size:12px;padding:4px 10px;" data-docai="'+r.did+'">🤖 AI找错（复制全文）</button>'
+          :'<span style="font-size:12px;color:#8a8178;">pdf读不了字（原件已删），同名txt才是正文</span>')+'</div></div>';
+    }else{
+      html+='<div class="rec"><span class="badge '+(r.type==='bg'?'badge-bg':'badge-vent')+'">'+(r.type==='bg'?'血气':'呼吸机')+'</span>'+
+        '<span class="rec-time">'+esc(r.time)+'</span>'+
+        '<div style="margin-top:3px;white-space:pre-wrap;">'+esc((r.text||'').slice(0,150))+(r.text&&r.text.length>150?'…':'')+'</div></div>';
+    }
   });
   if(!g.recs.length) html='<div style="font-size:13px;color:#8a8178;">名下还没有记录</div>';
   $('ptDetailList').innerHTML=html;
+  /* v0.6.0 病历按钮绑定 */
+  Array.prototype.forEach.call(document.querySelectorAll('[data-docview]'), function(el){
+    el.onclick=function(){ var d=docById(el.getAttribute('data-docview')); if(d&&d.text) openReader('📄 '+d.fname, d.text); else toast('这份病历原文没了'); };
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-docai]'), function(el){
+    el.onclick=function(){ var d=docById(el.getAttribute('data-docai')); if(!d||!d.text){ toast('这份病历没有文字内容'); return; }
+      copyText(d.text, '✅ 已复制「'+d.pkey+'」'+d.date+'的病历全文，打开AI找错软件粘贴即可'); };
+  });
   $('ptDetailCard').scrollIntoView({block:'start'});
 }
 $('ptDetailClose').onclick=function(){ $('ptDetailCard').classList.add('hidden'); };
+
+/* ==================== v0.6.0 病历自动收件（hx_pdocs_v1） ====================
+   流路：脱敏txt/pdf拷进授权文件夹 → 闲时/手动扫描 → 按「床号+姓+诊断+日期」解析
+   → txt正文入库、pdf记档 → 删原件 → 并入名册归堆（中文床号折阿拉伯走原起疑合并）。 */
+var LS_PDOCS='hx_pdocs_v1';
+function pdocsLoad(){ try{ var p=JSON.parse(localStorage.getItem(LS_PDOCS)); return (p&&Array.isArray(p.docs)&&Array.isArray(p.seen))?p:{v:1,docs:[],seen:[]}; }catch(e){ return {v:1,docs:[],seen:[]}; } }
+function pdocsSave(pd){ try{ localStorage.setItem(LS_PDOCS, JSON.stringify(pd)); }catch(e){ toast('病历库存储失败：'+e.message); } hxStore.set(LS_PDOCS, pd); }
+hxStore.reg(LS_PDOCS);
+function docUnb64(s){ return decodeURIComponent(escape(atob(s))); }
+function docById(id){ var pd=pdocsLoad(), r=null; pd.docs.forEach(function(d){ if(d.id===id) r=d; }); return r; }
+/* 中文数字→阿拉伯（床号到百位兜底） */
+function cnNum(s){
+  var map={'零':0,'〇':0,'一':1,'二':2,'两':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9};
+  var m10=String(s).match(/^([一二两三四五六七八九])?十([一二三四五六七八九])?$/);
+  if(m10) return (m10[1]?map[m10[1]]:1)*10+(m10[2]?map[m10[2]]:0);
+  if(map[s]!=null) return map[s];
+  var mh=String(s).match(/^([一二三四五六七八九])百([一二两三四五六七八九])?十?([一二三四五六七八九])?$/);
+  if(mh) return map[mh[1]]*100+(mh[2]?map[mh[2]]*10:0)+(mh[3]?map[mh[3]]:0);
+  return NaN;
+}
+/* 剥床号：阿拉伯或中文开头，返回{bed:'17', rest:'廖脑出血'} */
+function splitBed(name){
+  name=String(name||'').replace(/^\s+/,'');
+  var m=name.match(/^(\d+)([\s\S]*)$/);
+  if(m) return {bed:m[1].replace(/^0+(?=\d)/,''), rest:m[2]||''};
+  var c=name.match(/^([零〇一二两三四五六七八九十百]+)([\s\S]*)$/);
+  if(c){ var n=cnNum(c[1]); if(!isNaN(n)) return {bed:String(n), rest:c[2]||''}; }
+  return {bed:'', rest:name};
+}
+/* v0.6.0 支持中文床号的比对（原bedNo/nameSim保留，名册起疑链路改走这里） */
+function bedNoX(name){ return splitBed(name).bed; }
+function nameSimX(a,b){
+  a=splitBed(a).rest; b=splitBed(b).rest;
+  if(a===b) return 1;
+  if(a.indexOf(b)>=0||b.indexOf(a)>=0) return 0.9;
+  var ca={}, share=0;
+  for(var i=0;i<a.length;i++) ca[a[i]]=1;
+  for(var j=0;j<b.length;j++) if(ca[b[j]]) share++;
+  return share/Math.min(a.length,b.length)||0;
+}
+/* 解析文件名：十七廖脑出血0908.txt → {ok,pkey,bed,sur,diag,date,dateStr}
+   日期尾数：8位=年月日；4位=月日（年按文件修改时间补）；2位=日（年月按文件修改时间补） */
+function parseDocFname(fname, ft){
+  var base=String(fname||'').replace(/\.(txt|pdf)$/i,'');
+  var m=base.match(/^([\s\S]*?)(\d{8}|\d{4}|\d{2})$/); /* 先长后短：0908按"月日"不被"日"截胡 */
+  if(!m) return {ok:false, why:'文件名末尾没有日期数字'};
+  var core=m[1], ds=m[2], d;
+  if(ds.length===8){ d=new Date(+ds.substr(0,4), +ds.substr(4,2)-1, +ds.substr(6,2)); }
+  else if(ds.length===4){ var y=(ft?new Date(ft):new Date()).getFullYear(); d=new Date(y, +ds.substr(0,2)-1, +ds.substr(2,2)); }
+  else { var ref=ft?new Date(ft):new Date(); d=new Date(ref.getFullYear(), ref.getMonth(), +ds); }
+  if(isNaN(d.getTime())||d.getMonth()+1>12||d.getDate()>31) return {ok:false, why:'日期看不懂'};
+  var b=splitBed(core);
+  if(!b.bed) return {ok:false, why:'开头没有床号'};
+  if(b.rest.length<2) return {ok:false, why:'姓或诊断太短'};
+  return {ok:true, pkey:core, bed:b.bed, sur:b.rest.charAt(0), diag:b.rest.slice(1), date:d,
+          dateStr:d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()};
+}
+function docHm(ft){ var t=ft?new Date(ft):new Date(); function p(x){ return (x<10?'0':'')+x; } return p(t.getHours())+':'+p(t.getMinutes()); }
+/* 收件扫描：manual=手动按钮（无收获也吭声）；自动闲时=有收获才吭声 */
+function docInboxScan(manual){
+  if(!hxStore.bridged()){ if(manual) toast('还没接文件夹：点左下角🗄️先选大管家的数据文件夹，病历就拷进那里'); return; }
+  var files=[]; try{ files=JSON.parse(LearnShell.listFiles()||'[]'); }catch(e){ if(manual) toast('列目录失败：'+e.message); return; }
+  var pd=pdocsLoad();
+  function seenHas(f){ for(var i=0;i<pd.seen.length;i++){ var s=pd.seen[i]; if(s.f===f.name&&s.z===(f.size||0)&&s.t===(f.t||0)) return true; } return false; }
+  var got=[], skipped=[];
+  files.forEach(function(f){
+    if(!/\.(txt|pdf)$/i.test(f.name)) return;
+    if(f.name.indexOf('hxdata_')===0) return;
+    if(seenHas(f)) return;
+    var pr=parseDocFname(f.name, f.t);
+    if(!pr.ok){ skipped.push(f.name+'（'+pr.why+'）'); return; }
+    var kind=(/\.pdf$/i.test(f.name))?'pdf':'txt';
+    var text='';
+    if(kind==='txt'){
+      var b64=null; try{ b64=LearnShell.readFile(f.name); }catch(e){}
+      if(!b64){ skipped.push(f.name+'（读不出来，原件没删）'); return; }
+      try{ text=docUnb64(b64); }catch(e){ skipped.push(f.name+'（解码失败，原件没删）'); return; }
+      if(text.length>300000) text=text.slice(0,300000)+'\n…（太长已截断存，完整件在您内网电脑）';
+    }
+    pd.docs.push({id:'D'+Date.now().toString(36)+Math.floor(Math.random()*1000), pkey:pr.pkey, bed:pr.bed, sur:pr.sur, diag:pr.diag,
+      date:pr.dateStr, timeStr:pr.dateStr+' '+docHm(f.t), ts:pr.date.getTime(), fname:f.name, kind:kind, size:f.size||0, text:text});
+    pd.seen.push({f:f.name, z:f.size||0, t:f.t||0});
+    try{ LearnShell.deleteFile(f.name); }catch(e){} /* 拍板：收完即删，内网还有 */
+    got.push(pr.pkey+'（'+pr.dateStr+'）');
+  });
+  if(pd.seen.length>200) pd.seen=pd.seen.slice(-200);
+  if(got.length||skipped.length) pdocsSave(pd);
+  if(got.length){ toast('📥 新收病历'+got.length+'份：'+got.join('、'), 4000); renderPatients(); }
+  if(skipped.length) toast('有'+skipped.length+'份没收：'+skipped.join('；'), 6000);
+  else if(manual&&!got.length) toast('文件夹里没有新的病历txt/pdf');
+}
+/* 闲时自动收件：安静5秒跑（错开v0.5.2同步的3秒），只跑一趟；拷了新文件想马上收→点名册卡「🔄现在收一次」 */
+(function(){
+  var lastAct2=Date.now();
+  try{ ['touchstart','click','keydown','scroll'].forEach(function(ev){ document.addEventListener(ev,function(){ lastAct2=Date.now(); },{passive:true,capture:true}); }); }catch(e){}
+  (function w2(){ if(Date.now()-lastAct2>=5000){ try{ docInboxScan(false); }catch(e){} } else setTimeout(w2,500); })();
+})();
+$('btnDocInbox').onclick=function(){ docInboxScan(true); };
+/* 复制文本（AI找错用）：clipboard优先，降级textarea */
+function copyText(s, okMsg){
+  function fb(){ try{ var ta=document.createElement('textarea'); ta.value=s; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); toast(okMsg,4000); }catch(e){ toast('复制失败：'+e.message); } }
+  try{ if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(s).then(function(){ toast(okMsg,4000); },fb); } else fb(); }catch(e){ fb(); }
+}
 
 /* ── 扫描全家资料 ── */
 function scanSources(){
