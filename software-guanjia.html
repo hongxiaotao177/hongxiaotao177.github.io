@@ -761,7 +761,7 @@ hxStore.reg('hx_cards_v1'); hxStore.reg('hx_patients'); hxStore.reg('hx_inbox_v1
 </div>
 
 <script>
-var SW_VERSION = "0.13.0"; /* v0.13.0 四个毛病（洪老师真机报修）：①毛病21脱敏间预览全空——病根是hx_dsm_v1存档时content键用「补了日期的fname.txt」、files名用原文件名，恢复dsmh_restore后dsm_previewData按f.name取content取不到；修：dsmh_remember的fileMeta.name改成与content键一致+dsmh_restore对旧档自愈（名对不上的按未占用content键补别名/缺文件条目的补条目）②毛病20原文到点没删成还没红字——dsmraw_destroy里listFiles回读若返回字符串数组或解析失败会被当成"已删"静默放行；修：条目名兼容字符串/对象两种形态、回读失败一律当没删成走红字D2 ③毛病22名册详情pdf档只有病案名看不了——看全文按钮原来只给kind=txt；修：所有病历都给看全文（pdf档自动找同pkey的txt正文兜底），详情页新增「原状病历」（hx_dsmraw_v1未销毁的）和「聚合病历」（壳文件夹里脱敏导出_前缀且属于该病人的）两个区块，浏览器环境明示请在壳里查看 ④毛病23导出区上方文件清单dsm_renderFileList没排序——按v0.12.0 E1同款类型权重PDF排前（稳定排序同类保持原顺序） */ /* v0.12.0 七条（导出分块防截断+销毁核对+界面收纳+收件筛子）：①B1脱敏间整卡默认收起（旧机存过展开态的升级后强制收一次，一次性迁移标记hx_guanjia_fold里dsm_v12）②B2四处默认藏起留小字入口（📕PDF引擎状态/📁当前状态/📂点文件夹进件/📊当前病人，功能一行没动只是默认display:none）③C1收件筛子：parseDocFname解析不ok（补日期后仍不ok）的文件不进名册，收进「❓拿不准的文件」清单（localStorage hx_gj_unsure_v1+名册卡一行「❓拿不准X份（点我看）」点开alert清单），登记pd.seen防每次开门重复报，原件不删 ④D1导出防截断：壳里writeFile后立刻readFile回读atob对账（长度+尾部120字，含「由「医疗数据脱敏聚合工具 v5.0」生成」标志），对不上自动重试一次，再不行拆_1of2/_2of2两块各写各核对，全失败才红字「没存全」；成功明示「已存到授权文件夹：脱敏导出_文件名（共xxKB，已核对）」；浏览器blob下载路径不动，明示「已下载：文件名」 ⑤D2销毁回读核对：dsmraw_destroy删原文后用listFiles确认真没了，还在→红字toast「原文没删成，请手动到文件夹删：文件名」，登记条目只在确认删掉后才移除，没删成的保留在横幅列表里标红「没删成」；dsmraw_tick的无分身确认弹窗hxConfirm原样保留 ⑥E1排序：dsm预览和三个导出构造函数textFiles改PDF文档（病历类大头）排前、文本/Markdown（验单类）排后，同类保持原顺序（sort稳定排序只按类型权重）⑦E2手机全屏对照：.dsm_compare加max-width:700px媒体查询改单列上下排（上原文标红、下脱敏后），预览每个文件标题旁加「🔍 看全屏」按钮点开全屏浮层（大字、可滚动、右上角关闭） */ /* v0.11.0 问AI·病历分析（洪老师2026-09-09拍板开工）：病历详情页加「🤖问AI」按钮→壳内直发不再复制来复制去；三套提示词可编辑+存默认+恢复出厂（hx_gj_askai_v1）；千问/Kimi/🔀交叉校对三选一（交叉=千问出稿→Kimi挑错，需两把Key）；⟦R⟧红⟦B⟧醒目只在屏幕看，「复制干净版」剥标记；复用aiChat通道自动记账。纯加法：旧「AI找错（复制全文）」按钮保留未动 */ /* v0.10.0 原文保险柜（洪老师拍板六条）：①进来马上存（原文→壳文件夹「原文库_」前缀+hx_dsmraw_v1登记；脱敏版读完自动收病历库+hx_dsm_v1）②到点销毁默认1小时（1/4/24三档，横幅可换）③删前查脱敏分身：在→静默删/不在→弹问「删/再留会儿」④删=壳文件+脱敏间条目+登记一刀三断⑤开门堵问横幅⑥不搞密码；收件扫描排除原文库_/脱敏导出_前缀+全入口补日期（两处必改已注释报备）；导出报告同时写壳文件夹「脱敏导出_」 */ /* v0.9.1 修脱敏间「文件夹内容」文件名一字一行竖排：.dsm_name加min-width:0（flex子项默认min-width:auto被nowrap的大小/徽章挤到一字宽），只动这一处CSS，其余未碰 */ /* v0.9.0 工具箱：新折叠卡「🧰 工具箱」（走makeFoldable，默认折起），五个软件链接直达（学习笔记/血气分析/习题学习/PPT工坊/拍病历），链接带?from=guanjia&pt=当前病人——各软件认from亮「← 返回大管家」顶条，血气认pt自动设为当前病人，学习笔记新建笔记标题自动挂[病人]前缀；当前病人=名册里最近点开详情的那个（存hx_gj_curpt），工具箱标题旁实时显示；文件名自适应：仓库/公开站环境用software-*.html，壳内/桌面用中文名 */ /* v0.7.0 脱敏间合并：脱敏工具v5.0整张搬入成「🛡 脱敏间」折叠卡（dsm_前缀防冲突，#dsmWrap收样式作用域，规则引擎一个字符未改）；三种进件（拖放递归遍历+选文件夹+看文件选文件）；pdf.js内嵌文件末尾base64首次遇PDF才解码（Blob URL插script+workerSrc），开门不解码，cdnjs删光；「📥 收进病历库」直接调parseDocFname/pdocsLoad/pdocsSave/docHm/renderPatients进hx_pdocs_v1 */ /* v0.6.0 病历自动收件：脱敏txt/pdf拷进授权文件夹→闲时自动按「床号+姓+诊断+日期」解析收件进hx_pdocs_v1→并入名册时间线（中文床号自动折阿拉伯起疑合并）→收完删原件；详情页看全文+AI找错复制按钮 */ /* v0.5.2 开门零等待：hxStore仓管员对齐挪到闲时跑（你安静3秒才动），先秒开页面；文件夹拉到新数据→提示并自动刷新一次；治"点大管家愣10秒" */ /* v0.5.1 点亮三级菜单：选中菜单第1层5选项→第2层3套提示词→第3层可编辑+执行+存为默认；提示词存全家公用钥匙hx_glow_v1的guanjia分支；亮起触发机制未动 */ /* v0.5.0 鱼骨头化：ⓘ说明默认收起 + 家底总览/API Key收进「🛠 设置与工具」抽屉（hx_gj_tool_open），与文件桥v1.3.0同款；纯界面，功能逻辑未动 */ /* v0.4.14 ①修选中菜单"关不掉"：收起/点别处后清空兜里选中文字，不再被长按顶出来 ②寄PPT提示词跟随PPT工坊风格开关（ppt_style=strict时用严肃学术版，去掉强制口语） */ /* v0.4.13 ①hxStore仓管员：数据同步写壳文件夹（可拷走换机）②PPT链路闭环：信封带taskId、收样品（guanjia_inbox）、寄修改意见、定稿、3趟封顶 */
+var SW_VERSION = "0.13.1"; /* v0.13.1 毛病26（洪老师真机报）：脱敏间文本能看了但脱敏失灵（原文不标红、脱敏后仍见姓名住院号）——病根是hx_dsm_v1存档的content本来就是「脱敏后文本」（dsmh_remember第3参=out），v0.13.0把名对齐后恢复链路通了，预览却把这份脱敏存档当成原文：没词可红、脱敏后框只是存档原样。修：dsmh_restore恢复时查原文保险柜hx_dsmraw_v1，同名原文还没销毁的从壳文件夹readFile读回真原文挂内存content（只动内存不落盘，原文到点照销毁，保险柜设计不变）；已销毁的保持脱敏存档。规则引擎一个字没动 */ /* v0.13.0 四个毛病（洪老师真机报修）：①毛病21脱敏间预览全空——病根是hx_dsm_v1存档时content键用「补了日期的fname.txt」、files名用原文件名，恢复dsmh_restore后dsm_previewData按f.name取content取不到；修：dsmh_remember的fileMeta.name改成与content键一致+dsmh_restore对旧档自愈（名对不上的按未占用content键补别名/缺文件条目的补条目）②毛病20原文到点没删成还没红字——dsmraw_destroy里listFiles回读若返回字符串数组或解析失败会被当成"已删"静默放行；修：条目名兼容字符串/对象两种形态、回读失败一律当没删成走红字D2 ③毛病22名册详情pdf档只有病案名看不了——看全文按钮原来只给kind=txt；修：所有病历都给看全文（pdf档自动找同pkey的txt正文兜底），详情页新增「原状病历」（hx_dsmraw_v1未销毁的）和「聚合病历」（壳文件夹里脱敏导出_前缀且属于该病人的）两个区块，浏览器环境明示请在壳里查看 ④毛病23导出区上方文件清单dsm_renderFileList没排序——按v0.12.0 E1同款类型权重PDF排前（稳定排序同类保持原顺序） */ /* v0.12.0 七条（导出分块防截断+销毁核对+界面收纳+收件筛子）：①B1脱敏间整卡默认收起（旧机存过展开态的升级后强制收一次，一次性迁移标记hx_guanjia_fold里dsm_v12）②B2四处默认藏起留小字入口（📕PDF引擎状态/📁当前状态/📂点文件夹进件/📊当前病人，功能一行没动只是默认display:none）③C1收件筛子：parseDocFname解析不ok（补日期后仍不ok）的文件不进名册，收进「❓拿不准的文件」清单（localStorage hx_gj_unsure_v1+名册卡一行「❓拿不准X份（点我看）」点开alert清单），登记pd.seen防每次开门重复报，原件不删 ④D1导出防截断：壳里writeFile后立刻readFile回读atob对账（长度+尾部120字，含「由「医疗数据脱敏聚合工具 v5.0」生成」标志），对不上自动重试一次，再不行拆_1of2/_2of2两块各写各核对，全失败才红字「没存全」；成功明示「已存到授权文件夹：脱敏导出_文件名（共xxKB，已核对）」；浏览器blob下载路径不动，明示「已下载：文件名」 ⑤D2销毁回读核对：dsmraw_destroy删原文后用listFiles确认真没了，还在→红字toast「原文没删成，请手动到文件夹删：文件名」，登记条目只在确认删掉后才移除，没删成的保留在横幅列表里标红「没删成」；dsmraw_tick的无分身确认弹窗hxConfirm原样保留 ⑥E1排序：dsm预览和三个导出构造函数textFiles改PDF文档（病历类大头）排前、文本/Markdown（验单类）排后，同类保持原顺序（sort稳定排序只按类型权重）⑦E2手机全屏对照：.dsm_compare加max-width:700px媒体查询改单列上下排（上原文标红、下脱敏后），预览每个文件标题旁加「🔍 看全屏」按钮点开全屏浮层（大字、可滚动、右上角关闭） */ /* v0.11.0 问AI·病历分析（洪老师2026-09-09拍板开工）：病历详情页加「🤖问AI」按钮→壳内直发不再复制来复制去；三套提示词可编辑+存默认+恢复出厂（hx_gj_askai_v1）；千问/Kimi/🔀交叉校对三选一（交叉=千问出稿→Kimi挑错，需两把Key）；⟦R⟧红⟦B⟧醒目只在屏幕看，「复制干净版」剥标记；复用aiChat通道自动记账。纯加法：旧「AI找错（复制全文）」按钮保留未动 */ /* v0.10.0 原文保险柜（洪老师拍板六条）：①进来马上存（原文→壳文件夹「原文库_」前缀+hx_dsmraw_v1登记；脱敏版读完自动收病历库+hx_dsm_v1）②到点销毁默认1小时（1/4/24三档，横幅可换）③删前查脱敏分身：在→静默删/不在→弹问「删/再留会儿」④删=壳文件+脱敏间条目+登记一刀三断⑤开门堵问横幅⑥不搞密码；收件扫描排除原文库_/脱敏导出_前缀+全入口补日期（两处必改已注释报备）；导出报告同时写壳文件夹「脱敏导出_」 */ /* v0.9.1 修脱敏间「文件夹内容」文件名一字一行竖排：.dsm_name加min-width:0（flex子项默认min-width:auto被nowrap的大小/徽章挤到一字宽），只动这一处CSS，其余未碰 */ /* v0.9.0 工具箱：新折叠卡「🧰 工具箱」（走makeFoldable，默认折起），五个软件链接直达（学习笔记/血气分析/习题学习/PPT工坊/拍病历），链接带?from=guanjia&pt=当前病人——各软件认from亮「← 返回大管家」顶条，血气认pt自动设为当前病人，学习笔记新建笔记标题自动挂[病人]前缀；当前病人=名册里最近点开详情的那个（存hx_gj_curpt），工具箱标题旁实时显示；文件名自适应：仓库/公开站环境用software-*.html，壳内/桌面用中文名 */ /* v0.7.0 脱敏间合并：脱敏工具v5.0整张搬入成「🛡 脱敏间」折叠卡（dsm_前缀防冲突，#dsmWrap收样式作用域，规则引擎一个字符未改）；三种进件（拖放递归遍历+选文件夹+看文件选文件）；pdf.js内嵌文件末尾base64首次遇PDF才解码（Blob URL插script+workerSrc），开门不解码，cdnjs删光；「📥 收进病历库」直接调parseDocFname/pdocsLoad/pdocsSave/docHm/renderPatients进hx_pdocs_v1 */ /* v0.6.0 病历自动收件：脱敏txt/pdf拷进授权文件夹→闲时自动按「床号+姓+诊断+日期」解析收件进hx_pdocs_v1→并入名册时间线（中文床号自动折阿拉伯起疑合并）→收完删原件；详情页看全文+AI找错复制按钮 */ /* v0.5.2 开门零等待：hxStore仓管员对齐挪到闲时跑（你安静3秒才动），先秒开页面；文件夹拉到新数据→提示并自动刷新一次；治"点大管家愣10秒" */ /* v0.5.1 点亮三级菜单：选中菜单第1层5选项→第2层3套提示词→第3层可编辑+执行+存为默认；提示词存全家公用钥匙hx_glow_v1的guanjia分支；亮起触发机制未动 */ /* v0.5.0 鱼骨头化：ⓘ说明默认收起 + 家底总览/API Key收进「🛠 设置与工具」抽屉（hx_gj_tool_open），与文件桥v1.3.0同款；纯界面，功能逻辑未动 */ /* v0.4.14 ①修选中菜单"关不掉"：收起/点别处后清空兜里选中文字，不再被长按顶出来 ②寄PPT提示词跟随PPT工坊风格开关（ppt_style=strict时用严肃学术版，去掉强制口语） */ /* v0.4.13 ①hxStore仓管员：数据同步写壳文件夹（可拷走换机）②PPT链路闭环：信封带taskId、收样品（guanjia_inbox）、寄修改意见、定稿、3趟封顶 */
 document.getElementById('verTop').textContent = SW_VERSION;
 function $(id){ return document.getElementById(id); }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -4873,6 +4873,35 @@ function dsmh_restore(){
     if(!dsm_APP.patients[n]){ dsm_APP.patients[n]=h.patients[n].data; changed=true; }
   });
   if(healed) dsmhSave(h); /* v0.13.0 毛病21：自愈结果落盘，免得每次开门重算 */
+  /* v0.13.1 毛病26：hx_dsm_v1存档的content是「脱敏后文本」（dsmh_remember第3参=out，脱敏版存档本是对的），
+     但恢复后dsm_previewData把它当原文——原文框没有敏感词可标红、脱敏后框也只把存档原样再脱一遍（等于没脱敏这道工序）。
+     修：恢复时若原文保险柜（hx_dsmraw_v1）里同名原文还没销毁，就从壳文件夹readFile读回真原文，挂到内存里的content上
+     （只动内存：hx_dsm_v1盘档仍是脱敏版、原文到点照销毁，保险柜设计不变；此段放在dsmhSave之后，防真原文被落盘）。
+     原文已销毁的保持脱敏存档原样——里面本就没敏感词了，无红可标属正常。 */
+  try{
+    if(hxStore.bridged()){
+      var _rd=dsmrawLoad();
+      if(_rd.items&&_rd.items.length){
+        /* 名芯比对（与上面自愈同一把尺）：旧档文件名没日期、原文登记用原名；新档两头都带日期——按芯都能对上 */
+        var _strip=function(s){ return String(s).replace(/\.[^.]+$/,'').replace(/(\d{8}|\d{4}|\d{2})$/,''); };
+        names.forEach(function(n){
+          var _pd=dsm_APP.patients[n];
+          if(!_pd||!_pd.content) return;
+          Object.keys(_pd.content).forEach(function(k){
+            for(var i=0;i<_rd.items.length;i++){ var it=_rd.items[i];
+              if(_strip(it.fname)===_strip(k)&&['txt','md','markdown'].indexOf(String(it.ext||'').toLowerCase())>=0){
+                try{
+                  var _b=LearnShell.readFile(it.storeName);
+                  if(_b){ var _t=decodeURIComponent(escape(atob(_b))); if(_t){ _pd.content[k]={text:_t,images:(_pd.content[k]&&_pd.content[k].images)||[]}; } }
+                }catch(e){}
+                break;
+              }
+            }
+          });
+        });
+      }
+    }
+  }catch(e){}
   if(changed) dsm_renderPatientCards(Object.keys(dsm_APP.patients));
 }
 
