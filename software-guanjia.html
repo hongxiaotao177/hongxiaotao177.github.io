@@ -260,6 +260,21 @@
   #hxDlg .box { background:#fff; border-radius:14px; max-width:560px; margin:14vh auto; padding:18px 20px; }
   #hxDlgInput { width:100%; min-height:70px; font-size:15px; padding:10px;
                 border:1px solid #d8d2c6; border-radius:8px; }
+  /* ═══ v0.11.0 问AI·病历分析弹窗（仿hxDlg，id/class全部 askai_ 前缀防冲突） ═══ */
+  #askaiDlg { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:99998; overflow:auto; }
+  #askaiDlg .askai_box { background:#faf7f2; border-radius:14px; max-width:640px; margin:6vh auto; padding:16px 18px; }
+  .askai_tabs { display:flex; gap:6px; flex-wrap:wrap; margin:6px 0; }
+  .askai_tab { padding:5px 12px; border-radius:16px; border:1px solid #d8d2c6; background:#fff; color:#5a4a3a; font-size:13px; cursor:pointer; } /* v0.11.0修：全局button白字，未选中态必须显式深色字（playwright自测抓） */
+  .askai_tab.on { background:#8a5a3b; color:#fff; border-color:#8a5a3b; }
+  .askai_airow { display:flex; gap:6px; flex-wrap:wrap; margin:6px 0; align-items:center; }
+  .askai_ai { padding:5px 12px; border-radius:16px; border:1px solid #d8d2c6; background:#fff; color:#5a4a3a; font-size:13px; cursor:pointer; } /* 同上白字修复 */
+  .askai_ai.on { background:#3b6a8a; color:#fff; border-color:#3b6a8a; }
+  #askaiPrompt { width:100%; min-height:120px; font-size:13px; padding:9px 10px; border:1px solid #d8d2c6; border-radius:9px; background:#fff; }
+  #askaiResult { background:#fff; border:1px solid #e6e0d4; border-radius:9px; padding:12px 14px; margin-top:10px; font-size:14px; line-height:1.75; white-space:pre-wrap; word-break:break-word; max-height:52vh; overflow:auto; display:none; }
+  #askaiResult .askaiR { color:#c0392b; font-weight:bold; } /* 缺陷红 */
+  #askaiResult .askaiB { color:#1a6e8a; font-weight:bold; background:#eef6f9; border-radius:4px; padding:0 3px; } /* 修改意见醒目 */
+  #askaiResult .askaiH { color:#8a5a3b; font-weight:bold; border-bottom:2px solid #e8d9c8; display:block; margin:12px 0 4px; } /* 分节标题 */
+  .askai_prog { font-size:13px; color:#8a8178; margin-top:8px; display:none; }
   /* 全屏阅读器（v0.4.7）：书式目录+大窗大字+位置提示 */
   #readDlg { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:99997; }
   #readDlg .rbox { background:#faf7f2; max-width:680px; height:96vh; margin:2vh auto; border-radius:14px;
@@ -304,7 +319,7 @@
 .dsm_pdf-loader{background:#fff;border-radius:10px;padding:12px 20px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:16px;border-left:4px solid #f39c12}#dsmWrap .dsm_pdf-loader .dsm_loader-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}#dsmWrap .dsm_pdf-loader .dsm_loader-title{font-weight:600;color:#555;font-size:14px;display:flex;align-items:center;gap:8px}#dsmWrap .dsm_pdf-loader .dsm_spinner{display:inline-block;width:18px;height:18px;border:3px solid #f3f3f3;border-top:3px solid #1a73e8;border-radius:50%;animation:dsm_spin 0.8s linear infinite}#dsmWrap .dsm_pdf-loader .dsm_progress-wrap{flex:1;min-width:120px;height:6px;background:#e8edf5;border-radius:4px;overflow:hidden}#dsmWrap .dsm_pdf-loader .dsm_progress-fill{height:100%;background:linear-gradient(90deg,#1a73e8,#0d47a1);width:0%;border-radius:4px;transition:width .3s}#dsmWrap .dsm_pdf-loader .dsm_status-text{font-size:13px;color:#888}#dsmWrap .dsm_pdf-loader .dsm_status-text .dsm_hl{color:#1a73e8;font-weight:600}#dsmWrap .dsm_pdf-loader .dsm_retry-btn{background:#1a73e8;color:#fff;border:none;padding:3px 14px;border-radius:4px;font-size:12px;cursor:pointer}#dsmWrap .dsm_pdf-loader .dsm_retry-btn:hover{background:#1557b0}#dsmWrap .dsm_pdf-loader .dsm_retry-btn.dsm_hidden{display:none}#dsmWrap .dsm_pdf-loader.dsm_ready{border-left-color:#27ae60}#dsmWrap .dsm_pdf-loader.dsm_error{border-left-color:#e74c3c}#dsmWrap /* 状态栏 */
 .dsm_root-info{background:#fff;border-radius:10px;padding:10px 18px;box-shadow:0 1px 4px rgba(0,0,0,.06);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:16px}#dsmWrap .dsm_root-info .dsm_label{font-weight:600;color:#555;font-size:13px}#dsmWrap .dsm_root-info .dsm_path{color:#1a73e8;font-family:Consolas,monospace;font-size:13px;background:#f5f7fa;padding:2px 12px;border-radius:4px;word-break:break-all}#dsmWrap .dsm_root-info .dsm_actions{display:flex;gap:6px}#dsmWrap .dsm_root-info .dsm_actions button{padding:4px 12px;border:1px solid #ddd;background:#fff;border-radius:5px;font-size:12px;cursor:pointer}#dsmWrap .dsm_root-info .dsm_actions button:hover{background:#e8edf5;border-color:#1a73e8}#dsmWrap /* 选择区 */
 .dsm_select-zone{background:#fff;border-radius:10px;padding:28px 20px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:16px;border:3px dashed #1a73e8;text-align:center;cursor:pointer;transition:.2s}#dsmWrap .dsm_select-zone:hover{background:#e8edf5;border-color:#0d47a1}#dsmWrap .dsm_select-zone .dsm_icon{font-size:40px;display:block;margin-bottom:8px}#dsmWrap .dsm_select-zone .dsm_hint{font-size:16px;color:#333;font-weight:500}#dsmWrap .dsm_select-zone .dsm_sub-hint{font-size:13px;color:#888;margin-top:6px}#dsmWrap .dsm_select-zone .dsm_file-info{font-size:13px;color:#27ae60;margin-top:8px;font-weight:600}#dsmWrap /* ★★★ 文件浏览器 - 醒目显示 ★★★ */
-.dsm_file-browser{background:#fff;border-radius:10px;padding:14px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);margin-bottom:16px;display:none;border:3px solid #1a73e8}#dsmWrap .dsm_file-browser.dsm_visible{display:block}#dsmWrap .dsm_file-browser .dsm_browser-title{font-weight:700;color:#1a73e8;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;font-size:15px;padding-bottom:8px;border-bottom:2px solid #e8edf5}#dsmWrap .dsm_file-browser .dsm_browser-title .dsm_count{font-weight:400;color:#666;font-size:13px;background:#e8edf5;padding:2px 12px;border-radius:10px}#dsmWrap .dsm_file-browser .dsm_browser-list{max-height:400px;overflow-y:auto}#dsmWrap .dsm_file-browser .dsm_browser-item{display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:4px;border-bottom:1px solid #f5f7fa;font-size:13px}#dsmWrap .dsm_file-browser .dsm_browser-item:hover{background:#f0f6ff}#dsmWrap .dsm_file-browser .dsm_browser-item .dsm_icon{font-size:18px;width:28px;text-align:center}#dsmWrap .dsm_file-browser .dsm_browser-item .dsm_name{flex:1;font-family:Consolas,monospace;font-size:13px;color:#333;word-break:break-all}#dsmWrap .dsm_file-browser .dsm_browser-item .dsm_size{color:#999;font-size:12px;white-space:nowrap;margin:0 6px}#dsmWrap .dsm_file-browser .dsm_browser-item .dsm_badge{font-size:11px;padding:2px 10px;border-radius:10px;white-space:nowrap}#dsmWrap .dsm_file-browser .dsm_browser-item .dsm_badge.dsm_ok{background:#d4edda;color:#155724}#dsmWrap .dsm_file-browser .dsm_browser-item .dsm_badge.dsm_err{background:#f8d7da;color:#721c24}#dsmWrap .dsm_file-browser .dsm_browser-item .dsm_badge.warn{background:#fff3cd;color:#856404}#dsmWrap .dsm_file-browser .dsm_empty-state{color:#bbb;text-align:center;padding:30px 0;font-size:14px}#dsmWrap /* 病人列表 */
+.dsm_file-browser{background:#fff;border-radius:10px;padding:14px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);margin-bottom:16px;display:none;border:3px solid #1a73e8}#dsmWrap .dsm_file-browser.dsm_visible{display:block}#dsmWrap .dsm_file-browser .dsm_browser-title{font-weight:700;color:#1a73e8;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;font-size:15px;padding-bottom:8px;border-bottom:2px solid #e8edf5}#dsmWrap .dsm_file-browser .dsm_browser-title .dsm_count{font-weight:400;color:#666;font-size:13px;background:#e8edf5;padding:2px 12px;border-radius:10px}#dsmWrap .dsm_file-browser .dsm_browser-list{max-height:400px;overflow-y:auto}#dsmWrap .dsm_file-browser .dsm_browser-item{display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:4px;border-bottom:1px solid #f5f7fa;font-size:13px}#dsmWrap .dsm_file-browser .dsm_browser-item:hover{background:#f0f6ff}#dsmWrap .dsm_file-browser .dsm_browser-item .dsm_icon{font-size:18px;width:28px;text-align:center}#dsmWrap .dsm_file-browser .dsm_browser-item .dsm_name{flex:1;min-width:0;font-family:Consolas,monospace;font-size:13px;color:#333;word-break:break-all}#dsmWrap .dsm_file-browser .dsm_browser-item .dsm_size{color:#999;font-size:12px;white-space:nowrap;margin:0 6px}#dsmWrap .dsm_file-browser .dsm_browser-item .dsm_badge{font-size:11px;padding:2px 10px;border-radius:10px;white-space:nowrap}#dsmWrap .dsm_file-browser .dsm_browser-item .dsm_badge.dsm_ok{background:#d4edda;color:#155724}#dsmWrap .dsm_file-browser .dsm_browser-item .dsm_badge.dsm_err{background:#f8d7da;color:#721c24}#dsmWrap .dsm_file-browser .dsm_browser-item .dsm_badge.warn{background:#fff3cd;color:#856404}#dsmWrap .dsm_file-browser .dsm_empty-state{color:#bbb;text-align:center;padding:30px 0;font-size:14px}#dsmWrap /* 病人列表 */
 .dsm_patient-section{background:#fff;border-radius:10px;padding:14px 18px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:16px}#dsmWrap .dsm_patient-section .dsm_section-title{font-weight:600;color:#555;font-size:14px;margin-bottom:10px}#dsmWrap .dsm_patient-cards{display:flex;flex-wrap:wrap;gap:8px}#dsmWrap .dsm_patient-card{padding:8px 18px;border:2px solid #e0e4ea;border-radius:6px;cursor:pointer;font-weight:500;background:#fafbfc;font-size:13px;position:relative}#dsmWrap .dsm_patient-card:hover{border-color:#1a73e8;background:#f0f6ff}#dsmWrap .dsm_patient-card.dsm_active{border-color:#1a73e8;background:#e3edfc;color:#0d47a1}#dsmWrap .dsm_patient-card .dsm_del{position:absolute;top:-5px;right:-5px;background:#e74c3c;color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:11px;cursor:pointer;display:none;line-height:18px;text-align:center}#dsmWrap .dsm_patient-card:hover .dsm_del{display:block}#dsmWrap /* 数据区 */
 .dsm_data-section{background:#fff;border-radius:10px;padding:14px 18px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:16px}#dsmWrap .dsm_data-section .dsm_top-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px}#dsmWrap .dsm_data-section .dsm_top-row .dsm_info{font-size:13px;color:#555}#dsmWrap .dsm_data-section .dsm_top-row .dsm_info strong{color:#1a73e8}#dsmWrap .dsm_data-section .dsm_top-row .dsm_actions button{padding:4px 14px;border:1px solid #ddd;background:#fff;border-radius:5px;font-size:12px;cursor:pointer}#dsmWrap .dsm_data-section .dsm_top-row .dsm_actions button:hover{background:#e8edf5;border-color:#1a73e8}#dsmWrap .dsm_file-list{display:flex;flex-direction:column;gap:4px}#dsmWrap .dsm_file-item{display:flex;align-items:center;gap:10px;padding:5px 10px;background:#f8f9fb;border-radius:5px;font-size:13px}#dsmWrap .dsm_file-item .dsm_status{font-weight:600}#dsmWrap .dsm_file-item .dsm_status.dsm_ok{color:#27ae60}#dsmWrap .dsm_file-item .dsm_status.dsm_err{color:#e74c3c}#dsmWrap .dsm_file-item .dsm_fname{font-family:Consolas,monospace;font-size:12px;color:#333}#dsmWrap .dsm_file-item .dsm_fsize{color:#999;font-size:11px;margin-left:auto}#dsmWrap .dsm_file-item .dsm_ftype{color:#666;font-size:11px;background:#e8edf5;padding:1px 8px;border-radius:4px}#dsmWrap /* 导出 */
 .dsm_export-section{background:#fff;border-radius:10px;padding:12px 18px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:16px;display:flex;flex-wrap:wrap;align-items:center;gap:10px}#dsmWrap .dsm_export-section .dsm_label{font-weight:600;color:#555;font-size:13px}#dsmWrap .dsm_export-section .dsm_path-input{flex:2;min-width:160px;padding:5px 10px;border:1px solid #ddd;border-radius:5px;font-size:12px;background:#f8f9fb;font-family:Consolas,monospace}#dsmWrap .dsm_export-section .dsm_path-input:focus{border-color:#1a73e8;outline:none;background:#fff}#dsmWrap .dsm_export-section .dsm_btn-primary{padding:6px 20px;background:#1a73e8;color:#fff;border:none;border-radius:5px;font-size:14px;font-weight:600;cursor:pointer}#dsmWrap .dsm_export-section .dsm_btn-primary:hover{background:#1557b0}#dsmWrap /* 预览 */
@@ -681,6 +696,35 @@ hxStore.reg('hx_cards_v1'); hxStore.reg('hx_patients'); hxStore.reg('hx_inbox_v1
   </div>
 </div>
 
+<!-- ═══ v0.11.0 问AI·病历分析弹窗（纯加法，不影响旧弹窗） ═══ -->
+<div id="askaiDlg">
+  <div class="askai_box">
+    <h3 id="askaiTitle" style="margin-bottom:4px;">🤖 问AI·病历分析</h3>
+    <div style="font-size:12px;color:#8a8178;margin-bottom:6px;">①选提示词（可改）→ ②选AI → ③发送。颜色只在屏幕上看，复制出来的是干净文字。</div>
+    <div class="askai_tabs" id="askaiTabs"></div>
+    <textarea id="askaiPrompt" placeholder="提示词"></textarea>
+    <div class="btn-row" style="margin-top:4px;gap:6px;flex-wrap:wrap;">
+      <button class="ghost" id="askaiSaveP" style="font-size:12px;padding:4px 10px;">💾 这套存为我的默认</button>
+      <button class="ghost" id="askaiResetP" style="font-size:12px;padding:4px 10px;">↺ 恢复出厂这套</button>
+    </div>
+    <div class="askai_airow" id="askaiAis">
+      <span style="font-size:13px;color:#8a8178;">用哪家AI：</span>
+      <button class="askai_ai on" data-ai="qwen">千问（快·便宜）</button>
+      <button class="askai_ai" data-ai="kimi">Kimi</button>
+      <button class="askai_ai" data-ai="cross">🔀 交叉校对（千问出稿→Kimi挑错）</button>
+    </div>
+    <div class="btn-row" style="margin-top:6px;">
+      <button id="askaiSend">🚀 发送</button>
+      <button class="ghost" id="askaiClose">✕ 关上</button>
+    </div>
+    <div class="askai_prog" id="askaiProg"></div>
+    <div id="askaiResult"></div>
+    <div class="btn-row" style="margin-top:8px;display:none;" id="askaiCopyRow">
+      <button class="ghost" id="askaiCopy">📋 复制干净版（剥掉颜色标记）</button>
+    </div>
+  </div>
+</div>
+
 <div id="readDlg">
   <div class="rbox">
     <div class="rhead">
@@ -701,7 +745,7 @@ hxStore.reg('hx_cards_v1'); hxStore.reg('hx_patients'); hxStore.reg('hx_inbox_v1
 </div>
 
 <script>
-var SW_VERSION = "0.9.0"; /* v0.9.0 工具箱：新折叠卡「🧰 工具箱」（走makeFoldable，默认折起），五个软件链接直达（学习笔记/血气分析/习题学习/PPT工坊/拍病历），链接带?from=guanjia&pt=当前病人——各软件认from亮「← 返回大管家」顶条，血气认pt自动设为当前病人，学习笔记新建笔记标题自动挂[病人]前缀；当前病人=名册里最近点开详情的那个（存hx_gj_curpt），工具箱标题旁实时显示；文件名自适应：仓库/公开站环境用software-*.html，壳内/桌面用中文名 */ /* v0.7.0 脱敏间合并：脱敏工具v5.0整张搬入成「🛡 脱敏间」折叠卡（dsm_前缀防冲突，#dsmWrap收样式作用域，规则引擎一个字符未改）；三种进件（拖放递归遍历+选文件夹+看文件选文件）；pdf.js内嵌文件末尾base64首次遇PDF才解码（Blob URL插script+workerSrc），开门不解码，cdnjs删光；「📥 收进病历库」直接调parseDocFname/pdocsLoad/pdocsSave/docHm/renderPatients进hx_pdocs_v1 */ /* v0.6.0 病历自动收件：脱敏txt/pdf拷进授权文件夹→闲时自动按「床号+姓+诊断+日期」解析收件进hx_pdocs_v1→并入名册时间线（中文床号自动折阿拉伯起疑合并）→收完删原件；详情页看全文+AI找错复制按钮 */ /* v0.5.2 开门零等待：hxStore仓管员对齐挪到闲时跑（你安静3秒才动），先秒开页面；文件夹拉到新数据→提示并自动刷新一次；治"点大管家愣10秒" */ /* v0.5.1 点亮三级菜单：选中菜单第1层5选项→第2层3套提示词→第3层可编辑+执行+存为默认；提示词存全家公用钥匙hx_glow_v1的guanjia分支；亮起触发机制未动 */ /* v0.5.0 鱼骨头化：ⓘ说明默认收起 + 家底总览/API Key收进「🛠 设置与工具」抽屉（hx_gj_tool_open），与文件桥v1.3.0同款；纯界面，功能逻辑未动 */ /* v0.4.14 ①修选中菜单"关不掉"：收起/点别处后清空兜里选中文字，不再被长按顶出来 ②寄PPT提示词跟随PPT工坊风格开关（ppt_style=strict时用严肃学术版，去掉强制口语） */ /* v0.4.13 ①hxStore仓管员：数据同步写壳文件夹（可拷走换机）②PPT链路闭环：信封带taskId、收样品（guanjia_inbox）、寄修改意见、定稿、3趟封顶 */
+var SW_VERSION = "0.11.0"; /* v0.11.0 问AI·病历分析（洪老师2026-09-09拍板开工）：病历详情页加「🤖问AI」按钮→壳内直发不再复制来复制去；三套提示词可编辑+存默认+恢复出厂（hx_gj_askai_v1）；千问/Kimi/🔀交叉校对三选一（交叉=千问出稿→Kimi挑错，需两把Key）；⟦R⟧红⟦B⟧醒目只在屏幕看，「复制干净版」剥标记；复用aiChat通道自动记账。纯加法：旧「AI找错（复制全文）」按钮保留未动 */ /* v0.10.0 原文保险柜（洪老师拍板六条）：①进来马上存（原文→壳文件夹「原文库_」前缀+hx_dsmraw_v1登记；脱敏版读完自动收病历库+hx_dsm_v1）②到点销毁默认1小时（1/4/24三档，横幅可换）③删前查脱敏分身：在→静默删/不在→弹问「删/再留会儿」④删=壳文件+脱敏间条目+登记一刀三断⑤开门堵问横幅⑥不搞密码；收件扫描排除原文库_/脱敏导出_前缀+全入口补日期（两处必改已注释报备）；导出报告同时写壳文件夹「脱敏导出_」 */ /* v0.9.1 修脱敏间「文件夹内容」文件名一字一行竖排：.dsm_name加min-width:0（flex子项默认min-width:auto被nowrap的大小/徽章挤到一字宽），只动这一处CSS，其余未碰 */ /* v0.9.0 工具箱：新折叠卡「🧰 工具箱」（走makeFoldable，默认折起），五个软件链接直达（学习笔记/血气分析/习题学习/PPT工坊/拍病历），链接带?from=guanjia&pt=当前病人——各软件认from亮「← 返回大管家」顶条，血气认pt自动设为当前病人，学习笔记新建笔记标题自动挂[病人]前缀；当前病人=名册里最近点开详情的那个（存hx_gj_curpt），工具箱标题旁实时显示；文件名自适应：仓库/公开站环境用software-*.html，壳内/桌面用中文名 */ /* v0.7.0 脱敏间合并：脱敏工具v5.0整张搬入成「🛡 脱敏间」折叠卡（dsm_前缀防冲突，#dsmWrap收样式作用域，规则引擎一个字符未改）；三种进件（拖放递归遍历+选文件夹+看文件选文件）；pdf.js内嵌文件末尾base64首次遇PDF才解码（Blob URL插script+workerSrc），开门不解码，cdnjs删光；「📥 收进病历库」直接调parseDocFname/pdocsLoad/pdocsSave/docHm/renderPatients进hx_pdocs_v1 */ /* v0.6.0 病历自动收件：脱敏txt/pdf拷进授权文件夹→闲时自动按「床号+姓+诊断+日期」解析收件进hx_pdocs_v1→并入名册时间线（中文床号自动折阿拉伯起疑合并）→收完删原件；详情页看全文+AI找错复制按钮 */ /* v0.5.2 开门零等待：hxStore仓管员对齐挪到闲时跑（你安静3秒才动），先秒开页面；文件夹拉到新数据→提示并自动刷新一次；治"点大管家愣10秒" */ /* v0.5.1 点亮三级菜单：选中菜单第1层5选项→第2层3套提示词→第3层可编辑+执行+存为默认；提示词存全家公用钥匙hx_glow_v1的guanjia分支；亮起触发机制未动 */ /* v0.5.0 鱼骨头化：ⓘ说明默认收起 + 家底总览/API Key收进「🛠 设置与工具」抽屉（hx_gj_tool_open），与文件桥v1.3.0同款；纯界面，功能逻辑未动 */ /* v0.4.14 ①修选中菜单"关不掉"：收起/点别处后清空兜里选中文字，不再被长按顶出来 ②寄PPT提示词跟随PPT工坊风格开关（ppt_style=strict时用严肃学术版，去掉强制口语） */ /* v0.4.13 ①hxStore仓管员：数据同步写壳文件夹（可拷走换机）②PPT链路闭环：信封带taskId、收样品（guanjia_inbox）、寄修改意见、定稿、3趟封顶 */
 document.getElementById('verTop').textContent = SW_VERSION;
 function $(id){ return document.getElementById(id); }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -828,6 +872,121 @@ function keyInputAsk(){
     },'存');
   });
 }
+
+/* ══════════════ v0.11.0 问AI·病历分析（洪老师2026-09-09拍板：病历详情页壳内直发，三套提示词可编辑，千问/Kimi/交叉校对三选一） ══════════════
+   设计要点：
+   ①三套提示词存 hx_gj_askai_v1{p1,p2,p3}，弹窗里可改，「存为默认」才落库，「恢复出厂」回ASKAI_DEF；
+   ②颜色标记约定：AI输出用 ⟦R⟧…⟦/R⟧=缺陷红、⟦B⟧…⟦/B⟧=修改意见醒目色，只在屏幕显示；
+     「复制干净版」剥掉全部⟦⟧标记，贴进病历系统不带颜色（洪老师拍板：颜色是给自己看的，不是输出的）；
+   ③AI通道复用现有 aiChat（千问优先/罢工换Kimi/自动记账）；选Kimi走 opt.force='kimi'；
+   ④交叉校对=第1棒千问出稿→第2棒Kimi当校对员挑错，两份结果上下都显示；两家Key缺一不让选；
+   ⑤验单格式（洪老师口述）：txt里"前面一个时间后面跟内容，同一天多项检验时间相同或只差几分几秒"——写进第1套提示词让AI按类别分组+组内按时间重排。 */
+var LS_ASKAI='hx_gj_askai_v1';
+var ASKAI_DEF={
+p1:'你是一位资深的临床教学老师，正在审阅一份住院病历。请按顺序完成以下五个任务：\n\n【任务一·缺陷审阅】\n先把病历原文完整显示。对每一处缺陷（病史描述不完整、逻辑矛盾、遗漏重要阴性症状、用语不规范、时间线错误等），把有问题的原文用 ⟦R⟧原文⟦/R⟧ 标出，紧随其后用 ⟦B⟧修改意见：……⟦/B⟧ 给出具体修改建议。\n\n【任务二·诊断审核】\n检查诊断是否完整。若有遗漏请补齐并说明依据；若你认为某条原诊断有问题，把原诊断用 ⟦R⟧⟦/R⟧ 标出，在后面用 ⟦B⟧⟦/B⟧ 写出你的建议诊断和理由。\n\n【任务三·验单整理】\n病历中的验单原文格式为：前面一个时间、后面跟该项检验内容；同一天的多项检验时间相同或只差几分钟几秒。请把验单按类别分组（血常规/生化/凝血/免疫/影像/其他），组内按时间先后排列，重新输出。\n\n【任务四·验单解读】\n结合病史，逐项说明验单反映了什么情况（哪些支持诊断、哪些提示新问题、哪些需要复查）。\n\n【任务五·最终输出（复制用）】\n最后输出一份可直接粘贴进病历系统的干净文字版，包含：①修改后的病历完整文字 ②重排后的验单全文。本部分不要用⟦⟧标记，缺陷与修改处用【缺陷】【建议】文字标注。\n\n病历全文如下：\n',
+p2:'你是一位资深临床医生。阅读以下病历后请回答：\n1. 目前诊断列表是否完整？列出还应考虑的鉴别诊断（按可能性排序，每条给依据）。\n2. 还缺哪些关键检查/检验？为什么？\n3. 诊疗计划中可能存在的风险点或遗漏。\n4. 需要立即处理的警示征象（如有）。\n重要发现用 ⟦R⟧⟦/R⟧ 标出，建议用 ⟦B⟧⟦/B⟧ 标出。\n\n病历全文如下：\n',
+p3:'你是一位临床带教老师。请把这份病历提炼成教学材料：\n1. 本例的核心学习要点（3-5条）\n2. 适合提问实习生的问题（附参考答案）\n3. 本例体现的诊断思路链条\n4. 相关诊疗共识要点\n重点用 ⟦R⟧⟦/R⟧ 标出。\n\n病历全文如下：\n'};
+function askaiLoad(){ try{ var p=JSON.parse(localStorage.getItem(LS_ASKAI)); if(p&&p.p1&&p.p2&&p.p3) return p; }catch(e){} return {p1:ASKAI_DEF.p1,p2:ASKAI_DEF.p2,p3:ASKAI_DEF.p3}; }
+var askaiDoc=null, askaiSet=1, askaiAi='qwen', askaiLastRaw='';
+function askaiOpen(d){
+  askaiDoc=d; askaiLastRaw='';
+  $('askaiTitle').textContent='🤖 问AI ·「'+d.pkey+'」'+(d.date||'');
+  var saved=askaiLoad();
+  askaiSet=1;
+  $('askaiPrompt').value=saved.p1;
+  askaiRenderTabs(); askaiRenderAis();
+  $('askaiResult').style.display='none'; $('askaiResult').innerHTML='';
+  $('askaiCopyRow').style.display='none'; $('askaiProg').style.display='none';
+  $('askaiSend').disabled=false;
+  $('askaiDlg').style.display='block';
+}
+function askaiRenderTabs(){
+  var names=['第1套·病历缺陷+验单整理','第2套·鉴别诊断查漏','第3套·教学要点提炼'];
+  var h='';
+  for(var i=1;i<=3;i++) h+='<button class="askai_tab'+(askaiSet===i?' on':'')+'" data-set="'+i+'">'+names[i-1]+'</button>';
+  $('askaiTabs').innerHTML=h;
+  Array.prototype.forEach.call(document.querySelectorAll('#askaiTabs [data-set]'), function(el){
+    el.onclick=function(){
+      askaiSet=parseInt(el.getAttribute('data-set'),10);
+      var saved=askaiLoad();
+      $('askaiPrompt').value=(askaiSet===1?saved.p1:(askaiSet===2?saved.p2:saved.p3));
+      askaiRenderTabs();
+    };
+  });
+}
+function askaiRenderAis(){
+  Array.prototype.forEach.call(document.querySelectorAll('#askaiAis [data-ai]'), function(el){
+    el.classList.toggle('on', el.getAttribute('data-ai')===askaiAi);
+    el.onclick=function(){
+      var v=el.getAttribute('data-ai');
+      if(v==='cross'&&(!qwenKey()||!kimiKey())){ toast('🔀 交叉校对要千问和Kimi两把Key都在手，现在还缺一把'); return; }
+      if(v==='qwen'&&!qwenKey()&&!kimiKey()){ toast('还没有API Key，点「🛠 设置与工具」里填一把'); return; }
+      askaiAi=v; askaiRenderAis();
+    };
+  });
+}
+$('askaiSaveP').onclick=function(){
+  var p=askaiLoad();
+  if(askaiSet===1) p.p1=$('askaiPrompt').value; else if(askaiSet===2) p.p2=$('askaiPrompt').value; else p.p3=$('askaiPrompt').value;
+  try{ localStorage.setItem(LS_ASKAI, JSON.stringify(p)); toast('✅ 第'+askaiSet+'套已存为您的默认'); }catch(e){ toast('存不下：'+e.message); }
+};
+$('askaiResetP').onclick=function(){
+  $('askaiPrompt').value=(askaiSet===1?ASKAI_DEF.p1:(askaiSet===2?ASKAI_DEF.p2:ASKAI_DEF.p3));
+  toast('↺ 已恢复出厂第'+askaiSet+'套（没动您存的默认，要改默认请点💾）');
+};
+$('askaiClose').onclick=function(){ $('askaiDlg').style.display='none'; };
+/* 渲染：⟦R⟧红 ⟦B⟧醒目 【任务x…】节标题；其余原样（esc防注入） */
+function askaiRenderHtml(raw){
+  var s=esc(raw);
+  s=s.replace(/⟦R⟧([\s\S]*?)⟦\/R⟧/g,'<span class="askaiR">$1</span>');
+  s=s.replace(/⟦B⟧([\s\S]*?)⟦\/B⟧/g,'<span class="askaiB">$1</span>');
+  s=s.replace(/⟦\/?R⟧|⟦\/?B⟧/g,''); /* 没配对的孤标记清掉 */
+  s=s.replace(/^(【[^\n]{2,40}】)\s*$/gm,'<span class="askaiH">$1</span>');
+  return s;
+}
+function askaiStripMarks(raw){ return String(raw||'').replace(/⟦\/?R⟧|⟦\/?B⟧/g,''); }
+$('askaiCopy').onclick=function(){
+  copyText(askaiStripMarks(askaiLastRaw), '✅ 干净版已复制（颜色标记已剥掉），直接去病历系统粘贴');
+};
+$('askaiSend').onclick=function(){
+  if(!askaiDoc||!askaiDoc.text){ toast('病历内容没了'); return; }
+  if(!qwenKey()&&!kimiKey()){ toast('还没有API Key，点「🛠 设置与工具」里填一把'); return; }
+  var prompt=$('askaiPrompt').value;
+  if(!prompt.replace(/^\s+|\s+$/g,'')){ toast('提示词是空的'); return; }
+  $('askaiSend').disabled=true;
+  var prog=$('askaiProg'); prog.style.display='block';
+  $('askaiResult').style.display='none'; $('askaiCopyRow').style.display='none';
+  var t0=Date.now();
+  function done(finalRaw, label){
+    askaiLastRaw=finalRaw;
+    $('askaiResult').innerHTML=askaiRenderHtml(finalRaw);
+    $('askaiResult').style.display='block';
+    $('askaiCopyRow').style.display='';
+    prog.innerHTML=label+' · 用时'+Math.round((Date.now()-t0)/1000)+'秒';
+    $('askaiSend').disabled=false;
+  }
+  function fail(msg){
+    prog.innerHTML='❌ '+esc(msg)+'（Key不对/网不通都会报在这）';
+    $('askaiSend').disabled=false;
+  }
+  if(askaiAi==='cross'){
+    /* 第1棒千问出稿 → 第2棒Kimi校对 */
+    prog.textContent='🔀 第1棒：千问分析中…';
+    aiChat(prompt, askaiDoc.text, function(r1){
+      prog.textContent='🔀 第2棒：Kimi校对中…';
+      var sys2='你是一位严格的病历审阅校对员。另一位AI对病历做了一份分析，请逐条检查：指出其中的错误、遗漏、过度解读、与病历原文不符之处；同意的地方简单说"无误"。最后给出你的修正版结论。错误用 ⟦R⟧⟦/R⟧ 标出，修正建议用 ⟦B⟧⟦/B⟧ 标出。';
+      var usr2='===== 原始病历 =====\n'+askaiDoc.text+'\n\n===== 待校对的AI分析 =====\n'+r1;
+      aiChat(sys2, usr2, function(r2){
+        done('【第1棒·千问分析】\n'+r1+'\n\n【第2棒·Kimi校对意见】\n'+r2, '✅ 交叉校对完成（两棒都已记账）');
+      }, fail, {force:'kimi', what:'问AI交叉校对2棒', maxTokens:16384});
+    }, fail, {what:'问AI病历分析1棒', maxTokens:8192});
+    return;
+  }
+  prog.textContent=(askaiAi==='kimi'?'🚀 Kimi分析中…':'🚀 千问分析中…（罢工自动换Kimi）');
+  var opt={what:'问AI病历分析', maxTokens:(askaiAi==='kimi'?16384:8192)};
+  if(askaiAi==='kimi') opt.force='kimi';
+  aiChat(prompt, askaiDoc.text, function(r1){ done(r1, '✅ 完成'); }, fail, opt);
+};
 
 /* ── 名片库 hx_cards_v1（全家共享） ── */
 var LS_CARDS='hx_cards_v1';
@@ -1021,7 +1180,8 @@ function showPatientDetail(g){
         '<div style="margin-top:3px;white-space:pre-wrap;">'+esc((r.text||'').slice(0,150))+(r.text&&r.text.length>150?'…':'')+'</div>'+
         '<div style="margin-top:4px;">'+(r.kind==='txt'?
           '<button class="ghost" style="font-size:12px;padding:4px 10px;" data-docview="'+r.did+'">📄 看全文</button> '+
-          '<button class="ghost" style="font-size:12px;padding:4px 10px;" data-docai="'+r.did+'">🤖 AI找错（复制全文）</button>'
+          '<button class="ghost" style="font-size:12px;padding:4px 10px;" data-docai="'+r.did+'">🤖 AI找错（复制全文）</button> '+
+          '<button class="ghost" style="font-size:12px;padding:4px 10px;" data-docask="'+r.did+'">🤖 问AI（v0.11.0）</button>'
           :'<span style="font-size:12px;color:#8a8178;">pdf读不了字（原件已删），同名txt才是正文</span>')+'</div></div>';
     }else{
       html+='<div class="rec"><span class="badge '+(r.type==='bg'?'badge-bg':'badge-vent')+'">'+(r.type==='bg'?'血气':'呼吸机')+'</span>'+
@@ -1038,6 +1198,10 @@ function showPatientDetail(g){
   Array.prototype.forEach.call(document.querySelectorAll('[data-docai]'), function(el){
     el.onclick=function(){ var d=docById(el.getAttribute('data-docai')); if(!d||!d.text){ toast('这份病历没有文字内容'); return; }
       copyText(d.text, '✅ 已复制「'+d.pkey+'」'+d.date+'的病历全文，打开AI找错软件粘贴即可'); };
+  });
+  /* v0.11.0 问AI按钮绑定（壳内直发，不再复制来复制去） */
+  Array.prototype.forEach.call(document.querySelectorAll('[data-docask]'), function(el){
+    el.onclick=function(){ var d=docById(el.getAttribute('data-docask')); if(!d||!d.text){ toast('这份病历没有文字内容'); return; } askaiOpen(d); };
   });
   $('ptDetailCard').scrollIntoView({block:'start'});
 }
@@ -1110,8 +1274,15 @@ function docInboxScan(manual){
   files.forEach(function(f){
     if(!/\.(txt|pdf)$/i.test(f.name)) return;
     if(f.name.indexOf('hxdata_')===0) return;
+    if(f.name.indexOf('原文库_')===0) return; /* v0.10.0 原文保险柜自己的文件，不当病历收（必改处报备） */
+    if(f.name.indexOf('脱敏导出_')===0) return; /* v0.10.0 导出备份档，防重复收（必改处报备） */
     if(seenHas(f)) return;
     var pr=parseDocFname(f.name, f.t);
+    if(!pr.ok){ /* v0.10.0 全入口补日期（洪老师拍板）：文件名没带日期尾数的补今天月日再来一次（必改处报备） */
+      var nd0=new Date(); var nm0=(nd0.getMonth()+1<10?'0':'')+(nd0.getMonth()+1)+(nd0.getDate()<10?'0':'')+nd0.getDate();
+      var mext0=f.name.match(/\.(txt|pdf)$/i);
+      if(mext0) pr=parseDocFname(f.name.replace(/\.(txt|pdf)$/i,'')+nm0+mext0[0], f.t);
+    }
     if(!pr.ok){ skipped.push(f.name+'（'+pr.why+'）'); return; }
     var kind=(/\.pdf$/i.test(f.name))?'pdf':'txt';
     var text='';
@@ -2817,6 +2988,7 @@ function dsm_processFileList(files) {
         file._ext = ext;
         file._displayName = parts.length > 1 ? parts.slice(1).join('/') : file.name;
         fileList.push(file);
+        try{ dsmraw_archive(file); }catch(e){} /* v0.10.0 原文即存壳文件夹（拍板：进来马上存）；没接文件夹时自动跳过只留内存 */
     }
 
     if (fileList.length === 0) {
@@ -2908,6 +3080,7 @@ function dsm_processFileList(files) {
     function dsm_checkAllDone() {
         if (processed >= fileList.length) {
             dsm_showToast('读取完成，共 ' + fileList.length + ' 个文件，' + patientNames.length + ' 位病人', 'success');
+            setTimeout(function(){ try{ dsm_admitToLib(); }catch(e){} }, 300); /* v0.10.0 读完自动收脱敏版进病历库（拍板：进来马上存，不等按钮；dsm_admitToLib内有去重+没日期补今天兜底） */
             dsm_renderPatientCards(patientNames);
             if (patientNames.length > 0) {
                 dsm_selectPatient(patientNames[0]);
@@ -3606,7 +3779,7 @@ function dsm_exportReport() {
         link.click();
         document.body.removeChild(link);
         setTimeout(function(){ URL.revokeObjectURL(link.href); }, 5000);
-        dsm_showToast('报告已导出：' + fileName, 'success');
+        try{ if(hxStore.bridged()){ LearnShell.writeFile('脱敏导出_' + fileName, btoa(unescape(encodeURIComponent(content)))); dsm_showToast('报告已导出并存进文件夹：脱敏导出_' + fileName, 'success', 4000); } else { dsm_showToast('报告已导出：' + fileName, 'success'); } }catch(e){ dsm_showToast('报告已导出：' + fileName, 'success'); } /* v0.10.0 导出有着落：壳文件夹留一份（拍板） */
     } catch(e) { dsm_showToast('导出失败：' + e.message, 'error'); }
 }
 
@@ -4261,6 +4434,7 @@ function dsm_admitToLib() {
             if (dup) { skipped.push(pr.pkey + '（这份已收过，没重复收）'); return; }
             pd.docs.push({ id: 'D' + Date.now().toString(36) + Math.floor(Math.random() * 1000), pkey: pr.pkey, bed: pr.bed, sur: pr.sur, diag: pr.diag,
                 date: pr.dateStr, timeStr: pr.dateStr + ' ' + docHm(now), ts: pr.date.getTime(), fname: fname + '.txt', kind: 'txt', size: out.length, text: out });
+            try{ dsmh_remember(pr.pkey, fname + '.txt', out, {name: f.name, size: out.length, type: f.type, ext: f.ext}); }catch(e){} /* v0.10.0 脱敏版存脱敏间档案hx_dsm_v1（拍板：脱敏间列表也要存住） */
             got.push(pr.pkey + '（' + pr.dateStr + '）');
         });
     });
@@ -4270,8 +4444,156 @@ function dsm_admitToLib() {
     else if (!got.length) dsm_showToast('没有可收的内容', 'warn');
 }
 
+/* ═══════ v0.10.0 原文保险柜（2026-09-09 洪老师拍板，六条规矩）═══════
+   ①进来马上存：原文进壳文件夹「原文库_」前缀文件 + 登记hx_dsmraw_v1（hxStore双份）；脱敏版读完件自动收病历库+hx_dsm_v1。
+   ②到点销毁（默认1小时，1/4/24三档可换）：页面开着每60秒查 + 下次开门补查。
+   ③删前查分身：同名脱敏版在病历库/脱敏档案里→静默删；不在→弹窗问「删/再留会儿（重新计时）」。
+   ④删要两边都删：壳文件夹原件+脱敏间条目+登记，一刀三断；脱敏版不动。
+   ⑤开门堵问：还有没销毁的原文→横幅「点我处理」。
+   ⑥密码不搞（原文最长活到时限，窗口太短不值当）。 */
+var LS_DSMRAW='hx_dsmraw_v1', LS_DSMH='hx_dsm_v1';
+function dsmrawLoad(){ try{ var d=JSON.parse(localStorage.getItem(LS_DSMRAW)); return (d&&Array.isArray(d.items))?d:{v:1,ttl:3600000,items:[]}; }catch(e){ return {v:1,ttl:3600000,items:[]}; } }
+function dsmrawSave(d){ try{ localStorage.setItem(LS_DSMRAW,JSON.stringify(d)); }catch(e){ toast('原文登记存盘失败：'+e.message); } hxStore.set(LS_DSMRAW,d); }
+function dsmhLoad(){ try{ var d=JSON.parse(localStorage.getItem(LS_DSMH)); return (d&&d.patients)?d:{v:1,patients:{}}; }catch(e){ return {v:1,patients:{}}; } }
+function dsmhSave(d){ try{ localStorage.setItem(LS_DSMH,JSON.stringify(d)); }catch(e){} hxStore.set(LS_DSMH,d); }
+hxStore.reg(LS_DSMRAW); hxStore.reg(LS_DSMH);
+function dsmraw_b64buf(buf){ var u=new Uint8Array(buf), s='', i; for(i=0;i<u.length;i+=0x8000){ s+=String.fromCharCode.apply(null, u.subarray(i,i+0x8000)); } return btoa(s); }
+/* ①原文即存：File→壳文件夹（原文库_前缀，同病人同名同大小未销毁的不重复存） */
+function dsmraw_archive(file){
+  if(!hxStore.bridged()) return; /* 没接文件夹：只留内存，页面关就没（洪老师场景在壳里） */
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      var d=dsmrawLoad();
+      for(var i=0;i<d.items.length;i++){ var o=d.items[i]; if(o.patient===file._patient&&o.fname===file.name&&o.size===(file.size||0)) return; }
+      var id='R'+Date.now().toString(36)+Math.floor(Math.random()*1000);
+      var safe=String(file.name).replace(/[\/\\]/g,'_');
+      var storeName='原文库_'+id+'_'+safe;
+      LearnShell.writeFile(storeName, dsmraw_b64buf(e.target.result));
+      d.items.push({id:id, patient:file._patient||String(file.name).replace(/\.[^.]+$/,''), fname:file.name, storeName:storeName, ts:Date.now(), size:file.size||0, ext:(file._ext||'')});
+      dsmrawSave(d); dsmraw_bar();
+    }catch(err){}
+  };
+  try{ reader.readAsArrayBuffer(file); }catch(e){}
+}
+/* ③查脱敏分身：病历库同pkey 或 脱敏档案有同名（带日期尾数的先折算pkey再比，与收库口径一致） */
+function dsmraw_hasTwin(patient){
+  var pk=patient;
+  try{ var pr=parseDocFname(patient+'.txt', Date.now()); if(pr.ok) pk=pr.pkey; }catch(e){}
+  try{ var pd=pdocsLoad(); for(var i=0;i<pd.docs.length;i++){ if(pd.docs[i].pkey===pk||pd.docs[i].pkey===patient) return true; } }catch(e){}
+  try{ var h=dsmhLoad(); if(h.patients[pk]||h.patients[patient]) return true; }catch(e){}
+  return false;
+}
+/* ④销毁：壳文件+脱敏间条目+登记，一刀三断；脱敏档案有→条目退回脱敏版 */
+function dsmraw_destroy(id){
+  var d=dsmrawLoad();
+  var idx=-1; for(var i=0;i<d.items.length;i++){ if(d.items[i].id===id){ idx=i; break; } }
+  if(idx<0) return;
+  var it=d.items[idx];
+  try{ LearnShell.deleteFile(it.storeName); }catch(e){}
+  d.items.splice(idx,1); dsmrawSave(d);
+  try{
+    var h=dsmhLoad();
+    if(dsm_APP.patients[it.patient]){
+      if(h.patients[it.patient]){ dsm_APP.patients[it.patient]=h.patients[it.patient].data; }
+      else{ delete dsm_APP.patients[it.patient]; if(dsm_APP.currentPatient===it.patient){ dsm_APP.currentPatient=null; } }
+      dsm_renderPatientCards(Object.keys(dsm_APP.patients));
+    }
+  }catch(e){}
+  dsmraw_bar();
+}
+/* ②到点检查：有分身静默删；无分身弹问 */
+function dsmraw_tick(){
+  var d=dsmrawLoad(); if(!d.items.length){ dsmraw_bar(); return; }
+  var now=Date.now(), ttl=d.ttl||3600000;
+  d.items.slice().forEach(function(it){
+    if(now-it.ts<ttl) return;
+    if(dsmraw_hasTwin(it.patient)){ dsmraw_destroy(it.id); toast('🔒 '+it.patient+' 原文已到期销毁（脱敏版在病历库）',3500); }
+    else{
+      hxConfirm('🔒 原文「'+it.patient+'」到点了，但还没留脱敏版，删了就真没了。确定删？', function(ok){
+        if(ok){ dsmraw_destroy(it.id); }
+        else{ var dd=dsmrawLoad(); for(var i=0;i<dd.items.length;i++){ if(dd.items[i].id===it.id) dd.items[i].ts=Date.now(); } dsmrawSave(dd); dsmraw_bar(); toast('已续期，重新计时',2500); }
+      });
+    }
+  });
+}
+setInterval(function(){ try{ dsmraw_tick(); }catch(e){} }, 60000);
+/* ⑤横幅：有原文就亮，点开看列表/立即删/换时限 */
+function dsmraw_bar(){
+  var old=document.getElementById('dsmrawBar'); if(old) old.remove();
+  var d=dsmrawLoad(); if(!d.items.length) return;
+  var now=Date.now(), ttl=d.ttl||3600000;
+  var earliest=d.items[0].ts; d.items.forEach(function(x){ if(x.ts<earliest) earliest=x.ts; });
+  var mm=Math.max(0,Math.ceil((earliest+ttl-now)/60000));
+  var bar=document.createElement('div');
+  bar.id='dsmrawBar';
+  bar.style.cssText='position:fixed;left:50%;bottom:132px;transform:translateX(-50%);background:#fdf6ec;color:#6b5a3e;border:1px solid #ecd9b8;border-radius:12px;padding:10px 14px;font-size:14px;z-index:99997;max-width:92%;box-shadow:0 4px 16px rgba(0,0,0,.12);text-align:left;';
+  var head=document.createElement('div');
+  head.style.cssText='display:flex;align-items:center;gap:8px;';
+  var txt=document.createElement('span');
+  txt.textContent='🔒 未脱敏原文'+d.items.length+'份，最早约'+mm+'分钟后销毁（点我处理）';
+  txt.style.cssText='cursor:pointer;text-decoration:underline;';
+  var x=document.createElement('span'); x.textContent='✕';
+  x.style.cssText='cursor:pointer;padding:2px 8px;color:#a89f93;font-weight:700;';
+  x.onclick=function(){ bar.remove(); };
+  head.appendChild(txt); head.appendChild(x);
+  var det=document.createElement('div');
+  det.style.cssText='display:none;margin-top:8px;line-height:1.9;font-size:13px;border-top:1px dashed #ecd9b8;padding-top:8px;max-height:44vh;overflow-y:auto;';
+  var h='';
+  d.items.forEach(function(it){
+    var m2=Math.max(0,Math.ceil((it.ts+ttl-now)/60000));
+    h+='<div>· '+String(it.patient).replace(/</g,'&lt;')+'（'+String(it.fname).replace(/</g,'&lt;')+'）剩约'+m2+'分钟 '+
+       '<a style="color:#c0392b;cursor:pointer;text-decoration:underline;" onclick="dsmraw_askDel(\''+it.id+'\')">立即删</a></div>';
+  });
+  h+='<div style="margin-top:6px;border-top:1px dashed #ecd9b8;padding-top:6px;">销毁时限：'+
+     [['3600000','1小时'],['14400000','4小时'],['86400000','24小时']].map(function(p){
+       return '<a style="cursor:pointer;margin-right:10px;'+(String(ttl)===p[0]?'font-weight:700;color:#c0392b;':'color:#6b5a3e;')+'" onclick="dsmraw_setTtl('+p[0]+')">'+p[1]+'</a>';
+     }).join('')+'</div>';
+  det.innerHTML=h;
+  var open=false;
+  txt.onclick=function(){ open=!open; det.style.display=open?'block':'none'; };
+  bar.appendChild(head); bar.appendChild(det);
+  document.body.appendChild(bar);
+}
+function dsmraw_askDel(id){
+  var d=dsmrawLoad(); var it=null;
+  for(var i=0;i<d.items.length;i++){ if(d.items[i].id===id){ it=d.items[i]; break; } }
+  if(!it) return;
+  if(dsmraw_hasTwin(it.patient)){
+    hxConfirm('「'+it.patient+'」脱敏版已在病历库，原文现在销毁？', function(ok){ if(ok) dsmraw_destroy(id); });
+  }else{
+    hxConfirm('「'+it.patient+'」还没留脱敏版，删了就真没了。仍要删？', function(ok){
+      if(ok){ dsmraw_destroy(id); }else{ it.ts=Date.now(); dsmrawSave(d); dsmraw_bar(); }
+    });
+  }
+}
+function dsmraw_setTtl(ms){ var d=dsmrawLoad(); d.ttl=ms; dsmrawSave(d); dsmraw_bar(); toast('销毁时限已改：'+(ms/3600000)+'小时',2500); }
+/* ①脱敏版存档：收库成功时记下脱敏后文本，开门恢复脱敏间列表 */
+function dsmh_remember(patient, fname, out, fileMeta){
+  var h=dsmhLoad();
+  if(!h.patients[patient]) h.patients[patient]={data:{files:[],content:{}},ts:0};
+  var rec=h.patients[patient];
+  rec.ts=Date.now();
+  var has=false; for(var i=0;i<rec.data.files.length;i++){ if(rec.data.files[i].name===fname){ has=true; break; } }
+  if(!has) rec.data.files.push(fileMeta);
+  rec.data.content[fname]={text:out, images:[]};
+  dsmhSave(h);
+}
+function dsmh_restore(){
+  var h=dsmhLoad();
+  var names=Object.keys(h.patients);
+  if(!names.length) return;
+  var changed=false;
+  names.forEach(function(n){ if(!dsm_APP.patients[n]){ dsm_APP.patients[n]=h.patients[n].data; changed=true; } });
+  if(changed) dsm_renderPatientCards(Object.keys(dsm_APP.patients));
+}
+
 /* ═════ v0.7.0 脱敏间折叠：照用大管家现有 makeFoldable 机制（登记进 foldSetters，状态记 hx_guanjia_fold） ═════ */
 try { makeFoldable(document.getElementById('dsmH2'), 'dsm', false); } catch(e) {}
+/* v0.10.0 开门三件事：恢复脱敏间列表 + 到期销毁检查（开门补刀）+ 原文横幅（堵问） */
+try{ dsmh_restore(); }catch(e){}
+try{ dsmraw_tick(); }catch(e){}
+try{ dsmraw_bar(); }catch(e){}
 
 </script>
 <script>
