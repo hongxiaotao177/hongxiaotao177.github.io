@@ -761,7 +761,7 @@ hxStore.reg('hx_cards_v1'); hxStore.reg('hx_patients'); hxStore.reg('hx_inbox_v1
 </div>
 
 <script>
-var SW_VERSION = "0.14.0"; /* v0.14.0 2026-09-10 毛病27/28（洪老师真机报+自查实锤）：
+var SW_VERSION = "0.14.1"; /* v0.14.1（洪老师拍板）：①导出报告挂进名册该病人名下——hx_pdocs_v1加kind=report条目（同名更新不重复堆），详情页时间线直接看全文，标「📊 导出报告」徽标；不再只依赖扫文件夹的聚合病历区 ②收件副本显示名改「病人名+聚合.扩展名」③修预览愣20秒：回洗dirty判定改与盘档比（内存挂真原文时旧判定永远脏，每次预览全量写JS桥） */ /* v0.14.0 2026-09-10 毛病27/28（洪老师真机报+自查实锤）：
    ①脱敏失灵真病根：PDF解析文本字间带空格（"姓名 : 黄超明"），全部正则写成紧贴冒号不认空格，从脱敏间诞生第一天就带病——
      姓名提取4模式/患者姓名替换4模式/职称规则/固定字段10条/标红全套，一律加\s*容忍空格；页眉去重和分段判别的"姓名:"同步加。
      自测教训：以往5轮playwright全用编造的无空格文本，真实病历从没测过——本轮起用真机拉回的带空格真实病历做用例。
@@ -1083,7 +1083,7 @@ function scanPatients(bgArr, ventArr, docsArr){
     var name=String(dc.pkey||'未命名病人');
     if(!byName[name]) byName[name]=[];
     byName[name].push({type:'doc', time:dc.timeStr||dc.date||'', did:dc.id, kind:dc.kind,
-      text:(dc.kind==='txt'?(dc.text||''):('[同名pdf已随收，原件已删] '+dc.fname)).slice(0,200)});
+      text:((dc.kind==='txt'||dc.kind==='report')?(dc.text||''):('[同名pdf已随收，原件已删] '+dc.fname)).slice(0,200) /* v0.14.1：导出报告(kind=report)有正文 */});
   });
   /* 把名册里已合并的别名归到正主名下 */
   function canonOf(name){
@@ -1223,7 +1223,7 @@ function showPatientDetail(g){
   var html='';
   g.recs.forEach(function(r){
     if(r.type==='doc'){ /* v0.6.0 病历记录：看全文+AI找错复制 */
-      html+='<div class="rec"><span class="badge badge-doc">病历</span>'+
+      html+='<div class="rec"><span class="badge badge-doc">'+(r.kind==='report'?'📊 导出报告':'病历')+'</span>'+ /* v0.14.1：导出报告挂名下单独标 */
         '<span class="rec-time">'+esc(r.time)+'</span>'+
         '<div style="margin-top:3px;white-space:pre-wrap;">'+esc((r.text||'').slice(0,150))+(r.text&&r.text.length>150?'…':'')+'</div>'+
         '<div style="margin-top:4px;">'+
@@ -3618,11 +3618,14 @@ function dsm_renderFileList(patient) {
         var status = isError ? 'dsm_err' : 'dsm_ok';
         var statusIcon = isError ? '⚠️' : '✅';
         var _hasDateTail=/(\d{8}|\d{4})\.[a-z]+$/i.test(f.name);
-        var _tag=(_hasDateTail && _cores[_coreName(f.name)]>1)
+        var _isCopy=(_hasDateTail && _cores[_coreName(f.name)]>1);
+        var _tag=_isCopy
             ? ' <span style="font-size:11px;color:#8a6d3b;background:#fcf8e3;border-radius:4px;padding:0 4px;">收件副本</span>'
             : ' <span style="font-size:11px;color:#3c763d;background:#dff0d8;border-radius:4px;padding:0 4px;">原始</span>';
+        /* v0.14.1（洪老师拍板）：收件副本显示名改成「病人名+聚合.扩展名」，一眼看清哪份是聚合后的；存档键名不动，点开仍按原名取内容 */
+        var _dispName=_isCopy ? _coreName(f.name)+'聚合'+f.name.slice(f.name.lastIndexOf('.')) : f.name;
         html += '<div class="dsm_file-item" style="cursor:pointer;" onclick="dsm_viewFile(\'' + f.name.replace(/'/g,"\\'") + '\')"><span class="dsm_status ' + status + '">' + statusIcon + 
-            '</span><span>' + icon + '</span><span class="dsm_fname">' + f.name + _tag +
+            '</span><span>' + icon + '</span><span class="dsm_fname">' + _dispName + _tag +
             '</span><span class="dsm_ftype">' + f.type + '</span><span class="dsm_fsize">' + sizeStr + '</span></div>';
     });
     container.innerHTML = html;
@@ -3916,12 +3919,19 @@ function dsm_previewData() {
             var saveCopy = { v: 1, patients: {} };
             for (var _pn in dsm_APP.patients) { saveCopy.patients[_pn] = { data: JSON.parse(JSON.stringify(dsm_APP.patients[_pn])) }; }
             var dirty = false;
+            var _disk = dsmhLoad(); /* 与盘档比：盘档已是脱敏版就不重写——内存常挂真原文（保险柜读的），跟内存比会永远脏、每次预览全量写JS桥卡20秒（洪老师真机报） */
             for (var _p in saveCopy.patients) {
                 var _c = saveCopy.patients[_p] && saveCopy.patients[_p].data && saveCopy.patients[_p].data.content;
                 if (!_c) continue;
+                var _dc = _disk.patients[_p] && _disk.patients[_p].data && _disk.patients[_p].data.content;
                 for (var _k in _c) {
                     var _t = _c[_k] && _c[_k].text;
                     if (!_t) continue;
+                    /* 盘档这一键已脱敏（对盘档文本再脱一遍无改动）就跳过 */
+                    if (_dc && _dc[_k] && _dc[_k].text) {
+                        var _dd = dsm_desensitizeWithDebug(_dc[_k].text);
+                        if (_dd.changes.length === 0) continue;
+                    }
                     var _d = dsm_desensitizeWithDebug(_t);
                     if (_d.changes.length > 0 && _d.result !== _t) { _c[_k].text = _d.result; dirty = true; }
                 }
@@ -4110,6 +4120,29 @@ function dsm_exportReport() {
                 }
             }
         }catch(e){ dsm_showToast('❌ 没存全：写文件夹出错（' + e.message + '），浏览器已下载的一份还在', 'error', 8000); }
+        /* v0.14.1（洪老师拍板）：导出报告同时挂进名册该病人名下——hx_pdocs_v1加一条kind=report，
+           同名报告更新不重复堆；详情页时间线能直接看全文，不用等文件夹扫描 */
+        try{
+            var _pd=pdocsLoad();
+            var _pm=patient.match(/^(\d+)([\u4e00-\u9fa5])(.*)$/);
+            var _now=new Date();
+            var _dateStr=_now.getFullYear()+'-'+(_now.getMonth()+1)+'-'+_now.getDate();
+            var _fname='脱敏导出_'+fileName;
+            var _txt=content.length>300000?content.slice(0,300000)+'\n…（太长已截断存）':content;
+            var _found=false;
+            for(var _di=0;_di<_pd.docs.length;_di++){
+                if(_pd.docs[_di].fname===_fname && _pd.docs[_di].pkey===patient){
+                    _pd.docs[_di].text=_txt; _pd.docs[_di].ts=_now.getTime(); _pd.docs[_di].size=_txt.length; _found=true; break;
+                }
+            }
+            if(!_found){
+                _pd.docs.push({id:'D'+Date.now().toString(36)+Math.floor(Math.random()*1000), pkey:patient,
+                    bed:_pm?_pm[1]:'', sur:_pm?_pm[2]:'', diag:_pm?_pm[3]:patient,
+                    date:_dateStr, timeStr:_dateStr, ts:_now.getTime(), fname:_fname, kind:'report', size:_txt.length, text:_txt});
+            }
+            pdocsSave(_pd);
+            try{ renderPatients(); }catch(e){}
+        }catch(e){}
     } catch(e) { dsm_showToast('导出失败：' + e.message, 'error'); }
 }
 
