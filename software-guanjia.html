@@ -761,7 +761,15 @@ hxStore.reg('hx_cards_v1'); hxStore.reg('hx_patients'); hxStore.reg('hx_inbox_v1
 </div>
 
 <script>
-var SW_VERSION = "0.13.1"; /* v0.13.1 毛病26（洪老师真机报）：脱敏间文本能看了但脱敏失灵（原文不标红、脱敏后仍见姓名住院号）——病根是hx_dsm_v1存档的content本来就是「脱敏后文本」（dsmh_remember第3参=out），v0.13.0把名对齐后恢复链路通了，预览却把这份脱敏存档当成原文：没词可红、脱敏后框只是存档原样。修：dsmh_restore恢复时查原文保险柜hx_dsmraw_v1，同名原文还没销毁的从壳文件夹readFile读回真原文挂内存content（只动内存不落盘，原文到点照销毁，保险柜设计不变）；已销毁的保持脱敏存档。规则引擎一个字没动 */ /* v0.13.0 四个毛病（洪老师真机报修）：①毛病21脱敏间预览全空——病根是hx_dsm_v1存档时content键用「补了日期的fname.txt」、files名用原文件名，恢复dsmh_restore后dsm_previewData按f.name取content取不到；修：dsmh_remember的fileMeta.name改成与content键一致+dsmh_restore对旧档自愈（名对不上的按未占用content键补别名/缺文件条目的补条目）②毛病20原文到点没删成还没红字——dsmraw_destroy里listFiles回读若返回字符串数组或解析失败会被当成"已删"静默放行；修：条目名兼容字符串/对象两种形态、回读失败一律当没删成走红字D2 ③毛病22名册详情pdf档只有病案名看不了——看全文按钮原来只给kind=txt；修：所有病历都给看全文（pdf档自动找同pkey的txt正文兜底），详情页新增「原状病历」（hx_dsmraw_v1未销毁的）和「聚合病历」（壳文件夹里脱敏导出_前缀且属于该病人的）两个区块，浏览器环境明示请在壳里查看 ④毛病23导出区上方文件清单dsm_renderFileList没排序——按v0.12.0 E1同款类型权重PDF排前（稳定排序同类保持原顺序） */ /* v0.12.0 七条（导出分块防截断+销毁核对+界面收纳+收件筛子）：①B1脱敏间整卡默认收起（旧机存过展开态的升级后强制收一次，一次性迁移标记hx_guanjia_fold里dsm_v12）②B2四处默认藏起留小字入口（📕PDF引擎状态/📁当前状态/📂点文件夹进件/📊当前病人，功能一行没动只是默认display:none）③C1收件筛子：parseDocFname解析不ok（补日期后仍不ok）的文件不进名册，收进「❓拿不准的文件」清单（localStorage hx_gj_unsure_v1+名册卡一行「❓拿不准X份（点我看）」点开alert清单），登记pd.seen防每次开门重复报，原件不删 ④D1导出防截断：壳里writeFile后立刻readFile回读atob对账（长度+尾部120字，含「由「医疗数据脱敏聚合工具 v5.0」生成」标志），对不上自动重试一次，再不行拆_1of2/_2of2两块各写各核对，全失败才红字「没存全」；成功明示「已存到授权文件夹：脱敏导出_文件名（共xxKB，已核对）」；浏览器blob下载路径不动，明示「已下载：文件名」 ⑤D2销毁回读核对：dsmraw_destroy删原文后用listFiles确认真没了，还在→红字toast「原文没删成，请手动到文件夹删：文件名」，登记条目只在确认删掉后才移除，没删成的保留在横幅列表里标红「没删成」；dsmraw_tick的无分身确认弹窗hxConfirm原样保留 ⑥E1排序：dsm预览和三个导出构造函数textFiles改PDF文档（病历类大头）排前、文本/Markdown（验单类）排后，同类保持原顺序（sort稳定排序只按类型权重）⑦E2手机全屏对照：.dsm_compare加max-width:700px媒体查询改单列上下排（上原文标红、下脱敏后），预览每个文件标题旁加「🔍 看全屏」按钮点开全屏浮层（大字、可滚动、右上角关闭） */ /* v0.11.0 问AI·病历分析（洪老师2026-09-09拍板开工）：病历详情页加「🤖问AI」按钮→壳内直发不再复制来复制去；三套提示词可编辑+存默认+恢复出厂（hx_gj_askai_v1）；千问/Kimi/🔀交叉校对三选一（交叉=千问出稿→Kimi挑错，需两把Key）；⟦R⟧红⟦B⟧醒目只在屏幕看，「复制干净版」剥标记；复用aiChat通道自动记账。纯加法：旧「AI找错（复制全文）」按钮保留未动 */ /* v0.10.0 原文保险柜（洪老师拍板六条）：①进来马上存（原文→壳文件夹「原文库_」前缀+hx_dsmraw_v1登记；脱敏版读完自动收病历库+hx_dsm_v1）②到点销毁默认1小时（1/4/24三档，横幅可换）③删前查脱敏分身：在→静默删/不在→弹问「删/再留会儿」④删=壳文件+脱敏间条目+登记一刀三断⑤开门堵问横幅⑥不搞密码；收件扫描排除原文库_/脱敏导出_前缀+全入口补日期（两处必改已注释报备）；导出报告同时写壳文件夹「脱敏导出_」 */ /* v0.9.1 修脱敏间「文件夹内容」文件名一字一行竖排：.dsm_name加min-width:0（flex子项默认min-width:auto被nowrap的大小/徽章挤到一字宽），只动这一处CSS，其余未碰 */ /* v0.9.0 工具箱：新折叠卡「🧰 工具箱」（走makeFoldable，默认折起），五个软件链接直达（学习笔记/血气分析/习题学习/PPT工坊/拍病历），链接带?from=guanjia&pt=当前病人——各软件认from亮「← 返回大管家」顶条，血气认pt自动设为当前病人，学习笔记新建笔记标题自动挂[病人]前缀；当前病人=名册里最近点开详情的那个（存hx_gj_curpt），工具箱标题旁实时显示；文件名自适应：仓库/公开站环境用software-*.html，壳内/桌面用中文名 */ /* v0.7.0 脱敏间合并：脱敏工具v5.0整张搬入成「🛡 脱敏间」折叠卡（dsm_前缀防冲突，#dsmWrap收样式作用域，规则引擎一个字符未改）；三种进件（拖放递归遍历+选文件夹+看文件选文件）；pdf.js内嵌文件末尾base64首次遇PDF才解码（Blob URL插script+workerSrc），开门不解码，cdnjs删光；「📥 收进病历库」直接调parseDocFname/pdocsLoad/pdocsSave/docHm/renderPatients进hx_pdocs_v1 */ /* v0.6.0 病历自动收件：脱敏txt/pdf拷进授权文件夹→闲时自动按「床号+姓+诊断+日期」解析收件进hx_pdocs_v1→并入名册时间线（中文床号自动折阿拉伯起疑合并）→收完删原件；详情页看全文+AI找错复制按钮 */ /* v0.5.2 开门零等待：hxStore仓管员对齐挪到闲时跑（你安静3秒才动），先秒开页面；文件夹拉到新数据→提示并自动刷新一次；治"点大管家愣10秒" */ /* v0.5.1 点亮三级菜单：选中菜单第1层5选项→第2层3套提示词→第3层可编辑+执行+存为默认；提示词存全家公用钥匙hx_glow_v1的guanjia分支；亮起触发机制未动 */ /* v0.5.0 鱼骨头化：ⓘ说明默认收起 + 家底总览/API Key收进「🛠 设置与工具」抽屉（hx_gj_tool_open），与文件桥v1.3.0同款；纯界面，功能逻辑未动 */ /* v0.4.14 ①修选中菜单"关不掉"：收起/点别处后清空兜里选中文字，不再被长按顶出来 ②寄PPT提示词跟随PPT工坊风格开关（ppt_style=strict时用严肃学术版，去掉强制口语） */ /* v0.4.13 ①hxStore仓管员：数据同步写壳文件夹（可拷走换机）②PPT链路闭环：信封带taskId、收样品（guanjia_inbox）、寄修改意见、定稿、3趟封顶 */
+var SW_VERSION = "0.14.0"; /* v0.14.0 2026-09-10 毛病27/28（洪老师真机报+自查实锤）：
+   ①脱敏失灵真病根：PDF解析文本字间带空格（"姓名 : 黄超明"），全部正则写成紧贴冒号不认空格，从脱敏间诞生第一天就带病——
+     姓名提取4模式/患者姓名替换4模式/职称规则/固定字段10条/标红全套，一律加\s*容忍空格；页眉去重和分段判别的"姓名:"同步加。
+     自测教训：以往5轮playwright全用编造的无空格文本，真实病历从没测过——本轮起用真机拉回的带空格真实病历做用例。
+   ②预览明文回洗：存档content若还是明文（脱敏有改动），预览时就地更新为脱敏后版本落盘（hx_dsm_v1设计本就存脱敏后文本）。
+   ③文件清单：每份可点击全屏单独浏览（dsm_viewFile，原文标红+脱敏后对照）；带日期尾数且有同名芯的标「收件副本」，其余标「原始」。
+   ④预览去重：同一内容（PDF与其文本副本）按指纹只渲染一次，其余收成一行小字说明。
+   ⑤毛病28：docInboxScan收完删原件回读核对兼容字符串数组（照v0.13.0毛病20同款）——原来只比.name，壳返回字符串时误判已删登记seen，原件永远留下。
+   v0.13.1 毛病26（洪老师真机报）：脱敏间文本能看了但脱敏失灵（原文不标红、脱敏后仍见姓名住院号）——病根是hx_dsm_v1存档的content本来就是「脱敏后文本」（dsmh_remember第3参=out），v0.13.0把名对齐后恢复链路通了，预览却把这份脱敏存档当成原文：没词可红、脱敏后框只是存档原样。修：dsmh_restore恢复时查原文保险柜hx_dsmraw_v1，同名原文还没销毁的从壳文件夹readFile读回真原文挂内存content（只动内存不落盘，原文到点照销毁，保险柜设计不变）；已销毁的保持脱敏存档。规则引擎一个字没动 */ /* v0.13.0 四个毛病（洪老师真机报修）：①毛病21脱敏间预览全空——病根是hx_dsm_v1存档时content键用「补了日期的fname.txt」、files名用原文件名，恢复dsmh_restore后dsm_previewData按f.name取content取不到；修：dsmh_remember的fileMeta.name改成与content键一致+dsmh_restore对旧档自愈（名对不上的按未占用content键补别名/缺文件条目的补条目）②毛病20原文到点没删成还没红字——dsmraw_destroy里listFiles回读若返回字符串数组或解析失败会被当成"已删"静默放行；修：条目名兼容字符串/对象两种形态、回读失败一律当没删成走红字D2 ③毛病22名册详情pdf档只有病案名看不了——看全文按钮原来只给kind=txt；修：所有病历都给看全文（pdf档自动找同pkey的txt正文兜底），详情页新增「原状病历」（hx_dsmraw_v1未销毁的）和「聚合病历」（壳文件夹里脱敏导出_前缀且属于该病人的）两个区块，浏览器环境明示请在壳里查看 ④毛病23导出区上方文件清单dsm_renderFileList没排序——按v0.12.0 E1同款类型权重PDF排前（稳定排序同类保持原顺序） */ /* v0.12.0 七条（导出分块防截断+销毁核对+界面收纳+收件筛子）：①B1脱敏间整卡默认收起（旧机存过展开态的升级后强制收一次，一次性迁移标记hx_guanjia_fold里dsm_v12）②B2四处默认藏起留小字入口（📕PDF引擎状态/📁当前状态/📂点文件夹进件/📊当前病人，功能一行没动只是默认display:none）③C1收件筛子：parseDocFname解析不ok（补日期后仍不ok）的文件不进名册，收进「❓拿不准的文件」清单（localStorage hx_gj_unsure_v1+名册卡一行「❓拿不准X份（点我看）」点开alert清单），登记pd.seen防每次开门重复报，原件不删 ④D1导出防截断：壳里writeFile后立刻readFile回读atob对账（长度+尾部120字，含「由「医疗数据脱敏聚合工具 v5.0」生成」标志），对不上自动重试一次，再不行拆_1of2/_2of2两块各写各核对，全失败才红字「没存全」；成功明示「已存到授权文件夹：脱敏导出_文件名（共xxKB，已核对）」；浏览器blob下载路径不动，明示「已下载：文件名」 ⑤D2销毁回读核对：dsmraw_destroy删原文后用listFiles确认真没了，还在→红字toast「原文没删成，请手动到文件夹删：文件名」，登记条目只在确认删掉后才移除，没删成的保留在横幅列表里标红「没删成」；dsmraw_tick的无分身确认弹窗hxConfirm原样保留 ⑥E1排序：dsm预览和三个导出构造函数textFiles改PDF文档（病历类大头）排前、文本/Markdown（验单类）排后，同类保持原顺序（sort稳定排序只按类型权重）⑦E2手机全屏对照：.dsm_compare加max-width:700px媒体查询改单列上下排（上原文标红、下脱敏后），预览每个文件标题旁加「🔍 看全屏」按钮点开全屏浮层（大字、可滚动、右上角关闭） */ /* v0.11.0 问AI·病历分析（洪老师2026-09-09拍板开工）：病历详情页加「🤖问AI」按钮→壳内直发不再复制来复制去；三套提示词可编辑+存默认+恢复出厂（hx_gj_askai_v1）；千问/Kimi/🔀交叉校对三选一（交叉=千问出稿→Kimi挑错，需两把Key）；⟦R⟧红⟦B⟧醒目只在屏幕看，「复制干净版」剥标记；复用aiChat通道自动记账。纯加法：旧「AI找错（复制全文）」按钮保留未动 */ /* v0.10.0 原文保险柜（洪老师拍板六条）：①进来马上存（原文→壳文件夹「原文库_」前缀+hx_dsmraw_v1登记；脱敏版读完自动收病历库+hx_dsm_v1）②到点销毁默认1小时（1/4/24三档，横幅可换）③删前查脱敏分身：在→静默删/不在→弹问「删/再留会儿」④删=壳文件+脱敏间条目+登记一刀三断⑤开门堵问横幅⑥不搞密码；收件扫描排除原文库_/脱敏导出_前缀+全入口补日期（两处必改已注释报备）；导出报告同时写壳文件夹「脱敏导出_」 */ /* v0.9.1 修脱敏间「文件夹内容」文件名一字一行竖排：.dsm_name加min-width:0（flex子项默认min-width:auto被nowrap的大小/徽章挤到一字宽），只动这一处CSS，其余未碰 */ /* v0.9.0 工具箱：新折叠卡「🧰 工具箱」（走makeFoldable，默认折起），五个软件链接直达（学习笔记/血气分析/习题学习/PPT工坊/拍病历），链接带?from=guanjia&pt=当前病人——各软件认from亮「← 返回大管家」顶条，血气认pt自动设为当前病人，学习笔记新建笔记标题自动挂[病人]前缀；当前病人=名册里最近点开详情的那个（存hx_gj_curpt），工具箱标题旁实时显示；文件名自适应：仓库/公开站环境用software-*.html，壳内/桌面用中文名 */ /* v0.7.0 脱敏间合并：脱敏工具v5.0整张搬入成「🛡 脱敏间」折叠卡（dsm_前缀防冲突，#dsmWrap收样式作用域，规则引擎一个字符未改）；三种进件（拖放递归遍历+选文件夹+看文件选文件）；pdf.js内嵌文件末尾base64首次遇PDF才解码（Blob URL插script+workerSrc），开门不解码，cdnjs删光；「📥 收进病历库」直接调parseDocFname/pdocsLoad/pdocsSave/docHm/renderPatients进hx_pdocs_v1 */ /* v0.6.0 病历自动收件：脱敏txt/pdf拷进授权文件夹→闲时自动按「床号+姓+诊断+日期」解析收件进hx_pdocs_v1→并入名册时间线（中文床号自动折阿拉伯起疑合并）→收完删原件；详情页看全文+AI找错复制按钮 */ /* v0.5.2 开门零等待：hxStore仓管员对齐挪到闲时跑（你安静3秒才动），先秒开页面；文件夹拉到新数据→提示并自动刷新一次；治"点大管家愣10秒" */ /* v0.5.1 点亮三级菜单：选中菜单第1层5选项→第2层3套提示词→第3层可编辑+执行+存为默认；提示词存全家公用钥匙hx_glow_v1的guanjia分支；亮起触发机制未动 */ /* v0.5.0 鱼骨头化：ⓘ说明默认收起 + 家底总览/API Key收进「🛠 设置与工具」抽屉（hx_gj_tool_open），与文件桥v1.3.0同款；纯界面，功能逻辑未动 */ /* v0.4.14 ①修选中菜单"关不掉"：收起/点别处后清空兜里选中文字，不再被长按顶出来 ②寄PPT提示词跟随PPT工坊风格开关（ppt_style=strict时用严肃学术版，去掉强制口语） */ /* v0.4.13 ①hxStore仓管员：数据同步写壳文件夹（可拷走换机）②PPT链路闭环：信封带taskId、收样品（guanjia_inbox）、寄修改意见、定稿、3趟封顶 */
 document.getElementById('verTop').textContent = SW_VERSION;
 function $(id){ return document.getElementById(id); }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -1419,6 +1427,8 @@ try{ unsureRenderLine(); }catch(e){}
 function docInboxScan(manual){
   if(!hxStore.bridged()){ if(manual) toast('还没接文件夹：点左下角🗄️先选大管家的数据文件夹，病历就拷进那里'); return; }
   var files=[]; try{ files=JSON.parse(LearnShell.listFiles()||'[]'); }catch(e){ if(manual) toast('列目录失败：'+e.message); return; }
+  /* v0.14.0 加固：壳listFiles若返回字符串数组，标准化成对象，免得f.name全undefined静默漏收 */
+  files=files.map(function(f){ return (typeof f==='string')?{name:f,size:0,t:0}:f; });
   var pd=pdocsLoad();
   function seenHas(f){ for(var i=0;i<pd.seen.length;i++){ var s=pd.seen[i]; if(s.f===f.name&&s.z===(f.size||0)&&s.t===(f.t||0)) return true; } return false; }
   var got=[], skipped=[];
@@ -1428,7 +1438,21 @@ function docInboxScan(manual){
     if(f.name.indexOf('hxdata_')===0) return;
     if(f.name.indexOf('原文库_')===0) return; /* v0.10.0 原文保险柜自己的文件，不当病历收（必改处报备） */
     if(f.name.indexOf('脱敏导出_')===0) return; /* v0.10.0 导出备份档，防重复收（必改处报备） */
-    if(seenHas(f)) return;
+    if(seenHas(f)){
+      /* v0.14.0 毛病28补刀：seen里躺着的文件还出现在文件夹里，说明旧版误判已删（回读.name坑）从没真删成——补删一次；
+         删掉/删不掉都吭一声，删不掉进红字清单下次再试 */
+      try{
+        var _dr2=LearnShell.deleteFile(f.name);
+        var _lf2=[]; try{ _lf2=JSON.parse(LearnShell.listFiles()||'[]'); }catch(e2){ _dr2=false; }
+        if(_dr2===false){ delFailReport(f.name); }
+        else{
+          var _still=false;
+          for(var _li2=0;_li2<_lf2.length;_li2++){ var _ln2=(typeof _lf2[_li2]==='string')?_lf2[_li2]:(_lf2[_li2]&&_lf2[_li2].name); if(_ln2===f.name){ _still=true; break; } }
+          if(_still) delFailReport(f.name);
+        }
+      }catch(e){ delFailReport(f.name); }
+      return;
+    }
     var pr=parseDocFname(f.name, f.t);
     if(!pr.ok){ /* v0.10.0 全入口补日期（洪老师拍板）：文件名没带日期尾数的补今天月日再来一次（必改处报备） */
       var nd0=new Date(); var nm0=(nd0.getMonth()+1<10?'0':'')+(nd0.getMonth()+1)+(nd0.getDate()<10?'0':'')+nd0.getDate();
@@ -1452,9 +1476,18 @@ function docInboxScan(manual){
        还在→红字明示"原文没删成"，不登记seen（下次扫描还会再试删），确认删掉才登记防重 */
     var delOk=false;
     try{
-      LearnShell.deleteFile(f.name);
-      var _lf=[]; try{ _lf=JSON.parse(LearnShell.listFiles()||'[]'); }catch(e2){}
-      delOk=true; for(var _li=0;_li<_lf.length;_li++){ if(_lf[_li].name===f.name){ delOk=false; break; } }
+      /* v0.14.0 毛病28（与v0.13.0毛病20同款病根）：deleteFile返回false直接算没删成；
+         listFiles回读兼容字符串数组/对象数组两种形态（原来只比.name，壳返回字符串时全undefined→误判已删→登记seen再也不试删）；
+         listFiles解析不出来一律当没删成走红字 */
+      var _dr=LearnShell.deleteFile(f.name);
+      if(_dr===false) throw new Error('deleteFile返回false');
+      var _lf=JSON.parse(LearnShell.listFiles()||'[]');
+      if(!Array.isArray(_lf)) throw new Error('listFiles回读异常');
+      delOk=true;
+      for(var _li=0;_li<_lf.length;_li++){
+        var _ln=(typeof _lf[_li]==='string')?_lf[_li]:(_lf[_li]&&_lf[_li].name);
+        if(_ln===f.name){ delOk=false; break; }
+      }
     }catch(e){}
     if(delOk){ pd.seen.push({f:f.name, z:f.size||0, t:f.t||0}); }
     else { delFailReport(f.name); }
@@ -2911,10 +2944,10 @@ function dsm_extractPatientNames(text, excludes) {
     if (!excludes) excludes = dsm_APP.rules.excludes || [];
     var names = [];
     var patterns = [
-        /患者([\u4e00-\u9fa5]{2,4})/g,
-        /患者[:：]([\u4e00-\u9fa5]{2,4})/g,
-        /患者姓名[:：]([\u4e00-\u9fa5]{2,4})/g,
-        /姓名[:：]([\u4e00-\u9fa5]{2,4})/g
+        /患者\s*([\u4e00-\u9fa5]{2,4})/g,
+        /患者\s*[:：]\s*([\u4e00-\u9fa5]{2,4})/g,
+        /患者姓名\s*[:：]\s*([\u4e00-\u9fa5]{2,4})/g,
+        /姓名\s*[:：]\s*([\u4e00-\u9fa5]{2,4})/g
     ];
     
     patterns.forEach(function(pattern) {
@@ -3569,6 +3602,14 @@ function dsm_renderFileList(patient) {
        照v0.12.0 E1同款类型权重排——PDF文档（病历类大头）排前、文本/Markdown排后；sort稳定排序，同类保持原顺序 */
     var _fl = data.files.slice();
     _fl.sort(function(a, b) { return (a.type === 'PDF文档' ? 0 : 1) - (b.type === 'PDF文档' ? 0 : 1); });
+    /* v0.14.0：①每份文件可点击单独浏览（弹全屏看该份内容）②身份标注——文件名带日期尾数（如0909）
+       且存在同名芯文件的，是收件时自动补日期产生的副本，标「收件副本」；其余标「原始」。
+       名芯=剥掉4/8位日期尾数和扩展名后的部分（与收件口径一致） */
+    function _coreName(nm){
+        return nm.replace(/\.(txt|pdf|md|markdown)$/i,'').replace(/(\d{8}|\d{4}|\d{2})$/,'');
+    }
+    var _cores={};
+    _fl.forEach(function(f){ var c=_coreName(f.name); _cores[c]=(_cores[c]||0)+1; });
     _fl.forEach(function(f) {
         var sizeStr = f.size > 1024 ? (f.size/1024).toFixed(1) + 'KB' : f.size + 'B';
         if (f.size > 1024*1024) sizeStr = (f.size/(1024*1024)).toFixed(1) + 'MB';
@@ -3576,8 +3617,12 @@ function dsm_renderFileList(patient) {
         var isError = f.originalText && f.originalText.indexOf('[PDF') === 0;
         var status = isError ? 'dsm_err' : 'dsm_ok';
         var statusIcon = isError ? '⚠️' : '✅';
-        html += '<div class="dsm_file-item"><span class="dsm_status ' + status + '">' + statusIcon + 
-            '</span><span>' + icon + '</span><span class="dsm_fname">' + f.name +
+        var _hasDateTail=/(\d{8}|\d{4})\.[a-z]+$/i.test(f.name);
+        var _tag=(_hasDateTail && _cores[_coreName(f.name)]>1)
+            ? ' <span style="font-size:11px;color:#8a6d3b;background:#fcf8e3;border-radius:4px;padding:0 4px;">收件副本</span>'
+            : ' <span style="font-size:11px;color:#3c763d;background:#dff0d8;border-radius:4px;padding:0 4px;">原始</span>';
+        html += '<div class="dsm_file-item" style="cursor:pointer;" onclick="dsm_viewFile(\'' + f.name.replace(/'/g,"\\'") + '\')"><span class="dsm_status ' + status + '">' + statusIcon + 
+            '</span><span>' + icon + '</span><span class="dsm_fname">' + f.name + _tag +
             '</span><span class="dsm_ftype">' + f.type + '</span><span class="dsm_fsize">' + sizeStr + '</span></div>';
     });
     container.innerHTML = html;
@@ -3601,7 +3646,7 @@ function dsm_formatText(text) {
         /^暨南大学附属第五医院\s*$/,
         /^深河人民医院\s*$/,
         /^病程记录\s*$/,
-        /^姓名[:：][^\n]*住院号[:：]\s*\S+[^\n]*$/
+        /^姓名\s*[:：]\s*[^\n]*住院号\s*[:：]\s*\S+[^\n]*$/
     ];
     result = result.split('\n').map(function(line) {
         var trimmed = line.trim();
@@ -3639,7 +3684,7 @@ function dsm_formatText(text) {
         var curTrimmed = cur.trim();
         var nextTrimmed = next.trim();
         // 下一行如果是新段落开头，不合并
-        var isNewBlock = /^(\d+[、\.]|[一二三四五六七八九十]+[、\.]|\d{4}[\/\-]\d|第\s*\d+\s*页|姓名[:：]|入院|转[入出]|主诉|目前|诊断|诊疗|上级医师|医师签名|检查描述|诊断结论)/.test(nextTrimmed);
+        var isNewBlock = /^(\d+[、\.]|[一二三四五六七八九十]+[、\.]|\d{4}[\/\-]\d|第\s*\d+\s*页|姓名\s*[:：]|入院|转[入出]|主诉|目前|诊断|诊疗|上级医师|医师签名|检查描述|诊断结论)/.test(nextTrimmed);
         // 上一行如果以句末标点结尾，不合并
         var curEndsSentence = /[。！？；：]$/.test(curTrimmed);
         if (isNewBlock || curEndsSentence) {
@@ -3700,10 +3745,10 @@ function dsm_desensitizeWithDebug(text) {
     patientNames.forEach(function(name) {
         if (name && name.length >= 2) {
             var patterns = [
-                { p: new RegExp('患者' + name, 'g'), r: '患者***', l: '患者姓名:' + name },
-                { p: new RegExp('患者[:：]' + name, 'g'), r: '患者：***', l: '患者姓名:' + name },
-                { p: new RegExp('患者姓名[:：]' + name, 'g'), r: '患者姓名：***', l: '患者姓名:' + name },
-                { p: new RegExp('姓名[:：]' + name, 'g'), r: '姓名：***', l: '姓名:' + name }
+                { p: new RegExp('患者\\s*' + name, 'g'), r: '患者***', l: '患者姓名' },
+                { p: new RegExp('患者\\s*[:：]\\s*' + name, 'g'), r: '患者：***', l: '患者姓名' },
+                { p: new RegExp('患者姓名\\s*[:：]\\s*' + name, 'g'), r: '患者姓名：***', l: '患者姓名' },
+                { p: new RegExp('姓名\\s*[:：]\\s*' + name, 'g'), r: '姓名：***', l: '姓名' }
             ];
             patterns.forEach(function(rule) {
                 if (rule.p.test(result)) {
@@ -3718,7 +3763,7 @@ function dsm_desensitizeWithDebug(text) {
     var sortedTitles = titles.slice().sort(function(a, b) { return b.length - a.length; });
     sortedTitles.forEach(function(title) {
         if (!title) return;
-        var pattern = new RegExp('([\u4e00-\u9fa5]{2,4})(' + title + ')', 'g');
+        var pattern = new RegExp('([\u4e00-\u9fa5]{2,4})\\s*(' + title + ')', 'g');
         if (pattern.test(result)) {
             result = result.replace(pattern, '***$2');
             if (changes.indexOf('姓名+' + title) === -1) changes.push('姓名+' + title);
@@ -3737,16 +3782,16 @@ function dsm_desensitizeWithDebug(text) {
 
     // 第四步：固定字段
     var fixedPatterns = [
-        { p: /住院号[:：]\d+/g, r: '住院号：***', l: '住院号' },
-        { p: /身份证[:：]\d{17}[\dXx]/g, r: '身份证：***', l: '身份证' },
-        { p: /电话[:：]1[3-9]\d{9}/g, r: '电话：***', l: '电话' },
-        { p: /地址[:：][^\n]*/g, r: '地址：【已脱敏】', l: '地址' },
-        { p: /住址[:：][^\n]*/g, r: '住址：【已脱敏】', l: '住址' },
-        { p: /医师签名[:：][\u4e00-\u9fa5]{2,4}/g, r: '医师签名：***', l: '医师签名' },
-        { p: /上级医师签名[:：][\u4e00-\u9fa5]{2,4}/g, r: '上级医师签名：***', l: '上级医师签名' },
-        { p: /护士签名[:：][\u4e00-\u9fa5]{2,4}/g, r: '护士签名：***', l: '护士签名' },
-        { p: /参与抢救人员[:：][^\n]*/g, r: '参与抢救人员：【已脱敏】', l: '参与抢救人员' },
-        { p: /家属[\u4e00-\u9fa5]{2,4}/g, r: '家属***', l: '家属姓名' }
+        { p: /住院号\s*[:：]\s*\d+/g, r: '住院号：***', l: '住院号' },
+        { p: /身份证\s*[:：]\s*\d{17}[\dXx]/g, r: '身份证：***', l: '身份证' },
+        { p: /电话\s*[:：]\s*1[3-9]\d{9}/g, r: '电话：***', l: '电话' },
+        { p: /地址\s*[:：]\s*[^\n]*/g, r: '地址：【已脱敏】', l: '地址' },
+        { p: /住址\s*[:：]\s*[^\n]*/g, r: '住址：【已脱敏】', l: '住址' },
+        { p: /医\s*师\s*签\s*名\s*[:：]\s*[\u4e00-\u9fa5]{2,4}/g, r: '医师签名：***', l: '医师签名' },
+        { p: /上\s*级\s*医\s*师\s*签\s*名\s*[:：]\s*[\u4e00-\u9fa5]{2,4}/g, r: '上级医师签名：***', l: '上级医师签名' },
+        { p: /护\s*士\s*签\s*名\s*[:：]\s*[\u4e00-\u9fa5]{2,4}/g, r: '护士签名：***', l: '护士签名' },
+        { p: /参\s*与\s*抢\s*救\s*人\s*员\s*[:：]\s*[^\n]*/g, r: '参与抢救人员：【已脱敏】', l: '参与抢救人员' },
+        { p: /家属\s*[\u4e00-\u9fa5]{2,4}/g, r: '家属***', l: '家属姓名' }
     ];
     fixedPatterns.forEach(function(rule) {
         if (rule.p.test(result)) {
@@ -3794,17 +3839,17 @@ function dsm_highlightSensitive(text) {
     var patientNames = dsm_extractPatientNames(result, excludes);
     patientNames.forEach(function(name) {
         if (name && name.length >= 2) {
-            highlightRules.push({ p: new RegExp('患者' + name, 'g'), r: '<span class="dsm_highlight-red">患者' + name + '</span>' });
-            highlightRules.push({ p: new RegExp('患者[:：]' + name, 'g'), r: '<span class="dsm_highlight-red">患者：' + name + '</span>' });
-            highlightRules.push({ p: new RegExp('患者姓名[:：]' + name, 'g'), r: '<span class="dsm_highlight-red">患者姓名：' + name + '</span>' });
-            highlightRules.push({ p: new RegExp('姓名[:：]' + name, 'g'), r: '<span class="dsm_highlight-red">姓名：' + name + '</span>' });
+            highlightRules.push({ p: new RegExp('患者\\s*' + name, 'g'), r: '<span class="dsm_highlight-red">患者' + name + '</span>' });
+            highlightRules.push({ p: new RegExp('患者\\s*[:：]\\s*' + name, 'g'), r: '<span class="dsm_highlight-red">患者：' + name + '</span>' });
+            highlightRules.push({ p: new RegExp('患者姓名\\s*[:：]\\s*' + name, 'g'), r: '<span class="dsm_highlight-red">患者姓名：' + name + '</span>' });
+            highlightRules.push({ p: new RegExp('姓名\\s*[:：]\\s*' + name, 'g'), r: '<span class="dsm_highlight-red">姓名：' + name + '</span>' });
         }
     });
 
     var sortedTitles = titles.slice().sort(function(a, b) { return b.length - a.length; });
     sortedTitles.forEach(function(title) {
         if (!title) return;
-        highlightRules.push({ p: new RegExp('([\u4e00-\u9fa5]{2,4})(' + title + ')', 'g'), r: '<span class="dsm_highlight-red">$1$2</span>' });
+        highlightRules.push({ p: new RegExp('([\u4e00-\u9fa5]{2,4})\\s*(' + title + ')', 'g'), r: '<span class="dsm_highlight-red">$1$2</span>' });
     });
 
     hospitals.forEach(function(hospital) {
@@ -3813,10 +3858,10 @@ function dsm_highlightSensitive(text) {
     });
 
     var fixedPatterns = [
-        /住院号[:：]\d+/g, /身份证[:：]\d{17}[\dXx]/g, /电话[:：]1[3-9]\d{9}/g,
-        /地址[:：][^\n]*/g, /住址[:：][^\n]*/g, /医师签名[:：][\u4e00-\u9fa5]{2,4}/g,
-        /上级医师签名[:：][\u4e00-\u9fa5]{2,4}/g, /护士签名[:：][\u4e00-\u9fa5]{2,4}/g,
-        /参与抢救人员[:：][^\n]*/g, /家属[\u4e00-\u9fa5]{2,4}/g
+        /住院号\s*[:：]\s*\d+/g, /身份证\s*[:：]\s*\d{17}[\dXx]/g, /电话\s*[:：]\s*1[3-9]\d{9}/g,
+        /地址\s*[:：]\s*[^\n]*/g, /住址\s*[:：]\s*[^\n]*/g, /医\s*师\s*签\s*名\s*[:：]\s*[\u4e00-\u9fa5]{2,4}/g,
+        /上\s*级\s*医\s*师\s*签\s*名\s*[:：]\s*[\u4e00-\u9fa5]{2,4}/g, /护\s*士\s*签\s*名\s*[:：]\s*[\u4e00-\u9fa5]{2,4}/g,
+        /参\s*与\s*抢\s*救\s*人\s*员\s*[:：]\s*[^\n]*/g, /家属\s*[\u4e00-\u9fa5]{2,4}/g
     ];
     fixedPatterns.forEach(function(pattern) {
         highlightRules.push({ p: pattern, r: function(m) { return '<span class="dsm_highlight-red">' + m + '</span>'; } });
@@ -3863,7 +3908,41 @@ function dsm_previewData() {
     var content = data.content;
     dsm_fullData = []; /* v0.12.0 E2：每次预览重算「看全屏」缓存 */
 
+    /* v0.14.0 补强：落盘存档统一洗成脱敏后文本（深拷贝洗，内存不动——本次预览的原文标红不受影响）；
+       hx_dsm_v1设计本就应存脱敏后文本，早期空格病根漏脱的明文存档（含files外的补日期副本键）借预览时机洗干净 */
+    (function(){
+        try {
+            /* 注意结构：盘档patients每项是{data:{files,content}}，内存dsm_APP.patients是摊平的{files,content}——存回去要包回data层 */
+            var saveCopy = { v: 1, patients: {} };
+            for (var _pn in dsm_APP.patients) { saveCopy.patients[_pn] = { data: JSON.parse(JSON.stringify(dsm_APP.patients[_pn])) }; }
+            var dirty = false;
+            for (var _p in saveCopy.patients) {
+                var _c = saveCopy.patients[_p] && saveCopy.patients[_p].data && saveCopy.patients[_p].data.content;
+                if (!_c) continue;
+                for (var _k in _c) {
+                    var _t = _c[_k] && _c[_k].text;
+                    if (!_t) continue;
+                    var _d = dsm_desensitizeWithDebug(_t);
+                    if (_d.changes.length > 0 && _d.result !== _t) { _c[_k].text = _d.result; dirty = true; }
+                }
+            }
+            if (dirty) dsmhSave(saveCopy);
+        } catch(e) {}
+    })();
+
     var textFiles = data.files.filter(function(f) { return f.type === '文本' || f.type === 'Markdown' || f.type === '文档' || f.type === 'PDF文档'; });
+    /* v0.14.0 毛病27：导出同款去重——同一内容（PDF与其文本副本/补日期副本）只导一次 */
+    (function(){
+        var seen = {}, out = [], dups = [];
+        textFiles.forEach(function(f){
+            var t = data.content[f.name] && data.content[f.name].text;
+            var fp = t ? (t.length + '|' + t.slice(0, 80)) : f.name;
+            if (seen[fp]) { dups.push(f.name + '（内容与「' + seen[fp] + '」相同）'); return; }
+            seen[fp] = f.name; out.push(f);
+        });
+        textFiles = out;
+        if (dups.length) { try { dsm_APP._lastDups = dups; } catch(e) {} }
+    })();
     /* v0.12.0 E1 排序：病历类（PDF文档，多为整份病历）排前，验单类（文本/Markdown，时间戳密集的化验单）排后；
        Array.prototype.sort稳定排序，只按类型权重排，同类保持原顺序 */
     textFiles.sort(function(a, b) { return (a.type === 'PDF文档' ? 0 : 1) - (b.type === 'PDF文档' ? 0 : 1); });
@@ -3871,8 +3950,19 @@ function dsm_previewData() {
     if (textFiles.length === 0) {
         html = '<div class="dsm_empty-state">没有可预览的文本文件</div>';
     } else {
+        /* v0.14.0 毛病27：同一份病历的PDF和它的文本副本内容一样，预览重复出现。
+           按内容指纹（长度+前80字）去重：内容相同的只渲染第一份，其余收成一行小字说明 */
+        var _seenFp = {};
         textFiles.forEach(function(f) {
             var c = content[f.name];
+            var _fpTxt = c && c.text ? c.text : '';
+            var _fp = _fpTxt.length + '|' + _fpTxt.slice(0, 80);
+            if (_fpTxt && _seenFp[_fp]) {
+                html += '<div style="font-size:12px;color:#8a8178;padding:4px 8px;">📎 ' + f.name + '：内容与「' + _seenFp[_fp] + '」相同，不重复预览（文件清单里可单独点开看）</div>';
+                return;
+            }
+            if (_fpTxt) _seenFp[_fp] = f.name;
+            /* （统一去重已在前面滤掉重复文件，这里只见得到独一份） */
             var text = c ? c.text : '';
             
             if (text && text.indexOf('[PDF') === 0) {
@@ -3909,6 +3999,11 @@ function dsm_previewData() {
         });
     }
 
+    /* v0.14.0：有被去重滤掉的重复文件时，向洪老师说明哪几份为什么不显示 */
+    if (dsm_APP._lastDups && dsm_APP._lastDups.length) {
+        html += '<div style="font-size:12px;color:#8a8178;padding:4px 8px;">📎 以下 ' + dsm_APP._lastDups.length + ' 份内容重复不重复预览（文件清单里可单独点开看）：' + dsm_APP._lastDups.join('；') + '</div>';
+        dsm_APP._lastDups = null;
+    }
     html += '<div class="dsm_section-block" style="border-left-color:#8e44ad;">';
     html += '<div class="dsm_title">🤖 AI 提示词</div>';
     html += '<div style="white-space:pre-wrap;font-size:12px;background:#f5f0f9;padding:10px;border-radius:5px;">' + (dsm_APP.aiPrompt || '未设置') + '</div>';
@@ -3920,6 +4015,36 @@ function dsm_previewData() {
 
 /* v0.12.0 E2 手机版全屏对照：全屏浮层看单个文件完整对照（上段原文带红色敏感词高亮、下段脱敏后），大字、可滚动、右上角关闭 */
 var dsm_fullData = [];
+
+/* v0.14.0 新增：文件清单点哪份看哪份（全屏浮层：原文标红 + 脱敏后对照），复用dsm_fullOverlay样式 */
+function dsm_viewFile(fname) {
+    var patient = dsm_APP.currentPatient;
+    if (!patient) { dsm_showToast('请先选择病人', 'error'); return; }
+    var data = dsm_APP.patients[patient];
+    if (!data) return;
+    var c = data.content[fname];
+    /* 旧档自愈同款：名芯对不上时按名芯找（剥日期尾数） */
+    if (!c) {
+        var core = fname.replace(/\.(txt|pdf|md|markdown)$/i,'').replace(/(\d{8}|\d{4}|\d{2})$/,'');
+        for (var k in data.content) {
+            var kc = k.replace(/\.(txt|pdf|md|markdown)$/i,'').replace(/(\d{8}|\d{4}|\d{2})$/,'');
+            if (kc === core) { c = data.content[k]; break; }
+        }
+    }
+    if (!c || !c.text) { dsm_showToast('这份文件没有文本内容', 'warn'); return; }
+    var text = c.text;
+    var dbg = dsm_desensitizeWithDebug(text);
+    var hl = dsm_highlightSensitive(dsm_formatText(text));
+    var old = document.getElementById('dsm_fullOverlay'); if (old) old.remove();
+    var ov = document.createElement('div');
+    ov.className = 'dsm_fullOverlay'; ov.id = 'dsm_fullOverlay';
+    ov.innerHTML = '<button class="dsm_fullClose" onclick="document.getElementById(\'dsm_fullOverlay\').remove()">✕ 关闭</button>' +
+        '<div class="dsm_fullTitle">📄 ' + fname + '</div>' +
+        '<div class="dsm_fullOrig"><div class="dsm_fullLabel" style="color:#c0392b;">📋 原文（红色高亮敏感词）</div><pre>' + hl + '</pre></div>' +
+        '<div class="dsm_fullDes"><div class="dsm_fullLabel" style="color:#27ae60;">🔒 脱敏后</div><pre>' + dsm_formatText(dbg.result) + '</pre></div>';
+    document.body.appendChild(ov);
+}
+
 function dsm_fullCompare(i) {
     var it = dsm_fullData[i];
     if (!it) { dsm_showToast('这份预览没了，请重新点「📋 预览」', 'warn'); return; }
@@ -4020,6 +4145,18 @@ function dsm_buildReportHtml(patient, data) {
     var content = data.content;
     var body = '';
     var textFiles = data.files.filter(function(f) { return f.type === '文本' || f.type === 'Markdown' || f.type === '文档' || f.type === 'PDF文档'; });
+    /* v0.14.0 毛病27：导出同款去重——同一内容（PDF与其文本副本/补日期副本）只导一次 */
+    (function(){
+        var seen = {}, out = [], dups = [];
+        textFiles.forEach(function(f){
+            var t = data.content[f.name] && data.content[f.name].text;
+            var fp = t ? (t.length + '|' + t.slice(0, 80)) : f.name;
+            if (seen[fp]) { dups.push(f.name + '（内容与「' + seen[fp] + '」相同）'); return; }
+            seen[fp] = f.name; out.push(f);
+        });
+        textFiles = out;
+        if (dups.length) { try { dsm_APP._lastDups = dups; } catch(e) {} }
+    })();
     /* v0.12.0 E1 排序：病历类（PDF文档，多为整份病历）排前，验单类（文本/Markdown，时间戳密集的化验单）排后；
        Array.prototype.sort稳定排序，只按类型权重排，同类保持原顺序 */
     textFiles.sort(function(a, b) { return (a.type === 'PDF文档' ? 0 : 1) - (b.type === 'PDF文档' ? 0 : 1); });
@@ -4064,6 +4201,18 @@ function dsm_buildReportTxt(patient, data) {
     lines.push('');
 
     var textFiles = data.files.filter(function(f) { return f.type === '文本' || f.type === 'Markdown' || f.type === '文档' || f.type === 'PDF文档'; });
+    /* v0.14.0 毛病27：导出同款去重——同一内容（PDF与其文本副本/补日期副本）只导一次 */
+    (function(){
+        var seen = {}, out = [], dups = [];
+        textFiles.forEach(function(f){
+            var t = data.content[f.name] && data.content[f.name].text;
+            var fp = t ? (t.length + '|' + t.slice(0, 80)) : f.name;
+            if (seen[fp]) { dups.push(f.name + '（内容与「' + seen[fp] + '」相同）'); return; }
+            seen[fp] = f.name; out.push(f);
+        });
+        textFiles = out;
+        if (dups.length) { try { dsm_APP._lastDups = dups; } catch(e) {} }
+    })();
     /* v0.12.0 E1 排序：病历类（PDF文档，多为整份病历）排前，验单类（文本/Markdown，时间戳密集的化验单）排后；
        Array.prototype.sort稳定排序，只按类型权重排，同类保持原顺序 */
     textFiles.sort(function(a, b) { return (a.type === 'PDF文档' ? 0 : 1) - (b.type === 'PDF文档' ? 0 : 1); });
@@ -4117,6 +4266,18 @@ function dsm_buildReportMd(patient, data) {
     lines.push('');
 
     var textFiles = data.files.filter(function(f) { return f.type === '文本' || f.type === 'Markdown' || f.type === '文档' || f.type === 'PDF文档'; });
+    /* v0.14.0 毛病27：导出同款去重——同一内容（PDF与其文本副本/补日期副本）只导一次 */
+    (function(){
+        var seen = {}, out = [], dups = [];
+        textFiles.forEach(function(f){
+            var t = data.content[f.name] && data.content[f.name].text;
+            var fp = t ? (t.length + '|' + t.slice(0, 80)) : f.name;
+            if (seen[fp]) { dups.push(f.name + '（内容与「' + seen[fp] + '」相同）'); return; }
+            seen[fp] = f.name; out.push(f);
+        });
+        textFiles = out;
+        if (dups.length) { try { dsm_APP._lastDups = dups; } catch(e) {} }
+    })();
     /* v0.12.0 E1 排序：病历类（PDF文档，多为整份病历）排前，验单类（文本/Markdown，时间戳密集的化验单）排后；
        Array.prototype.sort稳定排序，只按类型权重排，同类保持原顺序 */
     textFiles.sort(function(a, b) { return (a.type === 'PDF文档' ? 0 : 1) - (b.type === 'PDF文档' ? 0 : 1); });
