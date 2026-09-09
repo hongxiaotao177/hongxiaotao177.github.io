@@ -1,1 +1,1 @@
-{"version": "0.12.0", "dl": "software-guanjia.html", "engine": "guanjia-pdf-engine.js", "note": "导出分块回读防截断（修聚合只有验单没病历）+原文销毁删后核对+脱敏间收纳+收件筛子+病历排前+手机全屏对照"}
+{"version": "0.13.0", "dl": "software-guanjia.html", "engine": "guanjia-pdf-engine.js", "note": "修四毛病：脱敏间预览全空(存档键名对不上+旧档自愈)+原文销毁回读加固+名册详情三栏(原状/脱敏/聚合全能看)+导出清单PDF排前"}
