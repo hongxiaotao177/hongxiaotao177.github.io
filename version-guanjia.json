@@ -1,1 +1,1 @@
-{"version": "0.13.0", "dl": "software-guanjia.html", "engine": "guanjia-pdf-engine.js", "note": "修四毛病：脱敏间预览全空(存档键名对不上+旧档自愈)+原文销毁回读加固+名册详情三栏(原状/脱敏/聚合全能看)+导出清单PDF排前"}
+{"version": "0.13.1", "dl": "software-guanjia.html", "engine": "guanjia-pdf-engine.js", "note": "修#26脱敏失灵：恢复时从原文保险柜读回真原文再预览脱敏（存档本是脱敏后文本）"}
