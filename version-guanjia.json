@@ -1,1 +1,1 @@
-{"version": "0.13.1", "dl": "software-guanjia.html", "engine": "guanjia-pdf-engine.js", "note": "修#26脱敏失灵：恢复时从原文保险柜读回真原文再预览脱敏（存档本是脱敏后文本）"}
+{"version": "0.14.0", "dl": "software-guanjia.html", "engine": "guanjia-pdf-engine.js", "note": "修#27脱敏空格病根（PDF解析文本带空格全失配）+#28删原件seen烂账补删；文件身份标注+点击单独浏览；预览/导出去重；签名医生空格失配补强；存档明文预览时回洗"}
