@@ -2,6 +2,15 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.9.0 2026-09-09 开门三停+版本校对明示+升级复核（洪老师拍板：自动化全部停掉，只认手动按钮）：
+      ①开门三停：开门/闲时不再自动查云端版本、不再自动下载换新、不再自动备份（含闲时触发和
+        v1.8.0的闲时3天对账）——自检流程只在手动点「🔍 检查新版本」（立hx_ver_manual标记刷新）时跑，
+        函数本体全部保留；坚果云7天提醒（只读localStorage不联网）保留；
+      ②版本校对明示：顶部常驻一行各软件本机版本号（只读本机记忆CUR/hx_suite_ver，不联网），
+        卡片角标改"本机 vX.X.X"；手动查版本结果写明"本机vX / 云端vY，有新版"或"已是最新（本机=云端 vX）"；
+      ③升级后复核：手动升级跑完自动重读本机记录+探实际文件，与云端版本对账——对得上显示
+        "升级完成，本机=云端 vX"；对不上红字写明"本机vX/云端vY"+最可能原因（文件没写进去/下载截断或壳没刷新），
+        对不上时不自动刷新让您看清。其余一行未动。
     v1.8.0 2026-09-08 对账+清缓存+主界面自我更新（洪老师拍板）：
       ①主界面自己入更新名单（SUITE加index）——破冰前旧主界面永远不自更新的断根修法；
       ②更新流程跑完→自动对账一次（重查一遍版本+文件在不在）；5秒无操作→再对账一次（🧾对账②）；
@@ -181,6 +190,9 @@
 
   <div id="updLine"></div>
 
+  <!-- v1.9.0 版本校对明示：顶部常驻一行各软件本机版本号（只读本机记忆，不联网） -->
+  <div id="verLocalLine" style="font-size:12px;color:#a89f93;margin-bottom:10px;line-height:1.6;"></div>
+
   <!-- v1.7.1 洪老师拍板：第一行常驻同步键——不按绝不同步；按了全程直播每一步 -->
   <div id="syncBar" style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
     <button class="tag" id="btnSyncTop" style="padding:10px 16px;border:none;cursor:pointer;">🔄 同步</button>
@@ -269,7 +281,7 @@
   <a class="card" id="scCard" href="javascript:void(0)">
     <h2>🔄 同步体检</h2>
     <div class="desc" id="scLine">心跳对账：逐个比对授权文件夹和坚果云的修改时间，只报告，绝不动数据。点我手动对账。</div>
-    <div class="meta"><span class="tag">只报告不改数据</span><span class="tag">开门12秒自动体检一次</span></div>
+    <div class="meta"><span class="tag">只报告不改数据</span><span class="tag">v1.9.0起只认手动：点我或下面按钮才体检</span></div>
   </a>
   <div class="card" id="scPanel" style="display:none;">
     <div class="desc" id="scStatus">……</div>
@@ -284,21 +296,23 @@
     <div class="desc intro" id="bkDavLine">一键把授权文件夹里的 .json/.bak 数据文件全部传到坚果云「/学习套装备份/」存档（.html 网页文件不传）。</div>
     <div class="meta"><span class="tag">手动全量备份</span><span class="tag">只传数据文件</span></div>
     <div style="margin-top:12px;"><button class="tag" style="padding:10px 14px; border:none; cursor:pointer;" id="bkDavBtn">📤 开始备份</button></div>
-    <!-- v1.4.8 备份自理班：手动检查更新按钮（点=清标记+刷新重查，自检IIFE自然重跑） -->
+    <!-- v1.4.8 备份自理班：手动检查更新按钮（点=清标记+刷新重查，自检IIFE自然重跑）
+         （v1.9.0 必改处报备：开门三停后自检不再自动起步，此手动按钮加立 hx_ver_manual 标记，功能不变） -->
     <div style="margin-top:10px;">
-      <button class="tag" style="padding:10px 14px; border:none; cursor:pointer;" onclick="try{sessionStorage.removeItem('hx_ver_checked');}catch(e){};updMsg('🔍 正在查新版本，请稍等…');setTimeout(function(){location.reload();},120);">🔍 检查新版本</button>
-      <div class="desc" style="margin-top:6px; font-size:12px;">每次开门自动查一次；等不及就点我。</div>
+      <button class="tag" style="padding:10px 14px; border:none; cursor:pointer;" onclick="try{sessionStorage.removeItem('hx_ver_checked');sessionStorage.setItem('hx_ver_manual','1');}catch(e){};updMsg('🔍 正在查新版本，请稍等…');setTimeout(function(){location.reload();},120);">🔍 检查新版本</button>
+      <div class="desc" style="margin-top:6px; font-size:12px;">v1.9.0起开门不再自动查；各软件本机版本号见顶部一行小字和卡片角标，想查新版点我。</div>
     </div>
-    <!-- v1.8.0 清缓存按钮（洪老师拍板）：发了版手机还是旧版时点我——清本机版本记忆+自检标记，刷新后8个全重查重下 -->
+    <!-- v1.8.0 清缓存按钮（洪老师拍板）：发了版手机还是旧版时点我——清本机版本记忆+自检标记，刷新后8个全重查重下
+         （v1.9.0 必改处报备：开门三停后刷新不再自动重查，此手动按钮加立 hx_ver_manual 标记，保住"清完重查"原功能） -->
     <div style="margin-top:10px;">
-      <button class="tag" style="padding:10px 14px; border:none; cursor:pointer;" onclick="try{localStorage.removeItem('hx_suite_ver');sessionStorage.removeItem('hx_ver_checked');localStorage.removeItem('hx_audit3');}catch(e){};updMsg('🧹 已清本机版本记忆，刷新后全部重新检查下载…');setTimeout(function(){location.reload();},300);">🧹 清缓存重来</button>
+      <button class="tag" style="padding:10px 14px; border:none; cursor:pointer;" onclick="try{localStorage.removeItem('hx_suite_ver');sessionStorage.removeItem('hx_ver_checked');localStorage.removeItem('hx_audit3');sessionStorage.setItem('hx_ver_manual','1');}catch(e){};updMsg('🧹 已清本机版本记忆，刷新后全部重新检查下载…');setTimeout(function(){location.reload();},300);">🧹 清缓存重来</button>
       <div class="desc" style="margin-top:6px; font-size:12px;">"发了版手机还是旧版"时点我：清掉本机版本记忆，全部重查重下。壳自己的缓存每次开门已自动清，我能清的就是这一层。</div>
     </div>
   </div>
 
   <a class="card" id="apkCard" href="https://github.com/hongxiaotao177/xuexi-backup/releases/download/shell-v1.0.5/LearnShell-v1.0.5.apk">
     <h2>📱 学习套装·壳APP（推荐）<span class="infoBtn">ⓘ 说明</span></h2>
-    <div class="desc intro">把整套软件装进一个APP（成员加了自动跟着装）：文件夹授权一次永久有效；打开主界面就自动更新，不用管。点我下载安装包（华为提示"未知来源"点允许即可）。iPad不适用。</div>
+    <div class="desc intro">把整套软件装进一个APP（成员加了自动跟着装）：文件夹授权一次永久有效；更新只认手动——在管理工具里点「🔍 检查新版本」。点我下载安装包（华为提示"未知来源"点允许即可）。iPad不适用。</div>
     <div class="meta"><span class="tag">APP安装包</span><span class="tag">v1.0.5</span></div>
   </a>
 
@@ -306,12 +320,12 @@
 
 </main>
 
-<footer>红小涛的学习园地 · 主界面 v1.8.0 · 由 Kimi 协助维护</footer>  <!-- v1.8.0 页脚亮版本号：真机验收一眼看清自己是不是新版 -->
+<footer>红小涛的学习园地 · 主界面 v1.9.0 · 由 Kimi 协助维护</footer>  <!-- v1.8.0 页脚亮版本号：真机验收一眼看清自己是不是新版 -->
 
 <script>
 /* ==================== 套装主界面自检器官（v1.1.0） ==================== */
 /* 本界面对应的四个软件当前内装版本（每次发版跟着改） */
-var CUR = { notes:"2.16.2", xiti:"1.10.3", bridge:"1.3.1", xueqi:"0.12.0", ppt:"0.14.3", xiaotao:"0.5.1", guanjia:"0.9.0", index:"1.8.0" };
+var CUR = { notes:"2.16.2", xiti:"1.10.3", bridge:"1.3.1", xueqi:"0.12.0", ppt:"0.14.3", xiaotao:"0.5.1", guanjia:"0.12.0", index:"1.9.0" /* v1.9.0 必改处报备：CUR.guanjia原0.9.0严重落伍（真机版本对不上的病根之一），发版大管家v0.12.0同步更新 */ };
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
 try{ var _sv=JSON.parse(localStorage.getItem("hx_suite_ver")||"{}"); Object.keys(_sv).forEach(function(k){ if(_sv[k]) CUR[k]=_sv[k]; }); }catch(e){}
 /* key: [云端软件文件, 壳内文件名, 云端版本文件, 标签id] */
@@ -325,12 +339,20 @@ var SUITE = {
   guanjia:["software-guanjia.html","病人大管家.html","version-guanjia.json","tagGuanjia"],
   index:  ["index.html",          "index.html",     "version-index.json", ""]
 };
-/* 标签按 CUR 显示（永不落伍） */
+/* 标签按 CUR 显示（永不落伍）；v1.9.0 版本校对明示：角标写明"本机"，查新版靠手动按钮 */
 Object.keys(SUITE).forEach(function(k){
   if(CUR[k]==="0") return;  /* 0=本机还没装（如老壳没带PPT工坊），保留静态文案 */
   var el = document.getElementById(SUITE[k][3]);
-  if(el) el.textContent = "v" + CUR[k];
+  if(el) el.textContent = "本机 v" + CUR[k];
 });
+/* v1.9.0 版本校对明示：顶部常驻一行本机版本号——只读本机记忆 CUR/hx_suite_ver，绝不联网 */
+try{
+  var _vl=document.getElementById("verLocalLine");
+  if(_vl){
+    var _nm={notes:"笔记",xiti:"习题",bridge:"文件桥",xueqi:"血气",ppt:"PPT",xiaotao:"小涛",guanjia:"大管家",index:"主界面"};
+    _vl.textContent="本机版本："+Object.keys(SUITE).map(function(k){ return (_nm[k]||k)+" v"+CUR[k]; }).join(" ｜ ")+"。查新版：管理工具→「🔍 检查新版本」（手动）。";
+  }
+}catch(e){}
 
 /* v1.1.4 踩坑修复：壳里主界面已换新、但新成员软件还没下载完时，点卡片会撞壳的404。
    壳里页面走 https://app.local/，缺文件壳就回404——直接fetch每个软件文件探一探，
@@ -419,6 +441,12 @@ function hxRawGet(name){
      手动点「🔍 检查新版本」按钮不受此限（按钮先清标记再刷新重查）。只拦下面查版本，不拦上面藏卡片。 */
   /* v1.8.0 对账①：刚装完更新刷新回来时（hx_postaudit），清掉自检标记让下面流程重跑一遍=对账 */
   try{ if(sessionStorage.getItem("hx_postaudit")==="1"){ sessionStorage.removeItem("hx_postaudit"); sessionStorage.removeItem("hx_ver_checked"); } }catch(e){}
+  /* v1.9.0 洪老师拍板：开门三停——开门/闲时不再自动查版本、不再自动下载换新、不再自动备份，只认手动按钮。
+     手动点「🔍 检查新版本」时会先立 hx_ver_manual 标记再刷新，这里认到标记才跑全流程；
+     平时开门到这里直接退出（上面藏壳卡片照常）。下面 step/dl/finish 等函数本体全保留，手动流程照用。 */
+  var _manualGo=false;
+  try{ if(sessionStorage.getItem("hx_ver_manual")==="1"){ sessionStorage.removeItem("hx_ver_manual"); _manualGo=true; } }catch(e){}
+  if(!_manualGo) return;
   try{ if(sessionStorage.getItem("hx_ver_checked")==="1") return; sessionStorage.setItem("hx_ver_checked","1"); }catch(e){}
   var c=ghCfg();
   /* v1.3.7：没填Token也要更新（走公开直链），不再静默跳过 */
@@ -498,6 +526,31 @@ function hxRawGet(name){
       next();
   }
   var progLog=[]; /* v1.7.0 进度直播：每一步都记一行，第一屏全程可见 */
+  var cloudVer={}; /* v1.9.0 版本校对明示+升级复核：记下每个软件云端读到的版本号，供对账用 */
+  /* v1.9.0 升级后复核（洪老师拍板）：手动升级跑完后，自动重读一遍本机记录+探实际文件在不在，
+     和云端版本对账——只读不下载。对得上→"升级完成，本机=云端 vX"；对不上→红字写明本机/云端+最可能原因。 */
+  function verifyAfter(done){
+    var ks=Object.keys(cloudVer), i=0, lines=[], allOk=true;
+    if(!ks.length){ done(lines, allOk); return; }
+    (function one(){
+      if(i>=ks.length){ done(lines, allOk); return; }
+      var k=ks[i++], cn=(k==="index"?"主界面自己":SUITE[k][1].replace(".html",""));
+      fetch(encodeURI(SUITE[k][1]), {cache:"no-store"}).then(function(r){
+        var fileOk=r.ok;
+        var match = fileOk && cloudVer[k] && cmpVer(CUR[k], cloudVer[k])===0;
+        if(match){ lines.push("✅ "+cn+"：升级完成，本机=云端 v"+CUR[k]); }
+        else{
+          allOk=false;
+          var why=[];
+          if(!fileOk) why.push("文件没写进壳里（写入失败）");
+          if(cloudVer[k] && cmpVer(CUR[k], cloudVer[k])!==0) why.push("下载截断或壳没刷新");
+          if(!why.length) why.push("云端版本没读到");
+          lines.push("❌ "+cn+"：升级后版本对不上：本机v"+CUR[k]+" / 云端v"+(cloudVer[k]||"?")+"，可能原因："+why.slice(0,2).join("；"));
+        }
+        one();
+      }).catch(function(){ allOk=false; lines.push("❌ "+cn+"：本机文件探不到，可能原因：文件没写进去；壳还没刷新"); one(); });
+    })();
+  }
   function prog(line){ progLog.push(line); updMsg("🔍 检查新版本（"+Math.min(progLog.length,keys.length)+"/"+keys.length+"）\n"+progLog.join("\n")); }
   function step(i){
     if(i>=keys.length){ finish(); return; }
@@ -508,8 +561,9 @@ function hxRawGet(name){
       var info;
       try{ info=JSON.parse(txt); }catch(e){ info=null; }
       if(!info || !info.version){ progLog[progLog.length-1]="⚠️ "+cnName+"：版本文件没读到，跳过"; updMsg("🔍 检查新版本\n"+progLog.join("\n")); step(i+1); return; }
-      if(cmpVer(info.version, CUR[k])>0){ progLog[progLog.length-1]="📥 "+cnName+"：发现新版 v"+info.version+"，正在下载…"; updMsg("🔍 检查新版本\n"+progLog.join("\n")); dl(k, info, remote, localName, function(){ step(i+1); }); return; }
-      progLog[progLog.length-1]="✅ "+cnName+"：已是最新 v"+info.version; updMsg("🔍 检查新版本\n"+progLog.join("\n"));
+      cloudVer[k]=info.version; /* v1.9.0 记云端版本，供升级后复核对账 */
+      if(cmpVer(info.version, CUR[k])>0){ progLog[progLog.length-1]="📥 "+cnName+"：本机v"+CUR[k]+" / 云端v"+info.version+"，有新版，正在下载…"; updMsg("🔍 检查新版本\n"+progLog.join("\n")); dl(k, info, remote, localName, function(){ step(i+1); }); return; }
+      progLog[progLog.length-1]="✅ "+cnName+"：已是最新（本机=云端 v"+info.version+"）"; updMsg("🔍 检查新版本\n"+progLog.join("\n"));
       /* 版本看着不新，再敲一下文件的门（v1.1.5 假记忆防御） */
       reallyMissing(localName, function(missing){
         if(missing) dl(k, info, remote, localName, function(){ step(i+1); });
@@ -517,47 +571,35 @@ function hxRawGet(name){
       });
     }).catch(function(e){ step(i+1); });  /* 单个版本文件读不到不拖累别人 */
   }
-  var _audit2=false; /* v1.8.0 对账②只跑一次，不循环 */
   function finish(){
     /* v1.7.0 进度直播定格：结果常驻第一屏不消失，您看清了再点进去（洪老师拍板2026-09-08） */
-    /* v1.8.0 对账②：更新流程跑完5秒后再对一遍（只排一次；对账②自己跑完不再排） */
-    if(!_audit2){ _audit2=true; setTimeout(function(){ progLog.length=0; updated.length=0; failed.length=0; step(0); }, 5000); }
+    /* v1.9.0 洪老师拍板：开门三停——原v1.8.0"对账②"（跑完5秒自动再全查重下一遍）删除，自动化只认手动按钮；
+       升级为"升级后复核"（verifyAfter，只读不下载），见下面 updated 分支。 */
     if(updated.length){
       try{ sessionStorage.setItem("hx_postaudit","1"); }catch(e){}  /* v1.8.0 刷新回来后自动对账① */
-      updMsg(progLog.join("\n")+"\n\n✅ 已自动更新："+updated.join("、")+"\n旧版不用管，新版备份已存进您的文件夹。3秒后自动刷新…");
+      updMsg(progLog.join("\n")+"\n\n✅ 已自动更新："+updated.join("、")+"\n旧版不用管，新版备份已存进您的文件夹。\n正在复核版本…");
       try{ window.LearnShell.toast("✅ 套装已自动更新"); }catch(e){}
-      setTimeout(function(){ location.reload(); }, 3000);
+      /* v1.9.0 升级后复核：重读本机记录+探实际文件，跟云端版本对账；
+         全对上→3秒后自动刷新（原"升级成功"提示保留，补上复核结果）；有对不上→红字定格，不自动刷新，让您看清 */
+      verifyAfter(function(vlines, allOk){
+        var el=document.getElementById("updLine");
+        updMsg(progLog.join("\n")+"\n\n✅ 已自动更新："+updated.join("、")+"\n旧版不用管，新版备份已存进您的文件夹。\n\n—— 升级后复核 ——\n"+vlines.join("\n")+(allOk?"\n3秒后自动刷新…":"\n\n⚠️ 有对不上的，请再点一次「🔍 检查新版本」重试"));
+        if(!allOk){ el.style.background="#fdecec"; el.style.border="1px solid #eec2c2"; el.style.color="#a33"; }
+        else setTimeout(function(){ location.reload(); }, 3000);
+      });
     }else if(failed.length){
       updMsg(progLog.join("\n")+"\n\n⚠️ 有新版但下载没成功："+failed.join("、")+"\n不影响使用，下次打开会再试。");
     }else{
       updMsg(progLog.join("\n")+"\n\n✅ " + keys.length + "个软件全部是最新版，放心用");
     }
   }
-  hxIdle0().then(function(){ step(0); });  /* v1.6.2 查版本不抢开门：先等你安静3秒 */
+  /* v1.9.0 洪老师拍板：开门三停——这行现在只有手动点「🔍 检查新版本」立了 hx_ver_manual 标记才会走到
+     （门口 _manualGo 关卡已拦住一切自动触发）；hxIdle0 保留，手动流程跑起来后每步仍给您让路 */
+  hxIdle0().then(function(){ step(0); });
 })();
 
-/* v1.8.0 闲时对账（洪老师拍板：满3天才自动对一次，不每次闲时都烦）：
-   只拉8个版本表（几十字节）和本机记忆对一遍；对不上→清自检标记刷新，让自检流程重查重下 */
-(function(){
-  if(!window.LearnShell) return;
-  var last=0; try{ last=+(localStorage.getItem("hx_audit3")||0); }catch(e){}
-  if(Date.now()-last < 3*86400000) return;
-  try{ localStorage.setItem("hx_audit3", String(Date.now())); }catch(e){}
-  hxIdle0().then(function(){
-    var ks=Object.keys(SUITE), bad=false, i=0;
-    (function one(){
-      if(i>=ks.length){
-        if(bad){ try{ sessionStorage.removeItem("hx_ver_checked"); }catch(e){}; location.reload(); }
-        return;
-      }
-      var k=ks[i++];
-      hxRawGet(SUITE[k][2]).then(function(txt){
-        try{ var info=JSON.parse(txt); if(info && info.version && cmpVer(info.version, CUR[k])!==0) bad=true; }catch(e){}
-        one();
-      }).catch(function(){ one(); });
-    })();
-  });
-})();
+/* v1.9.0 洪老师拍板：开门三停——原v1.8.0"闲时3天自动对账"（自动拉8个云端版本表、对不上就自动刷新重查重下）
+   整段自动触发已删除，只认手动「🔍 检查新版本」。hxRawGet/cmpVer 等工具函数保留（手动流程还在用）。 */
 
 /* ==================== v1.2.0 坚果云↔仓库shared 同步官 + 仓库文件柜 ====================
    规矩（洪医生拍板）：新盖旧（比修改时间）、只增不删（删除不传播）、PDF和大文件(>4MB)不进仓库；

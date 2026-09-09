@@ -388,6 +388,21 @@ hxStore.reg('hx_cards_v1'); hxStore.reg('hx_patients'); hxStore.reg('hx_inbox_v1
   <h1>🏠 病人大管家</h1>
   <div class="ver">v<span id="verTop">?</span> · 全家的资料管家：病人归堆 + 知识搜索（名片打底）</div>
 
+  <!-- v0.12.0 E2 手机版全屏对照：窄屏（max-width:700px）下.dsm_compare改单列上下排（上原文标红、下脱敏后）+ 全屏浮层样式 -->
+  <style>
+    @media (max-width:700px){
+      #dsmWrap .dsm_preview-content .dsm_compare{flex-direction:column}
+      #dsmWrap .dsm_preview-content .dsm_compare .dsm_original,
+      #dsmWrap .dsm_preview-content .dsm_compare .dsm_desensitized{min-width:0;width:100%}
+    }
+    .dsm_fullOverlay{position:fixed;inset:0;background:#fff;z-index:100000;overflow-y:auto;padding:16px;font-size:16px;line-height:1.8}
+    .dsm_fullOverlay .dsm_fullClose{position:fixed;top:10px;right:12px;z-index:100001;background:#c0392b;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:16px;font-weight:700;cursor:pointer}
+    .dsm_fullOverlay .dsm_fullTitle{font-weight:700;color:#0d47a1;margin:0 70px 12px 0;font-size:17px}
+    .dsm_fullOverlay .dsm_fullOrig{background:#fff3f3;border:1px solid #f5c6c6;border-radius:6px;padding:12px;margin-bottom:14px}
+    .dsm_fullOverlay .dsm_fullDes{background:#f0f7f0;border:1px solid #b8d4b8;border-radius:6px;padding:12px}
+    .dsm_fullOverlay pre{white-space:pre-wrap;word-break:break-word;font-size:16px;line-height:1.8;margin:0}
+    .dsm_fullOverlay .dsm_fullLabel{font-weight:700;font-size:14px;margin-bottom:6px}
+  </style>
   <!-- v0.7.0 脱敏间：脱敏工具整张搬入（折叠走大管家现有makeFoldable，见文件末尾dsm脚本） -->
   <div class="card" id="dsmCard">
     <h2 id="dsmH2">🛡 脱敏间 <span style="font-size:13px;color:#8a8178;font-weight:normal;">病历拖进来脱敏，点「📥 收进病历库」直接进名册</span></h2>
@@ -563,6 +578,7 @@ hxStore.reg('hx_cards_v1'); hxStore.reg('hx_patients'); hxStore.reg('hx_inbox_v1
 
   <div class="card">
     <h2>👥 病人名册 <span id="ptCount" style="font-size:13px;color:#8a8178;font-weight:normal;"></span><span class="infoBtn" data-fk="pts">ⓘ 说明</span> <button class="ghost" id="btnDocInbox" style="font-size:12px;padding:3px 9px;">🔄 现在收一次病历</button></h2>
+    <div id="unsureLine" style="font-size:13px;color:#b45309;margin-bottom:6px;display:none;cursor:pointer;"></div><!-- v0.12.0 C1 拿不准清单一行入口 -->
     <div class="intro" style="font-size:13px;color:#8a8178;margin-bottom:6px;">自动翻血气/呼吸机档案柜+授权文件夹里的脱敏病历（txt/pdf），按病人归堆。名字像的我会问您，绝不擅自合并。病历拷进🗄️那个文件夹就行，我开门闲时自动收，收完删原件。</div>
     <div id="ptList"></div>
     <div class="msg" id="ptMsg"></div>
@@ -745,7 +761,7 @@ hxStore.reg('hx_cards_v1'); hxStore.reg('hx_patients'); hxStore.reg('hx_inbox_v1
 </div>
 
 <script>
-var SW_VERSION = "0.11.0"; /* v0.11.0 问AI·病历分析（洪老师2026-09-09拍板开工）：病历详情页加「🤖问AI」按钮→壳内直发不再复制来复制去；三套提示词可编辑+存默认+恢复出厂（hx_gj_askai_v1）；千问/Kimi/🔀交叉校对三选一（交叉=千问出稿→Kimi挑错，需两把Key）；⟦R⟧红⟦B⟧醒目只在屏幕看，「复制干净版」剥标记；复用aiChat通道自动记账。纯加法：旧「AI找错（复制全文）」按钮保留未动 */ /* v0.10.0 原文保险柜（洪老师拍板六条）：①进来马上存（原文→壳文件夹「原文库_」前缀+hx_dsmraw_v1登记；脱敏版读完自动收病历库+hx_dsm_v1）②到点销毁默认1小时（1/4/24三档，横幅可换）③删前查脱敏分身：在→静默删/不在→弹问「删/再留会儿」④删=壳文件+脱敏间条目+登记一刀三断⑤开门堵问横幅⑥不搞密码；收件扫描排除原文库_/脱敏导出_前缀+全入口补日期（两处必改已注释报备）；导出报告同时写壳文件夹「脱敏导出_」 */ /* v0.9.1 修脱敏间「文件夹内容」文件名一字一行竖排：.dsm_name加min-width:0（flex子项默认min-width:auto被nowrap的大小/徽章挤到一字宽），只动这一处CSS，其余未碰 */ /* v0.9.0 工具箱：新折叠卡「🧰 工具箱」（走makeFoldable，默认折起），五个软件链接直达（学习笔记/血气分析/习题学习/PPT工坊/拍病历），链接带?from=guanjia&pt=当前病人——各软件认from亮「← 返回大管家」顶条，血气认pt自动设为当前病人，学习笔记新建笔记标题自动挂[病人]前缀；当前病人=名册里最近点开详情的那个（存hx_gj_curpt），工具箱标题旁实时显示；文件名自适应：仓库/公开站环境用software-*.html，壳内/桌面用中文名 */ /* v0.7.0 脱敏间合并：脱敏工具v5.0整张搬入成「🛡 脱敏间」折叠卡（dsm_前缀防冲突，#dsmWrap收样式作用域，规则引擎一个字符未改）；三种进件（拖放递归遍历+选文件夹+看文件选文件）；pdf.js内嵌文件末尾base64首次遇PDF才解码（Blob URL插script+workerSrc），开门不解码，cdnjs删光；「📥 收进病历库」直接调parseDocFname/pdocsLoad/pdocsSave/docHm/renderPatients进hx_pdocs_v1 */ /* v0.6.0 病历自动收件：脱敏txt/pdf拷进授权文件夹→闲时自动按「床号+姓+诊断+日期」解析收件进hx_pdocs_v1→并入名册时间线（中文床号自动折阿拉伯起疑合并）→收完删原件；详情页看全文+AI找错复制按钮 */ /* v0.5.2 开门零等待：hxStore仓管员对齐挪到闲时跑（你安静3秒才动），先秒开页面；文件夹拉到新数据→提示并自动刷新一次；治"点大管家愣10秒" */ /* v0.5.1 点亮三级菜单：选中菜单第1层5选项→第2层3套提示词→第3层可编辑+执行+存为默认；提示词存全家公用钥匙hx_glow_v1的guanjia分支；亮起触发机制未动 */ /* v0.5.0 鱼骨头化：ⓘ说明默认收起 + 家底总览/API Key收进「🛠 设置与工具」抽屉（hx_gj_tool_open），与文件桥v1.3.0同款；纯界面，功能逻辑未动 */ /* v0.4.14 ①修选中菜单"关不掉"：收起/点别处后清空兜里选中文字，不再被长按顶出来 ②寄PPT提示词跟随PPT工坊风格开关（ppt_style=strict时用严肃学术版，去掉强制口语） */ /* v0.4.13 ①hxStore仓管员：数据同步写壳文件夹（可拷走换机）②PPT链路闭环：信封带taskId、收样品（guanjia_inbox）、寄修改意见、定稿、3趟封顶 */
+var SW_VERSION = "0.12.0"; /* v0.12.0 七条（导出分块防截断+销毁核对+界面收纳+收件筛子）：①B1脱敏间整卡默认收起（旧机存过展开态的升级后强制收一次，一次性迁移标记hx_guanjia_fold里dsm_v12）②B2四处默认藏起留小字入口（📕PDF引擎状态/📁当前状态/📂点文件夹进件/📊当前病人，功能一行没动只是默认display:none）③C1收件筛子：parseDocFname解析不ok（补日期后仍不ok）的文件不进名册，收进「❓拿不准的文件」清单（localStorage hx_gj_unsure_v1+名册卡一行「❓拿不准X份（点我看）」点开alert清单），登记pd.seen防每次开门重复报，原件不删 ④D1导出防截断：壳里writeFile后立刻readFile回读atob对账（长度+尾部120字，含「由「医疗数据脱敏聚合工具 v5.0」生成」标志），对不上自动重试一次，再不行拆_1of2/_2of2两块各写各核对，全失败才红字「没存全」；成功明示「已存到授权文件夹：脱敏导出_文件名（共xxKB，已核对）」；浏览器blob下载路径不动，明示「已下载：文件名」 ⑤D2销毁回读核对：dsmraw_destroy删原文后用listFiles确认真没了，还在→红字toast「原文没删成，请手动到文件夹删：文件名」，登记条目只在确认删掉后才移除，没删成的保留在横幅列表里标红「没删成」；dsmraw_tick的无分身确认弹窗hxConfirm原样保留 ⑥E1排序：dsm预览和三个导出构造函数textFiles改PDF文档（病历类大头）排前、文本/Markdown（验单类）排后，同类保持原顺序（sort稳定排序只按类型权重）⑦E2手机全屏对照：.dsm_compare加max-width:700px媒体查询改单列上下排（上原文标红、下脱敏后），预览每个文件标题旁加「🔍 看全屏」按钮点开全屏浮层（大字、可滚动、右上角关闭） */ /* v0.11.0 问AI·病历分析（洪老师2026-09-09拍板开工）：病历详情页加「🤖问AI」按钮→壳内直发不再复制来复制去；三套提示词可编辑+存默认+恢复出厂（hx_gj_askai_v1）；千问/Kimi/🔀交叉校对三选一（交叉=千问出稿→Kimi挑错，需两把Key）；⟦R⟧红⟦B⟧醒目只在屏幕看，「复制干净版」剥标记；复用aiChat通道自动记账。纯加法：旧「AI找错（复制全文）」按钮保留未动 */ /* v0.10.0 原文保险柜（洪老师拍板六条）：①进来马上存（原文→壳文件夹「原文库_」前缀+hx_dsmraw_v1登记；脱敏版读完自动收病历库+hx_dsm_v1）②到点销毁默认1小时（1/4/24三档，横幅可换）③删前查脱敏分身：在→静默删/不在→弹问「删/再留会儿」④删=壳文件+脱敏间条目+登记一刀三断⑤开门堵问横幅⑥不搞密码；收件扫描排除原文库_/脱敏导出_前缀+全入口补日期（两处必改已注释报备）；导出报告同时写壳文件夹「脱敏导出_」 */ /* v0.9.1 修脱敏间「文件夹内容」文件名一字一行竖排：.dsm_name加min-width:0（flex子项默认min-width:auto被nowrap的大小/徽章挤到一字宽），只动这一处CSS，其余未碰 */ /* v0.9.0 工具箱：新折叠卡「🧰 工具箱」（走makeFoldable，默认折起），五个软件链接直达（学习笔记/血气分析/习题学习/PPT工坊/拍病历），链接带?from=guanjia&pt=当前病人——各软件认from亮「← 返回大管家」顶条，血气认pt自动设为当前病人，学习笔记新建笔记标题自动挂[病人]前缀；当前病人=名册里最近点开详情的那个（存hx_gj_curpt），工具箱标题旁实时显示；文件名自适应：仓库/公开站环境用software-*.html，壳内/桌面用中文名 */ /* v0.7.0 脱敏间合并：脱敏工具v5.0整张搬入成「🛡 脱敏间」折叠卡（dsm_前缀防冲突，#dsmWrap收样式作用域，规则引擎一个字符未改）；三种进件（拖放递归遍历+选文件夹+看文件选文件）；pdf.js内嵌文件末尾base64首次遇PDF才解码（Blob URL插script+workerSrc），开门不解码，cdnjs删光；「📥 收进病历库」直接调parseDocFname/pdocsLoad/pdocsSave/docHm/renderPatients进hx_pdocs_v1 */ /* v0.6.0 病历自动收件：脱敏txt/pdf拷进授权文件夹→闲时自动按「床号+姓+诊断+日期」解析收件进hx_pdocs_v1→并入名册时间线（中文床号自动折阿拉伯起疑合并）→收完删原件；详情页看全文+AI找错复制按钮 */ /* v0.5.2 开门零等待：hxStore仓管员对齐挪到闲时跑（你安静3秒才动），先秒开页面；文件夹拉到新数据→提示并自动刷新一次；治"点大管家愣10秒" */ /* v0.5.1 点亮三级菜单：选中菜单第1层5选项→第2层3套提示词→第3层可编辑+执行+存为默认；提示词存全家公用钥匙hx_glow_v1的guanjia分支；亮起触发机制未动 */ /* v0.5.0 鱼骨头化：ⓘ说明默认收起 + 家底总览/API Key收进「🛠 设置与工具」抽屉（hx_gj_tool_open），与文件桥v1.3.0同款；纯界面，功能逻辑未动 */ /* v0.4.14 ①修选中菜单"关不掉"：收起/点别处后清空兜里选中文字，不再被长按顶出来 ②寄PPT提示词跟随PPT工坊风格开关（ppt_style=strict时用严肃学术版，去掉强制口语） */ /* v0.4.13 ①hxStore仓管员：数据同步写壳文件夹（可拷走换机）②PPT链路闭环：信封带taskId、收样品（guanjia_inbox）、寄修改意见、定稿、3趟封顶 */
 document.getElementById('verTop').textContent = SW_VERSION;
 function $(id){ return document.getElementById(id); }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -779,6 +795,30 @@ function docSkipReport(skipped){
   det.innerHTML=skipped.map(function(s){ return '<div>· '+String(s).replace(/</g,'&lt;')+'</div>'; }).join('');
   var open=false;
   txt.onclick=function(){ open=!open; det.style.display=open?'block':'none'; txt.textContent='📥 有'+skipped.length+'份没收（'+(open?'收起':'点我看原因')+'）'; };
+  bar.appendChild(head); bar.appendChild(det);
+  document.body.appendChild(bar);
+}
+
+/* ── v0.12.0 D2 销毁核对失败横幅：删原件后listFiles回查还在的文件，红字列出来，点✕关掉（下次扫描还会再试删）── */
+var delFailList=[];
+function delFailReport(fname){
+  if(delFailList.indexOf(fname)<0) delFailList.push(fname);
+  var old=document.getElementById('delFailBar'); if(old) old.remove();
+  var bar=document.createElement('div');
+  bar.id='delFailBar';
+  bar.style.cssText='position:fixed;left:50%;bottom:130px;transform:translateX(-50%);background:#fff5f5;color:#c0392b;border:2px solid #e74c3c;border-radius:12px;padding:10px 14px;font-size:14px;z-index:99999;max-width:92%;box-shadow:0 4px 16px rgba(192,57,43,.25);text-align:left;';
+  var head=document.createElement('div');
+  head.style.cssText='display:flex;align-items:center;gap:8px;';
+  var txt=document.createElement('span');
+  txt.innerHTML='<b style="color:#c0392b;">⚠️ 原文没删成（'+delFailList.length+'份），请手动到文件夹删：</b>';
+  var x=document.createElement('span');
+  x.textContent='✕';
+  x.style.cssText='cursor:pointer;padding:2px 8px;color:#a89f93;font-weight:700;';
+  x.onclick=function(){ bar.remove(); };
+  head.appendChild(txt); head.appendChild(x);
+  var det=document.createElement('div');
+  det.style.cssText='margin-top:6px;line-height:1.8;font-size:13px;border-top:1px dashed #f5c6c6;padding-top:6px;max-height:40vh;overflow-y:auto;';
+  det.innerHTML=delFailList.map(function(s){ return '<div style="color:#c0392b;font-weight:600;">· '+String(s).replace(/</g,'&lt;')+'（没删成）</div>'; }).join('');
   bar.appendChild(head); bar.appendChild(det);
   document.body.appendChild(bar);
 }
@@ -1264,6 +1304,28 @@ function parseDocFname(fname, ft){
           dateStr:d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()};
 }
 function docHm(ft){ var t=ft?new Date(ft):new Date(); function p(x){ return (x<10?'0':'')+x; } return p(t.getHours())+':'+p(t.getMinutes()); }
+/* ── v0.12.0 C1 收件筛子：「❓拿不准的文件」清单（localStorage hx_gj_unsure_v1，[{f:文件名,w:原因,t:时间}]）；
+   解析不ok的txt/pdf不进名册、不删原件、登记pd.seen防每次开门重复收/重复报；名册卡上留一行入口点开看清单 ── */
+function unsureLoad(){ try{ var u=JSON.parse(localStorage.getItem('hx_gj_unsure_v1')); return Array.isArray(u)?u:[]; }catch(e){ return []; } }
+function unsureSave(u){ try{ localStorage.setItem('hx_gj_unsure_v1', JSON.stringify(u)); }catch(e){} }
+function unsureAdd(fname, why){
+  var u=unsureLoad();
+  for(var i=0;i<u.length;i++){ if(u[i].f===fname){ u[i].w=why; u[i].t=Date.now(); unsureSave(u); return; } }
+  u.push({f:fname, w:why, t:Date.now()}); if(u.length>100) u=u.slice(-100); unsureSave(u);
+}
+function unsureRenderLine(){
+  var el=$('unsureLine'); if(!el) return;
+  var u=unsureLoad();
+  if(!u.length){ el.style.display='none'; return; }
+  el.style.display='block';
+  el.textContent='❓拿不准'+u.length+'份（点我看）——文件名得按「床号+姓+诊断+日期」才收，原件还在文件夹里没动';
+  el.onclick=function(){
+    alert('❓拿不准的文件（共'+u.length+'份）\n这些文件名不是「床号+姓+诊断+日期」格式，我没收进名册，原件还在文件夹里：\n\n'+
+      u.map(function(x){ return '· '+x.f+'\n  （'+x.w+'）'; }).join('\n')+
+      '\n\n要收的话：把文件名改成「床号+姓+诊断+日期」（如 3床王高血压0908.txt）再放回文件夹；不要的话去文件夹里删掉即可。');
+  };
+}
+try{ unsureRenderLine(); }catch(e){}
 /* 收件扫描：manual=手动按钮（无收获也吭声）；自动闲时=有收获才吭声 */
 function docInboxScan(manual){
   if(!hxStore.bridged()){ if(manual) toast('还没接文件夹：点左下角🗄️先选大管家的数据文件夹，病历就拷进那里'); return; }
@@ -1271,6 +1333,7 @@ function docInboxScan(manual){
   var pd=pdocsLoad();
   function seenHas(f){ for(var i=0;i<pd.seen.length;i++){ var s=pd.seen[i]; if(s.f===f.name&&s.z===(f.size||0)&&s.t===(f.t||0)) return true; } return false; }
   var got=[], skipped=[];
+  var unsureNew=0; /* v0.12.0 C1：本次新进「拿不准」清单的份数 */
   files.forEach(function(f){
     if(!/\.(txt|pdf)$/i.test(f.name)) return;
     if(f.name.indexOf('hxdata_')===0) return;
@@ -1283,7 +1346,9 @@ function docInboxScan(manual){
       var mext0=f.name.match(/\.(txt|pdf)$/i);
       if(mext0) pr=parseDocFname(f.name.replace(/\.(txt|pdf)$/i,'')+nm0+mext0[0], f.t);
     }
-    if(!pr.ok){ skipped.push(f.name+'（'+pr.why+'）'); return; }
+    /* v0.12.0 C1 收件筛子：补日期后仍解析不ok（如「心脏协会复苏指南」）→不进名册，收进「❓拿不准的文件」清单；
+       登记pd.seen防每次开门重复收/重复报；原件不删，留在文件夹等用户处理 */
+    if(!pr.ok){ pd.seen.push({f:f.name, z:f.size||0, t:f.t||0}); unsureAdd(f.name, pr.why); unsureNew++; return; }
     var kind=(/\.pdf$/i.test(f.name))?'pdf':'txt';
     var text='';
     if(kind==='txt'){
@@ -1294,15 +1359,24 @@ function docInboxScan(manual){
     }
     pd.docs.push({id:'D'+Date.now().toString(36)+Math.floor(Math.random()*1000), pkey:pr.pkey, bed:pr.bed, sur:pr.sur, diag:pr.diag,
       date:pr.dateStr, timeStr:pr.dateStr+' '+docHm(f.t), ts:pr.date.getTime(), fname:f.name, kind:kind, size:f.size||0, text:text});
-    pd.seen.push({f:f.name, z:f.size||0, t:f.t||0});
-    try{ LearnShell.deleteFile(f.name); }catch(e){} /* 拍板：收完即删，内网还有 */
+    /* v0.12.0 D2 销毁回读核对：收完即删照旧（拍板：内网还有），但删完必须用listFiles确认真没了；
+       还在→红字明示"原文没删成"，不登记seen（下次扫描还会再试删），确认删掉才登记防重 */
+    var delOk=false;
+    try{
+      LearnShell.deleteFile(f.name);
+      var _lf=[]; try{ _lf=JSON.parse(LearnShell.listFiles()||'[]'); }catch(e2){}
+      delOk=true; for(var _li=0;_li<_lf.length;_li++){ if(_lf[_li].name===f.name){ delOk=false; break; } }
+    }catch(e){}
+    if(delOk){ pd.seen.push({f:f.name, z:f.size||0, t:f.t||0}); }
+    else { delFailReport(f.name); }
     got.push(pr.pkey+'（'+pr.dateStr+'）');
   });
   if(pd.seen.length>200) pd.seen=pd.seen.slice(-200);
-  if(got.length||skipped.length) pdocsSave(pd);
+  if(got.length||skipped.length||unsureNew) pdocsSave(pd);
   if(got.length){ toast('📥 新收病历'+got.length+'份：'+got.join('、'), 4000); renderPatients(); }
+  if(unsureNew){ toast('❓有'+unsureNew+'份拿不准没进名册（名册卡里「❓拿不准」点我看）', 5000); unsureRenderLine(); } /* v0.12.0 C1：扫完告知一次 */
   if(skipped.length) docSkipReport(skipped);
-  else if(manual&&!got.length) toast('文件夹里没有新的病历txt/pdf');
+  else if(manual&&!got.length&&!unsureNew) toast('文件夹里没有新的病历txt/pdf');
 }
 /* 闲时自动收件：安静5秒跑（错开v0.5.2同步的3秒），只跑一趟；拷了新文件想马上收→点名册卡「🔄现在收一次」 */
 (function(){
@@ -3689,13 +3763,17 @@ function dsm_previewData() {
     if (!patient) { dsm_showToast('请先选择病人', 'error'); return; }
     var data = dsm_APP.patients[patient];
     if (!data || data.files.length === 0) { dsm_showToast('该病人暂无数据', 'warn'); return; }
-    
+
     document.getElementById('dsm_previewSection').classList.add('dsm_visible');
     var container = document.getElementById('dsm_previewContent');
     var html = '';
     var content = data.content;
+    dsm_fullData = []; /* v0.12.0 E2：每次预览重算「看全屏」缓存 */
 
     var textFiles = data.files.filter(function(f) { return f.type === '文本' || f.type === 'Markdown' || f.type === '文档' || f.type === 'PDF文档'; });
+    /* v0.12.0 E1 排序：病历类（PDF文档，多为整份病历）排前，验单类（文本/Markdown，时间戳密集的化验单）排后；
+       Array.prototype.sort稳定排序，只按类型权重排，同类保持原顺序 */
+    textFiles.sort(function(a, b) { return (a.type === 'PDF文档' ? 0 : 1) - (b.type === 'PDF文档' ? 0 : 1); });
     
     if (textFiles.length === 0) {
         html = '<div class="dsm_empty-state">没有可预览的文本文件</div>';
@@ -3720,7 +3798,10 @@ function dsm_previewData() {
             var fileTypeLabel = f.type === 'Markdown' ? '📝 Markdown' : (f.type === 'PDF文档' ? '📕 PDF' : '📄 文本');
             
             html += '<div class="dsm_section-block">';
-            html += '<div class="dsm_title">' + fileTypeLabel + '：' + f.name + '</div>';
+            /* v0.12.0 E2：标题旁加「🔍 看全屏」按钮，点开全屏浮层看该文件完整对照（手机上左右两栏挤废） */
+            var _fi = dsm_fullData.length;
+            dsm_fullData.push({ name: fileTypeLabel + '：' + f.name, orig: highlightedText, des: formattedResult });
+            html += '<div class="dsm_title">' + fileTypeLabel + '：' + f.name + ' <button onclick="dsm_fullCompare(' + _fi + ')" style="font-size:12px;padding:2px 8px;border:1px solid #1a73e8;color:#1a73e8;background:#fff;border-radius:5px;cursor:pointer;">🔍 看全屏</button></div>';
             
             if (debugResult.changes.length > 0) {
                 html += '<div style="font-size:12px;color:#27ae60;margin-bottom:6px;">✅ 已脱敏：' + debugResult.changes.join('、') + '</div>';
@@ -3742,6 +3823,21 @@ function dsm_previewData() {
 
     container.innerHTML = html;
     dsm_showToast('预览已更新', 'success');
+}
+
+/* v0.12.0 E2 手机版全屏对照：全屏浮层看单个文件完整对照（上段原文带红色敏感词高亮、下段脱敏后），大字、可滚动、右上角关闭 */
+var dsm_fullData = [];
+function dsm_fullCompare(i) {
+    var it = dsm_fullData[i];
+    if (!it) { dsm_showToast('这份预览没了，请重新点「📋 预览」', 'warn'); return; }
+    var old = document.getElementById('dsm_fullOverlay'); if (old) old.remove();
+    var ov = document.createElement('div');
+    ov.className = 'dsm_fullOverlay'; ov.id = 'dsm_fullOverlay';
+    ov.innerHTML = '<button class="dsm_fullClose" onclick="document.getElementById(\'dsm_fullOverlay\').remove()">✕ 关闭</button>' +
+        '<div class="dsm_fullTitle">' + it.name + '</div>' +
+        '<div class="dsm_fullOrig"><div class="dsm_fullLabel" style="color:#c0392b;">📋 原文（红色高亮敏感词）</div><pre>' + it.orig + '</pre></div>' +
+        '<div class="dsm_fullDes"><div class="dsm_fullLabel" style="color:#27ae60;">🔒 脱敏后</div><pre>' + it.des + '</pre></div>';
+    document.body.appendChild(ov);
 }
 
 // ============================================================
@@ -3779,14 +3875,61 @@ function dsm_exportReport() {
         link.click();
         document.body.removeChild(link);
         setTimeout(function(){ URL.revokeObjectURL(link.href); }, 5000);
-        try{ if(hxStore.bridged()){ LearnShell.writeFile('脱敏导出_' + fileName, btoa(unescape(encodeURIComponent(content)))); dsm_showToast('报告已导出并存进文件夹：脱敏导出_' + fileName, 'success', 4000); } else { dsm_showToast('报告已导出：' + fileName, 'success'); } }catch(e){ dsm_showToast('报告已导出：' + fileName, 'success'); } /* v0.10.0 导出有着落：壳文件夹留一份（拍板） */
+        /* v0.12.0 D1 导出分块防截断：整份报告（含几十页病历PDF文本，常超100KB）一次性过JS桥会被WebView悄悄截断——
+           验单排前保住、病历排后被切掉（实机导出文件结尾没有「由「医疗数据脱敏聚合工具 v5.0」生成」行，已实锤）。
+           修法：写完立刻readFile回读atob对账（长度+尾部120字）→对不上自动重试一次→仍不行拆_1of2/_2of2两块各写各核对→全失败才红字「没存全」。
+           注意：LearnShell只有writeFile整写接口（applyUpdateBegin/Chunk/End三件套是壳自更新专用、写壳内目录不是授权文件夹，不可用），
+           所以「分块」=拆成两个文件分别整写、分别回读核对。浏览器blob下载路径不动，明示「已下载：文件名」 */
+        dsm_showToast('✅ 已下载：' + fileName, 'success');
+        try{
+            if(hxStore.bridged()){
+                var r = dsm_shellWriteVerified('脱敏导出_' + fileName, '\ufeff' + content);
+                if (r.ok) {
+                    var kb = Math.max(1, Math.round(('\ufeff' + content).length / 1024));
+                    dsm_showToast('✅ 已存到授权文件夹：' + r.saved.join('、') + '（共' + kb + 'KB，已核对）', 'success', 6000);
+                } else {
+                    dsm_showToast('❌ 没存全：脱敏导出_' + fileName + ' 写进文件夹被截断，重试一次、拆成两块存都没成。文件还在您手里（浏览器已下载一份），要存文件夹请改小再导', 'error', 8000);
+                }
+            }
+        }catch(e){ dsm_showToast('❌ 没存全：写文件夹出错（' + e.message + '），浏览器已下载的一份还在', 'error', 8000); }
     } catch(e) { dsm_showToast('导出失败：' + e.message, 'error'); }
+}
+
+/* v0.12.0 D1 写壳授权文件夹+回读对账：返回 {ok, saved:[实际存成的文件名]} */
+function dsm_shellWriteVerified(fileName, content) {
+    function enc(s) { return btoa(unescape(encodeURIComponent(s))); }
+    function writeOnce(name, text) {
+        for (var attempt = 0; attempt < 2; attempt++) { /* 对不上自动重试一次 */
+            try {
+                LearnShell.writeFile(name, enc(text));
+                var back = null; try { back = LearnShell.readFile(name); } catch(e) {}
+                if (back) {
+                    var dec = ''; try { dec = decodeURIComponent(escape(atob(back))); } catch(e) {}
+                    /* 对账：长度一致 + 尾部120字一致（尾部含「由「医疗数据脱敏聚合工具 v5.0」生成」标志行，截断必露馅） */
+                    if (dec.length === text.length && dec.slice(-120) === text.slice(-120)) return true;
+                }
+            } catch(e) {}
+        }
+        return false;
+    }
+    if (writeOnce(fileName, content)) return { ok: true, saved: [fileName] };
+    /* 仍不行：拆成两个文件写，每块都回读核对 */
+    var half = Math.ceil(content.length / 2);
+    var dot = fileName.lastIndexOf('.');
+    var stem = dot > 0 ? fileName.slice(0, dot) : fileName;
+    var ext = dot > 0 ? fileName.slice(dot) : '';
+    var n1 = stem + '_1of2' + ext, n2 = stem + '_2of2' + ext;
+    if (writeOnce(n1, content.slice(0, half)) && writeOnce(n2, content.slice(half))) return { ok: true, saved: [n1, n2] };
+    return { ok: false, saved: [] };
 }
 
 function dsm_buildReportHtml(patient, data) {
     var content = data.content;
     var body = '';
     var textFiles = data.files.filter(function(f) { return f.type === '文本' || f.type === 'Markdown' || f.type === '文档' || f.type === 'PDF文档'; });
+    /* v0.12.0 E1 排序：病历类（PDF文档，多为整份病历）排前，验单类（文本/Markdown，时间戳密集的化验单）排后；
+       Array.prototype.sort稳定排序，只按类型权重排，同类保持原顺序 */
+    textFiles.sort(function(a, b) { return (a.type === 'PDF文档' ? 0 : 1) - (b.type === 'PDF文档' ? 0 : 1); });
     
     if (textFiles.length > 0) {
         body += '<div class="dsm_section-block"><h2>📄 文本内容</h2>';
@@ -3828,6 +3971,9 @@ function dsm_buildReportTxt(patient, data) {
     lines.push('');
 
     var textFiles = data.files.filter(function(f) { return f.type === '文本' || f.type === 'Markdown' || f.type === '文档' || f.type === 'PDF文档'; });
+    /* v0.12.0 E1 排序：病历类（PDF文档，多为整份病历）排前，验单类（文本/Markdown，时间戳密集的化验单）排后；
+       Array.prototype.sort稳定排序，只按类型权重排，同类保持原顺序 */
+    textFiles.sort(function(a, b) { return (a.type === 'PDF文档' ? 0 : 1) - (b.type === 'PDF文档' ? 0 : 1); });
 
     if (textFiles.length === 0) {
         lines.push('（暂无文本数据）');
@@ -3878,6 +4024,9 @@ function dsm_buildReportMd(patient, data) {
     lines.push('');
 
     var textFiles = data.files.filter(function(f) { return f.type === '文本' || f.type === 'Markdown' || f.type === '文档' || f.type === 'PDF文档'; });
+    /* v0.12.0 E1 排序：病历类（PDF文档，多为整份病历）排前，验单类（文本/Markdown，时间戳密集的化验单）排后；
+       Array.prototype.sort稳定排序，只按类型权重排，同类保持原顺序 */
+    textFiles.sort(function(a, b) { return (a.type === 'PDF文档' ? 0 : 1) - (b.type === 'PDF文档' ? 0 : 1); });
 
     if (textFiles.length === 0) {
         lines.push('*暂无文本数据*');
@@ -4484,13 +4633,27 @@ function dsmraw_hasTwin(patient){
   try{ var h=dsmhLoad(); if(h.patients[pk]||h.patients[patient]) return true; }catch(e){}
   return false;
 }
-/* ④销毁：壳文件+脱敏间条目+登记，一刀三断；脱敏档案有→条目退回脱敏版 */
+/* ④销毁：壳文件+脱敏间条目+登记，一刀三断；脱敏档案有→条目退回脱敏版
+   v0.12.0 D2 销毁回读核对：deleteFile后用listFiles确认storeName真没了；还在→红字toast"原文没删成，请手动到文件夹删：文件名"，
+   登记条目只在确认删掉后才移除（没删成的标delFail留在横幅列表里标红"没删成"） */
 function dsmraw_destroy(id){
   var d=dsmrawLoad();
   var idx=-1; for(var i=0;i<d.items.length;i++){ if(d.items[i].id===id){ idx=i; break; } }
   if(idx<0) return;
   var it=d.items[idx];
-  try{ LearnShell.deleteFile(it.storeName); }catch(e){}
+  var delOk=false;
+  try{
+    LearnShell.deleteFile(it.storeName);
+    var _lf=[]; try{ _lf=JSON.parse(LearnShell.listFiles()||'[]'); }catch(e2){}
+    delOk=true; for(var _li=0;_li<_lf.length;_li++){ if(_lf[_li].name===it.storeName){ delOk=false; break; } }
+  }catch(e){}
+  if(!delOk){ /* 没删成：条目留下并标红，红字明示，不往下动脱敏间 */
+    it.delFail=true; dsmrawSave(d); dsmraw_bar();
+    toast('⚠️ 原文没删成，请手动到文件夹删：'+it.storeName, 6000);
+    delFailReport(it.storeName);
+    return;
+  }
+  it.delFail=false;
   d.items.splice(idx,1); dsmrawSave(d);
   try{
     var h=dsmhLoad();
@@ -4502,7 +4665,7 @@ function dsmraw_destroy(id){
   }catch(e){}
   dsmraw_bar();
 }
-/* ②到点检查：有分身静默删；无分身弹问 */
+/* ②到点检查：有分身静默删；无分身弹问（v0.12.0 D2：无分身确认弹窗hxConfirm原样保留，一字未动） */
 function dsmraw_tick(){
   var d=dsmrawLoad(); if(!d.items.length){ dsmraw_bar(); return; }
   var now=Date.now(), ttl=d.ttl||3600000;
@@ -4543,6 +4706,7 @@ function dsmraw_bar(){
   d.items.forEach(function(it){
     var m2=Math.max(0,Math.ceil((it.ts+ttl-now)/60000));
     h+='<div>· '+String(it.patient).replace(/</g,'&lt;')+'（'+String(it.fname).replace(/</g,'&lt;')+'）剩约'+m2+'分钟 '+
+       (it.delFail?'<b style="color:#c0392b;">（没删成，请手动到文件夹删）</b> ':'')+ /* v0.12.0 D2：没删成的标红 */
        '<a style="color:#c0392b;cursor:pointer;text-decoration:underline;" onclick="dsmraw_askDel(\''+it.id+'\')">立即删</a></div>';
   });
   h+='<div style="margin-top:6px;border-top:1px dashed #ecd9b8;padding-top:6px;">销毁时限：'+
@@ -4589,7 +4753,37 @@ function dsmh_restore(){
 }
 
 /* ═════ v0.7.0 脱敏间折叠：照用大管家现有 makeFoldable 机制（登记进 foldSetters，状态记 hx_guanjia_fold） ═════ */
-try { makeFoldable(document.getElementById('dsmH2'), 'dsm', false); } catch(e) {}
+/* v0.12.0 B1：脱敏间整卡默认收起——第3参数本就是false，但旧版本可能存过展开态（hx_guanjia_fold里dsm=true），
+   老用户升级后仍按记忆展开；加一次性迁移标记dsm_v12：没收过的强制收起一次，之后用户手动展开照记 */
+try {
+    makeFoldable(document.getElementById('dsmH2'), 'dsm', false);
+    var _df = foldLoad();
+    if (!_df['dsm_v12']) { _df['dsm'] = false; _df['dsm_v12'] = 1; foldSave(_df); if (foldSetters['dsm']) foldSetters['dsm'](false); }
+} catch(e) {}
+
+/* ═════ v0.12.0 B2 四处默认藏起：①PDF引擎状态框 ②「当前状态」框 ③「点击选择包含病人资料的文件夹」框 ④「当前病人」显示框，
+   每处前面留一行小字入口，点一下展开/收起；功能一行没动，只是默认display:none ═════ */
+(function(){
+    function dsm_v12Hide(el, label){
+        if(!el || !el.parentNode) return;
+        var t = document.createElement('div');
+        t.style.cssText = 'cursor:pointer;color:#8a8178;font-size:12px;margin:4px 0;user-select:none;';
+        t.textContent = '▸ ' + label + '（点我展开）';
+        el.style.display = 'none';
+        t.onclick = function(){
+            var show = (el.style.display === 'none');
+            el.style.display = show ? '' : 'none';
+            t.textContent = (show ? '▾ ' : '▸ ') + label + (show ? '（点我收起）' : '（点我展开）');
+        };
+        el.parentNode.insertBefore(t, el);
+    }
+    try {
+        dsm_v12Hide(document.getElementById('dsm_pdfLoader'), '📕 PDF引擎状态');
+        var ri = document.querySelector('#dsmWrap .dsm_root-info'); if (ri) dsm_v12Hide(ri, '📁 当前状态（选文件夹/清空/收进病历库在这）');
+        dsm_v12Hide(document.getElementById('dsm_selectZone'), '📂 点文件夹进件（展开后点大框选文件夹/拖文件进来）');
+        var cp = document.querySelector('#dsmWrap .dsm_data-section .dsm_info'); if (cp) dsm_v12Hide(cp, '📊 当前病人');
+    } catch(e) {}
+})();
 /* v0.10.0 开门三件事：恢复脱敏间列表 + 到期销毁检查（开门补刀）+ 原文横幅（堵问） */
 try{ dsmh_restore(); }catch(e){}
 try{ dsmraw_tick(); }catch(e){}
