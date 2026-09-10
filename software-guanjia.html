@@ -8,6 +8,16 @@
   红小涛学习套装 · 病人大管家
   定位：全家资料的"管家"。按病人归堆（血气/呼吸机/脱敏病历，天然有章），
         按知识搜索（笔记/习题，全靠AI名片）。
+  v0.22.0 2026-09-10 全鱼骨头收尾三连（plan.md统一样式规范C2，只动版面，功能/JS逻辑/存储键名一行未动）：
+    ①挂号#55销号——v0.18.0为毛病38加的紫色「🤖 AI功能（点我直达）」大按钮压成普通文字行「🤖 AI功能 ▸」，
+      位置在版本行下、样式与既有折叠行一致（同款.card+h2.foldable+▸箭头，min-height≥44px整行可点），
+      点击行为一个字未改（照样撑开问AI卡并滚过去）。
+    ②工具箱张开区5个软件链接去边框——a.ghost带底色像小钮，改纯文字行（一行一个、整行可点、min-height≥44px、
+      行距8px），href带from+pt逻辑tbRender一行未动。
+    ③问AI查资料张开区3个按钮（只翻我的资料/也上网查查/两路一起查）横排改一行一行文字行
+      （元素仍是button，onclick/disabled机制不动，样式抄v0.19.0 #50下划线文字链接先例）。
+    ④行高硬指标：折叠行h2.foldable加padding/min-height≥44px；卡片行距12px→10px。
+    其余一切不动：脱敏双栏预览(.dsm_compare)、脱敏间1234编号折叠行、名册行内鱼骨、文件清单全部原样保留。
   v0.21.1 2026-09-10 预览对照一律左右分栏（洪老师真机报"原文和脱敏后还是没有左右分栏，把这个做好"）：
     病根：v0.20.0立的规矩=手机竖屏上下排、打横才分栏，与洪老师期望相反。修：窄屏CSS改row各半宽（min-width:0防挤爆、
     padding收紧6px，字号不动字随栏宽折行），竖屏横屏一律左原文标红右脱敏后；横屏提醒条整条删（已分栏属多余）。
@@ -245,8 +255,8 @@
   .wrap { max-width:640px; margin:0 auto; padding:14px 14px 60px; }
   h1 { font-size:22px; margin:6px 0 2px; }
   .ver { font-size:12px; color:#8a8178; margin-bottom:12px; }
-  .card { background:#fff; border-radius:14px; padding:14px 16px; margin-bottom:12px;
-          box-shadow:0 1px 4px rgba(0,0,0,.06); }
+  .card { background:#fff; border-radius:14px; padding:14px 16px; margin-bottom:10px;
+          box-shadow:0 1px 4px rgba(0,0,0,.06); } /* v0.22.0 行距12→10px（规范：行距8~10px） */
   .card h2 { font-size:17px; margin:0 0 8px; }
   .btn-row { display:flex; flex-wrap:wrap; gap:8px; }
   button { font-size:15px; padding:9px 14px; border:none; border-radius:9px; color:#fff;
@@ -306,6 +316,8 @@
   .md b { color:#8a5a20; }
   /* 折叠面板（v0.4.1） */
   .card > h2.foldable { cursor:pointer; user-select:none; }
+  /* v0.22.0 行高硬指标：折叠行min-height≥44px、整行可点（规范4），只加padding不动结构 */
+  .card > h2.foldable { padding-top:12px; padding-bottom:12px; min-height:44px; margin-bottom:0; }
   .fold-arrow { float:right; color:#a89f93; font-size:14px; margin-left:8px; }
   .fold-body { overflow:hidden; }
   .fold-body.folded { display:none; }
@@ -466,9 +478,10 @@ hxStore.reg('hx_cards_v1'); hxStore.reg('hx_patients'); hxStore.reg('hx_inbox_v1
 <div class="wrap">
   <h1>🏠 病人大管家</h1>
   <div class="ver">v<span id="verTop">?</span> · 全家的资料管家：病人归堆 + 知识搜索（名片打底）</div>
-  <!-- v0.18.0 毛病38（洪老师真机报"做了半天ai功能在哪里没有发现"）：开门全卡折叠，AI埋在中间找不到；顶上加醒目直达钮，点了撑开「问AI查资料」卡滚过去 -->
-  <div style="margin:8px 0 4px;"><button id="btnAiEntry" style="width:100%;padding:12px;font-size:17px;font-weight:700;background:#8e44ad;color:#fff;border:none;border-radius:10px;cursor:pointer;"
-    onclick="try{ if(typeof foldSetters!=='undefined'&&foldSetters['ask']) foldSetters['ask'](true); var hs=document.querySelectorAll('.card > h2'); for(var i=0;i<hs.length;i++){ if(hs[i].textContent.indexOf('问AI查资料')>=0){ hs[i].scrollIntoView({block:'start'}); break; } } }catch(e){}">🤖 AI功能（问AI查资料，点我直达）</button></div>
+  <!-- v0.18.0 毛病38（洪老师真机报"做了半天ai功能在哪里没有发现"）：开门全卡折叠，AI埋在中间找不到；顶上加直达入口，点了撑开「问AI查资料」卡滚过去 -->
+  <!-- v0.22.0 挂号#55销号：紫色大按钮压成普通文字行，位置不变、点击行为不变，样式与折叠行一致 -->
+  <div class="card"><h2 id="btnAiEntry" class="foldable" style="margin:0;padding-top:12px;padding-bottom:12px;min-height:44px;"
+    onclick="try{ if(typeof foldSetters!=='undefined'&&foldSetters['ask']) foldSetters['ask'](true); var hs=document.querySelectorAll('.card > h2'); for(var i=0;i<hs.length;i++){ if(hs[i].textContent.indexOf('问AI查资料')>=0){ hs[i].scrollIntoView({block:'start'}); break; } } }catch(e){}">🤖 AI功能 <span class="fold-arrow">▸</span></h2></div>
 
   <!-- v0.12.0 E2 手机版全屏对照：窄屏（max-width:700px）下.dsm_compare改单列上下排（上原文标红、下脱敏后）+ 全屏浮层样式 -->
   <style>
@@ -724,10 +737,11 @@ hxStore.reg('hx_cards_v1'); hxStore.reg('hx_patients'); hxStore.reg('hx_inbox_v1
       <b>两路一起查</b>=先翻您的资料、再联网搜，最后Kimi当对照员逐条比对两边说法（多花约3分钱）。
     </div>
     <textarea class="ask-input" id="askQ" placeholder="比如：农药中毒 阿托品怎么用？"></textarea>
-    <div class="btn-row" style="margin-top:8px;">
-      <button id="btnAskLocal">📚 只翻我的资料</button>
-      <button id="btnAskWeb">🌐 也上网查查</button>
-      <button id="btnAskBoth">📚+🌐 两路一起查</button>
+    <!-- v0.22.0 问AI三钮横排改一行一行文字行（元素仍是button，onclick/disabled机制不动；样式抄v0.19.0 #50下划线链接先例，行高≥44px整行可点） -->
+    <div style="margin-top:8px;">
+      <button id="btnAskLocal" style="display:block;width:100%;text-align:left;background:none;border:none;color:#1a73e8;text-decoration:underline;padding:12px 6px;min-height:44px;margin:8px 0;font-size:16px;cursor:pointer;">📚 只翻我的资料</button>
+      <button id="btnAskWeb" style="display:block;width:100%;text-align:left;background:none;border:none;color:#1a73e8;text-decoration:underline;padding:12px 6px;min-height:44px;margin:8px 0;font-size:16px;cursor:pointer;">🌐 也上网查查</button>
+      <button id="btnAskBoth" style="display:block;width:100%;text-align:left;background:none;border:none;color:#1a73e8;text-decoration:underline;padding:12px 6px;min-height:44px;margin:8px 0;font-size:16px;cursor:pointer;">📚+🌐 两路一起查</button>
     </div>
     <div class="btn-row" style="margin-top:6px;">
       <button class="ghost" id="btnCrossTg" style="font-size:13px;padding:5px 10px;"></button>
@@ -863,7 +877,7 @@ hxStore.reg('hx_cards_v1'); hxStore.reg('hx_patients'); hxStore.reg('hx_inbox_v1
 </div>
 
 <script>
-var SW_VERSION = "0.21.1"; /* v0.21.1 2026-09-10 预览对照不分横竖屏一律左右分栏+删横屏提醒条（洪老师拍板"把这个做好"） */ /* v0.21.0 2026-09-10 脱敏体检五站浮层+原文不即毁（详见文件顶部修改记录） */ /* v0.20.0 2026-09-10 预览流程恢复原版格局+AI闭环六连（详见文件顶部修改记录）：①预览排版恢复+手机横竖屏适配 ②窄屏前8行折叠 ③📤交给AI查脱敏（dsm_buildAIView独立新函数，规则引擎未动） ④📥导入AI规则（快照+导入双存版本库） ⑤规则版本库hx_dsm_rulelib_v1 ⑥版本同步 */ /* v0.19.0 2026-09-10 速记10连改·全面鱼骨化（挂号#42~51，详见文件顶部修改记录）：名册inline展开明细/速记补充上一条/脱敏间编号折叠行/导出简化/做名片下划线 */ /* v0.18.0 2026-09-10 真机八连修（毛病34~41）：名册删除手段/收库即毁原文/删聚合病历独立框/导出进清单/AI直达钮/删蓝框功能鱼骨化/删当前病人展开区/文件条目窄行 */ /* 速记自动上行 v0.17.1 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* v0.17.0 2026-09-10 HTML会诊PPT（洪老师拍板做HTML不做pptx，纯加法）：详情页「📋 会诊PPT」按钮→第4套会诊稿提示词走aiChat出五栏目（AI失败留「（AI没回话，请手填）」占位照常出片）+本地宽松验单解析器（日期时间+项目名+数值+单位四件套，项目名取冒号前短名）挑≥2时间点指标（PCT/IL-6/乳酸/肌酐/白细胞/CRP/体温模糊匹配优先，最多6个）纯SVG趋势图（最新值红点+数字）→一页一屏HTML幻灯片（点按/滑动/键盘翻页，页脚页码，白底深灰大字+暖色细线标题）→三处产出：壳「脱敏导出_」前缀dsm_shellWriteVerified回读对账、名册kind=report「📋 会诊PPT」徽标+🖥放映按钮、浏览器blob下载；无壳无AI纯浏览器也出演示片 */ /* 速记 v0.16.1 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */ /* v0.16.0 2026-09-10 问AI升级（洪老师拍板）：
+var SW_VERSION = "0.22.0"; /* v0.22.0 2026-09-10 全鱼骨头收尾：紫AI大钮压行（挂号#55销号）+工具箱链接去边框+问AI三钮行化，只动版面（详见文件顶部修改记录） */ /* v0.21.1 2026-09-10 预览对照不分横竖屏一律左右分栏+删横屏提醒条（洪老师拍板"把这个做好"） */ /* v0.21.0 2026-09-10 脱敏体检五站浮层+原文不即毁（详见文件顶部修改记录） */ /* v0.20.0 2026-09-10 预览流程恢复原版格局+AI闭环六连（详见文件顶部修改记录）：①预览排版恢复+手机横竖屏适配 ②窄屏前8行折叠 ③📤交给AI查脱敏（dsm_buildAIView独立新函数，规则引擎未动） ④📥导入AI规则（快照+导入双存版本库） ⑤规则版本库hx_dsm_rulelib_v1 ⑥版本同步 */ /* v0.19.0 2026-09-10 速记10连改·全面鱼骨化（挂号#42~51，详见文件顶部修改记录）：名册inline展开明细/速记补充上一条/脱敏间编号折叠行/导出简化/做名片下划线 */ /* v0.18.0 2026-09-10 真机八连修（毛病34~41）：名册删除手段/收库即毁原文/删聚合病历独立框/导出进清单/AI直达钮/删蓝框功能鱼骨化/删当前病人展开区/文件条目窄行 */ /* 速记自动上行 v0.17.1 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* v0.17.0 2026-09-10 HTML会诊PPT（洪老师拍板做HTML不做pptx，纯加法）：详情页「📋 会诊PPT」按钮→第4套会诊稿提示词走aiChat出五栏目（AI失败留「（AI没回话，请手填）」占位照常出片）+本地宽松验单解析器（日期时间+项目名+数值+单位四件套，项目名取冒号前短名）挑≥2时间点指标（PCT/IL-6/乳酸/肌酐/白细胞/CRP/体温模糊匹配优先，最多6个）纯SVG趋势图（最新值红点+数字）→一页一屏HTML幻灯片（点按/滑动/键盘翻页，页脚页码，白底深灰大字+暖色细线标题）→三处产出：壳「脱敏导出_」前缀dsm_shellWriteVerified回读对账、名册kind=report「📋 会诊PPT」徽标+🖥放映按钮、浏览器blob下载；无壳无AI纯浏览器也出演示片 */ /* 速记 v0.16.1 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */ /* v0.16.0 2026-09-10 问AI升级（洪老师拍板）：
    ①提示词三套升四套，缺省内容换新规格：第1套病历质检（先整格式→找四类缺陷→⟦R⟧标红⟦B⟧醒目给修改意见）、第2套病情摘要/交班（一页交班摘要）、第3套检验解读（按时间重排+异常值方向+趋势+通俗解读）、第4套会诊稿（新增：五个固定栏目）；老用户已存的自定义提示词一个字不动，只在缺p4时补第4套（一次性迁移标记hx_gj_askai_v16mig）。
    ②脱敏间导出区加「🤖 AI分析」按钮：只把当前勾选（复用v0.15.0 dsm_selFiles过滤）且已脱敏的文本发给AI，原文绝不出去；弹出与病历详情同款四套提示词弹窗，复用aiChat通道和⟦R⟧/⟦B⟧渲染+「复制干净版」。
    ③问AI结果改全屏浮层：出结果后弹窗撑满屏（askai_full），结果区不再限52vh高，红/醒目两色渲染保留；关上或重开恢复小窗。
@@ -2875,7 +2889,8 @@ function tbRender(){
   var html='';
   tbLinks().forEach(function(L){
     var href=L[1]+'?from=guanjia'+(pt?'&pt='+encodeURIComponent(pt):'');
-    html+='<a class="ghost" style="display:inline-block;margin:3px 6px 3px 0;padding:8px 14px;text-decoration:none;" href="'+href+'">'+L[0]+'</a>';
+    /* v0.22.0 工具箱链接去边框变纯文字行：a.ghost带底色像小钮→一行一个纯文字行，href逻辑不动 */
+    html+='<a style="display:block;margin:8px 0;padding:12px 6px;min-height:44px;text-decoration:underline;color:#1a73e8;font-size:16px;border-bottom:1px dashed #e6e0d4;" href="'+href+'">'+L[0]+'</a>';
   });
   el.innerHTML=html;
 }
@@ -5469,6 +5484,7 @@ function dsm_aboutInfo() {
         '• 智能脱敏：姓名+职称、医院、身份证等\n' +
         '• 排除词功能：解决"平素体健"误脱敏\n' +
         '• AI提示词模板：排除词/职称/医院\n' +
+        '• v0.22.0：全鱼骨头收尾——紫色AI大钮变普通文字行（挂号#55销号）、工具箱链接去边框、问AI三钮改一行一行；\n' +
         '• v0.21.1：预览对照不分横竖屏一律左右分栏（左原文标红右脱敏后），横屏提醒条删；\n' +
         '• v0.21.0：📤交给AI查脱敏改五站浮层（选哪份/原文标红/现行规则/AI件确认/直发AI出意见可导入）；收库不再当场毁原文，恢复到点或下次开门才销毁；\n' +
         '• v0.20.0：预览标题行「📤交给AI查脱敏」导出体检包给AI找漏脱/误脱；\n' +
