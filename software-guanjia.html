@@ -8,6 +8,25 @@
   红小涛学习套装 · 病人大管家
   定位：全家资料的"管家"。按病人归堆（血气/呼吸机/脱敏病历，天然有章），
         按知识搜索（笔记/习题，全靠AI名片）。
+  v0.20.0 2026-09-10 预览流程恢复原版格局+AI闭环六连（洪老师逐条拍板；病根：之前版本把脱敏预览流程改乱，本版恢复原版格局并加AI闭环）：
+    ①预览排版恢复+手机适配——电脑（≥700px）左右分屏照旧；手机竖屏（<700px且宽<高）预览区顶部出横屏提醒条
+      「🔄 请横屏查看，左右对照更清楚」（✕可关，关掉本session不再弹，只记内存变量dsm_rotateTipOff不落地），
+      下方内容保持上下排；手机横屏（宽>高）加orientation媒体查询恢复左右分屏。
+    ②手机截断显示——窄屏（<700px）预览每个文件的原文框/脱敏框各只显前8行，末尾「…已折叠，点我看全文（共X行）」
+      点击展开全文、再点收回；宽屏不截断。纯前端按\n切行（dsm_foldPre），数据一个字不动。
+    ③预览标题行加「📤交给AI查脱敏」——生成「脱敏体检_AI件_病人名_月日_时分.txt」包裹：第一段现行规则序列化、
+      第二段对照病历（新函数dsm_buildAIView：先把姓名/住院号/医院/科室四项真值盖成[姓名][住院号][医院][科室]占位，
+      其余会被脱敏的位置用⟦R⟧原词⟦/R⟧标出；独立新函数逐步匹配记录命中区间，规则引擎dsm_desensitizeWithDebug
+      一个字符未动）、第三段给AI的体检任务（含===规则开始===输出格式约定）；壳走dsm_shellWriteVerified回读对账，
+      浏览器blob下载。同一套任务提示词追加进问AI提示词库hx_gj_askai_v1第5套「脱敏规则体检」（老存档一次性迁移补p5，
+      标记hx_gj_askai_v20mig，旧四套一个字不动）。
+    ④设置区加「📥导入AI规则」——粘贴textarea+导入钮；解析===规则开始===…===规则结束===之间的
+      「职称:/医院:/关键词:/排除:」行，有非法行或四组全空→红字报错不导入；导入前先把现行规则拍快照存进版本库，
+      应用新规则（复用现有4个dsm_rules_*存储键），应用后再存为新版本（备注默认「AI改」），toast「已导入并存为规则vX」。
+    ⑤规则版本库——新键hx_dsm_rulelib_v1（[{id,time,note,rules}]）+hx_dsm_rulelib_cur；设置区折叠区「📚 规则版本库」
+      列出版本（序号+时间+备注+✓正在用+换用+备注改 names），点「换用」写回现行规则并刷新规则标签；
+      首次运行无库自动把现行规则存为v1「原版内置」（幂等，重复开门不重复建）。
+    ⑥版本升v0.20.0：SW_VERSION、界面版本行（verTop照走SW_VERSION）、关于（dsm_aboutInfo）同步。
   v0.19.0 2026-09-10 速记10连改·全面鱼骨化（2026-09-10 洪老师速记14:03~14:13十条，洪老师拍板"全部做了吧开始"，挂号#42~51）：
     ①#42/#44 名册鱼骨头——名册行不再平铺「血气N张/呼吸机N条/病历N份」，一行只露病人名；点名展开该行
        inline明细（每条记录一行：🩸/🫁带时间，📄病历带文件名，点病历行开详情看全文），出院/召回/🗑删除钮收进展开区；
@@ -441,6 +460,14 @@ hxStore.reg('hx_cards_v1'); hxStore.reg('hx_patients'); hxStore.reg('hx_inbox_v1
       #dsmWrap .dsm_preview-content .dsm_compare .dsm_original,
       #dsmWrap .dsm_preview-content .dsm_compare .dsm_desensitized{min-width:0;width:100%}
     }
+    /* v0.20.0 ①手机横屏（宽>高）恢复左右分屏（盖掉上面的竖屏单列） */
+    @media (max-width:700px) and (orientation:landscape){
+      #dsmWrap .dsm_preview-content .dsm_compare{flex-direction:row}
+      #dsmWrap .dsm_preview-content .dsm_compare .dsm_original,
+      #dsmWrap .dsm_preview-content .dsm_compare .dsm_desensitized{min-width:0;width:auto;flex:1}
+    }
+    /* v0.20.0 ②窄屏折叠提示行 */
+    #dsmWrap .dsm_foldMore{font-size:12px;color:#1a73e8;cursor:pointer;text-decoration:underline;padding:4px 0}
     .dsm_fullOverlay{position:fixed;inset:0;background:#fff;z-index:100000;overflow-y:auto;padding:16px;font-size:16px;line-height:1.8}
     .dsm_fullOverlay .dsm_fullClose{position:fixed;top:10px;right:12px;z-index:100001;background:#c0392b;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:16px;font-weight:700;cursor:pointer}
     .dsm_fullOverlay .dsm_fullTitle{font-weight:700;color:#0d47a1;margin:0 70px 12px 0;font-size:17px}
@@ -524,7 +551,9 @@ hxStore.reg('hx_cards_v1'); hxStore.reg('hx_patients'); hxStore.reg('hx_inbox_v1
 
 <!-- 预览 -->
 <div class="dsm_preview-section" id="dsm_previewSection">
-<div class="dsm_preview-title">📄 预览（原文红色高亮 · 右侧脱敏后）</div>
+<!-- v0.20.0 ①手机竖屏横屏提醒条（✕关掉后本session不再弹，内存变量不落地） -->
+<div id="dsm_rotateTip" style="display:none;background:#fff8e1;border:1px solid #f0c36d;color:#7d5a10;border-radius:6px;padding:8px 10px;font-size:13px;margin-bottom:8px;">🔄 请横屏查看，左右对照更清楚 <span style="float:right;cursor:pointer;font-weight:700;padding:0 6px;" onclick="dsm_rotateTipOff=true;document.getElementById('dsm_rotateTip').style.display='none';">✕</span></div>
+<div class="dsm_preview-title">📄 预览（原文红色高亮 · 右侧脱敏后） <button onclick="event.stopPropagation();dsm_exportAIPackage()" style="float:right;font-size:12px;padding:2px 8px;border:1px solid #8e44ad;color:#8e44ad;background:#fff;border-radius:5px;cursor:pointer;">📤交给AI查脱敏</button></div><!-- v0.20.0 ③ -->
 <div class="dsm_preview-content" id="dsm_previewContent"><div class="dsm_empty-state">暂无数据</div></div>
 </div>
 </div>
@@ -597,6 +626,23 @@ hxStore.reg('hx_cards_v1'); hxStore.reg('hx_patients'); hxStore.reg('hx_inbox_v1
     <!-- 完整规则文本 -->
     <label>📄 完整规则（可编辑）</label>
     <textarea id="dsm_rulesTextarea" rows="4"></textarea>
+
+    <hr class="dsm_divider">
+
+    <!-- v0.20.0 ④ 导入AI改后规则：解析===规则开始===…===规则结束===之间的「职称:/医院:/关键词:/排除:」行 -->
+    <label>📥 导入AI规则</label>
+    <div class="dsm_rule-hint">💡 把AI改好的规则整段贴进来（要带 ===规则开始=== 和 ===规则结束=== 两行标记），点「导入」。导入前会自动给现行规则拍快照存进版本库，后悔了去下面版本库点「换用」。</div>
+    <textarea id="dsm_aiRulesInput" rows="5" placeholder="把AI回的规则整段贴这里"></textarea>
+    <div class="dsm_add-row">
+        <button onclick="dsm_importAIRules()">📥 导入</button>
+    </div>
+    <div id="dsm_aiRulesErr" style="display:none;color:#c0392b;font-size:12px;margin-top:6px;"></div>
+
+    <hr class="dsm_divider">
+
+    <!-- v0.20.0 ⑤ 规则版本库（默认收起） -->
+    <div id="dsm_rulelibHead" style="cursor:pointer;font-weight:600;font-size:13px;color:#555;padding:6px 0;user-select:none;" onclick="dsm_rulelibToggle()">▸ 📚 规则版本库（点我展开）</div>
+    <div id="dsm_rulelibBox" style="display:none;"></div>
 
     <hr class="dsm_divider">
 
@@ -805,7 +851,7 @@ hxStore.reg('hx_cards_v1'); hxStore.reg('hx_patients'); hxStore.reg('hx_inbox_v1
 </div>
 
 <script>
-var SW_VERSION = "0.19.0"; /* v0.19.0 2026-09-10 速记10连改·全面鱼骨化（挂号#42~51，详见文件顶部修改记录）：名册inline展开明细/速记补充上一条/脱敏间编号折叠行/导出简化/做名片下划线 */ /* v0.18.0 2026-09-10 真机八连修（毛病34~41）：名册删除手段/收库即毁原文/删聚合病历独立框/导出进清单/AI直达钮/删蓝框功能鱼骨化/删当前病人展开区/文件条目窄行 */ /* 速记自动上行 v0.17.1 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* v0.17.0 2026-09-10 HTML会诊PPT（洪老师拍板做HTML不做pptx，纯加法）：详情页「📋 会诊PPT」按钮→第4套会诊稿提示词走aiChat出五栏目（AI失败留「（AI没回话，请手填）」占位照常出片）+本地宽松验单解析器（日期时间+项目名+数值+单位四件套，项目名取冒号前短名）挑≥2时间点指标（PCT/IL-6/乳酸/肌酐/白细胞/CRP/体温模糊匹配优先，最多6个）纯SVG趋势图（最新值红点+数字）→一页一屏HTML幻灯片（点按/滑动/键盘翻页，页脚页码，白底深灰大字+暖色细线标题）→三处产出：壳「脱敏导出_」前缀dsm_shellWriteVerified回读对账、名册kind=report「📋 会诊PPT」徽标+🖥放映按钮、浏览器blob下载；无壳无AI纯浏览器也出演示片 */ /* 速记 v0.16.1 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */ /* v0.16.0 2026-09-10 问AI升级（洪老师拍板）：
+var SW_VERSION = "0.20.0"; /* v0.20.0 2026-09-10 预览流程恢复原版格局+AI闭环六连（详见文件顶部修改记录）：①预览排版恢复+手机横竖屏适配 ②窄屏前8行折叠 ③📤交给AI查脱敏（dsm_buildAIView独立新函数，规则引擎未动） ④📥导入AI规则（快照+导入双存版本库） ⑤规则版本库hx_dsm_rulelib_v1 ⑥版本同步 */ /* v0.19.0 2026-09-10 速记10连改·全面鱼骨化（挂号#42~51，详见文件顶部修改记录）：名册inline展开明细/速记补充上一条/脱敏间编号折叠行/导出简化/做名片下划线 */ /* v0.18.0 2026-09-10 真机八连修（毛病34~41）：名册删除手段/收库即毁原文/删聚合病历独立框/导出进清单/AI直达钮/删蓝框功能鱼骨化/删当前病人展开区/文件条目窄行 */ /* 速记自动上行 v0.17.1 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* v0.17.0 2026-09-10 HTML会诊PPT（洪老师拍板做HTML不做pptx，纯加法）：详情页「📋 会诊PPT」按钮→第4套会诊稿提示词走aiChat出五栏目（AI失败留「（AI没回话，请手填）」占位照常出片）+本地宽松验单解析器（日期时间+项目名+数值+单位四件套，项目名取冒号前短名）挑≥2时间点指标（PCT/IL-6/乳酸/肌酐/白细胞/CRP/体温模糊匹配优先，最多6个）纯SVG趋势图（最新值红点+数字）→一页一屏HTML幻灯片（点按/滑动/键盘翻页，页脚页码，白底深灰大字+暖色细线标题）→三处产出：壳「脱敏导出_」前缀dsm_shellWriteVerified回读对账、名册kind=report「📋 会诊PPT」徽标+🖥放映按钮、浏览器blob下载；无壳无AI纯浏览器也出演示片 */ /* 速记 v0.16.1 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */ /* v0.16.0 2026-09-10 问AI升级（洪老师拍板）：
    ①提示词三套升四套，缺省内容换新规格：第1套病历质检（先整格式→找四类缺陷→⟦R⟧标红⟦B⟧醒目给修改意见）、第2套病情摘要/交班（一页交班摘要）、第3套检验解读（按时间重排+异常值方向+趋势+通俗解读）、第4套会诊稿（新增：五个固定栏目）；老用户已存的自定义提示词一个字不动，只在缺p4时补第4套（一次性迁移标记hx_gj_askai_v16mig）。
    ②脱敏间导出区加「🤖 AI分析」按钮：只把当前勾选（复用v0.15.0 dsm_selFiles过滤）且已脱敏的文本发给AI，原文绝不出去；弹出与病历详情同款四套提示词弹窗，复用aiChat通道和⟦R⟧/⟦B⟧渲染+「复制干净版」。
    ③问AI结果改全屏浮层：出结果后弹窗撑满屏（askai_full），结果区不再限52vh高，红/醒目两色渲染保留；关上或重开恢复小窗。
@@ -987,10 +1033,11 @@ var ASKAI_DEF={
 p1:'你是一位资深病案质控医生。请按顺序完成三件事：\n\n【第一步·整理格式】\n先把这份聚合病历的格式整理好：删掉多余空格、星号、乱码，重排成规范病历格式，整理到能直接复制粘贴回病历系统。\n\n【第二步·找缺陷】\n在整理好的病历里找四类缺陷：①文字描述缺陷 ②诊断缺陷 ③鉴别诊断缺陷 ④病程记录缺陷。\n\n【第三步·标记】\n你怀疑有问题的地方用 ⟦R⟧问题原文⟦/R⟧ 标红，修改意见紧跟其后用 ⟦B⟧修改意见：……⟦/B⟧ 标出。\n\n病历全文如下：\n',
 p2:'你是一位资深临床医生。请把下面这份聚合病历浓缩成一页交班摘要，分条列、用大白话，包括：\n1. 主要诊断\n2. 当前问题清单\n3. 近24小时病情变化\n4. 待办事项\n重要发现用 ⟦R⟧⟦/R⟧ 标出，建议用 ⟦B⟧⟦/B⟧ 标出。\n\n病历全文如下：\n',
 p3:'你是一位资深检验医师。下面材料的验单格式是「时间+项目内容」段落：同一天的多项检验时间相同或只差几分钟，内容紧跟在时间后面。请完成：\n1. 把散乱的检验结果按时间先后重新排列。\n2. 标出异常值和变化方向（↑↓、新出现、好转、恶化）。\n3. 提示需要关注的趋势。\n4. 最后给一段通俗解读（说人话，让医生一眼看懂重点）。\n异常和需要警惕的地方用 ⟦R⟧⟦/R⟧ 标出，建议用 ⟦B⟧⟦/B⟧ 标出。\n\n检验全文如下：\n',
-p4:'你是一位资深临床医生。请把下面这份病历整理成多学科会诊材料，语言正式、分条列、能直接复制进会诊单。固定栏目：\n一、基本情况\n二、诊断与治疗经过\n三、验单摘要\n四、当前遇到的困难\n五、提请兄弟科室指导的问题清单\n拿不准或要紧的地方用 ⟦R⟧⟦/R⟧ 标出，建议用 ⟦B⟧⟦/B⟧ 标出。\n\n病历全文如下：\n'};
+p4:'你是一位资深临床医生。请把下面这份病历整理成多学科会诊材料，语言正式、分条列、能直接复制进会诊单。固定栏目：\n一、基本情况\n二、诊断与治疗经过\n三、验单摘要\n四、当前遇到的困难\n五、提请兄弟科室指导的问题清单\n拿不准或要紧的地方用 ⟦R⟧⟦/R⟧ 标出，建议用 ⟦B⟧⟦/B⟧ 标出。\n\n病历全文如下：\n',
+p5:'你是脱敏规则体检医生。随附的是一份病历，⟦R⟧…⟦/R⟧标出的是会被脱敏删掉/替换的内容，[姓名][住院号][医院][科室]是已遮盖的病人基本信息。\n请你：\n1. 找漏脱：还有没有该脱敏却没标的敏感信息（人名/日期以外的身份线索等）。\n2. 找误脱：⟦R⟧标出的内容里有没有误伤医学内容。判例：旧规则“把「患者」后面三个字删掉”会把“患者神志清楚”的“神志清”误删——排除词规则就是为治这个病。\n3. 输出改好的完整规则。严格按此格式，别的什么都别说：\n===规则开始===\n职称:xxx\n医院:xxx\n关键词:xxx\n排除:xxx\n===规则结束===\n（逐行列全，包括你认为该保留的旧规则；没有变化的组也要照列）\n\n病历（带标记）如下：\n'};
 /* v0.16.0 老用户迁移：hx_gj_askai_v1已有内容（您存的自定义p1/p2/p3）一个字不覆盖，只在缺p4时补上第4套缺省；
    一次性迁移标记hx_gj_askai_v16mig，补过就不再补（您以后自己改掉的p4不再被顶回） */
-function askaiLoad(){ try{ var p=JSON.parse(localStorage.getItem(LS_ASKAI)); if(p&&p.p1&&p.p2&&p.p3){ if(!p.p4){ p.p4=ASKAI_DEF.p4; try{ localStorage.setItem(LS_ASKAI, JSON.stringify(p)); localStorage.setItem('hx_gj_askai_v16mig','1'); }catch(e){} } return p; } }catch(e){} return {p1:ASKAI_DEF.p1,p2:ASKAI_DEF.p2,p3:ASKAI_DEF.p3,p4:ASKAI_DEF.p4}; }
+function askaiLoad(){ try{ var p=JSON.parse(localStorage.getItem(LS_ASKAI)); if(p&&p.p1&&p.p2&&p.p3){ if(!p.p4){ p.p4=ASKAI_DEF.p4; try{ localStorage.setItem(LS_ASKAI, JSON.stringify(p)); localStorage.setItem('hx_gj_askai_v16mig','1'); }catch(e){} } if(!p.p5){ p.p5=ASKAI_DEF.p5; try{ localStorage.setItem(LS_ASKAI, JSON.stringify(p)); localStorage.setItem('hx_gj_askai_v20mig','1'); }catch(e){} } /* v0.20.0 老存档缺第5套「脱敏规则体检」的当场补上（一次性迁移标记hx_gj_askai_v20mig，您存的旧四套一个字不动） */ return p; } }catch(e){} return {p1:ASKAI_DEF.p1,p2:ASKAI_DEF.p2,p3:ASKAI_DEF.p3,p4:ASKAI_DEF.p4,p5:ASKAI_DEF.p5}; }
 try{ askaiLoad(); }catch(e){} /* v0.16.0 开门即跑一趟：老存档缺第4套的当场补上（不点弹窗也迁移） */
 var askaiDoc=null, askaiSet=1, askaiAi='qwen', askaiLastRaw='';
 function askaiOpen(d){
@@ -1007,9 +1054,9 @@ function askaiOpen(d){
   $('askaiDlg').style.display='block';
 }
 function askaiRenderTabs(){
-  var names=['第1套·病历质检','第2套·病情摘要/交班','第3套·检验解读','第4套·会诊稿']; /* v0.16.0 三套升四套（洪老师新规格） */
+  var names=['第1套·病历质检','第2套·病情摘要/交班','第3套·检验解读','第4套·会诊稿','第5套·脱敏规则体检']; /* v0.16.0 三套升四套（洪老师新规格） */ /* v0.20.0 加第5套「脱敏规则体检」 */
   var h='';
-  for(var i=1;i<=4;i++) h+='<button class="askai_tab'+(askaiSet===i?' on':'')+'" data-set="'+i+'">'+names[i-1]+'</button>'; /* v0.16.0 循环3改4 */
+  for(var i=1;i<=5;i++) h+='<button class="askai_tab'+(askaiSet===i?' on':'')+'" data-set="'+i+'">'+names[i-1]+'</button>'; /* v0.16.0 循环3改4 */ /* v0.20.0 循环4改5 */
   $('askaiTabs').innerHTML=h;
   Array.prototype.forEach.call(document.querySelectorAll('#askaiTabs [data-set]'), function(el){
     el.onclick=function(){
@@ -4111,6 +4158,61 @@ function dsm_highlightSensitive(text) {
     return result;
 }
 
+/* ═════ v0.20.0 ② 手机截断显示：窄屏（<700px）每框只显前8行+折叠提示行，点展开/收回；宽屏全显。
+   纯前端按\n切行（数据不动）；content是预览用的HTML字符串（标红span/原文都含\n行分隔） ═════ */
+var dsm_foldTotal = {}; /* uid → 总行数（收回时还原提示文案用） */
+function dsm_foldPre(content, uid) {
+    if (!(window.innerWidth < 700)) return '<pre>' + content + '</pre>';
+    var lines = String(content).split('\n');
+    if (lines.length <= 8) return '<pre>' + content + '</pre>';
+    dsm_foldTotal[uid] = lines.length;
+    return '<pre data-foldpre="' + uid + '">' + lines.slice(0, 8).join('\n') + '</pre>' +
+        '<div class="dsm_foldMore" id="dsm_fm_' + uid + '" onclick="dsm_foldToggle(\'' + uid + '\')">…已折叠，点我看全文（共' + lines.length + '行）</div>' +
+        '<pre id="dsm_ff_' + uid + '" style="display:none;">' + content + '</pre>';
+}
+function dsm_foldToggle(uid) {
+    var head = document.querySelector('[data-foldpre="' + uid + '"]');
+    var full = document.getElementById('dsm_ff_' + uid);
+    var more = document.getElementById('dsm_fm_' + uid);
+    if (!head || !full || !more) return;
+    if (full.style.display === 'none') {
+        full.style.display = ''; head.style.display = 'none';
+        more.textContent = '…已展开，点我收回（只显前8行）';
+    } else {
+        full.style.display = 'none'; head.style.display = '';
+        more.textContent = '…已折叠，点我看全文（共' + (dsm_foldTotal[uid] || 0) + '行）';
+    }
+}
+/* ═════ v0.20.0 ① 横屏提醒条 + resize监听：竖屏（宽<700且宽<高）且预览开着且没关过→亮提醒条；
+   横竖屏跨界（700px窄屏界线变化）时预览重渲染一次，截断行数跟着屏宽走 ═════ */
+var dsm_rotateTipOff = false; /* ✕关掉后本session不再弹（内存变量，不落地） */
+var dsm_lastNarrow = null;
+function dsm_orientCheck() {
+    var tip = document.getElementById('dsm_rotateTip');
+    if (!tip) return;
+    var sec = document.getElementById('dsm_previewSection');
+    var show = !dsm_rotateTipOff && sec && sec.classList.contains('dsm_visible') &&
+        window.innerWidth < 700 && window.innerHeight > window.innerWidth;
+    tip.style.display = show ? '' : 'none';
+}
+(function(){
+    var tm = null;
+    window.addEventListener('resize', function() {
+        clearTimeout(tm);
+        tm = setTimeout(function() {
+            try { dsm_orientCheck(); } catch(e) {}
+            var narrow = window.innerWidth < 700;
+            if (dsm_lastNarrow !== null && narrow !== dsm_lastNarrow) {
+                var sec = document.getElementById('dsm_previewSection');
+                if (sec && sec.classList.contains('dsm_visible') && dsm_APP.currentPatient) {
+                    try { dsm_previewData(); } catch(e) {}
+                }
+            }
+            dsm_lastNarrow = narrow;
+        }, 300);
+    });
+})();
+
 // ============================================================
 //  预览数据
 // ============================================================
@@ -4219,8 +4321,9 @@ function dsm_previewData() {
             }
             
             html += '<div class="dsm_compare">';
-            html += '<div class="dsm_original"><div class="dsm_label">📋 原文（红色高亮敏感词）</div><pre>' + highlightedText + '</pre></div>';
-            html += '<div class="dsm_desensitized"><div class="dsm_label">🔒 脱敏后</div><pre>' + formattedResult + '</pre></div>';
+            /* v0.20.0 ②窄屏截断：每框前8行+折叠提示（宽屏dsm_foldPre原样全显） */
+            html += '<div class="dsm_original"><div class="dsm_label">📋 原文（红色高亮敏感词）</div>' + dsm_foldPre(highlightedText, 'o' + _fi) + '</div>';
+            html += '<div class="dsm_desensitized"><div class="dsm_label">🔒 脱敏后</div>' + dsm_foldPre(formattedResult, 'd' + _fi) + '</div>';
             html += '</div></div>';
         });
     }
@@ -4237,6 +4340,7 @@ function dsm_previewData() {
 
     container.innerHTML = html;
     dsm_showToast('预览已更新', 'success');
+    try { dsm_lastNarrow = (window.innerWidth < 700); dsm_orientCheck(); } catch(e) {} /* v0.20.0 ①：预览出来后按当前横竖屏决定提醒条 */
 }
 
 /* v0.12.0 E2 手机版全屏对照：全屏浮层看单个文件完整对照（上段原文带红色敏感词高亮、下段脱敏后），大字、可滚动、右上角关闭 */
@@ -4282,6 +4386,264 @@ function dsm_fullCompare(i) {
         '<div class="dsm_fullOrig"><div class="dsm_fullLabel" style="color:#c0392b;">📋 原文（红色高亮敏感词）</div><pre>' + it.orig + '</pre></div>' +
         '<div class="dsm_fullDes"><div class="dsm_fullLabel" style="color:#27ae60;">🔒 脱敏后</div><pre>' + it.des + '</pre></div>';
     document.body.appendChild(ov);
+}
+
+/* ═════ v0.20.0 ③ 📤交给AI查脱敏：dsm_buildAIView 独立新函数（规则引擎dsm_desensitizeWithDebug一个字符未动）。
+   处理法：①先把四项真值盖成占位符（姓名用dsm_extractPatientNames提取、住院号用现有固定正则、医院用规则hospitals、
+   科室按「科室：…」行匹配）；②其余会被脱敏的位置照规则逐步匹配记录命中区间，最后统一插⟦R⟧…⟦/R⟧标记 ═════ */
+function dsm_buildAIView(text) {
+    if (!text) return '';
+    var titles = dsm_APP.rules.titles || [];
+    var hospitals = dsm_APP.rules.hospitals || [];
+    var keywords = dsm_APP.rules.keywords || [];
+    var excludes = dsm_APP.rules.excludes || [];
+    var result = text;
+    /* ①四项真值盖占位符 */
+    var names = dsm_extractPatientNames(result, excludes);
+    names.forEach(function(name) {
+        if (name && name.length >= 2) { result = result.split(name).join('[姓名]'); }
+    });
+    result = result.replace(/住院号\s*[:：]\s*\d+/g, function(m) { return m.replace(/\d+/g, '[住院号]'); });
+    hospitals.forEach(function(h) { if (h) { result = result.split(h).join('[医院]'); } });
+    result = result.replace(/科室\s*[:：]\s*[^\n，。；]*/g, function(m) { return m.replace(/(科室\s*[:：]\s*)[\s\S]*/, '$1[科室]'); });
+    /* ②其余会被脱敏的位置：照规则逐步匹配记录命中区间（只记录不替换，最后从后往前插标记） */
+    var marks = []; /* [start, end) */
+    function scan(re) {
+        re.lastIndex = 0; var m;
+        while ((m = re.exec(result)) !== null) {
+            if (!m[0]) { re.lastIndex++; continue; }
+            marks.push([m.index, m.index + m[0].length]);
+        }
+    }
+    var sortedTitles = titles.slice().sort(function(a, b) { return b.length - a.length; });
+    sortedTitles.forEach(function(title) {
+        if (!title) return;
+        scan(new RegExp('([\u4e00-\u9fa5]{2,4})\\s*(' + title + ')', 'g'));
+    });
+    var fixedPatterns = [
+        /身份证\s*[:：]\s*\d{17}[\dXx]/g, /电话\s*[:：]\s*1[3-9]\d{9}/g,
+        /地址\s*[:：]\s*[^\n]*/g, /住址\s*[:：]\s*[^\n]*/g,
+        /医\s*师\s*签\s*名\s*[:：]\s*[\u4e00-\u9fa5]{2,4}/g, /上\s*级\s*医\s*师\s*签\s*名\s*[:：]\s*[\u4e00-\u9fa5]{2,4}/g,
+        /护\s*士\s*签\s*名\s*[:：]\s*[\u4e00-\u9fa5]{2,4}/g, /参\s*与\s*抢\s*救\s*人\s*员\s*[:：]\s*[^\n]*/g,
+        /家属\s*[\u4e00-\u9fa5]{2,4}/g
+    ];
+    fixedPatterns.forEach(function(re) { scan(re); });
+    keywords.forEach(function(kw) {
+        if (!kw || kw.trim() === '') return;
+        var isExcluded = false;
+        for (var i = 0; i < excludes.length; i++) {
+            if (kw.indexOf(excludes[i]) >= 0 || excludes[i].indexOf(kw) >= 0) { isExcluded = true; break; }
+        }
+        if (isExcluded) return;
+        try { scan(new RegExp(kw.trim(), 'g')); } catch(e) {}
+    });
+    /* 排序+去重叠，从后往前插⟦R⟧…⟦/R⟧（占位符[姓名][住院号][医院][科室]已盖过的不重复标） */
+    marks.sort(function(a, b) { return a[0] - b[0]; });
+    var out = '', pos = 0;
+    marks.forEach(function(r) {
+        if (r[0] < pos) return; /* 与已标区间重叠的丢弃 */
+        out += result.slice(pos, r[0]) + '⟦R⟧' + result.slice(r[0], r[1]) + '⟦/R⟧';
+        pos = r[1];
+    });
+    out += result.slice(pos);
+    return out;
+}
+
+/* v0.20.0 ③ 导出「脱敏体检_AI件_病人名_月日_时分.txt」四段包裹：现行规则 / 对照病历（带标记原文） / 给AI的任务 */
+function dsm_exportAIPackage() {
+    var patient = dsm_APP.currentPatient;
+    if (!patient) { dsm_showToast('请先选择病人', 'error'); return; }
+    var data = dsm_APP.patients[patient];
+    if (!data || data.files.length === 0) { dsm_showToast('该病人暂无数据', 'error'); return; }
+    var rules = dsm_APP.rules;
+    var L = [];
+    L.push('========================================');
+    L.push('  脱敏规则体检包（给AI分析用）');
+    L.push('========================================');
+    L.push('【第一段：现行脱敏规则】');
+    (rules.titles || []).forEach(function(t) { L.push('职称:' + t); });
+    (rules.hospitals || []).forEach(function(h) { L.push('医院:' + h); });
+    (rules.keywords || []).forEach(function(k) { L.push('关键词:' + k); });
+    (rules.excludes || []).forEach(function(e) { L.push('排除:' + e); });
+    L.push('');
+    L.push('【第二段：对照病历】');
+    /* 与预览同口径：只取勾选的文本类文件，同内容去重（PDF与文本副本只出一份） */
+    var textFiles = data.files.filter(function(f) { return f.type === '文本' || f.type === 'Markdown' || f.type === '文档' || f.type === 'PDF文档'; });
+    textFiles = dsm_selFiles(data, textFiles);
+    var seen = {}, outFiles = [];
+    textFiles.forEach(function(f) {
+        var t = data.content[f.name] && data.content[f.name].text;
+        var fp = t ? (t.length + '|' + t.slice(0, 80)) : f.name;
+        if (seen[fp]) return;
+        seen[fp] = 1; outFiles.push(f);
+    });
+    var nFiles = 0;
+    outFiles.forEach(function(f) {
+        var c = data.content[f.name];
+        var text = c ? c.text : '';
+        if (!text || text.indexOf('[PDF') === 0) return;
+        nFiles++;
+        L.push('--------【' + f.name + '】--------');
+        L.push(dsm_buildAIView(text));
+        L.push('');
+    });
+    if (!nFiles) { dsm_showToast('勾选里没有能体检的文本文件', 'warn'); return; }
+    L.push('【第三段：给AI的任务】');
+    L.push((typeof ASKAI_DEF !== 'undefined' && ASKAI_DEF.p5) ? ASKAI_DEF.p5.replace(/\n\n病历（带标记）如下：\n$/, '') : '');
+    L.push('========================================');
+    var content = L.join('\n');
+    var _n = new Date(); function _p2(x) { return (x < 10 ? '0' : '') + x; }
+    var fileName = '脱敏体检_AI件_' + patient + '_' + _p2(_n.getMonth() + 1) + _p2(_n.getDate()) + '_' + _p2(_n.getHours()) + _p2(_n.getMinutes()) + '.txt';
+    try {
+        var blob = new Blob(['\ufeff' + content], { type: 'text/plain;charset=utf-8' });
+        var link = document.createElement('a');
+        link.href = URL.createObjectURL(blob); link.download = fileName;
+        document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        setTimeout(function() { URL.revokeObjectURL(link.href); }, 5000);
+        dsm_showToast('✅ 已下载：' + fileName, 'success');
+    } catch(e) { dsm_showToast('导出失败：' + e.message, 'error'); }
+    /* 壳环境：走writeFile回读对账通道写授权文件夹（同v0.12.0 D1导出防截断） */
+    try {
+        if (hxStore.bridged()) {
+            var r = dsm_shellWriteVerified(fileName, '\ufeff' + content);
+            if (r.ok) { dsm_showToast('✅ 已存到授权文件夹：' + r.saved.join('、') + '（已核对）', 'success', 6000); }
+            else { dsm_showToast('❌ 没存全：' + fileName + ' 写进文件夹被截断；浏览器已下载的一份还在', 'error', 8000); }
+        }
+    } catch(e) { dsm_showToast('❌ 写文件夹出错（' + e.message + '），浏览器已下载的一份还在', 'error', 8000); }
+}
+
+/* ═════ v0.20.0 ⑤ 规则版本库：hx_dsm_rulelib_v1=[{id,time,note,rules:{titles,hospitals,keywords,excludes}}]，
+   hx_dsm_rulelib_cur=当前版本id。首次运行无库→把现行规则存为v1「原版内置」（幂等，重复开门不重复建） ═════ */
+var LS_RULELIB = 'hx_dsm_rulelib_v1', LS_RULELIB_CUR = 'hx_dsm_rulelib_cur';
+function dsm_rulelibLoad() { try { var a = JSON.parse(localStorage.getItem(LS_RULELIB)); return Array.isArray(a) ? a : []; } catch(e) { return []; } }
+function dsm_rulelibSave(a) { try { localStorage.setItem(LS_RULELIB, JSON.stringify(a)); } catch(e) {} }
+function dsm_rulelibCur() { try { return localStorage.getItem(LS_RULELIB_CUR) || ''; } catch(e) { return ''; } }
+function dsm_rulesSnapshot() {
+    return { titles: (dsm_APP.rules.titles || []).slice(), hospitals: (dsm_APP.rules.hospitals || []).slice(),
+             keywords: (dsm_APP.rules.keywords || []).slice(), excludes: (dsm_APP.rules.excludes || []).slice() };
+}
+function dsm_rulelibAdd(rules, note) {
+    var lib = dsm_rulelibLoad();
+    var id = 'V' + Date.now().toString(36) + Math.floor(Math.random() * 1000);
+    lib.push({ id: id, time: Date.now(), note: note || '', rules: rules });
+    dsm_rulelibSave(lib);
+    return { id: id, ver: lib.length }; /* ver=第几版（入库序号） */
+}
+/* 应用一组规则到现行：写回dsm_APP.rules + 复用现有localStorage各键 + 刷新规则标签UI和规则文本框 */
+function dsm_ruleApply(rules) {
+    dsm_APP.rules.titles = (rules.titles || []).slice();
+    dsm_APP.rules.hospitals = (rules.hospitals || []).slice();
+    dsm_APP.rules.keywords = (rules.keywords || []).slice();
+    dsm_APP.rules.excludes = (rules.excludes || []).slice();
+    try {
+        localStorage.setItem('dsm_rules_titles', JSON.stringify(dsm_APP.rules.titles));
+        localStorage.setItem('dsm_rules_hospitals', JSON.stringify(dsm_APP.rules.hospitals));
+        localStorage.setItem('dsm_rules_keywords', JSON.stringify(dsm_APP.rules.keywords));
+        localStorage.setItem('dsm_rules_excludes', JSON.stringify(dsm_APP.rules.excludes));
+    } catch(e) {}
+    try { dsm_renderExcludes(); dsm_renderTitles(); dsm_renderHospitals(); dsm_renderKeywords(); dsm_updateRulesTextarea(); } catch(e) {}
+    if (dsm_APP.currentPatient) { try { dsm_previewData(); } catch(e) {} }
+}
+function dsm_rulelibInit() {
+    if (dsm_rulelibLoad().length === 0) { /* 首次运行：现行规则存为v1「原版内置」，cur=v1；幂等 */
+        var r = dsm_rulelibAdd(dsm_rulesSnapshot(), '原版内置');
+        try { localStorage.setItem(LS_RULELIB_CUR, r.id); } catch(e) {}
+    }
+}
+function dsm_rulelibToggle() {
+    var box = document.getElementById('dsm_rulelibBox');
+    var head = document.getElementById('dsm_rulelibHead');
+    if (!box) return;
+    var show = box.style.display === 'none';
+    box.style.display = show ? '' : 'none';
+    if (head) head.textContent = (show ? '▾ 📚 规则版本库（点我收起）' : '▸ 📚 规则版本库（点我展开）');
+    if (show) dsm_rulelibRender();
+}
+function dsm_rulelibRender() {
+    var box = document.getElementById('dsm_rulelibBox');
+    if (!box) return;
+    var lib = dsm_rulelibLoad(), cur = dsm_rulelibCur();
+    var html = '';
+    if (!lib.length) { html = '<div style="font-size:12px;color:#999;padding:6px 0;">版本库是空的</div>'; }
+    lib.forEach(function(v, i) {
+        var d = new Date(v.time || 0);
+        function pp(x) { return (x < 10 ? '0' : '') + x; }
+        var ts = d.getFullYear() + '-' + pp(d.getMonth() + 1) + '-' + pp(d.getDate()) + ' ' + pp(d.getHours()) + ':' + pp(d.getMinutes());
+        var isCur = (v.id === cur);
+        html += '<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-top:1px dashed #e8edf5;font-size:12px;flex-wrap:wrap;">' +
+            '<span style="font-weight:600;">v' + (i + 1) + '</span>' +
+            '<span style="color:#888;">' + ts + '</span>' +
+            '<span style="color:#333;">' + String(v.note || '').replace(/</g, '&lt;') + '</span>' +
+            (isCur ? '<span style="color:#27ae60;font-weight:600;">✓正在用</span>' : '') +
+            '<span style="flex:1;"></span>' +
+            '<button style="padding:2px 10px;font-size:12px;border:1px solid #1a73e8;color:#1a73e8;background:#fff;border-radius:4px;cursor:pointer;" onclick="dsm_rulelibUse(\'' + v.id + '\')">换用</button>' +
+            '<button style="padding:2px 10px;font-size:12px;border:1px solid #ddd;color:#555;background:#fff;border-radius:4px;cursor:pointer;" onclick="dsm_rulelibNote(\'' + v.id + '\')">备注</button>' +
+            '</div>';
+    });
+    box.innerHTML = html;
+}
+function dsm_rulelibUse(id) {
+    var lib = dsm_rulelibLoad(), hit = null;
+    for (var i = 0; i < lib.length; i++) { if (lib[i].id === id) { hit = lib[i]; break; } }
+    if (!hit) { dsm_showToast('这个版本没了', 'error'); return; }
+    dsm_ruleApply(hit.rules);
+    try { localStorage.setItem(LS_RULELIB_CUR, id); } catch(e) {}
+    dsm_rulelibRender();
+    dsm_showToast('✅ 已换用规则v' + (lib.indexOf(hit) + 1) + '（' + (hit.note || '') + '）', 'success');
+}
+function dsm_rulelibNote(id) {
+    var lib = dsm_rulelibLoad(), hit = null;
+    for (var i = 0; i < lib.length; i++) { if (lib[i].id === id) { hit = lib[i]; break; } }
+    if (!hit) return;
+    var nv = prompt('给规则v' + (i + 1) + '改备注：', hit.note || '');
+    if (nv === null) return;
+    hit.note = nv;
+    dsm_rulelibSave(lib);
+    dsm_rulelibRender();
+}
+/* ═════ v0.20.0 ④ 📥导入AI改后规则：解析===规则开始===…===规则结束===之间的规则行；
+   校验：至少有一组非空且无非法行，否则红字报错不导入；
+   导入前先把现行规则拍快照存版本库（备注「导入前快照」），应用后再存新版本（备注默认「AI改」） ═════ */
+function dsm_parseAIRules(text) {
+    var m = String(text || '').match(/===规则开始===([\s\S]*?)===规则结束===/);
+    if (!m) return { err: '没找到「===规则开始===」和「===规则结束===」两行标记，请把AI回的内容整段贴进来' };
+    var lines = m[1].split('\n').map(function(s) { return s.trim(); }).filter(function(s) { return s; });
+    var r = { titles: [], hospitals: [], keywords: [], excludes: [] }, bad = [];
+    lines.forEach(function(ln) {
+        var hit = false;
+        var pairs = [['职称:', 'titles'], ['职称：', 'titles'], ['医院:', 'hospitals'], ['医院：', 'hospitals'],
+                     ['关键词:', 'keywords'], ['关键词：', 'keywords'], ['敏感词:', 'keywords'], ['敏感词：', 'keywords'],
+                     ['排除:', 'excludes'], ['排除：', 'excludes']];
+        for (var i = 0; i < pairs.length; i++) {
+            if (ln.indexOf(pairs[i][0]) === 0) {
+                var v = ln.substring(pairs[i][0].length).trim();
+                if (v) r[pairs[i][1]].push(v); else bad.push(ln);
+                hit = true; break;
+            }
+        }
+        if (!hit) bad.push(ln);
+    });
+    if (bad.length) return { err: '有' + bad.length + '行看不懂（规则行得是「职称:/医院:/关键词:/排除:」开头）：' + bad.slice(0, 3).join('；') };
+    if (!r.titles.length && !r.hospitals.length && !r.keywords.length && !r.excludes.length) return { err: '四组规则全是空的，没导入' };
+    return { rules: r };
+}
+function dsm_importAIRules() {
+    var ta = document.getElementById('dsm_aiRulesInput');
+    var err = document.getElementById('dsm_aiRulesErr');
+    function bad(msg) { if (err) { err.style.display = ''; err.textContent = '❌ ' + msg; } dsm_showToast('❌ ' + msg, 'error', 5000); }
+    if (err) { err.style.display = 'none'; err.textContent = ''; }
+    var parsed = dsm_parseAIRules(ta ? ta.value : '');
+    if (parsed.err) { bad(parsed.err); return; }
+    /* ①现行规则快照存版本库 */
+    dsm_rulelibAdd(dsm_rulesSnapshot(), '导入前快照');
+    /* ②应用新规则（复用现有存储键） */
+    dsm_ruleApply(parsed.rules);
+    /* ③新规则存为新版本（备注默认「AI改」，版本库里可再改） */
+    var r = dsm_rulelibAdd(dsm_rulesSnapshot(), 'AI改');
+    try { localStorage.setItem(LS_RULELIB_CUR, r.id); } catch(e) {}
+    if (ta) ta.value = '';
+    dsm_rulelibRender();
+    dsm_showToast('✅ 已导入并存为规则v' + r.ver, 'success', 4000);
 }
 
 // ============================================================
@@ -4977,7 +5339,10 @@ function dsm_aboutInfo() {
         '• 选择文件夹，自动识别病人\n' +
         '• 智能脱敏：姓名+职称、医院、身份证等\n' +
         '• 排除词功能：解决"平素体健"误脱敏\n' +
-        '• AI提示词模板：排除词/职称/医院\n\n' +
+        '• AI提示词模板：排除词/职称/医院\n' +
+        '• v0.20.0：预览标题行「📤交给AI查脱敏」导出体检包给AI找漏脱/误脱；\n' +
+        '  设置里「📥导入AI规则」贴回AI改好的规则（自动存版本库）；\n' +
+        '  「📚 规则版本库」随时换用旧版本；手机竖屏有横屏提醒，窄屏预览前8行可展开\n\n' +
         '【排除词用法】\n' +
         '1. 预览时发现被误脱敏的词\n' +
         '2. 复制该词 → 系统设置 → 排除词 → 添加\n' +
@@ -5461,6 +5826,9 @@ try {
 try{ dsmh_restore(); }catch(e){}
 try{ dsmraw_tick(); }catch(e){}
 try{ dsmraw_bar(); }catch(e){}
+/* v0.20.0 开门两件套：规则版本库首次建档（幂等，重复开门不重复建）+ 横屏提醒条初始检查 */
+try{ dsm_rulelibInit(); }catch(e){}
+try{ dsm_lastNarrow = (window.innerWidth < 700); dsm_orientCheck(); }catch(e){}
 
 /* ══════════════ v0.17.0 HTML会诊PPT（洪老师拍板：多学科会诊用，做HTML格式不做pptx；本区块全部新增，旧代码一行未动） ══════════════
    流程：详情页「📋 会诊PPT」→ ①聚合该病人病历全文走aiChat发第4套「会诊稿」提示词出五栏目
