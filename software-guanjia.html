@@ -8,6 +8,19 @@
   红小涛学习套装 · 病人大管家
   定位：全家资料的"管家"。按病人归堆（血气/呼吸机/脱敏病历，天然有章），
         按知识搜索（笔记/习题，全靠AI名片）。
+  v0.21.0 2026-09-10 脱敏体检闭环五站+原文不即毁（洪老师2026-09-10傍晚逐条拍板"全部都搞吧，开工"）：
+    ①原文不即毁（回滚v0.18.0毛病37那半条）：收进病历库不再当场销毁保险柜原文——识别错了能拿真原文重来；
+      恢复v0.10.0老六条：原文留到到点（默认1小时，1/4/24三档可换）或下次开门才销毁，销毁前查脱敏分身弹问。
+      v0.18.0另半条（导出html登记进文件清单）保留不动。
+    ②📤交给AI查脱敏改五站浮层（dsm_aiCheckOpen，版面一步不跳；旧dsm_exportAIPackage保留作"只存体检包"留档）：
+      站1选了哪份——文件名+病人名+来源标注：保险柜在读（真原文）/原文已销毁红字明说（脱敏存档没词可红）/浏览器内存；
+      站2原文标红——复用dsm_highlightSensitive/dsm_formatText，原文在才红，不在照实说；
+      站3现行规则——职称/医院/关键词/排除四组逐条列全+标注"当前用=规则版本库第X版（备注）"；
+      站4要交出去的AI件——dsm_buildAIView（四件套[姓名][住院号][医院][科室]+⟦R⟧红标），底部「✅确认发AI」「💾只存体检包」「✕取消」；
+      站5确认后直发AI——第5套脱敏体检提示词走aiChat（千问/Kimi自动换，记账照走），意见显示在浮层内，
+      「📥去导入AI规则」把AI原话预填进设置区导入框（规则解析/快照/版本库全走v0.20.0老链路，一个字符未动）。
+      规则引擎dsm_desensitizeWithDebug/dsm_highlightSensitive/dsm_buildAIView一个字未改，纯加法浮层。
+    ③版本升v0.21.0：SW_VERSION、界面版本行、关于同步。
   v0.20.0 2026-09-10 预览流程恢复原版格局+AI闭环六连（洪老师逐条拍板；病根：之前版本把脱敏预览流程改乱，本版恢复原版格局并加AI闭环）：
     ①预览排版恢复+手机适配——电脑（≥700px）左右分屏照旧；手机竖屏（<700px且宽<高）预览区顶部出横屏提醒条
       「🔄 请横屏查看，左右对照更清楚」（✕可关，关掉本session不再弹，只记内存变量dsm_rotateTipOff不落地），
@@ -553,7 +566,7 @@ hxStore.reg('hx_cards_v1'); hxStore.reg('hx_patients'); hxStore.reg('hx_inbox_v1
 <div class="dsm_preview-section" id="dsm_previewSection">
 <!-- v0.20.0 ①手机竖屏横屏提醒条（✕关掉后本session不再弹，内存变量不落地） -->
 <div id="dsm_rotateTip" style="display:none;background:#fff8e1;border:1px solid #f0c36d;color:#7d5a10;border-radius:6px;padding:8px 10px;font-size:13px;margin-bottom:8px;">🔄 请横屏查看，左右对照更清楚 <span style="float:right;cursor:pointer;font-weight:700;padding:0 6px;" onclick="dsm_rotateTipOff=true;document.getElementById('dsm_rotateTip').style.display='none';">✕</span></div>
-<div class="dsm_preview-title">📄 预览（原文红色高亮 · 右侧脱敏后） <button onclick="event.stopPropagation();dsm_exportAIPackage()" style="float:right;font-size:12px;padding:2px 8px;border:1px solid #8e44ad;color:#8e44ad;background:#fff;border-radius:5px;cursor:pointer;">📤交给AI查脱敏</button></div><!-- v0.20.0 ③ -->
+<div class="dsm_preview-title">📄 预览（原文红色高亮 · 右侧脱敏后） <button onclick="event.stopPropagation();dsm_aiCheckOpen()" style="float:right;font-size:12px;padding:2px 8px;border:1px solid #8e44ad;color:#8e44ad;background:#fff;border-radius:5px;cursor:pointer;">📤交给AI查脱敏</button></div><!-- v0.20.0 ③ -->
 <div class="dsm_preview-content" id="dsm_previewContent"><div class="dsm_empty-state">暂无数据</div></div>
 </div>
 </div>
@@ -851,7 +864,7 @@ hxStore.reg('hx_cards_v1'); hxStore.reg('hx_patients'); hxStore.reg('hx_inbox_v1
 </div>
 
 <script>
-var SW_VERSION = "0.20.0"; /* v0.20.0 2026-09-10 预览流程恢复原版格局+AI闭环六连（详见文件顶部修改记录）：①预览排版恢复+手机横竖屏适配 ②窄屏前8行折叠 ③📤交给AI查脱敏（dsm_buildAIView独立新函数，规则引擎未动） ④📥导入AI规则（快照+导入双存版本库） ⑤规则版本库hx_dsm_rulelib_v1 ⑥版本同步 */ /* v0.19.0 2026-09-10 速记10连改·全面鱼骨化（挂号#42~51，详见文件顶部修改记录）：名册inline展开明细/速记补充上一条/脱敏间编号折叠行/导出简化/做名片下划线 */ /* v0.18.0 2026-09-10 真机八连修（毛病34~41）：名册删除手段/收库即毁原文/删聚合病历独立框/导出进清单/AI直达钮/删蓝框功能鱼骨化/删当前病人展开区/文件条目窄行 */ /* 速记自动上行 v0.17.1 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* v0.17.0 2026-09-10 HTML会诊PPT（洪老师拍板做HTML不做pptx，纯加法）：详情页「📋 会诊PPT」按钮→第4套会诊稿提示词走aiChat出五栏目（AI失败留「（AI没回话，请手填）」占位照常出片）+本地宽松验单解析器（日期时间+项目名+数值+单位四件套，项目名取冒号前短名）挑≥2时间点指标（PCT/IL-6/乳酸/肌酐/白细胞/CRP/体温模糊匹配优先，最多6个）纯SVG趋势图（最新值红点+数字）→一页一屏HTML幻灯片（点按/滑动/键盘翻页，页脚页码，白底深灰大字+暖色细线标题）→三处产出：壳「脱敏导出_」前缀dsm_shellWriteVerified回读对账、名册kind=report「📋 会诊PPT」徽标+🖥放映按钮、浏览器blob下载；无壳无AI纯浏览器也出演示片 */ /* 速记 v0.16.1 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */ /* v0.16.0 2026-09-10 问AI升级（洪老师拍板）：
+var SW_VERSION = "0.21.0"; /* v0.21.0 2026-09-10 脱敏体检五站浮层+原文不即毁（详见文件顶部修改记录） */ /* v0.20.0 2026-09-10 预览流程恢复原版格局+AI闭环六连（详见文件顶部修改记录）：①预览排版恢复+手机横竖屏适配 ②窄屏前8行折叠 ③📤交给AI查脱敏（dsm_buildAIView独立新函数，规则引擎未动） ④📥导入AI规则（快照+导入双存版本库） ⑤规则版本库hx_dsm_rulelib_v1 ⑥版本同步 */ /* v0.19.0 2026-09-10 速记10连改·全面鱼骨化（挂号#42~51，详见文件顶部修改记录）：名册inline展开明细/速记补充上一条/脱敏间编号折叠行/导出简化/做名片下划线 */ /* v0.18.0 2026-09-10 真机八连修（毛病34~41）：名册删除手段/收库即毁原文/删聚合病历独立框/导出进清单/AI直达钮/删蓝框功能鱼骨化/删当前病人展开区/文件条目窄行 */ /* 速记自动上行 v0.17.1 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* v0.17.0 2026-09-10 HTML会诊PPT（洪老师拍板做HTML不做pptx，纯加法）：详情页「📋 会诊PPT」按钮→第4套会诊稿提示词走aiChat出五栏目（AI失败留「（AI没回话，请手填）」占位照常出片）+本地宽松验单解析器（日期时间+项目名+数值+单位四件套，项目名取冒号前短名）挑≥2时间点指标（PCT/IL-6/乳酸/肌酐/白细胞/CRP/体温模糊匹配优先，最多6个）纯SVG趋势图（最新值红点+数字）→一页一屏HTML幻灯片（点按/滑动/键盘翻页，页脚页码，白底深灰大字+暖色细线标题）→三处产出：壳「脱敏导出_」前缀dsm_shellWriteVerified回读对账、名册kind=report「📋 会诊PPT」徽标+🖥放映按钮、浏览器blob下载；无壳无AI纯浏览器也出演示片 */ /* 速记 v0.16.1 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */ /* v0.16.0 2026-09-10 问AI升级（洪老师拍板）：
    ①提示词三套升四套，缺省内容换新规格：第1套病历质检（先整格式→找四类缺陷→⟦R⟧标红⟦B⟧醒目给修改意见）、第2套病情摘要/交班（一页交班摘要）、第3套检验解读（按时间重排+异常值方向+趋势+通俗解读）、第4套会诊稿（新增：五个固定栏目）；老用户已存的自定义提示词一个字不动，只在缺p4时补第4套（一次性迁移标记hx_gj_askai_v16mig）。
    ②脱敏间导出区加「🤖 AI分析」按钮：只把当前勾选（复用v0.15.0 dsm_selFiles过滤）且已脱敏的文本发给AI，原文绝不出去；弹出与病历详情同款四套提示词弹窗，复用aiChat通道和⟦R⟧/⟦B⟧渲染+「复制干净版」。
    ③问AI结果改全屏浮层：出结果后弹窗撑满屏（askai_full），结果区不再限52vh高，红/醒目两色渲染保留；关上或重开恢复小窗。
@@ -4450,6 +4463,125 @@ function dsm_buildAIView(text) {
 }
 
 /* v0.20.0 ③ 导出「脱敏体检_AI件_病人名_月日_时分.txt」四段包裹：现行规则 / 对照病历（带标记原文） / 给AI的任务 */
+/* ═════ v0.21.0 ② 📤交给AI查脱敏·五站浮层（洪老师拍板方案A）：
+   站1选了哪份（文件名+病人+来源明说）→站2原文标红→站3现行规则逐条→站4交AI件预览+确认→站5直发AI出意见+去导入。
+   全程浮层内完成，版面一步不跳；规则引擎/体检包构造函数一个字符未动，纯加法。 ═════ */
+var _dsmAICheckPayload=''; /* 站4确认时备好的交AI文本（dsm_buildAIView拼好） */
+var _dsmAICheckRaw='';     /* 站5 AI回的原话（去导入时预填用） */
+function dsm_aiCheckSrcLabel(patient, fname, rdItems, strip) {
+    /* 来源判定：保险柜登记按名芯对得上→真原文在读；壳里对不上→原文已销毁（脱敏存档没词可红）；浏览器→内存文本 */
+    var core = strip(fname), pcore = strip(patient);
+    for (var i = 0; i < rdItems.length; i++) {
+        var it = rdItems[i];
+        if (strip(it.fname) === core || strip(it.fname) === pcore || strip(it.patient) === pcore || strip(it.patient) === core) {
+            return { ok: true, html: '<span style="color:#27ae60;font-weight:600;">✅ 原始病历（保险柜在读·真原文）</span>' };
+        }
+    }
+    if (hxStore.bridged()) return { ok: false, html: '<span style="color:#c0392b;font-weight:600;">⚠️ 原文已销毁——下面是脱敏后存档，没词可红属正常（要重来请重新拷件进授权文件夹）</span>' };
+    return { ok: false, html: '<span style="color:#b8860b;font-weight:600;">⚠️ 浏览器环境：内存里的文本，是不是原文请您自己核对</span>' };
+}
+function dsm_aiCheckOpen() {
+    var patient = dsm_APP.currentPatient;
+    if (!patient) { dsm_showToast('请先选择病人', 'error'); return; }
+    var data = dsm_APP.patients[patient];
+    if (!data || data.files.length === 0) { dsm_showToast('该病人暂无数据', 'error'); return; }
+    var textFiles = data.files.filter(function(f) { return ['文本','Markdown','文档','PDF文档'].indexOf(f.type) >= 0; });
+    textFiles = dsm_selFiles(data, textFiles); /* 与预览/体检包同口径：只取勾选的 */
+    var okFiles = [];
+    textFiles.forEach(function(f) {
+        var t = data.content[f.name] && data.content[f.name].text;
+        if (t && t.indexOf('[PDF') !== 0) okFiles.push(f);
+    });
+    if (!okFiles.length) { dsm_showToast('勾选里没有能体检的文本文件', 'warn'); return; }
+    var rd = dsmrawLoad();
+    var strip = function(x) { return String(x).replace(/\.[^.]+$/, '').replace(/(\d{8}|\d{4}|\d{2})$/, ''); }; /* 与dsmh_restore同一把名芯尺 */
+    var h = '';
+    /* ── 站1+站2：选了哪份 + 原文标红 ── */
+    var aiParts = [];
+    okFiles.forEach(function(f, idx) {
+        var text = data.content[f.name].text;
+        var src = dsm_aiCheckSrcLabel(patient, f.name, rd.items || [], strip);
+        h += '<div style="background:#fff;border:1px solid #e3dccd;border-radius:8px;padding:10px 12px;margin-bottom:12px;">';
+        h += '<div style="font-weight:700;color:#5a5045;margin-bottom:4px;">① 选的这份：' + esc(f.name) + '（病人：' + esc(patient) + '）' + (okFiles.length > 1 ? '　第' + (idx + 1) + '/' + okFiles.length + '份' : '') + '</div>';
+        h += '<div style="font-size:12px;margin-bottom:6px;">' + src.html + '</div>';
+        h += '<div style="font-weight:600;color:#7a6f63;font-size:12px;margin:6px 0 3px;">② 原文标红（红=会被脱敏删掉/替换的）</div>';
+        h += '<pre style="white-space:pre-wrap;word-break:break-word;font-size:12px;background:#fff3f3;border:1px solid #f5c6c6;border-radius:5px;padding:8px;max-height:260px;overflow-y:auto;margin:0;">' + dsm_highlightSensitive(dsm_formatText(text)) + '</pre>';
+        aiParts.push('--------【' + f.name + '】--------\n' + dsm_buildAIView(text));
+        h += '</div>';
+    });
+    _dsmAICheckPayload = aiParts.join('\n\n');
+    /* ── 站3：现行规则逐条 + 版本库标注 ── */
+    var rules = dsm_APP.rules || {};
+    function rl(label, arr) { return '<div style="font-size:12px;margin:2px 0;"><b>' + label + '</b>（' + (arr && arr.length || 0) + '条）：' + (arr && arr.length ? esc(arr.join('、')) : '<span style="color:#999;">（空）</span>') + '</div>'; }
+    var lib = dsm_rulelibLoad(), cur = dsm_rulelibCur(), curTxt = '内置规则（未入版本库）';
+    for (var i = 0; i < lib.length; i++) { if (lib[i].id === cur) { curTxt = '规则版本库 v' + (lib[i].ver || (i + 1)) + '（' + esc(lib[i].note || '') + '·' + esc(lib[i].time || '') + '）'; break; } }
+    h += '<div style="background:#fdf9f0;border:1px solid #ecd9a8;border-radius:8px;padding:10px 12px;margin-bottom:12px;">';
+    h += '<div style="font-weight:700;color:#5a5045;margin-bottom:4px;">③ 现行脱敏规则（当前用＝' + curTxt + '）</div>';
+    h += rl('职称', rules.titles) + rl('医院', rules.hospitals) + rl('关键词', rules.keywords) + rl('排除', rules.excludes);
+    h += '</div>';
+    /* ── 站4：要交出去的AI件 ── */
+    var aiHtml = esc(_dsmAICheckPayload).replace(/⟦R⟧/g, '<span style="color:#c0392b;background:#fdebd0;font-weight:600;">').replace(/⟦\/R⟧/g, '</span>');
+    h += '<div style="background:#f5f0f9;border:1px solid #d5c6e0;border-radius:8px;padding:10px 12px;margin-bottom:12px;">';
+    h += '<div style="font-weight:700;color:#5a5045;margin-bottom:4px;">④ 这份才是真要发给AI的（[姓名][住院号][医院][科室]已遮盖，红底=⟦R⟧标记给AI看的脱敏点）</div>';
+    h += '<pre style="white-space:pre-wrap;word-break:break-word;font-size:12px;background:#fff;border:1px solid #d5c6e0;border-radius:5px;padding:8px;max-height:300px;overflow-y:auto;margin:0;">' + aiHtml + '</pre>';
+    h += '</div>';
+    /* ── 站5：AI意见区（确认后填） ── */
+    h += '<div id="dsmAICheckResult" style="display:none;background:#f0f7f0;border:1px solid #b8d4b8;border-radius:8px;padding:10px 12px;margin-bottom:12px;">';
+    h += '<div style="font-weight:700;color:#2d6a35;margin-bottom:4px;">⑤ AI体检意见</div><div id="dsmAICheckProg" style="font-size:12px;color:#7a6f63;"></div>';
+    h += '<pre id="dsmAICheckOut" style="white-space:pre-wrap;word-break:break-word;font-size:12px;margin:6px 0 0;"></pre>';
+    h += '<div id="dsmAICheckGo" style="display:none;margin-top:8px;"><button onclick="dsm_aiCheckGoImport()" style="padding:6px 12px;border:1px solid #27ae60;color:#27ae60;background:#fff;border-radius:6px;cursor:pointer;font-weight:700;">📥 去导入AI规则（意见已预填进导入框）</button></div>';
+    h += '</div>';
+    /* ── 底排三钮 ── */
+    h += '<div style="position:sticky;bottom:0;background:#fbfaf7;padding:8px 0 2px;border-top:1px solid #e3dccd;display:flex;gap:8px;flex-wrap:wrap;">';
+    h += '<button id="dsmAICheckSend" onclick="dsm_aiCheckSend()" style="padding:8px 14px;border:none;background:#8e44ad;color:#fff;border-radius:6px;cursor:pointer;font-weight:700;">✅ 确认发AI（先存体检包留档，再直发）</button>';
+    h += '<button onclick="dsm_exportAIPackage()" style="padding:8px 12px;border:1px solid #8a8178;color:#5a5045;background:#fff;border-radius:6px;cursor:pointer;">💾 只存体检包</button>';
+    h += '<button onclick="dsm_aiCheckClose()" style="padding:8px 12px;border:1px solid #c0392b;color:#c0392b;background:#fff;border-radius:6px;cursor:pointer;">✕ 取消</button>';
+    h += '</div>';
+    var dlg = document.getElementById('dsm_aiCheckDlg');
+    if (!dlg) {
+        dlg = document.createElement('div');
+        dlg.id = 'dsm_aiCheckDlg';
+        dlg.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(60,50,40,.45);z-index:9999;overflow-y:auto;';
+        dlg.innerHTML = '<div id="dsm_aiCheckCard" style="max-width:860px;margin:18px auto;background:#fbfaf7;border-radius:10px;padding:14px 16px;box-shadow:0 4px 24px rgba(0,0,0,.25);"></div>';
+        document.body.appendChild(dlg);
+    }
+    document.getElementById('dsm_aiCheckCard').innerHTML =
+        '<div style="font-weight:800;font-size:15px;color:#4a4238;margin-bottom:10px;">📤 交给AI查脱敏 · 五步确认（看完④再点确认，版面不跳走）</div>' + h;
+    dlg.style.display = 'block';
+}
+function dsm_aiCheckClose() { var d = document.getElementById('dsm_aiCheckDlg'); if (d) d.style.display = 'none'; }
+function dsm_aiCheckSend() {
+    if (!_dsmAICheckPayload) { dsm_showToast('没有可发的内容', 'warn'); return; }
+    if (!qwenKey() && !kimiKey()) { dsm_showToast('还没有API Key，点「🛠 设置与工具」里填一把', 'error', 5000); return; }
+    try{ dsm_exportAIPackage(); }catch(e){} /* 拍板：确认发AI时体检包照旧存授权文件夹留档 */
+    var prompt = (typeof askaiLoad === 'function' ? (askaiLoad().p5 || ASKAI_DEF.p5) : ASKAI_DEF.p5);
+    var sec = document.getElementById('dsmAICheckResult'), prog = document.getElementById('dsmAICheckProg'),
+        out = document.getElementById('dsmAICheckOut'), go = document.getElementById('dsmAICheckGo'),
+        btn = document.getElementById('dsmAICheckSend');
+    sec.style.display = 'block'; go.style.display = 'none'; out.textContent = '';
+    prog.textContent = '🤖 AI体检中（千问不通自动换Kimi）…';
+    if (btn) btn.disabled = true;
+    var t0 = Date.now();
+    aiChat(prompt, _dsmAICheckPayload, function(r) {
+        _dsmAICheckRaw = r;
+        out.textContent = r;
+        prog.textContent = '✅ 体检完 · 用时' + Math.round((Date.now() - t0) / 1000) + '秒（已记账）';
+        go.style.display = 'block';
+        if (btn) btn.disabled = false;
+        sec.scrollIntoView({ block: 'start' });
+    }, function(msg) {
+        prog.textContent = '❌ ' + msg + '（Key不对/网不通都会报在这；体检包已存授权文件夹，可拿去手动问）';
+        if (btn) btn.disabled = false;
+    }, { what: '脱敏体检', maxTokens: 2048 });
+}
+function dsm_aiCheckGoImport() {
+    dsm_aiCheckClose();
+    var ta = document.getElementById('dsm_aiRulesInput');
+    if (ta && _dsmAICheckRaw) ta.value = _dsmAICheckRaw; /* AI原话预填，洪老师扫一眼再点导入（导入走v0.20.0老链路：解析+快照+版本库） */
+    if (ta) { try{ ta.scrollIntoView({ block: 'center' }); ta.focus(); }catch(e){} }
+    dsm_showToast('AI意见已填进「📥导入AI规则」框，核对后点导入即存进规则版本库', 'success', 5000);
+}
+
 function dsm_exportAIPackage() {
     var patient = dsm_APP.currentPatient;
     if (!patient) { dsm_showToast('请先选择病人', 'error'); return; }
@@ -5340,6 +5472,7 @@ function dsm_aboutInfo() {
         '• 智能脱敏：姓名+职称、医院、身份证等\n' +
         '• 排除词功能：解决"平素体健"误脱敏\n' +
         '• AI提示词模板：排除词/职称/医院\n' +
+        '• v0.21.0：📤交给AI查脱敏改五站浮层（选哪份/原文标红/现行规则/AI件确认/直发AI出意见可导入）；收库不再当场毁原文，恢复到点或下次开门才销毁；\n' +
         '• v0.20.0：预览标题行「📤交给AI查脱敏」导出体检包给AI找漏脱/误脱；\n' +
         '  设置里「📥导入AI规则」贴回AI改好的规则（自动存版本库）；\n' +
         '  「📚 规则版本库」随时换用旧版本；手机竖屏有横屏提醒，窄屏预览前8行可展开\n\n' +
@@ -5456,7 +5589,6 @@ function dsm_admitToLib() {
     if (typeof pdocsLoad !== 'function') { dsm_showToast('大管家病历库不在', 'error'); return; }
     var pd = pdocsLoad();
     var got = [], skipped = [];
-    var admittedPkeys = []; /* v0.18.0 毛病35 */
     var now = Date.now();
     names.forEach(function(patient) {
         var data = dsm_APP.patients[patient];
@@ -5484,28 +5616,15 @@ function dsm_admitToLib() {
             if (dup) { skipped.push(pr.pkey + '（这份已收过，没重复收）'); return; }
             pd.docs.push({ id: 'D' + Date.now().toString(36) + Math.floor(Math.random() * 1000), pkey: pr.pkey, bed: pr.bed, sur: pr.sur, diag: pr.diag,
                 date: pr.dateStr, timeStr: pr.dateStr + ' ' + docHm(now), ts: pr.date.getTime(), fname: fname + '.txt', kind: 'txt', size: out.length, text: out });
-            admittedPkeys.push(pr.pkey); /* v0.18.0 毛病35：记下收成功的，回头毁原文用 */
             try{ dsmh_remember(pr.pkey, fname + '.txt', out, {name: fname + '.txt', size: out.length, type: f.type, ext: f.ext}); }catch(e){} /* v0.10.0 脱敏版存脱敏间档案hx_dsm_v1（拍板：脱敏间列表也要存住） */ /* v0.13.0 毛病21：fileMeta.name原来用原文件名f.name，和dsmh_remember里content键（fname+'.txt'）对不上，恢复后预览按名取内容全空；改成与content键同名 */
             got.push(pr.pkey + '（' + pr.dateStr + '）');
         });
     });
     if (got.length) pdocsSave(pd);
     if (got.length) { toast('📥 收进病历库' + got.length + '份：' + got.join('、'), 4000); renderPatients(); }
-    /* v0.18.0 毛病35（洪老师真机报"原始病历还没删除，这是重大隐患"）：脱敏版已安全进库的病人，
-       原文保险柜里同名（pkey口径，日期尾数先折算）原文立即销毁，不再干等到点；
-       销毁走原dsmraw_destroy（壳文件+条目+登记一刀三断，listFiles回读核对，没删成红字）。 */
-    if (admittedPkeys.length) {
-        try{
-            var _rd9 = dsmrawLoad();
-            _rd9.items.slice().forEach(function(_it9){
-                var _pk9 = _it9.patient;
-                try{ var _pr9 = parseDocFname(_it9.patient + '.txt', Date.now()); if (_pr9.ok) _pk9 = _pr9.pkey; }catch(e){}
-                if (admittedPkeys.indexOf(_pk9) >= 0 || admittedPkeys.indexOf(_it9.patient) >= 0) {
-                    try{ dsmraw_destroy(_it9.id); }catch(e){}
-                }
-            });
-        }catch(e){}
-    }
+    /* v0.21.0 洪老师拍板回滚：收库不再当场毁原文（v0.18.0毛病37那半条"收库即毁"撤销）——
+       原文留到到点（1/4/24三档）或下次开门才销毁，销毁前照老六条查分身弹问；
+       识别错了随时能拿真原文重新脱敏重新收。dsmraw_tick/dsmraw_destroy原机制一个字未动。 */
     if (skipped.length) dsm_showToast('有' + skipped.length + '份没收：' + skipped.join('；'), 'warn', 6000);
     else if (!got.length) dsm_showToast('没有可收的内容', 'warn');
 }
