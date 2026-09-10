@@ -42,6 +42,8 @@ window.addEventListener('load', function(){
   小涛笔记（学习笔记2代）· 单文件版
 ==========================================================
   修改记录：
+   v0.5.3 2026-09-10 速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。
+   v0.5.2 2026-09-10 浮标速记入编（全家9件同一套自包含snippet，详见SW_VERSION注释链）。
    v0.5.1 2026-09-06 点亮菜单提示词配置搬家全家公用钥匙 hx_glow_v1（xiaotao分支，
         与病人大管家同一把钥匙各存各的）；读取顺序：hx_glow_v1.xiaotao→旧xt_glow_v1
         自动搬家（旧钥匙保留不删）→默认三套。其余一行未动。
@@ -650,7 +652,7 @@ window.addEventListener('load', function(){
 (function(){
 __bc('D脚本启动');
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.5.2'; /* 速记 v0.5.2 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */ /* v0.5.1 提示词配置搬家全家公用钥匙：点亮三级菜单的提示词从 xt_glow_v1 迁到 hx_glow_v1 的 xiaotao 分支（与大管家共用一把钥匙、各存各的分支互不踩）；读取顺序 hx_glow_v1.xiaotao→旧xt_glow_v1搬家（旧钥匙保留不删）→默认三套；其余一行未动 */ /* v0.5.0 点亮三级菜单：点亮切块/笔记正文→底部浮条5选项（变笔记/问AI/做新PPT/出题/自定义）→每选项3套提示词→可编辑发送；提示词存xt_glow_v1可随时改；做PPT走ppt_inbox邮路寄PPT工坊；变笔记可一键存笔记（洪老师2026-09-06晚拍板，提示词AI先编三套待调） */ /* v0.4.1 排版修复：资料库列表「自动切失败」报错条从右栏搬出单独占一行，书名不再被挤成一字一行（洪老师真机截图报案）；纯排版，切片逻辑未动 */ /* v0.4.0 鱼骨头化：ⓘ说明默认收起 + 设置/关于收进「🛠 设置与工具」抽屉（hx_xiaotao_tool_open），照管家v0.5.0样板；纯界面，功能逻辑未动 */ /* v0.3.32 账本桥进全家hx_aibill（主界面💰卡片汇总） */ /* v0.3.31 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */
+var SW_VERSION = '0.5.3'; /* 速记自动上行 v0.5.3 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* 速记 v0.5.2 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */ /* v0.5.1 提示词配置搬家全家公用钥匙：点亮三级菜单的提示词从 xt_glow_v1 迁到 hx_glow_v1 的 xiaotao 分支（与大管家共用一把钥匙、各存各的分支互不踩）；读取顺序 hx_glow_v1.xiaotao→旧xt_glow_v1搬家（旧钥匙保留不删）→默认三套；其余一行未动 */ /* v0.5.0 点亮三级菜单：点亮切块/笔记正文→底部浮条5选项（变笔记/问AI/做新PPT/出题/自定义）→每选项3套提示词→可编辑发送；提示词存xt_glow_v1可随时改；做PPT走ppt_inbox邮路寄PPT工坊；变笔记可一键存笔记（洪老师2026-09-06晚拍板，提示词AI先编三套待调） */ /* v0.4.1 排版修复：资料库列表「自动切失败」报错条从右栏搬出单独占一行，书名不再被挤成一字一行（洪老师真机截图报案）；纯排版，切片逻辑未动 */ /* v0.4.0 鱼骨头化：ⓘ说明默认收起 + 设置/关于收进「🛠 设置与工具」抽屉（hx_xiaotao_tool_open），照管家v0.5.0样板；纯界面，功能逻辑未动 */ /* v0.3.32 账本桥进全家hx_aibill（主界面💰卡片汇总） */ /* v0.3.31 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
@@ -3408,6 +3410,29 @@ document.addEventListener('selectionchange', function(){
   function b64e(s){ return btoa(unescape(encodeURIComponent(s))); }
   function b64d(s){ try{ return decodeURIComponent(escape(atob(s))); }catch(e){ try{ return atob(s); }catch(e2){ return ''; } } }
   function pad(n){ return (n<10?'0':'')+n; }
+
+  /* 速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：
+     记下成功+开门闲时各对账一次——整份「速记流水.txt」PUT到仓根目录同名文件（整份覆盖，没网漏掉的行下回自动补）；
+     钥匙抄公共钱罐hx_gh_*（全家共享那套），没钥匙/没网静默跳过不打搅；上行成功才记hx_sj_uplocal对账，内容没变不重复推 */
+  function sjGhKeys(){ try{ var g=function(k){ return localStorage.getItem(k)||''; }; var t=g('hx_gh_tok')||g('br_gh_tok'),u=g('hx_gh_user')||g('br_gh_user'),r=g('hx_gh_repo')||g('br_gh_repo'); if(!t||!u||!r) return null; return {t:t,u:u,r:r}; }catch(e){ return null; } }
+  function sjUpload(){
+    try{
+      if(!bridged()) return;
+      var g=sjGhKeys(); if(!g||!window.fetch) return;
+      var b=LearnShell.readFile('速记流水.txt'); if(!b) return;
+      var txt=b64d(b); if(!txt) return;
+      if(txt===localStorage.getItem('hx_sj_uplocal')) return;
+      var api='https://api.github.com/repos/'+encodeURIComponent(g.u)+'/'+encodeURIComponent(g.r)+'/contents/'+encodeURIComponent('速记流水.txt');
+      var H={'Authorization':'token '+g.t,'Accept':'application/vnd.github+json'};
+      fetch(api,{headers:H}).then(function(resp){ if(resp.status===404) return {sha:null}; if(!resp.ok) throw 0; return resp.json(); }).then(function(j){
+        var body={message:'速记自动上行 '+HX_SJ_APP, content:b64e(txt)};
+        if(j&&j.sha) body.sha=j.sha;
+        return fetch(api,{method:'PUT',headers:H,body:JSON.stringify(body)});
+      }).then(function(resp){ if(!resp.ok) throw 0; return resp.json(); }).then(function(){
+        try{ localStorage.setItem('hx_sj_uplocal',txt); }catch(e){}
+      }).catch(function(){ /* 静默：没网/钥匙不好使都不打搅，下回记下自动补 */ });
+    }catch(e){}
+  }
   function sjToast(m){ var t=$('hxSjToast'); if(!t) return; t.textContent=m; t.style.display='block'; clearTimeout(t._t); t._t=setTimeout(function(){ t.style.display='none'; },2200); }
   function openPanel(){ var p=$('hxSjPanel'); if(!p) return; p.style.display=(p.style.display==='block')?'none':'block'; if(p.style.display==='block'){ $('hxSjHint').style.display=bridged()?'none':'block'; try{ $('hxSjText').focus(); }catch(e){} } }
   function save(){
@@ -3426,6 +3451,7 @@ document.addEventListener('selectionchange', function(){
     try{
       LearnShell.writeFile('速记流水.txt', b64e(neu));
       sjToast('已记下'); ta.value=''; $('hxSjPanel').style.display='none';
+      try{ sjUpload(); }catch(e){} /* 速记自动上行：本地存成后顺手推上网，失败静默下回补 */
     }catch(e){ sjToast('没存成：'+e.message); }
   }
   function init(){
@@ -3433,6 +3459,7 @@ document.addEventListener('selectionchange', function(){
     dot.addEventListener('click', openPanel);
     $('hxSjSave').addEventListener('click', save);
     $('hxSjClose').addEventListener('click', function(){ $('hxSjPanel').style.display='none'; });
+    setTimeout(function(){ try{ sjUpload(); }catch(e){} }, 8000); /* 速记自动上行：开门闲时对账补推（上次没网漏的在这补） */
   }
   if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', init); } else { init(); }
 })();
