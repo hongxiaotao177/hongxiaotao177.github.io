@@ -1,1 +1,1 @@
-{"version": "0.21.0", "dl": "software-guanjia.html", "engine": "guanjia-pdf-engine.js", "note": "交给AI查脱敏改五站浮层（选了哪份/原文标红/现行规则/AI件确认/直发AI）；收库不即毁原文，到点或下次开门才销毁（#53~57）"}
+{"version": "0.21.1", "dl": "software-guanjia.html", "engine": "guanjia-pdf-engine.js", "note": "预览对照不分横竖屏一律左右分栏（左原文标红右脱敏后）+删横屏提醒条"}
