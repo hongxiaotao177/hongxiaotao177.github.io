@@ -8,13 +8,6 @@
   红小涛学习套装 · 病人大管家
   定位：全家资料的"管家"。按病人归堆（血气/呼吸机/脱敏病历，天然有章），
         按知识搜索（笔记/习题，全靠AI名片）。
-  v0.17.0 2026-09-10 HTML会诊PPT（洪老师拍板：多学科会诊用，做HTML不做pptx，纯新功能只加不改）：
-    病人详情页「🤖问AI」旁加「📋 会诊PPT」——聚合全文走aiChat发第4套会诊稿提示词出五栏目
-    （AI没回话栏目留「（AI没回话，请手填）」照常出片）；本地宽松解析验单「时间+项目名+数值+单位」
-    挑≥2个时间点的指标（PCT/IL-6/乳酸/肌酐/白细胞/CRP/体温优先，最多6个）纯SVG画趋势图；
-    出一页一屏可翻页的HTML幻灯片，写壳「脱敏导出_会诊PPT_病人名_时间戳.html」（dsm_shellWriteVerified
-    回读对账同款）、挂名册kind=report（「📋 会诊PPT」徽标+🖥放映）、浏览器blob下载三处齐活。
-  v0.16.1 2026-09-10 浮标速记入编（洪老师拍板方案A，全家9件同一套，详见SW_VERSION注释链）。
   v0.8.3 2026-09-08 没收清单改一行条（洪老师拍板：黑大坨toast看不清还烦人）：
     「有N份没收（点我看原因）✕」白底卡片一行，点字展开/收起逐行明细，点✕关掉，不自动消失。
     只改收件这一处调用，toast本体没动（别处小提示照旧）。其余一行未动。
@@ -281,9 +274,6 @@
   #askaiResult .askaiR { color:#c0392b; font-weight:bold; } /* 缺陷红 */
   #askaiResult .askaiB { color:#1a6e8a; font-weight:bold; background:#eef6f9; border-radius:4px; padding:0 3px; } /* 修改意见醒目 */
   #askaiResult .askaiH { color:#8a5a3b; font-weight:bold; border-bottom:2px solid #e8d9c8; display:block; margin:12px 0 4px; } /* 分节标题 */
-  /* v0.16.0 结果全屏：出结果后弹窗撑满屏看长结果不憋屈（askaiSend的done里加这个class，关上/重开收回）；红/醒目两色渲染不变 */
-  #askaiDlg.askai_full .askai_box { max-width:none; margin:0; border-radius:0; min-height:100vh; }
-  #askaiDlg.askai_full #askaiResult { max-height:none; font-size:16px; line-height:1.9; }
   .askai_prog { font-size:13px; color:#8a8178; margin-top:8px; display:none; }
   /* 全屏阅读器（v0.4.7）：书式目录+大窗大字+位置提示 */
   #readDlg { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:99997; }
@@ -486,7 +476,6 @@ hxStore.reg('hx_cards_v1'); hxStore.reg('hx_patients'); hxStore.reg('hx_inbox_v1
 </select>
 <input class="dsm_path-input" id="dsm_exportFileName" placeholder="文件名自动生成" value="">
 <button class="dsm_btn-primary" onclick="dsm_exportReport()">📤 导出报告</button>
-<button class="dsm_btn-primary" onclick="dsm_askAI()" style="background:#8e44ad;">🤖 AI分析</button><!-- v0.16.0 脱敏间AI分析入口：只发勾选且已脱敏的文本，原文不出这台机器 -->
 </div>
 
 <!-- 预览 -->
@@ -772,15 +761,7 @@ hxStore.reg('hx_cards_v1'); hxStore.reg('hx_patients'); hxStore.reg('hx_inbox_v1
 </div>
 
 <script>
-var SW_VERSION = "0.17.0"; /* v0.17.0 2026-09-10 HTML会诊PPT（洪老师拍板做HTML不做pptx，纯加法）：详情页「📋 会诊PPT」按钮→第4套会诊稿提示词走aiChat出五栏目（AI失败留「（AI没回话，请手填）」占位照常出片）+本地宽松验单解析器（日期时间+项目名+数值+单位四件套，项目名取冒号前短名）挑≥2时间点指标（PCT/IL-6/乳酸/肌酐/白细胞/CRP/体温模糊匹配优先，最多6个）纯SVG趋势图（最新值红点+数字）→一页一屏HTML幻灯片（点按/滑动/键盘翻页，页脚页码，白底深灰大字+暖色细线标题）→三处产出：壳「脱敏导出_」前缀dsm_shellWriteVerified回读对账、名册kind=report「📋 会诊PPT」徽标+🖥放映按钮、浏览器blob下载；无壳无AI纯浏览器也出演示片 */ /* 速记 v0.16.1 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */ /* v0.16.0 2026-09-10 问AI升级（洪老师拍板）：
-   ①提示词三套升四套，缺省内容换新规格：第1套病历质检（先整格式→找四类缺陷→⟦R⟧标红⟦B⟧醒目给修改意见）、第2套病情摘要/交班（一页交班摘要）、第3套检验解读（按时间重排+异常值方向+趋势+通俗解读）、第4套会诊稿（新增：五个固定栏目）；老用户已存的自定义提示词一个字不动，只在缺p4时补第4套（一次性迁移标记hx_gj_askai_v16mig）。
-   ②脱敏间导出区加「🤖 AI分析」按钮：只把当前勾选（复用v0.15.0 dsm_selFiles过滤）且已脱敏的文本发给AI，原文绝不出去；弹出与病历详情同款四套提示词弹窗，复用aiChat通道和⟦R⟧/⟦B⟧渲染+「复制干净版」。
-   ③问AI结果改全屏浮层：出结果后弹窗撑满屏（askai_full），结果区不再限52vh高，红/醒目两色渲染保留；关上或重开恢复小窗。
-   v0.15.0 2026-09-10 毛病31/32/33（洪老师真机报）：
-   ①毛病31 脱敏间/导出区文件清单的绿色✅勾点不掉，每次点「📤导出报告」把以前聚合过的旧文件又导一遍——病根是那个✅本来就只是"读取成功"的状态图标，从没接过点击，导出也从来不过滤勾选。修：✅改成可点的勾选开关（点一下取消变灰⬜、再点恢复✅，默认仍全选），清单上方加「全选/全不选」小字，三个导出构造函数（txt/md/html）只导当前勾选的文件；⚠️读坏的文件不给勾选。
-   ②毛病32 聚合导出文件名固定「病人名.html」，同名导致名册去重把新导出当旧件丢掉（点七八次导出只进来几份）——病根是v0.14.1挂名册时按fname同名更新。修：导出那一刻生成一次时间戳「_月日_时分」（如16黄热射病_0910_0852.html），浏览器下载、壳文件夹「脱敏导出_」、名册kind=report条目三处用同一个带戳文件名，txt/md/html同待遇。
-   ③毛病33 a)文献PDF（如「2025ESICM临床实践指南…」「2025美国心脏协会心肺复苏指南…」）被收件误判成病人收进名册——病根是补日期重试后开头"2025"被splitBed当成床号。修：parseDocFname收紧床号样式，开头数字1~3位且数值1~999（或中文数字折阿拉伯后同范围）才算床号，"2025"这种年份样式一律不ok进拿不准。b)「❓拿不准」清单原来点开只是alert没法处理。修：改浮层列表，每条一行文件名+原因小字+行尾红✕，点✕从清单删掉并记进「不要了」名单（hx_gj_unsure_no_v1），扫描时整份跳过（不再进拿不准、也不再被seen补刀误删原件）；浮层右上角「关上」。
-   v0.14.1（洪老师拍板）：①导出报告挂进名册该病人名下——hx_pdocs_v1加kind=report条目（同名更新不重复堆），详情页时间线直接看全文，标「📊 导出报告」徽标；不再只依赖扫文件夹的聚合病历区 ②收件副本显示名改「病人名+聚合.扩展名」③修预览愣20秒：回洗dirty判定改与盘档比（内存挂真原文时旧判定永远脏，每次预览全量写JS桥） */ /* v0.14.0 2026-09-10 毛病27/28（洪老师真机报+自查实锤）：
+var SW_VERSION = "0.14.1"; /* v0.14.1（洪老师拍板）：①导出报告挂进名册该病人名下——hx_pdocs_v1加kind=report条目（同名更新不重复堆），详情页时间线直接看全文，标「📊 导出报告」徽标；不再只依赖扫文件夹的聚合病历区 ②收件副本显示名改「病人名+聚合.扩展名」③修预览愣20秒：回洗dirty判定改与盘档比（内存挂真原文时旧判定永远脏，每次预览全量写JS桥） */ /* v0.14.0 2026-09-10 毛病27/28（洪老师真机报+自查实锤）：
    ①脱敏失灵真病根：PDF解析文本字间带空格（"姓名 : 黄超明"），全部正则写成紧贴冒号不认空格，从脱敏间诞生第一天就带病——
      姓名提取4模式/患者姓名替换4模式/职称规则/固定字段10条/标红全套，一律加\s*容忍空格；页眉去重和分段判别的"姓名:"同步加。
      自测教训：以往5轮playwright全用编造的无空格文本，真实病历从没测过——本轮起用真机拉回的带空格真实病历做用例。
@@ -949,20 +930,14 @@ function keyInputAsk(){
    ④交叉校对=第1棒千问出稿→第2棒Kimi当校对员挑错，两份结果上下都显示；两家Key缺一不让选；
    ⑤验单格式（洪老师口述）：txt里"前面一个时间后面跟内容，同一天多项检验时间相同或只差几分几秒"——写进第1套提示词让AI按类别分组+组内按时间重排。 */
 var LS_ASKAI='hx_gj_askai_v1';
-/* v0.16.0 提示词三套升四套（洪老师新规格）：第1/2/3套缺省内容整份换新，新增第4套会诊稿 */
 var ASKAI_DEF={
-p1:'你是一位资深病案质控医生。请按顺序完成三件事：\n\n【第一步·整理格式】\n先把这份聚合病历的格式整理好：删掉多余空格、星号、乱码，重排成规范病历格式，整理到能直接复制粘贴回病历系统。\n\n【第二步·找缺陷】\n在整理好的病历里找四类缺陷：①文字描述缺陷 ②诊断缺陷 ③鉴别诊断缺陷 ④病程记录缺陷。\n\n【第三步·标记】\n你怀疑有问题的地方用 ⟦R⟧问题原文⟦/R⟧ 标红，修改意见紧跟其后用 ⟦B⟧修改意见：……⟦/B⟧ 标出。\n\n病历全文如下：\n',
-p2:'你是一位资深临床医生。请把下面这份聚合病历浓缩成一页交班摘要，分条列、用大白话，包括：\n1. 主要诊断\n2. 当前问题清单\n3. 近24小时病情变化\n4. 待办事项\n重要发现用 ⟦R⟧⟦/R⟧ 标出，建议用 ⟦B⟧⟦/B⟧ 标出。\n\n病历全文如下：\n',
-p3:'你是一位资深检验医师。下面材料的验单格式是「时间+项目内容」段落：同一天的多项检验时间相同或只差几分钟，内容紧跟在时间后面。请完成：\n1. 把散乱的检验结果按时间先后重新排列。\n2. 标出异常值和变化方向（↑↓、新出现、好转、恶化）。\n3. 提示需要关注的趋势。\n4. 最后给一段通俗解读（说人话，让医生一眼看懂重点）。\n异常和需要警惕的地方用 ⟦R⟧⟦/R⟧ 标出，建议用 ⟦B⟧⟦/B⟧ 标出。\n\n检验全文如下：\n',
-p4:'你是一位资深临床医生。请把下面这份病历整理成多学科会诊材料，语言正式、分条列、能直接复制进会诊单。固定栏目：\n一、基本情况\n二、诊断与治疗经过\n三、验单摘要\n四、当前遇到的困难\n五、提请兄弟科室指导的问题清单\n拿不准或要紧的地方用 ⟦R⟧⟦/R⟧ 标出，建议用 ⟦B⟧⟦/B⟧ 标出。\n\n病历全文如下：\n'};
-/* v0.16.0 老用户迁移：hx_gj_askai_v1已有内容（您存的自定义p1/p2/p3）一个字不覆盖，只在缺p4时补上第4套缺省；
-   一次性迁移标记hx_gj_askai_v16mig，补过就不再补（您以后自己改掉的p4不再被顶回） */
-function askaiLoad(){ try{ var p=JSON.parse(localStorage.getItem(LS_ASKAI)); if(p&&p.p1&&p.p2&&p.p3){ if(!p.p4){ p.p4=ASKAI_DEF.p4; try{ localStorage.setItem(LS_ASKAI, JSON.stringify(p)); localStorage.setItem('hx_gj_askai_v16mig','1'); }catch(e){} } return p; } }catch(e){} return {p1:ASKAI_DEF.p1,p2:ASKAI_DEF.p2,p3:ASKAI_DEF.p3,p4:ASKAI_DEF.p4}; }
-try{ askaiLoad(); }catch(e){} /* v0.16.0 开门即跑一趟：老存档缺第4套的当场补上（不点弹窗也迁移） */
+p1:'你是一位资深的临床教学老师，正在审阅一份住院病历。请按顺序完成以下五个任务：\n\n【任务一·缺陷审阅】\n先把病历原文完整显示。对每一处缺陷（病史描述不完整、逻辑矛盾、遗漏重要阴性症状、用语不规范、时间线错误等），把有问题的原文用 ⟦R⟧原文⟦/R⟧ 标出，紧随其后用 ⟦B⟧修改意见：……⟦/B⟧ 给出具体修改建议。\n\n【任务二·诊断审核】\n检查诊断是否完整。若有遗漏请补齐并说明依据；若你认为某条原诊断有问题，把原诊断用 ⟦R⟧⟦/R⟧ 标出，在后面用 ⟦B⟧⟦/B⟧ 写出你的建议诊断和理由。\n\n【任务三·验单整理】\n病历中的验单原文格式为：前面一个时间、后面跟该项检验内容；同一天的多项检验时间相同或只差几分钟几秒。请把验单按类别分组（血常规/生化/凝血/免疫/影像/其他），组内按时间先后排列，重新输出。\n\n【任务四·验单解读】\n结合病史，逐项说明验单反映了什么情况（哪些支持诊断、哪些提示新问题、哪些需要复查）。\n\n【任务五·最终输出（复制用）】\n最后输出一份可直接粘贴进病历系统的干净文字版，包含：①修改后的病历完整文字 ②重排后的验单全文。本部分不要用⟦⟧标记，缺陷与修改处用【缺陷】【建议】文字标注。\n\n病历全文如下：\n',
+p2:'你是一位资深临床医生。阅读以下病历后请回答：\n1. 目前诊断列表是否完整？列出还应考虑的鉴别诊断（按可能性排序，每条给依据）。\n2. 还缺哪些关键检查/检验？为什么？\n3. 诊疗计划中可能存在的风险点或遗漏。\n4. 需要立即处理的警示征象（如有）。\n重要发现用 ⟦R⟧⟦/R⟧ 标出，建议用 ⟦B⟧⟦/B⟧ 标出。\n\n病历全文如下：\n',
+p3:'你是一位临床带教老师。请把这份病历提炼成教学材料：\n1. 本例的核心学习要点（3-5条）\n2. 适合提问实习生的问题（附参考答案）\n3. 本例体现的诊断思路链条\n4. 相关诊疗共识要点\n重点用 ⟦R⟧⟦/R⟧ 标出。\n\n病历全文如下：\n'};
+function askaiLoad(){ try{ var p=JSON.parse(localStorage.getItem(LS_ASKAI)); if(p&&p.p1&&p.p2&&p.p3) return p; }catch(e){} return {p1:ASKAI_DEF.p1,p2:ASKAI_DEF.p2,p3:ASKAI_DEF.p3}; }
 var askaiDoc=null, askaiSet=1, askaiAi='qwen', askaiLastRaw='';
 function askaiOpen(d){
   askaiDoc=d; askaiLastRaw='';
-  $('askaiDlg').classList.remove('askai_full'); /* v0.16.0 重开恢复小窗（上次出结果撑的全屏收回来） */
   $('askaiTitle').textContent='🤖 问AI ·「'+d.pkey+'」'+(d.date||'');
   var saved=askaiLoad();
   askaiSet=1;
@@ -974,15 +949,15 @@ function askaiOpen(d){
   $('askaiDlg').style.display='block';
 }
 function askaiRenderTabs(){
-  var names=['第1套·病历质检','第2套·病情摘要/交班','第3套·检验解读','第4套·会诊稿']; /* v0.16.0 三套升四套（洪老师新规格） */
+  var names=['第1套·病历缺陷+验单整理','第2套·鉴别诊断查漏','第3套·教学要点提炼'];
   var h='';
-  for(var i=1;i<=4;i++) h+='<button class="askai_tab'+(askaiSet===i?' on':'')+'" data-set="'+i+'">'+names[i-1]+'</button>'; /* v0.16.0 循环3改4 */
+  for(var i=1;i<=3;i++) h+='<button class="askai_tab'+(askaiSet===i?' on':'')+'" data-set="'+i+'">'+names[i-1]+'</button>';
   $('askaiTabs').innerHTML=h;
   Array.prototype.forEach.call(document.querySelectorAll('#askaiTabs [data-set]'), function(el){
     el.onclick=function(){
       askaiSet=parseInt(el.getAttribute('data-set'),10);
       var saved=askaiLoad();
-      $('askaiPrompt').value=saved['p'+askaiSet]; /* v0.16.0 四套统一按键名取（原三元只到p3） */
+      $('askaiPrompt').value=(askaiSet===1?saved.p1:(askaiSet===2?saved.p2:saved.p3));
       askaiRenderTabs();
     };
   });
@@ -1000,14 +975,14 @@ function askaiRenderAis(){
 }
 $('askaiSaveP').onclick=function(){
   var p=askaiLoad();
-  p['p'+askaiSet]=$('askaiPrompt').value; /* v0.16.0 四套统一按键名存（原if链只到p3） */
+  if(askaiSet===1) p.p1=$('askaiPrompt').value; else if(askaiSet===2) p.p2=$('askaiPrompt').value; else p.p3=$('askaiPrompt').value;
   try{ localStorage.setItem(LS_ASKAI, JSON.stringify(p)); toast('✅ 第'+askaiSet+'套已存为您的默认'); }catch(e){ toast('存不下：'+e.message); }
 };
 $('askaiResetP').onclick=function(){
-  $('askaiPrompt').value=ASKAI_DEF['p'+askaiSet]; /* v0.16.0 四套统一按键名取（原三元只到p3） */
+  $('askaiPrompt').value=(askaiSet===1?ASKAI_DEF.p1:(askaiSet===2?ASKAI_DEF.p2:ASKAI_DEF.p3));
   toast('↺ 已恢复出厂第'+askaiSet+'套（没动您存的默认，要改默认请点💾）');
 };
-$('askaiClose').onclick=function(){ $('askaiDlg').classList.remove('askai_full'); /* v0.16.0 关上收回全屏，下次开小窗 */ $('askaiDlg').style.display='none'; };
+$('askaiClose').onclick=function(){ $('askaiDlg').style.display='none'; };
 /* 渲染：⟦R⟧红 ⟦B⟧醒目 【任务x…】节标题；其余原样（esc防注入） */
 function askaiRenderHtml(raw){
   var s=esc(raw);
@@ -1035,7 +1010,6 @@ $('askaiSend').onclick=function(){
     $('askaiResult').innerHTML=askaiRenderHtml(finalRaw);
     $('askaiResult').style.display='block';
     $('askaiCopyRow').style.display='';
-    $('askaiDlg').classList.add('askai_full'); /* v0.16.0 出结果撑全屏浮层 */
     prog.innerHTML=label+' · 用时'+Math.round((Date.now()-t0)/1000)+'秒';
     $('askaiSend').disabled=false;
   }
@@ -1249,20 +1223,15 @@ function showPatientDetail(g){
   var html='';
   g.recs.forEach(function(r){
     if(r.type==='doc'){ /* v0.6.0 病历记录：看全文+AI找错复制 */
-      html+='<div class="rec"><span class="badge badge-doc">'+(r.kind==='report'?(String(r.fname||'').indexOf('会诊PPT_')>=0?'📋 会诊PPT':'📊 导出报告'):'病历')+'</span>'+ /* v0.14.1：导出报告挂名下单独标 */ /* v0.17.0：名册里文件名带「会诊PPT_」的报告条目改标「📋 会诊PPT」徽标，别的报告照旧 */
+      html+='<div class="rec"><span class="badge badge-doc">'+(r.kind==='report'?'📊 导出报告':'病历')+'</span>'+ /* v0.14.1：导出报告挂名下单独标 */
         '<span class="rec-time">'+esc(r.time)+'</span>'+
         '<div style="margin-top:3px;white-space:pre-wrap;">'+esc((r.text||'').slice(0,150))+(r.text&&r.text.length>150?'…':'')+'</div>'+
         '<div style="margin-top:4px;">'+
           /* v0.13.0 毛病22：看全文按钮不再只给kind=txt——pdf档也给（点的时候自动找同pkey的txt正文兜底，见下面data-docview绑定） */
           '<button class="ghost" style="font-size:12px;padding:4px 10px;" data-docview="'+r.did+'">📄 看全文</button> '+
-          /* v0.17.0：会诊PPT条目多给一个「🖥 放映」按钮——新开一页直接放幻灯片（看全文看到的是网页代码，放映才是片子） */
-          (r.kind==='report'&&String(r.fname||'').indexOf('会诊PPT_')>=0?
-          '<button class="ghost" style="font-size:12px;padding:4px 10px;" data-pptplay="'+r.did+'">🖥 放映</button> ':'')+
           (r.kind==='txt'?
           '<button class="ghost" style="font-size:12px;padding:4px 10px;" data-docai="'+r.did+'">🤖 AI找错（复制全文）</button> '+
-          '<button class="ghost" style="font-size:12px;padding:4px 10px;" data-docask="'+r.did+'">🤖 问AI（v0.11.0）</button> '+
-          /* v0.17.0（洪老师拍板）：「🤖问AI」旁加「📋 会诊PPT」——点它出多学科会诊HTML幻灯片（会诊稿+验单趋势图） */
-          '<button class="ghost" style="font-size:12px;padding:4px 10px;" data-hzppt="'+r.did+'">📋 会诊PPT</button>'
+          '<button class="ghost" style="font-size:12px;padding:4px 10px;" data-docask="'+r.did+'">🤖 问AI（v0.11.0）</button>'
           :'<span style="font-size:12px;color:#8a8178;">pdf读不了字（原件已删），同名txt才是正文</span>')+'</div></div>';
     }else{
       html+='<div class="rec"><span class="badge '+(r.type==='bg'?'badge-bg':'badge-vent')+'">'+(r.type==='bg'?'血气':'呼吸机')+'</span>'+
@@ -1339,23 +1308,6 @@ function showPatientDetail(g){
   /* v0.11.0 问AI按钮绑定（壳内直发，不再复制来复制去） */
   Array.prototype.forEach.call(document.querySelectorAll('[data-docask]'), function(el){
     el.onclick=function(){ var d=docById(el.getAttribute('data-docask')); if(!d||!d.text){ toast('这份病历没有文字内容'); return; } askaiOpen(d); };
-  });
-  /* v0.17.0 会诊PPT按钮绑定：聚合该病人全部病历全文→AI会诊稿+本地验单趋势图→出HTML幻灯片（详见hzPptOpen） */
-  Array.prototype.forEach.call(document.querySelectorAll('[data-hzppt]'), function(el){
-    el.onclick=function(){ var d=docById(el.getAttribute('data-hzppt')); if(!d||!d.text){ toast('这份病历没有文字内容'); return; } hzPptOpen(d); };
-  });
-  /* v0.17.0 会诊PPT「🖥 放映」按钮绑定：名册里的片子条目新开一页直接放（浏览器blob，不用壳） */
-  Array.prototype.forEach.call(document.querySelectorAll('[data-pptplay]'), function(el){
-    el.onclick=function(){
-      var d=docById(el.getAttribute('data-pptplay'));
-      if(!d||!d.text){ toast('这部片子的内容没了'); return; }
-      try{
-        var blob=new Blob([d.text],{type:'text/html;charset=utf-8'});
-        var url=URL.createObjectURL(blob);
-        window.open(url,'_blank');
-        setTimeout(function(){ URL.revokeObjectURL(url); },60000);
-      }catch(e){ toast('放映失败：'+e.message); }
-    };
   });
   $('ptDetailCard').scrollIntoView({block:'start'});
 }
@@ -1444,11 +1396,6 @@ function parseDocFname(fname, ft){
   if(isNaN(d.getTime())||d.getMonth()+1>12||d.getDate()>31) return {ok:false, why:'日期看不懂'};
   var b=splitBed(core);
   if(!b.bed) return {ok:false, why:'开头没有床号'};
-  /* v0.15.0 毛病33a 收紧床号样式（洪老师真机报）：「2025ESICM临床实践指南…」这类文献名补日期重试后，
-     开头的年份"2025"被splitBed当成床号混进名册。床位样式只认1~3位数字且数值1~999
-     （中文数字"十七"折成阿拉伯后同样过这道关），"2025"这种一律不ok进「拿不准」；
-     现有合法格式「15廖…」「十六黄…」「3床张三…」（1~3位）不受影响 */
-  if(b.bed.length>3||+b.bed<1||+b.bed>999) return {ok:false, why:'开头这串数字不像床号（床号最多3位数）'};
   if(b.rest.length<2) return {ok:false, why:'姓或诊断太短'};
   return {ok:true, pkey:core, bed:b.bed, sur:b.rest.charAt(0), diag:b.rest.slice(1), date:d,
           dateStr:d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()};
@@ -1469,51 +1416,11 @@ function unsureRenderLine(){
   if(!u.length){ el.style.display='none'; return; }
   el.style.display='block';
   el.textContent='❓拿不准'+u.length+'份（点我看）——文件名得按「床号+姓+诊断+日期」才收，原件还在文件夹里没动';
-  /* v0.15.0 毛病33b：点开不再alert，改浮层列表（每条可✕删掉，原件不动） */
-  el.onclick=function(){ unsureOpenDlg(); };
-}
-/* v0.15.0 毛病33b「不要了」名单（localStorage hx_gj_unsure_no_v1，[文件名]）：
-   洪老师点✕删掉的拿不准文件记在这里，收件扫描整份跳过——不再进拿不准清单，
-   也不会被v0.14.0毛病28的seen补刀误删原件 */
-function unsureNoLoad(){ try{ var a=JSON.parse(localStorage.getItem('hx_gj_unsure_no_v1')); return Array.isArray(a)?a:[]; }catch(e){ return []; } }
-function unsureNoSave(a){ try{ localStorage.setItem('hx_gj_unsure_no_v1', JSON.stringify(a)); }catch(e){} }
-function unsureNoHas(fname){ var a=unsureNoLoad(); return a.indexOf(fname)>=0; }
-/* v0.15.0 毛病33b：拿不准浮层——每条一行：文件名+原因小字+行尾红✕；右上角「关上」。样式用现成卡片风（白底圆角，与docSkipBar同套） */
-function unsureOpenDlg(){
-  var old=document.getElementById('unsureDlg'); if(old) old.remove();
-  var u=unsureLoad();
-  var ov=document.createElement('div');
-  ov.id='unsureDlg';
-  ov.style.cssText='position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(0,0,0,.4);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;';
-  var box=document.createElement('div');
-  box.style.cssText='background:#fffdf8;color:#6b6257;border:1px solid #e8dcc8;border-radius:12px;padding:14px;max-width:94%;width:520px;max-height:80vh;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.2);font-size:14px;';
-  function renderRows(){
-    var h='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">'+
-      '<b style="font-size:15px;">❓拿不准的文件（'+u.length+'份）</b>'+
-      '<button class="ghost" id="unsureDlgClose" style="font-size:13px;padding:4px 10px;">✕ 关上</button></div>'+
-      '<div style="font-size:12px;color:#8a8178;margin-bottom:8px;">这些文件名不是「床号+姓+诊断+日期」格式，我没收进名册，原件还在文件夹里没动。要收：把文件名改成「3床王高血压0908.txt」这种再放回文件夹；这份不是病历：点行尾红✕，我以后不再提它（原件不动）。</div>';
-    if(!u.length){ h+='<div style="font-size:13px;color:#8a8178;">清单空了，没有拿不准的文件</div>'; }
-    u.forEach(function(x,i){
-      h+='<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-top:1px dashed #eee5d8;">'+
-        '<div style="flex:1;min-width:0;word-break:break-all;">'+esc(x.f)+
-        '<div style="font-size:12px;color:#a89f93;">（'+esc(x.w)+'）</div></div>'+
-        '<button class="ghost" data-unsuredel="'+i+'" style="color:#c0392b;font-weight:700;font-size:15px;padding:4px 10px;flex:none;">✕</button></div>';
-    });
-    box.innerHTML=h;
-    box.querySelector('#unsureDlgClose').onclick=function(){ ov.remove(); }; /* v0.15.0：用box.querySelector不用$——此刻box还没挂进document，$会取不到（自测抓到） */
-    Array.prototype.forEach.call(box.querySelectorAll('[data-unsuredel]'), function(btn){
-      btn.onclick=function(){
-        var i=+btn.getAttribute('data-unsuredel'), it=u[i]; if(!it) return;
-        u.splice(i,1); unsureSave(u); /* 从清单删掉 */
-        var no=unsureNoLoad(); if(no.indexOf(it.f)<0){ no.push(it.f); if(no.length>200) no=no.slice(-200); unsureNoSave(no); } /* 记进「不要了」名单，扫描跳过 */
-        toast('已记下：「'+it.f.slice(0,24)+'」不是病历，以后不再提（文件夹里原件还在）');
-        renderRows(); unsureRenderLine(); if(!u.length) ov.remove();
-      };
-    });
-  }
-  renderRows();
-  ov.appendChild(box);
-  document.body.appendChild(ov);
+  el.onclick=function(){
+    alert('❓拿不准的文件（共'+u.length+'份）\n这些文件名不是「床号+姓+诊断+日期」格式，我没收进名册，原件还在文件夹里：\n\n'+
+      u.map(function(x){ return '· '+x.f+'\n  （'+x.w+'）'; }).join('\n')+
+      '\n\n要收的话：把文件名改成「床号+姓+诊断+日期」（如 3床王高血压0908.txt）再放回文件夹；不要的话去文件夹里删掉即可。');
+  };
 }
 try{ unsureRenderLine(); }catch(e){}
 /* 收件扫描：manual=手动按钮（无收获也吭声）；自动闲时=有收获才吭声 */
@@ -1531,7 +1438,6 @@ function docInboxScan(manual){
     if(f.name.indexOf('hxdata_')===0) return;
     if(f.name.indexOf('原文库_')===0) return; /* v0.10.0 原文保险柜自己的文件，不当病历收（必改处报备） */
     if(f.name.indexOf('脱敏导出_')===0) return; /* v0.10.0 导出备份档，防重复收（必改处报备） */
-    if(unsureNoHas(f.name)) return; /* v0.15.0 毛病33b：「不要了」名单里的文件整份跳过——不进拿不准、不走seen补刀、原件不动 */
     if(seenHas(f)){
       /* v0.14.0 毛病28补刀：seen里躺着的文件还出现在文件夹里，说明旧版误判已删（回读.name坑）从没真删成——补删一次；
          删掉/删不掉都吭一声，删不掉进红字清单下次再试 */
@@ -3704,24 +3610,13 @@ function dsm_renderFileList(patient) {
     }
     var _cores={};
     _fl.forEach(function(f){ var c=_coreName(f.name); _cores[c]=(_cores[c]||0)+1; });
-    /* v0.15.0 毛病31（洪老师真机报）：原来这行✅只是"读取成功"的状态图标，点不掉，导出永远全量带上旧文件。
-       修：✅改成可点的勾选开关（默认全选，保持原习惯），取消勾选变灰⬜，三个导出构造函数只导勾选的；
-       勾选状态记在该病人数据的 unsel 名单里（只记取消的） */
-    function _isSel(f){ return !(data.unsel && data.unsel[f.name]); }
-    html += '<div style="font-size:12px;color:#8a8178;padding:2px 4px 6px;">点前面的 ✅ 可以不要这份（变灰⬜就不导出）；<span style="color:#1a73e8;cursor:pointer;text-decoration:underline;" onclick="dsm_selAll(true)">全选</span> / <span style="color:#1a73e8;cursor:pointer;text-decoration:underline;" onclick="dsm_selAll(false)">全不选</span></div>'; /* v0.15.0 毛病31：全选/全不选 */
     _fl.forEach(function(f) {
         var sizeStr = f.size > 1024 ? (f.size/1024).toFixed(1) + 'KB' : f.size + 'B';
         if (f.size > 1024*1024) sizeStr = (f.size/(1024*1024)).toFixed(1) + 'MB';
         var icon = iconMap[f.type] || '📎';
         var isError = f.originalText && f.originalText.indexOf('[PDF') === 0;
         var status = isError ? 'dsm_err' : 'dsm_ok';
-        /* v0.15.0 毛病31：状态图标换勾选开关——勾选✅绿/取消⬜灰；⚠️读坏的不给勾选（本来也导不出） */
-        var statusIcon;
-        if (isError) { statusIcon = '⚠️'; }
-        else {
-            status = _isSel(f) ? 'dsm_ok' : '';
-            statusIcon = '<span style="cursor:pointer;' + (_isSel(f) ? '' : 'opacity:.45;filter:grayscale(1);') + '" title="点我勾选/取消（取消的不导出）" onclick="event.stopPropagation();dsm_toggleFileSel(\'' + f.name.replace(/'/g,"\\'") + '\')">' + (_isSel(f) ? '✅' : '⬜') + '</span>';
-        }
+        var statusIcon = isError ? '⚠️' : '✅';
         var _hasDateTail=/(\d{8}|\d{4})\.[a-z]+$/i.test(f.name);
         var _isCopy=(_hasDateTail && _cores[_coreName(f.name)]>1);
         var _tag=_isCopy
@@ -3734,54 +3629,6 @@ function dsm_renderFileList(patient) {
             '</span><span class="dsm_ftype">' + f.type + '</span><span class="dsm_fsize">' + sizeStr + '</span></div>';
     });
     container.innerHTML = html;
-}
-
-/* v0.15.0 毛病31：勾选状态存该病人数据的 unsel 名单（{文件名:true}=取消勾选），默认全选；各病人各记各的 */
-function dsm_toggleFileSel(fname) {
-    var patient = dsm_APP.currentPatient;
-    var data = patient && dsm_APP.patients[patient];
-    if (!data) return;
-    if (!data.unsel) data.unsel = {};
-    if (data.unsel[fname]) delete data.unsel[fname]; else data.unsel[fname] = true;
-    dsm_renderFileList(patient);
-}
-function dsm_selAll(on) {
-    var patient = dsm_APP.currentPatient;
-    var data = patient && dsm_APP.patients[patient];
-    if (!data) return;
-    data.unsel = {};
-    if (!on) { data.files.forEach(function(f){ data.unsel[f.name] = true; }); }
-    dsm_renderFileList(patient);
-    dsm_showToast(on ? '已全选' : '已全不选（导出前记得勾回要的）', 'info');
-}
-/* v0.15.0 毛病31：构造报告前过滤——只留当前勾选的（不在unsel名单里的） */
-function dsm_selFiles(data, files) {
-    return files.filter(function(f){ return !(data.unsel && data.unsel[f.name]); });
-}
-
-/* v0.16.0 脱敏间「🤖 AI分析」：取当前勾选（复用dsm_selFiles过滤）的脱敏后文本拼起来，
-   弹与病历详情同款四套提示词弹窗（复用askaiOpen/aiChat/⟦R⟧⟦B⟧渲染/复制干净版，不另造轮子）；
-   铁规矩：只送脱敏后文本，原文绝不出去 */
-function dsm_askAI() {
-    var patient = dsm_APP.currentPatient;
-    if (!patient) { dsm_showToast('请先选择病人', 'error'); return; }
-    var data = dsm_APP.patients[patient];
-    if (!data || data.files.length === 0) { dsm_showToast('该病人暂无数据', 'error'); return; }
-    var textFiles = data.files.filter(function(f) { return f.type === '文本' || f.type === 'Markdown' || f.type === '文档' || f.type === 'PDF文档'; });
-    textFiles = dsm_selFiles(data, textFiles); /* 只送当前勾选的，灰⬜取消勾选的不送 */
-    var parts = [];
-    textFiles.forEach(function(f) {
-        var c = data.content[f.name];
-        var text = c ? c.text : '';
-        if (!text || text.indexOf('[PDF') === 0) return;
-        var dbg = dsm_desensitizeWithDebug(text); /* 再过一遍脱敏引擎，确保送出去的是脱敏后文本 */
-        parts.push('【' + f.name + '】\n' + dsm_formatText(dbg.result));
-    });
-    if (!parts.length) { dsm_showToast('勾选里没有能分析的文本文件', 'warn'); return; }
-    var joined = parts.join('\n\n');
-    if (joined.length > 300000) joined = joined.slice(0, 300000) + '\n…（太长已截断）';
-    dsm_showToast('🤖 只把勾选且脱敏后的文本发给AI，原文不出这台机器', 'success');
-    askaiOpen({ pkey: '脱敏间·' + patient + '（已脱敏）', date: '', text: joined });
 }
 
 // ============================================================
@@ -4094,7 +3941,6 @@ function dsm_previewData() {
     })();
 
     var textFiles = data.files.filter(function(f) { return f.type === '文本' || f.type === 'Markdown' || f.type === '文档' || f.type === 'PDF文档'; });
-    textFiles = dsm_selFiles(data, textFiles); /* v0.15.0 毛病31：只取当前勾选的文件，取消勾选（灰⬜）的不进预览/导出 */
     /* v0.14.0 毛病27：导出同款去重——同一内容（PDF与其文本副本/补日期副本）只导一次 */
     (function(){
         var seen = {}, out = [], dups = [];
@@ -4237,17 +4083,6 @@ function dsm_exportReport() {
             var ext = format === 'md' ? 'md' : (format === 'txt' ? 'txt' : 'html');
             fileName = patient + '.' + ext;
         }
-        /* v0.15.0 毛病32（洪老师真机报）：导出文件名统一带生成时间戳「_月日_时分」（如 16黄热射病_0910_0852.html）——
-           原来固定「病人名.html」，同名导致名册去重把新导出当旧件丢掉（点七八次只进来几份）。
-           时间戳只在这一刻生成一次，浏览器下载、壳文件夹「脱敏导出_」、名册report条目三处共用这同一个fileName；
-           txt/md/html同待遇。名字里若带旧时间戳（_月月日日_时时分分）先剥掉再盖新的，不会越叠越长 */
-        var _stamp=(function(){ var _n=new Date(); function _p(x){ return (x<10?'0':'')+x; } return '_'+_p(_n.getMonth()+1)+_p(_n.getDate())+'_'+_p(_n.getHours())+_p(_n.getMinutes()); })();
-        var _dot=fileName.lastIndexOf('.');
-        var _stem=_dot>0?fileName.slice(0,_dot):fileName;
-        var _ext=_dot>0?fileName.slice(_dot):'';
-        _stem=_stem.replace(/_\d{4}_\d{4}$/,''); /* 剥旧时间戳 */
-        fileName=_stem+_stamp+_ext;
-        document.getElementById('dsm_exportFileName').value=fileName; /* 输入框同步显示真名，免得看着一个名存出另一个名 */
         var content = '';
         var mimeType = 'text/html;charset=utf-8';
         if (format === 'txt') {
@@ -4343,7 +4178,6 @@ function dsm_buildReportHtml(patient, data) {
     var content = data.content;
     var body = '';
     var textFiles = data.files.filter(function(f) { return f.type === '文本' || f.type === 'Markdown' || f.type === '文档' || f.type === 'PDF文档'; });
-    textFiles = dsm_selFiles(data, textFiles); /* v0.15.0 毛病31：只取当前勾选的文件，取消勾选（灰⬜）的不进预览/导出 */
     /* v0.14.0 毛病27：导出同款去重——同一内容（PDF与其文本副本/补日期副本）只导一次 */
     (function(){
         var seen = {}, out = [], dups = [];
@@ -4400,7 +4234,6 @@ function dsm_buildReportTxt(patient, data) {
     lines.push('');
 
     var textFiles = data.files.filter(function(f) { return f.type === '文本' || f.type === 'Markdown' || f.type === '文档' || f.type === 'PDF文档'; });
-    textFiles = dsm_selFiles(data, textFiles); /* v0.15.0 毛病31：只取当前勾选的文件，取消勾选（灰⬜）的不进预览/导出 */
     /* v0.14.0 毛病27：导出同款去重——同一内容（PDF与其文本副本/补日期副本）只导一次 */
     (function(){
         var seen = {}, out = [], dups = [];
@@ -4466,7 +4299,6 @@ function dsm_buildReportMd(patient, data) {
     lines.push('');
 
     var textFiles = data.files.filter(function(f) { return f.type === '文本' || f.type === 'Markdown' || f.type === '文档' || f.type === 'PDF文档'; });
-    textFiles = dsm_selFiles(data, textFiles); /* v0.15.0 毛病31：只取当前勾选的文件，取消勾选（灰⬜）的不进预览/导出 */
     /* v0.14.0 毛病27：导出同款去重——同一内容（PDF与其文本副本/补日期副本）只导一次 */
     (function(){
         var seen = {}, out = [], dups = [];
@@ -5304,353 +5136,11 @@ try{ dsmh_restore(); }catch(e){}
 try{ dsmraw_tick(); }catch(e){}
 try{ dsmraw_bar(); }catch(e){}
 
-/* ══════════════ v0.17.0 HTML会诊PPT（洪老师拍板：多学科会诊用，做HTML格式不做pptx；本区块全部新增，旧代码一行未动） ══════════════
-   流程：详情页「📋 会诊PPT」→ ①聚合该病人病历全文走aiChat发第4套「会诊稿」提示词出五栏目
-        ②本地宽松解析验单「日期时间+项目名+数值+单位」四件套，挑≥2个时间点的指标纯SVG画趋势图（不花钱不调库）
-        ③拼一页一屏的HTML幻灯片（点按/滑动/键盘翻页，页脚页码，白底深灰大字+标题暖色细线）
-        ④三处产出：壳文件夹「脱敏导出_」前缀（dsm_shellWriteVerified回读对账防截断，同v0.12.0 D1）
-          + 名册hx_pdocs_v1加kind=report（「📋 会诊PPT」徽标，同v0.14.1链路）+ 浏览器blob下载；
-        ⑤AI没回话/没网络：趋势图是本地的照常画，会诊稿五栏目留「（AI没回话，请手填）」占位，照样出片不整锅端掉。 */
-
-/* v0.17.0 聚合该病人全部病历全文（复用pdocsLoad名册取全文逻辑，同pkey的有正文的都拼上，内容去重；会诊PPT/导出报告条目不拼进去免得AI读到自己上一稿） */
-function hzGatherText(d){
-  var parts=[], seen={};
-  try{
-    var pd=pdocsLoad();
-    pd.docs.forEach(function(x){
-      if(x.pkey===d.pkey && x.text && x.kind!=='report'){
-        var fp=x.text.length+'|'+x.text.slice(0,80);
-        if(seen[fp]) return; seen[fp]=1;
-        parts.push('【'+x.fname+'】\n'+x.text);
-      }
-    });
-  }catch(e){}
-  if(!parts.length && d.text) parts.push(d.text);
-  var t=parts.join('\n\n');
-  if(t.length>300000) t=t.slice(0,300000)+'\n…（太长已截断）';
-  return t;
-}
-
-/* v0.17.0 宽松验单解析器：验单格式档案——「前面一个时间，后面跟该项检验内容」，同一天多项检验时间相同或差几分钟，
-   形如「2026/9/7 13:59:30 神经元特异性烯醇化酶测定(NSE)-化学发光法：神经元特异性烯醇化酶(NSE)：43.63 (ng/mL) ↑」。
-   抓「日期时间+项目名+数值+单位」四件套；一行里可能有多个冒号（方法学在前、真值在后），项目名取冒号前短名=最靠后那组「名：数值」的名字 */
-function hzLabParse(text){
-  var out={}; /* 项目名 -> {unit:'', pts:[{ts,d,v,flag}]} */
-  var dtRe=/((?:19|20)\d{2})[\/\-.](\d{1,2})[\/\-.](\d{1,2})[日号]?\s+(\d{1,2})[:：](\d{2})(?:[:：](\d{2}))?/;
-  var kvRe=/([A-Za-z0-9一-龥（）()\-\/%#*·.]{2,30}?)[：:]\s*([<>]?\s*\d+(?:\.\d+)?)\s*(?:[（(]\s*([^（）()\s]{1,12})\s*[）)])?\s*([↑↓]{0,2})/g;
-  String(text||'').split(/\r?\n/).forEach(function(line){
-    var m=line.match(dtRe); if(!m) return;
-    var ts=new Date(+m[1], +m[2]-1, +m[3], +m[4], +m[5], +(m[6]||0)).getTime();
-    var dLabel=(+m[2])+'月'+(+m[3])+'日';
-    var rest=line.slice(line.indexOf(m[0])+m[0].length);
-    kvRe.lastIndex=0;
-    var hit=null, mm;
-    while((mm=kvRe.exec(rest))){ hit=mm; } /* 取最后一个「名：数值」：方法学长名在前，冒号前短名（真值那组）在后 */
-    if(!hit) return;
-    var name=String(hit[1]).replace(/^[\s　]+|[\s　]+$/g,'');
-    if(!name || /时间|日期|标本|送检|报告|接收|审核|科室|床号|姓名|性别|年龄|备注|诊断|仪器|方法/.test(name)) return; /* 杂项栏不是检验值，扔掉 */
-    var v=parseFloat(String(hit[2]).replace(/[<>\s]/g,''));
-    if(!isFinite(v)) return;
-    var unit=hit[3]||'', flag=hit[4]||'';
-    if(!out[name]) out[name]={unit:unit, pts:[]};
-    if(unit && !out[name].unit) out[name].unit=unit;
-    out[name].pts.push({ts:ts, d:dLabel, v:v, flag:flag});
-  });
-  return out;
-}
-
-/* v0.17.0 常见指标优先名单（洪老师点名的几个，名字模糊匹配——各医院写法不一样，小写后包含即算） */
-var HZ_LAB_COMMON=[
-  ['PCT（降钙素原）', ['pct','降钙素原']],
-  ['IL-6（白介素6）', ['il-6','il6','白介素-6','白介素6','白细胞介素-6','白细胞介素6']],
-  ['乳酸', ['乳酸']],
-  ['肌酐', ['肌酐']],
-  ['白细胞', ['白细胞','wbc']],
-  ['CRP（C反应蛋白）', ['crp','c反应蛋白','c-反应蛋白','c反应']],
-  ['体温', ['体温']]
-];
-/* v0.17.0 挑做趋势图的指标：有≥2个不同时间点数值才配画线；常见名单里的排前，其余按点数排，最多6个 */
-function hzPickCharts(labs){
-  function seriesOf(name){
-    var pts=(labs[name].pts||[]).slice().sort(function(a,b){ return a.ts-b.ts; });
-    var seenTs={}, ded=[];
-    pts.forEach(function(p){ seenTs[p.ts]=p; });
-    for(var k in seenTs) ded.push(seenTs[k]); /* 同一时间点留最后一笔 */
-    ded.sort(function(a,b){ return a.ts-b.ts; });
-    return ded;
-  }
-  function okCnt(pts){ return pts.length>=2; }
-  var picked=[], used={}, i, j;
-  for(i=0;i<HZ_LAB_COMMON.length;i++){
-    if(picked.length>=6) break;
-    var disp=HZ_LAB_COMMON[i][0], kws=HZ_LAB_COMMON[i][1];
-    for(var nm in labs){
-      if(used[nm]) continue;
-      var low=nm.toLowerCase(), hit=false;
-      for(j=0;j<kws.length;j++){ if(low.indexOf(kws[j])>=0){ hit=true; break; } }
-      if(!hit) continue;
-      var pts=seriesOf(nm);
-      if(!okCnt(pts)) continue;
-      used[nm]=1;
-      picked.push({name:disp+' '+nm, unit:labs[nm].unit, pts:pts});
-      break; /* 同一常见指标只挑第一个对上的项目名，不重复画 */
-    }
-  }
-  if(picked.length<6){
-    var rest=[];
-    for(var nm2 in labs){ if(!used[nm2]){ var p2=seriesOf(nm2); if(okCnt(p2)) rest.push({name:nm2, unit:labs[nm2].unit, pts:p2}); } }
-    rest.sort(function(a,b){ return b.pts.length-a.pts.length; });
-    for(i=0;i<rest.length && picked.length<6;i++) picked.push(rest[i]);
-  }
-  return picked;
-}
-
-/* v0.17.0 纯SVG小折线图（不花钱不调库）：纵轴数值横轴日期，最新值标红点+数字；暖色低饱和，白底 */
-function hzSvgChart(name, unit, pts){
-  var W=520, H=260, pl=52, pr=20, pt=14, pb=36;
-  var iw=W-pl-pr, ih=H-pt-pb;
-  var vs=pts.map(function(p){ return p.v; });
-  var vmin=Math.min.apply(null,vs), vmax=Math.max.apply(null,vs);
-  if(vmin===vmax){ vmin-=1; vmax+=1; }
-  var pad=(vmax-vmin)*0.15; vmin-=pad; vmax+=pad;
-  function X(i){ return pl + (pts.length===1 ? iw/2 : iw*i/(pts.length-1)); }
-  function Y(v){ return pt + ih*(1-(v-vmin)/(vmax-vmin)); }
-  var poly=[], i;
-  for(i=0;i<pts.length;i++) poly.push(X(i).toFixed(1)+','+Y(pts[i].v).toFixed(1));
-  var s='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;max-width:520px;height:auto;background:#fff;border:1px solid #e8e0d5;border-radius:8px;" role="img">';
-  s+='<line x1="'+pl+'" y1="'+pt+'" x2="'+pl+'" y2="'+(pt+ih)+'" stroke="#d8cfc4" stroke-width="1"/>';
-  s+='<line x1="'+pl+'" y1="'+(pt+ih)+'" x2="'+(pl+iw)+'" y2="'+(pt+ih)+'" stroke="#d8cfc4" stroke-width="1"/>';
-  s+='<text x="'+(pl-6)+'" y="'+(pt+10)+'" text-anchor="end" font-size="11" fill="#8a8178">'+vmax.toFixed(1)+'</text>';
-  s+='<text x="'+(pl-6)+'" y="'+(pt+ih)+'" text-anchor="end" font-size="11" fill="#8a8178">'+vmin.toFixed(1)+'</text>';
-  s+='<text x="'+pl+'" y="'+(pt-3)+'" font-size="13" fill="#6b5a44" font-weight="bold">'+esc(name)+(unit?('（'+esc(unit)+'）'):'')+'</text>';
-  for(i=0;i<pts.length;i++){
-    s+='<text x="'+X(i).toFixed(1)+'" y="'+(pt+ih+16)+'" text-anchor="middle" font-size="11" fill="#8a8178">'+esc(pts[i].d)+'</text>';
-  }
-  s+='<polyline points="'+poly.join(' ')+'" fill="none" stroke="#b5673f" stroke-width="2.5" stroke-linejoin="round"/>';
-  for(i=0;i<pts.length;i++){
-    var last=(i===pts.length-1);
-    s+='<circle cx="'+X(i).toFixed(1)+'" cy="'+Y(pts[i].v).toFixed(1)+'" r="'+(last?6:3.5)+'" fill="'+(last?'#c0392b':'#b5673f')+'"/>';
-    if(last){ /* 最新值标红点+数字 */
-      s+='<text x="'+X(i).toFixed(1)+'" y="'+(Y(pts[i].v)-12).toFixed(1)+'" text-anchor="middle" font-size="15" font-weight="bold" fill="#c0392b">'+pts[i].v+(pts[i].flag||'')+'</text>';
-    }
-  }
-  s+='</svg>';
-  return s;
-}
-
-/* v0.17.0 从AI会诊稿里拆五栏目（栏目名宽松认：带不带序号、【】都能找）；找不到的栏目留空，外面统一填占位 */
-function hzParseSections(raw){
-  var s=askaiStripMarks(raw);
-  var defs=[
-    ['basic', ['基本情况','一般情况']],
-    ['course', ['诊断与治疗经过','诊断和治疗经过','治疗经过','诊疗经过']],
-    ['lab',    ['验单摘要','检验摘要','化验摘要','辅助检查摘要']],
-    ['diff',   ['当前遇到的困难','当前困难','目前困难','存在的困难','遇到的困难']],
-    ['ask',    ['提请兄弟科室指导的问题','提请兄弟科室','提请指导','指导的问题','请兄弟科室']]
-  ];
-  var marks=[], i, j;
-  for(i=0;i<defs.length;i++){
-    var pos=-1;
-    for(j=0;j<defs[i][1].length;j++){ var p=s.indexOf(defs[i][1][j]); if(p>=0 && (pos<0||p<pos)) pos=p; }
-    if(pos>=0) marks.push({key:defs[i][0], pos:pos});
-  }
-  marks.sort(function(a,b){ return a.pos-b.pos; });
-  var sec={basic:'',course:'',lab:'',diff:'',ask:''};
-  for(i=0;i<marks.length;i++){
-    var from=marks[i].pos;
-    var nl=s.indexOf('\n', from); /* 栏目标题那一行跳过，取下面的正文 */
-    var start=(nl>=0? nl+1 : from);
-    var end=(i+1<marks.length? marks[i+1].pos : s.length);
-    sec[marks[i].key]=s.slice(start,end).replace(/^\s+|\s+$/g,'');
-  }
-  return sec;
-}
-
-/* v0.17.0 拼HTML幻灯片：一页一屏（100vh），点右半屏/按→/空格往后翻，左半屏/←往前，手机左右滑动也行；页脚「3/8」；
-   白底深灰大字、标题下一条暖色细线；封面→基本情况→诊断与治疗经过→验单趋势图（一页两图）→验单摘要→当前困难→提请指导问题→结尾 */
-function hzPptHtml(patient, sec, charts, aiFail){
-  function bodyDiv(t){ return '<div class="hzBody">'+esc(t||'（AI没回话，请手填）')+'</div>'; }
-  var pages=[];
-  pages.push('<section class="hzSl hzCover"><div class="hzKicker">多学科会诊</div><h1>'+esc(patient)+'</h1><div class="hzCoverSub">会诊日期：'+esc(new Date().getFullYear()+'年'+(new Date().getMonth()+1)+'月'+new Date().getDate()+'日')+'</div><div class="hzCoverSub" style="font-size:18px;color:#a89c8d;">病人大管家 v'+SW_VERSION+' 自动整理'+(aiFail?'（AI没回话，栏目留了空请手填）':'')+'</div></section>');
-  pages.push('<section class="hzSl"><h2>一、基本情况</h2>'+bodyDiv(sec.basic)+'</section>');
-  pages.push('<section class="hzSl"><h2>二、诊断与治疗经过</h2>'+bodyDiv(sec.course)+'</section>');
-  /* 验单趋势图：一页摆两张，摆得下看得清 */
-  for(var i=0;i<charts.length;i+=2){
-    var ch='<div class="hzCharts">'+hzSvgChart(charts[i].name, charts[i].unit, charts[i].pts);
-    if(i+1<charts.length) ch+=hzSvgChart(charts[i+1].name, charts[i+1].unit, charts[i+1].pts);
-    ch+='</div>';
-    pages.push('<section class="hzSl"><h2>三、验单趋势'+(charts.length>2?('（'+(i/2+1)+'/'+Math.ceil(charts.length/2)+'）'):'')+'</h2>'+ch+'</section>');
-  }
-  pages.push('<section class="hzSl"><h2>四、验单摘要</h2>'+bodyDiv(sec.lab)+'</section>');
-  pages.push('<section class="hzSl"><h2>五、当前遇到的困难</h2>'+bodyDiv(sec.diff)+'</section>');
-  pages.push('<section class="hzSl"><h2>六、提请兄弟科室指导的问题</h2>'+bodyDiv(sec.ask)+'</section>');
-  pages.push('<section class="hzSl hzCover"><div class="hzKicker">谢谢聆听</div><h1>请批评指正</h1></section>');
-  var total=pages.length;
-  var html='<!DOCTYPE html>\n<html lang="zh-CN">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n<title>会诊PPT '+esc(patient)+'</title>\n<style>\n'+
-    'html,body{margin:0;padding:0;background:#fff;color:#3a3632;font-family:"PingFang SC","Microsoft YaHei",sans-serif;}\n'+
-    '.hzSl{display:none;min-height:100vh;box-sizing:border-box;padding:7vh 8vw 80px;flex-direction:column;justify-content:center;}\n'+
-    '.hzSl.on{display:flex;}\n'+
-    '.hzSl h2{font-size:34px;margin:0 0 8px;color:#3a3632;}\n'+
-    '.hzSl h2:after{content:"";display:block;width:72px;height:4px;background:#b5673f;border-radius:2px;margin-top:10px;}\n'+
-    '.hzBody{font-size:26px;line-height:1.8;white-space:pre-wrap;margin-top:18px;}\n'+
-    '.hzCover{align-items:center;text-align:center;}\n'+
-    '.hzKicker{font-size:24px;color:#b5673f;letter-spacing:8px;margin-bottom:14px;}\n'+
-    '.hzCover h1{font-size:52px;margin:0 0 16px;color:#3a3632;}\n'+
-    '.hzCoverSub{font-size:24px;color:#6b5a44;margin-top:6px;}\n'+
-    '.hzCharts{display:flex;flex-wrap:wrap;gap:26px;justify-content:center;margin-top:22px;}\n'+
-    '.hzCharts svg{flex:1 1 320px;}\n'+
-    '.hzFoot{position:fixed;right:18px;bottom:12px;font-size:16px;color:#a89c8d;}\n'+
-    '.hzHint{position:fixed;left:18px;bottom:12px;font-size:14px;color:#c9beb0;}\n'+
-    '@media (max-width:700px){.hzBody{font-size:20px;}.hzSl h2{font-size:26px;}.hzCover h1{font-size:36px;}}\n'+
-    '</style>\n</head>\n<body>\n'+
-    pages.map(function(p,i){ return p.replace('<section class="hzSl', '<section data-pg="'+(i+1)+'" class="hzSl'); }).join('\n')+'\n'+
-    '<div class="hzHint">点右半屏 / 按 → 往后翻 · 左半屏 / ← 往前</div>\n<div class="hzFoot" id="hzFoot"></div>\n'+
-    '<scr'+'ipt>\n'+
-    'var hzCur=1, hzTotal='+total+';\n'+
-    'function hzGo(n){ if(n<1)n=1; if(n>hzTotal)n=hzTotal; hzCur=n;\n'+
-    '  var ss=document.querySelectorAll(".hzSl"); for(var i=0;i<ss.length;i++){ ss[i].classList.toggle("on", i===hzCur-1); }\n'+
-    '  var f=document.getElementById("hzFoot"); if(f) f.textContent=hzCur+"/"+hzTotal; }\n'+
-    'document.addEventListener("keydown",function(e){ if(e.key==="ArrowRight"||e.key===" "||e.key==="PageDown") hzGo(hzCur+1); else if(e.key==="ArrowLeft"||e.key==="PageUp") hzGo(hzCur-1); });\n'+
-    'document.addEventListener("click",function(e){ if(e.clientX>window.innerWidth/2) hzGo(hzCur+1); else hzGo(hzCur-1); });\n'+
-    'var hzTx=0; document.addEventListener("touchstart",function(e){ hzTx=e.changedTouches[0].clientX; });\n'+
-    'document.addEventListener("touchend",function(e){ var dx=e.changedTouches[0].clientX-hzTx; if(dx<-40) hzGo(hzCur+1); else if(dx>40) hzGo(hzCur-1); });\n'+
-    'hzGo(1);\n'+
-    '</scr'+'ipt>\n</body>\n</html>';
-  return html;
-}
-
-/* v0.17.0 三处产出（复用v0.14.1/v0.15.0既有链路）：①壳文件夹「脱敏导出_会诊PPT_病人名_时间戳.html」走dsm_shellWriteVerified回读对账
-   ②名册hx_pdocs_v1加kind=report（文件名带「会诊PPT_」，详情页标「📋 会诊PPT」徽标+🖥放映）③浏览器blob下载 */
-function hzPptDeliver(patient, html){
-  var _stamp=(function(){ var _n=new Date(); function _p(x){ return (x<10?'0':'')+x; } return '_'+_p(_n.getMonth()+1)+_p(_n.getDate())+'_'+_p(_n.getHours())+_p(_n.getMinutes()); })(); /* 时间戳格式同v0.15.0「_月日_时分」 */
-  var fileName='会诊PPT_'+patient+_stamp+'.html';
-  try{
-    var blob=new Blob(['\ufeff'+html],{type:'text/html;charset=utf-8'});
-    var link=document.createElement('a');
-    link.href=URL.createObjectURL(blob); link.download=fileName;
-    document.body.appendChild(link); link.click(); document.body.removeChild(link);
-    setTimeout(function(){ URL.revokeObjectURL(link.href); },5000);
-    toast('✅ 已下载：'+fileName);
-  }catch(e){ toast('浏览器下载失败：'+e.message); }
-  try{
-    if(hxStore.bridged()){
-      var r=dsm_shellWriteVerified('脱敏导出_'+fileName, '\ufeff'+html); /* 同款回读对账防截断（JS桥写大文件会截断） */
-      if(r.ok){ toast('✅ 已存到授权文件夹：'+r.saved.join('、')+'（共'+Math.max(1,Math.round(('\ufeff'+html).length/1024))+'KB，已核对）',5000); }
-      else{ toast('❌ 会诊PPT没存全：写进文件夹被截断，重试、拆两块都没成。浏览器已下载的一份还在您手里',7000); }
-    }
-  }catch(e){ toast('❌ 写文件夹出错（'+e.message+'），浏览器已下载的一份还在',6000); }
-  try{
-    var _pd=pdocsLoad();
-    var _pm=patient.match(/^(\d+)([一-龥])(.*)$/);
-    var _now=new Date();
-    var _dateStr=_now.getFullYear()+'-'+(_now.getMonth()+1)+'-'+_now.getDate();
-    var _fname='脱敏导出_'+fileName;
-    var _txt=html.length>300000?html.slice(0,300000)+'\n…（太长已截断存）':html;
-    var _found=false;
-    for(var _di=0;_di<_pd.docs.length;_di++){
-      if(_pd.docs[_di].fname===_fname && _pd.docs[_di].pkey===patient){
-        _pd.docs[_di].text=_txt; _pd.docs[_di].ts=_now.getTime(); _pd.docs[_di].size=_txt.length; _found=true; break;
-      }
-    }
-    if(!_found){
-      _pd.docs.push({id:'D'+Date.now().toString(36)+Math.floor(Math.random()*1000), pkey:patient,
-        bed:_pm?_pm[1]:'', sur:_pm?_pm[2]:'', diag:_pm?_pm[3]:patient,
-        date:_dateStr, timeStr:_dateStr, ts:_now.getTime(), fname:_fname, kind:'report', size:_txt.length, text:_txt});
-    }
-    pdocsSave(_pd);
-    try{ renderPatients(); }catch(e){}
-  }catch(e){}
-}
-
-/* v0.17.0 主流程：点「📋 会诊PPT」→AI写会诊稿（失败也出片，栏目留「（AI没回话，请手填）」）+本地趋势图→拼片→三处产出 */
-function hzPptOpen(d){
-  var text=hzGatherText(d);
-  if(!text){ toast('这位病人名下还没有病历文字，做不出会诊PPT'); return; }
-  var charts=hzPickCharts(hzLabParse(text)); /* 本地解析验单，不花钱不调库，没网也照画 */
-  var saved=askaiLoad();
-  var prompt=(saved&&saved.p4)||ASKAI_DEF.p4; /* 第4套「会诊稿」提示词（hx_gj_askai_v1体系，v0.16.0已建好） */
-  toast('📋 正在做会诊PPT：先请AI写会诊稿（没回话也能出片，栏目留空请手填）…', 4000);
-  function finish(sec, aiFail){
-    var html=hzPptHtml(d.pkey, sec, charts, aiFail);
-    hzPptDeliver(d.pkey, html);
-    toast('✅ 会诊PPT做好啦：共'+(4+Math.ceil(charts.length/2)+2)+'页左右，'+charts.length+'张验单趋势图'+(aiFail?'（AI没回话，栏目留了空请手填）':''), 6000);
-  }
-  try{
-    aiChat('你是一位资深临床医生。', prompt+text, function(raw){
-      finish(hzParseSections(raw), false);
-    }, function(errMsg){
-      toast('AI没回话（'+String(errMsg||'').slice(0,40)+'），照常出片，栏目留了空请手填', 5000);
-      finish({basic:'',course:'',lab:'',diff:'',ask:''}, true);
-    }, {what:'会诊PPT会诊稿', maxTokens:8192});
-  }catch(e){
-    finish({basic:'',course:'',lab:'',diff:'',ask:''}, true); /* 无壳无AI的纯浏览器环境也要能出演示片 */
-  }
-}
-
 </script>
 <script>
 /* ═══════════ v0.8.0 引擎拆出：PDFJS_B64/PDFWORKER_B64 移到同目录 guanjia-pdf-engine.js，
    首次遇PDF才动态加载（本文件或导出完整版里已定义时直接用，不重复加载） ═══════════ */
 </script>
-</script>
-
-<!-- 速记 v0.16.1 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点，不做系统悬浮窗）：右下角半透明圆点→弹小输入框→「记下」自动把新行（时间+软件名+上下文）追加写进壳授权文件夹「速记流水.txt」（一个文件按时间追加），存完toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含，只依赖window.LearnShell壳桥（readFile/writeFile/folderSet，与大管家导出写壳文件夹同款），不依赖本软件任何内部函数；纯追加，现有代码一行未动 -->
-<style id="hxSjStyle">
-/* 速记 v0.16.1 样式：低饱和暖色、圆点半透明、输入框白底圆角大字；bottom:88px错开右下角已有的回家/功能圆钮 */
-#hxSjDot{position:fixed;right:18px;bottom:88px;width:52px;height:52px;border-radius:50%;background:rgba(122,158,126,.55);border:2px solid rgba(255,255,255,.75);color:#fff;font-size:22px;z-index:99990;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.18);user-select:none;-webkit-user-select:none}
-#hxSjPanel{position:fixed;right:14px;bottom:150px;width:320px;max-width:86vw;background:#fffdf8;border:1px solid #e5ddd0;border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.18);z-index:99991;padding:12px;display:none}
-#hxSjText{width:100%;box-sizing:border-box;min-height:72px;font-size:18px;line-height:1.5;border:1px solid #ddd2c2;border-radius:10px;padding:10px;background:#fff;color:#4a4238;resize:vertical}
-#hxSjPanel .hxSjBtns{display:flex;gap:10px;margin-top:10px}
-#hxSjPanel button{flex:1;font-size:18px;padding:10px 0;border:none;border-radius:10px;cursor:pointer}
-#hxSjSave{background:#7a9e7e;color:#fff}
-#hxSjClose{background:#efe9df;color:#6b6257}
-#hxSjHint{font-size:13px;color:#a05848;margin-top:8px;display:none}
-#hxSjToast{position:fixed;left:50%;bottom:160px;transform:translateX(-50%);background:rgba(74,64,48,.92);color:#fff;padding:10px 20px;border-radius:20px;font-size:16px;z-index:99992;display:none}
-</style>
-<div id="hxSjDot" title="速记">🏥</div>
-<div id="hxSjPanel">
-  <textarea id="hxSjText" placeholder="发现啥毛病，写一句…"></textarea>
-  <div class="hxSjBtns"><button id="hxSjSave" type="button">记下</button><button id="hxSjClose" type="button">关上</button></div>
-  <div id="hxSjHint">浏览器里存不了，请在手机壳里用</div>
-</div>
-<div id="hxSjToast"></div>
-<script>
-/* 速记 v0.16.1 浮标速记：自包含IIFE，只摸window.LearnShell壳桥；readFile('速记流水.txt')→拼新行→writeFile写回 */
-(function(){
-  var HX_SJ_APP='大管家'; /* 速记：本软件名，全家9个文件只这一行不同 */
-  function $(id){ return document.getElementById(id); }
-  function bridged(){ try{ return !!(window.LearnShell&&LearnShell.folderSet&&LearnShell.folderSet()); }catch(e){ return false; } }
-  function b64e(s){ return btoa(unescape(encodeURIComponent(s))); }
-  function b64d(s){ try{ return decodeURIComponent(escape(atob(s))); }catch(e){ try{ return atob(s); }catch(e2){ return ''; } } }
-  function pad(n){ return (n<10?'0':'')+n; }
-  function sjToast(m){ var t=$('hxSjToast'); if(!t) return; t.textContent=m; t.style.display='block'; clearTimeout(t._t); t._t=setTimeout(function(){ t.style.display='none'; },2200); }
-  function openPanel(){ var p=$('hxSjPanel'); if(!p) return; p.style.display=(p.style.display==='block')?'none':'block'; if(p.style.display==='block'){ $('hxSjHint').style.display=bridged()?'none':'block'; try{ $('hxSjText').focus(); }catch(e){} } }
-  function save(){
-    var ta=$('hxSjText'); var v=(ta.value||'').replace(/^\s+|\s+$/g,'');
-    if(!v){ sjToast('先写一句再记'); return; }
-    if(!bridged()){ $('hxSjHint').style.display='block'; sjToast('请在手机壳里用'); return; }
-    var d=new Date();
-    var ts=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes());
-    var ctx='';
-    try{ var pt=localStorage.getItem('hx_gj_curpt'); if(pt){ pt=String(pt).replace(/^["']+|["']+$/g,''); if(pt) ctx+='　病人:'+pt; } }catch(e){}
-    try{ var t=(document.title||'').replace(/^\s+|\s+$/g,''); if(t) ctx+='　页面:'+t; }catch(e){}
-    var line='['+ts+'] 【'+HX_SJ_APP+'】'+v+ctx;
-    var old='';
-    try{ var b=LearnShell.readFile('速记流水.txt'); if(b) old=b64d(b); }catch(e){ old=''; }
-    var neu=old+((old&&old.charAt(old.length-1)!=='\n')?'\n':'')+line+'\n';
-    try{
-      LearnShell.writeFile('速记流水.txt', b64e(neu));
-      sjToast('已记下'); ta.value=''; $('hxSjPanel').style.display='none';
-    }catch(e){ sjToast('没存成：'+e.message); }
-  }
-  function init(){
-    var dot=$('hxSjDot'); if(!dot) return;
-    dot.addEventListener('click', openPanel);
-    $('hxSjSave').addEventListener('click', save);
-    $('hxSjClose').addEventListener('click', function(){ $('hxSjPanel').style.display='none'; });
-  }
-  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', init); } else { init(); }
-})();
 </script>
 </body>
 </html>

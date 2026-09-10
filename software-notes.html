@@ -4,6 +4,7 @@
  学习笔记·双链版 —— 单文件 HTML 工具
 ====================================================================
  修改记录：
+   v2.16.3 2026-09-10 浮标速记入编（洪老师拍板方案A，全家9件同一套自包含snippet，详见SW_VERSION注释链）。
    v2.16.0 2026-09-06 「🚪 预切闸 + 400自动减半」（只动切片链路三处，其他一行没动）：
         ① 预切闸按模型定批量（留30%余量）：bklibSegment 段长随所选模型走——
            moonshot-v1-32k→约7000~8000字/段，moonshot-v1-128k 与 kimi-k2.6→约13000~15000字/段，
@@ -7159,7 +7160,7 @@ ghBindBtn($('ghConfNo'), function(){
      不通=红条常驻（只说连不上，不影响使用）
    注意：version.json 与软件副本（dl 字段指向的文件）由交付端（AI）每次发版时
    推到备份仓库；本文件版本号改 SW_VERSION 一处即可。 */
-var SW_VERSION = '2.16.2' /* v2.16.2 大管家回程票：从病人大管家点过来（?from=guanjia&pt=病人名）亮顶条「← 返回大管家」；新建笔记（AI生成/空白手写）标题自动挂「[病人名]」前缀，笔记仍存本软件大本营（study_notes_v1），两边都查得到；不带参数打开零影响 */; /* v2.16.1 (2026-09-07) 开门静默化：locStatusRender(SAF慢桥)从开门直跑挪进4秒闲时趟，治开门愣几秒；其余一行未动 */ /* v2.16.0 预切闸按模型定批量（32k→8000字/128k与k2.6→15000字留30%余量）+400自动一分为二递归3次+人话报错（bklibErrHuman）；聚合二期 */ /* v2.15.0 鱼骨头化：API设置/云备份收进「🛠 设置与工具」抽屉（hx_notes_tool_open），文献库/书库长说明收进ⓘ说明；纯界面，功能逻辑未动 */ /* v2.14.6 hxIndexRefresh加免Token备用路（API/没Token自动走公开站直链，治主界面卡旧版静默失败；成功/失败都popToast一句） */ /* v2.14.5 寄件链路状态卡常亮+点×才关+云端失败写明原因 */ /* v2.14.4 寄件镜像备份+红绿灯（pptBoxBackup+坚果云davUp） */ /* v2.14.3 寄件排队防覆盖+马上叫醒按钮 */ /* v2.14.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v2.14.1 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */
+var SW_VERSION = '2.16.3' /* 速记 v2.16.3 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */; /* v2.16.2 大管家回程票：从病人大管家点过来（?from=guanjia&pt=病人名）亮顶条「← 返回大管家」；新建笔记（AI生成/空白手写）标题自动挂「[病人名]」前缀，笔记仍存本软件大本营（study_notes_v1），两边都查得到；不带参数打开零影响 */; /* v2.16.1 (2026-09-07) 开门静默化：locStatusRender(SAF慢桥)从开门直跑挪进4秒闲时趟，治开门愣几秒；其余一行未动 */ /* v2.16.0 预切闸按模型定批量（32k→8000字/128k与k2.6→15000字留30%余量）+400自动一分为二递归3次+人话报错（bklibErrHuman）；聚合二期 */ /* v2.15.0 鱼骨头化：API设置/云备份收进「🛠 设置与工具」抽屉（hx_notes_tool_open），文献库/书库长说明收进ⓘ说明；纯界面，功能逻辑未动 */ /* v2.14.6 hxIndexRefresh加免Token备用路（API/没Token自动走公开站直链，治主界面卡旧版静默失败；成功/失败都popToast一句） */ /* v2.14.5 寄件链路状态卡常亮+点×才关+云端失败写明原因 */ /* v2.14.4 寄件镜像备份+红绿灯（pptBoxBackup+坚果云davUp） */ /* v2.14.3 寄件排队防覆盖+马上叫醒按钮 */ /* v2.14.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v2.14.1 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */
 /* v2.6.7 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["bg_gh_user", "hx_gh_user"], ["bg_gh_tok", "hx_gh_tok"], ["bg_gh_repo", "hx_gh_repo"], ["bg_apikey", "hx_apikey"]];
@@ -8002,6 +8003,65 @@ try{
     document.body.style.paddingTop='36px';
     window.GJ_PT=GJ_PT; /* 供新建笔记挂前缀 */
   }catch(e){}
+})();
+</script>
+
+<!-- 速记 v2.16.3 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点，不做系统悬浮窗）：右下角半透明圆点→弹小输入框→「记下」自动把新行（时间+软件名+上下文）追加写进壳授权文件夹「速记流水.txt」（一个文件按时间追加），存完toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含，只依赖window.LearnShell壳桥（readFile/writeFile/folderSet，与大管家导出写壳文件夹同款），不依赖本软件任何内部函数；纯追加，现有代码一行未动 -->
+<style id="hxSjStyle">
+/* 速记 v2.16.3 样式：低饱和暖色、圆点半透明、输入框白底圆角大字；bottom:88px错开右下角已有的回家/功能圆钮 */
+#hxSjDot{position:fixed;right:18px;bottom:88px;width:52px;height:52px;border-radius:50%;background:rgba(122,158,126,.55);border:2px solid rgba(255,255,255,.75);color:#fff;font-size:22px;z-index:99990;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.18);user-select:none;-webkit-user-select:none}
+#hxSjPanel{position:fixed;right:14px;bottom:150px;width:320px;max-width:86vw;background:#fffdf8;border:1px solid #e5ddd0;border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.18);z-index:99991;padding:12px;display:none}
+#hxSjText{width:100%;box-sizing:border-box;min-height:72px;font-size:18px;line-height:1.5;border:1px solid #ddd2c2;border-radius:10px;padding:10px;background:#fff;color:#4a4238;resize:vertical}
+#hxSjPanel .hxSjBtns{display:flex;gap:10px;margin-top:10px}
+#hxSjPanel button{flex:1;font-size:18px;padding:10px 0;border:none;border-radius:10px;cursor:pointer}
+#hxSjSave{background:#7a9e7e;color:#fff}
+#hxSjClose{background:#efe9df;color:#6b6257}
+#hxSjHint{font-size:13px;color:#a05848;margin-top:8px;display:none}
+#hxSjToast{position:fixed;left:50%;bottom:160px;transform:translateX(-50%);background:rgba(74,64,48,.92);color:#fff;padding:10px 20px;border-radius:20px;font-size:16px;z-index:99992;display:none}
+</style>
+<div id="hxSjDot" title="速记">🏥</div>
+<div id="hxSjPanel">
+  <textarea id="hxSjText" placeholder="发现啥毛病，写一句…"></textarea>
+  <div class="hxSjBtns"><button id="hxSjSave" type="button">记下</button><button id="hxSjClose" type="button">关上</button></div>
+  <div id="hxSjHint">浏览器里存不了，请在手机壳里用</div>
+</div>
+<div id="hxSjToast"></div>
+<script>
+/* 速记 v2.16.3 浮标速记：自包含IIFE，只摸window.LearnShell壳桥；readFile('速记流水.txt')→拼新行→writeFile写回 */
+(function(){
+  var HX_SJ_APP='学习笔记'; /* 速记：本软件名，全家9个文件只这一行不同 */
+  function $(id){ return document.getElementById(id); }
+  function bridged(){ try{ return !!(window.LearnShell&&LearnShell.folderSet&&LearnShell.folderSet()); }catch(e){ return false; } }
+  function b64e(s){ return btoa(unescape(encodeURIComponent(s))); }
+  function b64d(s){ try{ return decodeURIComponent(escape(atob(s))); }catch(e){ try{ return atob(s); }catch(e2){ return ''; } } }
+  function pad(n){ return (n<10?'0':'')+n; }
+  function sjToast(m){ var t=$('hxSjToast'); if(!t) return; t.textContent=m; t.style.display='block'; clearTimeout(t._t); t._t=setTimeout(function(){ t.style.display='none'; },2200); }
+  function openPanel(){ var p=$('hxSjPanel'); if(!p) return; p.style.display=(p.style.display==='block')?'none':'block'; if(p.style.display==='block'){ $('hxSjHint').style.display=bridged()?'none':'block'; try{ $('hxSjText').focus(); }catch(e){} } }
+  function save(){
+    var ta=$('hxSjText'); var v=(ta.value||'').replace(/^\s+|\s+$/g,'');
+    if(!v){ sjToast('先写一句再记'); return; }
+    if(!bridged()){ $('hxSjHint').style.display='block'; sjToast('请在手机壳里用'); return; }
+    var d=new Date();
+    var ts=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes());
+    var ctx='';
+    try{ var pt=localStorage.getItem('hx_gj_curpt'); if(pt){ pt=String(pt).replace(/^["']+|["']+$/g,''); if(pt) ctx+='　病人:'+pt; } }catch(e){}
+    try{ var t=(document.title||'').replace(/^\s+|\s+$/g,''); if(t) ctx+='　页面:'+t; }catch(e){}
+    var line='['+ts+'] 【'+HX_SJ_APP+'】'+v+ctx;
+    var old='';
+    try{ var b=LearnShell.readFile('速记流水.txt'); if(b) old=b64d(b); }catch(e){ old=''; }
+    var neu=old+((old&&old.charAt(old.length-1)!=='\n')?'\n':'')+line+'\n';
+    try{
+      LearnShell.writeFile('速记流水.txt', b64e(neu));
+      sjToast('已记下'); ta.value=''; $('hxSjPanel').style.display='none';
+    }catch(e){ sjToast('没存成：'+e.message); }
+  }
+  function init(){
+    var dot=$('hxSjDot'); if(!dot) return;
+    dot.addEventListener('click', openPanel);
+    $('hxSjSave').addEventListener('click', save);
+    $('hxSjClose').addEventListener('click', function(){ $('hxSjPanel').style.display='none'; });
+  }
+  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', init); } else { init(); }
 })();
 </script>
 </body>

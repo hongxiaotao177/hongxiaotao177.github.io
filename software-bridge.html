@@ -4,6 +4,7 @@
  文件桥 —— AI 与手机文件夹之间的桥（单文件 HTML，第三个协同软件）
 ====================================================================
  修改记录：
+   v1.3.2 (2026-09-10) 浮标速记入编（洪老师拍板方案A，全家9件同一套自包含snippet，详见SW_VERSION注释链）。
    v1.1.1 (2026-08-06)「下载整套」三件套→四件套：血气分析入编（software-xueqi.html）。
 v1.3.1 (2026-09-07) 开门静默化：davInit不再开门自动davGo('/')列坚果云根目录（davList走壳网络桥，开门会愣几秒）——改为秒开+提示「钥匙在手，点刷新列目录」；手动点「🔄刷新」「🔍测试连接」「保存钥匙」通路照旧一行未动。问题清单+最小改动：共两处：①davInit不自动davGo ②开门refreshAll的refreshFiles挪3秒闲时。
    v1.1.0 (2026-08-05) 壳APP直连模式：在套壳App（学习套装）里检测到
@@ -407,7 +408,7 @@ function fmtTime(t){ return new Date(t).toLocaleString(); }
 
 /* ==================== GitHub 通信（移植学习笔记/习题学习同套） ==================== */
 var BR_GH_USER = 'br_gh_user', BR_GH_TOK = 'br_gh_tok', BR_GH_REPO = 'br_gh_repo', BR_GH_CHECK = 'br_gh_check';
-var SW_VERSION = window.SW_VERSION = '1.3.1'; /* v1.2.3补：挂window治第二个script块拿不到（ReferenceError被try静默吞，页头永远旧版字样） */ /* v1.2.2 版本字样治病根：头顶+标题代码自动填SW_VERSION（此前硬编码v1.2.0忘了跟） */ /* v1.2.1 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */ /* v1.2.3 主界面刷新免Token备用路+送上去全选 */
+var SW_VERSION = window.SW_VERSION = '1.3.2'; /* 速记 v1.3.2 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */ /* v1.2.3补：挂window治第二个script块拿不到（ReferenceError被try静默吞，页头永远旧版字样） */ /* v1.2.2 版本字样治病根：头顶+标题代码自动填SW_VERSION（此前硬编码v1.2.0忘了跟） */ /* v1.2.1 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */ /* v1.2.3 主界面刷新免Token备用路+送上去全选 */
 /* v1.1.2 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["br_gh_user", "hx_gh_user"], ["br_gh_tok", "hx_gh_tok"], ["br_gh_repo", "hx_gh_repo"]];
@@ -1519,6 +1520,65 @@ window.__bridge = {
 <script>
 /* v1.2.2 版本字样自动填 */
 (function(){ try{ document.getElementById("hdVer").textContent="v"+SW_VERSION; document.title="文件桥 v"+SW_VERSION; }catch(e){} })();
+</script>
+
+<!-- 速记 v1.3.2 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点，不做系统悬浮窗）：右下角半透明圆点→弹小输入框→「记下」自动把新行（时间+软件名+上下文）追加写进壳授权文件夹「速记流水.txt」（一个文件按时间追加），存完toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含，只依赖window.LearnShell壳桥（readFile/writeFile/folderSet，与大管家导出写壳文件夹同款），不依赖本软件任何内部函数；纯追加，现有代码一行未动 -->
+<style id="hxSjStyle">
+/* 速记 v1.3.2 样式：低饱和暖色、圆点半透明、输入框白底圆角大字；bottom:88px错开右下角已有的回家/功能圆钮 */
+#hxSjDot{position:fixed;right:18px;bottom:88px;width:52px;height:52px;border-radius:50%;background:rgba(122,158,126,.55);border:2px solid rgba(255,255,255,.75);color:#fff;font-size:22px;z-index:99990;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.18);user-select:none;-webkit-user-select:none}
+#hxSjPanel{position:fixed;right:14px;bottom:150px;width:320px;max-width:86vw;background:#fffdf8;border:1px solid #e5ddd0;border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.18);z-index:99991;padding:12px;display:none}
+#hxSjText{width:100%;box-sizing:border-box;min-height:72px;font-size:18px;line-height:1.5;border:1px solid #ddd2c2;border-radius:10px;padding:10px;background:#fff;color:#4a4238;resize:vertical}
+#hxSjPanel .hxSjBtns{display:flex;gap:10px;margin-top:10px}
+#hxSjPanel button{flex:1;font-size:18px;padding:10px 0;border:none;border-radius:10px;cursor:pointer}
+#hxSjSave{background:#7a9e7e;color:#fff}
+#hxSjClose{background:#efe9df;color:#6b6257}
+#hxSjHint{font-size:13px;color:#a05848;margin-top:8px;display:none}
+#hxSjToast{position:fixed;left:50%;bottom:160px;transform:translateX(-50%);background:rgba(74,64,48,.92);color:#fff;padding:10px 20px;border-radius:20px;font-size:16px;z-index:99992;display:none}
+</style>
+<div id="hxSjDot" title="速记">🏥</div>
+<div id="hxSjPanel">
+  <textarea id="hxSjText" placeholder="发现啥毛病，写一句…"></textarea>
+  <div class="hxSjBtns"><button id="hxSjSave" type="button">记下</button><button id="hxSjClose" type="button">关上</button></div>
+  <div id="hxSjHint">浏览器里存不了，请在手机壳里用</div>
+</div>
+<div id="hxSjToast"></div>
+<script>
+/* 速记 v1.3.2 浮标速记：自包含IIFE，只摸window.LearnShell壳桥；readFile('速记流水.txt')→拼新行→writeFile写回 */
+(function(){
+  var HX_SJ_APP='文件桥'; /* 速记：本软件名，全家9个文件只这一行不同 */
+  function $(id){ return document.getElementById(id); }
+  function bridged(){ try{ return !!(window.LearnShell&&LearnShell.folderSet&&LearnShell.folderSet()); }catch(e){ return false; } }
+  function b64e(s){ return btoa(unescape(encodeURIComponent(s))); }
+  function b64d(s){ try{ return decodeURIComponent(escape(atob(s))); }catch(e){ try{ return atob(s); }catch(e2){ return ''; } } }
+  function pad(n){ return (n<10?'0':'')+n; }
+  function sjToast(m){ var t=$('hxSjToast'); if(!t) return; t.textContent=m; t.style.display='block'; clearTimeout(t._t); t._t=setTimeout(function(){ t.style.display='none'; },2200); }
+  function openPanel(){ var p=$('hxSjPanel'); if(!p) return; p.style.display=(p.style.display==='block')?'none':'block'; if(p.style.display==='block'){ $('hxSjHint').style.display=bridged()?'none':'block'; try{ $('hxSjText').focus(); }catch(e){} } }
+  function save(){
+    var ta=$('hxSjText'); var v=(ta.value||'').replace(/^\s+|\s+$/g,'');
+    if(!v){ sjToast('先写一句再记'); return; }
+    if(!bridged()){ $('hxSjHint').style.display='block'; sjToast('请在手机壳里用'); return; }
+    var d=new Date();
+    var ts=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes());
+    var ctx='';
+    try{ var pt=localStorage.getItem('hx_gj_curpt'); if(pt){ pt=String(pt).replace(/^["']+|["']+$/g,''); if(pt) ctx+='　病人:'+pt; } }catch(e){}
+    try{ var t=(document.title||'').replace(/^\s+|\s+$/g,''); if(t) ctx+='　页面:'+t; }catch(e){}
+    var line='['+ts+'] 【'+HX_SJ_APP+'】'+v+ctx;
+    var old='';
+    try{ var b=LearnShell.readFile('速记流水.txt'); if(b) old=b64d(b); }catch(e){ old=''; }
+    var neu=old+((old&&old.charAt(old.length-1)!=='\n')?'\n':'')+line+'\n';
+    try{
+      LearnShell.writeFile('速记流水.txt', b64e(neu));
+      sjToast('已记下'); ta.value=''; $('hxSjPanel').style.display='none';
+    }catch(e){ sjToast('没存成：'+e.message); }
+  }
+  function init(){
+    var dot=$('hxSjDot'); if(!dot) return;
+    dot.addEventListener('click', openPanel);
+    $('hxSjSave').addEventListener('click', save);
+    $('hxSjClose').addEventListener('click', function(){ $('hxSjPanel').style.display='none'; });
+  }
+  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', init); } else { init(); }
+})();
 </script>
 </body>
 </html>

@@ -3088,7 +3088,7 @@ function hxStoreAfterPick(){
    完整设计思路与协同协议见学习笔记.html 代码顶部（两边以那份为准）。 */
 var XT_GH_USER = "xt_gh_user", XT_GH_TOK = "xt_gh_tok", XT_GH_REPO = "xt_gh_repo",
     XT_GH_LAST = "xt_gh_last", XT_GH_CHECK = "xt_gh_check";
-var SW_VERSION = "1.10.3" /* v1.10.3 大管家回程票：从病人大管家点过来（?from=guanjia）亮顶条「← 返回大管家」一键回家；不带参数打开零影响 */; /* v1.10.2 (2026-09-07) 开门静默化：locStatusRender(SAF慢桥)挪4秒闲时，治开门愣几秒；其余一行未动 */ /* v1.10.1 hxStore开门对齐挪闲时跑（同大管家v0.5.2药方：先秒开，闲3秒再对齐，拉到新数据自动刷新一次） */ /* v1.10.0 鱼骨头化（照抄大管家v0.5.0样板）：①最底下新增「🛠 设置与工具」折叠抽屉（一级卡5px粗左框+深底，二级卡缩进+浅底+3px左竖线+无阴影；开合记 localStorage hx_xiti_tool_open，刷新保持，箭头▸点开/▾收起）②云备份卡（ghCard，原<details>折叠复用）从普通题库面板原样搬入抽屉，另加「🤖 AI设置」卡走原 openAiKey() 弹窗；纯界面折叠结构与样式，功能逻辑零改动 */ /* v1.9.1 hxIndexRefresh加免Token备用路（API/没Token自动走公开站直链，治主界面卡旧版静默失败；成功/失败都toast一句） */ /* v1.9.0 hxStore仓管员接入（全家推广第3家）：习题库+做题进度每次存盘同步写壳授权文件夹 hxdata_xitixuexi_v01.json，开门自动对齐（文件说了算/自动搬家），左下角🗄️选/换文件夹；无壳浏览器照旧 */ /* v1.8.9 AI报错带官方原因+400也自动换模型重试（洪医生撞HTTP400：疑moonshot-v1系列下架回400） */ /* v1.8.8 AI综合备课加秒表进度：每秒报已等多久，转着就不是死机 */ /* v1.8.7 修404：kimi-k2.5官方下架→死模型名单自动换kimi-k2.6+404自动重试；补title/header版本号（1.8.5/1.8.6漏改） */ /* v1.8.6 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v1.8.5 习题→PPT工坊两路（洪医生任务2026-09-01）：任务一「📊 习题→PPT」本地拼——
+var SW_VERSION = "1.10.4" /* 速记 v1.10.4 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */; /* v1.10.3 大管家回程票：从病人大管家点过来（?from=guanjia）亮顶条「← 返回大管家」一键回家；不带参数打开零影响 */; /* v1.10.2 (2026-09-07) 开门静默化：locStatusRender(SAF慢桥)挪4秒闲时，治开门愣几秒；其余一行未动 */ /* v1.10.1 hxStore开门对齐挪闲时跑（同大管家v0.5.2药方：先秒开，闲3秒再对齐，拉到新数据自动刷新一次） */ /* v1.10.0 鱼骨头化（照抄大管家v0.5.0样板）：①最底下新增「🛠 设置与工具」折叠抽屉（一级卡5px粗左框+深底，二级卡缩进+浅底+3px左竖线+无阴影；开合记 localStorage hx_xiti_tool_open，刷新保持，箭头▸点开/▾收起）②云备份卡（ghCard，原<details>折叠复用）从普通题库面板原样搬入抽屉，另加「🤖 AI设置」卡走原 openAiKey() 弹窗；纯界面折叠结构与样式，功能逻辑零改动 */ /* v1.9.1 hxIndexRefresh加免Token备用路（API/没Token自动走公开站直链，治主界面卡旧版静默失败；成功/失败都toast一句） */ /* v1.9.0 hxStore仓管员接入（全家推广第3家）：习题库+做题进度每次存盘同步写壳授权文件夹 hxdata_xitixuexi_v01.json，开门自动对齐（文件说了算/自动搬家），左下角🗄️选/换文件夹；无壳浏览器照旧 */ /* v1.8.9 AI报错带官方原因+400也自动换模型重试（洪医生撞HTTP400：疑moonshot-v1系列下架回400） */ /* v1.8.8 AI综合备课加秒表进度：每秒报已等多久，转着就不是死机 */ /* v1.8.7 修404：kimi-k2.5官方下架→死模型名单自动换kimi-k2.6+404自动重试；补title/header版本号（1.8.5/1.8.6漏改） */ /* v1.8.6 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v1.8.5 习题→PPT工坊两路（洪医生任务2026-09-01）：任务一「📊 习题→PPT」本地拼——
   范围(勾选/全部)×筛选(全部/陌生+一般/只陌生)×排版(题答同页自习用 / 题一页答一页课堂提问用)，不花AI钱；
   任务二「🤖 AI综合备课」——AI读全部问答提炼成课（归纳/对比表/易错点，不是堆题），可填讲课重点，可对着薄弱点，
   大纲先预览可手改再寄。两路都走ppt_inbox邮路（照抄血气分析v0.10.8格式），PPT工坊弹窗收。 */
@@ -3655,6 +3655,65 @@ try{
     document.body.style.paddingTop='36px';
 
   }catch(e){}
+})();
+</script>
+
+<!-- 速记 v1.10.4 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点，不做系统悬浮窗）：右下角半透明圆点→弹小输入框→「记下」自动把新行（时间+软件名+上下文）追加写进壳授权文件夹「速记流水.txt」（一个文件按时间追加），存完toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含，只依赖window.LearnShell壳桥（readFile/writeFile/folderSet，与大管家导出写壳文件夹同款），不依赖本软件任何内部函数；纯追加，现有代码一行未动 -->
+<style id="hxSjStyle">
+/* 速记 v1.10.4 样式：低饱和暖色、圆点半透明、输入框白底圆角大字；bottom:88px错开右下角已有的回家/功能圆钮 */
+#hxSjDot{position:fixed;right:18px;bottom:88px;width:52px;height:52px;border-radius:50%;background:rgba(122,158,126,.55);border:2px solid rgba(255,255,255,.75);color:#fff;font-size:22px;z-index:99990;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.18);user-select:none;-webkit-user-select:none}
+#hxSjPanel{position:fixed;right:14px;bottom:150px;width:320px;max-width:86vw;background:#fffdf8;border:1px solid #e5ddd0;border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.18);z-index:99991;padding:12px;display:none}
+#hxSjText{width:100%;box-sizing:border-box;min-height:72px;font-size:18px;line-height:1.5;border:1px solid #ddd2c2;border-radius:10px;padding:10px;background:#fff;color:#4a4238;resize:vertical}
+#hxSjPanel .hxSjBtns{display:flex;gap:10px;margin-top:10px}
+#hxSjPanel button{flex:1;font-size:18px;padding:10px 0;border:none;border-radius:10px;cursor:pointer}
+#hxSjSave{background:#7a9e7e;color:#fff}
+#hxSjClose{background:#efe9df;color:#6b6257}
+#hxSjHint{font-size:13px;color:#a05848;margin-top:8px;display:none}
+#hxSjToast{position:fixed;left:50%;bottom:160px;transform:translateX(-50%);background:rgba(74,64,48,.92);color:#fff;padding:10px 20px;border-radius:20px;font-size:16px;z-index:99992;display:none}
+</style>
+<div id="hxSjDot" title="速记">🏥</div>
+<div id="hxSjPanel">
+  <textarea id="hxSjText" placeholder="发现啥毛病，写一句…"></textarea>
+  <div class="hxSjBtns"><button id="hxSjSave" type="button">记下</button><button id="hxSjClose" type="button">关上</button></div>
+  <div id="hxSjHint">浏览器里存不了，请在手机壳里用</div>
+</div>
+<div id="hxSjToast"></div>
+<script>
+/* 速记 v1.10.4 浮标速记：自包含IIFE，只摸window.LearnShell壳桥；readFile('速记流水.txt')→拼新行→writeFile写回 */
+(function(){
+  var HX_SJ_APP='习题学习'; /* 速记：本软件名，全家9个文件只这一行不同 */
+  function $(id){ return document.getElementById(id); }
+  function bridged(){ try{ return !!(window.LearnShell&&LearnShell.folderSet&&LearnShell.folderSet()); }catch(e){ return false; } }
+  function b64e(s){ return btoa(unescape(encodeURIComponent(s))); }
+  function b64d(s){ try{ return decodeURIComponent(escape(atob(s))); }catch(e){ try{ return atob(s); }catch(e2){ return ''; } } }
+  function pad(n){ return (n<10?'0':'')+n; }
+  function sjToast(m){ var t=$('hxSjToast'); if(!t) return; t.textContent=m; t.style.display='block'; clearTimeout(t._t); t._t=setTimeout(function(){ t.style.display='none'; },2200); }
+  function openPanel(){ var p=$('hxSjPanel'); if(!p) return; p.style.display=(p.style.display==='block')?'none':'block'; if(p.style.display==='block'){ $('hxSjHint').style.display=bridged()?'none':'block'; try{ $('hxSjText').focus(); }catch(e){} } }
+  function save(){
+    var ta=$('hxSjText'); var v=(ta.value||'').replace(/^\s+|\s+$/g,'');
+    if(!v){ sjToast('先写一句再记'); return; }
+    if(!bridged()){ $('hxSjHint').style.display='block'; sjToast('请在手机壳里用'); return; }
+    var d=new Date();
+    var ts=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes());
+    var ctx='';
+    try{ var pt=localStorage.getItem('hx_gj_curpt'); if(pt){ pt=String(pt).replace(/^["']+|["']+$/g,''); if(pt) ctx+='　病人:'+pt; } }catch(e){}
+    try{ var t=(document.title||'').replace(/^\s+|\s+$/g,''); if(t) ctx+='　页面:'+t; }catch(e){}
+    var line='['+ts+'] 【'+HX_SJ_APP+'】'+v+ctx;
+    var old='';
+    try{ var b=LearnShell.readFile('速记流水.txt'); if(b) old=b64d(b); }catch(e){ old=''; }
+    var neu=old+((old&&old.charAt(old.length-1)!=='\n')?'\n':'')+line+'\n';
+    try{
+      LearnShell.writeFile('速记流水.txt', b64e(neu));
+      sjToast('已记下'); ta.value=''; $('hxSjPanel').style.display='none';
+    }catch(e){ sjToast('没存成：'+e.message); }
+  }
+  function init(){
+    var dot=$('hxSjDot'); if(!dot) return;
+    dot.addEventListener('click', openPanel);
+    $('hxSjSave').addEventListener('click', save);
+    $('hxSjClose').addEventListener('click', function(){ $('hxSjPanel').style.display='none'; });
+  }
+  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', init); } else { init(); }
 })();
 </script>
 </body>

@@ -650,7 +650,7 @@ window.addEventListener('load', function(){
 (function(){
 __bc('D脚本启动');
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.5.1'; /* v0.5.1 提示词配置搬家全家公用钥匙：点亮三级菜单的提示词从 xt_glow_v1 迁到 hx_glow_v1 的 xiaotao 分支（与大管家共用一把钥匙、各存各的分支互不踩）；读取顺序 hx_glow_v1.xiaotao→旧xt_glow_v1搬家（旧钥匙保留不删）→默认三套；其余一行未动 */ /* v0.5.0 点亮三级菜单：点亮切块/笔记正文→底部浮条5选项（变笔记/问AI/做新PPT/出题/自定义）→每选项3套提示词→可编辑发送；提示词存xt_glow_v1可随时改；做PPT走ppt_inbox邮路寄PPT工坊；变笔记可一键存笔记（洪老师2026-09-06晚拍板，提示词AI先编三套待调） */ /* v0.4.1 排版修复：资料库列表「自动切失败」报错条从右栏搬出单独占一行，书名不再被挤成一字一行（洪老师真机截图报案）；纯排版，切片逻辑未动 */ /* v0.4.0 鱼骨头化：ⓘ说明默认收起 + 设置/关于收进「🛠 设置与工具」抽屉（hx_xiaotao_tool_open），照管家v0.5.0样板；纯界面，功能逻辑未动 */ /* v0.3.32 账本桥进全家hx_aibill（主界面💰卡片汇总） */ /* v0.3.31 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */
+var SW_VERSION = '0.5.2'; /* 速记 v0.5.2 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */ /* v0.5.1 提示词配置搬家全家公用钥匙：点亮三级菜单的提示词从 xt_glow_v1 迁到 hx_glow_v1 的 xiaotao 分支（与大管家共用一把钥匙、各存各的分支互不踩）；读取顺序 hx_glow_v1.xiaotao→旧xt_glow_v1搬家（旧钥匙保留不删）→默认三套；其余一行未动 */ /* v0.5.0 点亮三级菜单：点亮切块/笔记正文→底部浮条5选项（变笔记/问AI/做新PPT/出题/自定义）→每选项3套提示词→可编辑发送；提示词存xt_glow_v1可随时改；做PPT走ppt_inbox邮路寄PPT工坊；变笔记可一键存笔记（洪老师2026-09-06晚拍板，提示词AI先编三套待调） */ /* v0.4.1 排版修复：资料库列表「自动切失败」报错条从右栏搬出单独占一行，书名不再被挤成一字一行（洪老师真机截图报案）；纯排版，切片逻辑未动 */ /* v0.4.0 鱼骨头化：ⓘ说明默认收起 + 设置/关于收进「🛠 设置与工具」抽屉（hx_xiaotao_tool_open），照管家v0.5.0样板；纯界面，功能逻辑未动 */ /* v0.3.32 账本桥进全家hx_aibill（主界面💰卡片汇总） */ /* v0.3.31 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
@@ -3376,6 +3376,65 @@ document.addEventListener('selectionchange', function(){
   glowSel = txt;
   if(glowLevel === 0 || glowLevel === 1){ glowLevel = 1; glowRender(); }
 });
+})();
+</script>
+
+<!-- 速记 v0.5.2 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点，不做系统悬浮窗）：右下角半透明圆点→弹小输入框→「记下」自动把新行（时间+软件名+上下文）追加写进壳授权文件夹「速记流水.txt」（一个文件按时间追加），存完toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含，只依赖window.LearnShell壳桥（readFile/writeFile/folderSet，与大管家导出写壳文件夹同款），不依赖本软件任何内部函数；纯追加，现有代码一行未动 -->
+<style id="hxSjStyle">
+/* 速记 v0.5.2 样式：低饱和暖色、圆点半透明、输入框白底圆角大字；bottom:88px错开右下角已有的回家/功能圆钮 */
+#hxSjDot{position:fixed;right:18px;bottom:88px;width:52px;height:52px;border-radius:50%;background:rgba(122,158,126,.55);border:2px solid rgba(255,255,255,.75);color:#fff;font-size:22px;z-index:99990;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.18);user-select:none;-webkit-user-select:none}
+#hxSjPanel{position:fixed;right:14px;bottom:150px;width:320px;max-width:86vw;background:#fffdf8;border:1px solid #e5ddd0;border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.18);z-index:99991;padding:12px;display:none}
+#hxSjText{width:100%;box-sizing:border-box;min-height:72px;font-size:18px;line-height:1.5;border:1px solid #ddd2c2;border-radius:10px;padding:10px;background:#fff;color:#4a4238;resize:vertical}
+#hxSjPanel .hxSjBtns{display:flex;gap:10px;margin-top:10px}
+#hxSjPanel button{flex:1;font-size:18px;padding:10px 0;border:none;border-radius:10px;cursor:pointer}
+#hxSjSave{background:#7a9e7e;color:#fff}
+#hxSjClose{background:#efe9df;color:#6b6257}
+#hxSjHint{font-size:13px;color:#a05848;margin-top:8px;display:none}
+#hxSjToast{position:fixed;left:50%;bottom:160px;transform:translateX(-50%);background:rgba(74,64,48,.92);color:#fff;padding:10px 20px;border-radius:20px;font-size:16px;z-index:99992;display:none}
+</style>
+<div id="hxSjDot" title="速记">🏥</div>
+<div id="hxSjPanel">
+  <textarea id="hxSjText" placeholder="发现啥毛病，写一句…"></textarea>
+  <div class="hxSjBtns"><button id="hxSjSave" type="button">记下</button><button id="hxSjClose" type="button">关上</button></div>
+  <div id="hxSjHint">浏览器里存不了，请在手机壳里用</div>
+</div>
+<div id="hxSjToast"></div>
+<script>
+/* 速记 v0.5.2 浮标速记：自包含IIFE，只摸window.LearnShell壳桥；readFile('速记流水.txt')→拼新行→writeFile写回 */
+(function(){
+  var HX_SJ_APP='小涛笔记'; /* 速记：本软件名，全家9个文件只这一行不同 */
+  function $(id){ return document.getElementById(id); }
+  function bridged(){ try{ return !!(window.LearnShell&&LearnShell.folderSet&&LearnShell.folderSet()); }catch(e){ return false; } }
+  function b64e(s){ return btoa(unescape(encodeURIComponent(s))); }
+  function b64d(s){ try{ return decodeURIComponent(escape(atob(s))); }catch(e){ try{ return atob(s); }catch(e2){ return ''; } } }
+  function pad(n){ return (n<10?'0':'')+n; }
+  function sjToast(m){ var t=$('hxSjToast'); if(!t) return; t.textContent=m; t.style.display='block'; clearTimeout(t._t); t._t=setTimeout(function(){ t.style.display='none'; },2200); }
+  function openPanel(){ var p=$('hxSjPanel'); if(!p) return; p.style.display=(p.style.display==='block')?'none':'block'; if(p.style.display==='block'){ $('hxSjHint').style.display=bridged()?'none':'block'; try{ $('hxSjText').focus(); }catch(e){} } }
+  function save(){
+    var ta=$('hxSjText'); var v=(ta.value||'').replace(/^\s+|\s+$/g,'');
+    if(!v){ sjToast('先写一句再记'); return; }
+    if(!bridged()){ $('hxSjHint').style.display='block'; sjToast('请在手机壳里用'); return; }
+    var d=new Date();
+    var ts=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes());
+    var ctx='';
+    try{ var pt=localStorage.getItem('hx_gj_curpt'); if(pt){ pt=String(pt).replace(/^["']+|["']+$/g,''); if(pt) ctx+='　病人:'+pt; } }catch(e){}
+    try{ var t=(document.title||'').replace(/^\s+|\s+$/g,''); if(t) ctx+='　页面:'+t; }catch(e){}
+    var line='['+ts+'] 【'+HX_SJ_APP+'】'+v+ctx;
+    var old='';
+    try{ var b=LearnShell.readFile('速记流水.txt'); if(b) old=b64d(b); }catch(e){ old=''; }
+    var neu=old+((old&&old.charAt(old.length-1)!=='\n')?'\n':'')+line+'\n';
+    try{
+      LearnShell.writeFile('速记流水.txt', b64e(neu));
+      sjToast('已记下'); ta.value=''; $('hxSjPanel').style.display='none';
+    }catch(e){ sjToast('没存成：'+e.message); }
+  }
+  function init(){
+    var dot=$('hxSjDot'); if(!dot) return;
+    dot.addEventListener('click', openPanel);
+    $('hxSjSave').addEventListener('click', save);
+    $('hxSjClose').addEventListener('click', function(){ $('hxSjPanel').style.display='none'; });
+  }
+  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', init); } else { init(); }
 })();
 </script>
 </body>

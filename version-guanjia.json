@@ -1,1 +1,1 @@
-{"version": "0.14.1", "dl": "software-guanjia.html", "engine": "guanjia-pdf-engine.js", "note": "导出报告挂名册该病人名下；收件副本显示名改「病人名+聚合」；修预览愣20秒（回洗判定改与盘档比）"}
+{"version": "0.17.0", "dl": "software-guanjia.html", "engine": "guanjia-pdf-engine.js", "note": "v0.15~0.17：脱敏间绿勾可取消+全选；导出文件名带时间戳（每次导出新文件不丢）；收件收紧床号防误收文献+拿不准清单浮层带✕可划掉；问AI升四套提示词（质检/交班/检验/会诊稿）+结果全屏；脱敏间加AI分析只送脱敏后文本；浮标速记；新增HTML会诊PPT（趋势图本地画）"}
