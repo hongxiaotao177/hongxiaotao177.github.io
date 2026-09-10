@@ -42,6 +42,12 @@ window.addEventListener('load', function(){
   小涛笔记（学习笔记2代）· 单文件版
 ==========================================================
   修改记录：
+   v0.6.0 2026-09-10 鱼骨头化总攻（洪老师拍板：首屏全鱼骨头，只动版面不动功能）：
+        毛病=首屏「✨新建笔记」是一张白底卡片，里头🤖AI帮我学/✍️自己手写两个大按钮；
+        病根=.card卡片样式+.btn大按钮样式；
+        修法=整张卡改成原生details折叠行「✨ 新建笔记 ▸」（与资料库/我的笔记同款），
+        张开后主题输入框照旧，两个大按钮压成两条整行宽文字行（.xt-line，行高≥44px）；
+        按钮id/事件/逻辑一行未动，功能零变化。
    v0.5.3 2026-09-10 速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。
    v0.5.2 2026-09-10 浮标速记入编（全家9件同一套自包含snippet，详见SW_VERSION注释链）。
    v0.5.1 2026-09-06 点亮菜单提示词配置搬家全家公用钥匙 hx_glow_v1（xiaotao分支，
@@ -287,6 +293,15 @@ window.addEventListener('load', function(){
   #toolCard { border-left:5px solid #b09a76; background:#faf6ef; cursor:pointer; }
   #toolZone { border-left:3px solid #e6ddcd; margin-left:8px; padding-left:12px; }
   #toolZone .card { background:#fdfbf8; box-shadow:none; }
+  /* v0.6.0 鱼骨头化：所有折叠行的标题行加高到≥44px（老人好按，纯CSS） */
+  details.card > summary { min-height: 44px; display: flex; align-items: center; }
+  /* v0.6.0 鱼骨头化：新建笔记折叠行内的两条文字行（整行宽可点、行高≥44px、无按钮样） */
+  .xt-line { display: block !important; width: 100%; text-align: left; background: none !important;
+    color: #5a4f38 !important; border: none; border-radius: 0; box-shadow: none;
+    border-bottom: 1px dashed #eee4d4; padding: 12px 4px; min-height: 44px;
+    margin: 8px 0 0; font-size: 15px; cursor: pointer; }
+  .xt-line:active { transform: none; background: #faf6ec !important; }
+  .xt-line[disabled] { color: #b5aa9c !important; }
   /* v0.5.0 点亮三级菜单：底部浮条（躲开系统菜单覆盖），z600压过header(400)/updBar(500) */
   #glowBar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 600; background: #fdfbf8;
     border-top: 2px solid #8a7a5a; box-shadow: 0 -4px 16px rgba(0,0,0,.18); padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
@@ -315,16 +330,14 @@ window.addEventListener('load', function(){
 <div class="page">
 <script>__bc('B骨架');</script>
 
-  <!-- ✨ 新建笔记 -->
-  <div class="card">
-    <h2>✨ 新建笔记</h2>
+  <!-- ✨ 新建笔记（v0.6.0 鱼骨头化：卡片+双大钮 → 一条details折叠行，张开后两条文字行；id/事件全保留） -->
+  <details class="card" id="newNoteBox">
+    <summary id="newNoteSum">✨ 新建笔记</summary>
     <input type="text" id="topicInput" placeholder="想学的主题（如：乳酸）">
-    <div style="margin-top:8px;">
-      <button class="btn" id="btnGen">🤖 AI 帮我学</button>
-      <button class="btn secondary" id="btnBlank">✍️ 自己手写</button>
-    </div>
+    <button class="btn xt-line" id="btnGen">🤖 AI 帮我学</button>
+    <button class="btn secondary xt-line" id="btnBlank">✍️ 自己手写</button>
     <div class="msg" id="genMsg"></div>
-  </div>
+  </details>
 
   <!-- 📚 资料库 -->
   <details class="card" id="libBox">
@@ -466,7 +479,7 @@ window.addEventListener('load', function(){
   <details class="card">
     <summary>📋 关于 / Obsidian 搬家说明</summary>
     <div class="kv" style="margin-top:6px;">
-      <b>版本：</b>v0.3.8（2026-08-13）文献库挪外挂、主体瘦回96KB，治壳里全空白<br><b>上一版：</b>v0.3.7 加看门狗：程序报错/文件残缺直接亮红条说原因<br><br>
+      <b>版本：</b>v0.6.0（2026-09-10）鱼骨头化：「✨ 新建笔记」收进一条折叠行，张开后🤖AI帮我学/✍️自己手写是两条文字行（只动版面，功能没变）<br><b>上一版：</b>v0.5.3 速记自动上行：记下的东西自动到网上，AI接班自己看<br><br>
       <b>⭐ 头一条铁律（Obsidian 搬家）：</b>小涛笔记里所有内容的<b>真身是标准 Markdown 文件</b>，
       全部存在 GitHub 仓库的 <b>vault/</b> 区——那就是一座现成的 Obsidian 仓库。<br>
       <b>搬家方法：</b>把仓库里 vault/ 文件夹下载到电脑/手机（或坚果云同步它），
@@ -652,7 +665,7 @@ window.addEventListener('load', function(){
 (function(){
 __bc('D脚本启动');
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.5.3'; /* 速记自动上行 v0.5.3 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* 速记 v0.5.2 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */ /* v0.5.1 提示词配置搬家全家公用钥匙：点亮三级菜单的提示词从 xt_glow_v1 迁到 hx_glow_v1 的 xiaotao 分支（与大管家共用一把钥匙、各存各的分支互不踩）；读取顺序 hx_glow_v1.xiaotao→旧xt_glow_v1搬家（旧钥匙保留不删）→默认三套；其余一行未动 */ /* v0.5.0 点亮三级菜单：点亮切块/笔记正文→底部浮条5选项（变笔记/问AI/做新PPT/出题/自定义）→每选项3套提示词→可编辑发送；提示词存xt_glow_v1可随时改；做PPT走ppt_inbox邮路寄PPT工坊；变笔记可一键存笔记（洪老师2026-09-06晚拍板，提示词AI先编三套待调） */ /* v0.4.1 排版修复：资料库列表「自动切失败」报错条从右栏搬出单独占一行，书名不再被挤成一字一行（洪老师真机截图报案）；纯排版，切片逻辑未动 */ /* v0.4.0 鱼骨头化：ⓘ说明默认收起 + 设置/关于收进「🛠 设置与工具」抽屉（hx_xiaotao_tool_open），照管家v0.5.0样板；纯界面，功能逻辑未动 */ /* v0.3.32 账本桥进全家hx_aibill（主界面💰卡片汇总） */ /* v0.3.31 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */
+var SW_VERSION = '0.6.0'; /* 鱼骨头化总攻 v0.6.0 2026-09-10：新建笔记卡双大钮收进一条details折叠行，张开后两条文字行，纯版面，功能零改动 */ /* 速记自动上行 v0.5.3 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* 速记 v0.5.2 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */ /* v0.5.1 提示词配置搬家全家公用钥匙：点亮三级菜单的提示词从 xt_glow_v1 迁到 hx_glow_v1 的 xiaotao 分支（与大管家共用一把钥匙、各存各的分支互不踩）；读取顺序 hx_glow_v1.xiaotao→旧xt_glow_v1搬家（旧钥匙保留不删）→默认三套；其余一行未动 */ /* v0.5.0 点亮三级菜单：点亮切块/笔记正文→底部浮条5选项（变笔记/问AI/做新PPT/出题/自定义）→每选项3套提示词→可编辑发送；提示词存xt_glow_v1可随时改；做PPT走ppt_inbox邮路寄PPT工坊；变笔记可一键存笔记（洪老师2026-09-06晚拍板，提示词AI先编三套待调） */ /* v0.4.1 排版修复：资料库列表「自动切失败」报错条从右栏搬出单独占一行，书名不再被挤成一字一行（洪老师真机截图报案）；纯排版，切片逻辑未动 */ /* v0.4.0 鱼骨头化：ⓘ说明默认收起 + 设置/关于收进「🛠 设置与工具」抽屉（hx_xiaotao_tool_open），照管家v0.5.0样板；纯界面，功能逻辑未动 */ /* v0.3.32 账本桥进全家hx_aibill（主界面💰卡片汇总） */ /* v0.3.31 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
