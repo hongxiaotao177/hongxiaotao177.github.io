@@ -2,6 +2,18 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.12.0 2026-09-10 公共件收编（plan2军规：钥匙统一+收公共块+不崩溃压倒一切）：
+      ①接入 hx-common.js 三级查找加载器（壳readFile授权文件夹→同目录fetch 8秒超时→公开仓raw下载写壳安装），
+        hxCommonLoad两个回调：装好走HX.*，没装好只console.warn降级提示，主功能（卡片/同步/文件柜/体检/备份）照常；
+      ②删除内嵌速记snippet（sjGhKeys/sjToast/sjUpload+浮标UI/style），改 HX.sj.init({app:'主界面'})（HX不在时浮标不出=静默降级）；
+      ③内嵌gh传输改调 HX.gh.*：ghCfg/ghHeaders 改 HX.gh.cfg/headers（HX不在或读不到时回落原fallback链，bg_/xt_旧键不丢），
+        cmpVer→HX.cmpVer、u8enc/u8dec→HX.gh.b64enc/b64dec（均HX优先+原实现兜底）；
+        自检说明：主界面自检=套装更新引擎（9件逐个查版本+下载换新+升级复核，API优先+raw兜底，与HX.selfCheck同源且是其功能超集，
+        版本文件名9件各异 version.json/version-xiti.json…，HX.selfCheck只认 version-<app>.json 装不下），引擎本体保留、底层已走HX.gh；
+      ④钥匙读取改 HX.keys（经HX.keys.gh，hx_gh_*→br_gh_*fallback链，旧数据不丢）；主界面无设置页不写Key（写Key一律hx_apikey的规矩由有设置页的软件执行）；
+      ⑤账本：主界面只做"汇总全家账本"读hx_aibill（billRender读法一行未动），不写账，HX.bill无需调用；
+      ⑥小涛笔记入口行标注「（旧版留档·功能已并入学习笔记）」（plan2拍板：小涛冻结v0.6.0留档不维护，学习笔记是正房）。
+      CUR.index同步1.12.0。
     v1.11.0 2026-09-10 鱼骨头化总攻·主界面（洪老师拍板：首屏全鱼骨头，只动版面不动功能）：
       毛病=首屏11张卡片白底圆角带阴影像11个方框，顶部同步/检查新版本是两个大按钮，60岁零基础看着乱；
       病根=.card白底+圆角+阴影+大padding的卡片样式，按钮用.tag胶囊样式；
@@ -259,7 +271,7 @@
   <div class="section-title">学习记录</div>
 
   <a class="card" href="小涛笔记.html">
-    <h2>📒 小涛笔记 <span style="font-size:12px; color:#b08a4a;">（学习笔记2代·全新）</span><span class="infoBtn">ⓘ 说明</span></h2>
+    <h2>📒 小涛笔记 <span style="font-size:12px; color:#a05848;">（旧版留档·功能已并入学习笔记）</span><span class="infoBtn">ⓘ 说明</span></h2>
     <div class="desc intro">新一代笔记：AI 是主力——输入主题 AI 备课，写完 AI 改稿；[[]] 双链+反链；所有笔记真身是 Obsidian 标准 Markdown，自动存进仓库 vault/ 区，随时零损失搬进 Obsidian；二期上资料库（文献+书统一管理、云端自动切片），三期上我的书。</div>
     <div class="meta"><span class="tag">网页工具</span><span class="tag" id="tagXiaotao">v0.1.0</span></div>
   </a>
@@ -363,12 +375,55 @@
 
 </main>
 
-<footer>红小涛的学习园地 · 主界面 v1.11.0 · 由 Kimi 协助维护</footer>  <!-- v1.8.0 页脚亮版本号：真机验收一眼看清自己是不是新版 -->
+<footer>红小涛的学习园地 · 主界面 v1.12.0 · 由 Kimi 协助维护</footer>  <!-- v1.8.0 页脚亮版本号：真机验收一眼看清自己是不是新版 -->
+
+<script>
+/* ==================== v1.12.0 hx-common.js 三级加载（plan2军规1/2，照 guanjia-pdf-engine.js 已验证先例） ====================
+   ①壳readFile授权文件夹 → ②同目录fetch(8秒超时) → ③公开仓raw下载后写壳安装；
+   军规1 不崩溃压倒一切：全挂也不白屏——装好走 HX.*，没装好只console.warn降级提示，主功能照常 */
+function hxCommonLoad(onHxReady, onHxMissing){
+  function runTxt(txt){ try{ var s=document.createElement('script'); s.textContent=txt; document.head.appendChild(s); }catch(e){} }
+  function ok(){ return !!(window.HX && window.HX.HX_COMMON_VERSION); }
+  function miss(){ try{ if(onHxMissing) onHxMissing(); }catch(e){} }
+  function good(){ try{ if(onHxReady) onHxReady(); }catch(e){} }
+  /* ①壳里先读授权文件夹（file://下fetch常被拦，readFile可靠） */
+  if(window.LearnShell){
+    var f=null; try{ f=LearnShell.readFile('hx-common.js'); }catch(e){}
+    if(f){ try{ runTxt(decodeURIComponent(escape(atob(String(f).replace(/\s+/g,''))))); if(ok()){ good(); return; } }catch(e){} }
+  }
+  /* ②同目录fetch（壳内file://会挂起，装8秒超时） */
+  var _c=new AbortController(); var _t=setTimeout(function(){ _c.abort(); }, 8000);
+  fetch('hx-common.js?t='+Date.now(), {cache:'no-store', signal:_c.signal}).then(function(r){
+    if(!r.ok) throw new Error('HTTP '+r.status); return r.text();
+  }).then(function(txt){
+    clearTimeout(_t); runTxt(txt);
+    if(ok()){ good(); } else { hxCommonInstall(good, miss); } /* ③在线下载安装 */
+  }).catch(function(){ clearTimeout(_t); hxCommonInstall(good, miss); });
+}
+function hxCommonInstall(good, miss){
+  var _c=new AbortController(); var _t=setTimeout(function(){ _c.abort(); }, 30000);
+  fetch('https://hongxiaotao177.github.io/hx-common.js?t='+Date.now(), {cache:'no-store', signal:_c.signal}).then(function(r){
+    if(!r.ok) throw new Error('HTTP '+r.status); return r.text();
+  }).then(function(txt){
+    clearTimeout(_t);
+    try{ if(window.LearnShell && LearnShell.folderSet && LearnShell.folderSet()) LearnShell.writeFile('hx-common.js', btoa(unescape(encodeURIComponent(txt)))); }catch(e){}
+    try{ var s=document.createElement('script'); s.textContent=txt; document.head.appendChild(s); }catch(e){}
+    if(window.HX && window.HX.HX_COMMON_VERSION){ good(); } else { miss(); }
+  }).catch(function(){ clearTimeout(_t); miss(); });
+}
+/* 装好了：速记浮标入编（UI由HX.sj自动注入）；gh/keys/cmpVer wrappers在调用点实时认HX，无需在此重绑 */
+hxCommonLoad(function(){
+  try{ HX.sj.init({app:'主界面'}); }catch(e){}
+}, function(){
+  /* 军规1 降级：只做提示不挡路——速记浮标不出，gh/keys走原fallback实现，主功能照常 */
+  try{ if(window.console && console.warn) console.warn('[hx-common] 公共件未装，速记/云自检走降级路径，主功能不受影响'); }catch(e){}
+});
+</script>
 
 <script>
 /* ==================== 套装主界面自检器官（v1.1.0） ==================== */
 /* 本界面对应的四个软件当前内装版本（每次发版跟着改） */
-var CUR = { notes:"2.17.0", xiti:"1.11.0", bridge:"1.4.0", xueqi:"0.13.0", ppt:"0.15.0", xiaotao:"0.6.0", guanjia:"0.22.0" /* v1.11.0鱼骨头化总攻9件齐发CUR全同步（原0.19.0落伍上真账） */, index:"1.11.0" /* 鱼骨头化总攻 v1.11.0 2026-09-10：11卡压成文字行，纯CSS只动版面 */ };
+var CUR = { notes:"2.18.0", xiti:"1.12.0", bridge:"1.5.0", xueqi:"0.14.0", ppt:"0.16.0", xiaotao:"0.6.0" /* 冻结留档 */, guanjia:"0.23.0", pai:"0.6.0", index:"1.12.0" /* 公共件收编 v1.12.0 2026-09-10：hx-common.js接入8件齐发CUR全同步（新增pai入册） */ };
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
 try{ var _sv=JSON.parse(localStorage.getItem("hx_suite_ver")||"{}"); Object.keys(_sv).forEach(function(k){ if(_sv[k]) CUR[k]=_sv[k]; }); }catch(e){}
 /* key: [云端软件文件, 壳内文件名, 云端版本文件, 标签id] */
@@ -422,18 +477,26 @@ try{
 }catch(e){}
 
 function updMsg(t){ var el=document.getElementById("updLine"); el.style.display="block"; el.textContent=t; }
+/* v1.12.0 公共件收编：cmpVer 改调 HX.cmpVer（HX不在时回落原实现，不崩） */
 function cmpVer(a,b){
+  if(window.HX && HX.cmpVer){ try{ return HX.cmpVer(a,b); }catch(e){} }
   var pa=String(a).split("."), pb=String(b).split(".");
   for(var i=0;i<Math.max(pa.length,pb.length);i++){
     var x=parseInt(pa[i]||"0",10), y=parseInt(pb[i]||"0",10);
     if(x>y) return 1; if(x<y) return -1;
   } return 0;
 }
-function u8enc(str){ var b=new TextEncoder().encode(str), s=""; for(var i=0;i<b.length;i++) s+=String.fromCharCode(b[i]); return btoa(s); }
-function u8dec(b64){ var s=atob(b64.replace(/\s+/g,"")), b=new Uint8Array(s.length); for(var i=0;i<s.length;i++) b[i]=s.charCodeAt(i); return new TextDecoder().decode(b); }
+/* v1.12.0 公共件收编：u8enc/u8dec 改调 HX.gh.b64enc/b64dec（HX不在时回落原实现） */
+function u8enc(str){ if(window.HX && HX.gh && HX.gh.b64enc){ try{ return HX.gh.b64enc(str); }catch(e){} } var b=new TextEncoder().encode(str), s=""; for(var i=0;i<b.length;i++) s+=String.fromCharCode(b[i]); return btoa(s); }
+function u8dec(b64){ if(window.HX && HX.gh && HX.gh.b64dec){ try{ return HX.gh.b64dec(b64); }catch(e){} } var s=atob(b64.replace(/\s+/g,"")), b=new Uint8Array(s.length); for(var i=0;i<s.length;i++) b[i]=s.charCodeAt(i); return new TextDecoder().decode(b); }
 
 /* 公共钱罐读配置：hx_* 优先，各软件私有罐也能认 */
+/* v1.12.0 公共件收编（plan2军规4 钥匙统一）：改走 HX.keys.gh()（hx_gh_*→br_gh_* fallback）；
+   HX不在或HX读不到时回落原四前缀fallback链（bg_/xt_旧键数据不丢，军规1不崩压倒一切） */
 function ghCfg(){
+  if(window.HX && HX.gh && HX.gh.cfg){
+    try{ var hc=HX.gh.cfg(); if(hc && (hc.user||hc.tok||hc.repo)) return { user:hc.user||"", tok:hc.tok||"", repo:hc.repo||"" }; }catch(e){}
+  }
   function pick(keys){ for(var i=0;i<keys.length;i++){ var v=localStorage.getItem(keys[i]); if(v) return v.replace(/^\s+|\s+$/g,""); } return ""; }
   return {
     user: pick(["hx_gh_user","bg_gh_user","xt_gh_user","br_gh_user"]),
@@ -441,7 +504,13 @@ function ghCfg(){
     repo: pick(["hx_gh_repo","bg_gh_repo","xt_gh_repo","br_gh_repo"])
   };
 }
-function ghHeaders(){ var c=ghCfg(); return {"Authorization":"token "+c.tok, "Accept":"application/vnd.github+json"}; }
+/* v1.12.0 公共件收编：改调 HX.gh.headers()（拿不到有效头时回落原实现） */
+function ghHeaders(){
+  if(window.HX && HX.gh && HX.gh.headers){
+    try{ var hh=HX.gh.headers(); if(hh && hh.Authorization && hh.Authorization!=="token ") return hh; }catch(e){}
+  }
+  var c=ghCfg(); return {"Authorization":"token "+c.tok, "Accept":"application/vnd.github+json"};
+}
 
 /* v1.6.1 卡10秒修复：访问GitHub的fetch统一走这里，8秒没回话就当超时失败，
    不再干等浏览器默认超时（可达数分钟）。用法和fetch一模一样，失败照常走原catch。 */
@@ -1048,88 +1117,8 @@ document.getElementById('bkDavBtn').addEventListener('click', function(){ try{ b
 </script>
 
 
-<!-- 速记 v1.10.1 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点，不做系统悬浮窗）：右下角半透明圆点→弹小输入框→「记下」自动把新行（时间+软件名+上下文）追加写进壳授权文件夹「速记流水.txt」（一个文件按时间追加），存完toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含，只依赖window.LearnShell壳桥（readFile/writeFile/folderSet，与大管家导出写壳文件夹同款），不依赖本软件任何内部函数；纯追加，现有代码一行未动 -->
-<style id="hxSjStyle">
-/* 速记 v1.10.1 样式：低饱和暖色、圆点半透明、输入框白底圆角大字；bottom:88px错开右下角已有的回家/功能圆钮 */
-#hxSjDot{position:fixed;right:18px;bottom:88px;width:52px;height:52px;border-radius:50%;background:rgba(122,158,126,.55);border:2px solid rgba(255,255,255,.75);color:#fff;font-size:22px;z-index:99990;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.18);user-select:none;-webkit-user-select:none}
-#hxSjPanel{position:fixed;right:14px;bottom:150px;width:320px;max-width:86vw;background:#fffdf8;border:1px solid #e5ddd0;border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.18);z-index:99991;padding:12px;display:none}
-#hxSjText{width:100%;box-sizing:border-box;min-height:72px;font-size:18px;line-height:1.5;border:1px solid #ddd2c2;border-radius:10px;padding:10px;background:#fff;color:#4a4238;resize:vertical}
-#hxSjPanel .hxSjBtns{display:flex;gap:10px;margin-top:10px}
-#hxSjPanel button{flex:1;font-size:18px;padding:10px 0;border:none;border-radius:10px;cursor:pointer}
-#hxSjSave{background:#7a9e7e;color:#fff}
-#hxSjClose{background:#efe9df;color:#6b6257}
-#hxSjHint{font-size:13px;color:#a05848;margin-top:8px;display:none}
-#hxSjToast{position:fixed;left:50%;bottom:160px;transform:translateX(-50%);background:rgba(74,64,48,.92);color:#fff;padding:10px 20px;border-radius:20px;font-size:16px;z-index:99992;display:none}
-</style>
-<div id="hxSjDot" title="速记">🏥</div>
-<div id="hxSjPanel">
-  <textarea id="hxSjText" placeholder="发现啥毛病，写一句…"></textarea>
-  <div class="hxSjBtns"><button id="hxSjSave" type="button">记下</button><button id="hxSjClose" type="button">关上</button></div>
-  <div id="hxSjHint">浏览器里存不了，请在手机壳里用</div>
-</div>
-<div id="hxSjToast"></div>
-<script>
-/* 速记 v1.10.1 浮标速记：自包含IIFE，只摸window.LearnShell壳桥；readFile('速记流水.txt')→拼新行→writeFile写回 */
-(function(){
-  var HX_SJ_APP='主界面'; /* 速记：本软件名，全家9个文件只这一行不同 */
-  function $(id){ return document.getElementById(id); }
-  function bridged(){ try{ return !!(window.LearnShell&&LearnShell.folderSet&&LearnShell.folderSet()); }catch(e){ return false; } }
-  function b64e(s){ return btoa(unescape(encodeURIComponent(s))); }
-  function b64d(s){ try{ return decodeURIComponent(escape(atob(s))); }catch(e){ try{ return atob(s); }catch(e2){ return ''; } } }
-  function pad(n){ return (n<10?'0':'')+n; }
-
-  /* 速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：
-     记下成功+开门闲时各对账一次——整份「速记流水.txt」PUT到仓根目录同名文件（整份覆盖，没网漏掉的行下回自动补）；
-     钥匙抄公共钱罐hx_gh_*（全家共享那套），没钥匙/没网静默跳过不打搅；上行成功才记hx_sj_uplocal对账，内容没变不重复推 */
-  function sjGhKeys(){ try{ var g=function(k){ return localStorage.getItem(k)||''; }; var t=g('hx_gh_tok')||g('br_gh_tok'),u=g('hx_gh_user')||g('br_gh_user'),r=g('hx_gh_repo')||g('br_gh_repo'); if(!t||!u||!r) return null; return {t:t,u:u,r:r}; }catch(e){ return null; } }
-  function sjUpload(){
-    try{
-      if(!bridged()) return;
-      var g=sjGhKeys(); if(!g||!window.fetch) return;
-      var b=LearnShell.readFile('速记流水.txt'); if(!b) return;
-      var txt=b64d(b); if(!txt) return;
-      if(txt===localStorage.getItem('hx_sj_uplocal')) return;
-      var api='https://api.github.com/repos/'+encodeURIComponent(g.u)+'/'+encodeURIComponent(g.r)+'/contents/'+encodeURIComponent('速记流水.txt');
-      var H={'Authorization':'token '+g.t,'Accept':'application/vnd.github+json'};
-      fetch(api,{headers:H}).then(function(resp){ if(resp.status===404) return {sha:null}; if(!resp.ok) throw 0; return resp.json(); }).then(function(j){
-        var body={message:'速记自动上行 '+HX_SJ_APP, content:b64e(txt)};
-        if(j&&j.sha) body.sha=j.sha;
-        return fetch(api,{method:'PUT',headers:H,body:JSON.stringify(body)});
-      }).then(function(resp){ if(!resp.ok) throw 0; return resp.json(); }).then(function(){
-        try{ localStorage.setItem('hx_sj_uplocal',txt); }catch(e){}
-      }).catch(function(){ /* 静默：没网/钥匙不好使都不打搅，下回记下自动补 */ });
-    }catch(e){}
-  }
-  function sjToast(m){ var t=$('hxSjToast'); if(!t) return; t.textContent=m; t.style.display='block'; clearTimeout(t._t); t._t=setTimeout(function(){ t.style.display='none'; },2200); }
-  function openPanel(){ var p=$('hxSjPanel'); if(!p) return; p.style.display=(p.style.display==='block')?'none':'block'; if(p.style.display==='block'){ $('hxSjHint').style.display=bridged()?'none':'block'; try{ $('hxSjText').focus(); }catch(e){} } }
-  function save(){
-    var ta=$('hxSjText'); var v=(ta.value||'').replace(/^\s+|\s+$/g,'');
-    if(!v){ sjToast('先写一句再记'); return; }
-    if(!bridged()){ $('hxSjHint').style.display='block'; sjToast('请在手机壳里用'); return; }
-    var d=new Date();
-    var ts=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes());
-    var ctx='';
-    try{ var pt=localStorage.getItem('hx_gj_curpt'); if(pt){ pt=String(pt).replace(/^["']+|["']+$/g,''); if(pt) ctx+='　病人:'+pt; } }catch(e){}
-    try{ var t=(document.title||'').replace(/^\s+|\s+$/g,''); if(t) ctx+='　页面:'+t; }catch(e){}
-    var line='['+ts+'] 【'+HX_SJ_APP+'】'+v+ctx;
-    var old='';
-    try{ var b=LearnShell.readFile('速记流水.txt'); if(b) old=b64d(b); }catch(e){ old=''; }
-    var neu=old+((old&&old.charAt(old.length-1)!=='\n')?'\n':'')+line+'\n';
-    try{
-      LearnShell.writeFile('速记流水.txt', b64e(neu));
-      sjToast('已记下'); ta.value=''; $('hxSjPanel').style.display='none';
-      try{ sjUpload(); }catch(e){} /* 速记自动上行：本地存成后顺手推上网，失败静默下回补 */
-    }catch(e){ sjToast('没存成：'+e.message); }
-  }
-  function init(){
-    var dot=$('hxSjDot'); if(!dot) return;
-    dot.addEventListener('click', openPanel);
-    $('hxSjSave').addEventListener('click', save);
-    $('hxSjClose').addEventListener('click', function(){ $('hxSjPanel').style.display='none'; });
-    setTimeout(function(){ try{ sjUpload(); }catch(e){} }, 8000); /* 速记自动上行：开门闲时对账补推（上次没网漏的在这补） */
-  }
-  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', init); } else { init(); }
-})();
-</script>
+<!-- v1.12.0 公共件收编（plan2军规5）：内嵌速记snippet（sjGhKeys/sjToast/sjUpload+浮标UI+style）已删除，
+     改 HX.sj.init({app:'主界面'})（见上方 hxCommonLoad 的 onHxReady 回调；UI由HX.sj自动注入，行为一字未改）。
+     HX不在时浮标不出=静默降级，主功能照常（军规1）。 -->
 </body>
 </html>
