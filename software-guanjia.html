@@ -8,6 +8,25 @@
   红小涛学习套装 · 病人大管家
   定位：全家资料的"管家"。按病人归堆（血气/呼吸机/脱敏病历，天然有章），
         按知识搜索（笔记/习题，全靠AI名片）。
+  v0.18.0 2026-09-10 真机八连修（2026-09-10 洪老师真机反馈11:41~11:52八条，逐条对应）：
+    ①毛病34 名册混入非病人记录没手段删——名册每行加「🗑 删除」：点了一刀两断，名下病历条目从hx_pdocs_v1删掉+
+      名字（含别名）记进隐藏名单hx_gj_pthide_v1，以后归堆不再显示；血气/呼吸机档案柜原始记录不动。
+    ②毛病35 原始病历没收干净（"17床黄热射病原始病历还没删""脱敏环节原始病历两件没删，重大隐患"）——
+      病根：收进病历库后原文保险柜hx_dsmraw_v1的原文只等到点（默认1小时）才销毁。修：dsm_admitToLib收成功的病人，
+      保险柜里同名（pkey口径）原文立即销毁（脱敏分身已在库，合③静默删规矩），不等钟点。
+    ③毛病36 详情页「聚合病历」独立框多余（v0.14.1起导出报告已挂进该病人时间线，另立一框重复占地）——整框删掉，
+      看聚合走时间线里的「📊 导出报告/📋 会诊PPT」条目。
+    ④毛病37 新生成的导出html没进病人文件清单（"本该4个还是3个"）——修：dsm_exportReport导出成功后把报告登记进
+      脱敏间该病人文件清单（同名芯更新不重复堆，标「导出报告」，不参了下轮导出防自己吃自己），清单立刻多一行。
+    ⑤毛病38 AI功能找不到——病根：开门全卡折叠成一行标题，问AI卡埋在中间。修：版本行下加醒目「🤖 AI功能」直达钮，
+      点了撑开「问AI查资料」卡并滚过去。
+    ⑥毛病39 脱敏间开头蓝色大框碍眼+功能要鱼骨头——删.dsm_header蓝色渐变头框（⚙️系统设置/📖帮助挪进脱敏间卡标题行，
+      功能不丢）；「📂选文件夹/🗑清空/📄看文件选文件/📥收进病历库」四个动作钮从被默认藏起的「当前状态」框里挪出来
+      单独成行常显（病根：v0.12.0 B2把收进病历库按钮一起藏了，难怪找不到），「当前状态」框本身照旧默认藏。
+    ⑦毛病40 脱敏间「当前病人」展开区多余（名册点谁谁是当前病人，蓝边已表明）——整行删掉，
+      三处dsm_currentPatientName赋值加空值守卫。
+    ⑧毛病41 文件条目方框太大——文件清单/文件夹内容条目改窄行（padding收紧）；文件名已带扩展名，
+      后面pdf/txt类型小框删掉、「✅可脱敏」说明徽标删掉（❌不支持保留），大小保留小字。
   v0.17.1 2026-09-10 速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。
   v0.17.0 2026-09-10 HTML会诊PPT（洪老师拍板：多学科会诊用，做HTML不做pptx，纯新功能只加不改）：
     病人详情页「🤖问AI」旁加「📋 会诊PPT」——聚合全文走aiChat发第4套会诊稿提示词出五栏目
@@ -330,9 +349,9 @@
 .dsm_pdf-loader{background:#fff;border-radius:10px;padding:12px 20px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:16px;border-left:4px solid #f39c12}#dsmWrap .dsm_pdf-loader .dsm_loader-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}#dsmWrap .dsm_pdf-loader .dsm_loader-title{font-weight:600;color:#555;font-size:14px;display:flex;align-items:center;gap:8px}#dsmWrap .dsm_pdf-loader .dsm_spinner{display:inline-block;width:18px;height:18px;border:3px solid #f3f3f3;border-top:3px solid #1a73e8;border-radius:50%;animation:dsm_spin 0.8s linear infinite}#dsmWrap .dsm_pdf-loader .dsm_progress-wrap{flex:1;min-width:120px;height:6px;background:#e8edf5;border-radius:4px;overflow:hidden}#dsmWrap .dsm_pdf-loader .dsm_progress-fill{height:100%;background:linear-gradient(90deg,#1a73e8,#0d47a1);width:0%;border-radius:4px;transition:width .3s}#dsmWrap .dsm_pdf-loader .dsm_status-text{font-size:13px;color:#888}#dsmWrap .dsm_pdf-loader .dsm_status-text .dsm_hl{color:#1a73e8;font-weight:600}#dsmWrap .dsm_pdf-loader .dsm_retry-btn{background:#1a73e8;color:#fff;border:none;padding:3px 14px;border-radius:4px;font-size:12px;cursor:pointer}#dsmWrap .dsm_pdf-loader .dsm_retry-btn:hover{background:#1557b0}#dsmWrap .dsm_pdf-loader .dsm_retry-btn.dsm_hidden{display:none}#dsmWrap .dsm_pdf-loader.dsm_ready{border-left-color:#27ae60}#dsmWrap .dsm_pdf-loader.dsm_error{border-left-color:#e74c3c}#dsmWrap /* 状态栏 */
 .dsm_root-info{background:#fff;border-radius:10px;padding:10px 18px;box-shadow:0 1px 4px rgba(0,0,0,.06);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:16px}#dsmWrap .dsm_root-info .dsm_label{font-weight:600;color:#555;font-size:13px}#dsmWrap .dsm_root-info .dsm_path{color:#1a73e8;font-family:Consolas,monospace;font-size:13px;background:#f5f7fa;padding:2px 12px;border-radius:4px;word-break:break-all}#dsmWrap .dsm_root-info .dsm_actions{display:flex;gap:6px}#dsmWrap .dsm_root-info .dsm_actions button{padding:4px 12px;border:1px solid #ddd;background:#fff;border-radius:5px;font-size:12px;cursor:pointer}#dsmWrap .dsm_root-info .dsm_actions button:hover{background:#e8edf5;border-color:#1a73e8}#dsmWrap /* 选择区 */
 .dsm_select-zone{background:#fff;border-radius:10px;padding:28px 20px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:16px;border:3px dashed #1a73e8;text-align:center;cursor:pointer;transition:.2s}#dsmWrap .dsm_select-zone:hover{background:#e8edf5;border-color:#0d47a1}#dsmWrap .dsm_select-zone .dsm_icon{font-size:40px;display:block;margin-bottom:8px}#dsmWrap .dsm_select-zone .dsm_hint{font-size:16px;color:#333;font-weight:500}#dsmWrap .dsm_select-zone .dsm_sub-hint{font-size:13px;color:#888;margin-top:6px}#dsmWrap .dsm_select-zone .dsm_file-info{font-size:13px;color:#27ae60;margin-top:8px;font-weight:600}#dsmWrap /* ★★★ 文件浏览器 - 醒目显示 ★★★ */
-.dsm_file-browser{background:#fff;border-radius:10px;padding:14px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);margin-bottom:16px;display:none;border:3px solid #1a73e8}#dsmWrap .dsm_file-browser.dsm_visible{display:block}#dsmWrap .dsm_file-browser .dsm_browser-title{font-weight:700;color:#1a73e8;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;font-size:15px;padding-bottom:8px;border-bottom:2px solid #e8edf5}#dsmWrap .dsm_file-browser .dsm_browser-title .dsm_count{font-weight:400;color:#666;font-size:13px;background:#e8edf5;padding:2px 12px;border-radius:10px}#dsmWrap .dsm_file-browser .dsm_browser-list{max-height:400px;overflow-y:auto}#dsmWrap .dsm_file-browser .dsm_browser-item{display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:4px;border-bottom:1px solid #f5f7fa;font-size:13px}#dsmWrap .dsm_file-browser .dsm_browser-item:hover{background:#f0f6ff}#dsmWrap .dsm_file-browser .dsm_browser-item .dsm_icon{font-size:18px;width:28px;text-align:center}#dsmWrap .dsm_file-browser .dsm_browser-item .dsm_name{flex:1;min-width:0;font-family:Consolas,monospace;font-size:13px;color:#333;word-break:break-all}#dsmWrap .dsm_file-browser .dsm_browser-item .dsm_size{color:#999;font-size:12px;white-space:nowrap;margin:0 6px}#dsmWrap .dsm_file-browser .dsm_browser-item .dsm_badge{font-size:11px;padding:2px 10px;border-radius:10px;white-space:nowrap}#dsmWrap .dsm_file-browser .dsm_browser-item .dsm_badge.dsm_ok{background:#d4edda;color:#155724}#dsmWrap .dsm_file-browser .dsm_browser-item .dsm_badge.dsm_err{background:#f8d7da;color:#721c24}#dsmWrap .dsm_file-browser .dsm_browser-item .dsm_badge.warn{background:#fff3cd;color:#856404}#dsmWrap .dsm_file-browser .dsm_empty-state{color:#bbb;text-align:center;padding:30px 0;font-size:14px}#dsmWrap /* 病人列表 */
+.dsm_file-browser{background:#fff;border-radius:10px;padding:14px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);margin-bottom:16px;display:none;border:3px solid #1a73e8}#dsmWrap .dsm_file-browser.dsm_visible{display:block}#dsmWrap .dsm_file-browser .dsm_browser-title{font-weight:700;color:#1a73e8;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;font-size:15px;padding-bottom:8px;border-bottom:2px solid #e8edf5}#dsmWrap .dsm_file-browser .dsm_browser-title .dsm_count{font-weight:400;color:#666;font-size:13px;background:#e8edf5;padding:2px 12px;border-radius:10px}#dsmWrap .dsm_file-browser .dsm_browser-list{max-height:400px;overflow-y:auto}#dsmWrap .dsm_file-browser .dsm_browser-item{display:flex;align-items:center;gap:8px;padding:2px 6px; /* v0.18.0 毛病41：窄行，手机版面不浪费 */border-radius:4px;border-bottom:1px solid #f5f7fa;font-size:13px}#dsmWrap .dsm_file-browser .dsm_browser-item:hover{background:#f0f6ff}#dsmWrap .dsm_file-browser .dsm_browser-item .dsm_icon{font-size:18px;width:28px;text-align:center}#dsmWrap .dsm_file-browser .dsm_browser-item .dsm_name{flex:1;min-width:0;font-family:Consolas,monospace;font-size:13px;color:#333;word-break:break-all}#dsmWrap .dsm_file-browser .dsm_browser-item .dsm_size{color:#999;font-size:12px;white-space:nowrap;margin:0 6px}#dsmWrap .dsm_file-browser .dsm_browser-item .dsm_badge{font-size:11px;padding:2px 10px;border-radius:10px;white-space:nowrap}#dsmWrap .dsm_file-browser .dsm_browser-item .dsm_badge.dsm_ok{background:#d4edda;color:#155724}#dsmWrap .dsm_file-browser .dsm_browser-item .dsm_badge.dsm_err{background:#f8d7da;color:#721c24}#dsmWrap .dsm_file-browser .dsm_browser-item .dsm_badge.warn{background:#fff3cd;color:#856404}#dsmWrap .dsm_file-browser .dsm_empty-state{color:#bbb;text-align:center;padding:30px 0;font-size:14px}#dsmWrap /* 病人列表 */
 .dsm_patient-section{background:#fff;border-radius:10px;padding:14px 18px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:16px}#dsmWrap .dsm_patient-section .dsm_section-title{font-weight:600;color:#555;font-size:14px;margin-bottom:10px}#dsmWrap .dsm_patient-cards{display:flex;flex-wrap:wrap;gap:8px}#dsmWrap .dsm_patient-card{padding:8px 18px;border:2px solid #e0e4ea;border-radius:6px;cursor:pointer;font-weight:500;background:#fafbfc;font-size:13px;position:relative}#dsmWrap .dsm_patient-card:hover{border-color:#1a73e8;background:#f0f6ff}#dsmWrap .dsm_patient-card.dsm_active{border-color:#1a73e8;background:#e3edfc;color:#0d47a1}#dsmWrap .dsm_patient-card .dsm_del{position:absolute;top:-5px;right:-5px;background:#e74c3c;color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:11px;cursor:pointer;display:none;line-height:18px;text-align:center}#dsmWrap .dsm_patient-card:hover .dsm_del{display:block}#dsmWrap /* 数据区 */
-.dsm_data-section{background:#fff;border-radius:10px;padding:14px 18px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:16px}#dsmWrap .dsm_data-section .dsm_top-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px}#dsmWrap .dsm_data-section .dsm_top-row .dsm_info{font-size:13px;color:#555}#dsmWrap .dsm_data-section .dsm_top-row .dsm_info strong{color:#1a73e8}#dsmWrap .dsm_data-section .dsm_top-row .dsm_actions button{padding:4px 14px;border:1px solid #ddd;background:#fff;border-radius:5px;font-size:12px;cursor:pointer}#dsmWrap .dsm_data-section .dsm_top-row .dsm_actions button:hover{background:#e8edf5;border-color:#1a73e8}#dsmWrap .dsm_file-list{display:flex;flex-direction:column;gap:4px}#dsmWrap .dsm_file-item{display:flex;align-items:center;gap:10px;padding:5px 10px;background:#f8f9fb;border-radius:5px;font-size:13px}#dsmWrap .dsm_file-item .dsm_status{font-weight:600}#dsmWrap .dsm_file-item .dsm_status.dsm_ok{color:#27ae60}#dsmWrap .dsm_file-item .dsm_status.dsm_err{color:#e74c3c}#dsmWrap .dsm_file-item .dsm_fname{font-family:Consolas,monospace;font-size:12px;color:#333}#dsmWrap .dsm_file-item .dsm_fsize{color:#999;font-size:11px;margin-left:auto}#dsmWrap .dsm_file-item .dsm_ftype{color:#666;font-size:11px;background:#e8edf5;padding:1px 8px;border-radius:4px}#dsmWrap /* 导出 */
+.dsm_data-section{background:#fff;border-radius:10px;padding:14px 18px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:16px}#dsmWrap .dsm_data-section .dsm_top-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px}#dsmWrap .dsm_data-section .dsm_top-row .dsm_info{font-size:13px;color:#555}#dsmWrap .dsm_data-section .dsm_top-row .dsm_info strong{color:#1a73e8}#dsmWrap .dsm_data-section .dsm_top-row .dsm_actions button{padding:4px 14px;border:1px solid #ddd;background:#fff;border-radius:5px;font-size:12px;cursor:pointer}#dsmWrap .dsm_data-section .dsm_top-row .dsm_actions button:hover{background:#e8edf5;border-color:#1a73e8}#dsmWrap .dsm_file-list{display:flex;flex-direction:column;gap:4px}#dsmWrap .dsm_file-item{display:flex;align-items:center;gap:8px;padding:2px 8px;background:#f8f9fb;border-radius:4px;font-size:13px} /* v0.18.0 毛病41：窄行 */#dsmWrap .dsm_file-item .dsm_status{font-weight:600}#dsmWrap .dsm_file-item .dsm_status.dsm_ok{color:#27ae60}#dsmWrap .dsm_file-item .dsm_status.dsm_err{color:#e74c3c}#dsmWrap .dsm_file-item .dsm_fname{font-family:Consolas,monospace;font-size:12px;color:#333}#dsmWrap .dsm_file-item .dsm_fsize{color:#999;font-size:11px;margin-left:auto}#dsmWrap .dsm_file-item .dsm_ftype{color:#666;font-size:11px;background:#e8edf5;padding:1px 8px;border-radius:4px}#dsmWrap /* 导出 */
 .dsm_export-section{background:#fff;border-radius:10px;padding:12px 18px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:16px;display:flex;flex-wrap:wrap;align-items:center;gap:10px}#dsmWrap .dsm_export-section .dsm_label{font-weight:600;color:#555;font-size:13px}#dsmWrap .dsm_export-section .dsm_path-input{flex:2;min-width:160px;padding:5px 10px;border:1px solid #ddd;border-radius:5px;font-size:12px;background:#f8f9fb;font-family:Consolas,monospace}#dsmWrap .dsm_export-section .dsm_path-input:focus{border-color:#1a73e8;outline:none;background:#fff}#dsmWrap .dsm_export-section .dsm_btn-primary{padding:6px 20px;background:#1a73e8;color:#fff;border:none;border-radius:5px;font-size:14px;font-weight:600;cursor:pointer}#dsmWrap .dsm_export-section .dsm_btn-primary:hover{background:#1557b0}#dsmWrap /* 预览 */
 .dsm_preview-section{background:#fff;border-radius:10px;padding:14px 18px;box-shadow:0 1px 4px rgba(0,0,0,.06);display:none}#dsmWrap .dsm_preview-section.dsm_visible{display:block}#dsmWrap .dsm_preview-section .dsm_preview-title{font-weight:600;color:#333;border-bottom:2px solid #e8edf5;padding-bottom:8px;margin-bottom:12px;font-size:14px}#dsmWrap .dsm_preview-content{max-height:550px;overflow-y:auto;font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word}#dsmWrap .dsm_preview-content .dsm_section-block{margin-bottom:14px;padding:10px 14px;background:#f8f9fb;border-radius:6px;border-left:4px solid #1a73e8}#dsmWrap .dsm_preview-content .dsm_section-block .dsm_title{font-weight:600;color:#0d47a1;font-size:13px;margin-bottom:4px}#dsmWrap .dsm_preview-content .dsm_compare{display:flex;gap:14px;flex-wrap:wrap}#dsmWrap .dsm_preview-content .dsm_compare .dsm_original{flex:1;min-width:280px;background:#fff3f3;padding:10px;border-radius:5px;border:1px solid #f5c6c6}#dsmWrap .dsm_preview-content .dsm_compare .dsm_original .dsm_label{color:#c0392b;font-weight:600;font-size:12px;margin-bottom:3px}#dsmWrap .dsm_preview-content .dsm_compare .dsm_desensitized{flex:1;min-width:280px;background:#f0f7f0;padding:10px;border-radius:5px;border:1px solid #b8d4b8}#dsmWrap .dsm_preview-content .dsm_compare .dsm_desensitized .dsm_label{color:#27ae60;font-weight:600;font-size:12px;margin-bottom:3px}#dsmWrap .dsm_preview-content .dsm_compare pre{white-space:pre-wrap;font-family:Consolas,monospace;font-size:12px;margin:0}#dsmWrap .dsm_highlight-red{color:#c0392b;background:#fdebd0;padding:1px 3px;border-radius:2px;font-weight:600}#dsmWrap /* 弹窗 */
 .dsm_modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.45);z-index:999;justify-content:center;align-items:center}#dsmWrap .dsm_modal-overlay.dsm_visible{display:flex}#dsmWrap .dsm_modal{background:#fff;border-radius:12px;padding:24px 28px;max-width:820px;width:95%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}#dsmWrap .dsm_modal h2{font-size:18px;margin-bottom:12px;color:#0d47a1}#dsmWrap .dsm_modal label{font-weight:600;font-size:13px;display:block;margin:10px 0 4px;color:#555}#dsmWrap .dsm_modal textarea{width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:Consolas,monospace;resize:vertical;min-height:100px}#dsmWrap .dsm_modal textarea:focus{border-color:#1a73e8;outline:none}#dsmWrap .dsm_modal .dsm_modal-actions{display:flex;gap:10px;margin-top:14px;justify-content:flex-end;flex-wrap:wrap}#dsmWrap .dsm_modal .dsm_modal-actions button{padding:6px 20px;border-radius:5px;font-size:13px;cursor:pointer;border:none}#dsmWrap .dsm_modal .dsm_modal-actions .dsm_btn-save{background:#1a73e8;color:#fff}#dsmWrap .dsm_modal .dsm_modal-actions .dsm_btn-save:hover{background:#1557b0}#dsmWrap .dsm_modal .dsm_modal-actions .dsm_btn-close{background:#f0f2f5;color:#333;border:1px solid #ddd}#dsmWrap .dsm_modal .dsm_modal-actions .dsm_btn-close:hover{background:#e4e7ed}#dsmWrap .dsm_modal .dsm_modal-actions .btn-ai{background:#8e44ad;color:#fff}#dsmWrap .dsm_modal .dsm_modal-actions .btn-ai:hover{background:#6c3483}#dsmWrap .dsm_modal .dsm_modal-actions .btn-danger{background:#e74c3c;color:#fff}#dsmWrap .dsm_modal .dsm_modal-actions .btn-danger:hover{background:#c0392b}#dsmWrap /* 规则标签 */
@@ -398,6 +417,9 @@ hxStore.reg('hx_cards_v1'); hxStore.reg('hx_patients'); hxStore.reg('hx_inbox_v1
 <div class="wrap">
   <h1>🏠 病人大管家</h1>
   <div class="ver">v<span id="verTop">?</span> · 全家的资料管家：病人归堆 + 知识搜索（名片打底）</div>
+  <!-- v0.18.0 毛病38（洪老师真机报"做了半天ai功能在哪里没有发现"）：开门全卡折叠，AI埋在中间找不到；顶上加醒目直达钮，点了撑开「问AI查资料」卡滚过去 -->
+  <div style="margin:8px 0 4px;"><button id="btnAiEntry" style="width:100%;padding:12px;font-size:17px;font-weight:700;background:#8e44ad;color:#fff;border:none;border-radius:10px;cursor:pointer;"
+    onclick="try{ if(typeof foldSetters!=='undefined'&&foldSetters['ask']) foldSetters['ask'](true); var hs=document.querySelectorAll('.card > h2'); for(var i=0;i<hs.length;i++){ if(hs[i].textContent.indexOf('问AI查资料')>=0){ hs[i].scrollIntoView({block:'start'}); break; } } }catch(e){}">🤖 AI功能（问AI查资料，点我直达）</button></div>
 
   <!-- v0.12.0 E2 手机版全屏对照：窄屏（max-width:700px）下.dsm_compare改单列上下排（上原文标红、下脱敏后）+ 全屏浮层样式 -->
   <style>
@@ -416,14 +438,9 @@ hxStore.reg('hx_cards_v1'); hxStore.reg('hx_patients'); hxStore.reg('hx_inbox_v1
   </style>
   <!-- v0.7.0 脱敏间：脱敏工具整张搬入（折叠走大管家现有makeFoldable，见文件末尾dsm脚本） -->
   <div class="card" id="dsmCard">
-    <h2 id="dsmH2">🛡 脱敏间 <span style="font-size:13px;color:#8a8178;font-weight:normal;">病历拖进来脱敏，点「📥 收进病历库」直接进名册</span></h2>
+    <h2 id="dsmH2">🛡 脱敏间 <span style="font-size:13px;color:#8a8178;font-weight:normal;">病历拖进来脱敏，点「📥 收进病历库」直接进名册</span> <button class="ghost" style="font-size:12px;padding:3px 9px;" onclick="event.stopPropagation();dsm_openSettings()">⚙️ 系统设置</button> <button class="ghost" style="font-size:12px;padding:3px 9px;" onclick="event.stopPropagation();dsm_aboutInfo()">📖 帮助</button></h2><!-- v0.18.0 毛病39：蓝头框删掉后，设置/帮助挪到卡标题行，功能不丢 -->
     <div id="dsmWrap">
 <div class="dsm_container">
-<div class="dsm_header">
-<div><h1>🏥 医疗数据脱敏聚合工具</h1><div class="dsm_sub">v5.0 · 排除词 · AI提示词模板 · Chrome优化</div></div>
-<div class="dsm_header-actions"><button onclick="dsm_openSettings()">⚙️ 系统设置</button><button onclick="dsm_aboutInfo()">📖 帮助</button></div>
-</div>
-
 <!-- PDF加载 -->
 <div class="dsm_pdf-loader" id="dsm_pdfLoader">
     <div class="dsm_loader-row">
@@ -437,10 +454,13 @@ hxStore.reg('hx_cards_v1'); hxStore.reg('hx_patients'); hxStore.reg('hx_inbox_v1
 <!-- 状态栏 -->
 <div class="dsm_root-info">
 <div><span class="dsm_label">📁 当前状态：</span><span class="dsm_path" id="dsm_rootPathDisplay">未加载</span></div>
-<div class="dsm_actions">
-    <button onclick="dsm_selectFolder()">📂 选文件夹</button>
-    <button onclick="dsm_clearAllData()">🗑️ 清空数据</button><button onclick="dsm_selectFiles()">📄 看文件选文件</button><button onclick="dsm_admitToLib()" style="border-color:#27ae60;color:#27ae60;font-weight:600;">📥 收进病历库</button>
 </div>
+<!-- v0.18.0 毛病39：四个动作钮从被v0.12.0 B2默认藏起的「当前状态」框里挪出来单独成行常显（收进病历库不能再被藏），「当前状态」框本身照旧默认藏 -->
+<div class="dsm_actions" style="display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px;">
+    <button style="padding:8px 14px;border:1px solid #ddd;background:#fff;border-radius:6px;font-size:14px;cursor:pointer;" onclick="dsm_selectFolder()">📂 选文件夹</button>
+    <button style="padding:8px 14px;border:1px solid #27ae60;background:#fff;color:#27ae60;font-weight:700;border-radius:6px;font-size:14px;cursor:pointer;" onclick="dsm_admitToLib()">📥 收进病历库</button>
+    <button style="padding:8px 14px;border:1px solid #ddd;background:#fff;border-radius:6px;font-size:14px;cursor:pointer;" onclick="dsm_selectFiles()">📄 看文件选文件</button>
+    <button style="padding:8px 14px;border:1px solid #ddd;background:#fff;border-radius:6px;font-size:14px;cursor:pointer;" onclick="dsm_clearAllData()">🗑️ 清空数据</button>
 </div>
 
 <!-- 选择区 -->
@@ -471,7 +491,6 @@ hxStore.reg('hx_cards_v1'); hxStore.reg('hx_patients'); hxStore.reg('hx_inbox_v1
 <!-- 数据区 -->
 <div class="dsm_data-section">
 <div class="dsm_top-row">
-<div class="dsm_info">📊 当前病人：<strong id="dsm_currentPatientName">未选择</strong></div>
 <div class="dsm_actions"><button onclick="dsm_previewData()">📋 预览</button></div>
 </div>
 <div class="dsm_file-list" id="dsm_fileList"><div class="dsm_empty-state">请选择一位病人</div></div>
@@ -773,7 +792,7 @@ hxStore.reg('hx_cards_v1'); hxStore.reg('hx_patients'); hxStore.reg('hx_inbox_v1
 </div>
 
 <script>
-var SW_VERSION = "0.17.1"; /* 速记自动上行 v0.17.1 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* v0.17.0 2026-09-10 HTML会诊PPT（洪老师拍板做HTML不做pptx，纯加法）：详情页「📋 会诊PPT」按钮→第4套会诊稿提示词走aiChat出五栏目（AI失败留「（AI没回话，请手填）」占位照常出片）+本地宽松验单解析器（日期时间+项目名+数值+单位四件套，项目名取冒号前短名）挑≥2时间点指标（PCT/IL-6/乳酸/肌酐/白细胞/CRP/体温模糊匹配优先，最多6个）纯SVG趋势图（最新值红点+数字）→一页一屏HTML幻灯片（点按/滑动/键盘翻页，页脚页码，白底深灰大字+暖色细线标题）→三处产出：壳「脱敏导出_」前缀dsm_shellWriteVerified回读对账、名册kind=report「📋 会诊PPT」徽标+🖥放映按钮、浏览器blob下载；无壳无AI纯浏览器也出演示片 */ /* 速记 v0.16.1 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */ /* v0.16.0 2026-09-10 问AI升级（洪老师拍板）：
+var SW_VERSION = "0.18.0"; /* v0.18.0 2026-09-10 真机八连修（毛病34~41，详见文件顶部修改记录）：名册删除手段/收库即毁原文/删聚合病历独立框/导出进清单/AI直达钮/删蓝框功能鱼骨化/删当前病人展开区/文件条目窄行 */ /* 速记自动上行 v0.17.1 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* v0.17.0 2026-09-10 HTML会诊PPT（洪老师拍板做HTML不做pptx，纯加法）：详情页「📋 会诊PPT」按钮→第4套会诊稿提示词走aiChat出五栏目（AI失败留「（AI没回话，请手填）」占位照常出片）+本地宽松验单解析器（日期时间+项目名+数值+单位四件套，项目名取冒号前短名）挑≥2时间点指标（PCT/IL-6/乳酸/肌酐/白细胞/CRP/体温模糊匹配优先，最多6个）纯SVG趋势图（最新值红点+数字）→一页一屏HTML幻灯片（点按/滑动/键盘翻页，页脚页码，白底深灰大字+暖色细线标题）→三处产出：壳「脱敏导出_」前缀dsm_shellWriteVerified回读对账、名册kind=report「📋 会诊PPT」徽标+🖥放映按钮、浏览器blob下载；无壳无AI纯浏览器也出演示片 */ /* 速记 v0.16.1 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */ /* v0.16.0 2026-09-10 问AI升级（洪老师拍板）：
    ①提示词三套升四套，缺省内容换新规格：第1套病历质检（先整格式→找四类缺陷→⟦R⟧标红⟦B⟧醒目给修改意见）、第2套病情摘要/交班（一页交班摘要）、第3套检验解读（按时间重排+异常值方向+趋势+通俗解读）、第4套会诊稿（新增：五个固定栏目）；老用户已存的自定义提示词一个字不动，只在缺p4时补第4套（一次性迁移标记hx_gj_askai_v16mig）。
    ②脱敏间导出区加「🤖 AI分析」按钮：只把当前勾选（复用v0.15.0 dsm_selFiles过滤）且已脱敏的文本发给AI，原文绝不出去；弹出与病历详情同款四套提示词弹窗，复用aiChat通道和⟦R⟧/⟦B⟧渲染+「复制干净版」。
    ③问AI结果改全屏浮层：出结果后弹窗撑满屏（askai_full），结果区不再限52vh高，红/醒目两色渲染保留；关上或重开恢复小窗。
@@ -1186,6 +1205,7 @@ function renderPatients(){
     if(!db){ $('ptList').innerHTML=''; showMsg($('ptMsg'),'这台机器上还没建血气的档案柜（没用过血气分析就没柜子）。用过再来，我就能归堆。','info'); return; }
     Promise.all([idbGet(db,'history'), idbGet(db,'ventHistory')]).then(function(rs){
       var data=scanPatients(rs[0], rs[1], pdocsLoad().docs); ptScanData=data; /* v0.6.0 病历并入归堆 */
+      data.list=data.list.filter(function(g){ return !ptIsHidden(g.names); }); /* v0.18.0 毛病34：手动删过的（含别名）不再进名册 */
       var html='', inN=0;
       data.list.forEach(function(g,gi){
         if(g.status==='in') inN++;
@@ -1196,7 +1216,8 @@ function renderPatients(){
           (g.names.length>1?'<span class="pt-alias">也叫：'+esc(g.names.filter(function(n){return n!==g.name;}).join('、'))+'</span>':'')+
           (g.status==='out'?'<span class="pt-out">已出院</span>':'')+
           '<div class="pt-sub">🩸 血气 '+bgN+' 张　🫁 呼吸机 '+vtN+' 条　'+(dcN?('📄 病历 '+dcN+' 份　'):'')+
-          '<button class="ghost" style="font-size:12px;padding:4px 10px;" data-tg="'+gi+'">'+(g.status==='in'?'出院':'召回')+'</button></div></div>';
+          '<button class="ghost" style="font-size:12px;padding:4px 10px;" data-tg="'+gi+'">'+(g.status==='in'?'出院':'召回')+'</button> '+
+          '<button class="ghost" style="font-size:12px;padding:4px 10px;color:#c0392b;" data-pdel="'+gi+'">🗑 删除</button></div></div>'; /* v0.18.0 毛病34 */
       });
       $('ptList').innerHTML=html;
       $('ptCount').textContent=data.list.length?('在院 '+inN+' 人 / 共 '+data.list.length+' 人'):'';
@@ -1209,10 +1230,34 @@ function renderPatients(){
       Array.prototype.forEach.call(document.querySelectorAll('[data-tg]'), function(el){
         el.onclick=function(){ togglePatientStatus(data.list[+el.getAttribute('data-tg')], data.ps); };
       });
+      /* v0.18.0 毛病34：删除钮绑定 */
+      Array.prototype.forEach.call(document.querySelectorAll('[data-pdel]'), function(el){
+        el.onclick=function(){ deletePatientFromRoster(data.list[+el.getAttribute('data-pdel')]); };
+      });
       /* 近似名起疑（一次只问一对，问完再扫） */
       var pair=findSuspect(data.byName, data.ps);
       if(pair) setTimeout(function(){ askSuspect(pair, data.ps, renderPatients); },400);
     });
+  });
+}
+/* ═══ v0.18.0 毛病34（洪老师真机报"名册混入非病人记录，要有手段直接删除"）═══
+   隐藏名单 hx_gj_pthide_v1：删过的病人名（含别名）记这里，归堆渲染时整组跳过；
+   删除=名下病历条目（hx_pdocs_v1，含导出报告/会诊PPT条目）一并删 + 记隐藏名单；
+   血气/呼吸机档案柜（IndexedDB，别的软件的柜）不动，只是名册不再显示。 */
+function ptHideLoad(){ try{ var a=JSON.parse(localStorage.getItem('hx_gj_pthide_v1')); return Array.isArray(a)?a:[]; }catch(e){ return []; } }
+function ptHideSave(a){ try{ localStorage.setItem('hx_gj_pthide_v1', JSON.stringify(a)); }catch(e){} }
+function ptIsHidden(names){ var h=ptHideLoad(); for(var i=0;i<names.length;i++){ if(h.indexOf(names[i])>=0) return true; } return false; }
+function deletePatientFromRoster(g){
+  if(!g) return;
+  hxConfirm('把「'+g.name+'」从名册里删掉？\n名下收进来的病历条目一并删掉；血气/呼吸机档案柜里的原始记录不动，只是名册不再显示这个人。', function(yes, top){
+    if(top||!yes) return;
+    var pd=pdocsLoad();
+    pd.docs=pd.docs.filter(function(d){ return g.names.indexOf(d.pkey)<0; });
+    pdocsSave(pd);
+    var h=ptHideLoad(); g.names.forEach(function(n){ if(h.indexOf(n)<0) h.push(n); }); ptHideSave(h);
+    try{ $('ptDetailCard').classList.add('hidden'); }catch(e){}
+    renderPatients();
+    toast('🗑 已把「'+g.name+'」从名册删掉');
   });
 }
 function togglePatientStatus(g, ps){
@@ -1289,36 +1334,14 @@ function showPatientDetail(g){
       ' <button class="ghost" style="font-size:12px;padding:4px 10px;" data-rawview="'+i+'">📄 看原文</button></div>';
   }); }
   html+='</div>';
-  /* ②聚合病历：授权文件夹里「脱敏导出_」前缀且属于该病人的文件；浏览器读不了文件夹就明示请在壳里查看 */
-  var _bridged=false; try{ _bridged=hxStore.bridged(); }catch(e){}
-  var _agg=[];
-  if(_bridged){
-    try{
-      var _als=JSON.parse(LearnShell.listFiles()||'[]');
-      _als.forEach(function(f){
-        var fn=(typeof f==='string')?f:f.name; if(!fn||fn.indexOf('脱敏导出_')!==0) return;
-        var core=fn.replace(/^脱敏导出_/,'').replace(/\.[^.]+$/,'');
-        for(var i=0;i<g.names.length;i++){ var n=g.names[i];
-          if(core.indexOf(n)>=0||n.indexOf(core)>=0){ _agg.push(fn); break; } }
-      });
-    }catch(e){}
-  }
-  html+='<div class="rec"><span class="badge badge-doc">聚合病历</span> <span style="font-size:12px;color:#8a8178;">（脱敏间导出的「脱敏导出_」那份）</span>';
-  if(!_bridged){ html+='<div style="margin-top:3px;font-size:13px;color:#8a8178;">浏览器里读不了授权文件夹，请在壳里查看</div>'; }
-  else if(!_agg.length){ html+='<div style="margin-top:3px;font-size:13px;color:#8a8178;">文件夹里还没扫到该病人的「脱敏导出_」文件（脱敏间点📤导出报告就会存一份）</div>'; }
-  else{ _agg.forEach(function(fn,i){
-    html+='<div style="margin-top:4px;font-size:13px;">· '+esc(fn)+
-      ' <button class="ghost" style="font-size:12px;padding:4px 10px;" data-aggview="'+i+'">📦 看全文</button></div>';
-  }); }
-  html+='</div>';
+  /* v0.18.0 毛病36（洪老师拍板"聚合病历应跟病人在一起，把这个单独框删了"）：独立框整框删除；
+     聚合件自v0.14.1起已挂进上方时间线（kind=report「📊 导出报告/📋 会诊PPT」条目），不丢功能 */
   $('ptDetailList').innerHTML=html;
   /* v0.13.0 毛病22：两新区块按钮绑定 */
   Array.prototype.forEach.call(document.querySelectorAll('[data-rawview]'), function(el){
     el.onclick=function(){ var it=_rawIts[+el.getAttribute('data-rawview')]; if(it) ptViewRaw(it); };
   });
-  Array.prototype.forEach.call(document.querySelectorAll('[data-aggview]'), function(el){
-    el.onclick=function(){ var fn=_agg[+el.getAttribute('data-aggview')]; if(fn) ptViewAgg(fn); };
-  });
+  /* v0.18.0 毛病36：聚合病历独立框已删，绑定一并撤（ptViewAgg函数保留未删，无调用） */
   /* v0.6.0 病历按钮绑定 */
   Array.prototype.forEach.call(document.querySelectorAll('[data-docview]'), function(el){
     /* v0.13.0 毛病22：本条没正文（pdf档text是空的）时，找同pkey有正文的兄弟条目兜底，再不行才明说 */
@@ -3242,7 +3265,8 @@ function dsm_renderFileBrowser(files) {
     sortedFiles.forEach(function(f) {
         var isSupported = supportTypes.indexOf(f.type) >= 0;
         var statusClass = isSupported ? 'dsm_ok' : 'dsm_err';
-        var statusText = isSupported ? '✅ 可脱敏' : (f.type === 'image' ? '🖼️ 图片' : '❌ 不支持');
+        /* v0.18.0 毛病41（洪老师真机报"写了16黄.pdf后面就不用再加一个说明"）：能脱敏的不再挂「✅可脱敏」徽标，只有不支持/图片才标 */
+        var statusText = isSupported ? '' : (f.type === 'image' ? '🖼️ 图片' : '❌ 不支持');
         var sizeStr = f.size > 1024 ? (f.size/1024).toFixed(1) + 'KB' : f.size + 'B';
         if (f.size > 1024*1024) sizeStr = (f.size/(1024*1024)).toFixed(1) + 'MB';
         
@@ -3250,7 +3274,7 @@ function dsm_renderFileBrowser(files) {
         html += '<span class="dsm_icon">' + dsm_getFileIcon(f.type, f.ext) + '</span>';
         html += '<span class="dsm_name">' + f.name + '</span>';
         html += '<span class="dsm_size">' + sizeStr + '</span>';
-        html += '<span class="dsm_badge ' + statusClass + '">' + statusText + '</span>';
+        if (statusText) html += '<span class="dsm_badge ' + statusClass + '">' + statusText + '</span>'; /* v0.18.0 毛病41 */
         html += '</div>';
     });
     
@@ -3650,7 +3674,7 @@ function dsm_renderPatientCards(names) {
 // ============================================================
 function dsm_selectPatient(name) {
     dsm_APP.currentPatient = name;
-    document.getElementById('dsm_currentPatientName').textContent = name;
+    var _cpnEl=document.getElementById('dsm_currentPatientName'); if(_cpnEl) _cpnEl.textContent = name; /* v0.18.0 毛病40：元素已删，留守卫防空指针 */
     var cards = document.querySelectorAll('.dsm_patient-card');
     cards.forEach(function(el) {
         el.classList.toggle('dsm_active', el.textContent.trim() === name);
@@ -3668,7 +3692,7 @@ function dsm_deletePatient(name) {
     delete dsm_APP.patients[name];
     if (dsm_APP.currentPatient === name) {
         dsm_APP.currentPatient = null;
-        document.getElementById('dsm_currentPatientName').textContent = '未选择';
+        var _cpnEl2=document.getElementById('dsm_currentPatientName'); if(_cpnEl2) _cpnEl2.textContent = '未选择'; /* v0.18.0 毛病40 */
         document.getElementById('dsm_fileList').innerHTML = '<div class="dsm_empty-state">请选择一位病人</div>';
     }
     var names = Object.keys(dsm_APP.patients);
@@ -3725,14 +3749,16 @@ function dsm_renderFileList(patient) {
         }
         var _hasDateTail=/(\d{8}|\d{4})\.[a-z]+$/i.test(f.name);
         var _isCopy=(_hasDateTail && _cores[_coreName(f.name)]>1);
-        var _tag=_isCopy
+        var _tag=(f._report /* v0.18.0 毛病37b：导出件行标「导出」，不再误标「原始」 */)
+            ? ' <span style="font-size:11px;color:#5b3a8e;background:#efe6f7;border-radius:4px;padding:0 4px;">导出</span>'
+            : (_isCopy
             ? ' <span style="font-size:11px;color:#8a6d3b;background:#fcf8e3;border-radius:4px;padding:0 4px;">收件副本</span>'
-            : ' <span style="font-size:11px;color:#3c763d;background:#dff0d8;border-radius:4px;padding:0 4px;">原始</span>';
+            : ' <span style="font-size:11px;color:#3c763d;background:#dff0d8;border-radius:4px;padding:0 4px;">原始</span>');
         /* v0.14.1（洪老师拍板）：收件副本显示名改成「病人名+聚合.扩展名」，一眼看清哪份是聚合后的；存档键名不动，点开仍按原名取内容 */
         var _dispName=_isCopy ? _coreName(f.name)+'聚合'+f.name.slice(f.name.lastIndexOf('.')) : f.name;
         html += '<div class="dsm_file-item" style="cursor:pointer;" onclick="dsm_viewFile(\'' + f.name.replace(/'/g,"\\'") + '\')"><span class="dsm_status ' + status + '">' + statusIcon + 
             '</span><span>' + icon + '</span><span class="dsm_fname">' + _dispName + _tag +
-            '</span><span class="dsm_ftype">' + f.type + '</span><span class="dsm_fsize">' + sizeStr + '</span></div>';
+            '</span><span class="dsm_fsize">' + sizeStr + '</span></div>'; /* v0.18.0 毛病41：删掉pdf/txt类型小框（文件名已带扩展名），大小留小字 */
     });
     container.innerHTML = html;
 }
@@ -4309,6 +4335,24 @@ function dsm_exportReport() {
             pdocsSave(_pd);
             try{ renderPatients(); }catch(e){}
         }catch(e){}
+        /* v0.18.0 毛病37b（洪老师真机报"生成了html没进病人列表，本该4个还是3个"）：导出成功后把这份报告登记进
+           脱敏间该病人文件清单——同名芯（剥时间戳）更新不重复堆；type标「导出报告」，不在导出构造函数白名单里，
+           下轮导出不会自己吃自己；清单立刻刷新多一行 */
+        try{
+            var _rp=null;
+            for(var _fi=0;_fi<data.files.length;_fi++){
+                var _fo=data.files[_fi];
+                if(_fo._report && ('.'+String(_fo.ext||''))===_ext){ _rp=_fo; break; } /* 同病人同格式（html/txt/md）只留一行，重导更新不重复堆 */
+            }
+            if(_rp){
+                _rp.name=fileName; _rp.size=content.length; _rp.originalText=content;
+                delete data.content[_rp._oldName||'']; data.content[fileName]={text:content,images:[]}; _rp._oldName=fileName;
+            }else{
+                data.files.push({name:fileName,size:content.length,type:'导出报告',ext:_ext.replace('.',''),originalText:content,_report:true,_oldName:fileName});
+                data.content[fileName]={text:content,images:[]};
+            }
+            dsm_renderFileList(patient);
+        }catch(e){}
     } catch(e) { dsm_showToast('导出失败：' + e.message, 'error'); }
 }
 
@@ -4875,7 +4919,7 @@ function dsm_clearAllData() {
     dsm_APP.patients = {};
     dsm_APP.currentPatient = null;
     dsm_APP.allFiles = [];
-    document.getElementById('dsm_currentPatientName').textContent = '未选择';
+    var _cpnEl3=document.getElementById('dsm_currentPatientName'); if(_cpnEl3) _cpnEl3.textContent = '未选择'; /* v0.18.0 毛病40 */
     document.getElementById('dsm_fileList').innerHTML = '<div class="dsm_empty-state">请选择一位病人</div>';
     document.getElementById('dsm_patientCards').innerHTML = '<div class="dsm_empty-state">请选择文件夹</div>';
     document.getElementById('dsm_previewSection').classList.remove('dsm_visible');
@@ -5012,6 +5056,7 @@ function dsm_admitToLib() {
     if (typeof pdocsLoad !== 'function') { dsm_showToast('大管家病历库不在', 'error'); return; }
     var pd = pdocsLoad();
     var got = [], skipped = [];
+    var admittedPkeys = []; /* v0.18.0 毛病35 */
     var now = Date.now();
     names.forEach(function(patient) {
         var data = dsm_APP.patients[patient];
@@ -5039,12 +5084,28 @@ function dsm_admitToLib() {
             if (dup) { skipped.push(pr.pkey + '（这份已收过，没重复收）'); return; }
             pd.docs.push({ id: 'D' + Date.now().toString(36) + Math.floor(Math.random() * 1000), pkey: pr.pkey, bed: pr.bed, sur: pr.sur, diag: pr.diag,
                 date: pr.dateStr, timeStr: pr.dateStr + ' ' + docHm(now), ts: pr.date.getTime(), fname: fname + '.txt', kind: 'txt', size: out.length, text: out });
+            admittedPkeys.push(pr.pkey); /* v0.18.0 毛病35：记下收成功的，回头毁原文用 */
             try{ dsmh_remember(pr.pkey, fname + '.txt', out, {name: fname + '.txt', size: out.length, type: f.type, ext: f.ext}); }catch(e){} /* v0.10.0 脱敏版存脱敏间档案hx_dsm_v1（拍板：脱敏间列表也要存住） */ /* v0.13.0 毛病21：fileMeta.name原来用原文件名f.name，和dsmh_remember里content键（fname+'.txt'）对不上，恢复后预览按名取内容全空；改成与content键同名 */
             got.push(pr.pkey + '（' + pr.dateStr + '）');
         });
     });
     if (got.length) pdocsSave(pd);
     if (got.length) { toast('📥 收进病历库' + got.length + '份：' + got.join('、'), 4000); renderPatients(); }
+    /* v0.18.0 毛病35（洪老师真机报"原始病历还没删除，这是重大隐患"）：脱敏版已安全进库的病人，
+       原文保险柜里同名（pkey口径，日期尾数先折算）原文立即销毁，不再干等到点；
+       销毁走原dsmraw_destroy（壳文件+条目+登记一刀三断，listFiles回读核对，没删成红字）。 */
+    if (admittedPkeys.length) {
+        try{
+            var _rd9 = dsmrawLoad();
+            _rd9.items.slice().forEach(function(_it9){
+                var _pk9 = _it9.patient;
+                try{ var _pr9 = parseDocFname(_it9.patient + '.txt', Date.now()); if (_pr9.ok) _pk9 = _pr9.pkey; }catch(e){}
+                if (admittedPkeys.indexOf(_pk9) >= 0 || admittedPkeys.indexOf(_it9.patient) >= 0) {
+                    try{ dsmraw_destroy(_it9.id); }catch(e){}
+                }
+            });
+        }catch(e){}
+    }
     if (skipped.length) dsm_showToast('有' + skipped.length + '份没收：' + skipped.join('；'), 'warn', 6000);
     else if (!got.length) dsm_showToast('没有可收的内容', 'warn');
 }
@@ -5297,7 +5358,7 @@ try {
         dsm_v12Hide(document.getElementById('dsm_pdfLoader'), '📕 PDF引擎状态');
         var ri = document.querySelector('#dsmWrap .dsm_root-info'); if (ri) dsm_v12Hide(ri, '📁 当前状态（选文件夹/清空/收进病历库在这）');
         dsm_v12Hide(document.getElementById('dsm_selectZone'), '📂 点文件夹进件（展开后点大框选文件夹/拖文件进来）');
-        var cp = document.querySelector('#dsmWrap .dsm_data-section .dsm_info'); if (cp) dsm_v12Hide(cp, '📊 当前病人');
+        /* v0.18.0 毛病40：「当前病人」显示框整行已删，不再留藏起入口 */
     } catch(e) {}
 })();
 /* v0.10.0 开门三件事：恢复脱敏间列表 + 到期销毁检查（开门补刀）+ 原文横幅（堵问） */
