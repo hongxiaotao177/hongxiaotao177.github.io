@@ -12,7 +12,7 @@
         版本文件名9件各异 version.json/version-xiti.json…，HX.selfCheck只认 version-<app>.json 装不下），引擎本体保留、底层已走HX.gh；
       ④钥匙读取改 HX.keys（经HX.keys.gh，hx_gh_*→br_gh_*fallback链，旧数据不丢）；主界面无设置页不写Key（写Key一律hx_apikey的规矩由有设置页的软件执行）；
       ⑤账本：主界面只做"汇总全家账本"读hx_aibill（billRender读法一行未动），不写账，HX.bill无需调用；
-      ⑥小涛笔记入口行标注「（旧版留档·功能已并入学习笔记）」（plan2拍板：小涛冻结v0.6.0留档不维护，学习笔记是正房）。
+      ⑥小涛笔记/学习笔记入口标注。 v1.12.1（2026-09-10晚班⑦纠正）：搞反了——小涛笔记才是新版正房（文件名带新），学习笔记双链版改标「旧版留档·已并入小涛笔记」（洪老师亲口纠正）。
       CUR.index同步1.12.0。
     v1.11.0 2026-09-10 鱼骨头化总攻·主界面（洪老师拍板：首屏全鱼骨头，只动版面不动功能）：
       毛病=首屏11张卡片白底圆角带阴影像11个方框，顶部同步/检查新版本是两个大按钮，60岁零基础看着乱；
@@ -271,13 +271,13 @@
   <div class="section-title">学习记录</div>
 
   <a class="card" href="小涛笔记.html">
-    <h2>📒 小涛笔记 <span style="font-size:12px; color:#a05848;">（旧版留档·功能已并入学习笔记）</span><span class="infoBtn">ⓘ 说明</span></h2>
+    <h2>📒 小涛笔记 <span style="font-size:12px; color:#4a7c59;">（新版·正房）</span><span class="infoBtn">ⓘ 说明</span></h2>
     <div class="desc intro">新一代笔记：AI 是主力——输入主题 AI 备课，写完 AI 改稿；[[]] 双链+反链；所有笔记真身是 Obsidian 标准 Markdown，自动存进仓库 vault/ 区，随时零损失搬进 Obsidian；二期上资料库（文献+书统一管理、云端自动切片），三期上我的书。</div>
     <div class="meta"><span class="tag">网页工具</span><span class="tag" id="tagXiaotao">v0.1.0</span></div>
   </a>
 
   <a class="card" href="学习笔记.html">
-    <h2>🔗 学习笔记·双链版<span class="infoBtn">ⓘ 说明</span></h2>
+    <h2>🔗 学习笔记·双链版 <span style="font-size:12px; color:#a05848;">（旧版留档·已并入小涛笔记）</span><span class="infoBtn">ⓘ 说明</span></h2>
     <div class="desc intro">输入主题，AI 生成学习笔记和关联线索；[[]] 双链跳转、词条角标、AI改稿、折叠标签、一键出复习题发送到习题学习、✍️ 自己手写空白笔记（不用AI）、📄 文献库导入PDF自动归类、词条挂文献点读全文、文献AI总结/出题/找相关笔记、💰查额度；笔记自动云备份到您的 GitHub 私有仓库。</div>
     <div class="meta"><span class="tag">网页工具</span><span class="tag" id="tagNotes">v2.6.9</span></div>
   </a>
@@ -375,7 +375,7 @@
 
 </main>
 
-<footer>红小涛的学习园地 · 主界面 v1.12.0 · 由 Kimi 协助维护</footer>  <!-- v1.8.0 页脚亮版本号：真机验收一眼看清自己是不是新版 -->
+<footer>红小涛的学习园地 · 主界面 v1.12.1 · 由 Kimi 协助维护</footer>  <!-- v1.8.0 页脚亮版本号：真机验收一眼看清自己是不是新版 -->
 
 <script>
 /* ==================== v1.12.0 hx-common.js 三级加载（plan2军规1/2，照 guanjia-pdf-engine.js 已验证先例） ====================
@@ -423,7 +423,7 @@ hxCommonLoad(function(){
 <script>
 /* ==================== 套装主界面自检器官（v1.1.0） ==================== */
 /* 本界面对应的四个软件当前内装版本（每次发版跟着改） */
-var CUR = { notes:"2.18.0", xiti:"1.12.0", bridge:"1.5.0", xueqi:"0.14.0", ppt:"0.16.0", xiaotao:"0.6.0" /* 冻结留档 */, guanjia:"0.23.0", pai:"0.6.0", index:"1.12.0" /* 公共件收编 v1.12.0 2026-09-10：hx-common.js接入8件齐发CUR全同步（新增pai入册） */ };
+var CUR = { notes:"2.18.0", xiti:"1.12.0", bridge:"1.5.0", xueqi:"0.14.0", ppt:"0.16.0", xiaotao:"0.6.0" /* 冻结留档 */, guanjia:"0.23.0", pai:"0.6.0", index:"1.12.1" /* v1.12.1纠正留档标注对调（小涛=新版正房） */ /* 公共件收编 v1.12.0 2026-09-10：hx-common.js接入8件齐发CUR全同步（新增pai入册） */ };
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
 try{ var _sv=JSON.parse(localStorage.getItem("hx_suite_ver")||"{}"); Object.keys(_sv).forEach(function(k){ if(_sv[k]) CUR[k]=_sv[k]; }); }catch(e){}
 /* key: [云端软件文件, 壳内文件名, 云端版本文件, 标签id] */
