@@ -341,6 +341,15 @@ v1.3补丁7 (2026-07-29) 后台任务从单任务升级为队列（最多3个并
   正确→第4个被拦截→注释各自钉对题→屏幕不跳转），待用户实测验证。
 
 v1.4 (2026-08-02) 学习笔记协同 + GitHub云备份 + 开机自检 + 下载整套。
+v1.12.0 (2026-09-10) 收编公共件hx-common.js（plan2军规：钥匙统一+收公共块，不崩溃压倒一切）。
+  ①三级查找加载hx-common.js（壳readFile→同目录fetch8秒→公开仓下载写壳安装）；
+    没装上时只速记/云备份/版本自检降级提示「公共件未装」，刷题/导入/AI备课主流程照常不白屏；
+  ②删内嵌速记snippet（v1.10.4浮标UI+v1.10.5自动上行整块拿掉），改一行 HX.sj.init({app:'习题'})；
+  ③删内嵌23个gh函数族传输实现，云备份/恢复/对账/下载新版改调 HX.gh.*（b64留本地纯函数供文件夹恢复用）；
+  ④删内嵌ghSelfCheck改 HX.selfCheck('xiti', SW_VERSION)（API优先+免Token raw直链兜底，黄条UI原样）；
+  ⑤钥匙读取改 HX.keys.get()（hx_apikey→bg_apikey→xt_apikey兜底链），设置页写Key只写hx_apikey（旧键保留不删自然淘汰）；
+  ⑥账本HX_PRICE/hxBill一族内嵌实现删除，改调 HX.bill.*（HX没装上记0元静默降级）；
+  3模式折叠行/题库行化结构/hxStore/page-study/aiMakeQuestions一律未动。
 v1.11.0 (2026-09-10) 全鱼骨头化首页（2026-09-10 洪老师拍板：只动版面不动功能）。
   毛病=首屏3个Tab大按钮+9个平铺大按钮+题库卡片墙，60岁零基础看着眼花；
   病根=按钮/卡片平铺，没有折叠分行；
@@ -715,7 +724,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 
 <script id="embedded-data" type="application/json">null</script>
 
-<header>📖 习题学习<span class="ver" id="hdVer">v1.11.0</span></header>
+<header>📖 习题学习<span class="ver" id="hdVer">v1.12.0</span></header>
 
 <!-- ========== 首页 ========== -->
 <div id="page-home" class="page">
@@ -2873,12 +2882,9 @@ function aiModel() {
   return lm;
 }
 /* ===== 全家AI账本 hx_aibill（2026-09-01 洪医生家规：每次AI记一笔+弹一条花了多少钱；主界面💰卡片汇总。tokens≈汉字数/2，是估算，真扣费以官方账单为准） ===== */
-var HX_PRICE={"kimi-k2.5":[4,16],"kimi-k2.6":[4,16],"kimi-k2.7":[7,27],"kimi-k3":[21,105],"qwen-vl-max":[3,9],"qwen-plus":[0.8,2],"moonshot-v1-8k":[12,12],"moonshot-v1-32k":[24,24],"moonshot-v1-128k":[60,60]};
-function hxBillYuan(model,inC,outC,imgs){var p=HX_PRICE["kimi-k2.5"];for(var k in HX_PRICE){if(model&&String(model).indexOf(k)===0){p=HX_PRICE[k];break;}}return Math.ceil((inC||0)/2)/1e6*p[0]+Math.ceil((outC||0)/2)/1e6*p[1]+(imgs||0)*0.005;}
-function hxBill(app,what,inC,outC,model,imgs){try{var c=hxBillYuan(model,inC,outC,imgs);var arr=JSON.parse(localStorage.getItem("hx_aibill")||"[]");arr.unshift({app:app,what:what||"",cost:+c.toFixed(4),t:Date.now()});if(arr.length>500)arr.length=500;localStorage.setItem("hx_aibill",JSON.stringify(arr));return c;}catch(e){return 0;}}
-function hxBillMonth(){try{var arr=JSON.parse(localStorage.getItem("hx_aibill")||"[]");var n=new Date(),s=0;arr.forEach(function(e){var t=new Date(e.t);if(t.getFullYear()===n.getFullYear()&&t.getMonth()===n.getMonth())s+=e.cost||0;});return s;}catch(e){return 0;}}
-function hxBillMsg(c){return "💰 本次约¥"+(c<0.01?c.toFixed(3):c.toFixed(2))+" ｜ 本月全家约¥"+hxBillMonth().toFixed(2);}
-function hxBillToast(c){try{var d=document.createElement("div");d.textContent=hxBillMsg(c);d.style.cssText="position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#4a6b4f;color:#fff;padding:10px 18px;border-radius:20px;font-size:14px;z-index:99999;box-shadow:0 2px 8px rgba(0,0,0,.25)";document.body.appendChild(d);setTimeout(function(){d.remove();},4000);}catch(e){}}
+/* v1.12.0 收编：HX_PRICE/hxBillYuan/hxBillMonth/hxBillMsg 内嵌实现删除，改调公共件 HX.bill.*（hx_aibill格式照原样一条不动，计价表在公共件）；HX没装上记0元静默降级，AI主流程照常 */
+function hxBill(app,what,inC,outC,model,imgs){ try{ if(window.HX&&HX.bill) return HX.bill(app,what,inC,outC,model,imgs); }catch(e){} return 0; }
+function hxBillToast(c){ try{ if(window.HX&&HX.bill&&HX.bill.toast){ HX.bill.toast(c); return; } }catch(e){} }
 
 async function callAI(sysPrompt, userText, what) {
   var model = aiModel();
@@ -3167,7 +3173,7 @@ function hxStoreAfterPick(){
    完整设计思路与协同协议见学习笔记.html 代码顶部（两边以那份为准）。 */
 var XT_GH_USER = "xt_gh_user", XT_GH_TOK = "xt_gh_tok", XT_GH_REPO = "xt_gh_repo",
     XT_GH_LAST = "xt_gh_last", XT_GH_CHECK = "xt_gh_check";
-var SW_VERSION = "1.11.0" /* v1.11.0 2026-09-10 全鱼骨头化首页：3Tab→3折叠行、9平铺钮归3组折叠行、题库卡行化（操作收小字行，新增改名）；纯版面，功能/JS/存储键名零改动 */ /* 速记自动上行 v1.10.5 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* 速记 v1.10.4 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */; /* v1.10.3 大管家回程票：从病人大管家点过来（?from=guanjia）亮顶条「← 返回大管家」一键回家；不带参数打开零影响 */; /* v1.10.2 (2026-09-07) 开门静默化：locStatusRender(SAF慢桥)挪4秒闲时，治开门愣几秒；其余一行未动 */ /* v1.10.1 hxStore开门对齐挪闲时跑（同大管家v0.5.2药方：先秒开，闲3秒再对齐，拉到新数据自动刷新一次） */ /* v1.10.0 鱼骨头化（照抄大管家v0.5.0样板）：①最底下新增「🛠 设置与工具」折叠抽屉（一级卡5px粗左框+深底，二级卡缩进+浅底+3px左竖线+无阴影；开合记 localStorage hx_xiti_tool_open，刷新保持，箭头▸点开/▾收起）②云备份卡（ghCard，原<details>折叠复用）从普通题库面板原样搬入抽屉，另加「🤖 AI设置」卡走原 openAiKey() 弹窗；纯界面折叠结构与样式，功能逻辑零改动 */ /* v1.9.1 hxIndexRefresh加免Token备用路（API/没Token自动走公开站直链，治主界面卡旧版静默失败；成功/失败都toast一句） */ /* v1.9.0 hxStore仓管员接入（全家推广第3家）：习题库+做题进度每次存盘同步写壳授权文件夹 hxdata_xitixuexi_v01.json，开门自动对齐（文件说了算/自动搬家），左下角🗄️选/换文件夹；无壳浏览器照旧 */ /* v1.8.9 AI报错带官方原因+400也自动换模型重试（洪医生撞HTTP400：疑moonshot-v1系列下架回400） */ /* v1.8.8 AI综合备课加秒表进度：每秒报已等多久，转着就不是死机 */ /* v1.8.7 修404：kimi-k2.5官方下架→死模型名单自动换kimi-k2.6+404自动重试；补title/header版本号（1.8.5/1.8.6漏改） */ /* v1.8.6 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v1.8.5 习题→PPT工坊两路（洪医生任务2026-09-01）：任务一「📊 习题→PPT」本地拼——
+var SW_VERSION = "1.12.0" /* v1.12.0 2026-09-10 收编公共件hx-common.js（详见文件顶部修改记录）：三级加载器接入，missing只降级提示；删内嵌速记snippet改HX.sj.init({app:'习题'})；删内嵌gh函数族改HX.gh.*；自检改HX.selfCheck('xiti',SW_VERSION)；钥匙读HX.keys写只写hx_apikey；账本改HX.bill；3模式折叠行/题库行化/hxStore/page-study/aiMakeQuestions一律未动 */ /* v1.11.0 2026-09-10 全鱼骨头化首页：3Tab→3折叠行、9平铺钮归3组折叠行、题库卡行化（操作收小字行，新增改名）；纯版面，功能/JS/存储键名零改动 */ /* 速记自动上行 v1.10.5 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* 速记 v1.10.4 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */; /* v1.10.3 大管家回程票：从病人大管家点过来（?from=guanjia）亮顶条「← 返回大管家」一键回家；不带参数打开零影响 */; /* v1.10.2 (2026-09-07) 开门静默化：locStatusRender(SAF慢桥)挪4秒闲时，治开门愣几秒；其余一行未动 */ /* v1.10.1 hxStore开门对齐挪闲时跑（同大管家v0.5.2药方：先秒开，闲3秒再对齐，拉到新数据自动刷新一次） */ /* v1.10.0 鱼骨头化（照抄大管家v0.5.0样板）：①最底下新增「🛠 设置与工具」折叠抽屉（一级卡5px粗左框+深底，二级卡缩进+浅底+3px左竖线+无阴影；开合记 localStorage hx_xiti_tool_open，刷新保持，箭头▸点开/▾收起）②云备份卡（ghCard，原<details>折叠复用）从普通题库面板原样搬入抽屉，另加「🤖 AI设置」卡走原 openAiKey() 弹窗；纯界面折叠结构与样式，功能逻辑零改动 */ /* v1.9.1 hxIndexRefresh加免Token备用路（API/没Token自动走公开站直链，治主界面卡旧版静默失败；成功/失败都toast一句） */ /* v1.9.0 hxStore仓管员接入（全家推广第3家）：习题库+做题进度每次存盘同步写壳授权文件夹 hxdata_xitixuexi_v01.json，开门自动对齐（文件说了算/自动搬家），左下角🗄️选/换文件夹；无壳浏览器照旧 */ /* v1.8.9 AI报错带官方原因+400也自动换模型重试（洪医生撞HTTP400：疑moonshot-v1系列下架回400） */ /* v1.8.8 AI综合备课加秒表进度：每秒报已等多久，转着就不是死机 */ /* v1.8.7 修404：kimi-k2.5官方下架→死模型名单自动换kimi-k2.6+404自动重试；补title/header版本号（1.8.5/1.8.6漏改） */ /* v1.8.6 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v1.8.5 习题→PPT工坊两路（洪医生任务2026-09-01）：任务一「📊 习题→PPT」本地拼——
   范围(勾选/全部)×筛选(全部/陌生+一般/只陌生)×排版(题答同页自习用 / 题一页答一页课堂提问用)，不花AI钱；
   任务二「🤖 AI综合备课」——AI读全部问答提炼成课（归纳/对比表/易错点，不是堆题），可填讲课重点，可对着薄弱点，
   大纲先预览可手改再寄。两路都走ppt_inbox邮路（照抄血气分析v0.10.8格式），PPT工坊弹窗收。 */
@@ -3194,7 +3200,7 @@ var SW_VERSION = "1.11.0" /* v1.11.0 2026-09-10 全鱼骨头化首页：3Tab→3
     try{
       if(typeof store==="undefined" || !store) return;
       if(!store.ai) store.ai={};
-      var sh=localStorage.getItem("hx_apikey")||"";
+      var sh=""; try{ if(window.HX&&HX.keys) sh=HX.keys.get()||""; }catch(e){} if(!sh) sh=localStorage.getItem("hx_apikey")||localStorage.getItem("bg_apikey")||localStorage.getItem("xt_apikey")||""; /* v1.12.0 钥匙统一HX.keys（hx→bg→xt兜底链） */
       var shm=localStorage.getItem("hx_aimodel")||"";
       if(store.ai.key && store.ai.key!==sh) localStorage.setItem("hx_apikey", store.ai.key);
       else if(!store.ai.key && sh){ store.ai.key=sh; if(typeof saveStore==="function") saveStore(); }
@@ -3208,6 +3214,7 @@ var SW_VERSION = "1.11.0" /* v1.11.0 2026-09-10 全鱼骨头化首页：3Tab→3
 function hxIndexRefresh(){
   if(!window.LearnShell || !window.LearnShell.applyUpdate) return;
   if(typeof ghCfg!=="function" || typeof cmpVer!=="function") return;
+  if(typeof ghOK==="function" && !ghOK()) return; /* v1.12.0 收编：公共件没装上整路静默跳过 */
   function say(m){ try{ toast(m); }catch(e){} }
   /* v1.9.1 加免Token备用路（公开站直链，和软件更新同款）——旧路只走API+Token，Token作废就静默失败，主界面永远旧版 */
   var c=ghCfg(), hasApi=!!(c.user && c.tok && c.repo);
@@ -3240,33 +3247,16 @@ setTimeout(hxIndexRefresh, 6000);
 
 var ghSuspend = false, ghAutoTimer = null, ghVerPending = null;
 
-function ghCfg() {
-  return {
-    user: (localStorage.getItem(XT_GH_USER) || "").replace(/^\s+|\s+$/g, ""),
-    tok: (localStorage.getItem(XT_GH_TOK) || "").replace(/^\s+|\s+$/g, ""),
-    repo: (localStorage.getItem(XT_GH_REPO) || "").replace(/^\s+|\s+$/g, "")
-  };
-}
-function ghReady() { var c = ghCfg(); return !!(c.user && c.tok && c.repo); }
-function ghHeaders() { return { "Authorization": "token " + ghCfg().tok, "Accept": "application/vnd.github+json" }; }
-function ghFileUrl(name) {
-  var c = ghCfg();
-  return "https://api.github.com/repos/" + encodeURIComponent(c.user) + "/" +
-         encodeURIComponent(c.repo) + "/contents/" + encodeURIComponent(name);
-}
-/* 带超时的 fetch（本文件没有 fetchWithTimeout，用 AbortController 实现 20 秒） */
-function ghFetch(url, opts) {
-  return new Promise(function (resolve, reject) {
-    var ctrl = new AbortController();
-    var timer = setTimeout(function () { ctrl.abort(); }, 20000);
-    fetch(url, Object.assign({}, opts || {}, { signal: ctrl.signal })).then(function (r) {
-      clearTimeout(timer); resolve(r);
-    }, function (e) {
-      clearTimeout(timer);
-      reject(new Error(e && e.name === "AbortError" ? "连接超时（20秒），网络可能不通" : "网络不通，请求没到达 GitHub"));
-    });
-  });
-}
+/* v1.12.0 收编公共件 hx-common.js：内嵌23个gh函数族的传输实现删除（ghCfg/ghReady/ghHeaders/ghFileUrl/ghFetch/ghErrText/cmpVer/ghSelfCheck 等），
+   云备份/恢复/对账/自检/下载新版一律改调公共件 HX.gh.* / HX.selfCheck / HX.cmpVer（钱罐 hx_gh_* 为准，hxSync 每2秒把 xt_gh_* 同步进去，旧键数据不丢）；
+   军规1不崩溃压倒一切：HX没装上时 ghReady()=false，云备份/自检按钮提示「公共件未装」，刷题/导入/AI备课照常。
+   ghB64enc/ghB64dec 保留本地纯函数（文件夹备份恢复/对账 locManualPull/locStatusRender/locReconcile 不联网、不依赖公共件）。 */
+function ghOK() { return !!(window.HX && window.HX.HX_COMMON_VERSION); }
+function ghCfg() { return ghOK() ? HX.gh.cfg() : { user: "", tok: "", repo: "" }; }
+function ghReady() { return ghOK() && HX.gh.ready(); }
+function ghHeaders() { return HX.gh.headers(); }
+function ghFileUrl(name) { return HX.gh.fileUrl(name); }
+function ghFetch(url, opts) { return HX.gh.fetch(url, opts); }
 function ghB64enc(s) { return btoa(unescape(encodeURIComponent(s))); }
 function ghB64dec(s) { return decodeURIComponent(escape(atob(String(s).replace(/\s+/g, "")))); }
 /* v1.4.6 内容指纹：FNV-1a 32位，对账用 */
@@ -3275,11 +3265,7 @@ function strHash(s) {
   for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = (h * 0x01000193) >>> 0; }
   return ("0000000" + h.toString(16)).slice(-8);
 }
-function ghErrText(status, body) {
-  if (status === 401) return "Token 失效或没权限，检查 Token";
-  if (status === 404) return "仓库不存在或 Token 没勾选这个仓库";
-  return "HTTP " + status + "：" + String(body || "").replace(/\s+/g, " ").slice(0, 150);
-}
+function ghErrText(status, body) { return HX.gh.errText(status, body); } /* v1.12.0 收编：改调公共件（401/404/其他人话报错同款，Token不进提示文字） */
 function ghSaveCfg() {
   try {
     localStorage.setItem(XT_GH_USER, document.getElementById("ghUser").value.replace(/^\s+|\s+$/g, ""));
@@ -3443,6 +3429,10 @@ function locReconcile(manual) {
     el.textContent = "对账：只在壳APP里可用（需要文件夹里的本地备份来对照）";
     return;
   }
+  if (!ghOK()) {
+    el.textContent = "对账：公共件 hx-common.js 未装上，暂不能和云端对照（本地备份/刷题照常）"; /* v1.12.0 降级提示 */
+    return;
+  }
   if (!ghReady()) {
     el.textContent = "对账：先填好云设置，才能和云端对照";
     return;
@@ -3500,6 +3490,7 @@ function locReconcile(manual) {
   });
 }
 function ghManualPush() {
+  if (!ghOK()) { toast("公共件 hx-common.js 未装上，云备份/恢复/下载暂不可用（刷题/导入/AI备课照常）。联网打开一次会自动安装"); return; } /* v1.12.0 降级提示 */
   if (!ghReady()) { toast("请先填好用户名、Token、仓库名并保存设置"); document.getElementById("ghCard").open = true; return; }
   toast("☁️ 正在备份…");
   ghPush(function (err, count) {
@@ -3508,6 +3499,7 @@ function ghManualPush() {
   });
 }
 function ghManualPull() {
+  if (!ghOK()) { toast("公共件 hx-common.js 未装上，云备份/恢复/下载暂不可用（刷题/导入/AI备课照常）。联网打开一次会自动安装"); return; } /* v1.12.0 降级提示 */
   if (!ghReady()) { toast("请先填好用户名、Token、仓库名并保存设置"); document.getElementById("ghCard").open = true; return; }
   toast("📥 正在连接 GitHub…");
   ghPull(function (err, payload) {
@@ -3524,14 +3516,7 @@ function scheduleGhAutoBackup() {
   }, 10000);
 }
 /* ---- 开机自检（读 version-xiti.json 比对 SW_VERSION，三态条都明说） ---- */
-function cmpVer(a, b) {
-  var pa = String(a).split("."), pb = String(b).split(".");
-  for (var i = 0; i < Math.max(pa.length, pb.length); i++) {
-    var x = parseInt(pa[i] || "0", 10), y = parseInt(pb[i] || "0", 10);
-    if (x > y) return 1; if (x < y) return -1;
-  }
-  return 0;
-}
+function cmpVer(a, b) { try{ if (window.HX && HX.cmpVer) return HX.cmpVer(a, b); }catch(e){} return 0; } /* v1.12.0 收编：改调公共件点分版本比较 */
 function updShow(kind, text, showDl) {
   var bar = document.getElementById("updBar");
   bar.className = kind || "";
@@ -3545,38 +3530,36 @@ function ghCheckRender(line) {
   try { localStorage.setItem(XT_GH_CHECK, line); } catch (e) {}
 }
 function ghSelfCheck(manual) {
-  if (!ghReady()) {
-    if (manual) { toast("请先填好用户名、Token、仓库名并保存设置，才能自检"); document.getElementById("ghCard").open = true; }
+  /* v1.12.0 收编：删内嵌传输实现，改调公共件 HX.selfCheck('xiti', SW_VERSION)（API优先+免Token raw直链兜底）；
+     UI三态条/黄条/下载钮原样保留，只换数据源 */
+  if (!ghOK()) {
+    if (manual) { toast("公共件 hx-common.js 未装上，版本自检暂不可用（刷题/导入/AI备课照常）。联网打开一次会自动安装"); }
     return;
   }
+  if (manual && !HX.gh.ready()) { toast("请先填好用户名、Token、仓库名并保存设置，才能自检"); document.getElementById("ghCard").open = true; return; }
   ghCheckRender("自检：正在检查…（① 连线路 ② 比版本）");
-  ghFetch(ghFileUrl("version-xiti.json"), { headers: ghHeaders() }).then(function (resp) {
-    if (resp.status === 404) {
-      ghCheckRender("自检：" + new Date().toLocaleString() + " ✅ 线路通（云端还没放版本信息，暂无法比对）");
-      updShow("ok", "✅ GitHub 线路通畅\n本机版本 v" + SW_VERSION + "（云端还没有版本信息可比对）\n备份功能可正常使用", false);
-      setTimeout(updHide, 8000);
-      return null;
-    }
-    if (!resp.ok) return resp.text().then(function (t) { throw new Error(ghErrText(resp.status, t)); });
-    return resp.json();
-  }).then(function (file) {
-    if (!file) return;
-    var info;
-    try { info = JSON.parse(ghB64dec(file.content || "")); } catch (e) { info = null; }
-    if (!info || !info.version) {
-      ghCheckRender("自检：" + new Date().toLocaleString() + " ✅ 线路通（版本信息读不懂，暂无法比对）");
-      updShow("ok", "✅ GitHub 线路通畅\n本机版本 v" + SW_VERSION + "\n备份功能可正常使用", false);
-      setTimeout(updHide, 8000);
+  HX.selfCheck('xiti', SW_VERSION).then(function (r) {
+    if (!r || r.state === 'unknown') {
+      var bad = !(r && r.remote);
+      if (bad) {
+        ghCheckRender("自检：" + new Date().toLocaleString() + " ❌ 连不上 GitHub（网络不通）——不影响使用，题目都在本机，等网络好了备份会自动重试");
+        updShow("bad", "❌ 这次没能连上 GitHub（网络不通）\n不影响使用：刷题照常，数据都在本机\n等网络好了自动备份会自己重试；也可以稍后再点「🔍 自检」", false);
+      } else {
+        ghCheckRender("自检：" + new Date().toLocaleString() + " ✅ 线路通（版本信息读不懂，暂无法比对）");
+        updShow("ok", "✅ GitHub 线路通畅\n本机版本 v" + SW_VERSION + "\n备份功能可正常使用", false);
+        setTimeout(updHide, 8000);
+      }
       return;
     }
-    if (cmpVer(info.version, SW_VERSION) > 0) {
+    var info = r.remote || {};
+    if (r.state === 'new') {
       ghCheckRender("自检：" + new Date().toLocaleString() + " ✅ 线路通　🎉 网上有新版 v" + info.version + "（本机 v" + SW_VERSION + "），建议下载替换");
       ghVerPending = info;
       updShow("", "🎉 网上有新版 v" + info.version + "，你的是 v" + SW_VERSION + "\n" +
         (info.note ? "新版内容：" + info.note + "\n" : "") +
         "点下面按钮下载到本机，之后从下载目录打开新文件替换旧的（也可以点云备份卡片里「⬇️ 下载整套软件」两个一起下）", true);
     } else {
-      ghCheckRender("自检：" + new Date().toLocaleString() + " ✅ 线路通　已是最新版 v" + SW_VERSION);
+      ghCheckRender("自检：" + new Date().toLocaleString() + " ✅ 线路通　" + (r.state === 'old' ? "本机版本比网上新 v" : "已是最新版 v") + SW_VERSION);
       updShow("ok", "✅ GitHub 线路通畅\n已是最新版 v" + SW_VERSION + "，无需下载\n备份功能可正常使用", false);
       setTimeout(updHide, 8000);
     }
@@ -3617,6 +3600,7 @@ function ghDownloadNew() {
   });
 }
 function ghDownloadAll() {
+  if (!ghOK()) { toast("公共件 hx-common.js 未装上，云备份/恢复/下载暂不可用（刷题/导入/AI备课照常）。联网打开一次会自动安装"); return; } /* v1.12.0 降级提示 */
   if (!ghReady()) { toast("请先填好用户名、Token、仓库名并保存设置"); document.getElementById("ghCard").open = true; return; }
   toast("⏳ 正在下载 学习笔记…（1/5）");
   ghDlFile("software-notes.html", "学习笔记.html", function (err1) {
@@ -3737,88 +3721,45 @@ try{
 })();
 </script>
 
-<!-- 速记 v1.10.4 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点，不做系统悬浮窗）：右下角半透明圆点→弹小输入框→「记下」自动把新行（时间+软件名+上下文）追加写进壳授权文件夹「速记流水.txt」（一个文件按时间追加），存完toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含，只依赖window.LearnShell壳桥（readFile/writeFile/folderSet，与大管家导出写壳文件夹同款），不依赖本软件任何内部函数；纯追加，现有代码一行未动 -->
-<style id="hxSjStyle">
-/* 速记 v1.10.4 样式：低饱和暖色、圆点半透明、输入框白底圆角大字；bottom:88px错开右下角已有的回家/功能圆钮 */
-#hxSjDot{position:fixed;right:18px;bottom:88px;width:52px;height:52px;border-radius:50%;background:rgba(122,158,126,.55);border:2px solid rgba(255,255,255,.75);color:#fff;font-size:22px;z-index:99990;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.18);user-select:none;-webkit-user-select:none}
-#hxSjPanel{position:fixed;right:14px;bottom:150px;width:320px;max-width:86vw;background:#fffdf8;border:1px solid #e5ddd0;border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.18);z-index:99991;padding:12px;display:none}
-#hxSjText{width:100%;box-sizing:border-box;min-height:72px;font-size:18px;line-height:1.5;border:1px solid #ddd2c2;border-radius:10px;padding:10px;background:#fff;color:#4a4238;resize:vertical}
-#hxSjPanel .hxSjBtns{display:flex;gap:10px;margin-top:10px}
-#hxSjPanel button{flex:1;font-size:18px;padding:10px 0;border:none;border-radius:10px;cursor:pointer}
-#hxSjSave{background:#7a9e7e;color:#fff}
-#hxSjClose{background:#efe9df;color:#6b6257}
-#hxSjHint{font-size:13px;color:#a05848;margin-top:8px;display:none}
-#hxSjToast{position:fixed;left:50%;bottom:160px;transform:translateX(-50%);background:rgba(74,64,48,.92);color:#fff;padding:10px 20px;border-radius:20px;font-size:16px;z-index:99992;display:none}
-</style>
-<div id="hxSjDot" title="速记">🏥</div>
-<div id="hxSjPanel">
-  <textarea id="hxSjText" placeholder="发现啥毛病，写一句…"></textarea>
-  <div class="hxSjBtns"><button id="hxSjSave" type="button">记下</button><button id="hxSjClose" type="button">关上</button></div>
-  <div id="hxSjHint">浏览器里存不了，请在手机壳里用</div>
-</div>
-<div id="hxSjToast"></div>
+<!-- v1.12.0 收编：内嵌速记snippet（v1.10.4浮标UI+v1.10.5自动上行）整块删除，改由公共件 hx-common.js 的 HX.sj 一行接入；
+     下方为三级查找加载器（照 guanjia-pdf-engine.js 已验证先例；军规1：加载失败只降级提示，刷题/导入/AI备课主流程照常，绝不白屏） -->
 <script>
-/* 速记 v1.10.4 浮标速记：自包含IIFE，只摸window.LearnShell壳桥；readFile('速记流水.txt')→拼新行→writeFile写回 */
-(function(){
-  var HX_SJ_APP='习题学习'; /* 速记：本软件名，全家9个文件只这一行不同 */
-  function $(id){ return document.getElementById(id); }
-  function bridged(){ try{ return !!(window.LearnShell&&LearnShell.folderSet&&LearnShell.folderSet()); }catch(e){ return false; } }
-  function b64e(s){ return btoa(unescape(encodeURIComponent(s))); }
-  function b64d(s){ try{ return decodeURIComponent(escape(atob(s))); }catch(e){ try{ return atob(s); }catch(e2){ return ''; } } }
-  function pad(n){ return (n<10?'0':'')+n; }
-
-  /* 速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：
-     记下成功+开门闲时各对账一次——整份「速记流水.txt」PUT到仓根目录同名文件（整份覆盖，没网漏掉的行下回自动补）；
-     钥匙抄公共钱罐hx_gh_*（全家共享那套），没钥匙/没网静默跳过不打搅；上行成功才记hx_sj_uplocal对账，内容没变不重复推 */
-  function sjGhKeys(){ try{ var g=function(k){ return localStorage.getItem(k)||''; }; var t=g('hx_gh_tok')||g('br_gh_tok'),u=g('hx_gh_user')||g('br_gh_user'),r=g('hx_gh_repo')||g('br_gh_repo'); if(!t||!u||!r) return null; return {t:t,u:u,r:r}; }catch(e){ return null; } }
-  function sjUpload(){
-    try{
-      if(!bridged()) return;
-      var g=sjGhKeys(); if(!g||!window.fetch) return;
-      var b=LearnShell.readFile('速记流水.txt'); if(!b) return;
-      var txt=b64d(b); if(!txt) return;
-      if(txt===localStorage.getItem('hx_sj_uplocal')) return;
-      var api='https://api.github.com/repos/'+encodeURIComponent(g.u)+'/'+encodeURIComponent(g.r)+'/contents/'+encodeURIComponent('速记流水.txt');
-      var H={'Authorization':'token '+g.t,'Accept':'application/vnd.github+json'};
-      fetch(api,{headers:H}).then(function(resp){ if(resp.status===404) return {sha:null}; if(!resp.ok) throw 0; return resp.json(); }).then(function(j){
-        var body={message:'速记自动上行 '+HX_SJ_APP, content:b64e(txt)};
-        if(j&&j.sha) body.sha=j.sha;
-        return fetch(api,{method:'PUT',headers:H,body:JSON.stringify(body)});
-      }).then(function(resp){ if(!resp.ok) throw 0; return resp.json(); }).then(function(){
-        try{ localStorage.setItem('hx_sj_uplocal',txt); }catch(e){}
-      }).catch(function(){ /* 静默：没网/钥匙不好使都不打搅，下回记下自动补 */ });
-    }catch(e){}
+/* v1.12.0 hx-common.js 三级加载：①壳readFile授权文件夹 → ②同目录fetch(8秒超时) → ③公开仓下载后写壳安装 */
+function hxCommonLoad(onHxReady, onHxMissing){
+  function runTxt(txt){ try{ var sc=document.createElement('script'); sc.textContent=txt; document.head.appendChild(sc); }catch(e){} }
+  function ok(){ return !!(window.HX && window.HX.HX_COMMON_VERSION); }
+  function miss(){ try{ if(onHxMissing) onHxMissing(); }catch(e){} }
+  function good(){ try{ if(onHxReady) onHxReady(); }catch(e){} }
+  if(window.LearnShell){
+    var f=null; try{ f=LearnShell.readFile('hx-common.js'); }catch(e){}
+    if(f){ try{ runTxt(decodeURIComponent(escape(atob(String(f).replace(/\s+/g,''))))); if(ok()){ good(); return; } }catch(e){} }
   }
-  function sjToast(m){ var t=$('hxSjToast'); if(!t) return; t.textContent=m; t.style.display='block'; clearTimeout(t._t); t._t=setTimeout(function(){ t.style.display='none'; },2200); }
-  function openPanel(){ var p=$('hxSjPanel'); if(!p) return; p.style.display=(p.style.display==='block')?'none':'block'; if(p.style.display==='block'){ $('hxSjHint').style.display=bridged()?'none':'block'; try{ $('hxSjText').focus(); }catch(e){} } }
-  function save(){
-    var ta=$('hxSjText'); var v=(ta.value||'').replace(/^\s+|\s+$/g,'');
-    if(!v){ sjToast('先写一句再记'); return; }
-    if(!bridged()){ $('hxSjHint').style.display='block'; sjToast('请在手机壳里用'); return; }
-    var d=new Date();
-    var ts=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes());
-    var ctx='';
-    try{ var pt=localStorage.getItem('hx_gj_curpt'); if(pt){ pt=String(pt).replace(/^["']+|["']+$/g,''); if(pt) ctx+='　病人:'+pt; } }catch(e){}
-    try{ var t=(document.title||'').replace(/^\s+|\s+$/g,''); if(t) ctx+='　页面:'+t; }catch(e){}
-    var line='['+ts+'] 【'+HX_SJ_APP+'】'+v+ctx;
-    var old='';
-    try{ var b=LearnShell.readFile('速记流水.txt'); if(b) old=b64d(b); }catch(e){ old=''; }
-    var neu=old+((old&&old.charAt(old.length-1)!=='\n')?'\n':'')+line+'\n';
-    try{
-      LearnShell.writeFile('速记流水.txt', b64e(neu));
-      sjToast('已记下'); ta.value=''; $('hxSjPanel').style.display='none';
-      try{ sjUpload(); }catch(e){} /* 速记自动上行：本地存成后顺手推上网，失败静默下回补 */
-    }catch(e){ sjToast('没存成：'+e.message); }
-  }
-  function init(){
-    var dot=$('hxSjDot'); if(!dot) return;
-    dot.addEventListener('click', openPanel);
-    $('hxSjSave').addEventListener('click', save);
-    $('hxSjClose').addEventListener('click', function(){ $('hxSjPanel').style.display='none'; });
-    setTimeout(function(){ try{ sjUpload(); }catch(e){} }, 8000); /* 速记自动上行：开门闲时对账补推（上次没网漏的在这补） */
-  }
-  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', init); } else { init(); }
-})();
+  var _c=new AbortController(); var _t=setTimeout(function(){ _c.abort(); }, 8000);
+  fetch('hx-common.js?t='+Date.now(), {cache:'no-store', signal:_c.signal}).then(function(r){
+    if(!r.ok) throw new Error('HTTP '+r.status); return r.text();
+  }).then(function(txt){
+    clearTimeout(_t); runTxt(txt);
+    if(ok()){ good(); } else { hxCommonInstall(good, miss); }
+  }).catch(function(){ clearTimeout(_t); hxCommonInstall(good, miss); });
+}
+function hxCommonInstall(good, miss){
+  var _c=new AbortController(); var _t=setTimeout(function(){ _c.abort(); }, 30000);
+  fetch('https://hongxiaotao177.github.io/hx-common.js?t='+Date.now(), {cache:'no-store', signal:_c.signal}).then(function(r){
+    if(!r.ok) throw new Error('HTTP '+r.status); return r.text();
+  }).then(function(txt){
+    clearTimeout(_t);
+    try{ if(window.LearnShell && LearnShell.folderSet && LearnShell.folderSet()) LearnShell.writeFile('hx-common.js', btoa(unescape(encodeURIComponent(txt)))); }catch(e){}
+    try{ var sc=document.createElement('script'); sc.textContent=txt; document.head.appendChild(sc); }catch(e){}
+    if(window.HX && window.HX.HX_COMMON_VERSION){ good(); } else { miss(); }
+  }).catch(function(){ clearTimeout(_t); miss(); });
+}
+/* v1.12.0 一行接入速记：HX.sj 自动注入右下角🏥浮标+面板（样式/文件格式/上行/对账/toast文案与原snippet一致）；
+   missing只console.warn降级——刷题/导入/AI备课/hxStore照常，绝不白屏 */
+hxCommonLoad(function(){
+  try{ HX.sj.init({app:'习题'}); }catch(e){}
+}, function(){
+  try{ if(window.console && console.warn) console.warn('[hx-common] 公共件未装：速记浮标/云备份/版本自检降级，主功能照常'); }catch(e){}
+});
 </script>
 </body>
 </html>
