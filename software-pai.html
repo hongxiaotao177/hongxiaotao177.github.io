@@ -6,6 +6,7 @@
 <title>拍病历</title>
 <!--
 修改记录:
+拍病历 v0.6.0 2026-09-10 接入公共件hx-common.js（plan2军规：钥匙统一+收公共块，不崩溃压倒一切）：①三级查找加载器接入（壳readFile→同目录fetch 8秒→公开仓raw下载安装），HX不在时只降级提示（速记浮标不出/云备份报「公共件未装」），建档/拍照流/识别/归档主功能照常不白屏；②删内嵌速记snippet（style+DOM+IIFE整段），改 HX.sj.init({app:'拍病历'})，行为不变；③内嵌ghPut/ghGet两个裸函数删除改调 HX.gh.putFile/getFile（钱罐从xt_gh_*独立罐迁移为HX.keys.gh()统一钱罐：读时若xt_gh_*有值而hx_gh_*空，一次性搬家写入hx_gh_*，旧键xt_gh_*保留不删自然淘汰；设置页GitHub三项只写hx_gh_*）；④钥匙读取6处（enqueue/visionModelPick/callVision/textModelPick/callText/btnFry）改 apiKey()=HX.keys.get()（hx→bg→xt fallback链接住，HX缺失时回退xt_apikey），设置页写Key只写hx_apikey；⑤billAiUse记账时同步 HX.bill('拍病历',...) 记全家账本hx_aibill（HX缺失静默跳过，本分账pai_bill_v1不动）；⑥10个view/卡墙行化结构/callVision识别逻辑/归档逻辑一律不动。
 拍病历 v0.5.0 2026-09-10 首屏鱼骨头化（2026-09-10 洪老师拍板：全家9件一口气全改，只动版面不动功能）：毛病=首屏「＋收新病人」大按钮+一墙.card.pcard小方框+顶栏队列/⚙️两钮，60岁零基础看着花；病根=卡片墙思路。改法=①大按钮压成「＋ 收新病人 ▸」文字行，点行张开/收起原newPane建档表单（表单本体一行未动，id照旧）；②顶栏队列/⚙️两钮撤出顶栏，改成两条纯文字行入口（id照旧btnQ/btnSet，事件目标不变）；③病人卡墙→名单行：一病人一行纯文字（床号+姓名 ▸，小字=代号·今日张数·账本摘要），点行=进vCam拍照流与原点卡完全一致，卡上「🗂库」收进该行小字行；④归档区details原样保持。renderHome只改输出HTML结构和CSS，数据流/变量名/存储键名一律没动；其余9个view一行未动。
 拍病历 v0.4.8 2026-09-10 速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。
 拍病历 v0.4.7 2026-09-10
@@ -262,7 +263,7 @@ table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:
       <div class="row" style="margin-top:8px"><button class="btn red sm" id="btnBillClear">🧹 清空账本</button></div>
     </div>
     <div class="card"><b>看门人日志</b><div id="guardLog" class="small" style="margin-top:6px"></div></div>
-    <div class="small" style="text-align:center;margin-top:8px">拍病历 v0.5.0</div><!-- v0.5.0 关于版本号 -->
+    <div class="small" style="text-align:center;margin-top:8px">拍病历 v0.6.0</div><!-- v0.6.0 关于版本号 -->
   </div>
 </div>
 
@@ -333,12 +334,24 @@ table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:
 
 <script>
 'use strict';
-const SW_VERSION='0.5.0' /* v0.5.0 2026-09-10 首屏鱼骨头化:病人卡墙→名单行(点行=拍照流,库入口收小字行),「＋收新病人」大按钮→文字行开合原表单,顶栏队列/⚙️→文字行;只改输出HTML+CSS,数据流/变量名/存储键名不动 */ /* 速记自动上行 v0.4.8 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* 速记 v0.4.7 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */; /* v0.4.6 大管家回程票：从病人大管家点过来（?from=guanjia）亮顶条「← 返回大管家」一键回家；不带参数打开零影响 */;
+const SW_VERSION='0.6.0' /* v0.6.0 2026-09-10 接入hx-common.js:三级加载+HX.sj.init+HX.gh.putFile/getFile+HX.keys+HX.bill,xt_gh_*一次性搬家hx_gh_*旧键保留,HX缺失主功能照常只降级提示 */ /* v0.5.0 2026-09-10 首屏鱼骨头化:病人卡墙→名单行(点行=拍照流,库入口收小字行),「＋收新病人」大按钮→文字行开合原表单,顶栏队列/⚙️→文字行;只改输出HTML+CSS,数据流/变量名/存储键名不动 */ /* 速记自动上行 v0.4.8 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* 速记 v0.4.7 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */; /* v0.4.6 大管家回程票：从病人大管家点过来（?from=guanjia）亮顶条「← 返回大管家」一键回家；不带参数打开零影响 */;
 const $=id=>document.getElementById(id);
 const esc=s=>s; // 一律textContent渲染
 function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',2200);}
 function show(id){document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));$(id).classList.add('on');}
 const LS={get:(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set:(k,v)=>localStorage.setItem(k,JSON.stringify(v))};
+/* v0.6.0 钥匙统一:优先HX.keys.get()(hx_apikey→bg_apikey→xt_apikey fallback链),HX缺失(公共件没装上)回退直接读xt_apikey,主功能照常 */
+function apiKey(){try{if(window.HX&&HX.keys&&HX.keys.get){const k=HX.keys.get();if(k)return k;}}catch(e){}return localStorage.getItem('xt_apikey')||'';}
+/* v0.6.0 xt_gh_*独立钱罐→hx_gh_*统一钱罐一次性搬家:xt有值而hx空才搬,旧键xt_gh_*保留不删自然淘汰 */
+function paiGhMigrate(){
+  try{
+    ['user','tok','repo'].forEach(function(k){
+      const nv=localStorage.getItem('hx_gh_'+k),ov=localStorage.getItem('xt_gh_'+k);
+      if((nv==null||nv==='')&&ov)localStorage.setItem('hx_gh_'+k,ov);
+    });
+  }catch(e){}
+}
+paiGhMigrate(); // v0.6.0 开门先搬一次,老数据不丢
 
 /* ---------- v0.2.0 照片存档:IndexedDB 'pai-db'/store 'photos', key=照片id ----------
    localStorage只存台账,照片只在本机IndexedDB(不进备份)。idb全异步且可能不可用(隐私模式/老浏览器),
@@ -442,6 +455,7 @@ function billAiUse(pid,model,usage,inChars,outChars,what,ref){
   b.log.push({t:Date.now(),model:model,in:tin,out:tout,what:what||'识别',pid:pid||null,ref:ref||null}); // v0.4.3 pid+ref:换人/挪条时账跟人走
   if(b.log.length>50)b.log=b.log.slice(-50);
   LS.set('pai_bill_v1',b);
+  try{if(window.HX&&HX.bill)HX.bill('拍病历',what||'识别',inChars||0,outChars||0,model,0);}catch(e){} // v0.6.0 同步记全家账本hx_aibill,HX缺失静默跳过,本分账不动
 }
 /* v0.4.3 账跟人走:把ref(照片id)对应的费用从fromPid挪到toPid;log只留50条,太老的挪不动(估算账,影响忽略) */
 function billMoveRef(ref,fromPid,toPid){
@@ -791,7 +805,7 @@ $('maskBack').addEventListener('click',()=>{show('vCam');renderCam();});
 
 /* ---------- 识别队列 ---------- */
 function enqueue(ph){
-  if(!window.__mockVision&&!localStorage.getItem('xt_apikey')){toast('先去⚙️设置里填API Key');return;} // v0.1.2 没Key拦下,不入队不空跑
+  if(!window.__mockVision&&!apiKey()){toast('先去⚙️设置里填API Key');return;} // v0.1.2 没Key拦下,不入队不空跑;v0.6.0 读钥匙走apiKey()(HX.keys fallback链)
   ph.status='queued';runQueue();
 }
 function openQueue(){show('vQueue');renderQueue();}
@@ -840,7 +854,7 @@ const OCR_PROMPT='你是医疗文书OCR助手。先判断这张图片属于哪�
 const VMODEL_PREFS=['moonshot-v1-8k-vision-preview','moonshot-v1-32k-vision-preview','moonshot-v1-128k-vision-preview','kimi-k2.5','kimi-k2.6'];
 async function visionModelPick(key){
   const cached=LS.get('pai_vmodel',null);if(cached)return cached;
-  const k=(key||localStorage.getItem('xt_apikey')||'').replace(/^"|"$/g,'');
+  const k=(key||apiKey()).replace(/^"|"$/g,''); // v0.6.0 HX.keys
   const r=await fetch('https://api.moonshot.cn/v1/models',{headers:{'Authorization':'Bearer '+k}});
   if(!r.ok)throw new Error('HTTP '+r.status);
   const j=await r.json();const ids=(j.data||[]).map(m=>m.id);
@@ -854,7 +868,7 @@ async function callVision(dataURL){
     if(m&&typeof m==='object'&&m.text!=null){callVision._usage=m.usage||null;callVision._model=m.model||'moonshot-v1-8k-vision-preview';return m.text;}
     callVision._usage=null;callVision._model='moonshot-v1-8k-vision-preview';return m;
   }
-  const key=localStorage.getItem('xt_apikey');if(!key)throw new Error('未设置API Key');
+  const key=apiKey();if(!key)throw new Error('未设置API Key'); // v0.6.0 HX.keys
   const img=await encodeForVision(dataURL);
   const H={'Content-Type':'application/json','Authorization':'Bearer '+key.replace(/^"|"$/g,'')};
   // v0.4.2 max_tokens=4096:病历文书长,默认1024会拦腰截断(真机实测1586病例特点被切断=漏项病根之一)
@@ -1177,8 +1191,10 @@ function fallbackCopy(t){const a=document.createElement('textarea');a.value=t;do
 
 /* ---------- 设置 & 备份 ---------- */
 function openSet(){show('vSet');
-  $('setKey').value=localStorage.getItem('xt_apikey')||'';$('setGhU').value=localStorage.getItem('xt_gh_user')||'';
-  $('setGhT').value=localStorage.getItem('xt_gh_tok')||'';$('setGhR').value=localStorage.getItem('xt_gh_repo')||'';
+  paiGhMigrate(); // v0.6.0 开门再补搬一次,显示前先让hx_gh_*就位
+  // v0.6.0 读hx优先,xt兜底(旧数据还能看见)
+  $('setKey').value=apiKey();$('setGhU').value=localStorage.getItem('hx_gh_user')||localStorage.getItem('xt_gh_user')||'';
+  $('setGhT').value=localStorage.getItem('hx_gh_tok')||localStorage.getItem('xt_gh_tok')||'';$('setGhR').value=localStorage.getItem('hx_gh_repo')||localStorage.getItem('xt_gh_repo')||'';
   const gl=$('guardLog');gl.innerHTML='';
   const bb=bill();$('billMain').textContent='累计'+bb.calls+'趟 · 估算花费'+billFmt(billYuan(),2); // v0.1.4
   const lg=guardLog();
@@ -1188,8 +1204,10 @@ function openSet(){show('vSet');
 $('btnSet').addEventListener('click',openSet);
 document.querySelector('.setBack').addEventListener('click',()=>{show('vHome');renderHome();});
 $('btnSaveSet').addEventListener('click',()=>{
-  localStorage.setItem('xt_apikey',$('setKey').value.trim());localStorage.setItem('xt_gh_user',$('setGhU').value.trim());
-  localStorage.setItem('xt_gh_tok',$('setGhT').value.trim());localStorage.setItem('xt_gh_repo',$('setGhR').value.trim());
+  // v0.6.0 写Key只写hx_apikey(走HX.keys.set,HX缺失也写hx_apikey);GitHub三项只写hx_gh_*统一钱罐;旧键xt_*保留不删自然淘汰
+  try{if(window.HX&&HX.keys&&HX.keys.set)HX.keys.set($('setKey').value.trim());else localStorage.setItem('hx_apikey',$('setKey').value.trim());}catch(e){localStorage.setItem('hx_apikey',$('setKey').value.trim());}
+  localStorage.setItem('hx_gh_user',$('setGhU').value.trim());
+  localStorage.setItem('hx_gh_tok',$('setGhT').value.trim());localStorage.setItem('hx_gh_repo',$('setGhR').value.trim());
   toast('已保存');
 });
 $('btnBillClear').addEventListener('click',()=>{ // v0.1.4 清空账本
@@ -1202,25 +1220,17 @@ function buildBackup(){
     patients:patients().map(p=>({code:p.code,bed:p.bed,archived:p.archived,created:p.created})),
     entries:entries().map(e=>({code:(patients().find(p=>p.id===e.pid)||{}).code||'?',cat:e.cat,time:e.time,text:guardOut(e.text)}))};
 }
+/* v0.6.0 内嵌ghPut/ghGet两个裸函数删除,改调HX.gh.putFile/getFile(钱罐HX.keys.gh()统一罐,xt_gh_*已搬家进hx_gh_*);
+   HX缺失(公共件没装上)报「公共件未装」,不崩页面 */
 async function ghPut(content){
-  const u=LS.get('xt_gh_user',''),t=LS.get('xt_gh_tok',''),r=LS.get('xt_gh_repo','');
-  if(!u||!t||!r)throw new Error('请先填GitHub三项');
-  const url='https://api.github.com/repos/'+u+'/'+r+'/contents/pai-backup.json';
-  const H={Authorization:'token '+t,'Content-Type':'application/json'};
-  let sha;
-  const g=await fetch(url,{headers:H});
-  if(g.ok)sha=(await g.json()).sha;
-  const body={message:'pai backup',content:btoa(unescape(encodeURIComponent(JSON.stringify(content))))};
-  if(sha)body.sha=sha;
-  const p=await fetch(url,{method:'PUT',headers:H,body:JSON.stringify(body)});
-  if(!p.ok)throw new Error('HTTP '+p.status);
+  paiGhMigrate();
+  if(!(window.HX&&HX.gh&&HX.gh.putFile))throw new Error('公共件hx-common.js未装，云备份暂不可用');
+  await HX.gh.putFile(null,'pai-backup.json',JSON.stringify(content),'pai backup');
 }
 async function ghGet(){
-  const u=LS.get('xt_gh_user',''),t=LS.get('xt_gh_tok',''),r=LS.get('xt_gh_repo','');
-  const url='https://api.github.com/repos/'+u+'/'+r+'/contents/pai-backup.json';
-  const g=await fetch(url,{headers:{Authorization:'token '+t}});
-  if(!g.ok)throw new Error('HTTP '+g.status);
-  const j=await g.json();return JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\n/g,'')))));
+  paiGhMigrate();
+  if(!(window.HX&&HX.gh&&HX.gh.getFile))throw new Error('公共件hx-common.js未装，云恢复暂不可用');
+  return JSON.parse(await HX.gh.getFile(null,'pai-backup.json'));
 }
 $('btnBackup').addEventListener('click',async()=>{
   try{await ghPut(buildBackup());$('bakMsg').textContent='备份成功 '+fmtT(Date.now());}
@@ -1269,7 +1279,7 @@ function isCourseRecipe(id){return id==='rcp_course';} // 「今日病程记录�
 const TMODEL_PREFS=['moonshot-v1-32k','moonshot-v1-8k','kimi-k2.5'];
 async function textModelPick(key){
   const cached=LS.get('pai_tmodel',null);if(cached)return cached;
-  const k=(key||localStorage.getItem('xt_apikey')||'').replace(/^"|"$/g,'');
+  const k=(key||apiKey()).replace(/^"|"$/g,''); // v0.6.0 HX.keys
   const r=await fetch('https://api.moonshot.cn/v1/models',{headers:{'Authorization':'Bearer '+k}});
   if(!r.ok)throw new Error('HTTP '+r.status);
   const j=await r.json();const ids=(j.data||[]).map(m=>m.id);
@@ -1283,7 +1293,7 @@ async function callText(sys,user){
     if(m&&typeof m==='object'&&m.text!=null){callText._usage=m.usage||null;callText._model=m.model||'moonshot-v1-32k';return m.text;}
     callText._usage=null;callText._model='moonshot-v1-32k';return m;
   }
-  const key=localStorage.getItem('xt_apikey');if(!key)throw new Error('未设置API Key');
+  const key=apiKey();if(!key)throw new Error('未设置API Key'); // v0.6.0 HX.keys
   const H={'Content-Type':'application/json','Authorization':'Bearer '+key.replace(/^"|"$/g,'')};
   const mk=mdl=>JSON.stringify({model:mdl,messages:[{role:'system',content:sys},{role:'user',content:user}]});
   const post=mdl=>fetch('https://api.moonshot.cn/v1/chat/completions',{method:'POST',headers:H,body:mk(mdl)});
@@ -1431,7 +1441,7 @@ $('ckSaveAs').addEventListener('click',()=>{
 });
 $('ckGoRecipes').addEventListener('click',()=>openRecipes('cook'));
 $('btnFry').addEventListener('click',async()=>{
-  if(!window.__mockText&&!localStorage.getItem('xt_apikey')){toast('先去⚙️设置里填API Key');return;}
+  if(!window.__mockText&&!apiKey()){toast('先去⚙️设置里填API Key');return;} // v0.6.0 HX.keys
   const pl=buildCookPayload();
   if(!cookPickEntries().length&&!isCourseRecipe(pl.recipeId)){toast('选不到菜：库里这个范围没有条目');return;}
   $('fryMsg').textContent='炒菜中…';$('btnFry').disabled=true;
@@ -1516,6 +1526,49 @@ window.__pj={
 renderHome();
 </script>
 
+<!-- v0.6.0 hx-common.js 三级加载（照 guanjia-pdf-engine.js 已验证先例）：
+     ①壳readFile授权文件夹 → ②同目录fetch(8秒超时) → ③公开仓raw下载后写壳安装；
+     军规1不崩溃压倒一切：装不上只降级提示（速记浮标不出/云备份报「公共件未装」），建档/拍照流/识别主功能照常 -->
+<script>
+function hxCommonLoad(onHxReady, onHxMissing){
+  function runTxt(txt){ try{ var s=document.createElement('script'); s.textContent=txt; document.head.appendChild(s); }catch(e){} }
+  function ok(){ return !!(window.HX && window.HX.HX_COMMON_VERSION); }
+  function miss(){ try{ if(onHxMissing) onHxMissing(); }catch(e){} }
+  function good(){ try{ if(onHxReady) onHxReady(); }catch(e){} }
+  /* ①壳里先读授权文件夹（file://下fetch常被拦，readFile可靠） */
+  if(window.LearnShell){
+    var f=null; try{ f=LearnShell.readFile('hx-common.js'); }catch(e){}
+    if(f){ try{ runTxt(decodeURIComponent(escape(atob(String(f).replace(/\s+/g,''))))); if(ok()){ good(); return; } }catch(e){} }
+  }
+  /* ②同目录fetch（壳内file://会挂起，装8秒超时） */
+  var _c=new AbortController(); var _t=setTimeout(function(){ _c.abort(); }, 8000);
+  fetch('hx-common.js?t='+Date.now(), {cache:'no-store', signal:_c.signal}).then(function(r){
+    if(!r.ok) throw new Error('HTTP '+r.status); return r.text();
+  }).then(function(txt){
+    clearTimeout(_t); runTxt(txt);
+    if(ok()){ good(); } else { hxCommonInstall(good, miss); } /* ③在线下载安装 */
+  }).catch(function(){ clearTimeout(_t); hxCommonInstall(good, miss); });
+}
+function hxCommonInstall(good, miss){
+  var _c=new AbortController(); var _t=setTimeout(function(){ _c.abort(); }, 30000);
+  fetch('https://hongxiaotao177.github.io/hx-common.js?t='+Date.now(), {cache:'no-store', signal:_c.signal}).then(function(r){
+    if(!r.ok) throw new Error('HTTP '+r.status); return r.text();
+  }).then(function(txt){
+    clearTimeout(_t);
+    try{ if(window.LearnShell && LearnShell.folderSet && LearnShell.folderSet()) LearnShell.writeFile('hx-common.js', btoa(unescape(encodeURIComponent(txt)))); }catch(e){}
+    try{ var s=document.createElement('script'); s.textContent=txt; document.head.appendChild(s); }catch(e){}
+    if(window.HX && window.HX.HX_COMMON_VERSION){ good(); } else { miss(); }
+  }).catch(function(){ clearTimeout(_t); miss(); });
+}
+/* v0.6.0 接上公共件：速记改 HX.sj.init（页面已无内嵌snippet，UI由HX自动注入）；
+   missing只降级提示，不弹窗不卡屏，主功能照常 */
+hxCommonLoad(function(){
+  try{ HX.sj.init({app:'拍病历'}); }catch(e){}
+}, function(){
+  try{ if(window.console&&console.warn) console.warn('[拍病历] 公共件 hx-common.js 未装：速记浮标/云备份降级，主功能照常'); }catch(e){}
+});
+</script>
+
 <!-- 大管家回程票：从病人大管家点过来（?from=guanjia&pt=病人名）时亮顶条，「← 返回大管家」一键回家，不经过主界面；不带参数正常打开零影响。v0.4.6 大管家回程票 -->
 <script>
 (function(){
@@ -1543,88 +1596,6 @@ renderHome();
 })();
 </script>
 
-<!-- 速记 v0.4.7 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点，不做系统悬浮窗）：右下角半透明圆点→弹小输入框→「记下」自动把新行（时间+软件名+上下文）追加写进壳授权文件夹「速记流水.txt」（一个文件按时间追加），存完toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含，只依赖window.LearnShell壳桥（readFile/writeFile/folderSet，与大管家导出写壳文件夹同款），不依赖本软件任何内部函数；纯追加，现有代码一行未动 -->
-<style id="hxSjStyle">
-/* 速记 v0.4.7 样式：低饱和暖色、圆点半透明、输入框白底圆角大字；bottom:88px错开右下角已有的回家/功能圆钮 */
-#hxSjDot{position:fixed;right:18px;bottom:88px;width:52px;height:52px;border-radius:50%;background:rgba(122,158,126,.55);border:2px solid rgba(255,255,255,.75);color:#fff;font-size:22px;z-index:99990;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.18);user-select:none;-webkit-user-select:none}
-#hxSjPanel{position:fixed;right:14px;bottom:150px;width:320px;max-width:86vw;background:#fffdf8;border:1px solid #e5ddd0;border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.18);z-index:99991;padding:12px;display:none}
-#hxSjText{width:100%;box-sizing:border-box;min-height:72px;font-size:18px;line-height:1.5;border:1px solid #ddd2c2;border-radius:10px;padding:10px;background:#fff;color:#4a4238;resize:vertical}
-#hxSjPanel .hxSjBtns{display:flex;gap:10px;margin-top:10px}
-#hxSjPanel button{flex:1;font-size:18px;padding:10px 0;border:none;border-radius:10px;cursor:pointer}
-#hxSjSave{background:#7a9e7e;color:#fff}
-#hxSjClose{background:#efe9df;color:#6b6257}
-#hxSjHint{font-size:13px;color:#a05848;margin-top:8px;display:none}
-#hxSjToast{position:fixed;left:50%;bottom:160px;transform:translateX(-50%);background:rgba(74,64,48,.92);color:#fff;padding:10px 20px;border-radius:20px;font-size:16px;z-index:99992;display:none}
-</style>
-<div id="hxSjDot" title="速记">🏥</div>
-<div id="hxSjPanel">
-  <textarea id="hxSjText" placeholder="发现啥毛病，写一句…"></textarea>
-  <div class="hxSjBtns"><button id="hxSjSave" type="button">记下</button><button id="hxSjClose" type="button">关上</button></div>
-  <div id="hxSjHint">浏览器里存不了，请在手机壳里用</div>
-</div>
-<div id="hxSjToast"></div>
-<script>
-/* 速记 v0.4.7 浮标速记：自包含IIFE，只摸window.LearnShell壳桥；readFile('速记流水.txt')→拼新行→writeFile写回 */
-(function(){
-  var HX_SJ_APP='拍病历'; /* 速记：本软件名，全家9个文件只这一行不同 */
-  function $(id){ return document.getElementById(id); }
-  function bridged(){ try{ return !!(window.LearnShell&&LearnShell.folderSet&&LearnShell.folderSet()); }catch(e){ return false; } }
-  function b64e(s){ return btoa(unescape(encodeURIComponent(s))); }
-  function b64d(s){ try{ return decodeURIComponent(escape(atob(s))); }catch(e){ try{ return atob(s); }catch(e2){ return ''; } } }
-  function pad(n){ return (n<10?'0':'')+n; }
-
-  /* 速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：
-     记下成功+开门闲时各对账一次——整份「速记流水.txt」PUT到仓根目录同名文件（整份覆盖，没网漏掉的行下回自动补）；
-     钥匙抄公共钱罐hx_gh_*（全家共享那套），没钥匙/没网静默跳过不打搅；上行成功才记hx_sj_uplocal对账，内容没变不重复推 */
-  function sjGhKeys(){ try{ var g=function(k){ return localStorage.getItem(k)||''; }; var t=g('hx_gh_tok')||g('br_gh_tok'),u=g('hx_gh_user')||g('br_gh_user'),r=g('hx_gh_repo')||g('br_gh_repo'); if(!t||!u||!r) return null; return {t:t,u:u,r:r}; }catch(e){ return null; } }
-  function sjUpload(){
-    try{
-      if(!bridged()) return;
-      var g=sjGhKeys(); if(!g||!window.fetch) return;
-      var b=LearnShell.readFile('速记流水.txt'); if(!b) return;
-      var txt=b64d(b); if(!txt) return;
-      if(txt===localStorage.getItem('hx_sj_uplocal')) return;
-      var api='https://api.github.com/repos/'+encodeURIComponent(g.u)+'/'+encodeURIComponent(g.r)+'/contents/'+encodeURIComponent('速记流水.txt');
-      var H={'Authorization':'token '+g.t,'Accept':'application/vnd.github+json'};
-      fetch(api,{headers:H}).then(function(resp){ if(resp.status===404) return {sha:null}; if(!resp.ok) throw 0; return resp.json(); }).then(function(j){
-        var body={message:'速记自动上行 '+HX_SJ_APP, content:b64e(txt)};
-        if(j&&j.sha) body.sha=j.sha;
-        return fetch(api,{method:'PUT',headers:H,body:JSON.stringify(body)});
-      }).then(function(resp){ if(!resp.ok) throw 0; return resp.json(); }).then(function(){
-        try{ localStorage.setItem('hx_sj_uplocal',txt); }catch(e){}
-      }).catch(function(){ /* 静默：没网/钥匙不好使都不打搅，下回记下自动补 */ });
-    }catch(e){}
-  }
-  function sjToast(m){ var t=$('hxSjToast'); if(!t) return; t.textContent=m; t.style.display='block'; clearTimeout(t._t); t._t=setTimeout(function(){ t.style.display='none'; },2200); }
-  function openPanel(){ var p=$('hxSjPanel'); if(!p) return; p.style.display=(p.style.display==='block')?'none':'block'; if(p.style.display==='block'){ $('hxSjHint').style.display=bridged()?'none':'block'; try{ $('hxSjText').focus(); }catch(e){} } }
-  function save(){
-    var ta=$('hxSjText'); var v=(ta.value||'').replace(/^\s+|\s+$/g,'');
-    if(!v){ sjToast('先写一句再记'); return; }
-    if(!bridged()){ $('hxSjHint').style.display='block'; sjToast('请在手机壳里用'); return; }
-    var d=new Date();
-    var ts=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes());
-    var ctx='';
-    try{ var pt=localStorage.getItem('hx_gj_curpt'); if(pt){ pt=String(pt).replace(/^["']+|["']+$/g,''); if(pt) ctx+='　病人:'+pt; } }catch(e){}
-    try{ var t=(document.title||'').replace(/^\s+|\s+$/g,''); if(t) ctx+='　页面:'+t; }catch(e){}
-    var line='['+ts+'] 【'+HX_SJ_APP+'】'+v+ctx;
-    var old='';
-    try{ var b=LearnShell.readFile('速记流水.txt'); if(b) old=b64d(b); }catch(e){ old=''; }
-    var neu=old+((old&&old.charAt(old.length-1)!=='\n')?'\n':'')+line+'\n';
-    try{
-      LearnShell.writeFile('速记流水.txt', b64e(neu));
-      sjToast('已记下'); ta.value=''; $('hxSjPanel').style.display='none';
-      try{ sjUpload(); }catch(e){} /* 速记自动上行：本地存成后顺手推上网，失败静默下回补 */
-    }catch(e){ sjToast('没存成：'+e.message); }
-  }
-  function init(){
-    var dot=$('hxSjDot'); if(!dot) return;
-    dot.addEventListener('click', openPanel);
-    $('hxSjSave').addEventListener('click', save);
-    $('hxSjClose').addEventListener('click', function(){ $('hxSjPanel').style.display='none'; });
-    setTimeout(function(){ try{ sjUpload(); }catch(e){} }, 8000); /* 速记自动上行：开门闲时对账补推（上次没网漏的在这补） */
-  }
-  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', init); } else { init(); }
-})();
-</script>
+<!-- v0.6.0 内嵌速记snippet已删（收编进hx-common.js HX.sj）：圆点/面板/toast由HX.sj.init自动注入，行为不变；HX缺失时浮标不出=静默降级 -->
 </body>
 </html>
