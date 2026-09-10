@@ -4,6 +4,14 @@
  文件桥 —— AI 与手机文件夹之间的桥（单文件 HTML，第三个协同软件）
 ====================================================================
  修改记录：
+   v1.4.0 (2026-09-10) 全鱼骨头化（洪老师拍板：首屏只见折叠行，无卡片无大按钮）：
+        ①首屏五张卡（📁我的文件夹/📮AI往来/❓使用说明/📦打包分享/☁️云设置GitHub）一律改成
+          纯文字折叠行（▸收起/▾张开，默认收起，开合状态记 localStorage hx_br_fold_*）；
+        ②张开区里所有大按钮一律压成整行可点的文字行（class rowline，行高≥44px、行距8~10px）；
+          云设置3个输入框+3个按钮全部收进张开区；文件列表行式保持不动；
+        ③davCard/wizard 条件显示逻辑一行未动，出现时内部按钮同样行化；
+          「🛠 设置与工具」行保持原样（其抽屉内容已挪为上面的折叠行）；
+        ④纯版面改动：功能/JS/存储键名/变量名零改动（按钮id全保留，事件绑定原样）。
    v1.3.3 (2026-09-10) 速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。
    v1.3.2 (2026-09-10) 浮标速记入编（洪老师拍板方案A，全家9件同一套自包含snippet，详见SW_VERSION注释链）。
    v1.1.1 (2026-08-06)「下载整套」三件套→四件套：血气分析入编（software-xueqi.html）。
@@ -126,7 +134,7 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
   header .ver { font-size: 12px; font-weight: normal; opacity: .8; margin-left: 8px; }
   .page { padding: 14px; max-width: 640px; margin: 0 auto; }
   .hidden { display: none !important; }
-  .card { background: #fffdf8; border: 1px solid #e8dcc8; border-radius: 14px; padding: 14px 16px; margin-bottom: 14px; }
+  .card { background: #fffdf8; border: 1px solid #e8dcc8; border-radius: 14px; padding: 6px 16px; margin-bottom: 9px; } /* v1.4.0 行距9px、卡内边距收窄（折叠行化） */
   .card h2 { font-size: 16px; color: #6a5b47; margin-bottom: 8px; }
   .hint { font-size: 13px; color: #9a8f80; line-height: 1.7; margin-top: 6px; }
   button { font-size: 16px; border: none; border-radius: 10px; padding: 10px 16px; cursor: pointer; background: #6a5b47; color: #fff; -webkit-appearance: none; font-family: inherit; }
@@ -184,12 +192,26 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
   .help-sec p { font-size: 14px; line-height: 1.8; margin: 3px 0; }
   .gh-lab { display:block; margin-top: 6px; }
   /* v1.3.0 鱼骨头化：介绍收起(ⓘ说明按钮) + 设置与工具抽屉（与主界面v1.6.0同款） */
-  .infoBtn { font-size:12px; color:#8a7a63; border:1px solid #e0d6c4; border-radius:8px;
-    padding:2px 9px; margin-left:8px; font-weight:400; background:#faf7f1; vertical-align:2px; cursor:pointer; }
+  .infoBtn { font-size:12px; color:#8a7a63; border:none; border-radius:0;
+    padding:2px 4px; margin-left:4px; font-weight:400; background:none; vertical-align:2px; cursor:pointer; } /* v1.4.0 去小方框 */
   .intro { display:none; }
   #toolCard { border-left:5px solid #b09a76; background:#faf6ef; cursor:pointer; }
   #toolZone { border-left:3px solid #e6ddcd; margin-left:8px; padding-left:12px; }
   #toolZone .card { background:#fdfbf8; box-shadow:none; }
+  /* v1.4.0 全鱼骨头化：折叠行（无卡片无方框）+ 文字行按钮，行高≥44px、行距8~10px、整行可点 */
+  .frow { background:none; border:none; border-radius:0; padding:0; margin-bottom:9px; border-bottom:1px dashed #eee4d4; }
+  .frow-h { min-height:44px; display:flex; align-items:center; padding:12px 4px; cursor:pointer;
+    font-size:16px; font-weight:bold; color:#6a5b47; user-select:none; -webkit-user-select:none; width:100%; }
+  .frow-h .arr { margin-left:auto; display:flex; align-items:center; gap:8px; font-size:14px; color:#a89f93; font-weight:normal; }
+  .frow-b { display:none; padding:2px 0 8px; }
+  .frow.open .frow-b { display:block; }
+  button.rowline { display:block; width:100%; text-align:left; background:none; color:#4a3f2a;
+    border:none; border-bottom:1px dashed #eee4d4; border-radius:0; padding:12px 4px;
+    min-height:44px; font-size:15px; margin:0; }
+  button.rowline:active { background:#f5efe4; }
+  /* v1.4.0 向导卡内按钮同样行化 */
+  #wizard .step button { background:none; color:#6a5b47; border:none; border-bottom:1px dashed #eee0c8;
+    border-radius:0; padding:10px 4px; min-height:44px; text-align:left; font-size:14px; }
 </style>
 </head>
 <body>
@@ -203,29 +225,30 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
     <div class="hint">补齐后本卡自动消失。Token 在坚果云：学习文件 → AI → 我设计的软件 → github token my own software.txt</div>
   </div>
 
+  <!-- v1.4.0 鱼骨头化：五张卡→五行折叠行（默认收起，开合记 hx_br_fold_*）；按钮全压文字行（id全保留） -->
   <!-- 文件夹 -->
-  <div class="card">
-    <h2>📁 我的文件夹<span class="infoBtn">ⓘ 说明</span></h2>
-    <div id="dirStatus" class="hint">还没授权文件夹</div>
-    <div class="btn-row">
-      <button id="btnAuth">📁 授权文件夹</button>
-      <button class="ghost" id="btnRefresh">🔄 刷新列表</button>
+  <div class="frow" id="rowFolder">
+    <div class="frow-h" data-fkey="hx_br_fold_folder">📁 我的文件夹<span class="arr"><span class="infoBtn">ⓘ 说明</span><span class="farr">▸</span></span></div>
+    <div class="frow-b">
+      <div id="dirStatus" class="hint">还没授权文件夹</div>
+      <button class="rowline" id="btnAuth">📁 授权文件夹</button>
+      <button class="rowline" id="btnRefresh">🔄 刷新列表</button>
+      <div id="fileList"></div>
+      <div class="hint intro">授权「医学软件」文件夹后，这里列出里面的文件。「⬆️ 传给AI」= 文件送进 GitHub 中转站，跟 AI 说一声文件名它就能读到（读完会删掉中转，不占仓库）。</div>
     </div>
-    <div id="fileList"></div>
-    <div class="hint intro">授权「医学软件」文件夹后，这里列出里面的文件。「⬆️ 传给AI」= 文件送进 GitHub 中转站，跟 AI 说一声文件名它就能读到（读完会删掉中转，不占仓库）。</div>
   </div>
 
   <!-- AI 往来 -->
-  <div class="card">
-    <h2>📮 AI 往来<span class="infoBtn">ⓘ 说明</span></h2>
-    <div class="btn-row">
-      <button id="btnRecv">📥 检查AI发来的文件</button>
+  <div class="frow" id="rowIO">
+    <div class="frow-h" data-fkey="hx_br_fold_io">📮 AI往来<span class="arr"><span class="infoBtn">ⓘ 说明</span><span class="farr">▸</span></span></div>
+    <div class="frow-b">
+      <button class="rowline" id="btnRecv">📥 检查AI发来的文件</button>
+      <div class="log" id="ioLog"></div>
+      <div class="hint intro">AI 要给你文件时会往仓库贴"任务单"，点这里照单收进文件夹。</div>
     </div>
-    <div class="log" id="ioLog"></div>
-    <div class="hint intro">AI 要给你文件时会往仓库贴"任务单"，点这里照单收进文件夹。</div>
   </div>
 
-  <!-- 坚果云直通车（v1.2.0，仅壳APP里显示） -->
+  <!-- 坚果云直通车（v1.2.0，仅壳APP里显示；内部按钮行化） -->
   <div class="card hidden" id="davCard">
     <h2>☁️ 坚果云直通车</h2>
     <div id="davCfgBox">
@@ -233,77 +256,68 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
       <input type="text" id="davUser" autocomplete="off" placeholder="you@example.com">
       <label class="gh-lab">应用密码（不是登录密码！坚果云网页版→账户信息→安全选项→第三方应用管理→添加）</label>
       <input type="password" id="davPass" autocomplete="off">
-      <div class="btn-row">
-        <button id="davSave">💾 保存钥匙</button>
-        <button class="ghost" id="davTest">🔍 测试连接</button>
-      </div>
+      <button class="rowline" id="davSave">💾 保存钥匙</button>
+      <button class="rowline" id="davTest">🔍 测试连接</button>
       <div class="hint" id="davCfgHint">钥匙只存本机，套装共用。第一次用先点「测试连接」。</div>
     </div>
     <div id="davMain" style="display:none;">
-      <div class="btn-row" style="margin-top:6px;">
-        <button class="ghost" id="davUp2">⬆️ 上一级</button>
-        <button class="ghost" id="davRefresh">🔄 刷新</button>
-      </div>
+      <button class="rowline" id="davUp2">⬆️ 上一级</button>
+      <button class="rowline" id="davRefresh">🔄 刷新</button>
       <div class="hint" id="davPath" style="word-break:break-all;">/</div>
       <div id="davList"></div>
-      <div class="btn-row">
-        <button id="davDownBtn">⬇️ 取下来（进授权文件夹）</button>
-      </div>
+      <button class="rowline" id="davDownBtn">⬇️ 取下来（进授权文件夹）</button>
       <div class="hint" id="davProg"></div>
       <div style="border-top:1px dashed #ddd3b8; margin-top:10px; padding-top:8px;">
         <b style="font-size:14px; color:#6a5b47;">⬆️ 送上去：授权文件夹 → 当前坚果云目录</b>
         <div id="davUpList"></div>
-        <div class="btn-row">
-          <button id="davUpBtn">⬆️ 送上去</button>
-          <button class="ghost" id="davUpAllBtn">☑️ 全选</button>
-        </div>
+        <button class="rowline" id="davUpBtn">⬆️ 送上去</button>
+        <button class="rowline" id="davUpAllBtn">☑️ 全选</button>
       </div>
     </div>
   </div>
 
-  <!-- v1.3.0 鱼骨头化：偶尔才用的收进「🛠 设置与工具」抽屉 -->
-  <div class="card" id="toolCard">
-    <h2>🛠 设置与工具 <span id="toolArrow" style="font-size:13px; color:#a89f93; font-weight:normal;">▸ 点开</span></h2>
-    <div class="hint" style="margin-top:2px;">使用说明、打包分享、云设置（GitHub）——偶尔才用的都收在这里。</div>
-  </div>
-  <div id="toolZone" style="display:none;">
-
-  <!-- 使用说明入口 -->
-  <div class="card" style="padding:10px 16px;">
-    <div class="btn-row" style="margin:0;">
-      <button class="ghost" id="btnHelp">❓ 使用说明（取Kimi Key / 取GitHub Token / 文件桥用法）</button>
+  <!-- 使用说明 -->
+  <div class="frow" id="rowHelp">
+    <div class="frow-h" data-fkey="hx_br_fold_help">❓ 使用说明<span class="arr"><span class="farr">▸</span></span></div>
+    <div class="frow-b">
+      <button class="rowline" id="btnHelp">❓ 使用说明（取Kimi Key / 取GitHub Token / 文件桥用法）</button>
     </div>
   </div>
 
   <!-- 打包分享 -->
-  <div class="card">
-    <h2>📦 打包分享<span class="infoBtn">ⓘ 说明</span></h2>
-    <div class="btn-row">
-      <button id="btnPack">📦 打包这个文件夹</button>
+  <div class="frow" id="rowPack">
+    <div class="frow-h" data-fkey="hx_br_fold_pack">📦 打包分享<span class="arr"><span class="infoBtn">ⓘ 说明</span><span class="farr">▸</span></span></div>
+    <div class="frow-b">
+      <button class="rowline" id="btnPack">📦 打包这个文件夹</button>
+      <div class="hint intro">把文件夹里的软件打成 zip：给自己用会多带一张"随行配置卡"（新手机免填Token）；给别人只装干净软件。</div>
     </div>
-    <div class="hint intro">把文件夹里的软件打成 zip：给自己用会多带一张"随行配置卡"（新手机免填Token）；给别人只装干净软件。</div>
   </div>
 
   <!-- 云设置 -->
-  <div class="card">
-    <h2>☁️ 云设置（GitHub）<span class="infoBtn">ⓘ 说明</span></h2>
-    <label class="gh-lab">GitHub 用户名</label>
-    <input type="text" id="ghUser" autocomplete="off">
-    <label class="gh-lab">Token（只存本机浏览器，不外传）</label>
-    <input type="password" id="ghTok" autocomplete="off">
-    <label class="gh-lab">仓库名</label>
-    <input type="text" id="ghRepo" autocomplete="off">
-    <div class="btn-row">
-      <button id="ghSave">💾 保存设置</button>
+  <div class="frow" id="rowGh">
+    <div class="frow-h" data-fkey="hx_br_fold_gh">☁️ 云设置（GitHub）<span class="arr"><span class="infoBtn">ⓘ 说明</span><span class="farr">▸</span></span></div>
+    <div class="frow-b">
+      <label class="gh-lab">GitHub 用户名</label>
+      <input type="text" id="ghUser" autocomplete="off">
+      <label class="gh-lab">Token（只存本机浏览器，不外传）</label>
+      <input type="password" id="ghTok" autocomplete="off">
+      <label class="gh-lab">仓库名</label>
+      <input type="text" id="ghRepo" autocomplete="off">
+      <button class="rowline" id="ghSave">💾 保存设置</button>
+      <button class="rowline" id="ghCheckBtn">🔍 自检：线路 + 新版本</button>
+      <button class="rowline" id="ghDlAllBtn">⬇️ 下载整套软件</button>
+      <div class="hint" id="ghCheck">自检：还没查过（每次打开会自动查一次）</div>
+      <div class="hint intro">「下载整套」= 学习笔记 + 习题学习 + 文件桥 + 血气分析 + PPT工坊 + 小涛笔记，六个最新版一起下载（浏览器首次可能问"允许下载多个文件"，点允许）。</div>
     </div>
-    <div class="btn-row">
-      <button class="ghost" id="ghCheckBtn">🔍 自检：线路 + 新版本</button>
-      <button class="ghost" id="ghDlAllBtn">⬇️ 下载整套软件</button>
-    </div>
-    <div class="hint" id="ghCheck">自检：还没查过（每次打开会自动查一次）</div>
-    <div class="hint intro">「下载整套」= 学习笔记 + 习题学习 + 文件桥 + 血气分析 + PPT工坊 + 小涛笔记，六个最新版一起下载（浏览器首次可能问"允许下载多个文件"，点允许）。</div>
   </div>
 
+  <!-- v1.3.0 鱼骨头化：「🛠 设置与工具」行保持不动；v1.4.0 抽屉内容已挪为上面的折叠行 -->
+  <div class="card" id="toolCard">
+    <h2>🛠 设置与工具 <span id="toolArrow" style="font-size:13px; color:#a89f93; font-weight:normal;">▸ 点开</span></h2>
+    <div class="hint" style="margin-top:2px;">使用说明、打包分享、云设置（GitHub）。</div>
+  </div>
+  <div id="toolZone" style="display:none;">
+    <div class="hint">这三样都已挪到上面，各自是一行，点行就能张开。</div>
   </div><!-- /toolZone -->
 
   <div class="hint" style="text-align:center;padding:8px 0 20px;">文件桥 · AI 与文件夹之间的桥 · 只认 Chrome</div>
@@ -409,7 +423,7 @@ function fmtTime(t){ return new Date(t).toLocaleString(); }
 
 /* ==================== GitHub 通信（移植学习笔记/习题学习同套） ==================== */
 var BR_GH_USER = 'br_gh_user', BR_GH_TOK = 'br_gh_tok', BR_GH_REPO = 'br_gh_repo', BR_GH_CHECK = 'br_gh_check';
-var SW_VERSION = window.SW_VERSION = '1.3.3'; /* 速记自动上行 v1.3.3 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* 速记 v1.3.2 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */ /* v1.2.3补：挂window治第二个script块拿不到（ReferenceError被try静默吞，页头永远旧版字样） */ /* v1.2.2 版本字样治病根：头顶+标题代码自动填SW_VERSION（此前硬编码v1.2.0忘了跟） */ /* v1.2.1 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */ /* v1.2.3 主界面刷新免Token备用路+送上去全选 */
+var SW_VERSION = window.SW_VERSION = '1.4.0'; /* v1.4.0 2026-09-10 全鱼骨头化：五卡→五折叠行、大按钮全压文字行，纯版面 */ /* 速记自动上行 v1.3.3 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* 速记 v1.3.2 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */ /* v1.2.3补：挂window治第二个script块拿不到（ReferenceError被try静默吞，页头永远旧版字样） */ /* v1.2.2 版本字样治病根：头顶+标题代码自动填SW_VERSION（此前硬编码v1.2.0忘了跟） */ /* v1.2.1 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */ /* v1.2.3 主界面刷新免Token备用路+送上去全选 */
 /* v1.1.2 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["br_gh_user", "hx_gh_user"], ["br_gh_tok", "hx_gh_tok"], ["br_gh_repo", "hx_gh_repo"]];
@@ -1476,7 +1490,7 @@ try{
   for(var _i = 0; _i < _btns.length; _i++){ (function(btn){
     btn.addEventListener('click', function(e){
       e.preventDefault(); e.stopPropagation();
-      var card = btn; while(card && !(card.classList && card.classList.contains('card'))) card = card.parentElement;
+      var card = btn; while(card && !(card.classList && (card.classList.contains('card') || card.classList.contains('frow')))) card = card.parentElement; /* v1.4.0 补认 .frow */
       var d = card ? card.querySelector('.intro') : null; if(!d) return;
       var open = d.style.display !== 'block';
       d.style.display = open ? 'block' : 'none';
@@ -1493,6 +1507,22 @@ try{
   }
   toolCard.addEventListener('click', function(){ toolSet(toolZone.style.display !== 'block'); });
   toolSet(localStorage.getItem('hx_br_tool_open') === '1');
+}catch(e){}
+
+/* v1.4.0 全鱼骨头化：五折叠行——整行可点、默认收起、开合记 localStorage hx_br_fold_*（纯加法） */
+try{
+  var _fhs = document.querySelectorAll('.frow-h[data-fkey]');
+  for(var _fi = 0; _fi < _fhs.length; _fi++){ (function(h){
+    var row = h.parentElement, key = h.getAttribute('data-fkey');
+    var arr = h.querySelector('.farr');
+    function fset(open){
+      row.classList.toggle('open', open);
+      if(arr) arr.textContent = open ? '▾' : '▸';
+      try{ localStorage.setItem(key, open ? '1' : ''); }catch(e){}
+    }
+    h.addEventListener('click', function(){ fset(!row.classList.contains('open')); });
+    fset(localStorage.getItem(key) === '1');
+  })(_fhs[_fi]); }
 }catch(e){}
 
 fillGhInputs();
