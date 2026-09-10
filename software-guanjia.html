@@ -8,6 +8,19 @@
   红小涛学习套装 · 病人大管家
   定位：全家资料的"管家"。按病人归堆（血气/呼吸机/脱敏病历，天然有章），
         按知识搜索（笔记/习题，全靠AI名片）。
+  v0.19.0 2026-09-10 速记9连改·全面鱼骨化（2026-09-10 洪老师速记14:03~14:13九条，洪老师拍板"全部做了吧开始"，挂号#42~50）：
+    ①#42/#44 名册鱼骨头——名册行不再平铺「血气N张/呼吸机N条/病历N份」，一行只露病人名；点名展开该行
+       inline明细（每条记录一行：🩸/🫁带时间，📄病历带文件名，点病历行开详情看全文），出院/召回/🗑删除钮收进展开区；
+      「📂 打开详情（时间线/问AI/会诊PPT）」下划线链接照旧开详情卡。治"点上去没反应，我该知道病历两份是什么"。
+    ②#43 速记「补充上一条」——浮标面板加第三个钮：把输入框的话以「　补充：」追加到速记流水.txt最后一行末尾
+      （不开新行），存完照走自动上行；没有上一条就提示先记一条。
+    ③#45~49 脱敏间编号鱼骨——内部收成编号折叠行：「1.📂 选文件夹」（4个动作钮+选择大框+文件夹内容全折进去，
+      治"4个按钮重叠平铺"）、「2.👤 病人列表」（有病人自动展开）、「3.📄 文件清单」（点病人自动展开；
+      没选人不再杵着「请选择一位病人」大方框）、「4.📤 导出」（就一行，点了才出格式选择+导出报告+AI分析；
+      文件名输入框藏起自动生成，JS照用值不变）；PDF引擎/当前状态两条小字入口并成一行（功能重叠合并）；
+      脱敏间卡标题的说明小字删掉（设置/帮助钮保留）。实现照v0.12.0先例运行时包壳，原HTML结构未动。
+    ④#50 做名片改下划线——「🔨做名片/全部做完」按钮改下划线文字链接样式（元素仍是button，.disabled照用，
+      防重复点击机制不动）；其余各卡本就有折叠机制（v0.4.2起），未动。
   v0.18.0 2026-09-10 真机八连修（2026-09-10 洪老师真机反馈11:41~11:52八条，逐条对应）：
     ①毛病34 名册混入非病人记录没手段删——名册每行加「🗑 删除」：点了一刀两断，名下病历条目从hx_pdocs_v1删掉+
       名字（含别名）记进隐藏名单hx_gj_pthide_v1，以后归堆不再显示；血气/呼吸机档案柜原始记录不动。
@@ -438,7 +451,7 @@ hxStore.reg('hx_cards_v1'); hxStore.reg('hx_patients'); hxStore.reg('hx_inbox_v1
   </style>
   <!-- v0.7.0 脱敏间：脱敏工具整张搬入（折叠走大管家现有makeFoldable，见文件末尾dsm脚本） -->
   <div class="card" id="dsmCard">
-    <h2 id="dsmH2">🛡 脱敏间 <span style="font-size:13px;color:#8a8178;font-weight:normal;">病历拖进来脱敏，点「📥 收进病历库」直接进名册</span> <button class="ghost" style="font-size:12px;padding:3px 9px;" onclick="event.stopPropagation();dsm_openSettings()">⚙️ 系统设置</button> <button class="ghost" style="font-size:12px;padding:3px 9px;" onclick="event.stopPropagation();dsm_aboutInfo()">📖 帮助</button></h2><!-- v0.18.0 毛病39：蓝头框删掉后，设置/帮助挪到卡标题行，功能不丢 -->
+    <h2 id="dsmH2">🛡 脱敏间 <button class="ghost" style="font-size:12px;padding:3px 9px;" onclick="event.stopPropagation();dsm_openSettings()">⚙️ 系统设置</button> <button class="ghost" style="font-size:12px;padding:3px 9px;" onclick="event.stopPropagation();dsm_aboutInfo()">📖 帮助</button></h2><!-- v0.19.0 #49：说明小字删掉（洪老师速记14:11"说明取消"），设置/帮助钮保留 -->
     <div id="dsmWrap">
 <div class="dsm_container">
 <!-- PDF加载 -->
@@ -638,8 +651,8 @@ hxStore.reg('hx_cards_v1'); hxStore.reg('hx_patients'); hxStore.reg('hx_inbox_v1
       我翻名片几秒钟就挑出来。<b>只概括您的原文，一个字不外加。</b>
     </div>
     <div class="btn-row">
-      <button id="btnCards">🔨 做名片（一次10篇）</button>
-      <button class="ghost" id="btnCardsAll">全部做完</button>
+      <button id="btnCards" style="background:none;border:none;color:#1a73e8;text-decoration:underline;padding:4px 6px;font-size:14px;cursor:pointer;">🔨 做名片（一次10篇）</button><!-- v0.19.0 #50：改下划线文字链接（洪老师速记14:13"下划线是html特点，不要做按钮"）；元素仍是button，.disabled防重复点击机制未动 -->
+      <button class="ghost" id="btnCardsAll" style="background:none;border:none;color:#1a73e8;text-decoration:underline;padding:4px 6px;font-size:14px;cursor:pointer;">全部做完</button>
     </div>
     <div id="progLog"></div>
     <div class="msg" id="cardMsg"></div>
@@ -792,7 +805,7 @@ hxStore.reg('hx_cards_v1'); hxStore.reg('hx_patients'); hxStore.reg('hx_inbox_v1
 </div>
 
 <script>
-var SW_VERSION = "0.18.0"; /* v0.18.0 2026-09-10 真机八连修（毛病34~41，详见文件顶部修改记录）：名册删除手段/收库即毁原文/删聚合病历独立框/导出进清单/AI直达钮/删蓝框功能鱼骨化/删当前病人展开区/文件条目窄行 */ /* 速记自动上行 v0.17.1 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* v0.17.0 2026-09-10 HTML会诊PPT（洪老师拍板做HTML不做pptx，纯加法）：详情页「📋 会诊PPT」按钮→第4套会诊稿提示词走aiChat出五栏目（AI失败留「（AI没回话，请手填）」占位照常出片）+本地宽松验单解析器（日期时间+项目名+数值+单位四件套，项目名取冒号前短名）挑≥2时间点指标（PCT/IL-6/乳酸/肌酐/白细胞/CRP/体温模糊匹配优先，最多6个）纯SVG趋势图（最新值红点+数字）→一页一屏HTML幻灯片（点按/滑动/键盘翻页，页脚页码，白底深灰大字+暖色细线标题）→三处产出：壳「脱敏导出_」前缀dsm_shellWriteVerified回读对账、名册kind=report「📋 会诊PPT」徽标+🖥放映按钮、浏览器blob下载；无壳无AI纯浏览器也出演示片 */ /* 速记 v0.16.1 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */ /* v0.16.0 2026-09-10 问AI升级（洪老师拍板）：
+var SW_VERSION = "0.19.0"; /* v0.19.0 2026-09-10 速记9连改·全面鱼骨化（挂号#42~50，详见文件顶部修改记录）：名册inline展开明细/速记补充上一条/脱敏间编号折叠行/导出简化/做名片下划线 */ /* v0.18.0 2026-09-10 真机八连修（毛病34~41）：名册删除手段/收库即毁原文/删聚合病历独立框/导出进清单/AI直达钮/删蓝框功能鱼骨化/删当前病人展开区/文件条目窄行 */ /* 速记自动上行 v0.17.1 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* v0.17.0 2026-09-10 HTML会诊PPT（洪老师拍板做HTML不做pptx，纯加法）：详情页「📋 会诊PPT」按钮→第4套会诊稿提示词走aiChat出五栏目（AI失败留「（AI没回话，请手填）」占位照常出片）+本地宽松验单解析器（日期时间+项目名+数值+单位四件套，项目名取冒号前短名）挑≥2时间点指标（PCT/IL-6/乳酸/肌酐/白细胞/CRP/体温模糊匹配优先，最多6个）纯SVG趋势图（最新值红点+数字）→一页一屏HTML幻灯片（点按/滑动/键盘翻页，页脚页码，白底深灰大字+暖色细线标题）→三处产出：壳「脱敏导出_」前缀dsm_shellWriteVerified回读对账、名册kind=report「📋 会诊PPT」徽标+🖥放映按钮、浏览器blob下载；无壳无AI纯浏览器也出演示片 */ /* 速记 v0.16.1 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */ /* v0.16.0 2026-09-10 问AI升级（洪老师拍板）：
    ①提示词三套升四套，缺省内容换新规格：第1套病历质检（先整格式→找四类缺陷→⟦R⟧标红⟦B⟧醒目给修改意见）、第2套病情摘要/交班（一页交班摘要）、第3套检验解读（按时间重排+异常值方向+趋势+通俗解读）、第4套会诊稿（新增：五个固定栏目）；老用户已存的自定义提示词一个字不动，只在缺p4时补第4套（一次性迁移标记hx_gj_askai_v16mig）。
    ②脱敏间导出区加「🤖 AI分析」按钮：只把当前勾选（复用v0.15.0 dsm_selFiles过滤）且已脱敏的文本发给AI，原文绝不出去；弹出与病历详情同款四套提示词弹窗，复用aiChat通道和⟦R⟧/⟦B⟧渲染+「复制干净版」。
    ③问AI结果改全屏浮层：出结果后弹窗撑满屏（askai_full），结果区不再限52vh高，红/醒目两色渲染保留；关上或重开恢复小窗。
@@ -1204,7 +1217,9 @@ function renderPatients(){
   idbOpenBg().then(function(db){
     if(!db){ $('ptList').innerHTML=''; showMsg($('ptMsg'),'这台机器上还没建血气的档案柜（没用过血气分析就没柜子）。用过再来，我就能归堆。','info'); return; }
     Promise.all([idbGet(db,'history'), idbGet(db,'ventHistory')]).then(function(rs){
-      var data=scanPatients(rs[0], rs[1], pdocsLoad().docs); ptScanData=data; /* v0.6.0 病历并入归堆 */
+      var _docsArr=pdocsLoad().docs; /* v0.19.0 #44：提一档复用，顺手建 did→文件名 对照，病历行好亮真名 */
+      var _docById={}; _docsArr.forEach(function(x){ if(x&&x.id!=null) _docById[x.id]=x; });
+      var data=scanPatients(rs[0], rs[1], _docsArr); ptScanData=data; /* v0.6.0 病历并入归堆 */
       data.list=data.list.filter(function(g){ return !ptIsHidden(g.names); }); /* v0.18.0 毛病34：手动删过的（含别名）不再进名册 */
       var html='', inN=0;
       data.list.forEach(function(g,gi){
@@ -1212,20 +1227,40 @@ function renderPatients(){
         var bgN=g.recs.filter(function(r){return r.type==='bg';}).length;
         var dcN=g.recs.filter(function(r){return r.type==='doc';}).length; /* v0.6.0 */
         var vtN=g.recs.length-bgN-dcN; /* v0.6.0 原算法会把病历算进呼吸机，扣掉 */
+        /* v0.19.0 #42/#44（洪老师速记14:03/14:05"名册就一条鱼骨头，不要平铺；点了要知道病历两份是什么"）：
+           一行只露病人名+▸；点名inline展开明细——每条记录一行（🩸/🫁带时间机型，📄病历亮文件名，点病历行开详情看全文），
+           出院/召回/🗑删除钮收进展开区，不再平铺占屏 */
+        var _more='<div style="font-size:12px;color:#8a8178;margin:2px 0 4px;">🩸 血气 '+bgN+' 张　🫁 呼吸机 '+vtN+' 条　📄 病历 '+dcN+' 份　<span style="color:#1a73e8;cursor:pointer;text-decoration:underline;" data-open="'+gi+'">📂 打开详情</span></div>';
+        if(!g.recs.length) _more+='<div style="font-size:12px;color:#b5aa9c;">（名下还没有记录）</div>';
+        g.recs.forEach(function(r){
+          var _icon=r.type==='bg'?'🩸':(r.type==='doc'?'📄':'🫁');
+          var _lab;
+          if(r.type==='doc'){ var _d=_docById[r.did]; _lab=(_d&&_d.fname)?_d.fname:'病历（原件已删）'; }
+          else { _lab=(r.time||'（没时间）')+(r.model?(' · '+r.model):''); }
+          _more+='<div class="pt-rec" style="font-size:13px;padding:3px 2px;border-bottom:1px dashed #efe9df;'+(r.type==='doc'?'cursor:pointer;color:#37474f;':'color:#6b6257;')+'"'+(r.type==='doc'?(' data-open="'+gi+'"'):'')+'>'+_icon+' '+esc(_lab)+'</div>';
+        });
+        _more+='<div style="margin-top:6px;"><button class="ghost" style="font-size:12px;padding:4px 10px;" data-tg="'+gi+'">'+(g.status==='in'?'出院':'召回')+'</button> '+
+          '<button class="ghost" style="font-size:12px;padding:4px 10px;color:#c0392b;" data-pdel="'+gi+'">🗑 删除</button></div>';
         html+='<div class="pt"><span class="pt-name" data-gi="'+gi+'">'+esc(g.name)+'</span>'+
           (g.names.length>1?'<span class="pt-alias">也叫：'+esc(g.names.filter(function(n){return n!==g.name;}).join('、'))+'</span>':'')+
           (g.status==='out'?'<span class="pt-out">已出院</span>':'')+
-          '<div class="pt-sub">🩸 血气 '+bgN+' 张　🫁 呼吸机 '+vtN+' 条　'+(dcN?('📄 病历 '+dcN+' 份　'):'')+
-          '<button class="ghost" style="font-size:12px;padding:4px 10px;" data-tg="'+gi+'">'+(g.status==='in'?'出院':'召回')+'</button> '+
-          '<button class="ghost" style="font-size:12px;padding:4px 10px;color:#c0392b;" data-pdel="'+gi+'">🗑 删除</button></div></div>'; /* v0.18.0 毛病34 */
+          '<span class="pt-arrow" style="font-size:12px;color:#a89f93;margin-left:4px;">▸</span>'+
+          '<div class="pt-more" style="display:none;">'+_more+'</div></div>';
       });
       $('ptList').innerHTML=html;
       $('ptCount').textContent=data.list.length?('在院 '+inN+' 人 / 共 '+data.list.length+' 人'):'';
       if(!data.list.length) showMsg($('ptMsg'),'档案柜里还没有血气/呼吸机记录。在血气分析里拍一张并存病人记号，这里就自动归堆。','info');
       else $('ptMsg').className='msg';
-      /* 绑定：点名看详情；按钮换在院/出院 */
+      /* 绑定：点名inline展开/收起明细（v0.19.0 #42/#44鱼骨头）；「📂打开详情」/病历行才开详情卡；按钮换在院/出院 */
       Array.prototype.forEach.call(document.querySelectorAll('.pt-name'), function(el){
-        el.onclick=function(){ showPatientDetail(data.list[+el.getAttribute('data-gi')]); };
+        el.onclick=function(){
+          var more=el.parentNode.querySelector('.pt-more'); if(!more) return;
+          var show=more.style.display==='none'; more.style.display=show?'':'none';
+          var ar=el.parentNode.querySelector('.pt-arrow'); if(ar) ar.textContent=show?'▾':'▸';
+        };
+      });
+      Array.prototype.forEach.call(document.querySelectorAll('[data-open]'), function(el){
+        el.onclick=function(){ showPatientDetail(data.list[+el.getAttribute('data-open')]); };
       });
       Array.prototype.forEach.call(document.querySelectorAll('[data-tg]'), function(el){
         el.onclick=function(){ togglePatientStatus(data.list[+el.getAttribute('data-tg')], data.ps); };
@@ -5361,6 +5396,67 @@ try {
         /* v0.18.0 毛病40：「当前病人」显示框整行已删，不再留藏起入口 */
     } catch(e) {}
 })();
+
+/* ═════ v0.19.0 #45~49 脱敏间编号鱼骨（洪老师速记14:06~14:11："4个按钮折叠/状态重叠合并/请选择病人方框删/
+   导出就俩字点了再选/文件名自动生成别搞方框/1234一行行+折叠"）——照v0.12.0先例运行时包壳，原HTML结构一行未动 ═════ */
+(function(){
+    try{
+        var wrap=document.getElementById('dsmWrap'); if(!wrap) return;
+        var box=wrap.querySelector('.dsm_container'); if(!box) return;
+        function tglOf(el){ var p=el&&el.previousElementSibling; return (p&&/点我展开|点我收起/.test(p.textContent||''))?p:null; }
+        function mkRow(num,label){
+            var h=document.createElement('div');
+            h.style.cssText='cursor:pointer;font-size:14px;font-weight:600;color:#4a4238;padding:8px 2px 4px;user-select:none;border-top:1px solid #efe9df;margin-top:6px;';
+            h.textContent='▸ '+num+'. '+label;
+            return h;
+        }
+        function bindRow(h,num,label,el){
+            el.style.display='none';
+            h.onclick=function(){ var show=el.style.display==='none'; el.style.display=show?'':'none'; h.textContent=(show?'▾ ':'▸ ')+num+'. '+label; };
+            return function(){ el.style.display=''; h.textContent='▾ '+num+'. '+label; };
+        }
+        /* #46 状态重叠合并：PDF引擎/当前状态两条小字入口并成一行 */
+        var pdfL=document.getElementById('dsm_pdfLoader'), ri=box.querySelector('.dsm_root-info');
+        var tPdf=tglOf(pdfL), tRi=tglOf(ri);
+        if(tPdf&&tRi){ var st=document.createElement('div'); st.style.cssText='display:flex;gap:14px;flex-wrap:wrap;'; tPdf.style.margin='2px 0'; tRi.style.margin='2px 0'; box.insertBefore(st,tPdf); st.appendChild(tPdf); st.appendChild(tRi); }
+        /* #45 一号行「选文件夹/收进病历库」：4个动作钮+选择大框+文件夹内容全折进去 */
+        var act=box.querySelector('.dsm_actions'), sz=document.getElementById('dsm_selectZone'), fb=document.getElementById('dsm_fileBrowser');
+        var tSz=tglOf(sz);
+        if(act){
+            var h1=mkRow(1,'选文件夹 / 收进病历库');
+            var w1=document.createElement('div');
+            box.insertBefore(h1,act); box.insertBefore(w1,act);
+            w1.appendChild(act);
+            if(tSz) tSz.style.display='none'; /* 旧小字入口退休，由编号行头接管 */
+            if(sz){ sz.style.display=''; w1.appendChild(sz); }
+            if(fb) w1.appendChild(fb);
+            bindRow(h1,1,'选文件夹 / 收进病历库',w1);
+        }
+        /* 二号行「病人列表」：有病人自动展开 */
+        var psec=box.querySelector('.dsm_patient-section');
+        if(psec){
+            var h2v=mkRow(2,'病人列表'); psec.parentNode.insertBefore(h2v,psec);
+            window._dsmRow2Open=bindRow(h2v,2,'病人列表',psec);
+        }
+        /* #47 三号行「文件清单」：没选人不再杵大方框；点病人自动展开 */
+        var dsec=box.querySelector('.dsm_data-section');
+        if(dsec){
+            var h3=mkRow(3,'文件清单（先点一个病人）'); dsec.parentNode.insertBefore(h3,dsec);
+            window._dsmRow3Open=bindRow(h3,3,'文件清单（先点一个病人）',dsec);
+        }
+        /* #48 四号行「导出」：就一行，点了才出格式选择+导出报告+AI分析；文件名输入框藏起自动生成（JS照用.value，逻辑未动） */
+        var esec=box.querySelector('.dsm_export-section');
+        if(esec){
+            var h4=mkRow(4,'导出 / AI分析'); esec.parentNode.insertBefore(h4,esec);
+            bindRow(h4,4,'导出 / AI分析',esec);
+        }
+        var fn=document.getElementById('dsm_exportFileName'); if(fn) fn.style.display='none';
+        /* 点病人自动展开2/3号行：外包一层，原函数本体一行未动 */
+        if(typeof dsm_selectPatient==='function'){ var _origSP=dsm_selectPatient; dsm_selectPatient=function(name){ try{ _origSP(name); }finally{ try{ if(window._dsmRow3Open) window._dsmRow3Open(); }catch(e){} } }; }
+        if(typeof dsm_renderPatientCards==='function'){ var _origRPC=dsm_renderPatientCards; dsm_renderPatientCards=function(names){ try{ _origRPC(names); }finally{ try{ if(names&&names.length&&window._dsmRow2Open) window._dsmRow2Open(); }catch(e){} } }; }
+    }catch(e){}
+})();
+
 /* v0.10.0 开门三件事：恢复脱敏间列表 + 到期销毁检查（开门补刀）+ 原文横幅（堵问） */
 try{ dsmh_restore(); }catch(e){}
 try{ dsmraw_tick(); }catch(e){}
@@ -5663,7 +5759,7 @@ function hzPptOpen(d){
 #hxSjPanel{position:fixed;right:14px;bottom:150px;width:320px;max-width:86vw;background:#fffdf8;border:1px solid #e5ddd0;border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.18);z-index:99991;padding:12px;display:none}
 #hxSjText{width:100%;box-sizing:border-box;min-height:72px;font-size:18px;line-height:1.5;border:1px solid #ddd2c2;border-radius:10px;padding:10px;background:#fff;color:#4a4238;resize:vertical}
 #hxSjPanel .hxSjBtns{display:flex;gap:10px;margin-top:10px}
-#hxSjPanel button{flex:1;font-size:18px;padding:10px 0;border:none;border-radius:10px;cursor:pointer}
+#hxSjPanel button{flex:1;font-size:16px;padding:10px 0;border:none;border-radius:10px;cursor:pointer}/* 速记 v0.19.0 #43：三个钮改16px，「补充上一条」不挤 */
 #hxSjSave{background:#7a9e7e;color:#fff}
 #hxSjClose{background:#efe9df;color:#6b6257}
 #hxSjHint{font-size:13px;color:#a05848;margin-top:8px;display:none}
@@ -5672,7 +5768,7 @@ function hzPptOpen(d){
 <div id="hxSjDot" title="速记">🏥</div>
 <div id="hxSjPanel">
   <textarea id="hxSjText" placeholder="发现啥毛病，写一句…"></textarea>
-  <div class="hxSjBtns"><button id="hxSjSave" type="button">记下</button><button id="hxSjClose" type="button">关上</button></div>
+  <div class="hxSjBtns"><button id="hxSjSave" type="button">记下</button><button id="hxSjAppend" type="button" style="background:#b8925a;color:#fff;">补充上一条</button><button id="hxSjClose" type="button">关上</button></div><!-- 速记 v0.19.0 #43（洪老师速记14:04"可以给上一条补充内容"） -->
   <div id="hxSjHint">浏览器里存不了，请在手机壳里用</div>
 </div>
 <div id="hxSjToast"></div>
@@ -5729,10 +5825,27 @@ function hzPptOpen(d){
       try{ sjUpload(); }catch(e){} /* 速记自动上行：本地存成后顺手推上网，失败静默下回补 */
     }catch(e){ sjToast('没存成：'+e.message); }
   }
+  /* 速记 v0.19.0 #43 补充上一条：不开新行，把话以「　补充：」追加到最后一行末尾；没有上一条提示先记 */
+  function appendLast(){
+    var ta=$('hxSjText'); var v=(ta.value||'').replace(/^\s+|\s+$/g,'');
+    if(!v){ sjToast('先写一句再补充'); return; }
+    if(!bridged()){ $('hxSjHint').style.display='block'; sjToast('请在手机壳里用'); return; }
+    var old='';
+    try{ var b=LearnShell.readFile('速记流水.txt'); if(b) old=b64d(b); }catch(e){ old=''; }
+    old=old.replace(/\s+$/,'');
+    if(!old){ sjToast('还没有上一条，先点「记下」'); return; }
+    var neu=old+'　补充：'+v+'\n';
+    try{
+      LearnShell.writeFile('速记流水.txt', b64e(neu));
+      sjToast('已补到上一条'); ta.value=''; $('hxSjPanel').style.display='none';
+      try{ sjUpload(); }catch(e){} /* 顺手上行，失败静默下回补 */
+    }catch(e){ sjToast('没存成：'+e.message); }
+  }
   function init(){
     var dot=$('hxSjDot'); if(!dot) return;
     dot.addEventListener('click', openPanel);
     $('hxSjSave').addEventListener('click', save);
+    $('hxSjAppend').addEventListener('click', appendLast); /* 速记 v0.19.0 #43 */
     $('hxSjClose').addEventListener('click', function(){ $('hxSjPanel').style.display='none'; });
     setTimeout(function(){ try{ sjUpload(); }catch(e){} }, 8000); /* 速记自动上行：开门闲时对账补推（上次没网漏的在这补） */
   }
