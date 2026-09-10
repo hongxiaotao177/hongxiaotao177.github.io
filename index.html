@@ -2,6 +2,12 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.11.0 2026-09-10 鱼骨头化总攻·主界面（洪老师拍板：首屏全鱼骨头，只动版面不动功能）：
+      毛病=首屏11张卡片白底圆角带阴影像11个方框，顶部同步/检查新版本是两个大按钮，60岁零基础看着乱；
+      病根=.card白底+圆角+阴影+大padding的卡片样式，按钮用.tag胶囊样式；
+      修法=纯CSS包壳压平：11张卡全部变成一行一条的纯文字折叠行/链接行（无底色无边框无阴影，行高≥44px、行距8px、整行宽100%可点），
+      顶部同步条改成一行小字链接，抽屉内📤备份/🔍查新版/🧹清缓存/🔄刷新等大按钮全压成文字行；
+      admCard/billCard/cabCard/scCard折叠机制、ⓘ说明、所有JS/跳转/存储键一行未动。CUR.index同步1.11.0。
     v1.10.2 2026-09-10 速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。
     v1.10.1 2026-09-10 浮标速记入编（洪老师拍板方案A：软件内常驻圆点，不做系统悬浮窗）：全家9个软件插同一段自包含snippet（只依赖壳桥window.LearnShell）——右下角半透明圆点🏥→小输入框→「记下」把新行（时间+软件名+上下文）追加写进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」。只加不改，现有代码一行未动。
     v1.10.0 2026-09-09 「🔍 检查新版本」上第一行（洪老师拍板：查版本和🔄同步并列摆第一行，最要命的放上面）：
@@ -183,6 +189,35 @@
   #admCard { border-left:5px solid #b09a76; background:#faf6ef; }
   #admZone { border-left:3px solid #e6ddcd; margin-left:8px; padding-left:12px; margin-bottom:14px; }
   #admZone .card { background:#fdfbf8; box-shadow:none; }
+
+  /* ============ v1.11.0 鱼骨头化总攻（洪老师拍板2026-09-10）：首屏11卡全压成纯文字行，只动版面 ============ */
+  /* 卡片→文字行：去底色/边框/阴影/圆角，行高≥44px、行距8px、整行100%宽可点 */
+  main .card {
+    background:none; border:none; box-shadow:none; border-radius:0;
+    padding:10px 2px; margin-bottom:8px; min-height:44px;
+    border-bottom:1px dashed #eee5d8;
+  }
+  main .card:active { transform:none; }
+  main .card h2 { display:inline; font-size:16px; }
+  main .card .meta { display:inline; margin-top:0; margin-left:8px; }
+  main .card .desc { margin-top:4px; }
+  /* 一级/二级区分保留：管理工具行加粗，抽屉内缩进 */
+  #admCard { border-left:none; background:none; border-bottom:1px dashed #eee5d8; }
+  #admCard h2 { font-size:17px; }
+  #admZone { border-left:2px solid #e6ddcd; }
+  #admZone .card { background:none; }
+  /* 顶部同步条→一行小字链接（行高仍≥44px，点击区不变小） */
+  #syncBar { min-height:44px; }
+  #syncBar button.tag {
+    background:none; border:none; color:#4a6b8a; text-decoration:underline;
+    padding:12px 8px; font-size:14px; cursor:pointer;
+  }
+  /* 抽屉内大按钮→文字行（📤开始备份/🔍检查新版本/🧹清缓存/🔄刷新清单/⇅立即同步/🔄手动对账）：整行宽可点 */
+  main .card button.tag {
+    display:block; width:100%; text-align:left; background:none; border:none;
+    color:#4a6b8a; text-decoration:underline; padding:12px 4px; font-size:14px;
+    cursor:pointer; min-height:44px; margin:0; border-bottom:1px dashed #f3ece0;
+  }
 </style>
 </head>
 <body>
@@ -201,9 +236,9 @@
 
   <!-- v1.7.1 洪老师拍板：第一行常驻同步键——不按绝不同步；按了全程直播每一步 -->
   <div id="syncBar" style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-    <button class="tag" id="btnSyncTop" style="padding:10px 16px;border:none;cursor:pointer;">🔄 同步</button>
+    <button class="tag" id="btnSyncTop" style="padding:12px 10px;border:none;cursor:pointer;"><!-- v1.11.0 padding微调=行高满44px -->🔄 同步</button>
     <!-- v1.10.0 洪老师拍板：「🔍 检查新版本」上第一行与🔄同步并列；功能=管理工具里同款（清标记+立hx_ver_manual+刷新重查），直播与复核结论在下方updLine；管理工具原按钮保留不动 -->
-    <button class="tag" id="btnVerTop" style="padding:10px 16px;border:none;cursor:pointer;" onclick="try{sessionStorage.removeItem('hx_ver_checked');sessionStorage.setItem('hx_ver_manual','1');}catch(e){};var _st=document.getElementById('syncTopMsg');if(_st)_st.textContent='🔍 正在查新版本，请稍等…';updMsg('🔍 正在查新版本，请稍等…');setTimeout(function(){location.reload();},120);">🔍 检查新版本</button>
+    <button class="tag" id="btnVerTop" style="padding:12px 10px;border:none;cursor:pointer;" onclick="try{sessionStorage.removeItem('hx_ver_checked');sessionStorage.setItem('hx_ver_manual','1');}catch(e){};var _st=document.getElementById('syncTopMsg');if(_st)_st.textContent='🔍 正在查新版本，请稍等…';updMsg('🔍 正在查新版本，请稍等…');setTimeout(function(){location.reload();},120);">🔍 检查新版本</button>
     <span id="syncTopMsg" style="font-size:13px;color:#8a8178;">不按它，绝不同步</span>
   </div>
 
@@ -328,12 +363,12 @@
 
 </main>
 
-<footer>红小涛的学习园地 · 主界面 v1.10.1 · 由 Kimi 协助维护</footer>  <!-- v1.8.0 页脚亮版本号：真机验收一眼看清自己是不是新版 -->
+<footer>红小涛的学习园地 · 主界面 v1.11.0 · 由 Kimi 协助维护</footer>  <!-- v1.8.0 页脚亮版本号：真机验收一眼看清自己是不是新版 -->
 
 <script>
 /* ==================== 套装主界面自检器官（v1.1.0） ==================== */
 /* 本界面对应的四个软件当前内装版本（每次发版跟着改） */
-var CUR = { notes:"2.16.4", xiti:"1.10.5", bridge:"1.3.3", xueqi:"0.12.2", ppt:"0.14.5", xiaotao:"0.5.3", guanjia:"0.19.0" /* v0.19.0发版CUR同步（原0.17.1落伍，顺手上真账） */, index:"1.10.2" /* 速记自动上行 v1.10.2 2026-09-10 全家9件发版CUR同步（另补：CUR.guanjia原0.16.1落伍，顺手上真账0.17.1） */ /* 速记 v1.10.1 2026-09-10 全家9件入编浮标速记，CUR同步（大管家此前CUR里0.14.1严重落伍，顺手上真账） */ /* v1.9.0 必改处报备：CUR.guanjia原0.9.0严重落伍（真机版本对不上的病根之一），发版大管家v0.12.0同步更新 */ };
+var CUR = { notes:"2.17.0", xiti:"1.11.0", bridge:"1.4.0", xueqi:"0.13.0", ppt:"0.15.0", xiaotao:"0.6.0", guanjia:"0.22.0" /* v1.11.0鱼骨头化总攻9件齐发CUR全同步（原0.19.0落伍上真账） */, index:"1.11.0" /* 鱼骨头化总攻 v1.11.0 2026-09-10：11卡压成文字行，纯CSS只动版面 */ };
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
 try{ var _sv=JSON.parse(localStorage.getItem("hx_suite_ver")||"{}"); Object.keys(_sv).forEach(function(k){ if(_sv[k]) CUR[k]=_sv[k]; }); }catch(e){}
 /* key: [云端软件文件, 壳内文件名, 云端版本文件, 标签id] */
