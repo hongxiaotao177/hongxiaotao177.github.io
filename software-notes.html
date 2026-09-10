@@ -4,6 +4,7 @@
  学习笔记·双链版 —— 单文件 HTML 工具
 ====================================================================
  修改记录：
+   v2.18.0 2026-09-10 公共件收编（plan2 军规：钥匙统一+收公共块+不崩溃压倒一切）：新增 hx-common.js 三级加载器（壳readFile→同目录fetch→在线下载安装，missing只降级提示）；删内嵌速记snippet改 HX.sj.init({app:'学习笔记'})；删内嵌gh传输函数族，云备份/恢复/下载/云端切片全改调 HX.gh.*（高层putFile/getFile+低层readJson/deleteFile，按钮行为与提示文案不变）；删内嵌ghSelfCheck改 HX.selfCheck('notes', SW_VERSION)（UI黄条保留只换数据源，新逻辑API优先+raw直链兜底）；删内嵌hxBill一族改 HX.bill.*（HX_PRICE表在公共件，计价一致）；大模型Key读取改 HX.keys.get()（hx_apikey→bg_apikey→xt_apikey 兜底链，旧数据自动接住），设置页写Key只写hx_apikey（旧键保留不删自然淘汰）；hx-common.js没装上时：笔记/书库/文献库/编辑器主功能照常，只有速记/云备份/版本自检降级提示「公共件未装」。AI底座callAI及10条流水线、编辑器/反向链接/quiz/PPT联动一行未动。
    v2.17.0 2026-09-10 鱼骨头化二期（洪老师拍板：一口气全改，只动版面不动功能）：首屏「✨新建笔记 / 📄文献库 / 📖书库」3张平铺卡→3条折叠行（▸点开/▾收起，默认收起，开合记 localStorage hx_notes_fold_new/lit/bklib，刷新保持，沿用 v2.15.0 设置抽屉 hx_notes_tool_open 同款模式）；7个大按钮全部压成纯文字行（行高≥44px、整行可点），张开区末尾"真正动手那一下"的提交钮（🤖让AI翻书回答 / ✂️开始切块 / 夜间队列小钮）保留朴素小钮；主题/搜索等4个输入框收进各自张开区；书库张开区照大管家1234编号行细分（1.导入 2.问AI 3.定级 4.收云端）；🔆保持屏幕亮收成书库张开区小字行。二级页（viewDetail编辑器/viewBook/viewLit等）一律未动；功能/JS/存储键名一行未改。
    v2.16.4 2026-09-10 速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。
    v2.16.3 2026-09-10 浮标速记入编（洪老师拍板方案A，全家9件同一套自包含snippet，详见SW_VERSION注释链）。
@@ -1516,7 +1517,7 @@
   <details class="about">
     <summary>📋 关于 / 版本说明</summary>
     <div class="inner">
-      <p><b>版本：</b>v2.17.0（2026-09-10）：「🐟 鱼骨头化二期」——首屏更干净：「✨ 新建笔记」「📄 文献库」「📖 书库」三张卡收成三行字，点一下才展开，软件记得住您开过还是收着；里面的大按钮都变成一行一行的文字，行高加大好按；「🔆 切片时保持屏幕亮」收成书库里一行小字。功能一点没变，只是台面干净了。<br>上一版 v2.16.0（2026-09-06）：「🚪 预切闸 + 400自动减半」——切书更稳：每批发给AI的文字量按您选的模型自动定（32k模型约8000字、128k模型和kimi-k2.6约15000字、默认8k照旧小段）；万一AI说"吃不下"（400错误），软件自动把这段劈成两半重试，最多劈3层，不再一报错就停；报错全部改成人话（Key不对/AI太忙/超时/没看懂，都写明怎么办）。<br>上一版 v2.15.0（2026-09-06）：「🐟 鱼骨头化」——首页更清爽：「🔑 API 设置」和「☁️ 云备份」收进最底下「🛠 设置与工具」抽屉，点一下才展开，软件记得住您开过还是收着；文献库、书库的长说明默认收起，点标题旁的「ⓘ 说明」才看。功能一点没变，只是台面干净了。<br>上一版 v2.14.0（2026-08-12）：「⬇️ 下载整套软件」升六件套——补上PPT工坊和新成员小涛笔记，一次下载全拿齐。<br>上一版 v2.13.0（2026-08-11）：「🌐 云端切片」——切块这活儿可以搬出手机了：书架打勾后点「发到云端切」，手机只花几秒提取文字传到仓库；然后您找AI说一声"切书"，它在云端切好放回；下次打开学习笔记自动收进书库（也能点「收云端切好的书」手动收）。手机不用亮屏，不费手机AI额度。<br>上一版 v2.12.0（2026-08-11）：「⚖️ 交叉对比」——问AI时如果AI生成的资料有话说、正规文献也有话说，自动两边一起摆：先按正规文献回答，再单独一段对比AI资料的说法（一致还是矛盾直接点明），结尾提醒以正规文献为准。<br>上一版 v2.11.0（2026-08-11）：「🏷️ 文献出身证」——每本书定级：🟢指南 / 📄普通期刊 / 📘书籍 / 🟠AI生成·待核；AI认书时自动分辨（可手改），旧书可一键AI定级；问AI回答注明出处级别，用到🟠AI生成资料会强制提醒"跟正规指南核对后再用"，且正规文献优先、AI资料垫底。<br>上一版 v2.10.0（2026-08-11）：「📚 批量取书+晚间队列」——书架取书改打勾多选，切过的书灰掉防误选；选中的书可「⚡现在切」（全自动一本接一本，不用人盯）或「🌙留到晚上切」（充电+WiFi时软件开着就自动开工，锁屏也不怕，进度存着下次接着切）；切片时可保持屏幕亮（默认开，可关）。<br>上一版 v2.9.1（2026-08-11）：「💰 查额度」升级查两套账——点一下出两行：第一行照旧显示开放平台真实余额（API key 花的钱）；第二行试查 Kimi 会员额度，能读到就直接显示，读不到（官方没开放查询门，不是坏了）会给「👉 去看会员额度」按钮，点一下跳到 kimi.com 自己看。上一版 v2.9.0（2026-08-11）：「📖 书库」上线——首页新增书库卡片：导入整本PDF书（网页用系统文件选择器，壳里可「📂 从坚果云书架取书」），AI自动认出书名/作者/语言（可手改，没填Key就手动填书名、本地粗切无摘要），确认后一次过细切成"一个知识点一块"（每块配一句话中文摘要，分批进行、显示第x批/共y批、中途退出可"继续切"断点续切、同一本书切过会提醒不重复花钱）；扫描图片版读不出文字会明说、不发AI不扣钱。书库顶部搜索框本地免费中英混搜（摘要命中排前面，点结果直达切片）；「🤖 问AI」是查书唯一花AI的入口：本地先挑3~5块相关原文再连问题发给AI，回答注明出自哪本书。切好的书自动出现在「我的书」里（目录=章节，可挂现成笔记/文献）。书库台账+切片摘要随云备份走（payload.bookLib），切片正文只存本机和坚果云文件夹（booklib-backup.json），不进GitHub仓库。上一版 v2.8.0（2026-08-09）：「📚 我的书」上线——把笔记串成书：AI读旧笔记拟目录（也可从别的AI粘贴目录，AI帮忙认），逐章让AI丰满或挂现成笔记/文献，每章打开就是您熟悉的笔记编辑器（涂黑改写/折标签/角标都能用）；整本可导出Word、可发到PPT工坊；书随云备份走，换机不丢。上一版 v2.7.2（2026-08-09）：首页更清爽——笔记区收成「📚 我的笔记（N篇）」一行，点它才展开笔记标题列表（每篇一行、不露内容），再点标题进去看正文。上一版 v2.7.1（2026-08-09）：笔记列表瘦身——一篇笔记只占一行（标题＋日期），不再露内容预览，点标题进去看，一屏能看好几篇。上一版 v2.7.0（2026-08-07）：立下文献存放死规矩——PDF原件的家＝坚果云授权文件夹（书架），本地+云端双备份；文献库新增「📂 从坚果云书架取文献」（壳里可见），直接列出书架里的PDF点名字就导入，不用翻系统文件选择器。上一版 v2.6.9（2026-08-06）：「📊 生成PPT大纲」上线（详情页新按钮，AI写Markdown大纲可改，一键发送到PPT工坊）；修复发送成功提示被面板盖住看不见。上一版 v2.6.6（2026-08-05）：修复——词条气泡内容太长时上面被盖住、拉不下来；现在气泡限高，内容太长就在气泡里上下滑动看。上一版 v2.6.0（2026-08-04）：文献库三期上线——读文献时多了三个AI帮手：「🤖 AI总结」（五段式大白话总结，自动保存，换设备也能看）「📝 出复习题」（就这篇文献出题，可发到习题学习）「🔍 找相关笔记」（AI从您的笔记里挑出和这篇文献相关的，点名直接跳过去）。另外「API 设置」里新增「💰 查额度」：点一下直接显示您Kimi开放平台账户的真实余额，钱到没到一眼就知道（注意：Kimi会员和API开放平台是两套账，互不相通）。上一版 v2.5.1（2026-08-04）：修复——在注释气泡里涂黑一个词点「➕ 选词加角标」时，如果这个词正文里也有（比如"继发"），以前角标会错贴到正文去、气泡里看不到；现在涂黑发生在气泡里就优先贴气泡里。上一版 v2.5.0（2026-08-04）：文献库二期上线——词条可以挂文献了。读笔记时点词条角标，气泡里多了「📎 挂文献」：点一下就把这篇文献挂到这个词条上（再点一下摘掉），挂好后气泡里会出现文献名小胶囊，点胶囊直接读文献全文，看完点「← 返回笔记」回来。文献阅读页也多了「🔗 被这些词条引用」，点词条名能跳回那篇笔记。删除某篇文献时，挂着它的词条会自动摘掉，不会留死链。上一版 v2.4.0（2026-08-03）：文献库一期上线——首页新增「📄 文献库」：点「📥 导入PDF文献」可多选导入，软件自动提取文字、让AI起中文标题并归类；列表按类目分组、可搜索；点文献名可看全文、改标题/类目、复制全文、删除。没填API Key也能导入（自动归入「未分类」）。注意：这里只存提取的文字（会云备份）；PDF原件请放坚果云「医学文献」文件夹，按文件名就能找到；扫描图片版PDF读不出文字，会提示跳过。第一次导入需要联网加载一次PDF阅读组件，之后离线可用。上一版 v2.3.0（2026-08-03）：手写笔记上线——首页「✍️ 自己手写（空白笔记，不用AI）」一键建空白笔记，进去直接打字写；详情页新增「✍️ 自己写/改」，任何一篇笔记（包括AI写的）都能随时进入手写模式，改标题、改正文，点「💾 保存手写内容」即入库并自动云备份。全程不发任何AI请求，没网、没Key也能写。上一版 v2.2.2（2026-08-02）：「⬇️ 下载整套软件」升级为三件套——学习笔记+习题学习+文件桥（新成员，AI 和手机文件夹之间的桥），一次下载全拿齐。上一版 v2.2.1（2026-08-02）：纯文档版——说明里记下"数据备份和软件发布共用一个仓库（xuexi-backup），不再建新仓库"的决定，功能与 v2.2 完全一致。上一版 v2.2（2026-08-02）：出复习题上线——详情页新增「📝 出复习题」（整篇出题），涂黑一大段文字的弹出菜单新增「📝 就出这段出题」（段落出题）。题数可选1~10道（默认5），出题要求可自己改；AI 出好后可预览修改，点「📤 发送到习题学习」，打开习题学习软件会自动弹出导入窗（两个软件要用同一个浏览器打开才收得到；收不到就点「📋 复制题目txt」去那边粘贴导入）。云备份卡片新增「⬇️ 下载整套软件」：学习笔记+习题学习两个最新版一起下载到手机（浏览器首次可能问"允许下载多个文件"，点允许；想自己选保存位置：Chrome 设置→下载内容→打开「询问保存位置」）。上一版 v2.1.1（2026-08-01）：纯文档版——把「软件查新（版本自检）的完整设计思路+测试踩坑记录」写进了代码顶部的开发备忘（含发版清单六步、移植到其他软件的方法），以后新对话的 AI 看说明就能照着做，不用反复试。功能与 v2.1 完全一致。上一版 v2.1（2026-08-01）：开机自检上线——每次打开软件会自动检查三件事并弹条告诉您：① GitHub 线路通不通 ② 网上有没有更新的版本 ③ 需不需要下载。有新版时条上有「⬇️ 下载新版到本机」按钮，点一下新版就下载到手机「下载」目录，之后打开新文件替换旧的即可；已是最新=绿条（8 秒自动收）；连不上=红条（不耽误使用，笔记都在本机，网络好了备份自动重试）。云备份卡片里也有「🔍 自检：线路 + 新版本」按钮可随时手动查。上一版 v2.0.2（2026-08-01）：「关于」页新增「GitHub 自助指南」（建仓库/上传/下载/换设备四节大白话教程，在本页下方）。上一版 v2.0（2026-08-01）：云备份上线——笔记自动同步到您的 GitHub 私有仓库（首页「☁️ 云备份」卡片里填一次用户名、Token、仓库名即可；之后每次改动后 10 秒自动备份），换设备/清缓存后可点「📥 从云端恢复」一键找回；Token 只存在本机浏览器，不外传。上一版 v1.9（2026-08-01）：涂黑大段文字 → 弹出菜单新增「🦴 精炼成骨头」，AI 把这段提炼成 3~5 条要点（骨头）留在正文，原文自动折成一个小胶囊标签压在骨头后面；骨头不满意可涂黑单条让 AI 只改这一条，或点「🔄 再改一次」回提示词重发；标签名可自己改，也可点「🤖 让AI起名」（名字自动带「原文：」前缀）。注意：之后点标签里的「📤 释放这段」只把标签内的原文还原回正文，已提炼的骨头列表会保留。上一版 v1.8.1（2026-08-01）：标签胶囊瘦身——内外边距和字号都收紧，胶囊只占约正文一行高，不再占版面。上一版 v1.8（2026-08-01）：大段文字涂黑 → 弹出菜单新增「🏷 折成标签」，可把太长但有用的段落折叠成一个小胶囊标签（可自己起名，也可点「🤖 让AI起名」让 AI 概括），点一下标签就展开全文，标签里点「📤 释放这段」可还原回正文；导出到 Obsidian 就是原生 callout 折叠块，默认收起，一字不丢。上一版 v1.7.3（2026-08-01）：替换这段的定位加固为三级（精确→忽略格式模糊→段落大意），模糊定位命中会先让您确认再替换，误报"找不到原文"大幅减少。上一版 v1.7.2（2026-08-01）：修复——当 AI 回信太长被中途截断时，以前会把一段露出 JSON 代码的文字收进笔记正文，现在软件会自动"剥信封"，只把真正的正文收进笔记，标题也能一起认出来；同时把 AI 回复长度上限调大，减少被截断的情况。上一版 v1.7.1（2026-08-01）：让 AI 改稿时，AI 偶尔不按约定格式回信（直接返回裸文章），以前会报「格式不对」让您重试，现在软件能智能识别裸文章并直接采用，改稿照常完成；同时把格式要求写得更醒目，降低这种情况发生的概率。上一版 v1.7（2026-08-01）：对照预览里的加粗、列表现在按真实样式显示，不再露出一堆星号；AI 新稿里哪一小段不满意，涂黑它就会弹出小条，让 AI 只改这一小段（只套一层，最后点「✅ 采用」才存历史）。另外把手机上按钮"点了没反应"的两个老坑记进了开发备忘，以后维护不会再犯。上一版 v1.6（2026-07-31）新功能：涂黑一大段文字 → 弹出菜单点「🔄 替换这段」→ 面板里点预设要求（可叠加多个）或自由填写/补充 → AI 只改写这一段 → 预览对照（上原文下新稿）后点「✅ 采用」才生效，改前自动存一版历史，可点「让 AI 改」里的「↩️ 回退上一版」找回原稿。上一版 v1.5.2：注释里的生词，正文没有也能加角标——在注释气泡里涂黑注释文字中的生词点「➕ 选词加角标」，它会变成一个贴在气泡里的小角标（灰色虚线=待解释），点角标可钻进去看/编辑，「← 返回」回到上一条；随「批量解释」一起让 AI 讲解（AI 会参考它所在的那条注释文字）；导出时嵌套解释不单独出脚注，附加在父脚注末尾，如「……。（肺的应力：肺泡壁承受的牵张力）」。上一版 v1.5.1 修复：一篇笔记里多个词条分散在不同段落时，第一个角标之后的词条（如 ARDS、PEEP）会贴不上角标的问题，现已全部正常。以下为 v1.5 功能：① 手动加的角标现在贴在您涂黑的那个确切位置（记住涂黑处前后文），不再跳到全篇第一次出现的地方；并有词边界保护，像 ARDS 不会再嵌进 ARDSNet 中间。② 注释气泡新增「🤖 让AI改写」：点词条角标后可让 AI 按要求改写解释，改写要求可以随意修改（默认是"更通俗、更简短"），改写前自动存一版历史可回退。③ 气泡里涂黑注释文字中的生词，点「➕ 选词加角标」即可把它加为本篇待解释角标（不发 AI 请求），之后随批量解释一起让 AI 讲解。上一版 v1.4 手动批量角标：读正文时涂黑一个词，点弹出菜单的「➕ 加角标」，立即立一个灰色虚线空角标（不发 AI 请求，可连加多个）；读完后点「🤖 批量解释」按钮，把所有空角标一次性发给 AI，解释自动填回各角标变实色。另有 v1.3 词条脚注注释（正文词条旁 ① 小角标，点开看大白话，导出转 Obsidian 标准脚注）与 v1.1 交互式改稿（分栏、快捷指令、5 版历史可回退）。AI 请求保持不传 temperature / response_format（兼容 kimi-k2.6）。</p>
+      <p><b>版本：</b>v2.18.0（2026-09-10）：「🧩 公共件收编」——速记浮标、云备份、版本自检、AI账本、钥匙读取这些"全家同款"的零件收进公共零件盒 hx-common.js：打开软件时自动从三个地方找它（壳授权文件夹→同目录→网上），找不到也不碍事——写笔记、书库、文献库、编辑器照常，只有速记浮标、云备份、版本自检会提示"公共件未装"；找到了还会顺带装进壳里，下回直接用。钥匙统一成一把 hx_apikey，您以前存的旧钥匙（bg_apikey）软件自己认得，不用重填；新填的 Key 只写新钥匙位，旧的保留不删。功能一点没变，只是零件归了堆。<br>上一版 v2.17.0（2026-09-10）：「🐟 鱼骨头化二期」——首屏更干净：「✨ 新建笔记」「📄 文献库」「📖 书库」三张卡收成三行字，点一下才展开，软件记得住您开过还是收着；里面的大按钮都变成一行一行的文字，行高加大好按；「🔆 切片时保持屏幕亮」收成书库里一行小字。功能一点没变，只是台面干净了。<br>上一版 v2.16.0（2026-09-06）：「🚪 预切闸 + 400自动减半」——切书更稳：每批发给AI的文字量按您选的模型自动定（32k模型约8000字、128k模型和kimi-k2.6约15000字、默认8k照旧小段）；万一AI说"吃不下"（400错误），软件自动把这段劈成两半重试，最多劈3层，不再一报错就停；报错全部改成人话（Key不对/AI太忙/超时/没看懂，都写明怎么办）。<br>上一版 v2.15.0（2026-09-06）：「🐟 鱼骨头化」——首页更清爽：「🔑 API 设置」和「☁️ 云备份」收进最底下「🛠 设置与工具」抽屉，点一下才展开，软件记得住您开过还是收着；文献库、书库的长说明默认收起，点标题旁的「ⓘ 说明」才看。功能一点没变，只是台面干净了。<br>上一版 v2.14.0（2026-08-12）：「⬇️ 下载整套软件」升六件套——补上PPT工坊和新成员小涛笔记，一次下载全拿齐。<br>上一版 v2.13.0（2026-08-11）：「🌐 云端切片」——切块这活儿可以搬出手机了：书架打勾后点「发到云端切」，手机只花几秒提取文字传到仓库；然后您找AI说一声"切书"，它在云端切好放回；下次打开学习笔记自动收进书库（也能点「收云端切好的书」手动收）。手机不用亮屏，不费手机AI额度。<br>上一版 v2.12.0（2026-08-11）：「⚖️ 交叉对比」——问AI时如果AI生成的资料有话说、正规文献也有话说，自动两边一起摆：先按正规文献回答，再单独一段对比AI资料的说法（一致还是矛盾直接点明），结尾提醒以正规文献为准。<br>上一版 v2.11.0（2026-08-11）：「🏷️ 文献出身证」——每本书定级：🟢指南 / 📄普通期刊 / 📘书籍 / 🟠AI生成·待核；AI认书时自动分辨（可手改），旧书可一键AI定级；问AI回答注明出处级别，用到🟠AI生成资料会强制提醒"跟正规指南核对后再用"，且正规文献优先、AI资料垫底。<br>上一版 v2.10.0（2026-08-11）：「📚 批量取书+晚间队列」——书架取书改打勾多选，切过的书灰掉防误选；选中的书可「⚡现在切」（全自动一本接一本，不用人盯）或「🌙留到晚上切」（充电+WiFi时软件开着就自动开工，锁屏也不怕，进度存着下次接着切）；切片时可保持屏幕亮（默认开，可关）。<br>上一版 v2.9.1（2026-08-11）：「💰 查额度」升级查两套账——点一下出两行：第一行照旧显示开放平台真实余额（API key 花的钱）；第二行试查 Kimi 会员额度，能读到就直接显示，读不到（官方没开放查询门，不是坏了）会给「👉 去看会员额度」按钮，点一下跳到 kimi.com 自己看。上一版 v2.9.0（2026-08-11）：「📖 书库」上线——首页新增书库卡片：导入整本PDF书（网页用系统文件选择器，壳里可「📂 从坚果云书架取书」），AI自动认出书名/作者/语言（可手改，没填Key就手动填书名、本地粗切无摘要），确认后一次过细切成"一个知识点一块"（每块配一句话中文摘要，分批进行、显示第x批/共y批、中途退出可"继续切"断点续切、同一本书切过会提醒不重复花钱）；扫描图片版读不出文字会明说、不发AI不扣钱。书库顶部搜索框本地免费中英混搜（摘要命中排前面，点结果直达切片）；「🤖 问AI」是查书唯一花AI的入口：本地先挑3~5块相关原文再连问题发给AI，回答注明出自哪本书。切好的书自动出现在「我的书」里（目录=章节，可挂现成笔记/文献）。书库台账+切片摘要随云备份走（payload.bookLib），切片正文只存本机和坚果云文件夹（booklib-backup.json），不进GitHub仓库。上一版 v2.8.0（2026-08-09）：「📚 我的书」上线——把笔记串成书：AI读旧笔记拟目录（也可从别的AI粘贴目录，AI帮忙认），逐章让AI丰满或挂现成笔记/文献，每章打开就是您熟悉的笔记编辑器（涂黑改写/折标签/角标都能用）；整本可导出Word、可发到PPT工坊；书随云备份走，换机不丢。上一版 v2.7.2（2026-08-09）：首页更清爽——笔记区收成「📚 我的笔记（N篇）」一行，点它才展开笔记标题列表（每篇一行、不露内容），再点标题进去看正文。上一版 v2.7.1（2026-08-09）：笔记列表瘦身——一篇笔记只占一行（标题＋日期），不再露内容预览，点标题进去看，一屏能看好几篇。上一版 v2.7.0（2026-08-07）：立下文献存放死规矩——PDF原件的家＝坚果云授权文件夹（书架），本地+云端双备份；文献库新增「📂 从坚果云书架取文献」（壳里可见），直接列出书架里的PDF点名字就导入，不用翻系统文件选择器。上一版 v2.6.9（2026-08-06）：「📊 生成PPT大纲」上线（详情页新按钮，AI写Markdown大纲可改，一键发送到PPT工坊）；修复发送成功提示被面板盖住看不见。上一版 v2.6.6（2026-08-05）：修复——词条气泡内容太长时上面被盖住、拉不下来；现在气泡限高，内容太长就在气泡里上下滑动看。上一版 v2.6.0（2026-08-04）：文献库三期上线——读文献时多了三个AI帮手：「🤖 AI总结」（五段式大白话总结，自动保存，换设备也能看）「📝 出复习题」（就这篇文献出题，可发到习题学习）「🔍 找相关笔记」（AI从您的笔记里挑出和这篇文献相关的，点名直接跳过去）。另外「API 设置」里新增「💰 查额度」：点一下直接显示您Kimi开放平台账户的真实余额，钱到没到一眼就知道（注意：Kimi会员和API开放平台是两套账，互不相通）。上一版 v2.5.1（2026-08-04）：修复——在注释气泡里涂黑一个词点「➕ 选词加角标」时，如果这个词正文里也有（比如"继发"），以前角标会错贴到正文去、气泡里看不到；现在涂黑发生在气泡里就优先贴气泡里。上一版 v2.5.0（2026-08-04）：文献库二期上线——词条可以挂文献了。读笔记时点词条角标，气泡里多了「📎 挂文献」：点一下就把这篇文献挂到这个词条上（再点一下摘掉），挂好后气泡里会出现文献名小胶囊，点胶囊直接读文献全文，看完点「← 返回笔记」回来。文献阅读页也多了「🔗 被这些词条引用」，点词条名能跳回那篇笔记。删除某篇文献时，挂着它的词条会自动摘掉，不会留死链。上一版 v2.4.0（2026-08-03）：文献库一期上线——首页新增「📄 文献库」：点「📥 导入PDF文献」可多选导入，软件自动提取文字、让AI起中文标题并归类；列表按类目分组、可搜索；点文献名可看全文、改标题/类目、复制全文、删除。没填API Key也能导入（自动归入「未分类」）。注意：这里只存提取的文字（会云备份）；PDF原件请放坚果云「医学文献」文件夹，按文件名就能找到；扫描图片版PDF读不出文字，会提示跳过。第一次导入需要联网加载一次PDF阅读组件，之后离线可用。上一版 v2.3.0（2026-08-03）：手写笔记上线——首页「✍️ 自己手写（空白笔记，不用AI）」一键建空白笔记，进去直接打字写；详情页新增「✍️ 自己写/改」，任何一篇笔记（包括AI写的）都能随时进入手写模式，改标题、改正文，点「💾 保存手写内容」即入库并自动云备份。全程不发任何AI请求，没网、没Key也能写。上一版 v2.2.2（2026-08-02）：「⬇️ 下载整套软件」升级为三件套——学习笔记+习题学习+文件桥（新成员，AI 和手机文件夹之间的桥），一次下载全拿齐。上一版 v2.2.1（2026-08-02）：纯文档版——说明里记下"数据备份和软件发布共用一个仓库（xuexi-backup），不再建新仓库"的决定，功能与 v2.2 完全一致。上一版 v2.2（2026-08-02）：出复习题上线——详情页新增「📝 出复习题」（整篇出题），涂黑一大段文字的弹出菜单新增「📝 就出这段出题」（段落出题）。题数可选1~10道（默认5），出题要求可自己改；AI 出好后可预览修改，点「📤 发送到习题学习」，打开习题学习软件会自动弹出导入窗（两个软件要用同一个浏览器打开才收得到；收不到就点「📋 复制题目txt」去那边粘贴导入）。云备份卡片新增「⬇️ 下载整套软件」：学习笔记+习题学习两个最新版一起下载到手机（浏览器首次可能问"允许下载多个文件"，点允许；想自己选保存位置：Chrome 设置→下载内容→打开「询问保存位置」）。上一版 v2.1.1（2026-08-01）：纯文档版——把「软件查新（版本自检）的完整设计思路+测试踩坑记录」写进了代码顶部的开发备忘（含发版清单六步、移植到其他软件的方法），以后新对话的 AI 看说明就能照着做，不用反复试。功能与 v2.1 完全一致。上一版 v2.1（2026-08-01）：开机自检上线——每次打开软件会自动检查三件事并弹条告诉您：① GitHub 线路通不通 ② 网上有没有更新的版本 ③ 需不需要下载。有新版时条上有「⬇️ 下载新版到本机」按钮，点一下新版就下载到手机「下载」目录，之后打开新文件替换旧的即可；已是最新=绿条（8 秒自动收）；连不上=红条（不耽误使用，笔记都在本机，网络好了备份自动重试）。云备份卡片里也有「🔍 自检：线路 + 新版本」按钮可随时手动查。上一版 v2.0.2（2026-08-01）：「关于」页新增「GitHub 自助指南」（建仓库/上传/下载/换设备四节大白话教程，在本页下方）。上一版 v2.0（2026-08-01）：云备份上线——笔记自动同步到您的 GitHub 私有仓库（首页「☁️ 云备份」卡片里填一次用户名、Token、仓库名即可；之后每次改动后 10 秒自动备份），换设备/清缓存后可点「📥 从云端恢复」一键找回；Token 只存在本机浏览器，不外传。上一版 v1.9（2026-08-01）：涂黑大段文字 → 弹出菜单新增「🦴 精炼成骨头」，AI 把这段提炼成 3~5 条要点（骨头）留在正文，原文自动折成一个小胶囊标签压在骨头后面；骨头不满意可涂黑单条让 AI 只改这一条，或点「🔄 再改一次」回提示词重发；标签名可自己改，也可点「🤖 让AI起名」（名字自动带「原文：」前缀）。注意：之后点标签里的「📤 释放这段」只把标签内的原文还原回正文，已提炼的骨头列表会保留。上一版 v1.8.1（2026-08-01）：标签胶囊瘦身——内外边距和字号都收紧，胶囊只占约正文一行高，不再占版面。上一版 v1.8（2026-08-01）：大段文字涂黑 → 弹出菜单新增「🏷 折成标签」，可把太长但有用的段落折叠成一个小胶囊标签（可自己起名，也可点「🤖 让AI起名」让 AI 概括），点一下标签就展开全文，标签里点「📤 释放这段」可还原回正文；导出到 Obsidian 就是原生 callout 折叠块，默认收起，一字不丢。上一版 v1.7.3（2026-08-01）：替换这段的定位加固为三级（精确→忽略格式模糊→段落大意），模糊定位命中会先让您确认再替换，误报"找不到原文"大幅减少。上一版 v1.7.2（2026-08-01）：修复——当 AI 回信太长被中途截断时，以前会把一段露出 JSON 代码的文字收进笔记正文，现在软件会自动"剥信封"，只把真正的正文收进笔记，标题也能一起认出来；同时把 AI 回复长度上限调大，减少被截断的情况。上一版 v1.7.1（2026-08-01）：让 AI 改稿时，AI 偶尔不按约定格式回信（直接返回裸文章），以前会报「格式不对」让您重试，现在软件能智能识别裸文章并直接采用，改稿照常完成；同时把格式要求写得更醒目，降低这种情况发生的概率。上一版 v1.7（2026-08-01）：对照预览里的加粗、列表现在按真实样式显示，不再露出一堆星号；AI 新稿里哪一小段不满意，涂黑它就会弹出小条，让 AI 只改这一小段（只套一层，最后点「✅ 采用」才存历史）。另外把手机上按钮"点了没反应"的两个老坑记进了开发备忘，以后维护不会再犯。上一版 v1.6（2026-07-31）新功能：涂黑一大段文字 → 弹出菜单点「🔄 替换这段」→ 面板里点预设要求（可叠加多个）或自由填写/补充 → AI 只改写这一段 → 预览对照（上原文下新稿）后点「✅ 采用」才生效，改前自动存一版历史，可点「让 AI 改」里的「↩️ 回退上一版」找回原稿。上一版 v1.5.2：注释里的生词，正文没有也能加角标——在注释气泡里涂黑注释文字中的生词点「➕ 选词加角标」，它会变成一个贴在气泡里的小角标（灰色虚线=待解释），点角标可钻进去看/编辑，「← 返回」回到上一条；随「批量解释」一起让 AI 讲解（AI 会参考它所在的那条注释文字）；导出时嵌套解释不单独出脚注，附加在父脚注末尾，如「……。（肺的应力：肺泡壁承受的牵张力）」。上一版 v1.5.1 修复：一篇笔记里多个词条分散在不同段落时，第一个角标之后的词条（如 ARDS、PEEP）会贴不上角标的问题，现已全部正常。以下为 v1.5 功能：① 手动加的角标现在贴在您涂黑的那个确切位置（记住涂黑处前后文），不再跳到全篇第一次出现的地方；并有词边界保护，像 ARDS 不会再嵌进 ARDSNet 中间。② 注释气泡新增「🤖 让AI改写」：点词条角标后可让 AI 按要求改写解释，改写要求可以随意修改（默认是"更通俗、更简短"），改写前自动存一版历史可回退。③ 气泡里涂黑注释文字中的生词，点「➕ 选词加角标」即可把它加为本篇待解释角标（不发 AI 请求），之后随批量解释一起让 AI 讲解。上一版 v1.4 手动批量角标：读正文时涂黑一个词，点弹出菜单的「➕ 加角标」，立即立一个灰色虚线空角标（不发 AI 请求，可连加多个）；读完后点「🤖 批量解释」按钮，把所有空角标一次性发给 AI，解释自动填回各角标变实色。另有 v1.3 词条脚注注释（正文词条旁 ① 小角标，点开看大白话，导出转 Obsidian 标准脚注）与 v1.1 交互式改稿（分栏、快捷指令、5 版历史可回退）。AI 请求保持不传 temperature / response_format（兼容 kimi-k2.6）。</p>
       <p><b>历史版本：</b>v1.2 默认改快模型（秒级响应）+ 分步进度提示（发送→思考→解析+用时秒数）；v1.1.1 修复手机词条菜单按钮；v1.1.2 AI 请求加 180 秒超时；v1.0.2 修复 AI 调用 400 报错</p>
       <p><b>数据安全：</b>所有笔记和 API Key 只保存在您本机浏览器（localStorage），不上传到任何服务器；清除浏览器数据会丢失笔记，请定期导出备份。</p>
       <p><b>数据存放与备份同步规矩（v2.0.1 起，给洪老师和维护者共同遵守）：</b></p>
@@ -1584,9 +1585,53 @@
 (function(){
 'use strict';
 
+/* ==================== v2.18.0 hx-common.js 三级加载（照 guanjia-pdf-engine.js 已验证先例） ====================
+   ①壳readFile授权文件夹 → ②同目录fetch(8秒超时) → ③公开仓raw下载后写壳安装；
+   军规1 不崩溃压倒一切：全挂也不崩溃，onHxMissing 里只降级提示，笔记/书库/文献库/编辑器主功能照常 */
+function hxCommonLoad(onHxReady, onHxMissing){
+  function runTxt(txt){ try{ var s=document.createElement('script'); s.textContent=txt; document.head.appendChild(s); }catch(e){} }
+  function ok(){ return !!(window.HX && window.HX.HX_COMMON_VERSION); }
+  function miss(){ try{ if(onHxMissing) onHxMissing(); }catch(e){} }
+  function good(){ try{ if(onHxReady) onHxReady(); }catch(e){} }
+  /* ①壳里先读授权文件夹（file://下fetch常被拦，readFile可靠） */
+  if(window.LearnShell){
+    var f=null; try{ f=LearnShell.readFile('hx-common.js'); }catch(e){}
+    if(f){ try{ runTxt(decodeURIComponent(escape(atob(String(f).replace(/\s+/g,''))))); if(ok()){ good(); return; } }catch(e){} }
+  }
+  /* ②同目录fetch（壳内file://会挂起，装8秒超时） */
+  var _c=new AbortController(); var _t=setTimeout(function(){ _c.abort(); }, 8000);
+  fetch('hx-common.js?t='+Date.now(), {cache:'no-store', signal:_c.signal}).then(function(r){
+    if(!r.ok) throw new Error('HTTP '+r.status); return r.text();
+  }).then(function(txt){
+    clearTimeout(_t); runTxt(txt);
+    if(ok()){ good(); } else { hxCommonInstall(good, miss); } /* ③在线下载安装 */
+  }).catch(function(){ clearTimeout(_t); hxCommonInstall(good, miss); });
+}
+function hxCommonInstall(good, miss){
+  var _c=new AbortController(); var _t=setTimeout(function(){ _c.abort(); }, 30000);
+  fetch('https://hongxiaotao177.github.io/hx-common.js?t='+Date.now(), {cache:'no-store', signal:_c.signal}).then(function(r){
+    if(!r.ok) throw new Error('HTTP '+r.status); return r.text();
+  }).then(function(txt){
+    clearTimeout(_t);
+    try{ if(window.LearnShell && LearnShell.folderSet && LearnShell.folderSet()) LearnShell.writeFile('hx-common.js', btoa(unescape(encodeURIComponent(txt)))); }catch(e){}
+    try{ var s=document.createElement('script'); s.textContent=txt; document.head.appendChild(s); }catch(e){}
+    if(window.HX && window.HX.HX_COMMON_VERSION){ good(); } else { miss(); }
+  }).catch(function(){ clearTimeout(_t); miss(); });
+}
+hxCommonLoad(function(){
+  /* 公共件装上了：速记浮标一行接入（UI由HX.sj自动注入，原内嵌snippet已删） */
+  try{ HX.sj.init({app:'学习笔记'}); }catch(e){}
+}, function(){
+  /* 军规1：missing只降级提示——速记/云备份/版本自检静默降级，主功能照常 */
+  try{ console.warn('[hx-common] 公共件未装上：速记浮标不出、云备份/版本自检降级，笔记等主功能照常'); }catch(e){}
+});
+
 /* ==================== 数据层 ==================== */
 var LS_NOTES = 'study_notes_v1';
 var LS_KEY = 'bg_apikey';
+/* v2.18.0 钥匙统一收编（plan2军规4）：读走公共件 HX.keys.get()（hx_apikey→bg_apikey→xt_apikey 兜底链，旧数据自动接住）；
+   HX没装上时回落本机 bg_apikey 原路，主功能照常 */
+function hxGetKey(){ try{ if(window.HX && window.HX.keys) return HX.keys.get() || ''; }catch(e){} try{ return localStorage.getItem(LS_KEY) || ''; }catch(e){ return ''; } }
 
 function loadNotes(){
   try{
@@ -1735,16 +1780,14 @@ function stageWatch(loadingEl){
   };
 }
 
-/* ===== 全家AI账本 hx_aibill（2026-09-01 洪医生家规：每次AI记一笔+弹一条花了多少钱；主界面💰卡片汇总。tokens≈汉字数/2，是估算，真扣费以官方账单为准） ===== */
-var HX_PRICE={"kimi-k2.5":[4,16],"kimi-k2.6":[4,16],"kimi-k2.7":[7,27],"kimi-k3":[21,105],"qwen-vl-max":[3,9],"qwen-plus":[0.8,2],"moonshot-v1-8k":[12,12],"moonshot-v1-32k":[24,24],"moonshot-v1-128k":[60,60]};
-function hxBillYuan(model,inC,outC,imgs){var p=HX_PRICE["kimi-k2.5"];for(var k in HX_PRICE){if(model&&String(model).indexOf(k)===0){p=HX_PRICE[k];break;}}return Math.ceil((inC||0)/2)/1e6*p[0]+Math.ceil((outC||0)/2)/1e6*p[1]+(imgs||0)*0.005;}
-function hxBill(app,what,inC,outC,model,imgs){try{var c=hxBillYuan(model,inC,outC,imgs);var arr=JSON.parse(localStorage.getItem("hx_aibill")||"[]");arr.unshift({app:app,what:what||"",cost:+c.toFixed(4),t:Date.now()});if(arr.length>500)arr.length=500;localStorage.setItem("hx_aibill",JSON.stringify(arr));return c;}catch(e){return 0;}}
-function hxBillMonth(){try{var arr=JSON.parse(localStorage.getItem("hx_aibill")||"[]");var n=new Date(),s=0;arr.forEach(function(e){var t=new Date(e.t);if(t.getFullYear()===n.getFullYear()&&t.getMonth()===n.getMonth())s+=e.cost||0;});return s;}catch(e){return 0;}}
-function hxBillMsg(c){return "💰 本次约¥"+(c<0.01?c.toFixed(3):c.toFixed(2))+" ｜ 本月全家约¥"+hxBillMonth().toFixed(2);}
-function hxBillToast(c){try{var d=document.createElement("div");d.textContent=hxBillMsg(c);d.style.cssText="position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#4a6b4f;color:#fff;padding:10px 18px;border-radius:20px;font-size:14px;z-index:99999;box-shadow:0 2px 8px rgba(0,0,0,.25)";document.body.appendChild(d);setTimeout(function(){d.remove();},4000);}catch(e){}}
+/* ===== 全家AI账本 hx_aibill（2026-09-01 洪医生家规：每次AI记一笔+弹一条花了多少钱；主界面💰卡片汇总。tokens≈汉字数/2，是估算，真扣费以官方账单为准） =====
+   v2.18.0 收编：HX_PRICE表+hxBill一族已搬进公共件 hx-common.js（HX.bill.*，实现一字未改、计价一致），此处内嵌定义删除；
+   HX没装上时账本静默跳过（不记这笔也不弹toast），主功能照常 */
+function hxBillToast(c){ try{ if(window.HX && window.HX.bill) HX.bill.toast(c); }catch(e){} }
+function hxBill(app,what,inC,outC,model,imgs){ try{ if(window.HX && window.HX.bill) return HX.bill(app,what,inC,outC,model,imgs); }catch(e){} return 0; }
 
 function callAI(topic, onOk, onErr, st){
-  var key = (localStorage.getItem(LS_KEY) || '').trim();
+  var key = (hxGetKey() || '').trim();
   if(!key){ onErr('还没有填写 API Key。请先在上方「API 设置」里输入并保存 Key。'); return; }
   var model = modelSel.value;
   var payload = {
@@ -2248,7 +2291,7 @@ function termContext(content, term, maxLen){
 /* v1.5 注释改写 AI：提示词 + 术语 + 上下文 + 现有注释 → 只回纯文本解释（<=80字）。
    不传 temperature / response_format（兼容 kimi-k2.6），与 callAnnotAI 同风格。 */
 function callRewriteAI(note, annot, userReq, onOk, onErr, st){
-  var key = (localStorage.getItem(LS_KEY) || '').trim();
+  var key = (hxGetKey() || '').trim();
   if(!key){ onErr('还没有填写 API Key。请先返回首页在「API 设置」里保存 Key。'); return; }
   var sys = '你是一位资深的重症医学（ICU）教学专家。用户会给你一个医学术语、它所在的笔记段落、' +
     '现有的注释文字，以及一条改写要求。请严格按改写要求处理这条注释，' +
@@ -2682,7 +2725,7 @@ function persistNote(note){
 }
 /* v1.3 词条注释 AI：单词条或批量生词，返回解释（正文不动，解释进 annots 角标） */
 function callAnnotAI(note, term, onOk, onErr, st, ctxMap){
-  var key = (localStorage.getItem(LS_KEY) || '').trim();
+  var key = (hxGetKey() || '').trim();
   if(!key){ onErr('还没有填写 API Key。请先返回首页在「API 设置」里保存 Key。'); return; }
   var sys, usr;
   if(Object.prototype.toString.call(term) === '[object Array]'){
@@ -3102,7 +3145,7 @@ function pdfExtractText(buf){
 /* AI 自动归类起名：发前3000字，回严格JSON {title,category}；任何失败都不阻塞导入 */
 function callLitClassify(head, filename, cats, onOk){
   var fallback = { title: filename.replace(/\.pdf$/i, ''), category: '未分类' };
-  var key = (localStorage.getItem(LS_KEY) || '').trim();
+  var key = (hxGetKey() || '').trim();
   if(!key){ onOk(fallback); return; }
   var payload = {
     model: modelSel.value,
@@ -3270,7 +3313,7 @@ function openLit(id, from){
 var currentLitText = null;
 /* 通用文献AI调用：自由系统提示+用户文本，回纯文本 */
 function litAI(sysPrompt, userText, onOk, onErr, maxTok){
-  var key = (localStorage.getItem(LS_KEY) || '').trim();
+  var key = (hxGetKey() || '').trim();
   if(!key){ onErr('还没有填写 API Key。请先回首页在「API 设置」里保存 Key。'); return; }
   var payload = {
     model: modelSel.value,
@@ -3593,7 +3636,7 @@ function bklibGradeTag(m){ return BKLIB_GRADES[bklibGradeOf(m)].tag; }
 /* AI 认书：发前3000字猜书名/作者/语言；没填 Key 或任何失败都用文件名兜底，不阻塞导入 */
 function bklibRecognize(head, filename, cb){
   var fallback = { title: filename.replace(/\.pdf$/i, ''), author: '', lang: '中文', grade: 'book' };
-  var key = (localStorage.getItem(LS_KEY) || '').trim();
+  var key = (hxGetKey() || '').trim();
   if(!key){ cb(fallback); return; }
   var payload = {
     model: modelSel.value,
@@ -3675,7 +3718,7 @@ function bklibCutAISafe(seg, lang, depth){
 
 /* 一批（一段）发给AI切成知识点块；返回 [{title,summary,text}]，剥信封容错 */
 function bklibCutAI(seg, lang){
-  var key = (localStorage.getItem(LS_KEY) || '').trim();
+  var key = (hxGetKey() || '').trim();
   var sys = '你是图书整理助手。把用户给的一段书的原文切成"一个知识点一块"：每块几百字，必须照抄原文不要改写不要漏内容；' +
     '每块起一个简短标题和一句话摘要（摘要用中文大白话，即使原文是英文）。' +
     '只返回一个JSON数组：[{"title":"…","summary":"…","text":"…"}]，不要markdown围栏，不要任何解释。';
@@ -3728,7 +3771,7 @@ function bklibCutNext(bookId){
     if(prog.done.length >= segs.length){ bklibCutting[bookId] = false; bklibFinish(bookId); return; }
     var idx = prog.done.length;
     bklibSetProg('⏳ 正在切：第 ' + (idx + 1) + ' 批 / 共 ' + segs.length + ' 批（每批发一次AI，可以中途退出，下次点「继续切」）');
-    var key = (localStorage.getItem(LS_KEY) || '').trim();
+    var key = (hxGetKey() || '').trim();
     var meta = bklibMeta(bookId);
     var lang = meta ? meta.lang : '中文';
     var p;
@@ -4039,47 +4082,26 @@ function bklibCloudQ(){ try{ return JSON.parse(localStorage.getItem(BKLIB_CLOUDQ
 function bklibCloudQSave(q){ localStorage.setItem(BKLIB_CLOUDQ, JSON.stringify(q)); bklibNightBarRender(); }
 function bklibSafeFp(fp){ return String(fp).replace(/[^\w\u4e00-\u9fff.-]/g, '_'); }
 
-/* 仓库 slice 区读写（走公共钱罐的 GitHub 配置） */
-function ghSliceUrl(path){
-  var c = ghCfg();
-  return 'https://api.github.com/repos/' + encodeURIComponent(c.user) + '/' +
-         encodeURIComponent(c.repo) + '/contents/' + path.split('/').map(encodeURIComponent).join('/');
-}
+/* 仓库 slice 区读写（走公共钱罐的 GitHub 配置）
+   v2.18.0 收编：内嵌传输已删，全改调公共件 HX.gh.*（调用点都在 ghReady() 闸门后，HX没装上时整路自动跳过） */
 function ghSliceList(dir){
-  return fetchWithTimeout(ghSliceUrl(dir), { headers: ghHeaders() }).then(function(resp){
+  return HX.gh.fetch(HX.gh.fileUrl(dir), { headers: HX.gh.headers() }).then(function(resp){
     if(resp.status === 404) return [];
-    if(!resp.ok) return resp.text().then(function(t){ throw new Error(ghErrText(resp.status, t)); });
+    if(!resp.ok) return resp.text().then(function(t){ throw new Error(HX.gh.errText(resp.status, t)); });
     return resp.json();
   });
 }
 function ghSlicePut(path, jsonStr, msg){
-  return fetchWithTimeout(ghSliceUrl(path), { headers: ghHeaders() }).then(function(resp){
-    if(resp.status === 404) return null;
-    if(!resp.ok) throw new Error('读旧文件失败');
-    return resp.json();
-  }).then(function(old){
-    var body = { message: msg, content: ghB64enc(jsonStr) };
-    if(old && old.sha) body.sha = old.sha;
-    return fetchWithTimeout(ghSliceUrl(path), {
-      method: 'PUT', headers: ghHeaders(), body: JSON.stringify(body)
-    });
-  }).then(function(resp){
-    if(!resp.ok) return resp.text().then(function(t){ throw new Error(ghErrText(resp.status, t)); });
-  });
+  return HX.gh.putFile(null, path, jsonStr, msg);
 }
 function ghSliceGet(item){
-  return fetchWithTimeout(ghSliceUrl(item.path), { headers: ghHeaders() }).then(function(resp){
-    if(!resp.ok) throw new Error('下载失败');
-    return resp.json();
-  }).then(function(d){ return { sha: d.sha, data: JSON.parse(ghB64dec(d.content)) }; });
+  return HX.gh.readJson(item.path).then(function(r){
+    if(!r || r.data == null) throw new Error('下载失败');
+    return { sha: r.sha, data: r.data };
+  });
 }
 function ghSliceDel(path, sha, msg){
-  return fetchWithTimeout(ghSliceUrl(path), {
-    method: 'DELETE', headers: ghHeaders(),
-    body: JSON.stringify({ message: msg, sha: sha })
-  }).then(function(resp){
-    if(!resp.ok) return resp.text().then(function(t){ throw new Error(ghErrText(resp.status, t)); });
-  });
+  return HX.gh.deleteFile(path, msg); /* 公共件内部自拿sha（404当成功），sha参数留名不重构 */
 }
 
 /* 发货：提取文字（本地不发AI）→ 传 slice-inbox/；>35万字拆part */
@@ -4538,7 +4560,7 @@ $('btnBklibAsk').addEventListener('click', function(){
 $('btnBklibAskGo').addEventListener('click', function(){
   var q = $('bklibQ').value.replace(/^\s+|\s+$/g, '');
   if(!q){ showMsg($('bklibAskMsg'), '先写上您想问的问题。', 'err'); return; }
-  var key = (localStorage.getItem(LS_KEY) || '').trim();
+  var key = (hxGetKey() || '').trim();
   if(!key){ showMsg($('bklibAskMsg'), '还没有填写 API Key。请先回首页在「API 设置」里保存 Key。', 'err'); return; }
   $('bklibAskMsg').className = 'msg';
   $('btnBklibAskGo').disabled = true;
@@ -4611,7 +4633,7 @@ $('btnBklibAskGo').addEventListener('click', function(){
 
 /* v2.11.0 AI给旧书定级：库里 gradeBy 为空的书逐本发AI分辨（第一块正文前1500字+书名+文件名） */
 $('btnBklibGradeOld').addEventListener('click', function(){
-  var key = (localStorage.getItem(LS_KEY) || '').trim();
+  var key = (hxGetKey() || '').trim();
   if(!key){ bklibProgLine('🏷️ 还没填 API Key，先保存 Key 再来定级。'); return; }
   var olds = loadBookLib().filter(function(m){ return !m.gradeBy; });
   if(!olds.length){ bklibProgLine('🏷️ 库里的书都定过级了（手动定的不会被动）。'); return; }
@@ -4651,7 +4673,7 @@ renderBklibList();
 
 /* 改稿 AI 调用：原笔记全文 + 用户要求 → 同格式 JSON（不传 temperature/response_format） */
 function callReviseAI(note, instruction, onOk, onErr, st){
-  var key = (localStorage.getItem(LS_KEY) || '').trim();
+  var key = (hxGetKey() || '').trim();
   if(!key){ onErr('还没有填写 API Key。请先返回首页在「API 设置」里保存 Key。'); return; }
   var payload = {
     model: modelSel.value,
@@ -5110,7 +5132,7 @@ function locateReplaceSpanEx(content, ctx){
 /* v1.6 段落替换 AI：提示词 + 要改写的段落 + 前后 ~300 字上下文 + 硬性要求，
    只回改写后的这一段纯文本。不传 temperature / response_format（兼容 kimi-k2.6）。 */
 function callReplaceAI(userReq, selText, ctxText, onOk, onErr, st){
-  var key = (localStorage.getItem(LS_KEY) || '').trim();
+  var key = (hxGetKey() || '').trim();
   if(!key){ onErr('还没有填写 API Key。请先返回首页在「API 设置」里保存 Key。'); return; }
   var sys = '你是一位资深的重症医学（ICU）教学编辑。用户会给你一段被涂黑选中的笔记文字、' +
     '它前后的正文上下文，以及一条改写要求。请严格按改写要求只改写这一段。';
@@ -5421,7 +5443,7 @@ function findFpConfBtn(target){
 /* v1.8「🤖 让AI起名」：AI 用选中文字概括 ≤10 字标签名，纯文本返回；
    复用 callAnnotAI 风格（不传 temperature / response_format），走 stageWatch。 */
 function callFoldNameAI(selText, onOk, onErr, st){
-  var key = (localStorage.getItem(LS_KEY) || '').trim();
+  var key = (hxGetKey() || '').trim();
   if(!key){ onErr('还没有填写 API Key。请先返回首页在「API 设置」里保存 Key。'); return; }
   var sys = '你是一位资深的重症医学（ICU）教学编辑。用户会给你一段笔记文字，' +
     '请你为这段文字起一个简短贴切的标签名。';
@@ -5672,7 +5694,7 @@ function showBoneConfirm(content, loc){
    每行一条以 - 开头"。callReplaceAI 风格：不传 temperature / response_format，
    max_tokens 8000（v1.7.2 起防截断），走 stageWatch 分步进度。 */
 function callBoneAI(userReq, selText, onOk, onErr, st){
-  var key = (localStorage.getItem(LS_KEY) || '').trim();
+  var key = (hxGetKey() || '').trim();
   if(!key){ onErr('还没有填写 API Key。请先返回首页在「API 设置」里保存 Key。'); return; }
   var sys = '你是一位资深的重症医学（ICU）教学编辑。用户会给你一段笔记文字和一条提炼要求，' +
     '请严格按要求把这段提炼成 3~5 条骨头（要点）。';
@@ -5918,7 +5940,7 @@ function quizExtract(text){
 }
 
 function callQuizAI(count, userPrompt, sourceText, onOk, onErr, st){
-  var key = (localStorage.getItem(LS_KEY) || '').trim();
+  var key = (hxGetKey() || '').trim();
   if(!key){ onErr('还没有填写 API Key。请先返回首页在「API 设置」里保存 Key。'); return; }
   var sys = '你是一位资深的重症医学（ICU）出题助手，帮助医生把笔记变成复习题。';
   var usr = '【出题范围】\n' + sourceText + '\n\n' +
@@ -6076,7 +6098,7 @@ function pptExtract(text){
 }
 
 function callPptAI(userPrompt, sourceText, onOk, onErr, st){
-  var key = (localStorage.getItem(LS_KEY) || '').trim();
+  var key = (hxGetKey() || '').trim();
   if(!key){ onErr('还没有填写 API Key。请先返回首页在「API 设置」里保存 Key。'); return; }
   var sys = '你是一位资深的重症医学（ICU）讲课助手，帮助医生把笔记整理成PPT大纲。';
   var usr = '【笔记内容】\n' + sourceText + '\n\n' +
@@ -6370,7 +6392,7 @@ function hideNestBar(){
 /* 嵌套小改 AI：prompt = 用户要求 +【要重写的小段】+【所在新稿前后 ~500 字】+ 硬性要求。
    不传 temperature / response_format（兼容 kimi-k2.6）；走 stageWatch 分步进度。 */
 function callNestAI(userReq, piece, ctxText, onOk, onErr, st){
-  var key = (localStorage.getItem(LS_KEY) || '').trim();
+  var key = (hxGetKey() || '').trim();
   if(!key){ onErr('还没有填写 API Key。请先返回首页在「API 设置」里保存 Key。'); return; }
   var sys = '你是一位资深的重症医学（ICU）教学编辑。用户会给你新稿中的一小段文字、' +
     '它所在的新稿全文，以及一条修改要求。请严格按要求只重写这一小段。';
@@ -6545,19 +6567,20 @@ function createNoteFromTerm(term, srcId){
 }
 
 /* ==================== API Key 设置 ==================== */
-apiKeyInput.value = localStorage.getItem(LS_KEY) || '';
+apiKeyInput.value = hxGetKey() || '';
 $('btnSaveKey').addEventListener('click', function(){
   var v = apiKeyInput.value.replace(/^\s+|\s+$/g,'');
   if(!v){ showMsg(keyMsg, 'Key 不能为空。', 'err'); return; }
   try{
-    localStorage.setItem(LS_KEY, v);
+    localStorage.setItem('hx_apikey', v); /* v2.18.0 军规4：写Key一律只写hx_apikey（旧键bg_apikey保留不删，自然淘汰；读走HX.keys兜底链接得住） */
+    try{ if(window.HX && window.HX.keys) HX.keys.set(v); }catch(e){}
     showMsg(keyMsg, '✅ Key 已保存到本机。', 'ok');
   }catch(e){
     showMsg(keyMsg, '保存失败：浏览器禁止了本地存储。', 'err');
   }
 });
 $('btnCopyKey').addEventListener('click', function(){
-  var v = localStorage.getItem(LS_KEY) || '';
+  var v = hxGetKey() || '';
   if(!v){ showMsg(keyMsg, '还没有保存过 Key。', 'err'); return; }
   function fallback(){
     apiKeyInput.value = v;
@@ -6574,7 +6597,7 @@ $('btnCopyKey').addEventListener('click', function(){
 
 /* v2.6 查额度：直接问 Kimi 开放平台真实余额（GET /v1/users/me/balance） */
 $('btnBalance').addEventListener('click', function(){
-  var key = (localStorage.getItem(LS_KEY) || '').trim();
+  var key = (hxGetKey() || '').trim();
   if(!key){ showMsg($('balMsg'), '还没有保存 Key，先保存再查。', 'err'); return; }
   showMsg($('balMsg'), '正在问平台…', 'ok');
   fetchWithTimeout('https://api.moonshot.cn/v1/users/me/balance', {
@@ -6815,23 +6838,18 @@ var ghSuspend = false;   /* 恢复写入时挂起自动备份，防止刚拉回�
 var ghAutoTimer = null;  /* debounce 句柄 */
 var ghPendingNotes = null; /* 确认条等待恢复的云端笔记 */
 
+/* v2.18.0 gh传输收编公共件 HX.gh（hx-common.js，以文件桥19fn最全版为底）：配置/请求头/文件地址/报错翻译全改调 HX.gh.*。
+   hxSync（下方公共钱罐）每2秒把 bg_gh_* 同步进 hx_gh_*，HX.keys.gh() 兜底链接得住，旧数据不丢。
+   军规1：HX没装上时 ghReady()=false，自动备份/自检/收菜全部自动跳过，手动按钮提示「公共件未装」，主功能照常 */
+function hxOk(){ return !!(window.HX && window.HX.HX_COMMON_VERSION && window.HX.gh); }
 function ghCfg(){
-  return {
-    user: (localStorage.getItem(LS_GH_USER) || '').replace(/^\s+|\s+$/g,''),
-    tok:  (localStorage.getItem(LS_GH_TOK)  || '').replace(/^\s+|\s+$/g,''),
-    repo: (localStorage.getItem(LS_GH_REPO) || '').replace(/^\s+|\s+$/g,'')
-  };
+  var c = hxOk() ? HX.gh.cfg() : { user:'', tok:'', repo:'' };
+  return { user: c.user || '', tok: c.tok || '', repo: c.repo || '' };
 }
-function ghReady(){ var c = ghCfg(); return !!(c.user && c.tok && c.repo); }
-function ghApiUrl(){
-  var c = ghCfg();
-  return 'https://api.github.com/repos/' + encodeURIComponent(c.user) + '/' +
-         encodeURIComponent(c.repo) + '/contents/notes-backup.json';
-}
-function ghHeaders(){
-  return { 'Authorization': 'token ' + ghCfg().tok, 'Accept': 'application/vnd.github+json' };
-}
-/* base64 必须处理中文：先 UTF-8 百分号编码再 btoa；解码反向 */
+function ghReady(){ return hxOk() && HX.gh.ready(); }
+function ghApiUrl(){ return HX.gh.fileUrl('notes-backup.json'); }
+function ghHeaders(){ return HX.gh.headers(); }
+/* base64 必须处理中文：先 UTF-8 百分号编码再 btoa；解码反向（本地文件夹备份/壳桥读写也用，保留本机实现，不依赖公共件） */
 function ghB64enc(s){ return btoa(unescape(encodeURIComponent(s))); }
 function ghB64dec(s){ return decodeURIComponent(escape(atob(String(s).replace(/\s+/g,'')))); }
 /* v2.6.5 内容指纹：FNV-1a 32位，对账用（同一份内容两边算出来必然相同） */
@@ -6840,18 +6858,10 @@ function strHash(s){
   for(var i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = (h * 0x01000193) >>> 0; }
   return ('0000000' + h.toString(16)).slice(-8);
 }
-/* 仓库任意文件的 contents API 地址（对账元信息用） */
-function ghFileUrl2(path){
-  var c = ghCfg();
-  return 'https://api.github.com/repos/' + encodeURIComponent(c.user) + '/' +
-         encodeURIComponent(c.repo) + '/contents/' + encodeURIComponent(path);
-}
-/* 错误翻译（Token 本身绝不进提示文字） */
-function ghErrText(status, body){
-  if(status === 401) return 'Token 失效或没权限，检查 Token';
-  if(status === 404) return '仓库不存在或 Token 没勾选这个仓库';
-  return 'HTTP ' + status + '：' + String(body || '').replace(/\s+/g,' ').slice(0,150);
-}
+/* 仓库任意文件的 contents API 地址（对账元信息用）——v2.18.0 改调 HX.gh.fileUrl（按段编码，中文/子目录安全） */
+function ghFileUrl2(path){ return HX.gh.fileUrl(path); }
+/* 错误翻译（Token 本身绝不进提示文字）——v2.18.0 改调 HX.gh.errText（401/404/其他人话报错同款） */
+function ghErrText(status, body){ return HX.gh.errText(status, body); }
 function ghSaveStatus(ok, errMsg){
   try{
     localStorage.setItem(LS_GH_LAST, JSON.stringify(ok
@@ -6884,55 +6894,33 @@ function ghPush(opts){
     return;
   }
   if(opts.st) opts.st.set('① 正在连接 GitHub…');
-  fetchWithTimeout(ghApiUrl(), { headers: ghHeaders() }).then(function(resp){
-    if(resp.status === 404) return null; /* 首次：云端还没有备份文件 */
-    if(!resp.ok) return resp.text().then(function(t){ throw new Error(ghErrText(resp.status, t)); });
-    return resp.json();
-  }).then(function(file){
-    if(opts.st) opts.st.set('② 正在上传备份…');
-    /* v2.4：文献目录（标题/类目/文件名等元数据，不含提取的文字）随笔记一起备份
-       v2.8：书（目录+章正文+注释）也随包备份 */
-    var payload = { version: 2, savedAt: new Date().toISOString(), notes: notes,
-                    litMeta: (typeof loadLitMeta === 'function') ? loadLitMeta() : [],
-                    books: (typeof loadBooks === 'function') ? loadBooks() : [],
-                    bookLib: (typeof loadBookLib === 'function') ? loadBookLib() : [] /* v2.9 书库台账+摘要（正文在IndexedDB/坚果云） */ };
-    var payloadStr = JSON.stringify(payload);
-    /* v2.6.3 双通道备份：壳APP里同时写一份到授权文件夹（本地保险副本）。
-       只写不读、失败静默不拖累云备份；浏览器里（写禁忌）自动跳过。 */
-    metaJson = JSON.stringify({ savedAt: payload.savedAt, hash: strHash(payloadStr), count: notes.length });
-    try{
-      if(window.LearnShell && window.LearnShell.folderSet && window.LearnShell.folderSet()){
-        window.LearnShell.writeFile('notes-backup.json', ghB64enc(payloadStr));
-        window.LearnShell.writeFile('backup-meta-notes.json', ghB64enc(metaJson)); /* v2.6.5 文件夹侧对账元信息 */
-        if(typeof bklibWriteFolderBackup === 'function') bklibWriteFolderBackup(); /* v2.9 书库整包写文件夹（不进GitHub） */
-      }
-    }catch(e){}
-    var body = {
-      message: '学习笔记备份 ' + fmtTime(Date.now()),
-      content: ghB64enc(payloadStr)
-    };
-    if(file && file.sha) body.sha = file.sha;
-    return fetchWithTimeout(ghApiUrl(), {
-      method: 'PUT', headers: ghHeaders(), body: JSON.stringify(body)
-    }).then(function(resp2){
-      if(!resp2.ok) return resp2.text().then(function(t){ throw new Error(ghErrText(resp2.status, t)); });
-      return resp2.text();
-    });
-  }).then(function(){
+  /* v2.4：文献目录（标题/类目/文件名等元数据，不含提取的文字）随笔记一起备份
+     v2.8：书（目录+章正文+注释）也随包备份 */
+  var payload = { version: 2, savedAt: new Date().toISOString(), notes: notes,
+                  litMeta: (typeof loadLitMeta === 'function') ? loadLitMeta() : [],
+                  books: (typeof loadBooks === 'function') ? loadBooks() : [],
+                  bookLib: (typeof loadBookLib === 'function') ? loadBookLib() : [] /* v2.9 书库台账+摘要（正文在IndexedDB/坚果云） */ };
+  var payloadStr = JSON.stringify(payload);
+  /* v2.6.3 双通道备份：壳APP里同时写一份到授权文件夹（本地保险副本）。
+     只写不读、失败静默不拖累云备份；浏览器里（写禁忌）自动跳过。 */
+  metaJson = JSON.stringify({ savedAt: payload.savedAt, hash: strHash(payloadStr), count: notes.length });
+  try{
+    if(window.LearnShell && window.LearnShell.folderSet && window.LearnShell.folderSet()){
+      window.LearnShell.writeFile('notes-backup.json', ghB64enc(payloadStr));
+      window.LearnShell.writeFile('backup-meta-notes.json', ghB64enc(metaJson)); /* v2.6.5 文件夹侧对账元信息 */
+      if(typeof bklibWriteFolderBackup === 'function') bklibWriteFolderBackup(); /* v2.9 书库整包写文件夹（不进GitHub） */
+    }
+  }catch(e){}
+  if(opts.st) opts.st.set('② 正在上传备份…');
+  /* v2.18.0：GET拿sha+PUT两步收进公共件高层 HX.gh.putFile（repo=null走钱罐，404=新建，行为一致） */
+  HX.gh.putFile(null, 'notes-backup.json', payloadStr, '学习笔记备份 ' + fmtTime(Date.now())).then(function(){
     if(opts.st) opts.st.set('③ 备份完成');
     ghSaveStatus(true); ghStatusRender();
     if(typeof locStatusRender === 'function') locStatusRender(); /* v2.6.4 本地备份状态同步刷新 */
-    /* v2.6.5 云端对账元信息（几KB，之后对账不用下载整个备份）；失败静默，不影响备份本身 */
+    /* v2.6.5 云端对账元信息（几KB，之后对账不用下载整个备份）；失败静默，不影响备份本身
+       v2.18.0：改调公共件高层 HX.gh.putFile（内部自带sha读取） */
     if(metaJson){
-      fetchWithTimeout(ghFileUrl2('backup-meta-notes.json'), { headers: ghHeaders() }).then(function(r){
-        if(r.status === 404) return null;
-        if(!r.ok) return null;
-        return r.json();
-      }).then(function(f){
-        var body = { message: '对账元信息', content: ghB64enc(metaJson) };
-        if(f && f.sha) body.sha = f.sha;
-        return fetchWithTimeout(ghFileUrl2('backup-meta-notes.json'), { method: 'PUT', headers: ghHeaders(), body: JSON.stringify(body) });
-      }).catch(function(){});
+      HX.gh.putFile(null, 'backup-meta-notes.json', metaJson, '对账元信息').catch(function(){});
     }
     if(typeof locReconcile === 'function') locReconcile(false); /* 备份完顺手对账 */
     if(opts.onDone) opts.onDone(null, notes.length);
@@ -6943,21 +6931,19 @@ function ghPush(opts){
   });
 }
 
-/* pull：onResult(err, payload)，payload={version,savedAt,notes} */
+/* pull：onResult(err, payload)，payload={version,savedAt,notes}
+   v2.18.0：改调公共件高层 HX.gh.getFile（404/失败都reject报原因，文案保持原样） */
 function ghPull(onResult){
-  fetchWithTimeout(ghApiUrl(), { headers: ghHeaders() }).then(function(resp){
-    if(resp.status === 404){ onResult('云端还没有备份文件（第一次用请先点「☁️ 立即备份」）。'); return null; }
-    if(!resp.ok) return resp.text().then(function(t){ onResult(ghErrText(resp.status, t)); return null; });
-    return resp.json();
-  }).then(function(file){
-    if(!file) return;
+  HX.gh.getFile(null, 'notes-backup.json').then(function(txt){
     try{
-      var payload = JSON.parse(ghB64dec(file.content || ''));
+      var payload = JSON.parse(txt);
       if(!payload || !Array.isArray(payload.notes)) throw new Error('bad');
       onResult(null, payload);
     }catch(e){ onResult('云端备份文件读不懂（内容可能损坏）。'); }
   }).catch(function(e){
-    onResult((e && e.message) ? e.message : '网络不通，恢复没成功');
+    var m = (e && e.message) ? e.message : '网络不通，恢复没成功';
+    if(m.indexOf('404') === 0) m = '云端还没有备份文件（第一次用请先点「☁️ 立即备份」）。';
+    onResult(m);
   });
 }
 
@@ -7010,6 +6996,7 @@ function scheduleGhAutoBackup(){
 }
 
 function ghManualPush(){
+  if(!hxOk()){ showMsg(ghMsg, '公共件 hx-common.js 未装上，云备份暂不可用（笔记等主功能不受影响）。', 'err'); ghCard.open = true; return; }
   if(!ghReady()){ showMsg(ghMsg, '请先把用户名、Token、仓库名填好并点「💾 保存设置」。', 'err'); ghCard.open = true; return; }
   ghMsg.className = 'msg'; ghMsg.textContent = '';
   ghLoading.style.display = 'block';
@@ -7021,6 +7008,7 @@ function ghManualPush(){
   }});
 }
 function ghManualPull(){
+  if(!hxOk()){ showMsg(ghMsg, '公共件 hx-common.js 未装上，云备份暂不可用（笔记等主功能不受影响）。', 'err'); ghCard.open = true; return; }
   if(!ghReady()){ showMsg(ghMsg, '请先把用户名、Token、仓库名填好并点「💾 保存设置」。', 'err'); ghCard.open = true; return; }
   ghMsg.className = 'msg'; ghMsg.textContent = '';
   ghLoading.style.display = 'block';
@@ -7131,21 +7119,15 @@ function locReconcile(manual){
   if(!loc){ el.textContent = '对账：📭 文件夹里还没有备份，先备份一次'; return; }
   var locWhen = loc.savedAt ? fmtTime(loc.savedAt) : '时间未知';
   el.textContent = '对账：正在和云端对照…（本地 ' + locWhen + '）';
-  /* ② 云端侧：只取元信息小文件；404 说明是旧版备份，现算一次指纹存起来 */
-  fetchWithTimeout(ghFileUrl2('backup-meta-notes.json'), { headers: ghHeaders() }).then(function(resp){
-    if(resp.status === 404){
-      /* 旧版备份没有元信息：整个取回来算一次（只此一回，之后就有了） */
-      return fetchWithTimeout(ghApiUrl(), { headers: ghHeaders() }).then(function(r2){
-        if(!r2.ok) throw new Error('云端备份读不到');
-        return r2.json().then(function(file){
-          var raw = ghB64dec(file.content || '');
-          var data = JSON.parse(raw);
-          return { savedAt: data.savedAt, hash: strHash(raw), count: Array.isArray(data.notes) ? data.notes.length : 0 };
-        });
-      });
-    }
-    if(!resp.ok) return resp.text().then(function(t){ throw new Error(ghErrText(resp.status, t)); });
-    return resp.json().then(function(file){ return JSON.parse(ghB64dec(file.content || '')); });
+  /* ② 云端侧：只取元信息小文件；没有 说明是旧版备份，现算一次指纹存起来
+     v2.18.0：改调公共件低层 HX.gh.readJson（404={sha:null,data:null}）+ 高层 HX.gh.getFile 兜底 */
+  HX.gh.readJson('backup-meta-notes.json').then(function(mr){
+    if(mr && mr.data) return mr.data;
+    /* 旧版备份没有元信息：整个取回来算一次（只此一回，之后就有了） */
+    return HX.gh.getFile(null, 'notes-backup.json').then(function(raw){
+      var data = JSON.parse(raw);
+      return { savedAt: data.savedAt, hash: strHash(raw), count: Array.isArray(data.notes) ? data.notes.length : 0 };
+    });
   }).then(function(rem){
     if(!rem || !rem.hash){ el.textContent = '对账：云端元信息读不懂，建议点「☁️ 立即备份」刷新一次'; return; }
     var remWhen = rem.savedAt ? fmtTime(rem.savedAt) : '时间未知';
@@ -7183,7 +7165,7 @@ ghBindBtn($('ghConfNo'), function(){
      不通=红条常驻（只说连不上，不影响使用）
    注意：version.json 与软件副本（dl 字段指向的文件）由交付端（AI）每次发版时
    推到备份仓库；本文件版本号改 SW_VERSION 一处即可。 */
-var SW_VERSION = '2.17.0' /* 鱼骨头化二期 v2.17.0 2026-09-10：首屏3平铺卡→3折叠行（hx_notes_fold_new/lit/bklib），7大钮压文字行，4输入框收张开区，书库张开区1234编号细分；纯版面，功能/JS/存储键名未动 */ /* 速记自动上行 v2.16.4 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* 速记 v2.16.3 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */; /* v2.16.2 大管家回程票：从病人大管家点过来（?from=guanjia&pt=病人名）亮顶条「← 返回大管家」；新建笔记（AI生成/空白手写）标题自动挂「[病人名]」前缀，笔记仍存本软件大本营（study_notes_v1），两边都查得到；不带参数打开零影响 */; /* v2.16.1 (2026-09-07) 开门静默化：locStatusRender(SAF慢桥)从开门直跑挪进4秒闲时趟，治开门愣几秒；其余一行未动 */ /* v2.16.0 预切闸按模型定批量（32k→8000字/128k与k2.6→15000字留30%余量）+400自动一分为二递归3次+人话报错（bklibErrHuman）；聚合二期 */ /* v2.15.0 鱼骨头化：API设置/云备份收进「🛠 设置与工具」抽屉（hx_notes_tool_open），文献库/书库长说明收进ⓘ说明；纯界面，功能逻辑未动 */ /* v2.14.6 hxIndexRefresh加免Token备用路（API/没Token自动走公开站直链，治主界面卡旧版静默失败；成功/失败都popToast一句） */ /* v2.14.5 寄件链路状态卡常亮+点×才关+云端失败写明原因 */ /* v2.14.4 寄件镜像备份+红绿灯（pptBoxBackup+坚果云davUp） */ /* v2.14.3 寄件排队防覆盖+马上叫醒按钮 */ /* v2.14.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v2.14.1 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */
+var SW_VERSION = '2.18.0' /* 公共件收编 v2.18.0 2026-09-10：hx-common.js三级加载（missing只降级提示）；速记snippet删→HX.sj.init({app:'学习笔记'})；内嵌gh函数族删→HX.gh.*（putFile/getFile/readJson/deleteFile，按钮行为文案不变）；ghSelfCheck删→HX.selfCheck('notes',SW_VERSION)（黄条保留只换数据源）；hxBill删→HX.bill.*；Key读→HX.keys.get()兜底链、写只写hx_apikey；AI底座/编辑器/quiz/PPT联动一行未动 */ /* 鱼骨头化二期 v2.17.0 2026-09-10：首屏3平铺卡→3折叠行（hx_notes_fold_new/lit/bklib），7大钮压文字行，4输入框收张开区，书库张开区1234编号细分；纯版面，功能/JS/存储键名未动 */ /* 速记自动上行 v2.16.4 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* 速记 v2.16.3 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */; /* v2.16.2 大管家回程票：从病人大管家点过来（?from=guanjia&pt=病人名）亮顶条「← 返回大管家」；新建笔记（AI生成/空白手写）标题自动挂「[病人名]」前缀，笔记仍存本软件大本营（study_notes_v1），两边都查得到；不带参数打开零影响 */; /* v2.16.1 (2026-09-07) 开门静默化：locStatusRender(SAF慢桥)从开门直跑挪进4秒闲时趟，治开门愣几秒；其余一行未动 */ /* v2.16.0 预切闸按模型定批量（32k→8000字/128k与k2.6→15000字留30%余量）+400自动一分为二递归3次+人话报错（bklibErrHuman）；聚合二期 */ /* v2.15.0 鱼骨头化：API设置/云备份收进「🛠 设置与工具」抽屉（hx_notes_tool_open），文献库/书库长说明收进ⓘ说明；纯界面，功能逻辑未动 */ /* v2.14.6 hxIndexRefresh加免Token备用路（API/没Token自动走公开站直链，治主界面卡旧版静默失败；成功/失败都popToast一句） */ /* v2.14.5 寄件链路状态卡常亮+点×才关+云端失败写明原因 */ /* v2.14.4 寄件镜像备份+红绿灯（pptBoxBackup+坚果云davUp） */ /* v2.14.3 寄件排队防覆盖+马上叫醒按钮 */ /* v2.14.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v2.14.1 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */
 /* v2.6.7 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["bg_gh_user", "hx_gh_user"], ["bg_gh_tok", "hx_gh_tok"], ["bg_gh_repo", "hx_gh_repo"], ["bg_apikey", "hx_apikey"]];
@@ -7204,7 +7186,7 @@ var SW_VERSION = '2.17.0' /* 鱼骨头化二期 v2.17.0 2026-09-10：首屏3平�
 /* 主界面刷新：壳里打开软件时顺带检查套装主界面(index.html)有没有新版，有就换新（解决主界面自己不会更新的鸡生蛋问题） */
 function hxIndexRefresh(){
   if(!window.LearnShell || !window.LearnShell.applyUpdate) return;
-  if(typeof ghCfg!=="function" || typeof cmpVer!=="function") return;
+  if(!hxOk()) return; /* v2.18.0：公共件没装上就静默跳过（主界面查新属云功能降级项，军规1） */
   function say(m){ if(typeof popToast==="function"){ try{ popToast(m, 3500); }catch(e){} } }
   /* v2.14.6 加免Token备用路（公开站直链，和软件更新同款）——旧路只走API+Token，Token作废就静默失败，主界面永远旧版 */
   var c=ghCfg(), hasApi=!!(c.user && c.tok && c.repo);
@@ -7239,20 +7221,8 @@ var LS_GH_CHECK = 'bg_gh_check';
 var updBar = $('updBar'), updText = $('updText'), updBtnRow = $('updBtnRow'),
     ghCheckEl = $('ghCheck');
 
-function ghVerUrl(){
-  var c = ghCfg();
-  return 'https://api.github.com/repos/' + encodeURIComponent(c.user) + '/' +
-         encodeURIComponent(c.repo) + '/contents/version.json';
-}
-/* 点分版本号比较：a>b 返回 1，a<b 返回 -1，相等 0（按段转数字逐段比） */
-function cmpVer(a, b){
-  var pa = String(a).split('.'), pb = String(b).split('.');
-  for(var i = 0; i < Math.max(pa.length, pb.length); i++){
-    var x = parseInt(pa[i] || '0', 10), y = parseInt(pb[i] || '0', 10);
-    if(x > y) return 1; if(x < y) return -1;
-  }
-  return 0;
-}
+/* v2.18.0 收编：ghVerUrl/cmpVer 已搬进公共件（HX.selfCheck 内部读 version-notes.json、HX.cmpVer 比对），此处内嵌定义删除 */
+function cmpVer(a, b){ try{ if(window.HX && HX.cmpVer) return HX.cmpVer(a, b); }catch(e){} return 0; }
 function updShow(kind, text, showDl){
   updBar.className = kind || '';
   updText.textContent = text;
@@ -7265,74 +7235,58 @@ function ghCheckRender(line){
   try{ localStorage.setItem(LS_GH_CHECK, line); }catch(e){}
 }
 
-/* 主流程：manual=true 时按钮触发（结果条一定显示）；自动触发时结果也显示（用户要求都通知） */
+/* 主流程：manual=true 时按钮触发（结果条一定显示）；自动触发时结果也显示（用户要求都通知）
+   v2.18.0 收编：数据源改公共件 HX.selfCheck('notes', SW_VERSION)（API优先、失败/没Token走raw直链?t=防缓存，免Token也能查）；
+   UI黄条/绿条/红条+ghCheck状态行一字未改，只换数据源 */
 function ghSelfCheck(manual){
+  if(!hxOk()){
+    if(manual){ showMsg(ghMsg, '公共件 hx-common.js 未装上，自检暂不可用（笔记等主功能不受影响）。', 'err'); ghCard.open = true; }
+    return;
+  }
   if(!ghReady()){
     if(manual){ showMsg(ghMsg, '请先把用户名、Token、仓库名填好并点「💾 保存设置」，才能自检。', 'err'); ghCard.open = true; }
     return;
   }
   ghCheckRender('自检：正在检查…（① 连线路 ② 比版本）');
-  fetchWithTimeout(ghVerUrl(), { headers: ghHeaders() }).then(function(resp){
-    if(resp.status === 404){
-      /* 仓库能访问但还没有 version.json：线路通，只是还没发布过版本信息 */
-      ghCheckRender('自检：' + fmtTime(Date.now()) + ' ✅ 线路通（云端还没放版本信息，暂无法比对）');
-      updShow('ok', '✅ GitHub 线路通畅\n本机版本 v' + SW_VERSION + '（云端还没有版本信息可比对）\n备份功能可正常使用', false);
-      setTimeout(updHide, 8000);
-      return null;
-    }
-    if(!resp.ok) return resp.text().then(function(t){ throw new Error(ghErrText(resp.status, t)); });
-    return resp.json();
-  }).then(function(file){
-    if(!file) return;
-    var info;
-    try{ info = JSON.parse(ghB64dec(file.content || '')); }catch(e){ info = null; }
-    if(!info || !info.version){
-      ghCheckRender('自检：' + fmtTime(Date.now()) + ' ✅ 线路通（版本信息读不懂，暂无法比对）');
-      updShow('ok', '✅ GitHub 线路通畅\n本机版本 v' + SW_VERSION + '\n备份功能可正常使用', false);
-      setTimeout(updHide, 8000);
-      return;
-    }
-    if(cmpVer(info.version, SW_VERSION) > 0){
+  HX.selfCheck('notes', SW_VERSION).then(function(res){
+    var info = res && res.remote;
+    if(res && res.state === 'new' && info && info.version){
       /* 有新版：黄条常驻 + 下载按钮（dl 指向仓库里的软件副本文件名） */
       ghCheckRender('自检：' + fmtTime(Date.now()) + ' ✅ 线路通　🎉 网上有新版 v' + info.version + '（本机 v' + SW_VERSION + '），建议下载替换');
       ghVerPending = info;
       updShow('', '🎉 网上有新版 v' + info.version + '，你的是 v' + SW_VERSION + '\n' +
         (info.note ? '新版内容：' + info.note + '\n' : '') +
         '点下面按钮下载到本机，之后从下载目录打开新文件替换旧的', true);
-    }else{
+    }else if(res && (res.state === 'same' || res.state === 'old')){
       ghCheckRender('自检：' + fmtTime(Date.now()) + ' ✅ 线路通　已是最新版 v' + SW_VERSION);
       updShow('ok', '✅ GitHub 线路通畅\n已是最新版 v' + SW_VERSION + '，无需下载\n备份功能可正常使用', false);
       setTimeout(updHide, 8000);
+    }else{
+      /* unknown：连不上/读不懂（原404/读不懂细分文案合并进红条，不耽误使用） */
+      var msg = '网络不通或版本信息读不到';
+      ghCheckRender('自检：' + fmtTime(Date.now()) + ' ❌ 连不上 GitHub（' + msg + '）——不影响使用，写好的笔记都在本机，等网络好了备份会自动重试');
+      updShow('bad', '❌ 这次没能连上 GitHub（' + msg + '）\n不影响使用：笔记照常写、照常保存在本机\n等网络好了，自动备份会自己重试；也可以稍后再点「🔍 自检」', false);
     }
-  }).catch(function(e){
-    var msg = (e && e.message) ? e.message : '网络不通';
-    ghCheckRender('自检：' + fmtTime(Date.now()) + ' ❌ 连不上 GitHub（' + msg + '）——不影响使用，写好的笔记都在本机，等网络好了备份会自动重试');
-    updShow('bad', '❌ 这次没能连上 GitHub（' + msg + '）\n不影响使用：笔记照常写、照常保存在本机\n等网络好了，自动备份会自己重试；也可以稍后再点「🔍 自检」', false);
   });
 }
 
-/* 一键下载新版：从备份仓库取 dl 文件内容 → Blob → a[download]（走 api 线路，带 Token） */
+/* 一键下载新版：从备份仓库取 dl 文件内容 → Blob → a[download]
+   v2.18.0：改调公共件高层 HX.gh.getFile（repo=null走钱罐，404/失败reject报原因） */
 var ghVerPending = null;
 function ghDownloadNew(){
   if(!ghVerPending || !ghVerPending.dl){ popToast('⚠️ 云端没给下载文件，找 AI 要新版即可', 3000); return; }
-  var c = ghCfg();
-  var url = 'https://api.github.com/repos/' + encodeURIComponent(c.user) + '/' +
-            encodeURIComponent(c.repo) + '/contents/' + encodeURIComponent(ghVerPending.dl);
   popToast('⏳ 正在下载新版…', 2000);
-  fetchWithTimeout(url, { headers: ghHeaders() }).then(function(resp){
-    if(!resp.ok) return resp.text().then(function(t){ throw new Error(ghErrText(resp.status, t)); });
-    return resp.json();
-  }).then(function(file){
+  HX.gh.getFile(null, ghVerPending.dl).then(function(txt){
     if(window.LearnShell){
       /* 壳APP：自更新（写进APP内部www目录，重启生效）+ 授权文件夹里再存一份备份 */
-      var b64html = ghB64enc(ghB64dec(file.content || ''));
+      var b64html = ghB64enc(txt);
       if(window.LearnShell.applyUpdate('学习笔记.html', b64html)){
         try{ if(window.LearnShell.folderSet()) window.LearnShell.writeFile('学习笔记_v' + ghVerPending.version + '.html', b64html); }catch(e){}
         popToast('✅ 新版已装好，重启APP生效（文件夹里也存了一份）', 4500);
         return;
       }
     }
-    var blob = new Blob([ghB64dec(file.content || '')], { type: 'text/html;charset=utf-8' });
+    var blob = new Blob([txt], { type: 'text/html;charset=utf-8' });
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = '学习笔记_v' + ghVerPending.version + '.html';
@@ -7349,22 +7303,17 @@ ghBindBtn($('updClose'), updHide);
 /* v2.2 下载整套软件（v2.2.2 起三件套）：从备份仓库依次拉
    software-notes.html + software-xiti.html + software-bridge.html，
    a[download] 间隔 900ms（浏览器首次可能询问"允许多个文件下载"） */
+/* v2.18.0：改调公共件高层 HX.gh.getFile（repo=null走钱罐，404/失败reject报原因） */
 function ghDlFile(dlName, saveAs, onDone){
-  var c = ghCfg();
-  var url = 'https://api.github.com/repos/' + encodeURIComponent(c.user) + '/' +
-            encodeURIComponent(c.repo) + '/contents/' + encodeURIComponent(dlName);
-  fetchWithTimeout(url, { headers: ghHeaders() }).then(function(resp){
-    if(!resp.ok) return resp.text().then(function(t){ throw new Error(ghErrText(resp.status, t)); });
-    return resp.json();
-  }).then(function(file){
+  HX.gh.getFile(null, dlName).then(function(txt){
     if(window.LearnShell){
       /* 壳APP：自更新（写进APP内部www目录，重启生效）+ 授权文件夹里再存一份备份 */
-      var b64html = ghB64enc(ghB64dec(file.content || ''));
+      var b64html = ghB64enc(txt);
       var okSelf = window.LearnShell.applyUpdate(saveAs, b64html);
       try{ if(window.LearnShell.folderSet()) window.LearnShell.writeFile(saveAs, b64html); }catch(e){}
       if(okSelf){ onDone(null); return; }
     }
-    var blob = new Blob([ghB64dec(file.content || '')], { type: 'text/html;charset=utf-8' });
+    var blob = new Blob([txt], { type: 'text/html;charset=utf-8' });
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = saveAs;
@@ -7374,6 +7323,7 @@ function ghDlFile(dlName, saveAs, onDone){
   }).catch(function(e){ onDone((e && e.message) || '网络不通'); });
 }
 function ghDownloadAll(){
+  if(!hxOk()){ showMsg(ghMsg, '公共件 hx-common.js 未装上，云备份暂不可用（笔记等主功能不受影响）。', 'err'); ghCard.open = true; return; }
   if(!ghReady()){ showMsg(ghMsg, '请先把用户名、Token、仓库名填好并点「💾 保存设置」。', 'err'); ghCard.open = true; return; }
   popToast('⏳ 正在下载 学习笔记…（1/6）', 2000);
   ghDlFile('software-notes.html', '学习笔记.html', function(err1){
@@ -8049,88 +7999,8 @@ try{
 })();
 </script>
 
-<!-- 速记 v2.16.3 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点，不做系统悬浮窗）：右下角半透明圆点→弹小输入框→「记下」自动把新行（时间+软件名+上下文）追加写进壳授权文件夹「速记流水.txt」（一个文件按时间追加），存完toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含，只依赖window.LearnShell壳桥（readFile/writeFile/folderSet，与大管家导出写壳文件夹同款），不依赖本软件任何内部函数；纯追加，现有代码一行未动 -->
-<style id="hxSjStyle">
-/* 速记 v2.16.3 样式：低饱和暖色、圆点半透明、输入框白底圆角大字；bottom:88px错开右下角已有的回家/功能圆钮 */
-#hxSjDot{position:fixed;right:18px;bottom:88px;width:52px;height:52px;border-radius:50%;background:rgba(122,158,126,.55);border:2px solid rgba(255,255,255,.75);color:#fff;font-size:22px;z-index:99990;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.18);user-select:none;-webkit-user-select:none}
-#hxSjPanel{position:fixed;right:14px;bottom:150px;width:320px;max-width:86vw;background:#fffdf8;border:1px solid #e5ddd0;border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.18);z-index:99991;padding:12px;display:none}
-#hxSjText{width:100%;box-sizing:border-box;min-height:72px;font-size:18px;line-height:1.5;border:1px solid #ddd2c2;border-radius:10px;padding:10px;background:#fff;color:#4a4238;resize:vertical}
-#hxSjPanel .hxSjBtns{display:flex;gap:10px;margin-top:10px}
-#hxSjPanel button{flex:1;font-size:18px;padding:10px 0;border:none;border-radius:10px;cursor:pointer}
-#hxSjSave{background:#7a9e7e;color:#fff}
-#hxSjClose{background:#efe9df;color:#6b6257}
-#hxSjHint{font-size:13px;color:#a05848;margin-top:8px;display:none}
-#hxSjToast{position:fixed;left:50%;bottom:160px;transform:translateX(-50%);background:rgba(74,64,48,.92);color:#fff;padding:10px 20px;border-radius:20px;font-size:16px;z-index:99992;display:none}
-</style>
-<div id="hxSjDot" title="速记">🏥</div>
-<div id="hxSjPanel">
-  <textarea id="hxSjText" placeholder="发现啥毛病，写一句…"></textarea>
-  <div class="hxSjBtns"><button id="hxSjSave" type="button">记下</button><button id="hxSjClose" type="button">关上</button></div>
-  <div id="hxSjHint">浏览器里存不了，请在手机壳里用</div>
-</div>
-<div id="hxSjToast"></div>
-<script>
-/* 速记 v2.16.3 浮标速记：自包含IIFE，只摸window.LearnShell壳桥；readFile('速记流水.txt')→拼新行→writeFile写回 */
-(function(){
-  var HX_SJ_APP='学习笔记'; /* 速记：本软件名，全家9个文件只这一行不同 */
-  function $(id){ return document.getElementById(id); }
-  function bridged(){ try{ return !!(window.LearnShell&&LearnShell.folderSet&&LearnShell.folderSet()); }catch(e){ return false; } }
-  function b64e(s){ return btoa(unescape(encodeURIComponent(s))); }
-  function b64d(s){ try{ return decodeURIComponent(escape(atob(s))); }catch(e){ try{ return atob(s); }catch(e2){ return ''; } } }
-  function pad(n){ return (n<10?'0':'')+n; }
-
-  /* 速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：
-     记下成功+开门闲时各对账一次——整份「速记流水.txt」PUT到仓根目录同名文件（整份覆盖，没网漏掉的行下回自动补）；
-     钥匙抄公共钱罐hx_gh_*（全家共享那套），没钥匙/没网静默跳过不打搅；上行成功才记hx_sj_uplocal对账，内容没变不重复推 */
-  function sjGhKeys(){ try{ var g=function(k){ return localStorage.getItem(k)||''; }; var t=g('hx_gh_tok')||g('br_gh_tok'),u=g('hx_gh_user')||g('br_gh_user'),r=g('hx_gh_repo')||g('br_gh_repo'); if(!t||!u||!r) return null; return {t:t,u:u,r:r}; }catch(e){ return null; } }
-  function sjUpload(){
-    try{
-      if(!bridged()) return;
-      var g=sjGhKeys(); if(!g||!window.fetch) return;
-      var b=LearnShell.readFile('速记流水.txt'); if(!b) return;
-      var txt=b64d(b); if(!txt) return;
-      if(txt===localStorage.getItem('hx_sj_uplocal')) return;
-      var api='https://api.github.com/repos/'+encodeURIComponent(g.u)+'/'+encodeURIComponent(g.r)+'/contents/'+encodeURIComponent('速记流水.txt');
-      var H={'Authorization':'token '+g.t,'Accept':'application/vnd.github+json'};
-      fetch(api,{headers:H}).then(function(resp){ if(resp.status===404) return {sha:null}; if(!resp.ok) throw 0; return resp.json(); }).then(function(j){
-        var body={message:'速记自动上行 '+HX_SJ_APP, content:b64e(txt)};
-        if(j&&j.sha) body.sha=j.sha;
-        return fetch(api,{method:'PUT',headers:H,body:JSON.stringify(body)});
-      }).then(function(resp){ if(!resp.ok) throw 0; return resp.json(); }).then(function(){
-        try{ localStorage.setItem('hx_sj_uplocal',txt); }catch(e){}
-      }).catch(function(){ /* 静默：没网/钥匙不好使都不打搅，下回记下自动补 */ });
-    }catch(e){}
-  }
-  function sjToast(m){ var t=$('hxSjToast'); if(!t) return; t.textContent=m; t.style.display='block'; clearTimeout(t._t); t._t=setTimeout(function(){ t.style.display='none'; },2200); }
-  function openPanel(){ var p=$('hxSjPanel'); if(!p) return; p.style.display=(p.style.display==='block')?'none':'block'; if(p.style.display==='block'){ $('hxSjHint').style.display=bridged()?'none':'block'; try{ $('hxSjText').focus(); }catch(e){} } }
-  function save(){
-    var ta=$('hxSjText'); var v=(ta.value||'').replace(/^\s+|\s+$/g,'');
-    if(!v){ sjToast('先写一句再记'); return; }
-    if(!bridged()){ $('hxSjHint').style.display='block'; sjToast('请在手机壳里用'); return; }
-    var d=new Date();
-    var ts=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes());
-    var ctx='';
-    try{ var pt=localStorage.getItem('hx_gj_curpt'); if(pt){ pt=String(pt).replace(/^["']+|["']+$/g,''); if(pt) ctx+='　病人:'+pt; } }catch(e){}
-    try{ var t=(document.title||'').replace(/^\s+|\s+$/g,''); if(t) ctx+='　页面:'+t; }catch(e){}
-    var line='['+ts+'] 【'+HX_SJ_APP+'】'+v+ctx;
-    var old='';
-    try{ var b=LearnShell.readFile('速记流水.txt'); if(b) old=b64d(b); }catch(e){ old=''; }
-    var neu=old+((old&&old.charAt(old.length-1)!=='\n')?'\n':'')+line+'\n';
-    try{
-      LearnShell.writeFile('速记流水.txt', b64e(neu));
-      sjToast('已记下'); ta.value=''; $('hxSjPanel').style.display='none';
-      try{ sjUpload(); }catch(e){} /* 速记自动上行：本地存成后顺手推上网，失败静默下回补 */
-    }catch(e){ sjToast('没存成：'+e.message); }
-  }
-  function init(){
-    var dot=$('hxSjDot'); if(!dot) return;
-    dot.addEventListener('click', openPanel);
-    $('hxSjSave').addEventListener('click', save);
-    $('hxSjClose').addEventListener('click', function(){ $('hxSjPanel').style.display='none'; });
-    setTimeout(function(){ try{ sjUpload(); }catch(e){} }, 8000); /* 速记自动上行：开门闲时对账补推（上次没网漏的在这补） */
-  }
-  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', init); } else { init(); }
-})();
-</script>
+<!-- v2.18.0 收编：内嵌速记snippet（样式+圆点+面板+IIFE，原v2.16.3/v2.16.4那套）已删，改公共件一行接入 HX.sj.init({app:'学习笔记'})
+     （加载器在主脚本开头 hxCommonLoad；UI由HX.sj.init自动注入，行为/文件格式/上行/对账/toast文案一字未改）；
+     公共件没装上时速记浮标不出，属军规1预期的静默降级，主功能照常 -->
 </body>
 </html>
