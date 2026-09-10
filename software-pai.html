@@ -6,6 +6,7 @@
 <title>拍病历</title>
 <!--
 修改记录:
+拍病历 v0.5.0 2026-09-10 首屏鱼骨头化（2026-09-10 洪老师拍板：全家9件一口气全改，只动版面不动功能）：毛病=首屏「＋收新病人」大按钮+一墙.card.pcard小方框+顶栏队列/⚙️两钮，60岁零基础看着花；病根=卡片墙思路。改法=①大按钮压成「＋ 收新病人 ▸」文字行，点行张开/收起原newPane建档表单（表单本体一行未动，id照旧）；②顶栏队列/⚙️两钮撤出顶栏，改成两条纯文字行入口（id照旧btnQ/btnSet，事件目标不变）；③病人卡墙→名单行：一病人一行纯文字（床号+姓名 ▸，小字=代号·今日张数·账本摘要），点行=进vCam拍照流与原点卡完全一致，卡上「🗂库」收进该行小字行；④归档区details原样保持。renderHome只改输出HTML结构和CSS，数据流/变量名/存储键名一律没动；其余9个view一行未动。
 拍病历 v0.4.8 2026-09-10 速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。
 拍病历 v0.4.7 2026-09-10
 - 浮标速记入编（洪老师拍板方案A，全家9件同一套自包含snippet，详见SW_VERSION注释链）
@@ -115,15 +116,21 @@ table.tt{border-collapse:collapse;width:100%;font-size:13px;margin-top:6px}
 table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:left}
 #toast{position:fixed;left:50%;bottom:40px;transform:translateX(-50%);background:#4a3f30;color:#fff;padding:9px 16px;border-radius:10px;display:none;z-index:99;max-width:86%}
 .archbox summary{cursor:pointer;padding:10px;color:var(--mut)}
+/* v0.5.0 鱼骨头文字行:无卡无框,整行宽100%可点,min-height≥44px,行距9px,上下padding≥10px */
+.hxrow{display:block;width:100%;min-height:44px;padding:10px 4px;margin:0 0 9px;cursor:pointer;font-size:17px;color:var(--tx);border-bottom:1px dashed var(--line);background:none;border-top:none;border-left:none;border-right:none;text-align:left}
+.hxrow .sub{font-size:13px;color:var(--mut);margin-top:3px;line-height:1.5}
+.hxrow .sub .lk{color:var(--brown2);text-decoration:underline;padding:6px 8px;margin-left:4px;display:inline-block;cursor:pointer}
 .qbar{background:#fff4d6;border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:14px}
 </style>
 </head>
 <body>
 
 <div class="view on" id="vHome">
-  <div class="topbar"><h1>📷 拍病历</h1><button id="btnQ">队列</button><button id="btnSet">⚙️</button></div>
+  <!-- v0.5.0 顶栏只剩标题行;队列/⚙️撤到下面文字行(id照旧btnQ/btnSet,事件目标不变) -->
+  <div class="topbar"><h1>📷 拍病历</h1></div>
   <div class="wrap">
-    <div class="row" style="margin-bottom:12px"><button class="btn" id="btnNew">＋收新病人</button></div>
+    <!-- v0.5.0 大按钮压成文字行:点行张开/收起原newPane建档表单(表单本体一行未动) -->
+    <div class="hxrow" id="btnNew">＋ 收新病人 ▸</div>
     <!-- v0.1.1 建病人改页面内面板（浏览器弹窗太暗看不清，洪大夫点空确定白跑一趟） -->
     <div class="card hidden" id="newPane" style="margin-bottom:12px">
       <div style="font-weight:bold;margin-bottom:8px">收新病人</div>
@@ -132,6 +139,9 @@ table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:
       <div class="row"><button class="btn" id="npOk">建档</button><button class="btn sec" id="npCancel">取消</button></div>
     </div>
     <div id="wall"></div>
+    <!-- v0.5.0 队列/设置=两条纯文字行入口(顶栏两钮撤下来,id照旧) -->
+    <div class="hxrow" id="btnQ">🗂 识别队列 ▸</div>
+    <div class="hxrow" id="btnSet">⚙️ 设置 ▸</div>
     <details class="archbox card"><summary>📁 归档区（<span id="archN">0</span>）</summary><div id="archList" style="margin-top:8px"></div></details>
   </div>
 </div>
@@ -252,6 +262,7 @@ table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:
       <div class="row" style="margin-top:8px"><button class="btn red sm" id="btnBillClear">🧹 清空账本</button></div>
     </div>
     <div class="card"><b>看门人日志</b><div id="guardLog" class="small" style="margin-top:6px"></div></div>
+    <div class="small" style="text-align:center;margin-top:8px">拍病历 v0.5.0</div><!-- v0.5.0 关于版本号 -->
   </div>
 </div>
 
@@ -322,7 +333,7 @@ table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:
 
 <script>
 'use strict';
-const SW_VERSION='0.4.8' /* 速记自动上行 v0.4.8 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* 速记 v0.4.7 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */; /* v0.4.6 大管家回程票：从病人大管家点过来（?from=guanjia）亮顶条「← 返回大管家」一键回家；不带参数打开零影响 */;
+const SW_VERSION='0.5.0' /* v0.5.0 2026-09-10 首屏鱼骨头化:病人卡墙→名单行(点行=拍照流,库入口收小字行),「＋收新病人」大按钮→文字行开合原表单,顶栏队列/⚙️→文字行;只改输出HTML+CSS,数据流/变量名/存储键名不动 */ /* 速记自动上行 v0.4.8 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* 速记 v0.4.7 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */; /* v0.4.6 大管家回程票：从病人大管家点过来（?from=guanjia）亮顶条「← 返回大管家」一键回家；不带参数打开零影响 */;
 const $=id=>document.getElementById(id);
 const esc=s=>s; // 一律textContent渲染
 function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',2200);}
@@ -455,22 +466,20 @@ function billFmt(y,fix){return y<0.01?'不足1分钱':'¥'+y.toFixed(fix);}
 function renderHome(){
   const wall=$('wall');wall.innerHTML='';
   const act=patients().filter(p=>!p.archived);
-  if(!act.length){const d=document.createElement('div');d.className='card small';d.textContent='还没有病人，点上面「＋收新病人」';wall.appendChild(d);}
+  if(!act.length){const d=document.createElement('div');d.className='small';d.style.cssText='padding:10px 4px;margin-bottom:9px';d.textContent='还没有病人，点上面「＋ 收新病人」';wall.appendChild(d);}
+  // v0.5.0 卡墙→名单行:一病人一行纯文字(床号+姓名 ▸),点行=进vCam拍照流(与原点卡一致),
+  // 小字行=代号·今日张数·账本摘要;卡上「🗂库」收进小字行(stopPropagation不触发拍照)
   for(const p of act){
-    const c=document.createElement('div');c.className='card pcard';c.dataset.pid=p.id;
-    const a=document.createElement('div');
-    const n=document.createElement('div');n.className='nm';n.textContent=p.name;
-    const cd=document.createElement('div');cd.className='cd';cd.textContent=p.code+(p.bed?' · 床'+p.bed:'');
-    a.appendChild(n);a.appendChild(cd);
-    const bp=bill().byPatient[p.id]; // v0.1.4 卡片小字账本
-    if(bp){const bd=document.createElement('div');bd.className='cd bill-line';bd.textContent='识别'+bp.calls+'趟 '+billFmt(bp.yuan,2);a.appendChild(bd);}
-    const cnt=document.createElement('div');cnt.className='cnt';cnt.textContent='今日'+todayCount(p.id)+'张';
+    const c=document.createElement('div');c.className='hxrow';c.dataset.pid=p.id;
+    const n=document.createElement('div');n.textContent=(p.bed?p.bed+'床 ':'')+p.name+' ▸';
+    const cd=document.createElement('div');cd.className='sub';
+    const bp=bill().byPatient[p.id]; // v0.1.4 账本摘要小字
+    cd.textContent=p.code+' · 今日'+todayCount(p.id)+'张'+(bp?' · 识别'+bp.calls+'趟 '+billFmt(bp.yuan,2):'');
     // v0.4.2 库入口摆明面:长按进库太隐蔽,洪大夫找不到存的内容("储存区没有内容"病灶)
-    const bk=document.createElement('button');bk.className='btn sec sm';bk.textContent='🗂 库';
+    const bk=document.createElement('span');bk.className='lk';bk.textContent='🗂 库';
     bk.addEventListener('click',e=>{e.stopPropagation();openLib(p.id);});
-    const wrap=document.createElement('div');wrap.style.cssText='margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:6px';
-    cnt.style.marginLeft='0';wrap.appendChild(cnt);wrap.appendChild(bk);
-    c.appendChild(a);c.appendChild(wrap);
+    cd.appendChild(bk);
+    c.appendChild(n);c.appendChild(cd);
     c.addEventListener('click',()=>openCam(p.id));
     c.addEventListener('contextmenu',e=>{e.preventDefault();openLib(p.id);});
     wall.appendChild(c);
@@ -491,11 +500,17 @@ function renderHome(){
   }
 }
 /* v0.1.1 建病人走页面内面板 */
-$('btnNew').addEventListener('click',()=>{ $('newPane').classList.remove('hidden'); $('npName').value=''; $('npBed').value=''; $('npName').focus(); });
-$('npCancel').addEventListener('click',()=>$('newPane').classList.add('hidden'));
+/* v0.5.0 文字行点开合:点行张开/收起原newPane表单,箭头▸/▾跟着翻;表单本体和建档逻辑不动 */
+function hxSetNewPane(open){
+  $('newPane').classList.toggle('hidden',!open);
+  $('btnNew').textContent='＋ 收新病人 '+(open?'▾':'▸');
+  if(open){ $('npName').value=''; $('npBed').value=''; $('npName').focus(); }
+}
+$('btnNew').addEventListener('click',()=>{ hxSetNewPane($('newPane').classList.contains('hidden')); });
+$('npCancel').addEventListener('click',()=>hxSetNewPane(false));
 $('npOk').addEventListener('click',()=>{
   const name=$('npName').value.trim(); if(!name){ toast('请填病人真名'); return; }
-  addPatient(name,$('npBed').value.trim()); $('newPane').classList.add('hidden'); renderHome(); toast('已建档');
+  addPatient(name,$('npBed').value.trim()); hxSetNewPane(false); renderHome(); toast('已建档');
 });
 
 /* ---------- 拍摄页 ---------- */
