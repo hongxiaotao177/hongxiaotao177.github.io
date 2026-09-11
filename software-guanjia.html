@@ -8,6 +8,16 @@
   红小涛学习套装 · 病人大管家
   定位：全家资料的"管家"。按病人归堆（血气/呼吸机/脱敏病历，天然有章），
         按知识搜索（笔记/习题，全靠AI名片）。
+  v0.27.0 2026-09-11 信息流通三连（断点D6/D9，只改下面三处，其他一行未动）：
+    ①D6a 收件「合并/新建资料」回写study_notes_v1的同一动作，顺手双写小涛笔记正房xt_notes_v1
+      （结构照抄software-xiaotao.html：数组，元素{id,title,content,createdAt,updatedAt,fp}，fp=strHash(content)同款FNV；
+      合并按title找小涛同名篇追加，没有就新建；双写失败静默不挡study_notes_v1已成的活）；
+    ②D6b 工具箱（🧰）加第6个链接「📘 小涛笔记」：文件名自适应照抄现有写法
+      （仓/公开站software-xiaotao.html，壳内中文名 小涛笔记.html），带?from=guanjia&pt=当前病人；
+    ③D9 病历详情页现有按钮排（问AI/会诊PPT一带）加「📮寄给小涛笔记」：该病人聚合病历文本
+      （复用hzGatherText，同会诊PPT口径）+标题打包push进localStorage xt_inbox_v1（数组，元素{title,text,pt,ts}；
+      读旧数组→push→写回），toast「已寄给小涛笔记」；无壳也照做（localStorage同源共享）。
+    ④版本升v0.27.0：SW_VERSION、界面版本行（verTop照走SW_VERSION）、关于（dsm_aboutInfo）同步。
   v0.26.0 2026-09-11 收件两修（D1断点"不许静默吞"，只改收件扫描一带，其他一行未动）：
     ①可收文件类型扩成txt/pdf/md：docInboxScan收件过滤、补日期重试正则、parseDocFname剥扩展名正则同步加md；
       拍病历导出的「代号-完整资料.md」不再被类型过滤一口吞掉。
@@ -925,7 +935,7 @@ hxStore.reg('hx_cards_v1'); hxStore.reg('hx_patients'); hxStore.reg('hx_inbox_v1
 </div>
 
 <script>
-var SW_VERSION = "0.26.0"; /* v0.26.0 2026-09-11 收件两修（D1断点"不许静默吞"，只改收件扫描一带）：①可收文件类型扩成txt/pdf/md（parseDocFname/补日期重试正则同步），拍病历导出的「代号-完整资料.md」能被扫描看到 ②凡被收件扫描看到但parseDocFname解析不ok或类型不收的文件一律进「❓拿不准」清单（hx_gj_unsure_v1，原因写明"类型不收"/解析why），登记pd.seen防重复报，原件不删、不走seen补刀；可用拿不准浮层「✅是病人」转正收进名册（详见文件顶部修改记录） */ /* v0.25.0 2026-09-11 速记四连（②⑤⑥⑦，只加不改）：①脱敏间「📥 拉测试病历」HX.gh从云端仓shared/拉两份测试病历走正常进件同一条路进脱敏间待处理（没钥匙/没网提示拉不动）②脱敏间「📁本地病历夹」浮层勾选库里病历回炉重脱敏（hx_pdocs_v1不动不删）③拿不准浮层加「✅是病人」填床号/姓/诊断按正常收件进库+删原件 ④工具箱「选择病人▾」浮层（名册病人+脱敏间文件两区）+名册点病人行顺手写hx_gj_curpt（详见文件顶部修改记录） */ /* v0.24.0 2026-09-11 AI面板试点（洪老师拍板方法论落地）：AI_MANIFEST 8条+浮标「🤖AI」统一入口+原AI按钮改唤起面板定位（HX不在降级原行为）+AI功能生成器接aiChat通道；现有AI功能本体一行未动 */ /* v0.23.0 2026-09-10 收编公共件hx-common.js（plan2军规：钥匙统一HX.keys/速记改HX.sj/账本改HX.bill/gh传输收编，不崩溃压倒一切，详见文件顶部修改记录） */ /* v0.22.0 2026-09-10 全鱼骨头收尾：紫AI大钮压行（挂号#55销号）+工具箱链接去边框+问AI三钮行化，只动版面（详见文件顶部修改记录） */ /* v0.21.1 2026-09-10 预览对照不分横竖屏一律左右分栏+删横屏提醒条（洪老师拍板"把这个做好"） */ /* v0.21.0 2026-09-10 脱敏体检五站浮层+原文不即毁（详见文件顶部修改记录） */ /* v0.20.0 2026-09-10 预览流程恢复原版格局+AI闭环六连（详见文件顶部修改记录）：①预览排版恢复+手机横竖屏适配 ②窄屏前8行折叠 ③📤交给AI查脱敏（dsm_buildAIView独立新函数，规则引擎未动） ④📥导入AI规则（快照+导入双存版本库） ⑤规则版本库hx_dsm_rulelib_v1 ⑥版本同步 */ /* v0.19.0 2026-09-10 速记10连改·全面鱼骨化（挂号#42~51，详见文件顶部修改记录）：名册inline展开明细/速记补充上一条/脱敏间编号折叠行/导出简化/做名片下划线 */ /* v0.18.0 2026-09-10 真机八连修（毛病34~41）：名册删除手段/收库即毁原文/删聚合病历独立框/导出进清单/AI直达钮/删蓝框功能鱼骨化/删当前病人展开区/文件条目窄行 */ /* 速记自动上行 v0.17.1 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* v0.17.0 2026-09-10 HTML会诊PPT（洪老师拍板做HTML不做pptx，纯加法）：详情页「📋 会诊PPT」按钮→第4套会诊稿提示词走aiChat出五栏目（AI失败留「（AI没回话，请手填）」占位照常出片）+本地宽松验单解析器（日期时间+项目名+数值+单位四件套，项目名取冒号前短名）挑≥2时间点指标（PCT/IL-6/乳酸/肌酐/白细胞/CRP/体温模糊匹配优先，最多6个）纯SVG趋势图（最新值红点+数字）→一页一屏HTML幻灯片（点按/滑动/键盘翻页，页脚页码，白底深灰大字+暖色细线标题）→三处产出：壳「脱敏导出_」前缀dsm_shellWriteVerified回读对账、名册kind=report「📋 会诊PPT」徽标+🖥放映按钮、浏览器blob下载；无壳无AI纯浏览器也出演示片 */ /* 速记 v0.16.1 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */ /* v0.16.0 2026-09-10 问AI升级（洪老师拍板）：
+var SW_VERSION = "0.27.0"; /* v0.27.0 2026-09-11 信息流通三连（断点D6/D9，只改这三处其他一行未动）：①D6a收件「合并/新建资料」回写study_notes_v1同一动作顺手双写小涛笔记正房xt_notes_v1（结构照抄小涛：数组元素{id,title,content,createdAt,updatedAt,fp}，fp=strHash同款FNV）②D6b工具箱加第6个链接「📘 小涛笔记」（文件名自适应照抄现有写法，带?from=guanjia&pt=当前病人）③D9病历详情页按钮排加「📮寄给小涛笔记」：该病人聚合病历文本（复用hzGatherText）+标题push进xt_inbox_v1（数组，元素{title,text,pt,ts}），toast「已寄给小涛笔记」，无壳也照做（localStorage同源共享）（详见文件顶部修改记录） */ /* v0.26.0 2026-09-11 收件两修（D1断点"不许静默吞"，只改收件扫描一带）：①可收文件类型扩成txt/pdf/md（parseDocFname/补日期重试正则同步），拍病历导出的「代号-完整资料.md」能被扫描看到 ②凡被收件扫描看到但parseDocFname解析不ok或类型不收的文件一律进「❓拿不准」清单（hx_gj_unsure_v1，原因写明"类型不收"/解析why），登记pd.seen防重复报，原件不删、不走seen补刀；可用拿不准浮层「✅是病人」转正收进名册（详见文件顶部修改记录） */ /* v0.25.0 2026-09-11 速记四连（②⑤⑥⑦，只加不改）：①脱敏间「📥 拉测试病历」HX.gh从云端仓shared/拉两份测试病历走正常进件同一条路进脱敏间待处理（没钥匙/没网提示拉不动）②脱敏间「📁本地病历夹」浮层勾选库里病历回炉重脱敏（hx_pdocs_v1不动不删）③拿不准浮层加「✅是病人」填床号/姓/诊断按正常收件进库+删原件 ④工具箱「选择病人▾」浮层（名册病人+脱敏间文件两区）+名册点病人行顺手写hx_gj_curpt（详见文件顶部修改记录） */ /* v0.24.0 2026-09-11 AI面板试点（洪老师拍板方法论落地）：AI_MANIFEST 8条+浮标「🤖AI」统一入口+原AI按钮改唤起面板定位（HX不在降级原行为）+AI功能生成器接aiChat通道；现有AI功能本体一行未动 */ /* v0.23.0 2026-09-10 收编公共件hx-common.js（plan2军规：钥匙统一HX.keys/速记改HX.sj/账本改HX.bill/gh传输收编，不崩溃压倒一切，详见文件顶部修改记录） */ /* v0.22.0 2026-09-10 全鱼骨头收尾：紫AI大钮压行（挂号#55销号）+工具箱链接去边框+问AI三钮行化，只动版面（详见文件顶部修改记录） */ /* v0.21.1 2026-09-10 预览对照不分横竖屏一律左右分栏+删横屏提醒条（洪老师拍板"把这个做好"） */ /* v0.21.0 2026-09-10 脱敏体检五站浮层+原文不即毁（详见文件顶部修改记录） */ /* v0.20.0 2026-09-10 预览流程恢复原版格局+AI闭环六连（详见文件顶部修改记录）：①预览排版恢复+手机横竖屏适配 ②窄屏前8行折叠 ③📤交给AI查脱敏（dsm_buildAIView独立新函数，规则引擎未动） ④📥导入AI规则（快照+导入双存版本库） ⑤规则版本库hx_dsm_rulelib_v1 ⑥版本同步 */ /* v0.19.0 2026-09-10 速记10连改·全面鱼骨化（挂号#42~51，详见文件顶部修改记录）：名册inline展开明细/速记补充上一条/脱敏间编号折叠行/导出简化/做名片下划线 */ /* v0.18.0 2026-09-10 真机八连修（毛病34~41）：名册删除手段/收库即毁原文/删聚合病历独立框/导出进清单/AI直达钮/删蓝框功能鱼骨化/删当前病人展开区/文件条目窄行 */ /* 速记自动上行 v0.17.1 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* v0.17.0 2026-09-10 HTML会诊PPT（洪老师拍板做HTML不做pptx，纯加法）：详情页「📋 会诊PPT」按钮→第4套会诊稿提示词走aiChat出五栏目（AI失败留「（AI没回话，请手填）」占位照常出片）+本地宽松验单解析器（日期时间+项目名+数值+单位四件套，项目名取冒号前短名）挑≥2时间点指标（PCT/IL-6/乳酸/肌酐/白细胞/CRP/体温模糊匹配优先，最多6个）纯SVG趋势图（最新值红点+数字）→一页一屏HTML幻灯片（点按/滑动/键盘翻页，页脚页码，白底深灰大字+暖色细线标题）→三处产出：壳「脱敏导出_」前缀dsm_shellWriteVerified回读对账、名册kind=report「📋 会诊PPT」徽标+🖥放映按钮、浏览器blob下载；无壳无AI纯浏览器也出演示片 */ /* 速记 v0.16.1 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */ /* v0.16.0 2026-09-10 问AI升级（洪老师拍板）：
    ①提示词三套升四套，缺省内容换新规格：第1套病历质检（先整格式→找四类缺陷→⟦R⟧标红⟦B⟧醒目给修改意见）、第2套病情摘要/交班（一页交班摘要）、第3套检验解读（按时间重排+异常值方向+趋势+通俗解读）、第4套会诊稿（新增：五个固定栏目）；老用户已存的自定义提示词一个字不动，只在缺p4时补第4套（一次性迁移标记hx_gj_askai_v16mig）。
    ②脱敏间导出区加「🤖 AI分析」按钮：只把当前勾选（复用v0.15.0 dsm_selFiles过滤）且已脱敏的文本发给AI，原文绝不出去；弹出与病历详情同款四套提示词弹窗，复用aiChat通道和⟦R⟧/⟦B⟧渲染+「复制干净版」。
    ③问AI结果改全屏浮层：出结果后弹窗撑满屏（askai_full），结果区不再限52vh高，红/醒目两色渲染保留；关上或重开恢复小窗。
@@ -1547,7 +1557,9 @@ function showPatientDetail(g){
           '<button class="ghost" style="font-size:12px;padding:4px 10px;" data-docai="'+r.did+'">🤖 AI找错（复制全文）</button> '+
           '<button class="ghost" style="font-size:12px;padding:4px 10px;" data-docask="'+r.did+'">🤖 问AI（v0.11.0）</button> '+
           /* v0.17.0（洪老师拍板）：「🤖问AI」旁加「📋 会诊PPT」——点它出多学科会诊HTML幻灯片（会诊稿+验单趋势图） */
-          '<button class="ghost" style="font-size:12px;padding:4px 10px;" data-hzppt="'+r.did+'">📋 会诊PPT</button>'
+          '<button class="ghost" style="font-size:12px;padding:4px 10px;" data-hzppt="'+r.did+'">📋 会诊PPT</button> '+
+          /* v0.27.0 D9（洪老师拍板）：「📋会诊PPT」旁加「📮寄给小涛笔记」——该病人聚合病历文本打包push进xt_inbox_v1 */
+          '<button class="ghost" style="font-size:12px;padding:4px 10px;" data-xtmail="'+r.did+'">📮寄给小涛笔记</button>'
           :'<span style="font-size:12px;color:#8a8178;">pdf读不了字（原件已删），同名txt才是正文</span>')+'</div></div>';
     }else{
       html+='<div class="rec"><span class="badge '+(r.type==='bg'?'badge-bg':'badge-vent')+'">'+(r.type==='bg'?'血气':'呼吸机')+'</span>'+
@@ -1606,6 +1618,23 @@ function showPatientDetail(g){
   /* v0.17.0 会诊PPT按钮绑定：聚合该病人全部病历全文→AI会诊稿+本地验单趋势图→出HTML幻灯片（详见hzPptOpen） */
   Array.prototype.forEach.call(document.querySelectorAll('[data-hzppt]'), function(el){
     el.onclick=function(){ if(window.HX&&HX.ai&&HX.ai.ready&&HX.ai.ready()){ HX.ai.open('huizhen'); return; } /* v0.24.0 AI面板唤起；HX不在放行原行为 */ var d=docById(el.getAttribute('data-hzppt')); if(!d||!d.text){ toast('这份病历没有文字内容'); return; } hzPptOpen(d); };
+  });
+  /* v0.27.0 D9「📮寄给小涛笔记」按钮绑定：该病人聚合病历文本（复用hzGatherText，同会诊PPT口径）+标题打包
+     push进localStorage xt_inbox_v1（数组，元素{title,text,pt,ts}；读旧数组→push→写回），toast「已寄给小涛笔记」；
+     无壳也照做——localStorage同源共享，小涛笔记开门就能收 */
+  Array.prototype.forEach.call(document.querySelectorAll('[data-xtmail]'), function(el){
+    el.onclick=function(){
+      var d=docById(el.getAttribute('data-xtmail')); if(!d||!d.text){ toast('这份病历没有文字内容'); return; }
+      var text=hzGatherText(d);
+      var title='聚合病历 '+d.pkey+(d.date?(' '+d.date):'');
+      try{
+        var box=JSON.parse(localStorage.getItem('xt_inbox_v1'))||[];
+        if(!Array.isArray(box)) box=[];
+        box.push({title:title, text:text, pt:d.pkey||'', ts:Date.now()});
+        localStorage.setItem('xt_inbox_v1', JSON.stringify(box));
+        toast('已寄给小涛笔记');
+      }catch(e){ toast('没寄成：'+e.message); }
+    };
   });
   /* v0.17.0 会诊PPT「🖥 放映」按钮绑定：名册里的片子条目新开一页直接放（浏览器blob，不用壳） */
   Array.prototype.forEach.call(document.querySelectorAll('[data-pptplay]'), function(el){
@@ -3065,6 +3094,7 @@ function inboxKeep(item){
         hit.content=(hit.content||'')+addTxt;
         hit.updatedAt=Date.now(); /* sig变了，名片自动重打 */
         localStorage.setItem('study_notes_v1', JSON.stringify(notes));
+        xtNotesDualWrite(hit.title, addTxt, hit.title); /* D6a 双写小涛笔记 */
         return '✅ 已合并进《'+hit.title+'》（它的名片下次自动重打）';
       }
       /* 合并目标没了→自动改新建，不让料丢 */
@@ -3072,8 +3102,34 @@ function inboxKeep(item){
     var title=item.q.slice(0,30)||('上网查资料 '+new Date().toLocaleDateString());
     notes.unshift({id:'gj'+Date.now(), title:title, content:'（来源：大管家上网查查）'+addTxt.replace(/^\n+/,''), updatedAt:Date.now()});
     localStorage.setItem('study_notes_v1', JSON.stringify(notes));
+    xtNotesDualWrite(title, addTxt, null); /* D6a 双写小涛笔记 */
     return '✅ 已新建一篇《'+title+'》（在学习笔记里能翻到，名片下次自动补上）';
   }catch(e){ return null; }
+}
+/* D6a（v0.27.0 断点D6）：收件保留同一动作顺手双写小涛笔记正房 xt_notes_v1——
+   结构照抄software-xiaotao.html：数组（726行loadNotes），元素{id,title,content,createdAt,updatedAt,fp}（1019行makeNote同款，fp=strHash(content)）；
+   合并按title找小涛那边的同名篇追加正文，没有就新建一篇。双写失败静默不挡study_notes_v1已成的活（localStorage同源，无壳也照做） */
+function xtFp(s){ var h=0x811c9dc5; for(var i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=(h*0x01000193)>>>0; } return h.toString(16); } /* 照抄小涛strHash */
+function xtNotesDualWrite(title, addTxt, mergeTitle){
+  try{
+    var xt=JSON.parse(localStorage.getItem('xt_notes_v1'))||[];
+    if(!Array.isArray(xt)) xt=[];
+    if(mergeTitle){
+      var hit=null;
+      xt.forEach(function(n){ if(n.title===mergeTitle) hit=n; });
+      if(hit){
+        hit.content=(hit.content||'')+addTxt;
+        hit.updatedAt=Date.now();
+        hit.fp=xtFp(hit.content);
+        localStorage.setItem('xt_notes_v1', JSON.stringify(xt));
+        return;
+      }
+      /* 小涛那边没同名篇→自动改新建，不让料丢 */
+    }
+    var ct='（来源：大管家收件箱双写）'+String(addTxt).replace(/^\n+/,'');
+    xt.unshift({id:'gj'+Date.now(), title:title, content:ct, createdAt:Date.now(), updatedAt:Date.now(), fp:xtFp(ct)});
+    localStorage.setItem('xt_notes_v1', JSON.stringify(xt));
+  }catch(e){}
 }
 function renderInbox(){
   var b=inboxLoad();
@@ -3173,7 +3229,8 @@ function tbLinks(){
     ['🩸 血气分析', repo?'software-xueqi.html':'血气分析.html'],
     ['📝 习题学习', repo?'software-xiti.html':'习题学习.html'],
     ['📽 PPT工坊', repo?'software-ppt.html':'PPT工坊.html'],
-    ['📷 拍病历', repo?'software-pai.html':'拍病历.html']
+    ['📷 拍病历', repo?'software-pai.html':'拍病历.html'],
+    ['📘 小涛笔记', repo?'software-xiaotao.html':'小涛笔记.html'] /* D6b（v0.27.0）：第6个链接，文件名自适应照抄上面写法 */
   ];
 }
 function tbRender(){
@@ -5838,6 +5895,8 @@ function dsm_aboutInfo() {
         '• 智能脱敏：姓名+职称、医院、身份证等\n' +
         '• 排除词功能：解决"平素体健"误脱敏\n' +
         '• AI提示词模板：排除词/职称/医院\n' +
+        '• v0.27.0：信息流通三连——收件保留顺手双写进小涛笔记（合并/新建都带过去）；工具箱加「📘 小涛笔记」直达链接；\n' +
+        '  病历详情页加「📮寄给小涛笔记」，该病人聚合病历打包寄过去，小涛笔记开门就能收；\n' +
         '• v0.26.0：收件两修——可收文件类型扩成txt/pdf/md；立"不许静默吞"规矩，被扫描看到但解析不ok或类型不收的\n' +
         '  文件一律进「❓拿不准」清单写明原因（原件不删、不重复报），点「✅是病人」可转正收进名册；\n' +
         '• v0.25.0：速记四连——脱敏间加「📥 拉测试病历」（云端仓拉两份进脱敏间，没钥匙/没网会明说）和「📁本地病历夹」（库里病历勾选回炉重脱敏，库里的不动）；拿不准浮层加「✅是病人」（填床号/姓/诊断就收件进库）；工具箱加「选择病人▾」（名册病人/脱敏间文件两区点选当前病人，名册里点病人行也算选中）；\n' +
