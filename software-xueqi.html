@@ -179,6 +179,7 @@
     v0.12.1 2026-09-10 浮标速记入编（洪老师拍板方案A，全家9件同一套自包含snippet，详见SW_VERSION注释链）。
     v0.13.0 2026-09-10 首屏全鱼骨头化（洪老师拍板：只动版面不动功能）：首屏4个大按钮（📷拍照/🖼相册/📄查看记录/🫁呼吸机屏幕分析）压成4条纯文字行（▸，行高≥44px、整行可点、行距9px），点击行为与原按钮完全相同（id不变、JS一行未动）。
     v0.16.0 2026-09-11 病人标识统一（毛病：大管家记hx_gj_curpt、血气记bg_curpatient互不认互不同步；病根D11三套标识并一套，洪老师拍板全家统一记号=hx_gj_curpt）：①setSelectedPatient写bg_curpatient顺手同值写hx_gj_curpt（bg键保留不动兼容旧逻辑） ②开门初始化当前病人，bg为空而hx_gj_curpt有值则采用之并回填bg保持内部一致 ③?pt=参数existing逻辑/界面当前病人显示处不动 ④版本号0.15.0→0.16.0。
+    v0.17.0 2026-09-11 信息流通普查断点三修（断点D3/D4a/D8，只加不破坏）：①D3回填大管家：血气记录保存成功后，若hx_gj_curpt有当前病人，把这条结果整理成一段txt（日期时间+项目+结果）按hx_pdocs_v1结构造kind='bg'条目（fname「血气_月日_时分.txt」）追加进该病人名下病历夹，提示「已回填大管家病历夹」；hx_pdocs_v1不存在/没当前病人静默跳过 ②D8寄PPT走新协议（照抄小涛笔记glowPptSend）：ppt_busy有锁或ppt_inbox有未收的信→进ppt_inbox_q排队不覆盖，空闲→直接寄ppt_inbox ③D4a bg_history文件夹备份：persistHist有变动打脏标记，保存后闲时3秒把全部历史JSON写壳授权文件夹「hxdata_bg_history.json」（LearnShell.writeFile，无壳静默跳过），设置与工具区加文字行「💾立即备份到文件夹」手动触发同一函数 ④版本号0.16.0→0.17.0。
     v0.15.0 2026-09-11 AI面板推广（大管家v0.24.0试点拍板方法论推广到全家）：①AI_MANIFEST 5条（发送AI解读/结果页追问/呼吸机屏幕分析/呼吸机发给AI/呼吸机追问，run全指现有按钮，功能本体一行未动） ②hxReady回调追加HX.ai.init（getSection辨step1~3=拍照解读/step4=结果页/ventPage=呼吸机；send走新加纯文本小通道aiPanelSend，只给面板「＋加AI功能」生成器用，不碰convo主对话链） ③5处原AI按钮handler首行插拦截行（HX.ai.ready()则唤起面板定位到对应条目，HX不在/面板未就绪放行原行为，降级=v0.14.0原样） ④版本号0.14.0→0.15.0。
     v0.14.0 2026-09-10 收公共块hx-common.js（plan2军规：钥匙统一+收公共块，不崩溃压倒一切）：①三级查找加载hx-common.js（壳readFile→同目录fetch8秒→公开仓下载写壳），没装上只有速记/云备份/版本自检降级提示"公共件未装"，拍照/裁剪/AI解读主流程照常不白屏 ②删内嵌速记snippet改HX.sj.init({app:'血气',getCtx:当前病人}) ③删内嵌22个gh函数族，云备份/恢复/下载新版改调HX.gh.* ④删内嵌自检改HX.selfCheck('xueqi',SW_VERSION)（API优先+免Token raw直链兜底） ⑤钥匙读取改HX.keys（hx_apikey→bg_apikey→xt_apikey；千问hx_qwenkey→bg_qwen_key），设置页写Key只写hx_apikey（旧键保留不删自然淘汰） ⑥账本删内嵌改HX.bill。step2裁剪/step3/4/呼吸机页/callAI一律未动。
         毛病：首屏4个大按钮像遥控器面板，60岁医生一屏全是方块；病根：没按小涛笔记范本的纯文字行。ⓘ说明/当前病人条/设置抽屉/step2~4/呼吸机页全不动；存储键名零改动。
@@ -261,7 +262,7 @@
 </style>
 </head>
 <body>
-<header><span>血气分析解读助手</span><span class="ver">v0.16.0</span></header>
+<header><span>血气分析解读助手</span><span class="ver">v0.17.0</span></header>
 <main>
 
   <!-- 第1步：首页 -->
@@ -335,6 +336,8 @@
       <button class="btn secondary" id="btnImport">📥 从备份文件导入记录</button>
       <input type="file" id="fileImport" accept=".json,application/json" hidden>
       <p class="hint">导出文件含病人姓名和验单图片，请自己保管好（可存微信收藏/坚果云/电脑）。换手机后在新手机导入即可恢复。</p>
+      <!-- v0.17.0 D4a bg_history文件夹备份：闲时自动写一份，也可点这行手动立即备份（无壳提示，不报错） -->
+      <div id="btnBgFileBackup" style="cursor:pointer;padding:12px 4px;font-size:15px;color:#4a6b5d;">💾立即备份到文件夹<span class="hint" style="display:inline;">（hxdata_bg_history.json，平时有变动会自动备）</span></div>
       <button class="btn danger" id="btnHistClear">清空全部记录</button>
       <!-- v0.9.11 云备份折叠卡片（与学习笔记同款，备份文件 xueqi-backup.json） -->
       <details class="gh" id="ghCard">
@@ -464,6 +467,7 @@
 
 ★ 如果"自动定位"提示识别引擎下载失败或一直转圈：先检查网络、换个网络（WiFi换流量）多试几次；还是不行，把这个HTML文件发回给Kimi，说一句"引擎下载失败"，它读文件开头的说明就知道原因和处理办法，会直接给您做一个不联网的离线版。
 
+v0.17.0 信息流通三修：①保存血气记录后自动回填大管家病历夹（有当前病人才回填，没连大管家不打扰）②送去PPT工坊改走排队新邮路，不再顶掉没收的信 ③记录闲时自动备份到授权文件夹「hxdata_bg_history.json」，设置与工具里可点「💾立即备份到文件夹」手动备一份
 v0.13.0 首屏全鱼骨头化：4个大按钮（拍照/相册/查看记录/呼吸机屏幕分析）改成4条纯文字行（▸），整行可点、行高≥44px；点法跟原来一模一样。ⓘ说明、当前病人、设置抽屉、拍照裁剪/结果页/呼吸机页全都没动
 v0.11.0 首页鱼骨头化：API Key/AI厂商模型/提示词/备份等低频项收进最底下「🛠 设置与工具」抽屉（点开一次以后都记得）；首页长说明改「ⓘ 说明」点开才看。功能逻辑零改动
 v0.10.14 AI花钱看得见：每次用AI弹一句花了多少钱（估算），主界面新增「💰 AI花钱」卡片看全家汇总
@@ -1658,6 +1662,8 @@ function getHist(){ return histCache; }
 function persistHist(arr){
   histCache = arr;
   bgDirty(); /* v0.9.11 自动云备份钩子（IndexedDB 退回 localStorage 时 bg_history 也在快照内） */
+  bgFileDirty(); /* v0.17.0 D4a 文件夹备份钩子：bg_history有变动打脏标记，闲时写壳文件夹 */
+
   if(idb){ idbWrite(arr).catch(() => {}); return; }
   while(true){
     try{ localStorage.setItem("bg_history", JSON.stringify(arr)); return; }
@@ -1669,6 +1675,53 @@ function persistHist(arr){
       if(!stripped){ if(arr.length > 1) arr.pop(); else return; }
     }
   }
+}
+/* v0.17.0 D4a bg_history文件夹备份：persistHist打脏标记，闲时（保存后3秒setTimeout）把全部历史
+   JSON.stringify写壳授权文件夹「hxdata_bg_history.json」（LearnShell.writeFile，无壳/没授权文件夹静默跳过不报错） */
+let bgFileDirtyFlag = false;
+let bgFileTimer = null;
+function bgFileDirty(){
+  bgFileDirtyFlag = true;
+  if(bgFileTimer) clearTimeout(bgFileTimer);
+  bgFileTimer = setTimeout(() => { bgFileTimer = null; bgBackupToFile(false); }, 3000);
+}
+function bgBackupToFile(manual){
+  if(!bgFileDirtyFlag && !manual) return;
+  if(!window.LearnShell || !LearnShell.writeFile){ if(manual) alert("请在手机壳里用（浏览器里没有授权文件夹）"); return; }
+  try{
+    if(LearnShell.folderSet && !LearnShell.folderSet()){ if(manual) alert("请先在手机壳里授权文件夹"); return; }
+    const json = JSON.stringify(histCache);
+    LearnShell.writeFile("hxdata_bg_history.json", btoa(unescape(encodeURIComponent(json))));
+    bgFileDirtyFlag = false;
+    if(manual) alert("✅ 已备份到授权文件夹：hxdata_bg_history.json（共" + histCache.length + "条）");
+  }catch(e){ if(manual) alert("备份没成：" + e.message); }
+}
+/* v0.17.0 D3 回填大管家病历夹：血气记录保存成功后，hx_gj_curpt有当前病人则把这条结果整理成一段txt
+   （日期时间+项目+结果），照hx_pdocs_v1结构 {v:1,docs:[{id,pkey,bed,sur,diag,date,timeStr,ts,fname,kind,size,text}],seen:[]}
+   造kind='bg'条目追加进该病人名下；hx_pdocs_v1不存在/没当前病人静默跳过不报错 */
+function bgBackfillGj(it){
+  try{
+    const pkey = localStorage.getItem("hx_gj_curpt");
+    if(!pkey) return;
+    const raw = localStorage.getItem("hx_pdocs_v1");
+    if(!raw) return;
+    let pd; try{ pd = JSON.parse(raw); }catch(e){ return; }
+    if(!pd || !Array.isArray(pd.docs)) return;
+    if(!Array.isArray(pd.seen)) pd.seen = [];
+    const now = new Date();
+    const p2 = x => (x < 10 ? "0" : "") + x;
+    const dateStr = now.getFullYear() + "-" + (now.getMonth() + 1) + "-" + now.getDate();
+    const fname = "血气_" + p2(now.getMonth() + 1) + p2(now.getDate()) + "_" + p2(now.getHours()) + p2(now.getMinutes()) + ".txt";
+    const txt = "【血气分析】" + (it.time || "") + "\n病人：" + pkey + "\n项目：血气分析" + (it.bg ? "（背景：" + it.bg + "）" : "") + "\n结果：\n" + (it.text || "");
+    const pm = pkey.match(/^(\d+)([一-龥])([\s\S]*)$/);
+    pd.docs.push({
+      id: "D" + Date.now().toString(36) + Math.floor(Math.random() * 1000), pkey: pkey,
+      bed: pm ? pm[1] : "", sur: pm ? pm[2] : "", diag: pm ? pm[3] : pkey,
+      date: dateStr, timeStr: dateStr, ts: now.getTime(), fname: fname, kind: "bg", size: txt.length, text: txt
+    });
+    localStorage.setItem("hx_pdocs_v1", JSON.stringify(pd));
+    alert("已回填大管家病历夹");
+  }catch(e){}
 }
 function saveHistory(bg, text){
   const arr = getHist();
@@ -1688,6 +1741,7 @@ function saveHistory(bg, text){
   $("archiveInfo").textContent = "✅ 已自动归档到：" + (currentPatient||"未命名病人") + "（共" + count + "份）";
   refreshPatientBtns();
   renderPatientDrop();
+  bgBackfillGj(arr[0]); /* v0.17.0 D3 回填大管家病历夹（hx_gj_curpt有当前病人才回填，否则静默跳过） */
 }
 /* 追问后更新当前记录（最新回答+对话链） */
 function updateCurrentRecord(){
@@ -1834,6 +1888,7 @@ $("btnHistClear").onclick = () => {
 };
 
 /* ================= 导出/导入备份 ================= */
+$("btnBgFileBackup").onclick = () => { bgBackupToFile(true); }; /* v0.17.0 D4a 手动触发文件夹备份（与闲时自动同一函数） */
 $("btnExport").onclick = () => {
   const arr = getHist();
   if(!arr.length){ alert("没有记录可导出"); return; }
@@ -2081,7 +2136,7 @@ ghBindBtn($("ghConfNo"), function(){
    与学习笔记/习题学习/文件桥同款：读 version-xueqi.json 比对版本；
    壳APP里下载新版 = applyUpdate 自更新（重启生效）+ 授权文件夹存备份；
    浏览器里 = 普通下载。 */
-var SW_VERSION = "0.16.0" /* 病人标识统一 v0.16.0 2026-09-11（毛病：大管家记hx_gj_curpt、血气记bg_curpatient互不同步；病根D11三套标识并一套，洪老师拍板统一=hx_gj_curpt）：setSelectedPatient写bg顺手同值写hx_gj_curpt（bg键保留兼容）；开门初始化bg为空而hx_gj_curpt有值则采用并回填bg；?pt=existing逻辑/界面显示处不动 */ /* AI面板推广 v0.15.0 2026-09-11：AI_MANIFEST 5条+HX.ai.init（send走新加纯文本小通道aiPanelSend，不碰convo主链）+5处按钮拦截行；拍照/裁剪/解读/呼吸机功能本体一行未动，HX不在降级=v0.14.0原样 */ /* 收公共块hx-common.js v0.14.0 2026-09-10（plan2军规：钥匙统一+收公共块，不崩溃压倒一切）：三级加载hx-common.js，没装上只速记/云备份/自检降级提示"公共件未装"、主功能照常；删内嵌速记snippet改HX.sj.init（getCtx带当前病人）；删内嵌22个gh函数族云备份/恢复改HX.gh.*；删内嵌自检改HX.selfCheck('xueqi',SW_VERSION)；钥匙读取改HX.keys（hx→bg→xt fallback链覆盖，千问hx_qwenkey→bg_qwen_key），设置页写Key只写hx_apikey；账本改HX.bill。step2裁剪/step3/4/呼吸机页/callAI一律未动 */ /* 首屏全鱼骨头化 v0.13.0 2026-09-10：首屏4大按钮压成4条纯文字行（▸，行高≥44px整行可点，id不变JS零改动）；ⓘ说明/病人条/设置抽屉/二级页全不动，存储键名零改动 */ /* 速记自动上行 v0.12.2 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* 速记 v0.12.1 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */; /* v0.12.0 大管家回程票：从病人大管家点过来（?from=guanjia&pt=病人名）亮顶条「← 返回大管家」，且自动把该病人设为「当前病人」（setSelectedPatient），之后拍的血气/呼吸机记录自动挂他名下，大管家名册照旧自动归堆；不带参数打开零影响 */; /* v0.11.0 鱼骨头化：设置/备份等低频项收进「🛠 设置与工具」抽屉（hx_xueqi_tool_open），主卡说明改ⓘ收起；纯界面，功能逻辑未动（首段script保持原样） */ /* v0.10.15 hxIndexRefresh加免Token备用路（API/没Token自动走公开站直链，治主界面卡旧版静默失败；本页无toast浮层，提示保持静默） */
+var SW_VERSION = "0.17.0" /* 信息流通普查断点三修 v0.17.0 2026-09-11（断点D3/D4a/D8，只加不破坏，详见文件顶部修改记录）：①D3血气记录保存成功后，hx_gj_curpt有当前病人则把结果整理成txt按hx_pdocs_v1结构造kind='bg'条目（fname「血气_月日_时分.txt」）回填大管家病历夹；hx_pdocs_v1不存在/没当前病人静默跳过 ②D8寄PPT走新协议（照抄小涛笔记glowPptSend）：ppt_busy有锁或ppt_inbox有未收的信→进ppt_inbox_q排队不覆盖，空闲才直寄 ③D4a bg_history脏标记闲时双写：persistHist打脏，保存后3秒把全部历史JSON写壳授权文件夹「hxdata_bg_history.json」（LearnShell.writeFile无壳静默跳过），设置与工具区「💾立即备份到文件夹」手动触发同一函数 */ /* 病人标识统一 v0.16.0 2026-09-11（毛病：大管家记hx_gj_curpt、血气记bg_curpatient互不同步；病根D11三套标识并一套，洪老师拍板统一=hx_gj_curpt）：setSelectedPatient写bg顺手同值写hx_gj_curpt（bg键保留兼容）；开门初始化bg为空而hx_gj_curpt有值则采用并回填bg；?pt=existing逻辑/界面显示处不动 */ /* AI面板推广 v0.15.0 2026-09-11：AI_MANIFEST 5条+HX.ai.init（send走新加纯文本小通道aiPanelSend，不碰convo主链）+5处按钮拦截行；拍照/裁剪/解读/呼吸机功能本体一行未动，HX不在降级=v0.14.0原样 */ /* 收公共块hx-common.js v0.14.0 2026-09-10（plan2军规：钥匙统一+收公共块，不崩溃压倒一切）：三级加载hx-common.js，没装上只速记/云备份/自检降级提示"公共件未装"、主功能照常；删内嵌速记snippet改HX.sj.init（getCtx带当前病人）；删内嵌22个gh函数族云备份/恢复改HX.gh.*；删内嵌自检改HX.selfCheck('xueqi',SW_VERSION)；钥匙读取改HX.keys（hx→bg→xt fallback链覆盖，千问hx_qwenkey→bg_qwen_key），设置页写Key只写hx_apikey；账本改HX.bill。step2裁剪/step3/4/呼吸机页/callAI一律未动 */ /* 首屏全鱼骨头化 v0.13.0 2026-09-10：首屏4大按钮压成4条纯文字行（▸，行高≥44px整行可点，id不变JS零改动）；ⓘ说明/病人条/设置抽屉/二级页全不动，存储键名零改动 */ /* 速记自动上行 v0.12.2 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* 速记 v0.12.1 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */; /* v0.12.0 大管家回程票：从病人大管家点过来（?from=guanjia&pt=病人名）亮顶条「← 返回大管家」，且自动把该病人设为「当前病人」（setSelectedPatient），之后拍的血气/呼吸机记录自动挂他名下，大管家名册照旧自动归堆；不带参数打开零影响 */; /* v0.11.0 鱼骨头化：设置/备份等低频项收进「🛠 设置与工具」抽屉（hx_xueqi_tool_open），主卡说明改ⓘ收起；纯界面，功能逻辑未动（首段script保持原样） */ /* v0.10.15 hxIndexRefresh加免Token备用路（API/没Token自动走公开站直链，治主界面卡旧版静默失败；本页无toast浮层，提示保持静默） */
 /* v0.10.2 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["bg_gh_user", "hx_gh_user"], ["bg_gh_tok", "hx_gh_tok"], ["bg_gh_repo", "hx_gh_repo"], ["bg_apikey", "hx_apikey"]];
@@ -2746,10 +2801,21 @@ async function ventContinue(withPhoto){
   }
 }
 
-/* v0.10.8 PPT邮路（照抄学习笔记→PPT工坊的ppt_inbox格式，同源才收得到） */
+/* v0.10.8 PPT邮路（照抄学习笔记→PPT工坊的ppt_inbox格式，同源才收得到）
+   v0.17.0 D8 改走新协议（照抄小涛笔记glowPptSend）：ppt_busy有锁或ppt_inbox有未收的信→进ppt_inbox_q排队
+   不覆盖未收的信；空闲才直接寄ppt_inbox */
 function sendToPpt(title, md){
   try{
-    localStorage.setItem("ppt_inbox", JSON.stringify({ title: title, text: md, from: "血气分析", t: Date.now() }));
+    const obj = { title: title, text: md, from: "血气分析", t: Date.now() };
+    if(localStorage.getItem("ppt_busy") || localStorage.getItem("ppt_inbox")){
+      let q = [];
+      try{ q = JSON.parse(localStorage.getItem("ppt_inbox_q") || "[]") || []; }catch(e){ q = []; }
+      q.push(obj);
+      localStorage.setItem("ppt_inbox_q", JSON.stringify(q));
+      alert("📤 已排队（前面还有" + (q.length - 1) + "封）！打开「PPT工坊」会按顺序收。");
+      return;
+    }
+    localStorage.setItem("ppt_inbox", JSON.stringify(obj));
     alert("📤 已发送！现在去打开「PPT工坊」，它会弹窗问您收不收。");
   }catch(e){ alert("写入收件箱失败：" + e.message); }
 }
