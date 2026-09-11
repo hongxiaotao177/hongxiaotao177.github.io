@@ -1,6 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    hx-common.js —— 全家9件软件共用公共件母版
-   HX_COMMON_VERSION = '0.1.0'（2026-09-10 plan2 军规：钥匙统一+收公共块+不崩溃压倒一切）
+   HX_COMMON_VERSION = '0.2.0'（2026-09-10 plan2 军规：钥匙统一+收公共块+不崩溃压倒一切）
+   v0.2.0 2026-09-11：新增HX.ai统一AI面板（两层结构+定位置顶+AI功能生成器，洪老师2026-09-11拍板方法论落地试点）；HX.sj面板加「🤖AI」入口钮；其余一行未动
 
    收编四样+账本（AI底座不收）：
      HX.keys    钥匙统一读取（hx_apikey→bg_apikey→xt_apikey；hx_gh_*→br_gh_*；hx_qwenkey→bg_qwen_key；hx_dav_*）
@@ -21,7 +22,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 (function(){
   'use strict';
-  var HX_COMMON_VERSION = '0.1.1'; /* v0.1.1 2026-09-10：HX.sj.init 加可选 extraBtn（大管家#43「补充上一条」补回，洪老师点名功能）；不传仍是2钮版，默认行为不变 */
+  var HX_COMMON_VERSION = '0.2.0'; /* v0.2.0 2026-09-11：新增HX.ai统一AI面板（两层结构+定位置顶+AI功能生成器，洪老师2026-09-11拍板方法论落地试点）；HX.sj面板加「🤖AI」入口钮；其余一行未动 */ /* v0.1.1 2026-09-10：HX.sj.init 加可选 extraBtn（大管家#43「补充上一条」补回，洪老师点名功能）；不传仍是2钮版，默认行为不变 */
   if(window.HX && window.HX.HX_COMMON_VERSION){ return; } /* 已装过不重复装 */
   var HX = { HX_COMMON_VERSION: HX_COMMON_VERSION, ok: true };
   function warn(m){ try{ if(window.console && console.warn) console.warn('[hx-common] '+m); }catch(e){} }
@@ -369,7 +370,9 @@
           '  <textarea id="hxSjText" placeholder="发现啥毛病，写一句…"></textarea>'+
           '  <div class="hxSjBtns"><button id="hxSjSave" type="button">记下</button>'+
           (sjExtraBtn ? '<button id="hxSjAppend" type="button" style="background:#b8925a;color:#fff;">'+String(sjExtraBtn.label||'补充上一条')+'</button>' : '')+ /* v0.1.1 extraBtn：不传不出这钮，默认2钮版 */
-          '<button id="hxSjClose" type="button">关上</button></div>'+
+          '<button id="hxSjClose" type="button">关上</button>'+
+          ((HX.ai && HX.ai.ready && HX.ai.ready()) ? '<button id="hxSjAiBtn" type="button" style="background:#efe9df;color:#6b6257;">🤖AI</button>' : '')+ /* v0.2.0 AI面板入口：HX.ai已init且UI就绪才出这钮，不出现不影响速记 */
+          '</div>'+
           '  <div id="hxSjHint">浏览器里存不了，请在手机壳里用</div>'+
           '</div>'+
           '<div id="hxSjToast"></div>';
@@ -383,6 +386,7 @@
       $('hxSjSave').addEventListener('click', save);
       if(sjExtraBtn && $('hxSjAppend')) $('hxSjAppend').addEventListener('click', appendLast); /* v0.1.1 extraBtn */
       $('hxSjClose').addEventListener('click', function(){ $('hxSjPanel').style.display='none'; });
+      if(HX.ai && HX.ai.ready && HX.ai.ready()){ var sjAiBtn=$('hxSjAiBtn'); if(sjAiBtn) sjAiBtn.addEventListener('click', function(){ try{ $('hxSjPanel').style.display='none'; }catch(e){} try{ HX.ai.open(); }catch(e){} }); } /* v0.2.0 AI面板入口：点击=关速记面板+HX.ai.open() */
       setTimeout(function(){ try{ sjUpload(); }catch(e){} }, 8000); /* 速记自动上行：开门闲时对账补推（上次没网漏的在这补） */
     }
     /* 一行接入：HX.sj.init({app:'软件名', getCtx:fn可选})；重复调用只补上下文不重复绑 */
@@ -403,6 +407,220 @@
     sj.upload = function(){ try{ sjUpload(); }catch(e){} };
     sj._save = save; sj._toast = sjToast;
     return sj;
+  })();
+
+  /* ════ 5.5 统一AI面板 HX.ai（v0.2.0 新增，洪老师2026-09-11拍板方法论落地试点） ════
+     两层结构：第1层功能清单（getSection()对上的条目置顶标「本页」）→第2层条目详情（有prompts列提示词套/无则「▶ 开始」大钮）；
+     壳统一芯自带：各软件传自己的AI_MANIFEST，面板只调条目run，不新造取数通道；账本/钥匙HX.ai自身不碰（唯一例外：生成器条目走宿主send）。
+     防重入：面板触发run执行期间ready()短暂返false——宿主原按钮拦截行（HX.ai.ready()判断）就会放行原行为，不会又弹面板套娃。 */
+  HX.ai = (function(){
+    var ai = {};
+    var _app = '';            /* init传：软件名（生成器存档键hx_aiext_v1.<app>用它） */
+    var _manifest = [];       /* init传：宿主AI功能清单 */
+    var _getSection = null;   /* init传：返回当前界面名（定位置顶用） */
+    var _send = null;         /* init传（可选）：宿主AI通道 send(sys,user,onOk,onErr)，只给生成器条目用 */
+    var _inited = false, _uiOk = false, _inRun = false;
+    function $(id){ return document.getElementById(id); }
+    function aiToast(m){ var t=$('hxAiToast'); if(!t) return; t.textContent=m; t.style.display='block'; clearTimeout(t._t); t._t=setTimeout(function(){ t.style.display='none'; },2600); }
+    function lsKey(){ return 'hx_aiext_v1.'+_app; }
+    function extLoad(){ try{ var a=JSON.parse(localStorage.getItem(lsKey())||'[]'); return (a && a.length) ? a : []; }catch(e){ return []; } }
+    function extSave(a){ try{ localStorage.setItem(lsKey(), JSON.stringify(a||[])); }catch(e){} }
+    /* 生成器条目的run：走宿主send（sys=提示词，user=选中文字或'（无资料）'）；没通道/没Key都只toast不崩 */
+    function extRun(x){
+      try{
+        if(!_send){ aiToast('本软件还没接AI通道'); return; }
+        try{ if(!HX.keys.get() && !HX.keys.getQwen()){ aiToast('还没有API Key，先去设置里填一个'); return; } }catch(e){}
+        var usr='（无资料）';
+        if(x.useSel){ try{ var s=String(window.getSelection ? window.getSelection() : ''); if(s) usr=s; }catch(e){} }
+        _send(x.text||'', usr, function(r){ showResult(x.name, r); }, function(err){ aiToast('AI这条路不通：'+String(err||'').slice(0,60)); });
+      }catch(e){ warn('ai 自建条目: '+((e&&e.message)||e)); }
+    }
+    function mkExtItem(x){
+      return { id:x.id, name:x.name, icon:x.icon||'🛠', section:x.section||'', desc:x.desc||'自建功能', custom:true, prompts:null, run:function(){ extRun(x); } };
+    }
+    /* 合并：manifest在前，自建接末尾；同id以manifest为准 */
+    function allItems(){
+      var list=[], ids={}, i;
+      for(i=0;i<_manifest.length;i++){ var m=_manifest[i]; if(m && m.id && !ids[m.id]){ ids[m.id]=1; list.push(m); } }
+      var ext=extLoad();
+      for(i=0;i<ext.length;i++){ var x=ext[i]; if(x && x.id && !ids[x.id]){ ids[x.id]=1; list.push(mkExtItem(x)); } }
+      return list;
+    }
+    function escH(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    /* 第1层：全清单，getSection()对上的排最前标「本页」，自建的标「自建」 */
+    function renderL1(){
+      var body=$('hxAiBody'); if(!body) return;
+      var sec=''; try{ if(_getSection) sec=String(_getSection()||''); }catch(e){}
+      var list=allItems();
+      list.sort(function(a,b){ var am=(sec && a.section===sec)?0:1, bm=(sec && b.section===sec)?0:1; return am-bm; });
+      var html='';
+      if(!list.length) html+='<div class="hxAiEmpty">本软件还没配AI功能清单</div>';
+      for(var i=0;i<list.length;i++){
+        var it=list[i];
+        html+='<div class="hxAiRow" data-hxai="'+escH(it.id)+'"><span class="hxAiIco">'+escH(it.icon||'🤖')+'</span><span class="hxAiName">'+escH(it.name||it.id)+'</span>'+
+              ((sec && it.section===sec)?'<span class="hxAiHere">本页</span>':'')+
+              (it.custom?'<span class="hxAiCustom">自建</span>':'')+'</div>';
+      }
+      body.innerHTML=html;
+      Array.prototype.forEach.call(body.querySelectorAll('[data-hxai]'), function(el){
+        el.addEventListener('click', function(){
+          var id=el.getAttribute('data-hxai'), list2=allItems(), hit=null;
+          for(var i=0;i<list2.length;i++){ if(list2[i].id===id){ hit=list2[i]; break; } }
+          if(hit) renderL2(hit);
+        });
+      });
+    }
+    /* 第2层：←返回+条目名+desc；有prompts列提示词套（点一套=执行run），无则「▶ 开始」大钮 */
+    function renderL2(it){
+      var body=$('hxAiBody'); if(!body) return;
+      var html='<div class="hxAiBack" id="hxAiBack">← 返回</div>'+
+               '<div class="hxAiL2Title">'+escH(it.icon||'🤖')+' '+escH(it.name||it.id)+'</div>'+
+               (it.desc?'<div class="hxAiDesc">'+escH(it.desc)+'</div>':'');
+      if(it.prompts && it.prompts.length){
+        for(var i=0;i<it.prompts.length;i++) html+='<div class="hxAiRow" data-hxaip="'+i+'">'+escH(it.prompts[i].name||('第'+(i+1)+'套'))+'</div>';
+      }else{
+        html+='<button id="hxAiGo" type="button" class="hxAiGo">▶ 开始</button>';
+      }
+      body.innerHTML=html;
+      $('hxAiBack').addEventListener('click', renderL1);
+      var go=$('hxAiGo'); if(go) go.addEventListener('click', function(){ doRun(it); });
+      Array.prototype.forEach.call(body.querySelectorAll('[data-hxaip]'), function(el){
+        el.addEventListener('click', function(){ doRun(it); }); /* 点一套=执行run：取数/发送/结果宿主自己管 */
+      });
+    }
+    /* 面板触发run：执行期间ready()返false防宿主拦截行套娃；错误只warn不外抛 */
+    function doRun(it){
+      _inRun=true;
+      try{ it.run(); }catch(e){ warn('ai run: '+((e&&e.message)||e)); }
+      _inRun=false;
+    }
+    /* 生成器条目结果显示：面板内简单回显（宿主send只负责把话要回来） */
+    function showResult(name, r){
+      try{
+        var body=$('hxAiBody'); if(!body) return;
+        var p=$('hxAiPanel'); if(p) p.style.display='block';
+        body.innerHTML='<div class="hxAiBack" id="hxAiBack">← 返回</div><div class="hxAiL2Title">🛠 '+escH(name)+'</div><pre class="hxAiResult">'+escH(r)+'</pre>';
+        $('hxAiBack').addEventListener('click', renderL1);
+      }catch(e){}
+    }
+    /* 「＋加AI功能」生成器：依次问三样（宿主hxAsk优先，没有则window.prompt）→存hx_aiext_v1.<app>→进第1层末尾 */
+    function genFlow(){
+      try{
+        var useAsk=(typeof window.hxAsk==='function');
+        var finish=function(name, ptext, useSel){
+          name=String(name||'').replace(/^\s+|\s+$/g,''); ptext=String(ptext||'').replace(/^\s+|\s+$/g,'');
+          if(!name || !ptext){ aiToast('功能名和提示词都要填'); return; }
+          var arr=extLoad();
+          arr.push({ id:'ext-'+Date.now(), name:name, text:ptext, useSel:!!useSel, icon:'🛠' });
+          extSave(arr);
+          renderL1(); aiToast('已加到清单末尾（标「自建」）');
+        };
+        if(useAsk){
+          window.hxAsk('① 新AI功能叫啥名？','','',function(name){
+            if(name===null||name===undefined) return;
+            window.hxAsk('② 提示词：AI要怎么干？','','',function(ptext){
+              if(ptext===null||ptext===undefined) return;
+              window.hxAsk('③ 带不带当前选中文字？（是/否）','否','',function(s){
+                if(s===null||s===undefined) return;
+                finish(name, ptext, /^(是|y|yes)/i.test(String(s||'').replace(/^\s+|\s+$/g,'')));
+              },'生成');
+            },'下一步');
+          },'下一步');
+        }else{
+          var name2=window.prompt('① 新AI功能叫啥名？',''); if(name2===null||name2===undefined) return;
+          var ptext2=window.prompt('② 提示词：AI要怎么干？',''); if(ptext2===null||ptext2===undefined) return;
+          var s2=window.prompt('③ 带不带当前选中文字？（是/否）','否'); if(s2===null||s2===undefined) return;
+          finish(name2, ptext2, /^(是|y|yes)/i.test(String(s2||'').replace(/^\s+|\s+$/g,'')));
+        }
+      }catch(e){ warn('ai 生成器: '+((e&&e.message)||e)); }
+    }
+    function ensureUI(){
+      if($('hxAiPanel')) return true;
+      try{
+        if(!document.body) return false;
+        var st=document.createElement('style'); st.id='hxAiStyle';
+        st.textContent=
+          "#hxAiPanel{position:fixed;right:14px;bottom:150px;width:340px;max-width:88vw;max-height:70vh;overflow:auto;background:#fffdf8;border:1px solid #e5ddd0;border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.18);z-index:99993;padding:12px;display:none}\n"+
+          "#hxAiHead{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}\n"+
+          "#hxAiTitle{font-size:16px;font-weight:bold;color:#4a4238}\n"+
+          "#hxAiClose{border:none;border-radius:8px;background:#efe9df;color:#6b6257;font-size:14px;padding:4px 10px;cursor:pointer}\n"+
+          "#hxAiBody .hxAiRow{display:flex;align-items:center;gap:8px;padding:10px 6px;border-bottom:1px dashed #e6e0d4;cursor:pointer;font-size:16px;color:#4a4238}\n"+
+          "#hxAiBody .hxAiIco{flex:none}\n"+
+          "#hxAiBody .hxAiName{flex:1;min-width:0}\n"+
+          "#hxAiBody .hxAiHere{font-size:12px;color:#5a8f5f;flex:none}\n"+
+          "#hxAiBody .hxAiCustom{font-size:12px;color:#a89c8d;flex:none}\n"+
+          "#hxAiBody .hxAiEmpty{font-size:14px;color:#a89c8d;padding:14px 6px}\n"+
+          "#hxAiBody .hxAiBack{font-size:14px;color:#1a73e8;cursor:pointer;padding:6px 0}\n"+
+          "#hxAiBody .hxAiL2Title{font-size:16px;font-weight:bold;color:#4a4238;padding:4px 0}\n"+
+          "#hxAiBody .hxAiDesc{font-size:13px;color:#8a8178;padding:4px 0 8px}\n"+
+          "#hxAiBody .hxAiGo{display:block;width:100%;font-size:18px;padding:12px 0;border:none;border-radius:10px;background:#7a9e7e;color:#fff;cursor:pointer;margin-top:8px}\n"+
+          "#hxAiBody .hxAiResult{white-space:pre-wrap;word-break:break-word;font-size:14px;line-height:1.7;color:#4a4238;background:#fff;border:1px solid #e5ddd0;border-radius:10px;padding:10px;max-height:46vh;overflow:auto}\n"+
+          "#hxAiFoot{margin-top:8px;text-align:center}\n"+
+          "#hxAiAdd{border:none;background:none;color:#1a73e8;font-size:14px;text-decoration:underline;cursor:pointer;padding:6px}\n"+
+          "#hxSjPanel #hxSjAiBtn{background:#efe9df;color:#6b6257}\n"+
+          "#hxAiToast{position:fixed;left:50%;bottom:160px;transform:translateX(-50%);background:rgba(74,64,48,.92);color:#fff;padding:10px 20px;border-radius:20px;font-size:16px;z-index:99994;display:none}";
+        document.head.appendChild(st);
+        var wrap=document.createElement('div');
+        wrap.innerHTML=
+          '<div id="hxAiPanel">'+
+          '  <div id="hxAiHead"><span id="hxAiTitle">🤖 AI功能</span><button id="hxAiClose" type="button">✕</button></div>'+
+          '  <div id="hxAiBody"></div>'+
+          '  <div id="hxAiFoot"><button id="hxAiAdd" type="button">＋加AI功能</button></div>'+
+          '</div>'+
+          '<div id="hxAiToast"></div>';
+        while(wrap.firstChild){ document.body.appendChild(wrap.firstChild); }
+        $('hxAiClose').addEventListener('click', function(){ $('hxAiPanel').style.display='none'; });
+        $('hxAiAdd').addEventListener('click', genFlow);
+        return true;
+      }catch(e){ warn('ai UI注入失败: '+((e&&e.message)||e)); return false; }
+    }
+    /* 速记面板「🤖AI」钮：sj先建UI时sj那边条件未过，这里补上（HX.ai已init才出，符合军规）；点击=关速记面板+HX.ai.open() */
+    function sjAiBtnAdd(){
+      try{
+        var btns=document.querySelector('#hxSjPanel .hxSjBtns'); if(!btns) return;
+        if($('hxSjAiBtn')) return;
+        var b=document.createElement('button'); b.id='hxSjAiBtn'; b.type='button'; b.textContent='🤖AI';
+        btns.appendChild(b);
+        b.addEventListener('click', function(){ try{ $('hxSjPanel').style.display='none'; }catch(e){} try{ ai.open(); }catch(e){} });
+      }catch(e){}
+    }
+    /* HX.ai.init(opt)：opt={app, manifest, getSection, send可选}；重复init只更新manifest不重复绑；document ready后注入UI */
+    ai.init = function(opt){
+      try{
+        opt = opt || {};
+        if(opt.app) _app = String(opt.app);
+        if(!_app) _app = '未命名软件';
+        if(opt.manifest && opt.manifest.length!==undefined) _manifest = opt.manifest;
+        if(typeof opt.getSection === 'function') _getSection = opt.getSection;
+        if(typeof opt.send === 'function') _send = opt.send;
+        if(_inited){ return; } /* 重复init只更新manifest等参数，不重复绑 */
+        _inited = true;
+        var boot = function(){
+          try{
+            if(ensureUI()){ _uiOk = true; sjAiBtnAdd(); }
+          }catch(e){ warn('ai init: '+((e&&e.message)||e)); }
+        };
+        if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', boot); } else { boot(); }
+      }catch(e){ warn('ai init: '+((e&&e.message)||e)); }
+    };
+    /* HX.ai.open(id)：传id直接进该条目第2层，不传显示第1层全清单 */
+    ai.open = function(id){
+      try{
+        if(!_uiOk){ if(ensureUI()){ _uiOk = true; sjAiBtnAdd(); } else return; }
+        var p=$('hxAiPanel'); if(!p) return;
+        if(id){
+          var list=allItems(), hit=null;
+          for(var i=0;i<list.length;i++){ if(list[i].id===id){ hit=list[i]; break; } }
+          if(hit){ renderL2(hit); } else { renderL1(); }
+        }else{
+          renderL1();
+        }
+        p.style.display='block';
+      }catch(e){ warn('ai open: '+((e&&e.message)||e)); }
+    };
+    /* HX.ai.ready()：面板是否可用（UI注入成功）；面板触发run执行期间短暂返false防套娃 */
+    ai.ready = function(){ return !!(_uiOk && !_inRun); };
+    return ai;
   })();
 
   /* ════ 6. 三级加载器现成代码（接入方照抄；军规1：加载失败主功能照常，只静默降级） ════ */
@@ -443,5 +661,5 @@
   ].join('\n');
 
   window.HX = HX;
-  try{ if(window.console && console.info) console.info('[hx-common] v'+HX_COMMON_VERSION+' 已装（keys/gh/sj/selfCheck/bill）'); }catch(e){}
+  try{ if(window.console && console.info) console.info('[hx-common] v'+HX_COMMON_VERSION+' 已装（keys/gh/sj/selfCheck/bill/ai）'); }catch(e){}
 })();
