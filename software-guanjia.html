@@ -8,6 +8,21 @@
   红小涛学习套装 · 病人大管家
   定位：全家资料的"管家"。按病人归堆（血气/呼吸机/脱敏病历，天然有章），
         按知识搜索（笔记/习题，全靠AI名片）。
+  v0.25.0 2026-09-11 速记四连（②⑤⑥⑦，只加不改，其他一行未动）：
+    ①脱敏间进件区加文字行「📥 拉测试病历」：HX.gh（fileUrl+fetch+b64dec）从云端仓shared/拉「32廖车祸脑出血.txt」
+      「45黄热射病.txt」，拉到造成txt文件直接走正常进件同一条路（dsm_processFileList：原文保险柜登记+待脱敏），
+      不经过收件解析；HX不在/没钥匙/没网→提示「拉不动：没钥匙或没网」，成功toast「已拉进脱敏间：32廖、45黄」。
+    ②脱敏间进件入口旁加文字行「📁本地病历夹」：浮层按病人分堆列hx_pdocs_v1病历条目（每行病人名+文件名+勾选框，
+      风格照拿不准浮层），底部「✅送进脱敏间」把勾选正文（看全文同款取正文逻辑：本条没正文找同pkey兄弟兜底）
+      造成txt文件走正常进件同一条路回炉重脱敏；库里的病历不删、hx_pdocs_v1不动。
+    ③拿不准浮层每行红✕旁加「✅是病人」：弹prompt小表单填床号/姓/诊断（填一半取消则不动），确认后按正常收件逻辑
+      构造病历进hx_pdocs_v1（日期用文件名里的，认不出用今天），从拿不准清单移除，原件照正常收件删原件的做法删
+      （deleteFile+listFiles回读核对，没删成走红字delFailReport）。
+    ④工具箱标题旁加文字行「选择病人▾」：浮层上区列名册病人（hx_pdocs_v1全部病人名）、下区列脱敏间当前待处理
+      文件名；点病人写hx_gj_curpt（照1495行写法）并刷新tbCurPt；点脱敏间文件先试parseDocFname类逻辑认床号+姓，
+      认得出设上，认不出toast「这份还认不出是哪位病人，请先收进病历库或手动起名」；
+      名册里点病人行（inline展开那下）也顺手写hx_gj_curpt，选中=当前病人。
+    ⑤版本升v0.25.0：SW_VERSION、界面版本行（verTop照走SW_VERSION）、关于（dsm_aboutInfo）同步。
   v0.24.0 2026-09-11 AI面板试点（洪老师拍板方法论落地）：
     ①hx-common升v0.2.0（新增HX.ai统一AI面板：两层结构+定位置顶+AI功能生成器；速记面板加「🤖AI」入口钮）；
     ②新增AI_MANIFEST 8条（run全指现有函数，功能本体一行未动）+hxReady回调追加HX.ai.init（getSection：脱敏间/病历详情/阅读页，send走aiChat通道）；
@@ -544,6 +559,11 @@ hxStore.reg('hx_cards_v1'); hxStore.reg('hx_patients'); hxStore.reg('hx_inbox_v1
     <button style="padding:8px 14px;border:1px solid #ddd;background:#fff;border-radius:6px;font-size:14px;cursor:pointer;" onclick="dsm_selectFiles()">📄 看文件选文件</button>
     <button style="padding:8px 14px;border:1px solid #ddd;background:#fff;border-radius:6px;font-size:14px;cursor:pointer;" onclick="dsm_clearAllData()">🗑️ 清空数据</button>
 </div>
+<!-- v0.25.0 速记②⑤：进件区加两条文字行入口（鱼骨化文字行，不做大按钮，样式抄v0.19.0 #50下划线文字链接先例）：①📥拉测试病历=HX.gh从云端仓shared/拉两份走正常进件同一条路进脱敏间；②📁本地病历夹=库里病历勾选回炉重脱敏（库不动） -->
+<div style="margin:0 0 12px;">
+    <a style="display:block;padding:10px 6px;min-height:44px;color:#1a73e8;text-decoration:underline;font-size:15px;cursor:pointer;border-bottom:1px dashed #e6e0d4;" onclick="dsm_pullTestDocs()">📥 拉测试病历（从云端仓拉两份进脱敏间）</a>
+    <a style="display:block;padding:10px 6px;min-height:44px;color:#1a73e8;text-decoration:underline;font-size:15px;cursor:pointer;" onclick="dsm_pickLocalDocs()">📁 本地病历夹（把库里的病历回炉重脱敏）</a>
+</div>
 
 <!-- 选择区 -->
 <div class="dsm_select-zone" id="dsm_selectZone" onclick="dsm_selectFolder()">
@@ -718,7 +738,7 @@ hxStore.reg('hx_cards_v1'); hxStore.reg('hx_patients'); hxStore.reg('hx_inbox_v1
 
   <!-- v0.9.0 工具箱：从大管家直达各软件，带病人上下文；折起就一行 -->
   <div class="card">
-    <h2>🧰 工具箱 <span id="tbCurPt" style="font-size:13px;color:#8a8178;font-weight:normal;"></span></h2>
+    <h2>🧰 工具箱 <span id="tbCurPt" style="font-size:13px;color:#8a8178;font-weight:normal;"></span> <span id="tbPickPt" style="font-size:13px;color:#1a73e8;font-weight:normal;text-decoration:underline;cursor:pointer;">选择病人▾</span></h2><!-- v0.25.0 速记⑦：标题旁加文字行「选择病人▾」点开选择浮层（逻辑在tbPickPtOpen，tbRender里绑定） -->
     <div class="intro" style="font-size:13px;color:#8a8178;margin-bottom:6px;">点下面软件直接过去，办完事点顶上的「← 返回大管家」回来，不经过主界面。在名册里点开过谁，过去就挂在谁名下（没点过就不挂）。这些软件要和大管家放在同一个文件夹里；点不开=文件名对不上，把它们改成同名放一起。</div>
     <div id="tbList"></div>
   </div>
@@ -894,7 +914,7 @@ hxStore.reg('hx_cards_v1'); hxStore.reg('hx_patients'); hxStore.reg('hx_inbox_v1
 </div>
 
 <script>
-var SW_VERSION = "0.24.0"; /* v0.24.0 2026-09-11 AI面板试点（洪老师拍板方法论落地）：AI_MANIFEST 8条+浮标「🤖AI」统一入口+原AI按钮改唤起面板定位（HX不在降级原行为）+AI功能生成器接aiChat通道；现有AI功能本体一行未动 */ /* v0.23.0 2026-09-10 收编公共件hx-common.js（plan2军规：钥匙统一HX.keys/速记改HX.sj/账本改HX.bill/gh传输收编，不崩溃压倒一切，详见文件顶部修改记录） */ /* v0.22.0 2026-09-10 全鱼骨头收尾：紫AI大钮压行（挂号#55销号）+工具箱链接去边框+问AI三钮行化，只动版面（详见文件顶部修改记录） */ /* v0.21.1 2026-09-10 预览对照不分横竖屏一律左右分栏+删横屏提醒条（洪老师拍板"把这个做好"） */ /* v0.21.0 2026-09-10 脱敏体检五站浮层+原文不即毁（详见文件顶部修改记录） */ /* v0.20.0 2026-09-10 预览流程恢复原版格局+AI闭环六连（详见文件顶部修改记录）：①预览排版恢复+手机横竖屏适配 ②窄屏前8行折叠 ③📤交给AI查脱敏（dsm_buildAIView独立新函数，规则引擎未动） ④📥导入AI规则（快照+导入双存版本库） ⑤规则版本库hx_dsm_rulelib_v1 ⑥版本同步 */ /* v0.19.0 2026-09-10 速记10连改·全面鱼骨化（挂号#42~51，详见文件顶部修改记录）：名册inline展开明细/速记补充上一条/脱敏间编号折叠行/导出简化/做名片下划线 */ /* v0.18.0 2026-09-10 真机八连修（毛病34~41）：名册删除手段/收库即毁原文/删聚合病历独立框/导出进清单/AI直达钮/删蓝框功能鱼骨化/删当前病人展开区/文件条目窄行 */ /* 速记自动上行 v0.17.1 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* v0.17.0 2026-09-10 HTML会诊PPT（洪老师拍板做HTML不做pptx，纯加法）：详情页「📋 会诊PPT」按钮→第4套会诊稿提示词走aiChat出五栏目（AI失败留「（AI没回话，请手填）」占位照常出片）+本地宽松验单解析器（日期时间+项目名+数值+单位四件套，项目名取冒号前短名）挑≥2时间点指标（PCT/IL-6/乳酸/肌酐/白细胞/CRP/体温模糊匹配优先，最多6个）纯SVG趋势图（最新值红点+数字）→一页一屏HTML幻灯片（点按/滑动/键盘翻页，页脚页码，白底深灰大字+暖色细线标题）→三处产出：壳「脱敏导出_」前缀dsm_shellWriteVerified回读对账、名册kind=report「📋 会诊PPT」徽标+🖥放映按钮、浏览器blob下载；无壳无AI纯浏览器也出演示片 */ /* 速记 v0.16.1 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */ /* v0.16.0 2026-09-10 问AI升级（洪老师拍板）：
+var SW_VERSION = "0.25.0"; /* v0.25.0 2026-09-11 速记四连（②⑤⑥⑦，只加不改）：①脱敏间「📥 拉测试病历」HX.gh从云端仓shared/拉两份测试病历走正常进件同一条路进脱敏间待处理（没钥匙/没网提示拉不动）②脱敏间「📁本地病历夹」浮层勾选库里病历回炉重脱敏（hx_pdocs_v1不动不删）③拿不准浮层加「✅是病人」填床号/姓/诊断按正常收件进库+删原件 ④工具箱「选择病人▾」浮层（名册病人+脱敏间文件两区）+名册点病人行顺手写hx_gj_curpt（详见文件顶部修改记录） */ /* v0.24.0 2026-09-11 AI面板试点（洪老师拍板方法论落地）：AI_MANIFEST 8条+浮标「🤖AI」统一入口+原AI按钮改唤起面板定位（HX不在降级原行为）+AI功能生成器接aiChat通道；现有AI功能本体一行未动 */ /* v0.23.0 2026-09-10 收编公共件hx-common.js（plan2军规：钥匙统一HX.keys/速记改HX.sj/账本改HX.bill/gh传输收编，不崩溃压倒一切，详见文件顶部修改记录） */ /* v0.22.0 2026-09-10 全鱼骨头收尾：紫AI大钮压行（挂号#55销号）+工具箱链接去边框+问AI三钮行化，只动版面（详见文件顶部修改记录） */ /* v0.21.1 2026-09-10 预览对照不分横竖屏一律左右分栏+删横屏提醒条（洪老师拍板"把这个做好"） */ /* v0.21.0 2026-09-10 脱敏体检五站浮层+原文不即毁（详见文件顶部修改记录） */ /* v0.20.0 2026-09-10 预览流程恢复原版格局+AI闭环六连（详见文件顶部修改记录）：①预览排版恢复+手机横竖屏适配 ②窄屏前8行折叠 ③📤交给AI查脱敏（dsm_buildAIView独立新函数，规则引擎未动） ④📥导入AI规则（快照+导入双存版本库） ⑤规则版本库hx_dsm_rulelib_v1 ⑥版本同步 */ /* v0.19.0 2026-09-10 速记10连改·全面鱼骨化（挂号#42~51，详见文件顶部修改记录）：名册inline展开明细/速记补充上一条/脱敏间编号折叠行/导出简化/做名片下划线 */ /* v0.18.0 2026-09-10 真机八连修（毛病34~41）：名册删除手段/收库即毁原文/删聚合病历独立框/导出进清单/AI直达钮/删蓝框功能鱼骨化/删当前病人展开区/文件条目窄行 */ /* 速记自动上行 v0.17.1 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* v0.17.0 2026-09-10 HTML会诊PPT（洪老师拍板做HTML不做pptx，纯加法）：详情页「📋 会诊PPT」按钮→第4套会诊稿提示词走aiChat出五栏目（AI失败留「（AI没回话，请手填）」占位照常出片）+本地宽松验单解析器（日期时间+项目名+数值+单位四件套，项目名取冒号前短名）挑≥2时间点指标（PCT/IL-6/乳酸/肌酐/白细胞/CRP/体温模糊匹配优先，最多6个）纯SVG趋势图（最新值红点+数字）→一页一屏HTML幻灯片（点按/滑动/键盘翻页，页脚页码，白底深灰大字+暖色细线标题）→三处产出：壳「脱敏导出_」前缀dsm_shellWriteVerified回读对账、名册kind=report「📋 会诊PPT」徽标+🖥放映按钮、浏览器blob下载；无壳无AI纯浏览器也出演示片 */ /* 速记 v0.16.1 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */ /* v0.16.0 2026-09-10 问AI升级（洪老师拍板）：
    ①提示词三套升四套，缺省内容换新规格：第1套病历质检（先整格式→找四类缺陷→⟦R⟧标红⟦B⟧醒目给修改意见）、第2套病情摘要/交班（一页交班摘要）、第3套检验解读（按时间重排+异常值方向+趋势+通俗解读）、第4套会诊稿（新增：五个固定栏目）；老用户已存的自定义提示词一个字不动，只在缺p4时补第4套（一次性迁移标记hx_gj_askai_v16mig）。
    ②脱敏间导出区加「🤖 AI分析」按钮：只把当前勾选（复用v0.15.0 dsm_selFiles过滤）且已脱敏的文本发给AI，原文绝不出去；弹出与病历详情同款四套提示词弹窗，复用aiChat通道和⟦R⟧/⟦B⟧渲染+「复制干净版」。
    ③问AI结果改全屏浮层：出结果后弹窗撑满屏（askai_full），结果区不再限52vh高，红/醒目两色渲染保留；关上或重开恢复小窗。
@@ -1428,6 +1448,8 @@ function renderPatients(){
           var more=el.parentNode.querySelector('.pt-more'); if(!more) return;
           var show=more.style.display==='none'; more.style.display=show?'':'none';
           var ar=el.parentNode.querySelector('.pt-arrow'); if(ar) ar.textContent=show?'▾':'▸';
+          /* v0.25.0 速记⑦：名册点病人行（蓝边选中那下）也顺手写hx_gj_curpt——选中=当前病人（照1495行写法），不再只有点进详情才写 */
+          try{ var _g=data.list[+el.getAttribute('data-gi')]; if(_g){ localStorage.setItem('hx_gj_curpt', _g.name); tbRender(); } }catch(e){}
         };
       });
       Array.prototype.forEach.call(document.querySelectorAll('[data-open]'), function(el){
@@ -1727,6 +1749,7 @@ function unsureOpenDlg(){
       h+='<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-top:1px dashed #eee5d8;">'+
         '<div style="flex:1;min-width:0;word-break:break-all;">'+esc(x.f)+
         '<div style="font-size:12px;color:#a89f93;">（'+esc(x.w)+'）</div></div>'+
+        '<button class="ghost" data-unsureok="'+i+'" style="color:#27ae60;font-size:12px;padding:4px 8px;flex:none;">✅是病人</button>'+ /* v0.25.0 速记⑥：拿不准→填床号/姓/诊断按正常收件进库 */
         '<button class="ghost" data-unsuredel="'+i+'" style="color:#c0392b;font-weight:700;font-size:15px;padding:4px 10px;flex:none;">✕</button></div>';
     });
     box.innerHTML=h;
@@ -1740,12 +1763,155 @@ function unsureOpenDlg(){
         renderRows(); unsureRenderLine(); if(!u.length) ov.remove();
       };
     });
+    /* v0.25.0 速记⑥：「✅是病人」绑定——填床号/姓/诊断确认后进hx_pdocs_v1（逻辑在unsureAdmitPatient），办完重画清单 */
+    Array.prototype.forEach.call(box.querySelectorAll('[data-unsureok]'), function(btn){
+      btn.onclick=function(){
+        var i=+btn.getAttribute('data-unsureok'), it=u[i]; if(!it) return;
+        unsureAdmitPatient(it.f, function(){ u=unsureLoad(); renderRows(); unsureRenderLine(); if(!u.length) ov.remove(); });
+      };
+    });
   }
   renderRows();
   ov.appendChild(box);
   document.body.appendChild(ov);
 }
 try{ unsureRenderLine(); }catch(e){}
+/* ── v0.25.0 速记②：脱敏间「📥 拉测试病历」——HX.gh（fileUrl+fetch+b64dec）从云端仓shared/拉两份测试病历，
+   拉到造成txt文件走正常进件同一条路（dsm_processFileList：原文保险柜登记+待脱敏），不经过收件解析；
+   HX不在/没钥匙/没网→提示「拉不动：没钥匙或没网」（照现有"HX不在降级原行为"写法） ── */
+/* 文本造成File对象给进件口用（File构造器不行的老壳退Blob补name，FileReader照样能读） */
+function dsm_textToFile(name, text){
+  var f=null;
+  try{ f=new File([text], name, {type:'text/plain'}); }catch(e){}
+  if(!f){ try{ f=new Blob([text], {type:'text/plain'}); f.name=name; }catch(e){ return null; } }
+  return f;
+}
+function dsm_pullTestDocs(){
+  if(!(window.HX&&HX.gh&&HX.gh.ready&&HX.gh.ready())){ toast('拉不动：没钥匙或没网'); return; }
+  toast('正在从云端仓拉测试病历…', 2000);
+  var names=['shared/32廖车祸脑出血.txt','shared/45黄热射病.txt'];
+  var files=[];
+  Promise.all(names.map(function(nm){
+    return HX.gh.fetch(HX.gh.fileUrl(nm), {headers:HX.gh.headers()}).then(function(resp){
+      if(!resp.ok) throw new Error('HTTP '+resp.status);
+      return resp.json().then(function(j){
+        var txt=HX.gh.b64dec(j.content||'');
+        var f=dsm_textToFile(nm.split('/').pop(), txt);
+        if(!f) throw new Error('造文件失败');
+        files.push(f);
+      });
+    });
+  })).then(function(){
+    if(!files.length){ toast('拉不动：没钥匙或没网'); return; }
+    try{ dsm_processFileList(files); }catch(e){ toast('进脱敏间失败：'+e.message); return; } /* 走正常进件后的同一条路：原文保险柜登记、待脱敏 */
+    toast('已拉进脱敏间：32廖、45黄', 4000);
+  }, function(e){ toast('拉不动：没钥匙或没网'); });
+}
+/* ── v0.25.0 速记⑤：脱敏间「📁本地病历夹」——浮层按病人分堆列hx_pdocs_v1全部病历条目（每行：病人名+文件名+勾选框，
+   浮层样式照抄拿不准浮层unsureOpenDlg），底部「✅送进脱敏间」把勾选正文（看全文同款取正文逻辑：本条没正文找同pkey
+   有正文的兄弟条目兜底）造成txt文件走正常进件同一条路进脱敏间待处理（原文保险柜流程照走，相当于库里病历回炉重脱敏）；
+   只是把内容送进脱敏间，不删库里的病历、不动hx_pdocs_v1 ── */
+function dsm_pickLocalDocs(){
+  var old=document.getElementById('dsmLocalDocsDlg'); if(old) old.remove();
+  var pd=pdocsLoad();
+  var ov=document.createElement('div');
+  ov.id='dsmLocalDocsDlg';
+  ov.style.cssText='position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(0,0,0,.4);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;';
+  var box=document.createElement('div');
+  box.style.cssText='background:#fffdf8;color:#6b6257;border:1px solid #e8dcc8;border-radius:12px;padding:14px;max-width:94%;width:520px;max-height:80vh;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.2);font-size:14px;';
+  var groups={}, order=[];
+  pd.docs.forEach(function(d,i){ var k=d.pkey||'未分组'; if(!groups[k]){ groups[k]=[]; order.push(k); } groups[k].push(i); });
+  var h='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">'+
+    '<b style="font-size:15px;">📁 本地病历夹（'+pd.docs.length+'份）</b>'+
+    '<button class="ghost" id="dsmLdClose" style="font-size:13px;padding:4px 10px;">✕ 关上</button></div>'+
+    '<div style="font-size:12px;color:#8a8178;margin-bottom:8px;">库里收进来的病历都在这，按病人分堆。勾选后点底下「✅送进脱敏间」，内容就进脱敏间待处理重脱敏一遍（原文保险柜流程照走）；库里的病历不动、不删。</div>';
+  if(!pd.docs.length){ h+='<div style="font-size:13px;color:#8a8178;">病历库还是空的，先收病历进来再用</div>'; }
+  order.forEach(function(k){
+    h+='<div style="font-weight:700;margin-top:8px;color:#6b6257;">'+esc(k)+'</div>';
+    groups[k].forEach(function(i){
+      var d=pd.docs[i];
+      h+='<label style="display:flex;align-items:center;gap:6px;padding:6px 0;border-top:1px dashed #eee5d8;cursor:pointer;">'+
+        '<input type="checkbox" data-ld="'+i+'" style="flex:none;">'+
+        '<span style="flex:1;min-width:0;word-break:break-all;">'+esc(d.pkey||'')+'　'+esc(d.fname||'')+'</span></label>';
+    });
+  });
+  if(pd.docs.length){ h+='<div style="margin-top:10px;border-top:1px dashed #eee5d8;padding-top:8px;"><button class="ghost" id="dsmLdGo" style="font-size:14px;padding:6px 12px;color:#27ae60;font-weight:700;">✅送进脱敏间</button></div>'; }
+  box.innerHTML=h;
+  box.querySelector('#dsmLdClose').onclick=function(){ ov.remove(); }; /* 用box.querySelector不用$——此刻box还没挂进document（照unsureOpenDlg自测经验） */
+  var go=box.querySelector('#dsmLdGo');
+  if(go) go.onclick=function(){
+    var files=[], noText=0;
+    Array.prototype.forEach.call(box.querySelectorAll('[data-ld]'), function(ck){
+      if(!ck.checked) return;
+      var d=pd.docs[+ck.getAttribute('data-ld')]; if(!d) return;
+      /* 取正文照抄看全文逻辑（data-docview绑定处）：本条有正文用本条；没有找同pkey有正文的兄弟条目兜底 */
+      var text=d.text||'';
+      if(!text){ pd.docs.forEach(function(x){ if(x.pkey===d.pkey&&x.text) text=x.text; }); }
+      if(!text){ noText++; return; }
+      var fn=String(d.fname||d.pkey||'病历').replace(/\.(txt|pdf)$/i,'')+'.txt';
+      var f=dsm_textToFile(fn, text); if(f) files.push(f);
+    });
+    if(!files.length){ toast(noText?'勾选的都是pdf档，库里没存下文字内容，送不进脱敏间':'先勾选要回炉的病历'); return; }
+    ov.remove();
+    try{ dsm_processFileList(files); }catch(e){ toast('进脱敏间失败：'+e.message); return; } /* 走正常进件后的同一条路：原文保险柜登记、待脱敏 */
+    toast('已送进脱敏间 '+files.length+' 份（回炉重脱敏，库里的病历还在）'+(noText?'，另有'+noText+'份没文字内容跳过':''), 4000);
+  };
+  ov.appendChild(box);
+  document.body.appendChild(ov);
+}
+/* ── v0.25.0 速记⑥：拿不准浮层「✅是病人」——prompt小表单填床号/姓/诊断（风格从简，填一半取消则不动），
+   确认后按正常收件逻辑构造一条病历进hx_pdocs_v1（日期用文件名里的，认不出用今天），从拿不准清单移除，
+   原件照正常收件删原件的做法删（deleteFile+listFiles回读核对，没删成走红字delFailReport、不登记seen） ── */
+function unsureAdmitPatient(fname, onDone){
+  if(!hxStore.bridged()){ toast('还没接文件夹：点左下角🗄️先选大管家的数据文件夹'); return; }
+  var bed=prompt('这份是病历。床号（数字，如 32）：',''); if(bed===null) return; bed=String(bed).replace(/\s+/g,'');
+  var sur=prompt('姓（如 廖）：',''); if(sur===null) return; sur=String(sur).replace(/\s+/g,'');
+  var diag=prompt('诊断（如 车祸脑出血）：',''); if(diag===null) return; diag=String(diag).replace(/\s+/g,'');
+  if(!bed||!sur||!diag){ toast('床号/姓/诊断没填全，没收（拿不准清单里还留着）'); return; }
+  /* 日期用文件名里的，认不出用今天 */
+  var d=new Date(), dateStr=d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(), ts=d.getTime();
+  var pr0=parseDocFname(fname, null);
+  if(pr0.ok){ d=pr0.date; dateStr=pr0.dateStr; ts=pr0.date.getTime(); }
+  /* 先用收件同款解析器验一遍拼出来的名字合不合格（床号样式收紧规矩照走） */
+  var pkey=bed+sur+diag;
+  var prCk=parseDocFname(pkey+(d.getMonth()+1<10?'0':'')+(d.getMonth()+1)+(d.getDate()<10?'0':'')+d.getDate()+'.txt', d.getTime());
+  if(!prCk.ok){ toast('这么拼不合格：'+prCk.why+'（拿不准清单里还留着）'); return; }
+  var kind=(/\.pdf$/i.test(fname))?'pdf':'txt';
+  var text='';
+  if(kind==='txt'){
+    var b64=null; try{ b64=LearnShell.readFile(fname); }catch(e){}
+    if(!b64){ toast('原件读不出来，没收（拿不准清单里还留着）'); return; }
+    try{ text=docUnb64(b64); }catch(e){ toast('原件解码失败，没收（拿不准清单里还留着）'); return; }
+    if(text.length>300000) text=text.slice(0,300000)+'\n…（太长已截断存，完整件在您内网电脑）';
+  }
+  var pd=pdocsLoad();
+  var fz=0, ft=0;
+  try{ var _lf0=JSON.parse(LearnShell.listFiles()||'[]'); for(var _li0=0;_li0<_lf0.length;_li0++){ var _lo=_lf0[_li0]; var _ln0=(typeof _lo==='string')?_lo:(_lo&&_lo.name); if(_ln0===fname){ fz=_lo.size||0; ft=_lo.t||0; break; } } }catch(e){}
+  pd.docs.push({id:'D'+Date.now().toString(36)+Math.floor(Math.random()*1000), pkey:pkey, bed:bed, sur:sur, diag:diag,
+    date:dateStr, timeStr:dateStr+' '+docHm(ft), ts:ts, fname:fname, kind:kind, size:fz, text:text});
+  /* 原件照正常收件删原件的做法（照抄docInboxScan：deleteFile返回false算没删成；listFiles回读确认真没了才登记seen） */
+  var delOk=false;
+  try{
+    var _dr=LearnShell.deleteFile(fname);
+    if(_dr===false) throw new Error('deleteFile返回false');
+    var _lf=JSON.parse(LearnShell.listFiles()||'[]');
+    if(!Array.isArray(_lf)) throw new Error('listFiles回读异常');
+    delOk=true;
+    for(var _li=0;_li<_lf.length;_li++){
+      var _ln=(typeof _lf[_li]==='string')?_lf[_li]:(_lf[_li]&&_lf[_li].name);
+      if(_ln===fname){ delOk=false; break; }
+    }
+  }catch(e){}
+  if(delOk){ pd.seen.push({f:fname, z:fz, t:ft}); }
+  else { delFailReport(fname); }
+  if(pd.seen.length>200) pd.seen=pd.seen.slice(-200);
+  pdocsSave(pd);
+  /* 从拿不准清单移除 */
+  var u=unsureLoad(); u=u.filter(function(x){ return x.f!==fname; }); unsureSave(u);
+  toast('📥 已收进名册：'+pkey+'（'+dateStr+'）', 4000);
+  renderPatients();
+  if(onDone) onDone();
+}
 /* 收件扫描：manual=手动按钮（无收获也吭声）；自动闲时=有收获才吭声 */
 function docInboxScan(manual){
   if(!hxStore.bridged()){ if(manual) toast('还没接文件夹：点左下角🗄️先选大管家的数据文件夹，病历就拷进那里'); return; }
@@ -2992,6 +3158,66 @@ function tbRender(){
     html+='<a style="display:block;margin:8px 0;padding:12px 6px;min-height:44px;text-decoration:underline;color:#1a73e8;font-size:16px;border-bottom:1px dashed #e6e0d4;" href="'+href+'">'+L[0]+'</a>';
   });
   el.innerHTML=html;
+  /* v0.25.0 速记⑦：标题旁「选择病人▾」绑定（tbRender开门必跑，重画不重绑坏——每次都重指onclick） */
+  var pk=$('tbPickPt'); if(pk) pk.onclick=function(){ tbPickPtOpen(); };
+}
+/* ── v0.25.0 速记⑦：工具箱「选择病人▾」浮层——上区「名册病人」列hx_pdocs_v1全部病人名；下区「脱敏间文件」列脱敏间
+   当前待处理清单里的文件名；点病人写hx_gj_curpt（照1495行写法）并刷新tbCurPt；点脱敏间文件先试parseDocFname类逻辑
+   认床号+姓（认不出补今天日期再来一次，照收件补日期规矩），认得出设上，认不出toast明说；浮层样式照抄拿不准浮层 ── */
+function tbPickPtOpen(){
+  var old=document.getElementById('tbPickPtDlg'); if(old) old.remove();
+  var ov=document.createElement('div');
+  ov.id='tbPickPtDlg';
+  ov.style.cssText='position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(0,0,0,.4);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;';
+  var box=document.createElement('div');
+  box.style.cssText='background:#fffdf8;color:#6b6257;border:1px solid #e8dcc8;border-radius:12px;padding:14px;max-width:94%;width:520px;max-height:80vh;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.2);font-size:14px;';
+  var names=[];
+  try{ pdocsLoad().docs.forEach(function(d){ if(d.pkey&&names.indexOf(d.pkey)<0) names.push(d.pkey); }); }catch(e){}
+  var dsmNames=[];
+  try{ Object.keys(dsm_APP.patients||{}).forEach(function(p){ ((dsm_APP.patients[p]||{}).files||[]).forEach(function(f){ if(f.name&&dsmNames.indexOf(f.name)<0) dsmNames.push(f.name); }); }); }catch(e){}
+  var h='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">'+
+    '<b style="font-size:15px;">选择病人</b>'+
+    '<button class="ghost" id="tbPickPtClose" style="font-size:13px;padding:4px 10px;">✕ 关上</button></div>';
+  h+='<div style="font-weight:700;margin:6px 0 2px;">名册病人</div>';
+  if(!names.length){ h+='<div style="font-size:13px;color:#8a8178;">名册里还没有病历收进来</div>'; }
+  names.forEach(function(n){
+    h+='<div style="padding:8px 2px;border-top:1px dashed #eee5d8;color:#1a73e8;text-decoration:underline;cursor:pointer;" data-tbpt="'+esc(n)+'">'+esc(n)+'</div>';
+  });
+  h+='<div style="font-weight:700;margin:10px 0 2px;">脱敏间文件</div>';
+  if(!dsmNames.length){ h+='<div style="font-size:13px;color:#8a8178;">脱敏间现在没有待处理的文件</div>'; }
+  dsmNames.forEach(function(n){
+    h+='<div style="padding:8px 2px;border-top:1px dashed #eee5d8;color:#1a73e8;text-decoration:underline;cursor:pointer;" data-tbdm="'+esc(n)+'">'+esc(n)+'</div>';
+  });
+  box.innerHTML=h;
+  box.querySelector('#tbPickPtClose').onclick=function(){ ov.remove(); }; /* 用box.querySelector不用$——此刻box还没挂进document（照unsureOpenDlg自测经验） */
+  Array.prototype.forEach.call(box.querySelectorAll('[data-tbpt]'), function(el){
+    el.onclick=function(){
+      var n=el.getAttribute('data-tbpt');
+      try{ localStorage.setItem('hx_gj_curpt', n); }catch(e){} /* 照1495行写法记当前病人 */
+      tbRender(); ov.remove();
+      toast('当前病人：'+n);
+    };
+  });
+  Array.prototype.forEach.call(box.querySelectorAll('[data-tbdm]'), function(el){
+    el.onclick=function(){
+      var n=el.getAttribute('data-tbdm');
+      var pr=parseDocFname(n, Date.now());
+      if(!pr.ok){ /* 文件名没带日期尾数的补今天月日再来一次（照v0.10.0全入口补日期规矩） */
+        var nd0=new Date(); var nm0=(nd0.getMonth()+1<10?'0':'')+(nd0.getMonth()+1)+(nd0.getDate()<10?'0':'')+nd0.getDate();
+        var mext0=n.match(/\.(txt|pdf)$/i);
+        if(mext0) pr=parseDocFname(n.replace(/\.(txt|pdf)$/i,'')+nm0+mext0[0], Date.now());
+      }
+      if(pr.ok){
+        try{ localStorage.setItem('hx_gj_curpt', pr.pkey); }catch(e){} /* 照1495行写法记当前病人 */
+        tbRender(); ov.remove();
+        toast('当前病人：'+pr.pkey);
+      }else{
+        toast('这份还认不出是哪位病人，请先收进病历库或手动起名', 4000);
+      }
+    };
+  });
+  ov.appendChild(box);
+  document.body.appendChild(ov);
 }
 
 (function initFolds(){
@@ -5583,6 +5809,7 @@ function dsm_aboutInfo() {
         '• 智能脱敏：姓名+职称、医院、身份证等\n' +
         '• 排除词功能：解决"平素体健"误脱敏\n' +
         '• AI提示词模板：排除词/职称/医院\n' +
+        '• v0.25.0：速记四连——脱敏间加「📥 拉测试病历」（云端仓拉两份进脱敏间，没钥匙/没网会明说）和「📁本地病历夹」（库里病历勾选回炉重脱敏，库里的不动）；拿不准浮层加「✅是病人」（填床号/姓/诊断就收件进库）；工具箱加「选择病人▾」（名册病人/脱敏间文件两区点选当前病人，名册里点病人行也算选中）；\n' +
         '• v0.24.0：AI面板试点——🏥浮标→「🤖AI」统一入口，两层结构（功能→提示词套/开始），脱敏间展开时本页功能置顶；原AI按钮改为唤起面板定位（公共件不在时照旧直跑）；面板底部「＋加AI功能」可自建问答式小功能；\n' +
         '• v0.23.0：收编公共件hx-common.js——钥匙统一HX.keys（写Key只写hx_apikey）、速记改HX.sj一行接入（「补充上一条」照留，hx-common v0.1.1 extraBtn补回）、账本改HX.bill；公共件没装上时主功能照常，只速记浮标静默降级；\n' +
         '• v0.22.0：全鱼骨头收尾——紫色AI大钮变普通文字行（挂号#55销号）、工具箱链接去边框、问AI三钮改一行一行；\n' +
