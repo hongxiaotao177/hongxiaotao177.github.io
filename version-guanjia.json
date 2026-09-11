@@ -1,1 +1,1 @@
-{"version": "0.23.0", "dl": "software-guanjia.html", "note": "公共件收编：hx-common.js接入，补充上一条钮保留(hx-common v0.1.1)", "engine": "guanjia-pdf-engine.js"}
+{"version": "0.24.0", "dl": "software-guanjia.html", "note": "AI面板试点：HX.ai统一入口两层面板+生成器（hx-common v0.2.0）", "engine": "guanjia-pdf-engine.js"}
