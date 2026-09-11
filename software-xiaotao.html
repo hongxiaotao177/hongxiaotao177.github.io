@@ -232,6 +232,8 @@ window.addEventListener('load', function(){
   details.card summary::before { content: '▸ '; color: #b5aa9c; }
   details.card[open] summary::before { content: '▾ '; }
   details.card:not([open]) { padding-bottom: 14px; }
+  /* v0.8.1 修笔记行溢出：details收起时summary以外的子内容真实隐藏（原生details的隐藏被自定义样式冲掉，noteList溢出盖住下方设置卡挡点击，hit-test实证） */
+  details.card:not([open]) > :not(summary) { display: none; }
   details.card > summary { margin-bottom: 0; }
   details.card[open] > summary { margin-bottom: 10px; }
   .note-row { padding: 10px 4px; border-bottom: 1px dashed #eee4d4; cursor: pointer;
@@ -485,7 +487,7 @@ window.addEventListener('load', function(){
     <summary>📋 关于 / Obsidian 搬家说明</summary>
     <div class="kv" style="margin-top:6px;">
       <b style="color:#4a7c59;">📌 本软件为新版正房（学习笔记双链版已留档，功能并入本软件）。</b><br>
-      <b>版本：</b>v0.7.0（2026-09-11）收编公共件hx-common+AI统一面板（🏥浮标→🤖AI两层面板），速记「补充上一条」照留<br><b>上一版：</b>v0.6.2（2026-09-11）切片断根修：断点续切（切到一半接着切不重来）、本地连败自动送云端机器人代办（关软件也切）、云端切好自动取回、💰切片账本（每本书花了多少）、速记「补充上一条」<br><b>上一版：</b>v0.6.0（2026-09-10）鱼骨头化：「✨ 新建笔记」收进一条折叠行，张开后🤖AI帮我学/✍️自己手写是两条文字行（只动版面，功能没变）<br><b>上一版：</b>v0.5.3 速记自动上行：记下的东西自动到网上，AI接班自己看<br><br>
+      <b>版本：</b>v0.8.1（2026-09-11）收信断根修：大管家的信不再被静默吞（收不进就原样保留），修「我的笔记」收起时笔记行溢出挡点击<br><b>上一版：</b>v0.8.0（2026-09-11）信息流通三连：点亮出题可📮寄到习题学习、大管家回程票（?from=guanjia亮顶条）、开门自动收大管家寄来的信存成笔记<br><b>上一版：</b>v0.7.0（2026-09-11）收编公共件hx-common+AI统一面板（🏥浮标→🤖AI两层面板），速记「补充上一条」照留<br><b>上一版：</b>v0.6.2（2026-09-11）切片断根修：断点续切（切到一半接着切不重来）、本地连败自动送云端机器人代办（关软件也切）、云端切好自动取回、💰切片账本（每本书花了多少）、速记「补充上一条」<br><b>上一版：</b>v0.6.0（2026-09-10）鱼骨头化：「✨ 新建笔记」收进一条折叠行，张开后🤖AI帮我学/✍️自己手写是两条文字行（只动版面，功能没变）<br><b>上一版：</b>v0.5.3 速记自动上行：记下的东西自动到网上，AI接班自己看<br><br>
       <b>⭐ 头一条铁律（Obsidian 搬家）：</b>小涛笔记里所有内容的<b>真身是标准 Markdown 文件</b>，
       全部存在 GitHub 仓库的 <b>vault/</b> 区——那就是一座现成的 Obsidian 仓库。<br>
       <b>搬家方法：</b>把仓库里 vault/ 文件夹下载到电脑/手机（或坚果云同步它），
@@ -671,7 +673,7 @@ window.addEventListener('load', function(){
 (function(){
 __bc('D脚本启动');
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.7.0' /* 收编公共件+AI面板 v0.7.0 2026-09-11（照大管家v0.23.0/0.24.0已验证先例）：内嵌速记snippet整块退役改HX.sj一行接入（「补充上一条」extraBtn照留不退役，自动上行HX.sj自带）+AI_MANIFEST 7条接HX.ai统一面板（AI帮我学/问资料/重切/重写总结/送云端代办/AI改笔记/点亮菜单，run全指现有按钮本体未动）；hx-common不在时主功能照常、速记/AI静默降级 */ /* 切片断根修 v0.6.2 2026-09-11（洪老师拍板"一项一项完成"，挂号#63/#64/#65/#66）：
+var SW_VERSION = '0.8.1' /* 收信断根修+details溢出修 v0.8.1 2026-09-11（tester实证两案，只动2处其余一行未动）：①D9b收信从页底独立script挪进主闭包启动流程（原块调不到主IIFE的loadNotes/saveNotes/uid/strHash/vaultQueue，ReferenceError被try/catch吞掉→toast不亮、笔记没存、inbox却被清成[]，数据丢失级）；并立军规=全部存成功才清空xt_inbox_v1，任何一步失败inbox原样保留下回再收 ②首页「📚我的笔记」details收起时noteList仍渲染溢出盖住下方设置卡挡点击（hit-test实证），修=CSS一行details.card:not([open])>:not(summary)真隐藏 */ /* 信息流通普查断点三连 v0.8.0 2026-09-11（只动3处其余一行未动）：①D5点亮→出题结果页加第4钮「📮寄到习题学习」——题目文本按software-xiti.html收信端格式（单个对象{title,text}）写localStorage xitixuexi_inbox，打开习题自动收；②D6c大管家回程票（照抄血气v0.12.0现成写法）：?from=guanjia亮顶条「← 返回大管家」（文件名自适应software-前缀规矩），?pt=顺手写hx_gj_curpt（全家统一记号，血气v0.16.0先例）；③D9b开门收大管家的信：读xt_inbox_v1（数组[{title,text,pt,ts}]，大管家v0.27.0寄来）逐条存成笔记（照xt_notes_v1现有结构，标题加[病人名]前缀），收完清空写回[]，空则静默；无壳全try/catch不报错 */ /* 收编公共件+AI面板 v0.7.0 2026-09-11（照大管家v0.23.0/0.24.0已验证先例）：内嵌速记snippet整块退役改HX.sj一行接入（「补充上一条」extraBtn照留不退役，自动上行HX.sj自带）+AI_MANIFEST 7条接HX.ai统一面板（AI帮我学/问资料/重切/重写总结/送云端代办/AI改笔记/点亮菜单，run全指现有按钮本体未动）；hx-common不在时主功能照常、速记/AI静默降级 */ /* 切片断根修 v0.6.2 2026-09-11（洪老师拍板"一项一项完成"，挂号#63/#64/#65/#66）：
    ①#66断点续切：AI切到一半的书记着批次进度（sliceBatch），中断后续切不从头——病根=此前任何中断都整本重切、钱全白花，几本书一个月切不完就是它；
      粗切完成的书换AI重切仍整本重来（旧块全换），手动「重新AI切片」照旧全量；
    ②#63自动化：巡逻失败"当天不再碰"改退避2小时再试（网络抖一下不再废一天）；本地连败2次的书自动送云端代办（GitHub Actions机器人切，关掉软件它也切）；
@@ -2963,6 +2965,36 @@ billRender();
 renderList();
 renderLib();
 renderBooks();
+/* v0.8.1 D9b 收大管家的信（修v0.8.0静默吞信：原页底独立script块调不到本闭包的loadNotes/saveNotes，挪进主闭包；
+   军规：全部存成功才清空xt_inbox_v1，任何一步失败保留inbox不吞信）：
+   开门读 xt_inbox_v1（数组，元素{title,text,pt,ts}，大管家v0.27.0寄来），非空逐条存成笔记
+   （照xt_notes_v1现有结构，标题前加[病人名]前缀若有pt），收完清空写回[]；空则静默。无壳全try/catch不报错 */
+function gjInboxCheck(){
+  var raw;
+  try{ raw = localStorage.getItem('xt_inbox_v1'); }catch(e){ return; }
+  if(!raw) return;
+  var box;
+  try{ box = JSON.parse(raw); }catch(e){ box = null; }
+  if(!box || !box.length) return;
+  try{
+    var notes = loadNotes();
+    var got = 0;
+    box.forEach(function(it){
+      if(!it || !it.text) return;
+      var t = (it.pt ? '[' + it.pt + ']' : '') + (it.title || '大管家来信');
+      var nn = { id: uid(), title: t, content: it.text, createdAt: it.ts || Date.now(), updatedAt: Date.now(), fp: '' };
+      nn.fp = strHash(nn.content);
+      notes.unshift(nn); vaultQueue(nn);
+      got++;
+    });
+    if(!got) return; /* 全是空信封：不动inbox，留到下回 */
+    saveNotes(notes); /* 一次性落盘，抛错则inbox保留 */
+    try{ localStorage.setItem('xt_inbox_v1', '[]'); }catch(e){}
+    renderList();
+    toast('📮 收到大管家寄来' + got + '份', 3500);
+  }catch(e){ /* 存失败：inbox原样保留，下回开门再收 */ }
+}
+gjInboxCheck();
 if($('libBox').open) patrolKick();   /* v0.3.28：开屏时资料库若开着，直接巡逻 */
 /* v0.3.18 静物实验：取消开屏自动自检。铁律对照——浏览器里upd条从未弹出→从不空白；
    壳里每次空白都在upd条弹出后几秒。条改浮条只断了"推挤"，没断"界面变化"这个扳机。
@@ -3550,6 +3582,17 @@ function glowResult(txt){
     });
     row.appendChild(bp);
   }
+  if(glowOpt.id === 'quiz'){
+    /* v0.8.0 D5 寄到习题学习：格式照 software-xiti.html ghCheckInbox 收信端（单个对象，必带.text可带.title，启动时收） */
+    var bx = glowEl('button', 'gl-btn', '📮 寄到习题学习');
+    bx.addEventListener('click', function(){
+      try{
+        localStorage.setItem('xitixuexi_inbox', JSON.stringify({ title: '点亮出题·' + glowSel.slice(0, 18).replace(/\n/g, ' '), text: txt }));
+        toast('📮 已寄到习题学习，打开习题自动收', 3000);
+      }catch(e){}
+    });
+    row.appendChild(bx);
+  }
   var re = glowEl('button', 'gl-btn', '✏️ 再改一次');
   re.addEventListener('click', function(){ glowLevel = 3; glowRender(); });
   var xx = glowEl('button', 'gl-btn', '✕ 关闭');
@@ -3594,6 +3637,35 @@ document.addEventListener('selectionchange', function(){
 });
 })();
 </script>
+
+<!-- v0.8.0 D6c 大管家回程票：从病人大管家点过来（?from=guanjia&pt=病人名）时亮顶条，「← 返回大管家」一键回家；?pt=顺手写hx_gj_curpt（全家统一记号）。整段照抄血气v0.12.0现成写法；不带参数正常打开零影响 -->
+<script>
+(function(){
+  try{
+    var q=new URLSearchParams(location.search||'');
+    if(q.get('from')!=='guanjia') return;
+    var GJ_PT=q.get('pt')||'';
+    if(GJ_PT){ try{ localStorage.setItem('hx_gj_curpt', GJ_PT); }catch(e){} }
+    var repo=(location.pathname.split('/').pop()||'').indexOf('software-')===0;
+    var back=repo?'software-guanjia.html':'病人大管家.html';
+    var bar=document.createElement('div');
+    bar.id='gjBar';
+    bar.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#fdf9f3;border-bottom:1px solid #e5ddd0;padding:7px 10px;font-size:13px;display:flex;align-items:center;gap:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);';
+    var a=document.createElement('a');
+    a.href=back; a.textContent='← 返回大管家';
+    a.style.cssText='color:#7a5c3e;font-weight:bold;text-decoration:none;white-space:nowrap;';
+    var sp=document.createElement('span');
+    sp.style.cssText='color:#8a8178;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+    sp.textContent=GJ_PT?('🏥 当前病人：'+GJ_PT):'🏥 大管家模式';
+    bar.appendChild(a); bar.appendChild(sp);
+    document.body.appendChild(bar);
+    document.body.style.paddingTop='36px';
+  }catch(e){}
+})();
+</script>
+
+<!-- v0.8.0 D9b 收大管家的信：开门读 xt_inbox_v1（数组，元素{title,text,pt,ts}，大管家v0.27.0寄来），非空逐条存成笔记（照xt_notes_v1现有结构，标题前加[病人名]前缀若有pt），收完清空写回[]；空则静默。无壳全try/catch不报错 -->
+<!-- v0.8.1 D9b收信挪进主闭包（原v0.8.0页底独立script调不到主IIFE里的loadNotes/saveNotes等，ReferenceError被try/catch吞掉、信被静默吞；现挪进主脚本启动流程，见「v0.8.1 D9b」注释处） -->
 
 </body>
 </html>
