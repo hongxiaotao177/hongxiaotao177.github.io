@@ -4,6 +4,11 @@
  文件桥 —— AI 与手机文件夹之间的桥（单文件 HTML，第三个协同软件）
 ====================================================================
  修改记录：
+   v1.6.0 (2026-09-11) 断点D10「拿不准」可见（照信息流通普查_2026-09-11.md，只改这一条其他一行未动）：
+        主页向导卡下加一行小字（.hint 风格，照鱼骨头版面）：读 localStorage hx_gj_unsure_v1（数组，大管家登记），
+        非空则显示「❓大管家拿不准X份（点我去处理）」，点了跳大管家——文件名自适应照全家规矩：
+        仓/公开站（文件名 software- 开头）跳 software-guanjia.html，壳内/桌面跳 病人大管家.html；
+        空或读不到整行不显示；全走 localStorage 同源共享，无壳也照查不报错。开门查一次+闲时3秒再查一次。
    v1.5.0 (2026-09-10) 公共件收编（plan2 军规：钥匙统一+收公共块+不崩溃压倒一切）：
         ①新增 hx-common.js 三级加载器（壳readFile授权文件夹→同目录fetch 8秒超时→公开仓raw下载后写壳安装），
           missing 只降级提示，绝不白屏；
@@ -236,6 +241,9 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
     <div class="hint">补齐后本卡自动消失。Token 在坚果云：学习文件 → AI → 我设计的软件 → github token my own software.txt</div>
   </div>
 
+  <!-- v1.6.0 断点D10「拿不准」可见：大管家 hx_gj_unsure_v1 非空才显示的一行小字，点了去大管家处理；空/读不到整行不显示 -->
+  <div class="hint" id="unsureLine" style="display:none;cursor:pointer;padding:4px 12px;"></div>
+
   <!-- v1.4.0 鱼骨头化：五张卡→五行折叠行（默认收起，开合记 hx_br_fold_*）；按钮全压文字行（id全保留） -->
   <!-- 文件夹 -->
   <div class="frow" id="rowFolder">
@@ -383,6 +391,7 @@ v1.0.1 2026-08-02 新增「❓ 使用说明」按钮（页面顶部）：弹窗�
       <p><b>打包搬家：</b>「📦 打包这个文件夹」→ 给自己（带随行配置卡，新手机一键导入Token，包别发别人）/ 给别人（干净软件）。</p>
       <p><b>换新手机：</b>解压包 → Chrome打开文件桥 → 授权文件夹 → 发现随行配置卡点一键导入 → 另外两个软件各点「从云端恢复」→ 完事。</p>
       <p><b>自检与更新：</b>每次打开自动检查线路和新版；有新版点「⬇️ 下载整套软件」，六个软件一起换新。</p>
+      <p class="hint">v1.6.0 新加：主页一行小字「❓大管家拿不准X份（点我去处理）」——大管家收文件时拿不准的份数会在这露脸，点它直接去大管家处理；没有拿不准的整行不显示。</p>
       <p class="hint">注意：只认 Chrome；文件夹授权只认你亲手点"允许"；Token存在浏览器里，换浏览器要重填。</p>
     </div>
 
@@ -477,7 +486,7 @@ function fmtTime(t){ return new Date(t).toLocaleString(); }
 
 /* ==================== GitHub 通信（移植学习笔记/习题学习同套） ==================== */
 var BR_GH_USER = 'br_gh_user', BR_GH_TOK = 'br_gh_tok', BR_GH_REPO = 'br_gh_repo', BR_GH_CHECK = 'br_gh_check';
-var SW_VERSION = window.SW_VERSION = '1.5.0'; /* 公共件收编 v1.5.0 2026-09-10：hx-common.js三级加载（missing只降级提示不白屏）；速记snippet删→HX.sj.init({app:'文件桥'})；内嵌19个gh函数族删→HX.gh.*（本件是母本，语义一致；b64/cmpVer留本机兜底，打包/主界面刷新不受影响）；ghSelfCheck删→HX.selfCheck('bridge',SW_VERSION)（黄条UI原样只换数据源）；云设置写钥匙只写hx_gh_*三样（hxSync镜像br_gh_*旧键不丢）；公共件没装上时GitHub搬运提示「公共件未装」、本地列表照常；AI往来/打包/坚果云直通车/向导/showDirectoryPicker一行未动 */ /* v1.4.0 2026-09-10 全鱼骨头化：五卡→五折叠行、大按钮全压文字行，纯版面 */ /* 速记自动上行 v1.3.3 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* 速记 v1.3.2 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */ /* v1.2.3补：挂window治第二个script块拿不到（ReferenceError被try静默吞，页头永远旧版字样） */ /* v1.2.2 版本字样治病根：头顶+标题代码自动填SW_VERSION（此前硬编码v1.2.0忘了跟） */ /* v1.2.1 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */ /* v1.2.3 主界面刷新免Token备用路+送上去全选 */
+var SW_VERSION = window.SW_VERSION = '1.6.0'; /* v1.6.0 2026-09-11 断点D10「拿不准」可见：主页一行小字读 hx_gj_unsure_v1，非空显示「❓大管家拿不准X份（点我去处理）」跳大管家（文件名自适应：仓/公开站 software-guanjia.html，壳内/桌面中文名），空或读不到不显示，无壳不报错；开门+闲时3秒各查一次（详见文件顶部修改记录） */ /* 公共件收编 v1.5.0 2026-09-10：hx-common.js三级加载（missing只降级提示不白屏）；速记snippet删→HX.sj.init({app:'文件桥'})；内嵌19个gh函数族删→HX.gh.*（本件是母本，语义一致；b64/cmpVer留本机兜底，打包/主界面刷新不受影响）；ghSelfCheck删→HX.selfCheck('bridge',SW_VERSION)（黄条UI原样只换数据源）；云设置写钥匙只写hx_gh_*三样（hxSync镜像br_gh_*旧键不丢）；公共件没装上时GitHub搬运提示「公共件未装」、本地列表照常；AI往来/打包/坚果云直通车/向导/showDirectoryPicker一行未动 */ /* v1.4.0 2026-09-10 全鱼骨头化：五卡→五折叠行、大按钮全压文字行，纯版面 */ /* 速记自动上行 v1.3.3 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* 速记 v1.3.2 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */ /* v1.2.3补：挂window治第二个script块拿不到（ReferenceError被try静默吞，页头永远旧版字样） */ /* v1.2.2 版本字样治病根：头顶+标题代码自动填SW_VERSION（此前硬编码v1.2.0忘了跟） */ /* v1.2.1 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */ /* v1.2.3 主界面刷新免Token备用路+送上去全选 */
 /* v1.1.2 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["br_gh_user", "hx_gh_user"], ["br_gh_tok", "hx_gh_tok"], ["br_gh_repo", "hx_gh_repo"]];
@@ -1363,6 +1372,29 @@ $('packCancel').addEventListener('click', function(){ $('packMask').classList.ad
 $('ghSave').addEventListener('click', ghSave);
 $('ghCheckBtn').addEventListener('click', function(){ ghSelfCheck(true); });
 $('ghDlAllBtn').addEventListener('click', ghDownloadAll);
+
+/* ==================== v1.6.0 断点D10「拿不准」可见 ====================
+   读 localStorage hx_gj_unsure_v1（数组，大管家登记，localStorage 同源共享、无壳也照查）：
+   非空显示一行小字「❓大管家拿不准X份（点我去处理）」，点了跳大管家；
+   文件名自适应照全家规矩（与 xiti/pai 回程票同款判法）：仓/公开站（本文件名 software- 开头）跳 software-guanjia.html，壳内/桌面跳 病人大管家.html；
+   空或读不到整行不显示，出错一律藏行不报错。开门查一次 + 闲时3秒再查一次（照 refreshFiles 3秒闲时同款）。 */
+function unsureTick(){
+  var el = $('unsureLine');
+  try{
+    var u = JSON.parse(localStorage.getItem('hx_gj_unsure_v1') || '[]');
+    var n = Array.isArray(u) ? u.length : 0;
+    if(n > 0){ el.textContent = '❓大管家拿不准' + n + '份（点我去处理）'; el.style.display = ''; }
+    else{ el.style.display = 'none'; }
+  }catch(e){ try{ el.style.display = 'none'; }catch(e2){} }
+}
+$('unsureLine').addEventListener('click', function(){
+  try{
+    var repo = (location.pathname.split('/').pop() || '').indexOf('software-') === 0;
+    location.href = repo ? 'software-guanjia.html' : '病人大管家.html';
+  }catch(e){}
+});
+unsureTick(); /* 开门查一次 */
+setTimeout(unsureTick, 3000); /* 闲时3秒再查一次 */
 
 /* ==================== v1.2.0 坚果云直通车（壳APP专属） ==================== */
 /* 网页JS直连坚果云WebDAV会被CORS拦（实测），所以三个动作(davList/davDown/davUp)都走壳的JS桥。
