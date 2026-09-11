@@ -365,6 +365,11 @@ window.addEventListener('load', function(){
       <button class="btn secondary" id="btnPatrolPause" style="padding:4px 10px; font-size:13px; margin-left:8px;">⏸ 暂停</button>
     </div>
     <div id="patrolHint" class="hint hidden" style="margin-top:6px;">🔑 未填Key，巡逻休息中</div>
+    <!-- v0.6.2 切片账本（#64 洪老师：哪本书切了几次/每次多少钱/浪费多少/累计多少，要清楚详细） -->
+    <details style="margin-top:6px;" id="sliceBillBox">
+      <summary style="font-size:14px;color:#8a6d1a;cursor:pointer;">💰 切片账本（每本书花了多少，点我看）</summary>
+      <div id="sliceBillList" style="font-size:13px;color:#6b6257;margin-top:6px;"></div>
+    </details>
     <input type="text" id="libSearch" placeholder="🔍 搜索资料名/摘要…" style="margin-top:8px;">
     <div id="libList"></div>
   </details>
@@ -472,7 +477,7 @@ window.addEventListener('load', function(){
     <button class="btn secondary" id="btnBillReset" style="font-size:13px; padding:6px 10px; margin-top:6px;">🧹 清空账本</button>
 
     <h2 style="margin-top:18px;">🤖 云端切片巡逻兵</h2>
-    <div class="kv">二期随资料库上线：每小时自动切云端工单，这里显示巡逻状态。</div>
+    <div class="kv">v0.6.2起已自动化：本地切不动（连败2次）的书自动送云端 todo/，GitHub Actions 机器人接手切（关掉软件它也切）；切好开门自动取回进书库。也可在书的详情页手动点「☁️ 送云端自动切 / 📥 取回切片」。</div>
   </details>
 
   <!-- 📋 关于 -->
@@ -480,7 +485,7 @@ window.addEventListener('load', function(){
     <summary>📋 关于 / Obsidian 搬家说明</summary>
     <div class="kv" style="margin-top:6px;">
       <b style="color:#4a7c59;">📌 本软件为新版正房（学习笔记双链版已留档，功能并入本软件）。</b><br>
-      <b>版本：</b>v0.6.0（2026-09-10）鱼骨头化：「✨ 新建笔记」收进一条折叠行，张开后🤖AI帮我学/✍️自己手写是两条文字行（只动版面，功能没变）<br><b>上一版：</b>v0.5.3 速记自动上行：记下的东西自动到网上，AI接班自己看<br><br>
+      <b>版本：</b>v0.6.2（2026-09-11）切片断根修：断点续切（切到一半接着切不重来）、本地连败自动送云端机器人代办（关软件也切）、云端切好自动取回、💰切片账本（每本书花了多少）、速记「补充上一条」<br><b>上一版：</b>v0.6.0（2026-09-10）鱼骨头化：「✨ 新建笔记」收进一条折叠行，张开后🤖AI帮我学/✍️自己手写是两条文字行（只动版面，功能没变）<br><b>上一版：</b>v0.5.3 速记自动上行：记下的东西自动到网上，AI接班自己看<br><br>
       <b>⭐ 头一条铁律（Obsidian 搬家）：</b>小涛笔记里所有内容的<b>真身是标准 Markdown 文件</b>，
       全部存在 GitHub 仓库的 <b>vault/</b> 区——那就是一座现成的 Obsidian 仓库。<br>
       <b>搬家方法：</b>把仓库里 vault/ 文件夹下载到电脑/手机（或坚果云同步它），
@@ -666,7 +671,14 @@ window.addEventListener('load', function(){
 (function(){
 __bc('D脚本启动');
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.6.1' /* v0.6.1 2026-09-10晚班⑦纠正：留档标注搞反，本软件才是新版正房，标注纠正（功能零改动） */; /* 鱼骨头化总攻 v0.6.0 2026-09-10：新建笔记卡双大钮收进一条details折叠行，张开后两条文字行，纯版面，功能零改动 */ /* 速记自动上行 v0.5.3 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* 速记 v0.5.2 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */ /* v0.5.1 提示词配置搬家全家公用钥匙：点亮三级菜单的提示词从 xt_glow_v1 迁到 hx_glow_v1 的 xiaotao 分支（与大管家共用一把钥匙、各存各的分支互不踩）；读取顺序 hx_glow_v1.xiaotao→旧xt_glow_v1搬家（旧钥匙保留不删）→默认三套；其余一行未动 */ /* v0.5.0 点亮三级菜单：点亮切块/笔记正文→底部浮条5选项（变笔记/问AI/做新PPT/出题/自定义）→每选项3套提示词→可编辑发送；提示词存xt_glow_v1可随时改；做PPT走ppt_inbox邮路寄PPT工坊；变笔记可一键存笔记（洪老师2026-09-06晚拍板，提示词AI先编三套待调） */ /* v0.4.1 排版修复：资料库列表「自动切失败」报错条从右栏搬出单独占一行，书名不再被挤成一字一行（洪老师真机截图报案）；纯排版，切片逻辑未动 */ /* v0.4.0 鱼骨头化：ⓘ说明默认收起 + 设置/关于收进「🛠 设置与工具」抽屉（hx_xiaotao_tool_open），照管家v0.5.0样板；纯界面，功能逻辑未动 */ /* v0.3.32 账本桥进全家hx_aibill（主界面💰卡片汇总） */ /* v0.3.31 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */
+var SW_VERSION = '0.6.2' /* 切片断根修 v0.6.2 2026-09-11（洪老师拍板"一项一项完成"，挂号#63/#64/#65/#66）：
+   ①#66断点续切：AI切到一半的书记着批次进度（sliceBatch），中断后续切不从头——病根=此前任何中断都整本重切、钱全白花，几本书一个月切不完就是它；
+     粗切完成的书换AI重切仍整本重来（旧块全换），手动「重新AI切片」照旧全量；
+   ②#63自动化：巡逻失败"当天不再碰"改退避2小时再试（网络抖一下不再废一天）；本地连败2次的书自动送云端代办（GitHub Actions机器人切，关掉软件它也切）；
+     开门/开书库自动取回云端切好的结果（两本8月切好的书躺仓里一个月没人取，也是"没切完"病根之一）；
+   ③#64切片账本：书库加「💰切片账本」折叠行——每本书AI趟数/约多少钱/状态（切成/粗切浪费/切到一半/云端代办）+累计；
+   ④#65速记加「补充上一条」钮（抄大管家#43：话接到速记流水最后一行末尾，不开新行）；
+   ⑤云端巡逻兵设置区占位文案改实况说明。只动上述各处，其余一行未动 */ /* v0.6.1 2026-09-10晚班⑦纠正：留档标注搞反，本软件才是新版正房，标注纠正（功能零改动） */; /* 鱼骨头化总攻 v0.6.0 2026-09-10：新建笔记卡双大钮收进一条details折叠行，张开后两条文字行，纯版面，功能零改动 */ /* 速记自动上行 v0.5.3 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* 速记 v0.5.2 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */ /* v0.5.1 提示词配置搬家全家公用钥匙：点亮三级菜单的提示词从 xt_glow_v1 迁到 hx_glow_v1 的 xiaotao 分支（与大管家共用一把钥匙、各存各的分支互不踩）；读取顺序 hx_glow_v1.xiaotao→旧xt_glow_v1搬家（旧钥匙保留不删）→默认三套；其余一行未动 */ /* v0.5.0 点亮三级菜单：点亮切块/笔记正文→底部浮条5选项（变笔记/问AI/做新PPT/出题/自定义）→每选项3套提示词→可编辑发送；提示词存xt_glow_v1可随时改；做PPT走ppt_inbox邮路寄PPT工坊；变笔记可一键存笔记（洪老师2026-09-06晚拍板，提示词AI先编三套待调） */ /* v0.4.1 排版修复：资料库列表「自动切失败」报错条从右栏搬出单独占一行，书名不再被挤成一字一行（洪老师真机截图报案）；纯排版，切片逻辑未动 */ /* v0.4.0 鱼骨头化：ⓘ说明默认收起 + 设置/关于收进「🛠 设置与工具」抽屉（hx_xiaotao_tool_open），照管家v0.5.0样板；纯界面，功能逻辑未动 */ /* v0.3.32 账本桥进全家hx_aibill（主界面💰卡片汇总） */ /* v0.3.31 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */
 
 /* ==================== 基础 ==================== */
 var toastTimer = null;
@@ -1797,11 +1809,20 @@ function sliceLibItem(libId, text){
   if(refAt >= 0){ paras = paras.slice(0, refAt); text = paras.join('\n'); }
   var batches = makeBatches(paras, 15000);   /* v0.3.0：6000→15000，批数砍掉一半多 */
   var hasKey = !!(localStorage.getItem('xt_apikey') || '').trim();
+  /* v0.6.2 断点续切（#66）：AI切到一半的书（非粗切+有批次进度+有切块）从上次批次接着切；
+     批次由 splitParas+makeBatches 对同一原文确定性生成，同一本书批次内容不变，续切安全 */
+  var _libX = loadLib(); var _itX = _libX.filter(function(x){ return x.id === libId; })[0];
+  var startBatch = 0;
   var allChunks = [];
+  if(_itX && !_itX.coarse && (_itX.sliceBatch|0) > 0 && (_itX.chunks||[]).length){
+    startBatch = _itX.sliceBatch|0;
+    allChunks = _itX.chunks.slice();
+  }
   var anyCoarse = false;
   var firstErr = '';
   var chain = Promise.resolve();
   batches.forEach(function(idxArr, bi){
+    if(bi < startBatch) return; /* v0.6.2 断点续切：已切的批跳过不重复花钱 */
     chain = chain.then(function(){
       libProg('✂️ 《' + (getLib(libId) || {}).title + '》切片中 第' + (bi + 1) + '批/共' + batches.length + '批…');
       var pr;
@@ -1826,6 +1847,7 @@ function sliceLibItem(libId, text){
           var lib = loadLib();
           var it = lib.filter(function(x){ return x.id === libId; })[0];
           if(it){ it.chunks = allChunks.slice(); it.coarse = anyCoarse;
+                  it.sliceBatch = bi + 1; /* v0.6.2 每批落盘进度，中断下回从这批续 */
                   it.lastErr = anyCoarse ? firstErr : ''; saveLib(lib); renderLib(); }
         });
       });
@@ -1843,6 +1865,8 @@ function sliceLibItem(libId, text){
     }
   }).then(function(){
     libProg('✅ 《' + (getLib(libId) || {}).title + '》入库完成');
+    var _l9 = loadLib(); var _i9 = _l9.filter(function(x){ return x.id === libId; })[0];
+    if(_i9){ _i9.sliceBatch = 0; saveLib(_l9); } /* v0.6.2 切完清断点 */
     /* v0.2.3：粗切过的书保留原文，方便网络好时「重新AI切片」；AI切成的才删原文 */
     var it = getLib(libId);
     if(it && it.coarse) return;
@@ -1884,7 +1908,7 @@ function patrolScan(){
   var today = patrolToday(), out = [];
   loadLib().forEach(function(x){
     if(x.cloud === 'sent') return;                              /* 云端代办中的书不碰 */
-    if(x.autoFail && x.autoTryDay === today) return;            /* 今天自动试过且败了，不纠缠 */
+    if(x.autoFailT && Date.now() - x.autoFailT < 7200000) return; /* v0.6.2：失败退避2小时再试（#63"不成功反复试"；原当天封杀太狠，网络抖一下就废一天） */
     if(libNeedSlice(x)) out.push({ id: x.id, title: x.title, kind: 'slice' });
     else if(libNeedBrief(x)) out.push({ id: x.id, title: x.title, kind: 'brief' });
   });
@@ -1901,7 +1925,85 @@ function patrolAwake(){
   /* 人还停在书库页才跑：资料库合上了/切后台了/翻开某本详情了，都先歇着 */
   return $('libBox').open && !document.hidden && $('libPage').classList.contains('hidden');
 }
+/* ═══ v0.6.2 云端代办自动化（#63 洪老师："就算把套件关了，能不能也自动完成"） ═══
+   两件套：①自动取回——cloud='sent'的书，开门/开书库时查 done/slice_{id}.json，切好了就自动拼装进库；
+   ②自动送——本地连败≥2次的书自动送云端 todo/（GitHub Actions机器人接手切，关掉软件它也切）。
+   复用现成小函数（ghGetFile/ghPutFile/splitParas/refStartPara/idbPut/loadLib），原按钮代码一行未动；
+   全程静默，成功才toast，失败下回再说。 */
+function cloudFetchApply(id, data){
+  /* 取回拼装（照 btnCloudFetch 同款校验：段落数对得上+粗切大块头不出厂） */
+  return libFullText(id).then(function(raw){
+    if(!raw) throw new Error('正文丢失');
+    var paras = splitParas(raw);
+    if(data.paras && data.paras !== paras.length) throw new Error('段落数对不上');
+    var badCoarse = 0;
+    (data.chunks || []).forEach(function(c){
+      if(String(c.title || '').indexOf('粗切') < 0) return;
+      if(paras.slice(c.from - 1, c.to).join('\n').length > 3000) badCoarse++;
+    });
+    if(data.bad || badCoarse) throw new Error('云端标了不合格');
+    var refAt = refStartPara(paras);
+    var goodChunks = (data.chunks || []).filter(function(c){ return refAt < 0 || (c.from | 0) < refAt + 1; });
+    return idbDelPrefix('chunks', id + '_').then(function(){
+      var chain = Promise.resolve();
+      goodChunks.forEach(function(c, i){
+        chain = chain.then(function(){ return idbPut('chunks', { id: id + '_' + (i + 1), text: paras.slice(c.from - 1, c.to).join('\n') }); });
+      });
+      return chain.then(function(){
+        var lib = loadLib(); var it = lib.filter(function(t){ return t.id === id; })[0];
+        if(it){
+          it.chunks = goodChunks.map(function(c, i){ return { ch: i + 1, title: c.title, summary: c.summary || '' }; });
+          it.coarse = !!data.coarse;
+          if(data.brief) it.brief = data.brief;
+          it.done = true; it.cloud = ''; it.sliceBatch = 0;
+          it.lastErr = data.coarse ? '云端部分批次 AI 没切成（粗切保底）' : '';
+          saveLib(lib);
+        }
+        return ghDelFile('done/slice_' + id + '.json', '切片已取回').catch(function(){}).then(function(){
+          return ghDelFile('done/status_' + id + '.json', '进度纸条已收').catch(function(){});
+        }).then(function(){
+          if(!data.coarse) return idbDelPrefix('kv', 'raw_' + id).catch(function(){});
+        });
+      });
+    });
+  });
+}
+function cloudAutoRound(){
+  try{
+    if(!window.LearnShell || !LearnShell.folderSet || !LearnShell.folderSet()) return;
+    var lib = loadLib();
+    /* ①自动取回：云端切好的拉回家 */
+    lib.forEach(function(x){
+      if(x.cloud !== 'sent') return;
+      ghGetFile('done/slice_' + x.id + '.json').then(function(res){
+        if(!res) return; /* 没切好：下回再看（进度纸条手动按钮照可查） */
+        try{
+          var data = JSON.parse(res);
+          cloudFetchApply(x.id, data).then(function(){
+            renderLib(); toast('☁️ 《' + x.title + '》云端切好了，已自动收进书库（' + (data.chunks||[]).length + ' 块）', 4000);
+          }).catch(function(){ /* 校验不过：留云端，详情页手动按钮会说明原因 */ });
+        }catch(e){}
+      }).catch(function(){});
+    });
+    /* ②自动送：本地连败≥2次的书送云端机器人（关软件也切） */
+    lib.forEach(function(x){
+      if(x.cloud === 'sent' || x.done) return;
+      if((x.localFails|0) < 2) return;
+      libFullText(x.id).then(function(raw){
+        if(!raw) return;
+        return ghPutFile('todo/slice_' + x.id + '.txt', raw, '云端代办切片（自动送）：' + x.title).then(function(){
+          return ghPutFile('todo/slice_' + x.id + '.meta.json', JSON.stringify({ id: x.id, title: x.title }), '切片说明');
+        }).then(function(){
+          var l2 = loadLib(); var it = l2.filter(function(t){ return t.id === x.id; })[0];
+          if(it){ it.cloud = 'sent'; it.localFails = 0; saveLib(l2); renderLib(); }
+          toast('☁️ 《' + x.title + '》本地总切不动，已送云端机器人代办——您关掉软件它也切，切好我自动收回来', 5000);
+        });
+      }).catch(function(){});
+    });
+  }catch(e){}
+}
 function patrolKick(){
+  try{ cloudAutoRound(); }catch(e){} /* v0.6.2 云端代办自动化：先取回再巡逻 */
   var hint = $('patrolHint');
   var hasKey = !!(localStorage.getItem('xt_apikey') || '').trim();
   if(!hasKey){ if(hint) hint.classList.remove('hidden'); patrolBar(''); return; }   /* 保险①：没Key不跑，书库照常显示 */
@@ -1929,8 +2031,11 @@ function patrolNext(){
     if(!raw) throw new Error('正文丢失，没法自动弄（点详情手动处理）');
     if(job.kind === 'slice'){
       var l2 = loadLib(); var it2 = l2.filter(function(x){ return x.id === job.id; })[0];
-      if(it2){ it2.chunks = []; it2.coarse = false; it2.done = false; saveLib(l2); }
-      return idbDelPrefix('chunks', job.id + '_').then(function(){
+      /* v0.6.2 断点续切：AI切到一半的书（非粗切+有批次进度）保留进度续切，不再清空从头来；
+         粗切的书要换AI重切才清空重来（旧块全换） */
+      var _resume = !!(it2 && !it2.coarse && (it2.sliceBatch|0) > 0 && (it2.chunks||[]).length);
+      if(it2 && !_resume){ it2.chunks = []; it2.sliceBatch = 0; it2.coarse = false; it2.done = false; saveLib(l2); }
+      return (_resume ? Promise.resolve() : idbDelPrefix('chunks', job.id + '_')).then(function(){
         return sliceLibItem(job.id, raw);
       }).then(function(){
         var after = getLib(job.id);
@@ -1943,10 +2048,10 @@ function patrolNext(){
     });
   }).then(function(){
     var l3 = loadLib(); var it3 = l3.filter(function(x){ return x.id === job.id; })[0];
-    if(it3){ it3.autoFail = ''; saveLib(l3); renderLib(); }
+    if(it3){ it3.autoFail = ''; it3.autoFailT = 0; it3.localFails = 0; saveLib(l3); renderLib(); } /* v0.6.2 成功清退避/连败 */
   }).catch(function(e){
     var l4 = loadLib(); var it4 = l4.filter(function(x){ return x.id === job.id; })[0];
-    if(it4){ it4.autoFail = aiErrText(e); saveLib(l4); renderLib(); }   /* 保险②：记台账，本次打开不再碰它 */
+    if(it4){ it4.autoFail = aiErrText(e); it4.autoFailT = Date.now(); it4.localFails = (it4.localFails|0)+1; saveLib(l4); renderLib(); }   /* 保险②+v0.6.2退避时间戳+连败计数（≥2次自动送云端） */
   }).then(function(){
     _patrol.i++;
     patrolNext();
@@ -1970,6 +2075,34 @@ document.addEventListener('visibilitychange', function(){
 });
 
 /* --- 资料列表 --- */
+/* v0.6.2 切片账本（#64）：按书聚合 xt_aibill_v1 的 byBook 账（每趟AI都带book标记），
+   列：书名/AI趟数/约多少钱/状态（切成✅/粗切⚠️=钱花了没切成，算浪费/切到一半⏳/云端代办☁️）+累计总计 */
+function sliceBillRender(){
+  var box = $('sliceBillList'); if(!box) return;
+  var b = bill(); var lib = loadLib();
+  var rows = [], totalY = 0, totalCalls = 0;
+  lib.forEach(function(x){
+    var acc = b.byBook[x.id];
+    if(!acc || !acc.calls) return;
+    var st = x.cloud === 'sent' ? '☁️云端代办中' :
+             x.done && !x.coarse ? '✅已切成' :
+             x.coarse ? '⚠️粗切（钱花了没切成，算浪费）' :
+             ((x.sliceBatch|0) > 0 ? '⏳切到一半（第' + x.sliceBatch + '批后断的，会接着切）' : '⏳待切');
+    rows.push('《' + esc(x.title) + '》：AI ' + acc.calls + ' 趟，约 ' + acc.yuan.toFixed(2) + ' 元　' + st);
+    totalY += acc.yuan; totalCalls += acc.calls;
+  });
+  /* 老书删了id对不上的账也列出来，钱不能没去向 */
+  var known = {}; lib.forEach(function(x){ known[x.id] = 1; });
+  Object.keys(b.byBook || {}).forEach(function(bk){
+    if(known[bk] || !b.byBook[bk].calls) return;
+    rows.push('（已删除的资料 ' + bk.slice(0, 8) + '…）：AI ' + b.byBook[bk].calls + ' 趟，约 ' + b.byBook[bk].yuan.toFixed(2) + ' 元');
+    totalY += b.byBook[bk].yuan; totalCalls += b.byBook[bk].calls;
+  });
+  var h = rows.length ? rows.join('<br>') : '还没有切片花费记录。';
+  h += '<br><b style="color:#8a6d1a;">累计：AI ' + (b.calls|0) + ' 趟，约 ' + billYuan(b).toFixed(2) + ' 元</b>' +
+       '<br><span style="font-size:12px;color:#a89f93;">金额为按模型刊例价估算（这是低估，实际可能更高）；全书总账含问资料/写书等其他AI花费。</span>';
+  box.innerHTML = h;
+}
 function renderLib(){
   var lib = loadLib();
   var kw = ($('libSearch').value || '').trim().toLowerCase();
@@ -1979,6 +2112,7 @@ function renderLib(){
     return !kw || x.title.toLowerCase().indexOf(kw) >= 0 ||
       (x.chunks || []).some(function(c){ return (c.title + c.summary).toLowerCase().indexOf(kw) >= 0; });
   });
+  try{ sliceBillRender(); }catch(e){} /* v0.6.2 切片账本随书库刷新 */
   if(!list.length){ box.innerHTML = '<div class="hint">' + (lib.length ? '没搜到。' : '还没有资料，点上方「导入PDF」。') + '</div>'; return; }
   box.innerHTML = '';
   list.forEach(function(x){
@@ -3180,6 +3314,9 @@ window.__xt = { ensureJDB: ensureJDB, refTag: refTag, refSplitLocal: refSplitLoc
   openLib: openLib,
   /* v0.3.28 新挂钩：巡逻 + 账本 */
   patrolScan: patrolScan, patrolKick: patrolKick, patrolState: _patrol, libNeedSlice: libNeedSlice, libNeedBrief: libNeedBrief,
+  /* v0.6.2 新挂钩：断点续切/云端自动化/切片账本 */
+  sliceLibItem: sliceLibItem, libFullText: libFullText, getLib: getLib, loadLib: loadLib,
+  cloudAutoRound: cloudAutoRound, cloudFetchApply: cloudFetchApply, sliceBillRender: sliceBillRender,
   bill: bill, billYuan: billYuan, AI_PRICE: AI_PRICE, AI_PREFER: AI_PREFER, callAI: callAI, aiBookCtx: aiBookCtx,
   /* v0.3.30 新挂钩：我的书 */
   loadBooks: loadBooks, saveBooks: saveBooks, getBook: getBook, parseToc: parseToc, bookCreate: bookCreate,
@@ -3411,7 +3548,7 @@ document.addEventListener('selectionchange', function(){
 <div id="hxSjDot" title="速记">🏥</div>
 <div id="hxSjPanel">
   <textarea id="hxSjText" placeholder="发现啥毛病，写一句…"></textarea>
-  <div class="hxSjBtns"><button id="hxSjSave" type="button">记下</button><button id="hxSjClose" type="button">关上</button></div>
+  <div class="hxSjBtns"><button id="hxSjSave" type="button">记下</button><button id="hxSjAppend" type="button" style="background:#b8925a;color:#fff;">补充上一条</button><button id="hxSjClose" type="button">关上</button></div> <!-- v0.6.2 #65：补充上一条（洪老师速记09:11） -->
   <div id="hxSjHint">浏览器里存不了，请在手机壳里用</div>
 </div>
 <div id="hxSjToast"></div>
@@ -3468,10 +3605,26 @@ document.addEventListener('selectionchange', function(){
       try{ sjUpload(); }catch(e){} /* 速记自动上行：本地存成后顺手推上网，失败静默下回补 */
     }catch(e){ sjToast('没存成：'+e.message); }
   }
+  /* v0.6.2 #65 补充上一条（洪老师速记09:11"应该可以选择打开上一个记录，然后补充"；抄大管家#43逻辑）：把话接到速记流水最后一行末尾，不开新行 */
+  function appendLast(){
+    var ta=$('hxSjText'); var v=(ta.value||'').replace(/^\s+|\s+$/g,'');
+    if(!v){ sjToast('先写一句再补'); return; }
+    if(!bridged()){ $('hxSjHint').style.display='block'; sjToast('请在手机壳里用'); return; }
+    var old='';
+    try{ var b=LearnShell.readFile('速记流水.txt'); if(b) old=b64d(b); }catch(e){ old=''; }
+    if(!old){ save(); return; } /* 还没有上一条，就当新的一条记 */
+    var neu=old.replace(/\n+$/,'')+v+'\n';
+    try{
+      LearnShell.writeFile('速记流水.txt', b64e(neu));
+      sjToast('已补到上一条'); ta.value=''; $('hxSjPanel').style.display='none';
+      try{ sjUpload(); }catch(e){}
+    }catch(e){ sjToast('没存成：'+e.message); }
+  }
   function init(){
     var dot=$('hxSjDot'); if(!dot) return;
     dot.addEventListener('click', openPanel);
     $('hxSjSave').addEventListener('click', save);
+    if($('hxSjAppend')) $('hxSjAppend').addEventListener('click', appendLast); /* v0.6.2 #65 */
     $('hxSjClose').addEventListener('click', function(){ $('hxSjPanel').style.display='none'; });
     setTimeout(function(){ try{ sjUpload(); }catch(e){} }, 8000); /* 速记自动上行：开门闲时对账补推（上次没网漏的在这补） */
   }
