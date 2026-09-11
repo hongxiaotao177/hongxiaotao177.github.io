@@ -1,6 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    hx-common.js —— 全家9件软件共用公共件母版
    HX_COMMON_VERSION = '0.2.0'（2026-09-10 plan2 军规：钥匙统一+收公共块+不崩溃压倒一切）
+   v0.3.0 2026-09-11：部件自升级HX.selfUp（洪老师拍板彻底治"壳内部件不更新"病根：开门闲时比对云端version-hx-common.json，旧了静默下载新版写回授权文件夹，下次开门生效；全程不弹窗，没壳/没网跳过）；其余一行未动
    v0.2.0 2026-09-11：新增HX.ai统一AI面板（两层结构+定位置顶+AI功能生成器，洪老师2026-09-11拍板方法论落地试点）；HX.sj面板加「🤖AI」入口钮；其余一行未动
 
    收编四样+账本（AI底座不收）：
@@ -22,7 +23,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 (function(){
   'use strict';
-  var HX_COMMON_VERSION = '0.2.0'; /* v0.2.0 2026-09-11：新增HX.ai统一AI面板（两层结构+定位置顶+AI功能生成器，洪老师2026-09-11拍板方法论落地试点）；HX.sj面板加「🤖AI」入口钮；其余一行未动 */ /* v0.1.1 2026-09-10：HX.sj.init 加可选 extraBtn（大管家#43「补充上一条」补回，洪老师点名功能）；不传仍是2钮版，默认行为不变 */
+  var HX_COMMON_VERSION = '0.3.0'; /* v0.3.0 2026-09-11：部件自升级HX.selfUp（病根：壳里旧版公共件永远不升级→AI面板等新功能装了也白装；开门闲时20秒比对云端version-hx-common.json，旧了静默下载写回授权文件夹，下次开门用新的，全程不弹窗） */ /* v0.2.0 2026-09-11：新增HX.ai统一AI面板（两层结构+定位置顶+AI功能生成器，洪老师2026-09-11拍板方法论落地试点）；HX.sj面板加「🤖AI」入口钮；其余一行未动 */ /* v0.1.1 2026-09-10：HX.sj.init 加可选 extraBtn（大管家#43「补充上一条」补回，洪老师点名功能）；不传仍是2钮版，默认行为不变 */
   if(window.HX && window.HX.HX_COMMON_VERSION){ return; } /* 已装过不重复装 */
   var HX = { HX_COMMON_VERSION: HX_COMMON_VERSION, ok: true };
   function warn(m){ try{ if(window.console && console.warn) console.warn('[hx-common] '+m); }catch(e){} }
@@ -660,6 +661,40 @@
     "}"
   ].join('\n');
 
+  /* ════ 8. 部件自升级 HX.selfUp（v0.3.0 2026-09-11 洪老师拍板彻底治"壳内部件不更新"病根） ════
+     病根：三级加载器"壳里有就用"不查新旧，壳内旧版公共件用到天荒地老（AI面板事故真凶）。
+     治法：开门闲时（约20秒）读云端 version-hx-common.json 比对 HX_COMMON_VERSION，
+     旧了→静默下载新版js→写回壳授权文件夹 hx-common.js，下次开门自动用新的。
+     全程静默不弹窗；没壳/没网/下载内容不像本体一律跳过不写，绝不影响任何功能（军规1）。 */
+  HX.selfUp = function(){
+    try{
+      if(!window.LearnShell || !LearnShell.folderSet || !LearnShell.folderSet()) return; /* 浏览器里没处写，跳过 */
+      setTimeout(function(){
+        try{
+          fetch('https://hongxiaotao177.github.io/version-hx-common.json?t='+Date.now(), {cache:'no-store'}).then(function(r){
+            if(!r.ok) throw new Error('HTTP '+r.status); return r.json();
+          }).then(function(j){
+            try{
+              if(!j || !j.version) return;
+              if(HX.cmpVer(j.version, HX_COMMON_VERSION) <= 0) return; /* 已是最新 */
+              fetch('https://hongxiaotao177.github.io/hx-common.js?t='+Date.now(), {cache:'no-store'}).then(function(r2){
+                if(!r2.ok) throw new Error('HTTP '+r2.status); return r2.text();
+              }).then(function(txt){
+                try{
+                  if(txt.indexOf('HX_COMMON_VERSION')<0) return; /* 下载内容不像本体，不写 */
+                  try{ var _old=LearnShell.readFile('hx-common.js'); if(_old) LearnShell.writeFile('hx-common_v'+HX_COMMON_VERSION+'.js', _old); }catch(e){} /* 盖新前旧版留档（备份规矩） */
+                  LearnShell.writeFile('hx-common.js', btoa(unescape(encodeURIComponent(txt))));
+                  try{ if(window.console && console.info) console.info('[hx-common] 已自动升级到 v'+j.version+'（写进文件夹，下次开门生效）'); }catch(e){}
+                }catch(e){}
+              }).catch(function(){});
+            }catch(e){}
+          }).catch(function(){});
+        }catch(e){}
+      }, 20000);
+    }catch(e){}
+  };
+
   window.HX = HX;
+  try{ HX.selfUp(); }catch(e){} /* v0.3.0：装完即排闲时自检自升级（内部全try，绝不出错） */
   try{ if(window.console && console.info) console.info('[hx-common] v'+HX_COMMON_VERSION+' 已装（keys/gh/sj/selfCheck/bill/ai）'); }catch(e){}
 })();
