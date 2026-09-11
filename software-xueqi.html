@@ -178,6 +178,7 @@
     v0.12.2 2026-09-10 速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。
     v0.12.1 2026-09-10 浮标速记入编（洪老师拍板方案A，全家9件同一套自包含snippet，详见SW_VERSION注释链）。
     v0.13.0 2026-09-10 首屏全鱼骨头化（洪老师拍板：只动版面不动功能）：首屏4个大按钮（📷拍照/🖼相册/📄查看记录/🫁呼吸机屏幕分析）压成4条纯文字行（▸，行高≥44px、整行可点、行距9px），点击行为与原按钮完全相同（id不变、JS一行未动）。
+    v0.15.0 2026-09-11 AI面板推广（大管家v0.24.0试点拍板方法论推广到全家）：①AI_MANIFEST 5条（发送AI解读/结果页追问/呼吸机屏幕分析/呼吸机发给AI/呼吸机追问，run全指现有按钮，功能本体一行未动） ②hxReady回调追加HX.ai.init（getSection辨step1~3=拍照解读/step4=结果页/ventPage=呼吸机；send走新加纯文本小通道aiPanelSend，只给面板「＋加AI功能」生成器用，不碰convo主对话链） ③5处原AI按钮handler首行插拦截行（HX.ai.ready()则唤起面板定位到对应条目，HX不在/面板未就绪放行原行为，降级=v0.14.0原样） ④版本号0.14.0→0.15.0。
     v0.14.0 2026-09-10 收公共块hx-common.js（plan2军规：钥匙统一+收公共块，不崩溃压倒一切）：①三级查找加载hx-common.js（壳readFile→同目录fetch8秒→公开仓下载写壳），没装上只有速记/云备份/版本自检降级提示"公共件未装"，拍照/裁剪/AI解读主流程照常不白屏 ②删内嵌速记snippet改HX.sj.init({app:'血气',getCtx:当前病人}) ③删内嵌22个gh函数族，云备份/恢复/下载新版改调HX.gh.* ④删内嵌自检改HX.selfCheck('xueqi',SW_VERSION)（API优先+免Token raw直链兜底） ⑤钥匙读取改HX.keys（hx_apikey→bg_apikey→xt_apikey；千问hx_qwenkey→bg_qwen_key），设置页写Key只写hx_apikey（旧键保留不删自然淘汰） ⑥账本删内嵌改HX.bill。step2裁剪/step3/4/呼吸机页/callAI一律未动。
         毛病：首屏4个大按钮像遥控器面板，60岁医生一屏全是方块；病根：没按小涛笔记范本的纯文字行。ⓘ说明/当前病人条/设置抽屉/step2~4/呼吸机页全不动；存储键名零改动。
 -->
@@ -259,7 +260,7 @@
 </style>
 </head>
 <body>
-<header><span>血气分析解读助手</span><span class="ver">v0.14.0</span></header>
+<header><span>血气分析解读助手</span><span class="ver">v0.15.0</span></header>
 <main>
 
   <!-- 第1步：首页 -->
@@ -1437,6 +1438,7 @@ async function runFirstSend(mode, statusEl, btn){
 }
 
 $("btnSend").onclick = async () => {
+  if(window.HX&&HX.ai&&HX.ai.ready&&HX.ai.ready()){ HX.ai.open('send'); return; } /* v0.15.0 AI面板唤起；HX不在放行原行为 */
   if(!croppedDataURL){ $("status").textContent = "没有裁剪后的图片。"; return; }
   pickPatient();  // 保存/发送时才确定病人标识
   let bg = $("bgInput").value.trim() || "未提供";
@@ -1489,6 +1491,7 @@ $("btnRetry4").onclick = () => quickRetry("modelQuick4", "update", $("retryStatu
 
 /* 追问：把新问题和完整对话链一起发回 */
 $("btnFollow").onclick = async () => {
+  if(window.HX&&HX.ai&&HX.ai.ready&&HX.ai.ready()){ HX.ai.open('follow'); return; } /* v0.15.0 AI面板唤起；HX不在放行原行为 */
   const q = $("followInput").value.trim();
   if(!q){ alert("请先输入追问内容"); return; }
   if(convo.length < 2){ alert("当前没有可追问的对话（旧记录若无图片无法追问）"); return; }
@@ -2076,7 +2079,7 @@ ghBindBtn($("ghConfNo"), function(){
    与学习笔记/习题学习/文件桥同款：读 version-xueqi.json 比对版本；
    壳APP里下载新版 = applyUpdate 自更新（重启生效）+ 授权文件夹存备份；
    浏览器里 = 普通下载。 */
-var SW_VERSION = "0.14.0" /* 收公共块hx-common.js v0.14.0 2026-09-10（plan2军规：钥匙统一+收公共块，不崩溃压倒一切）：三级加载hx-common.js，没装上只速记/云备份/自检降级提示"公共件未装"、主功能照常；删内嵌速记snippet改HX.sj.init（getCtx带当前病人）；删内嵌22个gh函数族云备份/恢复改HX.gh.*；删内嵌自检改HX.selfCheck('xueqi',SW_VERSION)；钥匙读取改HX.keys（hx→bg→xt fallback链覆盖，千问hx_qwenkey→bg_qwen_key），设置页写Key只写hx_apikey；账本改HX.bill。step2裁剪/step3/4/呼吸机页/callAI一律未动 */ /* 首屏全鱼骨头化 v0.13.0 2026-09-10：首屏4大按钮压成4条纯文字行（▸，行高≥44px整行可点，id不变JS零改动）；ⓘ说明/病人条/设置抽屉/二级页全不动，存储键名零改动 */ /* 速记自动上行 v0.12.2 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* 速记 v0.12.1 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */; /* v0.12.0 大管家回程票：从病人大管家点过来（?from=guanjia&pt=病人名）亮顶条「← 返回大管家」，且自动把该病人设为「当前病人」（setSelectedPatient），之后拍的血气/呼吸机记录自动挂他名下，大管家名册照旧自动归堆；不带参数打开零影响 */; /* v0.11.0 鱼骨头化：设置/备份等低频项收进「🛠 设置与工具」抽屉（hx_xueqi_tool_open），主卡说明改ⓘ收起；纯界面，功能逻辑未动（首段script保持原样） */ /* v0.10.15 hxIndexRefresh加免Token备用路（API/没Token自动走公开站直链，治主界面卡旧版静默失败；本页无toast浮层，提示保持静默） */
+var SW_VERSION = "0.15.0" /* AI面板推广 v0.15.0 2026-09-11：AI_MANIFEST 5条+HX.ai.init（send走新加纯文本小通道aiPanelSend，不碰convo主链）+5处按钮拦截行；拍照/裁剪/解读/呼吸机功能本体一行未动，HX不在降级=v0.14.0原样 */ /* 收公共块hx-common.js v0.14.0 2026-09-10（plan2军规：钥匙统一+收公共块，不崩溃压倒一切）：三级加载hx-common.js，没装上只速记/云备份/自检降级提示"公共件未装"、主功能照常；删内嵌速记snippet改HX.sj.init（getCtx带当前病人）；删内嵌22个gh函数族云备份/恢复改HX.gh.*；删内嵌自检改HX.selfCheck('xueqi',SW_VERSION)；钥匙读取改HX.keys（hx→bg→xt fallback链覆盖，千问hx_qwenkey→bg_qwen_key），设置页写Key只写hx_apikey；账本改HX.bill。step2裁剪/step3/4/呼吸机页/callAI一律未动 */ /* 首屏全鱼骨头化 v0.13.0 2026-09-10：首屏4大按钮压成4条纯文字行（▸，行高≥44px整行可点，id不变JS零改动）；ⓘ说明/病人条/设置抽屉/二级页全不动，存储键名零改动 */ /* 速记自动上行 v0.12.2 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* 速记 v0.12.1 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */; /* v0.12.0 大管家回程票：从病人大管家点过来（?from=guanjia&pt=病人名）亮顶条「← 返回大管家」，且自动把该病人设为「当前病人」（setSelectedPatient），之后拍的血气/呼吸机记录自动挂他名下，大管家名册照旧自动归堆；不带参数打开零影响 */; /* v0.11.0 鱼骨头化：设置/备份等低频项收进「🛠 设置与工具」抽屉（hx_xueqi_tool_open），主卡说明改ⓘ收起；纯界面，功能逻辑未动（首段script保持原样） */ /* v0.10.15 hxIndexRefresh加免Token备用路（API/没Token自动走公开站直链，治主界面卡旧版静默失败；本页无toast浮层，提示保持静默） */
 /* v0.10.2 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["bg_gh_user", "hx_gh_user"], ["bg_gh_tok", "hx_gh_tok"], ["bg_gh_repo", "hx_gh_repo"], ["bg_apikey", "hx_apikey"]];
@@ -2522,6 +2525,7 @@ $("ventBtnLayouts").onclick = () => {  /* v0.10.7 版面账本 */
 };
 
 $("ventBtnSend").onclick = async () => {
+  if(window.HX&&HX.ai&&HX.ai.ready&&HX.ai.ready()){ HX.ai.open('ventsend'); return; } /* v0.15.0 AI面板唤起；HX不在放行原行为 */
   const key = hxKeyGet(); /* v0.14.0 钥匙统一：HX.keys fallback链 */
   if(!ventCandidates("V").length){ $("ventStatus").textContent = "请先在首页「设置」里填 Kimi 或 通义千问 的 Key。"; return; }
   if(!ventShots.length){ $("ventStatus").textContent = "请先拍呼吸机屏幕。"; return; }
@@ -2703,6 +2707,7 @@ $("ventBtnAddShot").onclick = () => {
 };
 /* 追问 */
 $("ventBtnFollow").onclick = () => {
+  if(window.HX&&HX.ai&&HX.ai.ready&&HX.ai.ready()){ HX.ai.open('ventfollow'); return; } /* v0.15.0 AI面板唤起；HX不在放行原行为 */
   const q = $("ventFollowInput").value.trim();
   if(!q){ $("ventFollowStatus").textContent = "请先输入追问内容"; return; }
   ventConvo.push({ role: "user", content: q });
@@ -2752,6 +2757,7 @@ $("ventBtnToPpt").onclick = () => {
 };
 
 $("btnVent").onclick = () => {
+  if(window.HX&&HX.ai&&HX.ai.ready&&HX.ai.ready()){ HX.ai.open('vent'); return; } /* v0.15.0 AI面板唤起；HX不在放行原行为 */
   show("ventPage");
   $("ventPatientName").textContent = getSelectedPatient(); /* v0.10.8 与首页同一病人 */
   $("ventRouteInfo").textContent = ventRouteText(); /* v0.10.5 开场就告诉用户将用哪个AI */
@@ -2869,6 +2875,39 @@ function hxCommonInstall(good, miss){
     if(window.HX && window.HX.HX_COMMON_VERSION){ good(); } else { miss(); }
   }).catch(function(){ clearTimeout(_t); miss(); });
 }
+/* ══════════════ v0.15.0 AI面板推广（大管家v0.24.0试点拍板方法论推广）：AI_MANIFEST 5条，run全指现有按钮，功能本体一行未动 ══════════════
+   壳统一（hx-common HX.ai面板）芯自带（本清单）；面板只调run，不新造取数通道；HX不在时5处原按钮拦截行一律放行，降级=v0.14.0原行为 */
+var AI_MANIFEST=[
+  { id:'send', name:'发送给AI解读', icon:'🚀', section:'拍照解读', desc:'裁好图后发送首轮AI解读（step3发送钮同款）',
+    run:function(){ var b=document.getElementById('btnSend'); if(!b){ return; } b.click(); } },
+  { id:'follow', name:'结果页追问', icon:'💬', section:'结果页', desc:'对本次AI解读继续追问（多轮对话，图片不重发）',
+    run:function(){ try{ show('step4'); }catch(e){} var i=document.getElementById('followInput'); if(i){ i.focus(); } } },
+  { id:'vent', name:'呼吸机屏幕分析', icon:'🫁', section:'呼吸机', desc:'进呼吸机页拍屏幕给AI分析',
+    run:function(){ var b=document.getElementById('btnVent'); if(!b){ return; } b.click(); } },
+  { id:'ventsend', name:'呼吸机·发给AI分析', icon:'🚀', section:'呼吸机', desc:'拍好呼吸机屏幕后发送AI分析（呼吸机页发送钮同款）',
+    run:function(){ var b=document.getElementById('ventBtnSend'); if(!b){ return; } b.click(); } },
+  { id:'ventfollow', name:'呼吸机追问', icon:'💬', section:'呼吸机', desc:'对呼吸机分析结果继续追问',
+    run:function(){ try{ show('ventPage'); }catch(e){} var i=document.getElementById('ventFollowInput'); if(i){ i.focus(); } } }
+];
+/* v0.15.0 面板「＋加AI功能」生成器专用纯文本小通道：与主链callAI同API同模型同钥匙，但完全独立——不读不写convo/ventConvo，不记账目以外的任何状态；纯加法 */
+function aiPanelSend(sys, user, onOk, onErr){
+  try{
+    var key = hxKeyGet();
+    if(!key){ onErr('还没有API Key，先去首页设置里填一个'); return; }
+    fetch(API_URL, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+key },
+      body: JSON.stringify({ model:getModel(), messages:[ {role:'system',content:String(sys||'')}, {role:'user',content:String(user||'')} ], max_tokens:4096 })
+    }).then(function(r){ return r.json().then(function(d){ return {ok:r.ok, d:d}; }); }).then(function(res){
+      if(!res.ok){ onErr('调用失败 HTTP：'+JSON.stringify(res.d).slice(0,200)); return; }
+      var c = res.d.choices && res.d.choices[0] && res.d.choices[0].message && res.d.choices[0].message.content;
+      if(Array.isArray(c)) c = c.map(function(p){ return typeof p==='string'?p:(p&&p.text?p.text:''); }).join('');
+      if(!c){ onErr('AI返回了空内容'); return; }
+      try{ hxBillToast(hxBill('血气分析','面板自建功能',(String(sys||'')+String(user||'')).length,String(c).length,getModel(),0)); }catch(e){}
+      onOk(c);
+    }).catch(function(e){ onErr((e&&e.message)||e); });
+  }catch(e){ try{ onErr((e&&e.message)||e); }catch(e2){} }
+}
 /* 接入：ready里一行接速记（getCtx返回本软件当前病人，保持原速记带病人行为）；
    missing里只做降级提示——主功能（拍照/裁剪/AI解读）不摸HX、照常跑 */
 hxCommonLoad(function(){
@@ -2877,6 +2916,14 @@ hxCommonLoad(function(){
       try{ var p=getSelectedPatient(); return (p && p!=='未命名病人') ? '　病人:'+p : ''; }catch(e){ return ''; }
     }});
   }catch(e){}
+  /* v0.15.0 AI面板推广：hxReady回调追加HX.ai.init（原逻辑一行未动）；HX不在时本行不跑，5处按钮拦截行也放行，降级=v0.14.0原行为 */
+  try{ if(window.HX&&HX.ai) HX.ai.init({app:'血气', manifest:AI_MANIFEST,
+    getSection:function(){
+      try{ var v=document.getElementById('ventPage'); if(v&&!v.hidden) return '呼吸机'; }catch(e){}
+      try{ var s4=document.getElementById('step4'); if(s4&&!s4.hidden) return '结果页'; }catch(e){}
+      return '拍照解读';
+    },
+    send:function(sys,user,onOk,onErr){ aiPanelSend(sys,user,onOk,onErr); } }); }catch(e){}
 }, function(){
   try{ if(window.console && console.warn) console.warn('[hx-common] 公共件未装上：速记/云备份/版本自检降级，拍照/AI解读等主功能照常'); }catch(e){}
 });
