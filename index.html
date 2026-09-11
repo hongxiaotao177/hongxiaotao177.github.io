@@ -2,6 +2,13 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.14.0 2026-09-11 备份增量+版本区说人话（洪老师拍板，只动4处其余一行未动）：
+      ①顶部一排版本号改三句大白话：对完显示「✅三个仓库对过了全都一样/⚠️有X处对不上」、逐条点名谁对不上、
+        对不上给「🔧 点我补齐」按钮（走原检查新版本流程补齐），全对显示"什么都不用做"；原版本号小字收进<details>备查不删；
+      ②📤备份到坚果云改增量：localStorage账本hx_bkdav_ledger_v1记 文件名→{size,tail(末尾64字符)}，
+        备份前逐个readFile比对，完全一样的跳过不传，传成功的更新账本；
+      ③备份报告改人话「共X件，Y件没变跳过，Z件已传（❌失败W件）」，失败仍逐件列文件名；
+      ④升级留档件（名字带_v1.2.3.js/html/bak，v1.13.0起"盖新前旧件留档"产出，仓里已有存档）不进备份名单。
     v1.13.2 2026-09-11 CUR同步：小涛笔记0.7.0（收编公共件+AI面板7条）。
     v1.13.1 2026-09-11 CUR同步：小涛笔记0.6.2（切片断根修：断点续切/连败自动送云端/自动取回/切片账本/速记补充上一条）。
     v1.13.0 2026-09-11 部件更新断根修（洪老师拍板彻底治"永远不知道手机是不是最新版"）：
@@ -254,8 +261,8 @@
 
   <div id="updLine"></div>
 
-  <!-- v1.9.0 版本校对明示：顶部常驻一行各软件本机版本号（只读本机记忆，不联网） -->
-  <div id="verLocalLine" style="font-size:12px;color:#a89f93;margin-bottom:10px;line-height:1.6;"></div>
+  <!-- v1.9.0 版本校对明示：顶部常驻版本区（只读本机记忆，不联网）；v1.14.0 改三句大白话，版本号小字收进<details>备查 -->
+  <div id="verLocalLine" style="font-size:14px;color:#6b6257;margin-bottom:10px;line-height:1.7;"></div>
 
   <!-- v1.7.1 洪老师拍板：第一行常驻同步键——不按绝不同步；按了全程直播每一步 -->
   <div id="syncBar" style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
@@ -359,8 +366,8 @@
   <!-- v1.4.8 备份自理班：📤备份到坚果云卡片（纯新增，不动上面同步体检卡一行） -->
   <div class="card" id="bkDavCard">
     <h2>📤 备份到坚果云<span class="infoBtn">ⓘ 说明</span></h2>
-    <div class="desc intro" id="bkDavLine">一键把授权文件夹里的 .json/.bak 数据文件全部传到坚果云「/学习套装备份/」存档（.html 网页文件不传）。</div>
-    <div class="meta"><span class="tag">手动全量备份</span><span class="tag">只传数据文件</span></div>
+    <div class="desc intro" id="bkDavLine">一键把授权文件夹里的 .json/.bak 数据文件传到坚果云「/学习套装备份/」存档（.html 网页文件不传；v1.14.0起改增量：没变过的自动跳过不传）。</div>
+    <div class="meta"><span class="tag">手动增量备份</span><span class="tag">只传数据文件</span></div>
     <div style="margin-top:12px;"><button class="tag" style="padding:10px 14px; border:none; cursor:pointer;" id="bkDavBtn">📤 开始备份</button></div>
     <!-- v1.4.8 备份自理班：手动检查更新按钮（点=清标记+刷新重查，自检IIFE自然重跑）
          （v1.9.0 必改处报备：开门三停后自检不再自动起步，此手动按钮加立 hx_ver_manual 标记，功能不变） -->
@@ -386,7 +393,7 @@
 
 </main>
 
-<footer>红小涛的学习园地 · 主界面 v1.13.2 · 由 Kimi 协助维护</footer>  <!-- v1.8.0 页脚亮版本号：真机验收一眼看清自己是不是新版 -->
+<footer>红小涛的学习园地 · 主界面 v1.14.0 · 由 Kimi 协助维护</footer>  <!-- v1.8.0 页脚亮版本号：真机验收一眼看清自己是不是新版 -->
 
 <script>
 /* ==================== v1.12.0 hx-common.js 三级加载（plan2军规1/2，照 guanjia-pdf-engine.js 已验证先例） ====================
@@ -434,7 +441,7 @@ hxCommonLoad(function(){
 <script>
 /* ==================== 套装主界面自检器官（v1.1.0） ==================== */
 /* 本界面对应的四个软件当前内装版本（每次发版跟着改） */
-var CUR = { notes:"2.18.1", xiti:"1.12.0", bridge:"1.5.0", xueqi:"0.14.0", ppt:"0.16.0", xiaotao:"0.7.0" /* 新版正房 */, guanjia:"0.24.0", pai:"0.6.0", index:"1.13.2" /* v1.13.2 CUR同步xiaotao0.7.0 */ /* v1.12.1纠正留档标注对调（小涛=新版正房） */ /* 公共件收编 v1.12.0 2026-09-10：hx-common.js接入8件齐发CUR全同步（新增pai入册） */ };
+var CUR = { notes:"2.18.1", xiti:"1.12.0", bridge:"1.5.0", xueqi:"0.14.0", ppt:"0.16.0", xiaotao:"0.7.0" /* 新版正房 */, guanjia:"0.25.0" /* v1.14.0随大管家v0.25.0发版同步CUR（发版必同步CUR规矩） */, pai:"0.6.0", index:"1.14.0" /* v1.14.0 备份增量+版本区说人话 */ /* v1.13.2 CUR同步xiaotao0.7.0 */ /* v1.12.1纠正留档标注对调（小涛=新版正房） */ /* 公共件收编 v1.12.0 2026-09-10：hx-common.js接入8件齐发CUR全同步（新增pai入册） */ };
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
 try{ var _sv=JSON.parse(localStorage.getItem("hx_suite_ver")||"{}"); Object.keys(_sv).forEach(function(k){ if(_sv[k]) CUR[k]=_sv[k]; }); }catch(e){}
 /* key: [云端软件文件, 壳内文件名, 云端版本文件, 标签id] */
@@ -455,13 +462,44 @@ Object.keys(SUITE).forEach(function(k){
   var el = document.getElementById(SUITE[k][3]);
   if(el) el.textContent = "本机 v" + CUR[k];
 });
-/* v1.9.0 版本校对明示：顶部常驻一行本机版本号——只读本机记忆 CUR/hx_suite_ver，绝不联网 */
-try{
-  var _vl=document.getElementById("verLocalLine");
-  if(_vl){
+/* v1.14.0 版本区说人话（洪老师拍板）：顶部一排版本号60岁看不懂对错，改三句大白话——
+   第1句 对完没/几处对不上；第2句 逐条点名谁对不上，全对就"没有要修的"；
+   第3句 对不上给「🔧 点我补齐」按钮（走原"检查新版本"手动流程补齐），全对显示"什么都不用做"。
+   原v1.9.0本机版本号小字收进<details>备查，功能不删。
+   badNames=null表示还没对过账；scCheck对账完会带名单调本函数刷新（scEsc/scHist在下面定义，函数提升可直调）。 */
+function ver3Render(badNames){
+  try{
+    var _vl=document.getElementById("verLocalLine");
+    if(!_vl) return;
     var _nm={notes:"笔记",xiti:"习题",bridge:"文件桥",xueqi:"血气",ppt:"PPT",xiaotao:"小涛",guanjia:"大管家",index:"主界面"};
-    _vl.textContent="本机版本："+Object.keys(SUITE).map(function(k){ return (_nm[k]||k)+" v"+CUR[k]; }).join(" ｜ ")+"。查新版：管理工具→「🔍 检查新版本」（手动）。";
-  }
+    var verTxt="本机版本："+Object.keys(SUITE).map(function(k){ return (_nm[k]||k)+" v"+CUR[k]; }).join(" ｜ ")+"。查新版：管理工具→「🔍 检查新版本」（手动）。";
+    var l1, l2;
+    if(badNames===null){ l1="⏳ 还没对过账"; l2="点开下面「🔄 同步体检」对一次就知道对不对"; }
+    else if(badNames.length===0){ l1="✅ 三个仓库对过了，全都一样"; l2="没有要修的"; }
+    else{
+      l1="⚠️ 有"+badNames.length+"处对不上";
+      l2=badNames.map(function(n){ return "坚果云的「"+n+"」旧了或没传上去"; }).join("\n");
+    }
+    var h=scEsc(l1)+"<br>"+scEsc(l2).replace(/\n/g,"<br>")+"<br>";
+    if(badNames && badNames.length){
+      /* 第3句：对不上给按钮，照抄顶部「🔍 检查新版本」的手动流程（立hx_ver_manual标记刷新重查，新版自动下载补齐） */
+      h+='<button class="tag" style="padding:12px 10px;border:none;cursor:pointer;color:#4a6b8a;text-decoration:underline;background:none;font-size:14px;" '
+        +'onclick="try{sessionStorage.removeItem(\'hx_ver_checked\');sessionStorage.setItem(\'hx_ver_manual\',\'1\');}catch(e){};updMsg(\'🔧 正在补齐，请稍等…\');setTimeout(function(){location.reload();},120);">🔧 点我补齐</button>';
+    }else{
+      h+=scEsc(badNames===null? "现在什么都不用做" : "什么都不用做");
+    }
+    h+='<details style="margin-top:6px;"><summary style="cursor:pointer;color:#a89f93;font-size:12px;">各软件版本号（备查，点开看）</summary><div style="font-size:12px;color:#a89f93;line-height:1.6;margin-top:4px;">'+scEsc(verTxt)+'</div></details>';
+    _vl.innerHTML=h;
+  }catch(e){}
+}
+/* 开门先按上次对账记录（hx_sync_check_v1 最近一条）填三句话；从没对过显示"还没对过账" */
+try{
+  var _rec0=scHist()[0];
+  if(_rec0){
+    var _bad0=_rec0.bad||[];
+    if(!_bad0.length && ((_rec0.fail||0)+(_rec0.slow||0))>0) _bad0=["（上次对账的旧记录没记名字，再对一次就逐条点名）"];
+    ver3Render(_bad0);
+  }else ver3Render(null);
 }catch(e){}
 
 /* v1.1.4 踩坑修复：壳里主界面已换新、但新成员软件还没下载完时，点卡片会撞壳的404。
@@ -1071,7 +1109,11 @@ function scCheck(manual){
       rows.push({name:f.name, st:st, lag:lag, t:t, ct:ct});
     });
     var rec={t:Date.now(), n:files.length, ok:okN, slow:slowN, fail:failN, avgLag:(lagN? Math.round(lagSum/lagN):0), err:(errs.join('；')||null)};
+    /* v1.14.0 版本区说人话：记下对不上（❌/⏳）的文件名进体检记录，对账完同步刷顶部三句话 */
+    var bads=rows.filter(function(r){ return r.st!=='✅'; }).map(function(r){ return r.name; });
+    rec.bad=bads;
     scRemember(rec);
+    ver3Render(bads);
     /* 渲染明细（.bak 归一组折叠） */
     var mains=rows.filter(function(r){ return !/\.bak$/i.test(r.name); });
     var baks=rows.filter(function(r){ return /\.bak$/i.test(r.name); });
@@ -1146,15 +1188,22 @@ function bkDavGo(){
   var list=[];
   for(var i=0;i<files.length;i++){
     var f=files[i];
-    if(f && f.name && /\.(json|bak)$/i.test(f.name) && !/\.html?$/i.test(f.name)) list.push(f);
+    if(f && f.name && /\.(json|bak)$/i.test(f.name) && !/\.html?$/i.test(f.name)
+      && !/_v\d+\.\d+\.\d+\.(js|html|bak)$/i.test(f.name)) list.push(f);
+      /* v1.14.0 铁律④：名字带 _v1.2.3.js/html/bak 的是v1.13.0起"盖新前旧件留档"产出的升级留档件，仓里已有存档，不进备份名单 */
   }
   if(!list.length){ line.textContent='ℹ️ 文件夹里没有 .json/.bak 数据文件，没什么可传的。'; return; }
-  var okN=0, fails=[], idx=0, total=list.length;
+  /* v1.14.0 备份改增量：localStorage账本 hx_bkdav_ledger_v1 记 文件名→{size,tail(内容末尾64字符)}，
+     备份前逐个readFile比对，完全一样的跳过不传；传成功的更新账本 */
+  var ledger={};
+  try{ ledger=JSON.parse(localStorage.getItem('hx_bkdav_ledger_v1')||'{}'); }catch(e){ ledger={}; }
+  var okN=0, skipN=0, fails=[], idx=0, total=list.length;
   var btn=document.getElementById('bkDavBtn'); if(btn) btn.disabled=true;
   function bkStep(){
     if(idx>=total){
-      var msg='📤 备份完成：✅成功'+okN+'件';
-      if(fails.length) msg+=' ❌失败'+fails.length+'件（'+fails.join('；')+'）';
+      /* v1.14.0 备份报告说人话：共X件，Y件没变跳过，Z件已传（❌失败W件），失败仍逐件列文件名 */
+      var msg='📤 备份完成：共'+total+'件，'+skipN+'件没变跳过，'+okN+'件已传（❌失败'+fails.length+'件）';
+      if(fails.length) msg+='：'+fails.join('；');
       line.textContent=msg;
       if(btn) btn.disabled=false;
       return;
@@ -1163,9 +1212,15 @@ function bkDavGo(){
     line.textContent='📤 正在备份到坚果云… '+(idx+1)+'/'+total+'（'+f.name+'）';
     setTimeout(function(){ /* 让进度先画到屏上再传 */
       idx++;
+      /* 增量比对：读内容比 size+末尾64字符，跟账本完全一样就跳过不传 */
+      var b64='';
+      try{ b64=String(window.LearnShell.readFile(f.name)||''); }catch(e){ b64=''; }
+      var sz=b64.length, tail=b64.slice(-64);
+      var lg=ledger[f.name];
+      if(b64 && lg && lg.size===sz && lg.tail===tail){ skipN++; bkStep(); return; }
       var r='';
       try{ r=window.LearnShell.davUp(u,p,f.name,'/学习套装备份/'); }catch(e){ r='err:'+String((e&&e.message)||e); }
-      if(/ok/i.test(String(r||''))) okN++;
+      if(/ok/i.test(String(r||''))){ okN++; ledger[f.name]={size:sz, tail:tail}; try{ localStorage.setItem('hx_bkdav_ledger_v1', JSON.stringify(ledger)); }catch(e){} }
       else fails.push(f.name+'：'+String(r||'无返回'));
       bkStep();
     },30);
