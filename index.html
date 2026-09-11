@@ -2,7 +2,16 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
-    v1.12.0 2026-09-10 公共件收编（plan2军规：钥匙统一+收公共块+不崩溃压倒一切）：
+    v1.13.0 2026-09-11 部件更新断根修（洪老师拍板彻底治"永远不知道手机是不是最新版"）：
+      病根：hx-common.js/guanjia-pdf-engine.js两件壳内部件不在更新名单、云端无版本文件、加载器"壳里有就用"不查新旧
+      →壳内旧部件用到天荒地老（2026-09-11 AI面板事故真凶：壳内hx-common停在v0.1.1，v0.2.0的AI面板全家没生效）；
+      另拍病历pai在CUR有名却漏进SUITE名单，永远不随检查新版本更新。
+      治法：①SUITE补pai一行 ②新增PARTS部件名单（hx-common.js+guanjia-pdf-engine.js），手动「🔍检查新版本」跑完9件后
+      连部件一起查/下载/写授权文件夹（部件住文件夹不住壳web目录，走writeFile不走applyUpdate）③复核行同样列部件版本
+      ④CUR同步云端真实版本（notes2.18.1/xiaotao0.6.1/guanjia0.24.0——又抓到CUR落伍老毛病）。
+      配套：hx-common.js升v0.3.0自带闲时静默自升级（双保险）；云端新建version-hx-common.json/version-guanjia-pdf-engine.json。
+      只动更新链路，其余一行未动。
+
       ①接入 hx-common.js 三级查找加载器（壳readFile授权文件夹→同目录fetch 8秒超时→公开仓raw下载写壳安装），
         hxCommonLoad两个回调：装好走HX.*，没装好只console.warn降级提示，主功能（卡片/同步/文件柜/体检/备份）照常；
       ②删除内嵌速记snippet（sjGhKeys/sjToast/sjUpload+浮标UI/style），改 HX.sj.init({app:'主界面'})（HX不在时浮标不出=静默降级）；
@@ -375,7 +384,7 @@
 
 </main>
 
-<footer>红小涛的学习园地 · 主界面 v1.12.1 · 由 Kimi 协助维护</footer>  <!-- v1.8.0 页脚亮版本号：真机验收一眼看清自己是不是新版 -->
+<footer>红小涛的学习园地 · 主界面 v1.13.0 · 由 Kimi 协助维护</footer>  <!-- v1.8.0 页脚亮版本号：真机验收一眼看清自己是不是新版 -->
 
 <script>
 /* ==================== v1.12.0 hx-common.js 三级加载（plan2军规1/2，照 guanjia-pdf-engine.js 已验证先例） ====================
@@ -423,7 +432,7 @@ hxCommonLoad(function(){
 <script>
 /* ==================== 套装主界面自检器官（v1.1.0） ==================== */
 /* 本界面对应的四个软件当前内装版本（每次发版跟着改） */
-var CUR = { notes:"2.18.0", xiti:"1.12.0", bridge:"1.5.0", xueqi:"0.14.0", ppt:"0.16.0", xiaotao:"0.6.0" /* 冻结留档 */, guanjia:"0.23.0", pai:"0.6.0", index:"1.12.1" /* v1.12.1纠正留档标注对调（小涛=新版正房） */ /* 公共件收编 v1.12.0 2026-09-10：hx-common.js接入8件齐发CUR全同步（新增pai入册） */ };
+var CUR = { notes:"2.18.1", xiti:"1.12.0", bridge:"1.5.0", xueqi:"0.14.0", ppt:"0.16.0", xiaotao:"0.6.1" /* 新版正房 */, guanjia:"0.24.0", pai:"0.6.0", index:"1.13.0" /* v1.13.0部件更新断根修 */ /* v1.12.1纠正留档标注对调（小涛=新版正房） */ /* 公共件收编 v1.12.0 2026-09-10：hx-common.js接入8件齐发CUR全同步（新增pai入册） */ };
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
 try{ var _sv=JSON.parse(localStorage.getItem("hx_suite_ver")||"{}"); Object.keys(_sv).forEach(function(k){ if(_sv[k]) CUR[k]=_sv[k]; }); }catch(e){}
 /* key: [云端软件文件, 壳内文件名, 云端版本文件, 标签id] */
@@ -435,6 +444,7 @@ var SUITE = {
   ppt:    ["software-ppt.html",    "PPT工坊.html",  "version-ppt.json",    "tagPpt"],
   xiaotao:["software-xiaotao.html","小涛笔记.html", "version-xiaotao.json","tagXiaotao"],
   guanjia:["software-guanjia.html","病人大管家.html","version-guanjia.json","tagGuanjia"],
+  pai:    ["software-pai.html",    "拍病历.html",   "version-pai.json",    ""], /* v1.13.0补上：CUR有名名单漏行，拍病历此前永远不随检查新版本更新 */
   index:  ["index.html",          "index.html",     "version-index.json", ""]
 };
 /* 标签按 CUR 显示（永不落伍）；v1.9.0 版本校对明示：角标写明"本机"，查新版靠手动按钮 */
@@ -646,7 +656,8 @@ function hxRawGet(name){
     if(!ks.length){ done(lines, allOk); return; }
     (function one(){
       if(i>=ks.length){ done(lines, allOk); return; }
-      var k=ks[i++], cn=(k==="index"?"主界面自己":SUITE[k][1].replace(".html",""));
+      var k=ks[i++]; if(!SUITE[k]){ one(); return; } /* v1.13.0：cloudVer里部件（hx-common.js等）不在SUITE，写入时已报结果，复核跳过不崩 */
+      var cn=(k==="index"?"主界面自己":SUITE[k][1].replace(".html",""));
       fetch(encodeURI(SUITE[k][1]), {cache:"no-store"}).then(function(r){
         var fileOk=r.ok;
         var match = fileOk && cloudVer[k] && cmpVer(CUR[k], cloudVer[k])===0;
@@ -664,8 +675,56 @@ function hxRawGet(name){
     })();
   }
   function prog(line){ progLog.push(line); updMsg("🔍 检查新版本（"+Math.min(progLog.length,keys.length)+"/"+keys.length+"）\n"+progLog.join("\n")); }
+  /* ═══ v1.13.0 PARTS部件名单（断根修"壳内部件不更新"，洪老师2026-09-11拍板） ═══
+     部件（hx-common.js/guanjia-pdf-engine.js）住授权文件夹，走writeFile，不走applyUpdate（那是壳web目录的通道）。
+     9件软件查完接着查部件：壳里读不到或版本比云端旧→下载新版写进文件夹，下次开门生效；复核行同样列部件。 */
+  var PARTS = [
+    ["hx-common.js",          "version-hx-common.json",          /HX_COMMON_VERSION\s*=\s*'([\d.]+)'/],
+    ["guanjia-pdf-engine.js", "version-guanjia-pdf-engine.json", /PDF\u5f15\u64ce\u5305[^\n]*?v([\d.]+)/]
+  ];
+  function partLocalVer(name, re){
+    try{
+      if(!window.LearnShell) return "";
+      var f=null; try{ f=LearnShell.readFile(name); }catch(e){}
+      if(!f) return "";
+      var t=decodeURIComponent(escape(atob(String(f).replace(/\s+/g,''))));
+      var m=t.slice(0,2000).match(re);
+      return m? m[1] : "";
+    }catch(e){ return ""; }
+  }
+  function partsStep(pi){
+    if(pi>=PARTS.length){ finish(); return; }
+    var pName=PARTS[pi][0], pVer=PARTS[pi][1], pRe=PARTS[pi][2];
+    var cn="部件"+pName;
+    prog("⏳ "+cn+"：正在查…");
+    fetchJson(pVer).then(function(txt){
+      var info; try{ info=JSON.parse(txt); }catch(e){ info=null; }
+      if(!info || !info.version){ progLog[progLog.length-1]="⚠️ "+cn+"：版本文件没读到，跳过"; updMsg("🔍 检查新版本\n"+progLog.join("\n")); partsStep(pi+1); return; }
+      var lv=partLocalVer(pName, pRe);
+      cloudVer[pName]=info.version; /* 复核一并列部件 */
+      if(lv && cmpVer(info.version, lv)<=0){
+        progLog[progLog.length-1]="✅ "+cn+"：已是最新（本机=云端 v"+lv+"）"; updMsg("🔍 检查新版本\n"+progLog.join("\n")); partsStep(pi+1); return;
+      }
+      progLog[progLog.length-1]="📥 "+cn+"：本机"+(lv?("v"+lv):"（没装）")+" / 云端v"+info.version+"，有新版，正在下载…"; updMsg("🔍 检查新版本\n"+progLog.join("\n"));
+      fetchJson(pName).then(function(txt2){
+        var wrote=false;
+        try{
+          if(window.LearnShell && LearnShell.folderSet && LearnShell.folderSet()){
+            if(lv){ try{ LearnShell.writeFile(pName.replace(".js","")+"_v"+lv+".js", LearnShell.readFile(pName)); }catch(e){} } /* v1.13.0备份规矩：盖新部件前旧版留档文件夹（铁律3延伸） */
+            wrote=!!LearnShell.writeFile(pName, u8enc(txt2));
+          }
+        }catch(e){}
+        if(wrote){ updated.push(pName+"→v"+info.version);
+          progLog[progLog.length-1]="✅ "+cn+"：已下载 v"+info.version+" 写进文件夹，下次开门生效"; }
+        else{ failed.push(pName);
+          progLog[progLog.length-1]="❌ "+cn+"：写入没成功（没壳或文件夹没授权），下次再试"; }
+        updMsg("🔍 检查新版本\n"+progLog.join("\n")); partsStep(pi+1);
+      }).catch(function(e){ failed.push(pName);
+        progLog[progLog.length-1]="❌ "+cn+"：下载没成功（"+((e&&e.message)||"网络不通")+"），下次再试"; updMsg("🔍 检查新版本\n"+progLog.join("\n")); partsStep(pi+1); });
+    }).catch(function(e){ partsStep(pi+1); });
+  }
   function step(i){
-    if(i>=keys.length){ finish(); return; }
+    if(i>=keys.length){ partsStep(0); return; } /* v1.13.0：9件查完改道部件名单，部件查完才finish */
     var k=keys[i], remote=SUITE[k][0], localName=SUITE[k][1], verFile=SUITE[k][2];
     var cnName=(k==="index"?"主界面自己":localName.replace(".html",""));  /* v1.8.0 主界面入名单后报进度说人话 */
     prog("⏳ "+cnName+"：正在查…");
