@@ -131,6 +131,8 @@ table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:
   <div class="topbar"><h1>📷 拍病历</h1></div>
   <div class="wrap">
     <!-- v0.5.0 大按钮压成文字行:点行张开/收起原newPane建档表单(表单本体一行未动) -->
+    <!-- v0.7.0 D11:大管家当前病人提示行(hx_gj_curpt),纯显示不绑定;无值时隐藏 -->
+    <div class="small" id="gjHintHome" style="display:none;white-space:pre-line;padding:2px 4px 8px"></div>
     <div class="hxrow" id="btnNew">＋ 收新病人 ▸</div>
     <!-- v0.1.1 建病人改页面内面板（浏览器弹窗太暗看不清，洪大夫点空确定白跑一趟） -->
     <div class="card hidden" id="newPane" style="margin-bottom:12px">
@@ -151,6 +153,8 @@ table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:
   <div class="topbar"><button id="camBack">←</button><h1>正在拍：<span id="camName"></span></h1></div>
   <div class="wrap">
     <div class="row" id="camChips" style="margin-bottom:10px;overflow-x:auto;flex-wrap:nowrap"></div>
+    <!-- v0.7.0 D11:当前代号与大管家病人对应知情行(hx_pai_ptmap_v1 vs hx_gj_curpt),不一致才出第二行 -->
+    <div class="small" id="gjHintCam" style="display:none;white-space:pre-line;margin-bottom:8px"></div>
     <video id="camVideo" autoplay playsinline muted></video>
     <img id="camPrev" alt="">
     <div class="row" style="justify-content:center;margin:14px 0"><button class="shotbtn" id="btnShot" aria-label="拍照"></button></div>
@@ -263,7 +267,7 @@ table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:
       <div class="row" style="margin-top:8px"><button class="btn red sm" id="btnBillClear">🧹 清空账本</button></div>
     </div>
     <div class="card"><b>看门人日志</b><div id="guardLog" class="small" style="margin-top:6px"></div></div>
-    <div class="small" style="text-align:center;margin-top:8px">拍病历 v0.6.0</div><!-- v0.6.0 关于版本号 -->
+    <div class="small" style="text-align:center;margin-top:8px">拍病历 v0.7.0</div><!-- v0.7.0 关于版本号 -->
   </div>
 </div>
 
@@ -334,7 +338,7 @@ table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:
 
 <script>
 'use strict';
-const SW_VERSION='0.6.0' /* v0.6.0 2026-09-10 接入hx-common.js:三级加载+HX.sj.init+HX.gh.putFile/getFile+HX.keys+HX.bill,xt_gh_*一次性搬家hx_gh_*旧键保留,HX缺失主功能照常只降级提示 */ /* v0.5.0 2026-09-10 首屏鱼骨头化:病人卡墙→名单行(点行=拍照流,库入口收小字行),「＋收新病人」大按钮→文字行开合原表单,顶栏队列/⚙️→文字行;只改输出HTML+CSS,数据流/变量名/存储键名不动 */ /* 速记自动上行 v0.4.8 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* 速记 v0.4.7 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */; /* v0.4.6 大管家回程票：从病人大管家点过来（?from=guanjia）亮顶条「← 返回大管家」一键回家；不带参数打开零影响 */;
+const SW_VERSION='0.7.0' /* v0.7.0 2026-09-11 D11三套标识并一套·pai侧只知情不合并(洪老师拍板统一记号hx_gj_curpt):毛病=拍病历匿名代号(如Rmttsw119735)跟大管家当前病人记号localStorage hx_gj_curpt(如"16黄热射病")互不认,不知道谁是谁;病根=D11三套标识并一套。改法=①开门读hx_gj_curpt,有值就在首页顶/拍照页顶加一行小字「大管家当前病人：XX」,纯显示不自动绑定不动代号体系;②收新病人建档/选病人定当前代号后,hx_gj_curpt有值且本代号还没关联过时,把「代号→hx_gj_curpt病人名」记进localStorage新键hx_pai_ptmap_v1(对象:代号→病人名),已有关联不覆盖;③当前代号在hx_pai_ptmap_v1有对应且与hx_gj_curpt不一致时,拍照页提示行显示「本代号对应：XX／大管家当前：YY」两行小字让用户知情。不做自动改名、不做自动合并,代号体系一行未动 */ /* v0.6.0 2026-09-10 接入hx-common.js:三级加载+HX.sj.init+HX.gh.putFile/getFile+HX.keys+HX.bill,xt_gh_*一次性搬家hx_gh_*旧键保留,HX缺失主功能照常只降级提示 */ /* v0.5.0 2026-09-10 首屏鱼骨头化:病人卡墙→名单行(点行=拍照流,库入口收小字行),「＋收新病人」大按钮→文字行开合原表单,顶栏队列/⚙️→文字行;只改输出HTML+CSS,数据流/变量名/存储键名不动 */ /* 速记自动上行 v0.4.8 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* 速记 v0.4.7 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */; /* v0.4.6 大管家回程票：从病人大管家点过来（?from=guanjia）亮顶条「← 返回大管家」一键回家；不带参数打开零影响 */;
 const $=id=>document.getElementById(id);
 const esc=s=>s; // 一律textContent渲染
 function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',2200);}
@@ -476,8 +480,30 @@ function billYuan(){const b=bill();let y=0;for(const m in b.byModel){const p=PAI
 function billYuanOf(pid){const bp=bill().byPatient[pid];return bp?bp.yuan:0;}
 function billFmt(y,fix){return y<0.01?'不足1分钱':'¥'+y.toFixed(fix);}
 
+/* ---------- v0.7.0 D11三套标识并一套·pai侧只知情不合并 ---------- */
+/* 毛病=拍病历匿名代号跟大管家当前病人记号localStorage hx_gj_curpt互不认;病根=D11三套标识并一套。
+   改法=只读hx_gj_curpt做提示+把「代号→病人名」记进hx_pai_ptmap_v1,不自动改名不自动合并,代号体系不动 */
+const PAI_PTMAP_KEY='hx_pai_ptmap_v1';
+function paiPtMap(){return LS.get(PAI_PTMAP_KEY,{})}
+function paiGjCur(){try{return localStorage.getItem('hx_gj_curpt')||''}catch(e){return ''}}
+function paiPtMapLink(code){ // 定了当前代号后:hx_gj_curpt有值且本代号还没关联过才记对应,已有关联不覆盖
+  const gj=paiGjCur();if(!gj||!code)return;
+  const m=paiPtMap();if(m[code])return;m[code]=gj;LS.set(PAI_PTMAP_KEY,m);
+}
+function paiGjHintLines(code){ // 提示行:有大管家当前病人就显示;本代号已对应且不一致再加第二行,纯知情
+  const gj=paiGjCur(),lines=[];
+  if(gj)lines.push('大管家当前病人：'+gj);
+  if(code&&gj){const mine=paiPtMap()[code];if(mine&&mine!==gj)lines.push('本代号对应：'+mine+'｜大管家当前：'+gj);}
+  return lines;
+}
+function paiGjHintShow(id,code){
+  const el=$(id);if(!el)return;const lines=paiGjHintLines(code);
+  el.textContent=lines.join('\n');el.style.display=lines.length?'':'none';
+}
+
 /* ---------- 主页 ---------- */
 function renderHome(){
+  paiGjHintShow('gjHintHome'); // v0.7.0 D11 开门读hx_gj_curpt,首页顶小字提示,纯显示
   const wall=$('wall');wall.innerHTML='';
   const act=patients().filter(p=>!p.archived);
   if(!act.length){const d=document.createElement('div');d.className='small';d.style.cssText='padding:10px 4px;margin-bottom:9px';d.textContent='还没有病人，点上面「＋ 收新病人」';wall.appendChild(d);}
@@ -524,7 +550,7 @@ $('btnNew').addEventListener('click',()=>{ hxSetNewPane($('newPane').classList.c
 $('npCancel').addEventListener('click',()=>hxSetNewPane(false));
 $('npOk').addEventListener('click',()=>{
   const name=$('npName').value.trim(); if(!name){ toast('请填病人真名'); return; }
-  addPatient(name,$('npBed').value.trim()); hxSetNewPane(false); renderHome(); toast('已建档');
+  const np=addPatient(name,$('npBed').value.trim()); paiPtMapLink(np.code); hxSetNewPane(false); renderHome(); toast('已建档'); // v0.7.0 D11 建档定代号后记hx_pai_ptmap_v1对应
 });
 
 /* ---------- 拍摄页 ---------- */
@@ -548,6 +574,7 @@ function pickFile(){$('filePick').click();}
 function renderCam(){
   const p=patients().find(x=>x.id===S.curPid);if(!p)return;
   $('camName').textContent=p.name;
+  paiPtMapLink(p.code);paiGjHintShow('gjHintCam',p.code); // v0.7.0 D11 选定当前代号后记对应+知情提示,不改名不合并
   const ch=$('camChips');ch.innerHTML='';
   for(const q of patients().filter(x=>!x.archived)){
     const b=document.createElement('button');b.className='chipbtn'+(q.id===S.curPid?' cur':'');
