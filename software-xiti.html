@@ -341,6 +341,7 @@ v1.3补丁7 (2026-07-29) 后台任务从单任务升级为队列（最多3个并
   正确→第4个被拦截→注释各自钉对题→屏幕不跳转），待用户实测验证。
 
 v1.4 (2026-08-02) 学习笔记协同 + GitHub云备份 + 开机自检 + 下载整套。
+v1.13.0 (2026-09-11) AI面板推广（大管家v0.24.0试点拍板方法论推广到全家）：①AI_MANIFEST 5条（AI出题/粘贴出题/AI综合备课/题内问AI/AI设置，run全调现有函数，功能本体一行未动；要上下文的条目没上下文时toast指路不报错） ②hxReady回调追加HX.ai.init（getSection辨学习页/首页；send走现有callAI文本通道，只给面板「＋加AI功能」生成器用） ③4处原AI入口函数首行插拦截行（HX.ai.ready()则唤起面板定位到对应条目，HX不在/面板未就绪放行原行为，降级=v1.12.0原样） ④版本号1.12.0→1.13.0。
 v1.12.0 (2026-09-10) 收编公共件hx-common.js（plan2军规：钥匙统一+收公共块，不崩溃压倒一切）。
   ①三级查找加载hx-common.js（壳readFile→同目录fetch8秒→公开仓下载写壳安装）；
     没装上时只速记/云备份/版本自检降级提示「公共件未装」，刷题/导入/AI备课主流程照常不白屏；
@@ -724,7 +725,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 
 <script id="embedded-data" type="application/json">null</script>
 
-<header>📖 习题学习<span class="ver" id="hdVer">v1.12.0</span></header>
+<header>📖 习题学习<span class="ver" id="hdVer">v1.13.0</span></header>
 
 <!-- ========== 首页 ========== -->
 <div id="page-home" class="page">
@@ -1514,6 +1515,7 @@ function openPasteRoot() { resetPasteModal("root", -1); }
 function openPasteShift() { resetPasteModal("shift", -1); }
 /* v1.5.0：题库卡片「📋 粘贴出题」——默认并入该库，隐藏库名/类型选择 */
 function openPasteBank(bi) {
+  if(window.HX&&HX.ai&&HX.ai.ready&&HX.ai.ready()){ HX.ai.open('pastebank'); return; } /* v1.13.0 AI面板唤起；HX不在放行原行为 */
   var b = store.banks[bi];
   resetPasteModal((b && b.type) || "normal", bi);
   document.getElementById("paste-title").textContent = "📋 粘贴出题 ｜ 并入「" + (b ? b.name : "") + "」";
@@ -1788,6 +1790,7 @@ function openPptSimple(){
   document.getElementById("ppt-modal").classList.remove("hidden");
 }
 function openPptAI(){
+  if(window.HX&&HX.ai&&HX.ai.ready&&HX.ai.ready()){ HX.ai.open('pptai'); return; } /* v1.13.0 AI面板唤起；HX不在放行原行为 */
   if (!needKey()) return;
   pptMode = "ai";
   document.getElementById("ppt-title").textContent = "🤖 AI综合备课 → PPT工坊";
@@ -2930,6 +2933,7 @@ function openAiModal(title, context, ph) {
 function closeAi() { document.getElementById("ai-modal").classList.add("hidden"); aiMode = null; aiLastQA = null; aiShowNext(); }
 /* ---- 功能A：题库内问AI出题 ---- */
 function openAiBank(bi) {
+  if(window.HX&&HX.ai&&HX.ai.ready&&HX.ai.ready()){ HX.ai.open('askbank'); return; } /* v1.13.0 AI面板唤起；HX不在放行原行为 */
   if (!needKey()) return;
   aiMode = "bank"; aiBankIdx = bi; aiLastQA = null;
   var b = store.banks[bi];
@@ -2937,6 +2941,7 @@ function openAiBank(bi) {
 }
 /* ---- 功能B：学习时就本题问AI，答案存注释 ---- */
 function openAiNote() {
+  if(window.HX&&HX.ai&&HX.ai.ready&&HX.ai.ready()){ HX.ai.open('asknote'); return; } /* v1.13.0 AI面板唤起；HX不在放行原行为 */
   if (!needKey()) return;
   var it = curList()[session.pos];
   aiMode = "note"; aiLastQA = null;
@@ -3173,7 +3178,7 @@ function hxStoreAfterPick(){
    完整设计思路与协同协议见学习笔记.html 代码顶部（两边以那份为准）。 */
 var XT_GH_USER = "xt_gh_user", XT_GH_TOK = "xt_gh_tok", XT_GH_REPO = "xt_gh_repo",
     XT_GH_LAST = "xt_gh_last", XT_GH_CHECK = "xt_gh_check";
-var SW_VERSION = "1.12.0" /* v1.12.0 2026-09-10 收编公共件hx-common.js（详见文件顶部修改记录）：三级加载器接入，missing只降级提示；删内嵌速记snippet改HX.sj.init({app:'习题'})；删内嵌gh函数族改HX.gh.*；自检改HX.selfCheck('xiti',SW_VERSION)；钥匙读HX.keys写只写hx_apikey；账本改HX.bill；3模式折叠行/题库行化/hxStore/page-study/aiMakeQuestions一律未动 */ /* v1.11.0 2026-09-10 全鱼骨头化首页：3Tab→3折叠行、9平铺钮归3组折叠行、题库卡行化（操作收小字行，新增改名）；纯版面，功能/JS/存储键名零改动 */ /* 速记自动上行 v1.10.5 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* 速记 v1.10.4 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */; /* v1.10.3 大管家回程票：从病人大管家点过来（?from=guanjia）亮顶条「← 返回大管家」一键回家；不带参数打开零影响 */; /* v1.10.2 (2026-09-07) 开门静默化：locStatusRender(SAF慢桥)挪4秒闲时，治开门愣几秒；其余一行未动 */ /* v1.10.1 hxStore开门对齐挪闲时跑（同大管家v0.5.2药方：先秒开，闲3秒再对齐，拉到新数据自动刷新一次） */ /* v1.10.0 鱼骨头化（照抄大管家v0.5.0样板）：①最底下新增「🛠 设置与工具」折叠抽屉（一级卡5px粗左框+深底，二级卡缩进+浅底+3px左竖线+无阴影；开合记 localStorage hx_xiti_tool_open，刷新保持，箭头▸点开/▾收起）②云备份卡（ghCard，原<details>折叠复用）从普通题库面板原样搬入抽屉，另加「🤖 AI设置」卡走原 openAiKey() 弹窗；纯界面折叠结构与样式，功能逻辑零改动 */ /* v1.9.1 hxIndexRefresh加免Token备用路（API/没Token自动走公开站直链，治主界面卡旧版静默失败；成功/失败都toast一句） */ /* v1.9.0 hxStore仓管员接入（全家推广第3家）：习题库+做题进度每次存盘同步写壳授权文件夹 hxdata_xitixuexi_v01.json，开门自动对齐（文件说了算/自动搬家），左下角🗄️选/换文件夹；无壳浏览器照旧 */ /* v1.8.9 AI报错带官方原因+400也自动换模型重试（洪医生撞HTTP400：疑moonshot-v1系列下架回400） */ /* v1.8.8 AI综合备课加秒表进度：每秒报已等多久，转着就不是死机 */ /* v1.8.7 修404：kimi-k2.5官方下架→死模型名单自动换kimi-k2.6+404自动重试；补title/header版本号（1.8.5/1.8.6漏改） */ /* v1.8.6 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v1.8.5 习题→PPT工坊两路（洪医生任务2026-09-01）：任务一「📊 习题→PPT」本地拼——
+var SW_VERSION = "1.13.0" /* v1.13.0 2026-09-11 AI面板推广：AI_MANIFEST 5条+HX.ai.init（send走现有callAI）+4处入口拦截行；刷题/导入/AI备课功能本体一行未动，HX不在降级=v1.12.0原样 */ /* v1.12.0 2026-09-10 收编公共件hx-common.js（详见文件顶部修改记录）：三级加载器接入，missing只降级提示；删内嵌速记snippet改HX.sj.init({app:'习题'})；删内嵌gh函数族改HX.gh.*；自检改HX.selfCheck('xiti',SW_VERSION)；钥匙读HX.keys写只写hx_apikey；账本改HX.bill；3模式折叠行/题库行化/hxStore/page-study/aiMakeQuestions一律未动 */ /* v1.11.0 2026-09-10 全鱼骨头化首页：3Tab→3折叠行、9平铺钮归3组折叠行、题库卡行化（操作收小字行，新增改名）；纯版面，功能/JS/存储键名零改动 */ /* 速记自动上行 v1.10.5 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* 速记 v1.10.4 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */; /* v1.10.3 大管家回程票：从病人大管家点过来（?from=guanjia）亮顶条「← 返回大管家」一键回家；不带参数打开零影响 */; /* v1.10.2 (2026-09-07) 开门静默化：locStatusRender(SAF慢桥)挪4秒闲时，治开门愣几秒；其余一行未动 */ /* v1.10.1 hxStore开门对齐挪闲时跑（同大管家v0.5.2药方：先秒开，闲3秒再对齐，拉到新数据自动刷新一次） */ /* v1.10.0 鱼骨头化（照抄大管家v0.5.0样板）：①最底下新增「🛠 设置与工具」折叠抽屉（一级卡5px粗左框+深底，二级卡缩进+浅底+3px左竖线+无阴影；开合记 localStorage hx_xiti_tool_open，刷新保持，箭头▸点开/▾收起）②云备份卡（ghCard，原<details>折叠复用）从普通题库面板原样搬入抽屉，另加「🤖 AI设置」卡走原 openAiKey() 弹窗；纯界面折叠结构与样式，功能逻辑零改动 */ /* v1.9.1 hxIndexRefresh加免Token备用路（API/没Token自动走公开站直链，治主界面卡旧版静默失败；成功/失败都toast一句） */ /* v1.9.0 hxStore仓管员接入（全家推广第3家）：习题库+做题进度每次存盘同步写壳授权文件夹 hxdata_xitixuexi_v01.json，开门自动对齐（文件说了算/自动搬家），左下角🗄️选/换文件夹；无壳浏览器照旧 */ /* v1.8.9 AI报错带官方原因+400也自动换模型重试（洪医生撞HTTP400：疑moonshot-v1系列下架回400） */ /* v1.8.8 AI综合备课加秒表进度：每秒报已等多久，转着就不是死机 */ /* v1.8.7 修404：kimi-k2.5官方下架→死模型名单自动换kimi-k2.6+404自动重试；补title/header版本号（1.8.5/1.8.6漏改） */ /* v1.8.6 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v1.8.5 习题→PPT工坊两路（洪医生任务2026-09-01）：任务一「📊 习题→PPT」本地拼——
   范围(勾选/全部)×筛选(全部/陌生+一般/只陌生)×排版(题答同页自习用 / 题一页答一页课堂提问用)，不花AI钱；
   任务二「🤖 AI综合备课」——AI读全部问答提炼成课（归纳/对比表/易错点，不是堆题），可填讲课重点，可对着薄弱点，
   大纲先预览可手改再寄。两路都走ppt_inbox邮路（照抄血气分析v0.10.8格式），PPT工坊弹窗收。 */
@@ -3755,8 +3760,37 @@ function hxCommonInstall(good, miss){
 }
 /* v1.12.0 一行接入速记：HX.sj 自动注入右下角🏥浮标+面板（样式/文件格式/上行/对账/toast文案与原snippet一致）；
    missing只console.warn降级——刷题/导入/AI备课/hxStore照常，绝不白屏 */
+/* ══════════════ v1.13.0 AI面板推广（大管家v0.24.0试点拍板方法论推广）：AI_MANIFEST 5条，run全调现有函数，功能本体一行未动 ══════════════
+   壳统一（hx-common HX.ai面板）芯自带（本清单）；要上下文的条目没上下文时toast指路不报错；HX不在时4处入口拦截行一律放行，降级=v1.12.0原行为 */
+/* v1.13.0 取题库当前勾选的库下标（.bank-check:checked 的 data-bi），没勾选返回-1由调用处toast指路 */
+function aiCheckedBank(){
+  try{ var c=document.querySelector('.bank-check:checked'); if(c) return parseInt(c.getAttribute('data-bi'),10); }catch(e){}
+  return -1;
+}
+var AI_MANIFEST=[
+  { id:'askbank', name:'AI出题', icon:'🤖', section:'题库', desc:'对勾选的题库提问，满意回答形成题目自动并库',
+    run:function(){ var bi=aiCheckedBank(); if(bi<0){ toast('先在首页题库勾选要出题的库'); return; } openAiBank(bi); } },
+  { id:'pastebank', name:'粘贴出题', icon:'📋', section:'题库', desc:'贴一段题目原文，AI整理后并入勾选的库',
+    run:function(){ var bi=aiCheckedBank(); if(bi<0){ toast('先在首页题库勾选要并入的库'); return; } openPasteBank(bi); } },
+  { id:'pptai', name:'AI综合备课', icon:'📊', section:'题库', desc:'提炼知识点成课，送去PPT工坊',
+    run:function(){ openPptAI(); } },
+  { id:'asknote', name:'题内问AI', icon:'💬', section:'学习页', desc:'就当前这道题问AI，回答可存进注释',
+    run:function(){ var sp=document.getElementById('page-study'); if(!sp||sp.classList.contains('hidden')){ toast('先进学习页打开一道题'); return; } openAiNote(); } },
+  { id:'aiset', name:'AI设置/查额度', icon:'⚙', section:'题库', desc:'填Key、选模型、查额度',
+    run:function(){ openAiKey(); } }
+];
 hxCommonLoad(function(){
   try{ HX.sj.init({app:'习题'}); }catch(e){}
+  /* v1.13.0 AI面板推广：hxReady回调追加HX.ai.init（原逻辑一行未动）；HX不在时本行不跑，4处入口拦截行也放行，降级=v1.12.0原行为 */
+  try{ if(window.HX&&HX.ai) HX.ai.init({app:'习题', manifest:AI_MANIFEST,
+    getSection:function(){
+      try{ var sp=document.getElementById('page-study'); if(sp&&!sp.classList.contains('hidden')) return '学习页'; }catch(e){}
+      return '题库';
+    },
+    send:function(sys,user,onOk,onErr){
+      try{ if(!store.ai.key){ onErr('还没有API Key，先去AI设置里填一个'); return; } }catch(e){}
+      callAI(sys, user, '面板自建功能').then(onOk, onErr);
+    } }); }catch(e){}
 }, function(){
   try{ if(window.console && console.warn) console.warn('[hx-common] 公共件未装：速记浮标/云备份/版本自检降级，主功能照常'); }catch(e){}
 });
