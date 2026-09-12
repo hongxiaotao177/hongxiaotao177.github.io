@@ -1,6 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    hx-common.js —— 全家9件软件共用公共件母版
-   HX_COMMON_VERSION = '0.5.0'（2026-09-10 plan2 军规：钥匙统一+收公共块+不崩溃压倒一切）
+   HX_COMMON_VERSION = '0.6.0'（2026-09-10 plan2 军规：钥匙统一+收公共块+不崩溃压倒一切）
+   v0.6.0 2026-09-12 地基二期：坚果云腿HX.dav的rescue从「只补缺失」升级为「ts对账」——davList云端清单带mtime后逐键比对：本地缺云端有照旧davDown补回；两边都有且云端新过本地超5秒，先把本地旧件留档hxdata_<key>_冲突_时分秒.json再davDown盖回；本地较新或相等顺手davUp让云端追平；云端没有顺手davUp补齐云端。单件失败跳过，list失败照旧直接返回，mirror的debounce 10秒不动；其余一行未动
    v0.5.0 2026-09-12：新增中转邮路HX.relay（单体备份永远重试+回读核对才销号+大白话状态条🟢🟡🔴）+坚果云腿HX.dav（壳内铁仓库：mirror镜像/rescue救命腿只补缺失不盖已有）；其余一行未动
    v0.4.0 2026-09-12：新增仓管员HX.store，地基工程一期规矩A/B落地（规矩A：一套门存取；规矩B：时间定新旧、冲突留档不覆盖）；修正：真源文件名前缀hxdata_沿用大管家旧档、兼容老hxStore裸档按mtime认读并升级信封、留档文件名放行中文「_冲突_」字样、留档名时分补秒防同分互盖；其余一行未动
    v0.3.0 2026-09-11：部件自升级HX.selfUp（洪老师拍板彻底治"壳内部件不更新"病根：开门闲时比对云端version-hx-common.json，旧了静默下载新版写回授权文件夹，下次开门生效；全程不弹窗，没壳/没网跳过）；其余一行未动
@@ -28,7 +29,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 (function(){
   'use strict';
-  var HX_COMMON_VERSION = '0.5.0'; /* v0.5.0 2026-09-12：新增中转邮路HX.relay+坚果云腿HX.dav */ /* v0.4.0 2026-09-12：新增仓管员HX.store，地基工程一期规矩A/B落地 */ /* v0.3.0 2026-09-11：部件自升级HX.selfUp（病根：壳里旧版公共件永远不升级→AI面板等新功能装了也白装；开门闲时20秒比对云端version-hx-common.json，旧了静默下载写回授权文件夹，下次开门用新的，全程不弹窗） */ /* v0.2.0 2026-09-11：新增HX.ai统一AI面板（两层结构+定位置顶+AI功能生成器，洪老师2026-09-11拍板方法论落地试点）；HX.sj面板加「🤖AI」入口钮；其余一行未动 */ /* v0.1.1 2026-09-10：HX.sj.init 加可选 extraBtn（大管家#43「补充上一条」补回，洪老师点名功能）；不传仍是2钮版，默认行为不变 */
+  var HX_COMMON_VERSION = '0.6.0'; /* v0.6.0 2026-09-12 地基二期：HX.dav的rescue升级为ts对账（云端新超5秒留档_冲突_后盖回/本地新或相等顺手davUp追平/云端缺顺手davUp补齐） */ /* v0.5.0 2026-09-12：新增中转邮路HX.relay+坚果云腿HX.dav */ /* v0.4.0 2026-09-12：新增仓管员HX.store，地基工程一期规矩A/B落地 */ /* v0.3.0 2026-09-11：部件自升级HX.selfUp（病根：壳里旧版公共件永远不升级→AI面板等新功能装了也白装；开门闲时20秒比对云端version-hx-common.json，旧了静默下载写回授权文件夹，下次开门用新的，全程不弹窗） */ /* v0.2.0 2026-09-11：新增HX.ai统一AI面板（两层结构+定位置顶+AI功能生成器，洪老师2026-09-11拍板方法论落地试点）；HX.sj面板加「🤖AI」入口钮；其余一行未动 */ /* v0.1.1 2026-09-10：HX.sj.init 加可选 extraBtn（大管家#43「补充上一条」补回，洪老师点名功能）；不传仍是2钮版，默认行为不变 */
   if(window.HX && window.HX.HX_COMMON_VERSION){ return; } /* 已装过不重复装 */
   var HX = { HX_COMMON_VERSION: HX_COMMON_VERSION, ok: true };
   function warn(m){ try{ if(window.console && console.warn) console.warn('[hx-common] '+m); }catch(e){} }
@@ -1007,13 +1008,14 @@
      现成桥（MainActivity）：LearnShell.davUp(user,pass,fileName,davDir)/davDown(user,pass,path,saveName)/davList(user,pass,path)，
      都同步返回String、"err:"开头=失败；钥匙 HX.keys.dav()（hx_dav_user/hx_dav_pass）。
      mirror(fileName)：闲时把 hxdata_<key>.json 镜像到 /学习套装数据/（debounce 10秒）；失败静默，下次闲时再试。
-     rescue(keys)：开门sync前，文件夹里缺失的 hxdata_<key>.json 才davDown拉回——只补缺失，不盖已有（文件夹是真源）；失败静默。 */
+     rescue(keys)：开门sync前按ts对账——本地缺云端有才davDown补回；两边都有云端mtime新过本地(listFiles的t)超5秒，先留档hxdata_<key>_冲突_时分秒.json再davDown盖回；本地较新或相等顺手davUp让云端追平；云端没有顺手davUp补齐；单件失败跳过，list失败直接返回。 */
   HX.dav = (function(){
     var dv = {};
     var DAV_DIR = '/学习套装数据/';
     var mTimers = {}; /* 每个文件名一颗debounce定时器 */
     function sh(){ try{ return (window.LearnShell && LearnShell.davUp && LearnShell.davDown && LearnShell.davList) ? LearnShell : null; }catch(e){ return null; } }
     function dfname(key){ return 'hxdata_' + String(key).replace(/[^一-龥a-zA-Z0-9_-]/g,'_') + '.json'; } /* 同仓管员fname规则 */
+    function hhmmss(){ var d = new Date(); return (d.getHours()<10?'0':'')+d.getHours()+(d.getMinutes()<10?'0':'')+d.getMinutes()+(d.getSeconds()<10?'0':'')+d.getSeconds(); } /* 同仓管员留档命名：时分秒 */
     /* LearnShell.davUp在 && 钥匙齐 */
     dv.ok = function(){ try{ return !!(sh() && HX.keys.dav()); }catch(e){ return false; } };
     /* 闲时镜像：直接davUp该文件名到 /学习套装数据/；debounce 10秒；失败静默下次闲时再试 */
@@ -1031,7 +1033,9 @@
         }, 10000);
       }catch(e){}
     };
-    /* 救命腿：对folder里缺失的 hxdata_<key>.json，davList查有则davDown拉回；只补缺失不盖已有 */
+    /* 救命腿（v0.6.0升级为ts对账）：davList查云端清单（含每项mtime）后逐键比对——
+       本地缺云端有→davDown补回；两边都有云端新过本地超5秒→先留档_冲突_件再davDown盖回；
+       本地较新或相等→顺手davUp让云端追平；云端没有→顺手davUp补齐；单件失败跳过不碍其他件 */
     dv.rescue = function(keys){
       try{
         if(!dv.ok()) return;
@@ -1040,26 +1044,39 @@
         var lst = '';
         try{ lst = String(L.davList(k.user, k.pass, DAV_DIR) || ''); }catch(e){ return; }
         if(lst.indexOf('err:') === 0) return;
-        var names = [], i;
+        var cloud = {}, i; /* 云端文件名→mtime(ms)，没给mtime按0 */
         try{
           var j = JSON.parse(lst);
           if(j && typeof j.length === 'number'){
             for(i = 0; i < j.length; i++){
-              if(typeof j[i] === 'string') names.push(j[i]);
-              else if(j[i] && j[i].name) names.push(String(j[i].name));
+              if(typeof j[i] === 'string') cloud[j[i]] = 0;
+              else if(j[i] && j[i].name) cloud[String(j[i].name)] = (+j[i].mtime) || (+j[i].t) || (Date.parse(j[i].mtime || j[i].t || '') || 0) || 0;
             }
           }
-        }catch(e){ names = lst.split(/[\r\n,]+/); } /* 非JSON就按行/逗号切 */
+        }catch(e){ var parts = lst.split(/[\r\n,]+/); for(i = 0; i < parts.length; i++){ if(parts[i]) cloud[parts[i]] = 0; } } /* 非JSON就按行/逗号切 */
+        var lmt = {}; /* 本地文件名→mtime(ms)，listFiles的t字段 */
+        try{
+          var lf = JSON.parse(L.listFiles() || '[]');
+          for(i = 0; i < lf.length; i++){ if(lf[i] && lf[i].name) lmt[String(lf[i].name)] = (+lf[i].t) || 0; }
+        }catch(e){}
         for(i = 0; i < keys.length; i++){
           try{
             var fn = dfname(keys[i]);
             var cur = null;
             try{ cur = L.readFile(fn); }catch(e){}
-            if(cur) continue; /* 文件夹是真源：已有件绝不盖 */
-            var has = false;
-            for(var j2 = 0; j2 < names.length; j2++){ if(names[j2] === fn){ has = true; break; } }
-            if(!has) continue;
-            L.davDown(k.user, k.pass, DAV_DIR + fn, fn);
+            var has = Object.prototype.hasOwnProperty.call(cloud, fn);
+            if(!cur){ /* 本地缺：云端有才davDown补回（照旧只补缺失） */
+              if(has) try{ L.davDown(k.user, k.pass, DAV_DIR + fn, fn); }catch(e){}
+              continue;
+            }
+            if(!has){ try{ L.davUp(k.user, k.pass, fn, DAV_DIR); }catch(e){} continue; } /* 云端没有：顺手davUp补齐云端 */
+            var ct = cloud[fn] || 0, lt = lmt[fn] || 0;
+            if(ct > lt + 5000){ /* 云端新过本地超5秒：先留档本地旧件再盖回 */
+              try{ L.writeFile(dfname(String(keys[i]) + '_冲突_' + hhmmss()), cur); }catch(e){} /* cur是readFile原文，原样另存 */
+              try{ L.davDown(k.user, k.pass, DAV_DIR + fn, fn); }catch(e){}
+            }else{ /* 本地较新或相等：顺手davUp让云端追平 */
+              try{ L.davUp(k.user, k.pass, fn, DAV_DIR); }catch(e){}
+            }
           }catch(e){}
         }
       }catch(e){}
