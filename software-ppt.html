@@ -10,6 +10,7 @@
           → 大纲编辑页改稿 → 一键生成HTML幻灯片 → 横屏播放 → 每页可AI重做/换版式
           → 导出单个HTML（微信发别人，浏览器打开即放映）
   修改记录：
+   v0.19.0 2026-09-12 地基二期（照大管家v0.28.0/v0.29.0两步合一，SPEC2共同规矩落地PPT）：①hxStore收编HX.store薄壳（对外set/reg/sync名字签名一个不变，内部转发HX.store.*；HX.store缺席时完全走原有本地老路不白屏）②set时无壳（HX.store.has()为false）顺手HX.relay.add同一份值，有壳绝不走relay ③保存后闲时HX.dav.mirror对应hxdata_<键>.json（dav内部debounce，失败静默）④开门sync前HX.dav.rescue(注册键数组hxStore.keys())只补缺失；闲时watcher加HX.relay.pull()，拉到>0件toast「🗄️ 中转区拉回N件新数据，已对齐，刷新一下看最新的」+2秒后刷新，无壳无钥匙静默 ⑤开门HX.relay.init('PPT')挪进hxReady回调挂顶部状态条 ⑥sync冲突→顶部红条（样式照抄大管家conflictBar，可✕关不弹窗）⑦ppt_inbox注册进仓管员键数组（收件箱一本账），收件从对齐后缓存读（寄件方另一班改）；全程if(window.HX&&HX.xxx)守卫+try，HX缺席行为与v0.18.0完全一致；版本号0.18.0→0.19.0（顶部注释/SW_VERSION/界面版本行hdVer·ftVer照走SW_VERSION三处同步）。
    v0.18.0 2026-09-11 D7b真挂病人（信息流通普查断点D7b）：①?from=guanjia&pt=病人名 的pt值存localStorage单立键 ppt_curpt（不动ppt_gongfang_v01仓结构；再来新pt覆盖=换病人，pt=空值=清掉），顶条显示照v0.14.3原样未动 ②之后点「➕新建PPT」（btnNew）时工程名title与大纲首行自动带「[病人名]」前缀，直到换病人/清掉；覆盖范围只此一处手动新建，auto信/学习笔记等自动建工程一律不动 ③版本号0.17.0→0.18.0。不带参数打开零影响，无壳不报错。
    v0.17.0 2026-09-11 AI面板推广（大管家v0.24.0试点拍板方法论推广到全家）：①AI_MANIFEST 6条（AI起草/润色大纲/大纲定稿出页/全篇双AI精做/AI照改大纲/放映问AI，run全点现有按钮，功能本体一行未动） ②hxReady回调追加HX.ai.init（getSection辨首页/大纲页/幻灯片；send直走现有callAI回调通道，只给面板「＋加AI功能」生成器用） ③6处原AI入口首行插拦截行（HX.ai.ready()则唤起面板定位到对应条目，HX不在/面板未就绪放行原行为，降级=v0.16.0原样） ④版本号0.16.0→0.17.0。
    v0.16.0 2026-09-10 收公共块hx-common.js（plan2军规：钥匙统一+收公共块，不崩溃压倒一切）：①三级查找加载hx-common.js（壳readFile授权文件夹→同目录fetch8秒超时→公开仓下载写壳安装），没装上只有速记/云备份/版本自检降级提示"公共件未装"，新建/大纲/生成/放映主流程照常不白屏 ②删内嵌速记snippet（style+圆点+面板+IIFE一整块），改HX.sj.init({app:'PPT工坊'})（UI由公共件init时自动注入，行为一字未改） ③删内嵌gh函数族传输实现（ghHeaders/ghFileUrl/ghFetch/ghErrText/ghRawGet等），云备份/恢复/对账/下载新版改调HX.gh.*（readJson/writeJson/getFile）；b64编解码是通用工具（导出/存文件夹主流程也用），留同名薄壳HX在走HX.gh不在本地照算 ④删内嵌自检改HX.selfCheck('ppt',SW_VERSION)（API优先+免Token raw直链兜底，UI原样） ⑤钥匙读取改HX.keys（大模型hx_apikey→bg_apikey→xt_apikey；千问hx_qwenkey→bg_qwen_key；GitHub钱罐hx_gh_*→br_gh_*），设置页写Key只写hx_apikey（旧键保留不删自然淘汰） ⑥账本删内嵌HX_PRICE/hxBill*实现改调HX.bill（hx_aibill格式一字未改，HX没装静默不记账）。ppt_inbox寄件信箱/hxStore/大纲编辑器/slides页/callAI一律未动。
@@ -388,8 +389,59 @@ var hxStore=(function(){
   function unb64(s){ return decodeURIComponent(escape(atob(s))); }
   function fn(key){ return 'hxdata_'+key+'.json'; }
   function reg(key){ if(KEYS.indexOf(key)<0) KEYS.push(key); }
-  function set(key,obj){ try{ localStorage.setItem(key,JSON.stringify(obj)); }catch(e){} if(bridged()){ try{ LearnShell.writeFile(fn(key), b64(JSON.stringify(obj))); }catch(e){} } }
+  function hasHX(){ try{ return !!(window.HX&&HX.store); }catch(e){ return false; } } /* v0.19.0 收编仓管员：HX.store在就转发，缺席走原有本地老路 */
+  /* v0.19.0 冲突明示红条（样式照抄大管家conflictBar）：两头都改过→顶部红条，可点✕关，不弹窗不阻塞 */
+  function conflictBar(list){
+    if(!list||!list.length) return;
+    var old=document.getElementById('hxSyncConflictBar'); if(old) old.remove();
+    var bar=document.createElement('div');
+    bar.id='hxSyncConflictBar';
+    bar.style.cssText='position:fixed;left:50%;top:10px;transform:translateX(-50%);background:#fff5f5;color:#c0392b;border:2px solid #e74c3c;border-radius:12px;padding:10px 14px;font-size:14px;z-index:99999;max-width:92%;box-shadow:0 4px 16px rgba(192,57,43,.25);text-align:left;';
+    var head=document.createElement('div');
+    head.style.cssText='display:flex;align-items:center;gap:8px;';
+    var txt=document.createElement('span');
+    txt.innerHTML='<b style="color:#c0392b;">⚠️ 对账发现'+list.length+'处两头都改过：新的已用上，旧的改名_冲突_时分留档</b>';
+    var x=document.createElement('span');
+    x.textContent='✕';
+    x.style.cssText='cursor:pointer;padding:2px 8px;color:#a89f93;font-weight:700;';
+    x.onclick=function(){ bar.remove(); };
+    head.appendChild(txt); head.appendChild(x);
+    var det=document.createElement('div');
+    det.style.cssText='margin-top:6px;line-height:1.8;font-size:13px;border-top:1px dashed #f5c6c6;padding-top:6px;max-height:40vh;overflow-y:auto;';
+    det.innerHTML=list.map(function(c){ return '<div style="color:#c0392b;font-weight:600;">· '+String(c.key).replace(/</g,'&lt;')+'（留用'+(c.kept==='local'?'本机':'文件夹')+'那份）</div>'; }).join('');
+    bar.appendChild(head); bar.appendChild(det);
+    document.body.appendChild(bar);
+  }
+  function set(key,obj){
+    /* v0.19.0 单体备份邮路+坚果云镜像（照大管家v0.29.0）：保存后，
+       无壳（HX.store缺席或HX.store.has()为false）→同一份值顺手塞HX.relay中转；有壳绝不走relay（壳内文件夹是真源）；
+       HX.dav.mirror镜像hxdata_<键>.json到坚果云（dav内部debounce闲时送，失败静默）。
+       全程if(window.HX&&HX.relay)/HX.dav守卫+try，HX缺席时行为与v0.18.0完全一致 */
+    var sv=null; try{ sv=JSON.stringify(obj); }catch(e){}
+    if(hasHX()){
+      try{ HX.store.set(key, sv);
+        try{ if(window.HX&&HX.relay&&!(HX.store.has&&HX.store.has())) HX.relay.add(key, sv); }catch(e2){}
+        try{ if(window.HX&&HX.dav&&HX.dav.mirror) HX.dav.mirror(fn(key)); }catch(e2){}
+        return;
+      }catch(e){}
+    }
+    try{ localStorage.setItem(key,JSON.stringify(obj)); }catch(e){} if(bridged()){ try{ LearnShell.writeFile(fn(key), b64(JSON.stringify(obj))); }catch(e){} }
+    try{ if(window.HX&&HX.relay&&!(HX.store&&HX.store.has&&HX.store.has())) HX.relay.add(key, sv!==null?sv:JSON.stringify(obj)); }catch(e){}
+    try{ if(window.HX&&HX.dav&&HX.dav.mirror) HX.dav.mirror(fn(key)); }catch(e){}
+  }
   function sync(){
+    /* v0.19.0 收编仓管员（照大管家v0.28.0班修）：HX.store.sync把新数据灌进localStorage后，老路{pulled}返回值被吞，
+       闲时watcher靠pulled>0才toast+刷新。修：sync前后快照对比注册键，
+       有变化按老路语义返回{pulled:n}（watcher原逻辑一行不动照走toast+location.reload）；冲突走conflictBar顶部红条 */
+    if(hasHX()){
+      try{
+        var _before={}; KEYS.forEach(function(k){ try{ _before[k]=localStorage.getItem(k); }catch(e){} });
+        HX.store.sync(KEYS.slice(), conflictBar);
+        var _pulled=0; KEYS.forEach(function(k){ var _nv=null; try{ _nv=localStorage.getItem(k); }catch(e){} if(_nv!==_before[k]) _pulled++; });
+        return {moved:0, pulled:_pulled};
+      }catch(e){}
+      return null;
+    }
     if(!bridged()) return null;
     var moved=0, pulled=0;
     KEYS.forEach(function(k){
@@ -404,9 +456,10 @@ var hxStore=(function(){
   function pick(){ try{ LearnShell.pickFolder(); }catch(e){} }
   function pollFolder(done){ var n=0; var t=setInterval(function(){ n++;
     if(bridged()){ clearInterval(t); done(true); } else if(n>30){ clearInterval(t); done(false); } },1000); }
-  return {bridged:bridged,reg:reg,set:set,sync:sync,folderName:folderName,pick:pick,pollFolder:pollFolder};
+  return {bridged:bridged,reg:reg,set:set,sync:sync,folderName:folderName,pick:pick,pollFolder:pollFolder,keys:function(){ return KEYS.slice(); }}; /* v0.19.0 加keys()（纯加法）：HX.dav.rescue要注册键数组，闭包里取不出，开个只读口子 */
 })();
 hxStore.reg('ppt_gongfang_v01');
+hxStore.reg('ppt_inbox'); /* v0.19.0 ppt_inbox收件箱注册进仓管员键数组（一本账）：对齐走HX.store.sync/老路hxdata_ppt_inbox.json，收件从对齐后localStorage缓存读；寄件方另一班改，pptBox三兄弟镜像链路一行未动 */
 /* v0.14.1 开门零等待（洪老师拍板2026-09-07：打开先用本机数据，对齐挪到闲时）：
    不再开门就同步hxStore.sync（SAF查文件夹慢，会卡住开门）——先秒开，
    等你安静3秒再对齐；文件夹真拉来了新数据→提示后自动刷新一次给你看最新的。 */
@@ -414,10 +467,16 @@ hxStore.reg('ppt_gongfang_v01');
   var lastAct=Date.now();
   try{ ['touchstart','click','keydown','scroll'].forEach(function(ev){ document.addEventListener(ev,function(){ lastAct=Date.now(); },{passive:true,capture:true}); }); }catch(e){}
   (function w(){ if(Date.now()-lastAct>=3000){
+    /* v0.19.0 救命腿（SPEC2共同规矩3，照大管家v0.29.0）：开门sync前，文件夹缺失的hxdata文件从坚果云/学习套装数据/拉回——只补缺失，不盖已有；失败静默 */
+    try{ if(window.HX&&HX.dav&&HX.dav.rescue) HX.dav.rescue(hxStore.keys()); }catch(e){}
     try{ var r=hxStore.sync();
       if(r&&r.pulled){ try{ toast('🗄️ 文件夹里有新数据，已对齐，刷新一下看最新的',3000); }catch(e){} setTimeout(function(){ location.reload(); },2000); }
       else if(r&&r.moved){ try{ toast('🗄️ 本地数据已搬进文件夹（'+r.moved+'份）'); }catch(e){} }
     }catch(e){}
+    /* v0.19.0 中转拉回（SPEC2共同规矩3，照大管家v0.29.0班修②）：壳内闲时拉GitHub中转区，拉到>0件照现有pulled逻辑toast+刷新；无壳/无钥匙HX.relay.pull自己静默返0。Promise.resolve兼容数字/Promise */
+    try{ if(window.HX&&HX.relay&&HX.relay.pull){
+      Promise.resolve(HX.relay.pull()).then(function(_rp){ if(_rp>0){ try{ toast('🗄️ 中转区拉回'+_rp+'件新数据，已对齐，刷新一下看最新的',3000); }catch(e){} setTimeout(function(){ location.reload(); },2000); } });
+    } }catch(e){}
   } else setTimeout(w,400); })();
 })();
 </script>
@@ -971,7 +1030,7 @@ function shipDone(p){
 
 <script>
 "use strict";
-var SW_VERSION = "0.18.0" /* D7b真挂病人 v0.18.0 2026-09-11（断点D7b）：?from=guanjia&pt=病人名 不再只亮顶条——pt值存localStorage单立键 ppt_curpt（照周边键风格，不动ppt_gongfang_v01仓结构；新pt覆盖=换病人，pt=空值=清掉），顶条显示照v0.14.3原样；此后点「➕新建PPT」时工程名title与大纲首行自动带「[病人名]」前缀（只盖btnNew手动新建一处，auto信/学习笔记等自动建工程不动）。无参数打开零影响，无壳不报错 */ /* AI面板推广 v0.17.0 2026-09-11（大管家v0.24.0试点拍板方法论推广到全家）：AI_MANIFEST 6条（AI起草/润色大纲/大纲定稿出页/全篇双AI精做/AI照改大纲/放映问AI，run全点现有按钮）+hxReady回调追加HX.ai.init（getSection辨首页/大纲页/幻灯片，send直走现有callAI回调通道）+6处入口首行插拦截行（HX.ai.ready()则唤起面板定位，HX不在/面板未就绪放行原行为，降级=v0.16.0原样）；新建/大纲/生成/放映功能本体一行未动 */ /* 收公共块hx-common.js v0.16.0 2026-09-10（plan2军规：钥匙统一+收公共块，不崩溃压倒一切）：三级加载hx-common.js，没装上只速记/云备份/自检降级提示"公共件未装"、新建/大纲/生成/放映主流程照常；删内嵌速记snippet改HX.sj.init({app:'PPT工坊'})；删内嵌gh函数族传输实现，云备份/恢复/对账/下载新版改HX.gh.*；删内嵌自检改HX.selfCheck('ppt',SW_VERSION)；钥匙读取改HX.keys（hx→bg→xt fallback链，千问hx_qwenkey→bg_qwen_key），设置页写Key只写hx_apikey；账本删内嵌改HX.bill。ppt_inbox寄件信箱/hxStore/大纲编辑器/slides页/callAI一律未动 */ /* 首屏全鱼骨头化 v0.15.0 2026-09-10：新建大钮→文字行、我的PPT/收件箱→折叠行、项目操作收小字行；只动版面，功能/存储键名不动 */ /* 速记自动上行 v0.14.5 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* 速记 v0.14.4 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */; /* v0.14.3 大管家回程票：从病人大管家点过来（?from=guanjia）亮顶条「← 返回大管家」一键回家；不带参数打开零影响 */; /* v0.14.2 开门首跑pptBox.restore()挪闲时（davList+davDown+readFile慢桥不再堵开门，先秒开渲染，闲3秒对齐文件夹正本后自动补跑checkInbox，新信不丢）；其余一行未动 */ /* v0.14.1 ①治死锁复活：两处解锁（验尸弹窗+进度牌×）补写回文件夹正本pptBox.backup()，旧版只清localStorage，开门"文件夹说了算"把死锁灌回来导致弹窗解了又来 ②hxStore开门对齐挪闲时跑（同大管家v0.5.2药方） */ /* v0.14.0 鱼骨头化：提示词档案/云备份收进「🛠 设置与工具」抽屉（hx_ppt_tool_open，刷新记住），长介绍加ⓘ说明默认收起；纯界面，寄PPT提示词与生成链路一行未动（与大管家v0.5.0同款） */ /* v0.13.1 hxIndexRefresh加免Token备用路（API/没Token自动走公开站直链，治主界面卡旧版静默失败；成功/失败都toast一句） */ /* v0.13.0 备份自理班·三写+开门拉回：backup后防抖30秒davUp传/学习套装备份/（只传正本，失败静默角落留痕不阻塞存盘）；restore开门先比云端mtime新2分钟→davDown拉回再走文件夹说了算，运行中不轮询 */ /* v0.12.0 ppt_inbox信箱搬家hxStore双写：文件夹ppt_inbox.json升为正本、开门对齐"文件夹说了算"+自动搬家、写前三级轮转备份(.bak→.bak2→.bak3，读旧写新名实现，壳无读文件能力降级单.bak) */ /* v0.11.4 卡死三处方（洪老师真机199分钟死锁报案）：①auto信堵漏改走大纲定稿新主路（不再逐页30次调用）②锁加心跳beat，进度牌见10分钟没心跳显示"疑似卡死"+×强行解锁 ③开门验尸：>15分钟旧锁弹确认解锁 */ /* v0.11.3 更新通道根治：下载新版改分块写入+字节对账+写完回读验版本号（治JS桥截断假报喜）；标题自动填版本号 */ /* v0.11.2 对比弹窗根治：预览改iframe隔离(pointer-events:none)+大红✕关闭click/touchend双绑+遮罩补touchend+弹窗探针(遮挡toast报名)+渲染try/catch错误写进弹窗 */ /* v0.11.0 弹窗兜底（遮罩可关+onerror可见+init分步容错）+风格分轨（大白话科普/严肃医学，严肃版术语不翻白话、格子放宽，大管家寄PPT跟随） */ /* v0.10.0 大纲契约主路（整形1次+校对1次+本地出页）+提示词档案diff+失败原因名单+老精做降级高级区（详见文件头） */ /* v0.9.5 干活进度牌（阶段常亮）+完工自动传坚果云PPT成品（成品+工程备份）+手动导出也顺手传 */ /* v0.9.4 信箱镜像备份+红绿灯+坚果云自动同步 */ /* v0.9.3 队列续件+干活锁 */ /* v0.9.2 ①hxStore仓管员：存盘同步写壳文件夹 ②PPT链路闭环：认taskId、做完把大纲样品寄回大管家（guanjia_inbox）、收rev修改意见自动照改再寄回、3趟封顶提醒 */ /* v0.9.1 认大管家auto信自动全篇精做（授权在寄信时），polishAllRun抽公共 */ /* v0.9.0 二期：自动收信自动开工+双AI逐页精做（千问原著/快校对）+每页三版开关（原著/校对/AI综合）+三版对比终审，导出剥vers（详见文件头） */ /* v0.7.5 系统弹窗大扫除：剩下6处prompt+3处confirm全换自画对话框hxAsk/hxConfirm（AI起草大纲/填Key/涂黑改/插链接/单页AI改/云端恢复/删项目/删页），手机壳上不再"点了没反应" */ /* v0.7.4 三件套：①重做弹窗显示"正在重做第N页《标题》+内容预览"防点错页 ②小活（单页重做）优先派千问qwen-plus（几秒~20秒），没Key/失败自动退Kimi ③AI干活浮动秒表胶囊趴右下角 ④重做后验收：原有表格被AI弄丢→自动重试一次，仍丢则不覆盖原页 */ /* v0.7.3 重做全程浮动提示：开工/成功/失败都弹toast（洪医生真机反馈：进度消息在页面顶部，滚到下面看不见，像死机） */ /* v0.7.2 修数据错乱：AI重做在途时移动/删除该页，写回改认"页面对象"不认下标（独立测试t37抓到） */ /* v0.7.1 修"AI重做本页点了没反应"：病根=手机壳X5内核不理系统prompt()弹窗（直接当取消），改自画弹窗（习题学习删除确认同款药方） */ /* v0.7.0 千问自动交叉校对（愿望清单第3批）：「🤖 自动校对」一键两棒——第1棒发千问qwen-plus（公共钱罐hx_qwenkey，约1分钱）拿校对意见，第2棒自动交给贴回校对管道让Kimi照改大纲（没提到的一字不动）；开关可选千问/Kimi自查；千问答"没发现问题"就不花第2棒的钱 */ /* v0.6.1 自选背景图（愿望清单第2批）：幻灯片页「🖼️ 背景图」相册选图→canvas压缩≤1600px、JPEG逐步降质（≤200KB）→存本PPT的p.bg（不设全局）；渲染时.slide-page叠82%不透明蒙纱（米白皮用米白纱/深色皮用深色纱）保证字可读；「✕ 清除背景」一键还原；导出HTML内嵌带走。提醒：导出会把照片带出去，别夹病人信息 */ /* v0.6.0 四套皮肤（米白学术/深蓝正式/墨绿讲堂/黑板粉笔），每个PPT各选各的，导出HTML带着走；点屏翻页其实v0.2.0起就有（点左35%上页/右65%下页） */ /* v0.5.0 放映自适应：底栏实底让位+内容超高自动等比缩小（洪医生横屏讲课表格最后一行被吃） */ /* v0.4.8 AI报错带官方原因+400也自动换模型重试（洪医生贴回校对撞HTTP400：疑公共模型罐里存着已下架的moonshot-v1系列，400不走404重试路） */ /* v0.4.7 版本字样治病根：头顶+页脚+标题改成代码自动填SW_VERSION（v0.4.0~0.4.6期间头顶一直显示旧号，害用户以为没更新） */ /* v0.4.6 更新通道免Token备用路：自检/下载新版在API不通或没填Token时自动走github.io公开直链 */ /* v0.4.5 贴回校对结果：别的AI的校对意见贴进来，本软件AI照改大纲（原文没提到的部分不动）+秒表进度 */ /* v0.4.4 复制校对：大纲/全片一键连校对指令复制，借别的AI挑错，不花自己Key */ /* v0.4.3 修404：死模型自动换kimi-k2.6+重试；max_tokens 8000→16384（k2.6思考型） */ /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
+var SW_VERSION = "0.19.0" /* 地基二期 v0.19.0 2026-09-12（照大管家v0.28.0/v0.29.0两步合一，详见文件顶部修改记录）：hxStore收编HX.store薄壳+无壳relay中转+dav镜像/救命腿+冲突顶部红条+ppt_inbox一本账注册，全程守卫+try，HX缺席行为与v0.18.0完全一致 */ /* D7b真挂病人 v0.18.0 2026-09-11（断点D7b）：?from=guanjia&pt=病人名 不再只亮顶条——pt值存localStorage单立键 ppt_curpt（照周边键风格，不动ppt_gongfang_v01仓结构；新pt覆盖=换病人，pt=空值=清掉），顶条显示照v0.14.3原样；此后点「➕新建PPT」时工程名title与大纲首行自动带「[病人名]」前缀（只盖btnNew手动新建一处，auto信/学习笔记等自动建工程不动）。无参数打开零影响，无壳不报错 */ /* AI面板推广 v0.17.0 2026-09-11（大管家v0.24.0试点拍板方法论推广到全家）：AI_MANIFEST 6条（AI起草/润色大纲/大纲定稿出页/全篇双AI精做/AI照改大纲/放映问AI，run全点现有按钮）+hxReady回调追加HX.ai.init（getSection辨首页/大纲页/幻灯片，send直走现有callAI回调通道）+6处入口首行插拦截行（HX.ai.ready()则唤起面板定位，HX不在/面板未就绪放行原行为，降级=v0.16.0原样）；新建/大纲/生成/放映功能本体一行未动 */ /* 收公共块hx-common.js v0.16.0 2026-09-10（plan2军规：钥匙统一+收公共块，不崩溃压倒一切）：三级加载hx-common.js，没装上只速记/云备份/自检降级提示"公共件未装"、新建/大纲/生成/放映主流程照常；删内嵌速记snippet改HX.sj.init({app:'PPT工坊'})；删内嵌gh函数族传输实现，云备份/恢复/对账/下载新版改HX.gh.*；删内嵌自检改HX.selfCheck('ppt',SW_VERSION)；钥匙读取改HX.keys（hx→bg→xt fallback链，千问hx_qwenkey→bg_qwen_key），设置页写Key只写hx_apikey；账本删内嵌改HX.bill。ppt_inbox寄件信箱/hxStore/大纲编辑器/slides页/callAI一律未动 */ /* 首屏全鱼骨头化 v0.15.0 2026-09-10：新建大钮→文字行、我的PPT/收件箱→折叠行、项目操作收小字行；只动版面，功能/存储键名不动 */ /* 速记自动上行 v0.14.5 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* 速记 v0.14.4 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */; /* v0.14.3 大管家回程票：从病人大管家点过来（?from=guanjia）亮顶条「← 返回大管家」一键回家；不带参数打开零影响 */; /* v0.14.2 开门首跑pptBox.restore()挪闲时（davList+davDown+readFile慢桥不再堵开门，先秒开渲染，闲3秒对齐文件夹正本后自动补跑checkInbox，新信不丢）；其余一行未动 */ /* v0.14.1 ①治死锁复活：两处解锁（验尸弹窗+进度牌×）补写回文件夹正本pptBox.backup()，旧版只清localStorage，开门"文件夹说了算"把死锁灌回来导致弹窗解了又来 ②hxStore开门对齐挪闲时跑（同大管家v0.5.2药方） */ /* v0.14.0 鱼骨头化：提示词档案/云备份收进「🛠 设置与工具」抽屉（hx_ppt_tool_open，刷新记住），长介绍加ⓘ说明默认收起；纯界面，寄PPT提示词与生成链路一行未动（与大管家v0.5.0同款） */ /* v0.13.1 hxIndexRefresh加免Token备用路（API/没Token自动走公开站直链，治主界面卡旧版静默失败；成功/失败都toast一句） */ /* v0.13.0 备份自理班·三写+开门拉回：backup后防抖30秒davUp传/学习套装备份/（只传正本，失败静默角落留痕不阻塞存盘）；restore开门先比云端mtime新2分钟→davDown拉回再走文件夹说了算，运行中不轮询 */ /* v0.12.0 ppt_inbox信箱搬家hxStore双写：文件夹ppt_inbox.json升为正本、开门对齐"文件夹说了算"+自动搬家、写前三级轮转备份(.bak→.bak2→.bak3，读旧写新名实现，壳无读文件能力降级单.bak) */ /* v0.11.4 卡死三处方（洪老师真机199分钟死锁报案）：①auto信堵漏改走大纲定稿新主路（不再逐页30次调用）②锁加心跳beat，进度牌见10分钟没心跳显示"疑似卡死"+×强行解锁 ③开门验尸：>15分钟旧锁弹确认解锁 */ /* v0.11.3 更新通道根治：下载新版改分块写入+字节对账+写完回读验版本号（治JS桥截断假报喜）；标题自动填版本号 */ /* v0.11.2 对比弹窗根治：预览改iframe隔离(pointer-events:none)+大红✕关闭click/touchend双绑+遮罩补touchend+弹窗探针(遮挡toast报名)+渲染try/catch错误写进弹窗 */ /* v0.11.0 弹窗兜底（遮罩可关+onerror可见+init分步容错）+风格分轨（大白话科普/严肃医学，严肃版术语不翻白话、格子放宽，大管家寄PPT跟随） */ /* v0.10.0 大纲契约主路（整形1次+校对1次+本地出页）+提示词档案diff+失败原因名单+老精做降级高级区（详见文件头） */ /* v0.9.5 干活进度牌（阶段常亮）+完工自动传坚果云PPT成品（成品+工程备份）+手动导出也顺手传 */ /* v0.9.4 信箱镜像备份+红绿灯+坚果云自动同步 */ /* v0.9.3 队列续件+干活锁 */ /* v0.9.2 ①hxStore仓管员：存盘同步写壳文件夹 ②PPT链路闭环：认taskId、做完把大纲样品寄回大管家（guanjia_inbox）、收rev修改意见自动照改再寄回、3趟封顶提醒 */ /* v0.9.1 认大管家auto信自动全篇精做（授权在寄信时），polishAllRun抽公共 */ /* v0.9.0 二期：自动收信自动开工+双AI逐页精做（千问原著/快校对）+每页三版开关（原著/校对/AI综合）+三版对比终审，导出剥vers（详见文件头） */ /* v0.7.5 系统弹窗大扫除：剩下6处prompt+3处confirm全换自画对话框hxAsk/hxConfirm（AI起草大纲/填Key/涂黑改/插链接/单页AI改/云端恢复/删项目/删页），手机壳上不再"点了没反应" */ /* v0.7.4 三件套：①重做弹窗显示"正在重做第N页《标题》+内容预览"防点错页 ②小活（单页重做）优先派千问qwen-plus（几秒~20秒），没Key/失败自动退Kimi ③AI干活浮动秒表胶囊趴右下角 ④重做后验收：原有表格被AI弄丢→自动重试一次，仍丢则不覆盖原页 */ /* v0.7.3 重做全程浮动提示：开工/成功/失败都弹toast（洪医生真机反馈：进度消息在页面顶部，滚到下面看不见，像死机） */ /* v0.7.2 修数据错乱：AI重做在途时移动/删除该页，写回改认"页面对象"不认下标（独立测试t37抓到） */ /* v0.7.1 修"AI重做本页点了没反应"：病根=手机壳X5内核不理系统prompt()弹窗（直接当取消），改自画弹窗（习题学习删除确认同款药方） */ /* v0.7.0 千问自动交叉校对（愿望清单第3批）：「🤖 自动校对」一键两棒——第1棒发千问qwen-plus（公共钱罐hx_qwenkey，约1分钱）拿校对意见，第2棒自动交给贴回校对管道让Kimi照改大纲（没提到的一字不动）；开关可选千问/Kimi自查；千问答"没发现问题"就不花第2棒的钱 */ /* v0.6.1 自选背景图（愿望清单第2批）：幻灯片页「🖼️ 背景图」相册选图→canvas压缩≤1600px、JPEG逐步降质（≤200KB）→存本PPT的p.bg（不设全局）；渲染时.slide-page叠82%不透明蒙纱（米白皮用米白纱/深色皮用深色纱）保证字可读；「✕ 清除背景」一键还原；导出HTML内嵌带走。提醒：导出会把照片带出去，别夹病人信息 */ /* v0.6.0 四套皮肤（米白学术/深蓝正式/墨绿讲堂/黑板粉笔），每个PPT各选各的，导出HTML带着走；点屏翻页其实v0.2.0起就有（点左35%上页/右65%下页） */ /* v0.5.0 放映自适应：底栏实底让位+内容超高自动等比缩小（洪医生横屏讲课表格最后一行被吃） */ /* v0.4.8 AI报错带官方原因+400也自动换模型重试（洪医生贴回校对撞HTTP400：疑公共模型罐里存着已下架的moonshot-v1系列，400不走404重试路） */ /* v0.4.7 版本字样治病根：头顶+页脚+标题改成代码自动填SW_VERSION（v0.4.0~0.4.6期间头顶一直显示旧号，害用户以为没更新） */ /* v0.4.6 更新通道免Token备用路：自检/下载新版在API不通或没填Token时自动走github.io公开直链 */ /* v0.4.5 贴回校对结果：别的AI的校对意见贴进来，本软件AI照改大纲（原文没提到的部分不动）+秒表进度 */ /* v0.4.4 复制校对：大纲/全片一键连校对指令复制，借别的AI挑错，不花自己Key */ /* v0.4.3 修404：死模型自动换kimi-k2.6+重试；max_tokens 8000→16384（k2.6思考型） */ /* v0.4.2 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v0.4.1 公共钱罐v2时间戳版 */
 try{ document.title="PPT工坊 v"+SW_VERSION; }catch(e){} /* v0.11.3 标题不再写死 */
 /* 公共钱罐：API key/GitHub配置 一处填处处有（与其他软件共享 hx_*） */
 (function(){
@@ -3198,6 +3257,8 @@ var AI_MANIFEST=[
     run:function(){ var b=document.getElementById('pvAsk'); if(!b){ return; } b.click(); } }
 ];
 hxCommonLoad(function(){
+  /* v0.19.0班修（照大管家v0.29.0班修①）：开门 HX.relay.init('PPT')放hxReady回调里挂顶部状态条（单体显眼🟢/🟡/🔴，壳内队列恒空🟢无害照挂，老hx-common无relay静默跳过） */
+  try{ if(window.HX&&HX.relay&&HX.relay.init) HX.relay.init('PPT'); }catch(e){}
   try{ HX.sj.init({app:'PPT工坊'}); }catch(e){}
   /* v0.17.0 AI面板推广：hxReady回调追加HX.ai.init（原逻辑一行未动）；HX不在时本行不跑，6处入口拦截行也放行，降级=v0.16.0原行为 */
   try{ if(window.HX&&HX.ai) HX.ai.init({app:'PPT工坊', manifest:AI_MANIFEST,
