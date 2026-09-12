@@ -341,6 +341,19 @@ v1.3补丁7 (2026-07-29) 后台任务从单任务升级为队列（最多3个并
   正确→第4个被拦截→注释各自钉对题→屏幕不跳转），待用户实测验证。
 
 v1.4 (2026-08-02) 学习笔记协同 + GitHub云备份 + 开机自检 + 下载整套。
+v1.15.0 (2026-09-12) 地基二期：换仓管员HX.store全套+收件键一本账（照大管家v0.28收编+v0.29接入两步合一）。
+  ①hxStore收编成HX.store薄壳代理：对外set/reg/sync等名字签名一个不变，内部转发HX.store.*；
+    HX.store缺席（旧公共件/没装上）完全走原有本地老路，不白屏；
+  ②保存时无壳（HX.store.has()为false）顺手HX.relay.add同一份值进中转队列，有壳绝不走relay；
+  ③保存后闲时HX.dav.mirror对应hxdata_<键>.json到坚果云（dav内部10秒debounce，失败静默）；
+  ④开门sync前HX.dav.rescue(注册键数组)只补缺失不盖已有；闲时watcher加HX.relay.pull()，
+    拉到>0件照大管家模式toast「🗄️ 中转区拉回N件新数据，已对齐，刷新一下看最新的」+2秒后刷新；无壳无钥匙自动静默；
+  ⑤开门HX.relay.init('习题')挂顶部状态条（挪进hxReady，单体显眼，壳内恒🟢无害）；
+  ⑥sync冲突回调→顶部红条明示（样式照抄大管家conflictBar：红底、可点✕关、不弹窗不阻塞）；
+  ⑦收件键一本账：xitixuexi_inbox注册进仓管员键数组，收件从对齐后的缓存读（HX.store.get），
+    收完HX.store.remove销号防重收；寄件方由小涛侧配套；
+  ⑧全程if(window.HX&&HX.xxx)守卫+try，HX缺席行为与v1.14.0完全一致；
+  ⑨版本号1.14.0→1.15.0，SW_VERSION注释链/hdVer静态文字三处同步。
 v1.14.0 (2026-09-11) 信息流通普查断点二修（断点D7a/D8b，只加不破坏）。
   ①D7a ?pt=真挂病人：大管家带?pt=跳来时把病人名存进 localStorage xti_curpt
     （单立键照hx_gj_curpt风格，不动xitixuexi_v01结构，老数据零迁移）；
@@ -736,7 +749,7 @@ v1.4.1 (2026-08-02) 「下载整套」升级为三件套：+ software-bridge.htm
 
 <script id="embedded-data" type="application/json">null</script>
 
-<header>📖 习题学习<span class="ver" id="hdVer">v1.14.0</span></header>
+<header>📖 习题学习<span class="ver" id="hdVer">v1.15.0</span></header>
 
 <!-- ========== 首页 ========== -->
 <div id="page-home" class="page">
@@ -1326,8 +1339,59 @@ var hxStore=(function(){
   function unb64(s){ return decodeURIComponent(escape(atob(s))); }
   function fn(key){ return 'hxdata_'+key+'.json'; }
   function reg(key){ if(KEYS.indexOf(key)<0) KEYS.push(key); }
-  function set(key,obj){ try{ localStorage.setItem(key,JSON.stringify(obj)); }catch(e){} if(bridged()){ try{ LearnShell.writeFile(fn(key), b64(JSON.stringify(obj))); }catch(e){} } }
+  function hasHX(){ try{ return !!(window.HX&&HX.store); }catch(e){ return false; } } /* v1.15.0 收编仓管员：HX.store在就转发，缺席走原有本地老路 */
+  /* v1.15.0 冲突明示红条（样式照抄大管家v0.29.0 conflictBar）：两头都改过→顶部红条，可点✕关，不弹窗不阻塞 */
+  function conflictBar(list){
+    if(!list||!list.length) return;
+    var old=document.getElementById('hxSyncConflictBar'); if(old) old.remove();
+    var bar=document.createElement('div');
+    bar.id='hxSyncConflictBar';
+    bar.style.cssText='position:fixed;left:50%;top:10px;transform:translateX(-50%);background:#fff5f5;color:#c0392b;border:2px solid #e74c3c;border-radius:12px;padding:10px 14px;font-size:14px;z-index:99999;max-width:92%;box-shadow:0 4px 16px rgba(192,57,43,.25);text-align:left;';
+    var head=document.createElement('div');
+    head.style.cssText='display:flex;align-items:center;gap:8px;';
+    var txt=document.createElement('span');
+    txt.innerHTML='<b style="color:#c0392b;">⚠️ 对账发现'+list.length+'处两头都改过：新的已用上，旧的改名_冲突_时分留档</b>';
+    var x=document.createElement('span');
+    x.textContent='✕';
+    x.style.cssText='cursor:pointer;padding:2px 8px;color:#a89f93;font-weight:700;';
+    x.onclick=function(){ bar.remove(); };
+    head.appendChild(txt); head.appendChild(x);
+    var det=document.createElement('div');
+    det.style.cssText='margin-top:6px;line-height:1.8;font-size:13px;border-top:1px dashed #f5c6c6;padding-top:6px;max-height:40vh;overflow-y:auto;';
+    det.innerHTML=list.map(function(c){ return '<div style="color:#c0392b;font-weight:600;">· '+String(c.key).replace(/</g,'&lt;')+'（留用'+(c.kept==='local'?'本机':'文件夹')+'那份）</div>'; }).join('');
+    bar.appendChild(head); bar.appendChild(det);
+    document.body.appendChild(bar);
+  }
+  function set(key,obj){
+    /* v1.15.0 单体备份邮路+坚果云镜像（照大管家v0.29.0接入共同规矩）：保存后，
+       无壳（HX.store缺席或HX.store.has()为false）→同一份值顺手塞HX.relay中转；有壳绝不走relay（壳内文件夹是真源）；
+       HX.dav.mirror镜像hxdata_<键>.json到坚果云（dav内部10秒debounce闲时送，失败静默）。
+       全程if(window.HX&&HX.relay)/HX.dav守卫+try，HX缺席时行为与v1.14.0完全一致 */
+    var sv=null; try{ sv=JSON.stringify(obj); }catch(e){}
+    if(hasHX()){
+      try{ HX.store.set(key, sv);
+        try{ if(window.HX&&HX.relay&&!(HX.store.has&&HX.store.has())) HX.relay.add(key, sv); }catch(e2){}
+        try{ if(window.HX&&HX.dav&&HX.dav.mirror) HX.dav.mirror(fn(key)); }catch(e2){}
+        return;
+      }catch(e){}
+    }
+    try{ localStorage.setItem(key,JSON.stringify(obj)); }catch(e){} if(bridged()){ try{ LearnShell.writeFile(fn(key), b64(JSON.stringify(obj))); }catch(e){} }
+    try{ if(window.HX&&HX.relay&&!(HX.store&&HX.store.has&&HX.store.has())) HX.relay.add(key, sv!==null?sv:JSON.stringify(obj)); }catch(e){}
+    try{ if(window.HX&&HX.dav&&HX.dav.mirror) HX.dav.mirror(fn(key)); }catch(e){}
+  }
   function sync(){
+    /* v1.15.0班修（照大管家v0.28.0班修）：HX.store.sync把新数据灌进localStorage后，老路{pulled}返回值被吞，
+       闲时watcher靠pulled>0才toast+刷新，换机数据灌回了界面却空白。修：sync前后快照对比注册键，
+       有变化按老路语义返回{pulled:n}（watcher原逻辑一行不动照走toast+location.reload） */
+    if(hasHX()){
+      try{
+        var _before={}; KEYS.forEach(function(k){ try{ _before[k]=localStorage.getItem(k); }catch(e){} });
+        HX.store.sync(KEYS.slice(), conflictBar);
+        var _pulled=0; KEYS.forEach(function(k){ var _nv=null; try{ _nv=localStorage.getItem(k); }catch(e){} if(_nv!==_before[k]) _pulled++; });
+        return {moved:0, pulled:_pulled};
+      }catch(e){}
+      return null;
+    }
     if(!bridged()) return null;
     var moved=0, pulled=0;
     KEYS.forEach(function(k){
@@ -1342,21 +1406,30 @@ var hxStore=(function(){
   function pick(){ try{ LearnShell.pickFolder(); }catch(e){} }
   function pollFolder(done){ var n=0; var t=setInterval(function(){ n++;
     if(bridged()){ clearInterval(t); done(true); } else if(n>30){ clearInterval(t); done(false); } },1000); }
-  return {bridged:bridged,reg:reg,set:set,sync:sync,folderName:folderName,pick:pick,pollFolder:pollFolder};
+  return {bridged:bridged,reg:reg,set:set,sync:sync,folderName:folderName,pick:pick,pollFolder:pollFolder,keys:function(){ return KEYS.slice(); }}; /* v1.15.0 加keys()（纯加法，照大管家v0.29.0）：HX.dav.rescue要注册键数组，闭包里取不出，开个只读口子 */
 })();
 /* 仓管员登记处：本软件归仓管员管的键 */
 hxStore.reg('xitixuexi_v01');
+hxStore.reg('xitixuexi_inbox'); /* v1.15.0 收件键一本账：小涛寄习题的收件箱注册进仓管员键数组，开门sync自动对齐，收件改从对齐后的缓存读 */
 /* v1.10.1 开门零等待（洪老师拍板2026-09-07：打开先用本机数据，对齐挪到闲时）：
    不再开门就同步hxStore.sync（SAF查文件夹慢，会卡住开门）——先秒开，
    等你安静3秒再对齐；文件夹真拉来了新数据→提示后自动刷新一次给你看最新的。 */
 (function(){
   var lastAct=Date.now();
+  /* v1.15.0班修①（照大管家v0.29.0班修①）：HX.relay.init挪出本块——本IIFE先于hxCommonLoad执行，HX必不在=死代码；改挪进hxReady回调 */
   try{ ['touchstart','click','keydown','scroll'].forEach(function(ev){ document.addEventListener(ev,function(){ lastAct=Date.now(); },{passive:true,capture:true}); }); }catch(e){}
   (function w(){ if(Date.now()-lastAct>=3000){
+    /* v1.15.0 救命腿（照大管家v0.29.0）：开门sync前，文件夹缺失的hxdata文件从坚果云/学习套装数据/拉回——只补缺失，不盖已有；失败静默 */
+    try{ if(window.HX&&HX.dav&&HX.dav.rescue) HX.dav.rescue(hxStore.keys()); }catch(e){}
     try{ var r=hxStore.sync();
       if(r&&r.pulled){ try{ toast('🗄️ 文件夹里有新数据，已对齐，刷新一下看最新的',3000); }catch(e){} setTimeout(function(){ location.reload(); },2000); }
       else if(r&&r.moved){ try{ toast('🗄️ 本地数据已搬进文件夹（'+r.moved+'份）'); }catch(e){} }
     }catch(e){}
+    /* v1.15.0 中转拉回（照大管家v0.29.0）：壳内闲时拉GitHub中转区，拉到>0件照现有pulled逻辑toast+刷新；无壳/无钥匙HX.relay.pull自己静默返0。
+       照大管家v0.29.0班修②：pull返回Promise，Promise.resolve兼容数字/Promise */
+    try{ if(window.HX&&HX.relay&&HX.relay.pull){
+      Promise.resolve(HX.relay.pull()).then(function(_rp){ if(_rp>0){ try{ toast('🗄️ 中转区拉回'+_rp+'件新数据，已对齐，刷新一下看最新的',3000); }catch(e){} setTimeout(function(){ location.reload(); },2000); } });
+    } }catch(e){}
   } else setTimeout(w,400); })();
 })();
 
@@ -3206,7 +3279,7 @@ function hxStoreAfterPick(){
    完整设计思路与协同协议见学习笔记.html 代码顶部（两边以那份为准）。 */
 var XT_GH_USER = "xt_gh_user", XT_GH_TOK = "xt_gh_tok", XT_GH_REPO = "xt_gh_repo",
     XT_GH_LAST = "xt_gh_last", XT_GH_CHECK = "xt_gh_check";
-var SW_VERSION = "1.14.0" /* v1.14.0 2026-09-11 信息流通普查断点二修（断点D7a/D8b，只加不破坏）：①D7a ?pt=真挂病人——大管家带?pt=跳来时把病人名存进 localStorage xti_curpt（单立键照hx_gj_curpt风格，不动xitixuexi_v01结构），新增xtiPt()/xtiPtTag()读取；产出标题带「[病人名]」前缀，覆盖范围：错题导出txt段标题+文件名、寄PPT信件标题（sendToPpt一处收口，习题集/备课两路都管）；本软件无独立「做题记录」文本产出，做题进度仍存xitixuexi_v01不出库，故无需挂名 ②D8b 寄PPT走新协议（照抄血气v0.17.0/小涛glowPptSend）：ppt_busy有锁或ppt_inbox有未收的信或ppt_inbox_q队非空→进ppt_inbox_q排队不覆盖未收的信，都空闲才直寄ppt_inbox ③版本号1.13.0→1.14.0，hdVer静态文字同步 */ /* v1.13.0 2026-09-11 AI面板推广：AI_MANIFEST 5条+HX.ai.init（send走现有callAI）+4处入口拦截行；刷题/导入/AI备课功能本体一行未动，HX不在降级=v1.12.0原样 */ /* v1.12.0 2026-09-10 收编公共件hx-common.js（详见文件顶部修改记录）：三级加载器接入，missing只降级提示；删内嵌速记snippet改HX.sj.init({app:'习题'})；删内嵌gh函数族改HX.gh.*；自检改HX.selfCheck('xiti',SW_VERSION)；钥匙读HX.keys写只写hx_apikey；账本改HX.bill；3模式折叠行/题库行化/hxStore/page-study/aiMakeQuestions一律未动 */ /* v1.11.0 2026-09-10 全鱼骨头化首页：3Tab→3折叠行、9平铺钮归3组折叠行、题库卡行化（操作收小字行，新增改名）；纯版面，功能/JS/存储键名零改动 */ /* 速记自动上行 v1.10.5 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* 速记 v1.10.4 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */; /* v1.10.3 大管家回程票：从病人大管家点过来（?from=guanjia）亮顶条「← 返回大管家」一键回家；不带参数打开零影响 */; /* v1.10.2 (2026-09-07) 开门静默化：locStatusRender(SAF慢桥)挪4秒闲时，治开门愣几秒；其余一行未动 */ /* v1.10.1 hxStore开门对齐挪闲时跑（同大管家v0.5.2药方：先秒开，闲3秒再对齐，拉到新数据自动刷新一次） */ /* v1.10.0 鱼骨头化（照抄大管家v0.5.0样板）：①最底下新增「🛠 设置与工具」折叠抽屉（一级卡5px粗左框+深底，二级卡缩进+浅底+3px左竖线+无阴影；开合记 localStorage hx_xiti_tool_open，刷新保持，箭头▸点开/▾收起）②云备份卡（ghCard，原<details>折叠复用）从普通题库面板原样搬入抽屉，另加「🤖 AI设置」卡走原 openAiKey() 弹窗；纯界面折叠结构与样式，功能逻辑零改动 */ /* v1.9.1 hxIndexRefresh加免Token备用路（API/没Token自动走公开站直链，治主界面卡旧版静默失败；成功/失败都toast一句） */ /* v1.9.0 hxStore仓管员接入（全家推广第3家）：习题库+做题进度每次存盘同步写壳授权文件夹 hxdata_xitixuexi_v01.json，开门自动对齐（文件说了算/自动搬家），左下角🗄️选/换文件夹；无壳浏览器照旧 */ /* v1.8.9 AI报错带官方原因+400也自动换模型重试（洪医生撞HTTP400：疑moonshot-v1系列下架回400） */ /* v1.8.8 AI综合备课加秒表进度：每秒报已等多久，转着就不是死机 */ /* v1.8.7 修404：kimi-k2.5官方下架→死模型名单自动换kimi-k2.6+404自动重试；补title/header版本号（1.8.5/1.8.6漏改） */ /* v1.8.6 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v1.8.5 习题→PPT工坊两路（洪医生任务2026-09-01）：任务一「📊 习题→PPT」本地拼——
+var SW_VERSION = "1.15.0" /* v1.15.0 2026-09-12 地基二期（照大管家v0.28收编+v0.29接入两步合一应用到习题）：①hxStore收编成HX.store薄壳代理（对外set/reg/sync名字签名一个不变，HX.store缺席走原有本地老路不白屏）②保存时无壳顺手HX.relay.add同一份值，有壳绝不走relay ③保存后闲时HX.dav.mirror对应hxdata文件名 ④开门sync前HX.dav.rescue(注册键数组)+闲时watcher加HX.relay.pull()（拉到>0件toast+2秒后刷新）⑤开门HX.relay.init('习题')挂顶部状态条（挪进hxReady）⑥sync冲突回调→顶部红条明示（样式照抄大管家conflictBar，可点✕关不弹窗不阻塞）⑦收件键一本账：xitixuexi_inbox注册进仓管员键数组，收件从对齐后的缓存读、收完销号 ⑧版本号1.14.0→1.15.0，hdVer静态文字同步 */ /* v1.14.0 2026-09-11 信息流通普查断点二修（断点D7a/D8b，只加不破坏）：①D7a ?pt=真挂病人——大管家带?pt=跳来时把病人名存进 localStorage xti_curpt（单立键照hx_gj_curpt风格，不动xitixuexi_v01结构），新增xtiPt()/xtiPtTag()读取；产出标题带「[病人名]」前缀，覆盖范围：错题导出txt段标题+文件名、寄PPT信件标题（sendToPpt一处收口，习题集/备课两路都管）；本软件无独立「做题记录」文本产出，做题进度仍存xitixuexi_v01不出库，故无需挂名 ②D8b 寄PPT走新协议（照抄血气v0.17.0/小涛glowPptSend）：ppt_busy有锁或ppt_inbox有未收的信或ppt_inbox_q队非空→进ppt_inbox_q排队不覆盖未收的信，都空闲才直寄ppt_inbox ③版本号1.13.0→1.14.0，hdVer静态文字同步 */ /* v1.13.0 2026-09-11 AI面板推广：AI_MANIFEST 5条+HX.ai.init（send走现有callAI）+4处入口拦截行；刷题/导入/AI备课功能本体一行未动，HX不在降级=v1.12.0原样 */ /* v1.12.0 2026-09-10 收编公共件hx-common.js（详见文件顶部修改记录）：三级加载器接入，missing只降级提示；删内嵌速记snippet改HX.sj.init({app:'习题'})；删内嵌gh函数族改HX.gh.*；自检改HX.selfCheck('xiti',SW_VERSION)；钥匙读HX.keys写只写hx_apikey；账本改HX.bill；3模式折叠行/题库行化/hxStore/page-study/aiMakeQuestions一律未动 */ /* v1.11.0 2026-09-10 全鱼骨头化首页：3Tab→3折叠行、9平铺钮归3组折叠行、题库卡行化（操作收小字行，新增改名）；纯版面，功能/JS/存储键名零改动 */ /* 速记自动上行 v1.10.5 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* 速记 v1.10.4 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */; /* v1.10.3 大管家回程票：从病人大管家点过来（?from=guanjia）亮顶条「← 返回大管家」一键回家；不带参数打开零影响 */; /* v1.10.2 (2026-09-07) 开门静默化：locStatusRender(SAF慢桥)挪4秒闲时，治开门愣几秒；其余一行未动 */ /* v1.10.1 hxStore开门对齐挪闲时跑（同大管家v0.5.2药方：先秒开，闲3秒再对齐，拉到新数据自动刷新一次） */ /* v1.10.0 鱼骨头化（照抄大管家v0.5.0样板）：①最底下新增「🛠 设置与工具」折叠抽屉（一级卡5px粗左框+深底，二级卡缩进+浅底+3px左竖线+无阴影；开合记 localStorage hx_xiti_tool_open，刷新保持，箭头▸点开/▾收起）②云备份卡（ghCard，原<details>折叠复用）从普通题库面板原样搬入抽屉，另加「🤖 AI设置」卡走原 openAiKey() 弹窗；纯界面折叠结构与样式，功能逻辑零改动 */ /* v1.9.1 hxIndexRefresh加免Token备用路（API/没Token自动走公开站直链，治主界面卡旧版静默失败；成功/失败都toast一句） */ /* v1.9.0 hxStore仓管员接入（全家推广第3家）：习题库+做题进度每次存盘同步写壳授权文件夹 hxdata_xitixuexi_v01.json，开门自动对齐（文件说了算/自动搬家），左下角🗄️选/换文件夹；无壳浏览器照旧 */ /* v1.8.9 AI报错带官方原因+400也自动换模型重试（洪医生撞HTTP400：疑moonshot-v1系列下架回400） */ /* v1.8.8 AI综合备课加秒表进度：每秒报已等多久，转着就不是死机 */ /* v1.8.7 修404：kimi-k2.5官方下架→死模型名单自动换kimi-k2.6+404自动重试；补title/header版本号（1.8.5/1.8.6漏改） */ /* v1.8.6 全家AI账本：每次AI记一笔+弹花了多少钱（估算） */ /* v1.8.5 习题→PPT工坊两路（洪医生任务2026-09-01）：任务一「📊 习题→PPT」本地拼——
   范围(勾选/全部)×筛选(全部/陌生+一般/只陌生)×排版(题答同页自习用 / 题一页答一页课堂提问用)，不花AI钱；
   任务二「🤖 AI综合备课」——AI读全部问答提炼成课（归纳/对比表/易错点，不是堆题），可填讲课重点，可对着薄弱点，
   大纲先预览可手改再寄。两路都走ppt_inbox邮路（照抄血气分析v0.10.8格式），PPT工坊弹窗收。 */
@@ -3666,16 +3739,23 @@ function ghDownloadAll() {
   });
 }
 /* ---- 收件箱：学习笔记 v2.2+ 出好题写 'xitixuexi_inbox'，这里启动时收 ---- */
+/* v1.15.0 收件销号：收完把真源文件一并删（防下回sync又拉回重收）；ghCheckInbox跑时hxCommonLoad多半还没装上HX，
+   故挪1.5秒后再删，HX届时在就删、不在就跳过（老行为不变） */
+function xitiInboxAck(){
+  setTimeout(function(){ try{ if(window.HX&&HX.store&&HX.store.remove) HX.store.remove("xitixuexi_inbox"); }catch(e){} }, 1500);
+}
 function ghCheckInbox() {
   var raw;
-  try { raw = localStorage.getItem("xitixuexi_inbox"); } catch (e) { return; }
+  /* v1.15.0 收件键一本账：xitixuexi_inbox已注册进仓管员，HX.store在就从对齐后的缓存读（HX.store.get读的正是sync对齐后的localStorage缓存）；HX缺席走原有老路，行为与v1.14.0一致 */
+  try { raw = (window.HX&&HX.store&&HX.store.get) ? HX.store.get("xitixuexi_inbox") : localStorage.getItem("xitixuexi_inbox"); } catch (e) { return; }
   if (!raw) return;
   var box;
   try { box = JSON.parse(raw); } catch (e) { box = null; }
-  if (!box || !box.text) { try { localStorage.removeItem("xitixuexi_inbox"); } catch (e) {} return; }
+  if (!box || !box.text) { try { localStorage.removeItem("xitixuexi_inbox"); } catch (e) {} xitiInboxAck(); return; }
   var qs = parseQuestions(box.text);
   if (!qs.length) { toast("📮 收到学习笔记发来的题目，但没解析出来（已保留，下次打开再试）"); return; }
   try { localStorage.removeItem("xitixuexi_inbox"); } catch (e) {}
+  xitiInboxAck(); /* v1.15.0 收完销号 */
   toast("📮 收到学习笔记发来的 " + qs.length + " 道题");
   enqueueImport(box.title || "学习笔记出题", qs, "normal");
 }
@@ -3812,6 +3892,8 @@ var AI_MANIFEST=[
 ];
 hxCommonLoad(function(){
   try{ HX.sj.init({app:'习题'}); }catch(e){}
+  /* v1.15.0 开门 HX.relay.init('习题')挪进hxReady（照大管家v0.29.0班修①：写开门IIFE先于hxCommonLoad执行=死代码）——单体挂状态条+开送，壳内队列恒空🟢无害，老hx-common无relay静默跳过 */
+  try{ if(window.HX&&HX.relay&&HX.relay.init) HX.relay.init('习题'); }catch(e){}
   /* v1.13.0 AI面板推广：hxReady回调追加HX.ai.init（原逻辑一行未动）；HX不在时本行不跑，4处入口拦截行也放行，降级=v1.12.0原行为 */
   try{ if(window.HX&&HX.ai) HX.ai.init({app:'习题', manifest:AI_MANIFEST,
     getSection:function(){
