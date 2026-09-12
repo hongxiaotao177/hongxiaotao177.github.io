@@ -1,6 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    hx-common.js —— 全家9件软件共用公共件母版
    HX_COMMON_VERSION = '0.2.0'（2026-09-10 plan2 军规：钥匙统一+收公共块+不崩溃压倒一切）
+   v0.4.0 2026-09-12：新增仓管员HX.store，地基工程一期规矩A/B落地（规矩A：一套门存取；规矩B：时间定新旧、冲突留档不覆盖）；修正：真源文件名前缀hxdata_沿用大管家旧档、兼容老hxStore裸档按mtime认读并升级信封、留档文件名放行中文「_冲突_」字样、留档名时分补秒防同分互盖；其余一行未动
    v0.3.0 2026-09-11：部件自升级HX.selfUp（洪老师拍板彻底治"壳内部件不更新"病根：开门闲时比对云端version-hx-common.json，旧了静默下载新版写回授权文件夹，下次开门生效；全程不弹窗，没壳/没网跳过）；其余一行未动
    v0.2.0 2026-09-11：新增HX.ai统一AI面板（两层结构+定位置顶+AI功能生成器，洪老师2026-09-11拍板方法论落地试点）；HX.sj面板加「🤖AI」入口钮；其余一行未动
 
@@ -10,6 +11,7 @@
      HX.sj      浮标速记+自动上行（从 software-notes.html 原文提取，8份MD5一致版）
      HX.selfCheck(app, swVersion)  版本自检（学习笔记 ghSelfCheck 通用化，API优先失败走raw直链带?t=防缓存）
      HX.bill    全家AI账本 hx_aibill（照抄学习笔记 hxBill 实现格式）
+     HX.store   仓管员：一套门存取（has/get/set/remove/sync/conflicts），壳内文件夹hxdata_<key>.json真源+localStorage缓存，时间定新旧、双动冲突留档（地基工程一期）
 
    接入说明（各软件照抄下面这段，三级查找照 guanjia-pdf-engine.js 已验证先例）：
      ① LearnShell.readFile('hx-common.js') 读壳授权文件夹（file://下fetch常被拦，readFile可靠）
@@ -23,7 +25,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 (function(){
   'use strict';
-  var HX_COMMON_VERSION = '0.3.0'; /* v0.3.0 2026-09-11：部件自升级HX.selfUp（病根：壳里旧版公共件永远不升级→AI面板等新功能装了也白装；开门闲时20秒比对云端version-hx-common.json，旧了静默下载写回授权文件夹，下次开门用新的，全程不弹窗） */ /* v0.2.0 2026-09-11：新增HX.ai统一AI面板（两层结构+定位置顶+AI功能生成器，洪老师2026-09-11拍板方法论落地试点）；HX.sj面板加「🤖AI」入口钮；其余一行未动 */ /* v0.1.1 2026-09-10：HX.sj.init 加可选 extraBtn（大管家#43「补充上一条」补回，洪老师点名功能）；不传仍是2钮版，默认行为不变 */
+  var HX_COMMON_VERSION = '0.4.0'; /* v0.4.0 2026-09-12：新增仓管员HX.store，地基工程一期规矩A/B落地 */ /* v0.3.0 2026-09-11：部件自升级HX.selfUp（病根：壳里旧版公共件永远不升级→AI面板等新功能装了也白装；开门闲时20秒比对云端version-hx-common.json，旧了静默下载写回授权文件夹，下次开门用新的，全程不弹窗） */ /* v0.2.0 2026-09-11：新增HX.ai统一AI面板（两层结构+定位置顶+AI功能生成器，洪老师2026-09-11拍板方法论落地试点）；HX.sj面板加「🤖AI」入口钮；其余一行未动 */ /* v0.1.1 2026-09-10：HX.sj.init 加可选 extraBtn（大管家#43「补充上一条」补回，洪老师点名功能）；不传仍是2钮版，默认行为不变 */
   if(window.HX && window.HX.HX_COMMON_VERSION){ return; } /* 已装过不重复装 */
   var HX = { HX_COMMON_VERSION: HX_COMMON_VERSION, ok: true };
   function warn(m){ try{ if(window.console && console.warn) console.warn('[hx-common] '+m); }catch(e){} }
@@ -622,6 +624,170 @@
     /* HX.ai.ready()：面板是否可用（UI注入成功）；面板触发run执行期间短暂返false防套娃 */
     ai.ready = function(){ return !!(_uiOk && !_inRun); };
     return ai;
+  })();
+
+  /* ════ 5.6 仓管员 HX.store（v0.4.0 新增，地基工程一期规矩A/B落地） ════
+     规矩A 一套门存取：托管键一律走 HX.store 存取，不直接摸 localStorage。
+     规矩B 时间定新旧、冲突留档：每个键带影子ts；sync时谁新谁当值；两边都动过不覆盖，
+     旧的那份以 key_冲突_HHMMSS 另存（缓存+真源各一份），并记进冲突清单。
+     数据模型：缓存 localStorage[key]=值字符串，影子 key+"ts"=本缓存最后改动ms、key+"sync"=上次对账一致ms；
+     壳内真源 hxdata_<key>.json（沿用大管家 hxdata_ 命名，旧备份直接能用；key里CJK中文放行、其余非[a-zA-Z0-9_-]换_），内容信封 {"v":值字符串,"ts":ms}；
+     兼容老hxStore裸档：真源文件不是信封格式时按裸值认读——v=文件原文、ts=listFiles该文件mtime，sync读到裸档顺手升级成信封，绝不丢旧数据；
+     无壳（!LearnShell||!folderSet()）：localStorage=真源照常能用，文件夹操作全跳过。 */
+  HX.store = (function(){
+    var st = {};
+    var conflictList = []; /* 本轮sync累计冲突清单（内存数组） */
+    function shOk(){ try{ return !!(window.LearnShell && LearnShell.folderSet && LearnShell.folderSet()); }catch(e){ return false; } }
+    function fname(key){ return 'hxdata_' + String(key).replace(/[^一-龥a-zA-Z0-9_-]/g,'_') + '.json'; } /* 白名单放行CJK中文：冲突留档「_冲突_」字样要在文件名里看得见 */
+    function kTs(key){ return String(key) + 'ts'; }
+    function kSync(key){ return String(key) + 'sync'; }
+    function lsRaw(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+    function lsDel(k){ try{ localStorage.removeItem(k); }catch(e){} }
+    function lsNum(k){ var n = parseInt(lsGet(k), 10); return isNaN(n) ? 0 : n; }
+    /* listFiles 里查该文件 mtime（裸档认读用）；查不到返0 */
+    function fMtime(name){
+      try{
+        var arr = JSON.parse(LearnShell.listFiles() || '[]');
+        for(var i = 0; i < arr.length; i++){ if(arr[i] && arr[i].name === name) return (+arr[i].t) || 0; }
+      }catch(e){}
+      return 0;
+    }
+    /* 读真源文件 → {v,ts} 或 null（没壳/没文件/坏JSON都算没有，单键坏不炸别键）；
+       兼容老hxStore裸档：解析不出信封就按裸值认读 v=文件原文、ts=文件mtime，标_bare待sync升级，绝不丢旧数据 */
+    function rRead(key){
+      try{
+        if(!shOk()) return null;
+        var fn = fname(key);
+        var b = LearnShell.readFile(fn);
+        if(!b) return null;
+        var txt = HX.gh.b64dec(b);
+        var j = null;
+        try{ j = JSON.parse(txt); }catch(e){ j = null; }
+        if(j && j.v !== undefined && j.v !== null && j.ts !== undefined && j.ts !== null){
+          return { v: String(j.v), ts: (+j.ts) || 0 };
+        }
+        return { v: txt, ts: fMtime(fn), _bare: true }; /* 裸JSON/裸值老档：按原文认 */
+      }catch(e){ return null; }
+    }
+    /* 写真源文件 → true/false */
+    function rWrite(key, val, ts){
+      try{
+        if(!shOk()) return false;
+        return !!LearnShell.writeFile(fname(key), HX.gh.b64enc(JSON.stringify({ v: String(val), ts: ts })));
+      }catch(e){ return false; }
+    }
+    function rDel(key){
+      try{
+        if(!shOk()) return false;
+        return !!LearnShell.deleteFile(fname(key));
+      }catch(e){ return false; }
+    }
+    /* 冲突另存：旧的那份以 key_冲突_HHMMSS 存（缓存+真源各一份）；时分后补秒防同分钟两次冲突同名互盖 */
+    function hhmmss(){ var d = new Date(); return (d.getHours()<10?'0':'')+d.getHours()+(d.getMinutes()<10?'0':'')+d.getMinutes()+(d.getSeconds()<10?'0':'')+d.getSeconds(); }
+    function saveConflictCopy(key, val, ts){
+      var ck = String(key) + '_冲突_' + hhmmss();
+      try{ lsSet(ck, String(val)); lsSet(ck+'ts', String(ts)); }catch(e){}
+      try{ rWrite(ck, val, ts); }catch(e){}
+    }
+    /* 记冲突：内存数组 + localStorage hx_store_conflicts（JSON数组，50条封顶） */
+    function pushConflict(rec){
+      try{ conflictList.push(rec); }catch(e){}
+      try{
+        var arr = JSON.parse(localStorage.getItem('hx_store_conflicts') || '[]');
+        arr.push(rec);
+        if(arr.length > 50) arr = arr.slice(arr.length - 50);
+        localStorage.setItem('hx_store_conflicts', JSON.stringify(arr));
+      }catch(e){}
+    }
+    /* 是否壳+文件夹可用 */
+    st.has = function(){ return shOk(); };
+    /* 读localStorage缓存，无则def（def默认null） */
+    st.get = function(key, def){
+      try{
+        var v = lsRaw(String(key));
+        return (v === null || v === undefined) ? (def === undefined ? null : def) : v;
+      }catch(e){ return (def === undefined ? null : def); }
+    };
+    /* 写缓存+影子ts=Date.now()；壳可用则同写真源文件；返回true/false */
+    st.set = function(key, val){
+      try{
+        var ts = Date.now();
+        lsSet(String(key), String(val));
+        lsSet(kTs(key), String(ts));
+        if(shOk()) rWrite(key, val, ts);
+        return true;
+      }catch(e){ return false; }
+    };
+    /* 删缓存+影子+真源文件 */
+    st.remove = function(key){
+      try{
+        lsDel(String(key));
+        lsDel(kTs(key));
+        lsDel(kSync(key));
+        if(shOk()) rDel(key);
+      }catch(e){}
+    };
+    /* 对账一批键（数组），逐键串行；cb(冲突清单数组)可无；单键炸不影响其他键 */
+    st.sync = function(keys, cb){
+      var news = [];
+      try{
+        keys = keys || [];
+        for(var i = 0; i < keys.length; i++){
+          try{
+            var key = String(keys[i]);
+            var R = rRead(key);                       /* 真源 {v,ts} 或 null */
+            if(R && R._bare) rWrite(key, R.v, R.ts);  /* 裸档顺手升级成信封，内容时间不变 */
+            var lv = lsRaw(key);                      /* 本地缓存值（null=没有） */
+            var hasL = (lv !== null && lv !== undefined);
+            var tsL = lsNum(kTs(key));                /* 本地影子ts */
+            var S = lsNum(kSync(key));                /* 上次对账一致ts */
+            if(R && !hasL){
+              /* 只有R有：R灌入本地（值+ts） */
+              lsSet(key, R.v); lsSet(kTs(key), String(R.ts));
+              lsSet(kSync(key), String(R.ts));
+            }else if(!R && hasL){
+              /* 只有L有：L推上真源 */
+              if(!tsL){ tsL = Date.now(); lsSet(kTs(key), String(tsL)); }
+              rWrite(key, lv, tsL);
+              lsSet(kSync(key), String(tsL));
+            }else if(R && hasL){
+              var tsR = R.ts;
+              if(tsL !== S && tsR !== S && tsR !== tsL){
+                /* 双动冲突：新的当值，旧的另存留档 */
+                if(tsL > tsR){
+                  saveConflictCopy(key, R.v, tsR);    /* 旧件=真源那份 */
+                  rWrite(key, lv, tsL);               /* 本地新的推上真源 */
+                  news.push({ key:key, kept:'local', tsKept:tsL, tsOld:tsR });
+                  lsSet(kSync(key), String(tsL));
+                }else{
+                  saveConflictCopy(key, lv, tsL);     /* 旧件=本地那份 */
+                  lsSet(key, R.v); lsSet(kTs(key), String(tsR));
+                  news.push({ key:key, kept:'remote', tsKept:tsR, tsOld:tsL });
+                  lsSet(kSync(key), String(tsR));
+                }
+              }else if(tsR > tsL){
+                /* 新盖旧：真源ts新→本地被盖 */
+                lsSet(key, R.v); lsSet(kTs(key), String(tsR));
+                lsSet(kSync(key), String(tsR));
+              }else if(tsL > tsR){
+                /* 新盖旧：本地ts新→真源被更新 */
+                rWrite(key, lv, tsL);
+                lsSet(kSync(key), String(tsL));
+              }else{
+                /* 相等不动 */
+                lsSet(kSync(key), String(tsL));
+              }
+            }
+            /* 两边都没有：跳过 */
+          }catch(e1){ warn('store.sync 键 '+keys[i]+': '+((e1&&e1.message)||e1)); }
+        }
+        for(var j = 0; j < news.length; j++) pushConflict(news[j]);
+      }catch(e){ warn('store.sync: '+((e&&e.message)||e)); }
+      try{ if(cb) cb(news); }catch(e){}
+    };
+    /* 本轮sync累计冲突清单（内存数组） */
+    st.conflicts = function(){ try{ return conflictList.slice(); }catch(e){ return []; } };
+    return st;
   })();
 
   /* ════ 6. 三级加载器现成代码（接入方照抄；军规1：加载失败主功能照常，只静默降级） ════ */

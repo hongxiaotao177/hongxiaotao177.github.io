@@ -6,6 +6,7 @@
 <title>拍病历</title>
 <!--
 修改记录:
+拍病历 v0.9.0 2026-09-12 地基一期接仓管员HX.store（三键pai_patients/pai_entries/hx_pai_ptmap_v1双写真源+开门闲时对账+冲突首页提示条+saveEntries条目补ts；HX缺席静默降级；照片备份/导出/识别链路一行未动）。
 拍病历 v0.8.0 2026-09-11 D2认?pt= + D4b照片备份出IndexedDB（只改这两处，其余一行未动）：①回程票扩认?pt=（不再要求from=guanjia）——带pt=就写hx_gj_curpt，查hx_pai_ptmap_v1反查代号：有→自动选中那个代号进拍照流，没有→记pai_pt_nocode，首页知情行提示「这个病人还没代号，建一个就自动关联」（建档paiPtMapLink自动关联后清除）；②照片只存IndexedDB换机即丢——新入库打脏标记pai_photos_dirty+3秒闲时自动备份，读出全部照片打成JSON（数组:{代号,条目id,base64}）写壳文件夹pai_photos_bak.json（LearnShell.writeFile，无壳静默跳过），总base64超2MB拆_1of2/_2of2两块各写各（病根档案①JS桥截断教训），写完清脏，设置页加文字行「💾立即备份照片到文件夹」手动触发+toast报件数。
 拍病历 v0.6.0 2026-09-10 接入公共件hx-common.js（plan2军规：钥匙统一+收公共块，不崩溃压倒一切）：①三级查找加载器接入（壳readFile→同目录fetch 8秒→公开仓raw下载安装），HX不在时只降级提示（速记浮标不出/云备份报「公共件未装」），建档/拍照流/识别/归档主功能照常不白屏；②删内嵌速记snippet（style+DOM+IIFE整段），改 HX.sj.init({app:'拍病历'})，行为不变；③内嵌ghPut/ghGet两个裸函数删除改调 HX.gh.putFile/getFile（钱罐从xt_gh_*独立罐迁移为HX.keys.gh()统一钱罐：读时若xt_gh_*有值而hx_gh_*空，一次性搬家写入hx_gh_*，旧键xt_gh_*保留不删自然淘汰；设置页GitHub三项只写hx_gh_*）；④钥匙读取6处（enqueue/visionModelPick/callVision/textModelPick/callText/btnFry）改 apiKey()=HX.keys.get()（hx→bg→xt fallback链接住，HX缺失时回退xt_apikey），设置页写Key只写hx_apikey；⑤billAiUse记账时同步 HX.bill('拍病历',...) 记全家账本hx_aibill（HX缺失静默跳过，本分账pai_bill_v1不动）；⑥10个view/卡墙行化结构/callVision识别逻辑/归档逻辑一律不动。
 拍病历 v0.5.0 2026-09-10 首屏鱼骨头化（2026-09-10 洪老师拍板：全家9件一口气全改，只动版面不动功能）：毛病=首屏「＋收新病人」大按钮+一墙.card.pcard小方框+顶栏队列/⚙️两钮，60岁零基础看着花；病根=卡片墙思路。改法=①大按钮压成「＋ 收新病人 ▸」文字行，点行张开/收起原newPane建档表单（表单本体一行未动，id照旧）；②顶栏队列/⚙️两钮撤出顶栏，改成两条纯文字行入口（id照旧btnQ/btnSet，事件目标不变）；③病人卡墙→名单行：一病人一行纯文字（床号+姓名 ▸，小字=代号·今日张数·账本摘要），点行=进vCam拍照流与原点卡完全一致，卡上「🗂库」收进该行小字行；④归档区details原样保持。renderHome只改输出HTML结构和CSS，数据流/变量名/存储键名一律没动；其余9个view一行未动。
@@ -134,6 +135,7 @@ table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:
     <!-- v0.5.0 大按钮压成文字行:点行张开/收起原newPane建档表单(表单本体一行未动) -->
     <!-- v0.7.0 D11:大管家当前病人提示行(hx_gj_curpt),纯显示不绑定;无值时隐藏 -->
     <div class="small" id="gjHintHome" style="display:none;white-space:pre-line;padding:2px 4px 8px"></div>
+    <div class="small" id="syncConflictHint" style="display:none;white-space:pre-line;padding:2px 4px 8px;color:#c00"></div><!-- v0.9.0 对账冲突提示条,样式照抄gjHint -->
     <div class="hxrow" id="btnNew">＋ 收新病人 ▸</div>
     <!-- v0.1.1 建病人改页面内面板（浏览器弹窗太暗看不清，洪大夫点空确定白跑一趟） -->
     <div class="card hidden" id="newPane" style="margin-bottom:12px">
@@ -270,7 +272,7 @@ table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:
       <div class="row" style="margin-top:8px"><button class="btn red sm" id="btnBillClear">🧹 清空账本</button></div>
     </div>
     <div class="card"><b>看门人日志</b><div id="guardLog" class="small" style="margin-top:6px"></div></div>
-    <div class="small" style="text-align:center;margin-top:8px">拍病历 v0.8.0</div><!-- v0.8.0 关于版本号 -->
+    <div class="small" style="text-align:center;margin-top:8px">拍病历 v0.9.0</div><!-- v0.8.0 关于版本号 -->
   </div>
 </div>
 
@@ -341,7 +343,7 @@ table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:
 
 <script>
 'use strict';
-const SW_VERSION='0.8.0' /* v0.8.0 2026-09-11 D2认?pt=+D4b照片备份出IndexedDB:①D2=回程票扩认?pt=(不再要求from=guanjia)——带pt=写hx_gj_curpt,查hx_pai_ptmap_v1反查代号,有→自动选中那个代号进拍照流,没有→记pai_pt_nocode首页知情行提示「这个病人还没代号，建一个就自动关联」(建档paiPtMapLink自动关联后清除);②D4b=照片只存IndexedDB换机即丢——新入库打脏标记pai_photos_dirty+入库后3秒闲时自动备份,读全部照片打成JSON(数组:{代号,条目id,base64})写壳文件夹pai_photos_bak.json(LearnShell.writeFile,无壳静默跳过),超2MB拆pai_photos_bak_1of2/2of2.json两块各写各(病根档案①JS桥截断教训),写完清脏,设置页加「💾立即备份照片到文件夹」手动+toast报件数 */ /* v0.7.0 2026-09-11 D11三套标识并一套·pai侧只知情不合并(洪老师拍板统一记号hx_gj_curpt):毛病=拍病历匿名代号(如Rmttsw119735)跟大管家当前病人记号localStorage hx_gj_curpt(如"16黄热射病")互不认,不知道谁是谁;病根=D11三套标识并一套。改法=①开门读hx_gj_curpt,有值就在首页顶/拍照页顶加一行小字「大管家当前病人：XX」,纯显示不自动绑定不动代号体系;②收新病人建档/选病人定当前代号后,hx_gj_curpt有值且本代号还没关联过时,把「代号→hx_gj_curpt病人名」记进localStorage新键hx_pai_ptmap_v1(对象:代号→病人名),已有关联不覆盖;③当前代号在hx_pai_ptmap_v1有对应且与hx_gj_curpt不一致时,拍照页提示行显示「本代号对应：XX／大管家当前：YY」两行小字让用户知情。不做自动改名、不做自动合并,代号体系一行未动 */ /* v0.6.0 2026-09-10 接入hx-common.js:三级加载+HX.sj.init+HX.gh.putFile/getFile+HX.keys+HX.bill,xt_gh_*一次性搬家hx_gh_*旧键保留,HX缺失主功能照常只降级提示 */ /* v0.5.0 2026-09-10 首屏鱼骨头化:病人卡墙→名单行(点行=拍照流,库入口收小字行),「＋收新病人」大按钮→文字行开合原表单,顶栏队列/⚙️→文字行;只改输出HTML+CSS,数据流/变量名/存储键名不动 */ /* 速记自动上行 v0.4.8 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* 速记 v0.4.7 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */; /* v0.4.6 大管家回程票：从病人大管家点过来（?from=guanjia）亮顶条「← 返回大管家」一键回家；不带参数打开零影响 */;
+const SW_VERSION='0.9.0' /* v0.9.0 2026-09-12 地基一期接仓管员HX.store:①savePatients/saveEntries/paiPtMapLink三处LS.set后追加HX.store.set双写(pai_patients/pai_entries/hx_pai_ptmap_v1);②HX装好后开门闲时3秒HX.store.sync三键对账,远端新→仓管员回灌localStorage缓存后补renderHome重渲染,冲突→首页红字提示条「对账发现N处两头都改过：新的已用上，旧的已留档」(样式照抄gjHint);③saveEntries条目无ts补ts:Date.now()(time字段不动);HX缺席全程静默降级老行为不变;照片备份/导出/识别链路一行未动 */ /* v0.8.0 2026-09-11 D2认?pt=+D4b照片备份出IndexedDB:①D2=回程票扩认?pt=(不再要求from=guanjia)——带pt=写hx_gj_curpt,查hx_pai_ptmap_v1反查代号,有→自动选中那个代号进拍照流,没有→记pai_pt_nocode首页知情行提示「这个病人还没代号，建一个就自动关联」(建档paiPtMapLink自动关联后清除);②D4b=照片只存IndexedDB换机即丢——新入库打脏标记pai_photos_dirty+入库后3秒闲时自动备份,读全部照片打成JSON(数组:{代号,条目id,base64})写壳文件夹pai_photos_bak.json(LearnShell.writeFile,无壳静默跳过),超2MB拆pai_photos_bak_1of2/2of2.json两块各写各(病根档案①JS桥截断教训),写完清脏,设置页加「💾立即备份照片到文件夹」手动+toast报件数 */ /* v0.7.0 2026-09-11 D11三套标识并一套·pai侧只知情不合并(洪老师拍板统一记号hx_gj_curpt):毛病=拍病历匿名代号(如Rmttsw119735)跟大管家当前病人记号localStorage hx_gj_curpt(如"16黄热射病")互不认,不知道谁是谁;病根=D11三套标识并一套。改法=①开门读hx_gj_curpt,有值就在首页顶/拍照页顶加一行小字「大管家当前病人：XX」,纯显示不自动绑定不动代号体系;②收新病人建档/选病人定当前代号后,hx_gj_curpt有值且本代号还没关联过时,把「代号→hx_gj_curpt病人名」记进localStorage新键hx_pai_ptmap_v1(对象:代号→病人名),已有关联不覆盖;③当前代号在hx_pai_ptmap_v1有对应且与hx_gj_curpt不一致时,拍照页提示行显示「本代号对应：XX／大管家当前：YY」两行小字让用户知情。不做自动改名、不做自动合并,代号体系一行未动 */ /* v0.6.0 2026-09-10 接入hx-common.js:三级加载+HX.sj.init+HX.gh.putFile/getFile+HX.keys+HX.bill,xt_gh_*一次性搬家hx_gh_*旧键保留,HX缺失主功能照常只降级提示 */ /* v0.5.0 2026-09-10 首屏鱼骨头化:病人卡墙→名单行(点行=拍照流,库入口收小字行),「＋收新病人」大按钮→文字行开合原表单,顶栏队列/⚙️→文字行;只改输出HTML+CSS,数据流/变量名/存储键名不动 */ /* 速记自动上行 v0.4.8 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* 速记 v0.4.7 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */; /* v0.4.6 大管家回程票：从病人大管家点过来（?from=guanjia）亮顶条「← 返回大管家」一键回家；不带参数打开零影响 */;
 const $=id=>document.getElementById(id);
 const esc=s=>s; // 一律textContent渲染
 function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',2200);}
@@ -413,9 +415,9 @@ $('imgView').addEventListener('click',()=>{$('imgView').style.display='none';});
 /* ---------- 数据 ---------- */
 const STEMS='甲乙丙丁戊己庚辛壬癸';
 function patients(){return LS.get('pai_patients',[])}
-function savePatients(p){LS.set('pai_patients',p)}
+function savePatients(p){LS.set('pai_patients',p);if(window.HX&&HX.store){HX.store.set('pai_patients',JSON.stringify(p));}} // v0.9.0 接仓管员三键之一
 function entries(){return LS.get('pai_entries',[])}
-function saveEntries(e){LS.set('pai_entries',e)}
+function saveEntries(e){e.forEach(function(it){if(it&&!it.ts)it.ts=Date.now();});LS.set('pai_entries',e);if(window.HX&&HX.store){HX.store.set('pai_entries',JSON.stringify(e));}} // v0.9.0 条目补ts+接仓管员三键之一
 function genCode(){
   const now=new Date(),mm=String(now.getMonth()+1).padStart(2,'0'),dd=String(now.getDate()).padStart(2,'0');
   let seq=LS.get('pai_seq',0);LS.set('pai_seq',seq+1);
@@ -497,7 +499,7 @@ function paiPtMap(){return LS.get(PAI_PTMAP_KEY,{})}
 function paiGjCur(){try{return localStorage.getItem('hx_gj_curpt')||''}catch(e){return ''}}
 function paiPtMapLink(code){ // 定了当前代号后:hx_gj_curpt有值且本代号还没关联过才记对应,已有关联不覆盖
   const gj=paiGjCur();if(!gj||!code)return;
-  const m=paiPtMap();if(m[code])return;m[code]=gj;LS.set(PAI_PTMAP_KEY,m);
+  const m=paiPtMap();if(m[code])return;m[code]=gj;LS.set(PAI_PTMAP_KEY,m);if(window.HX&&HX.store){HX.store.set(PAI_PTMAP_KEY,JSON.stringify(m));} // v0.9.0 接仓管员三键之一
   try{if(localStorage.getItem('pai_pt_nocode')===gj)localStorage.removeItem('pai_pt_nocode');}catch(e){} // v0.8.0 D2 ?pt=带来的病人建了代号=自动关联,清首页提示
 }
 function paiPtNocode(){try{return localStorage.getItem('pai_pt_nocode')||''}catch(e){return ''}} // v0.8.0 D2 ?pt=带过来但没代号的病人名
@@ -1636,6 +1638,21 @@ function hxCommonInstall(good, miss){
    missing只降级提示，不弹窗不卡屏，主功能照常 */
 hxCommonLoad(function(){
   try{ HX.sj.init({app:'拍病历'}); }catch(e){}
+  /* v0.9.0 开门闲时对账(HX装好后才有仓管员):三键sync,远端新→HX.store已回灌localStorage缓存,补renderHome重渲染;冲突→首页提示条 */
+  try{
+    if(window.HX&&HX.store&&HX.store.sync){
+      setTimeout(function(){
+        try{
+          HX.store.sync(['pai_patients','pai_entries','hx_pai_ptmap_v1'],function(cl){
+            try{
+              if(cl&&cl.length){var el=document.getElementById('syncConflictHint');if(el){el.textContent='对账发现'+cl.length+'处两头都改过：新的已用上，旧的已留档';el.style.display='';}}
+              if(window.__pj&&__pj.renderHome)__pj.renderHome();
+            }catch(e){}
+          });
+        }catch(e){}
+      },3000);
+    }
+  }catch(e){}
 }, function(){
   try{ if(window.console&&console.warn) console.warn('[拍病历] 公共件 hx-common.js 未装：速记浮标/云备份降级，主功能照常'); }catch(e){}
 });
