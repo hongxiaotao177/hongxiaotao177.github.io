@@ -42,6 +42,12 @@ window.addEventListener('load', function(){
   小涛笔记（学习笔记2代）· 单文件版
 ==========================================================
   修改记录：
+   v0.9.0 2026-09-12 SPEC2单体备份邮路+仓管员+坚果云镜像+中转拉回（地基补强，只加不破坏）：
+        主数据键=xt_notes_v1（笔记正文所在的最大数据键，只接这一个）。保存点saveNotes三岔：
+        有壳走HX.store.set一本账+闲时HX.dav.mirror镜像坚果云；无壳走原有localStorage老路
+        +HX.relay.add中转邮路（GitHub transit/，永远重试+回读核对）。开门HX.relay.init挂备份
+        状态条；闲时 HX.dav.rescue（只补缺失）→HX.store.sync对账→HX.relay.pull拉回中转件。
+        全守卫全try，HX缺席/老公共件=上版行为原样，一行老逻辑未动。
    v0.6.0 2026-09-10 鱼骨头化总攻（洪老师拍板：首屏全鱼骨头，只动版面不动功能）：
         毛病=首屏「✨新建笔记」是一张白底卡片，里头🤖AI帮我学/✍️自己手写两个大按钮；
         病根=.card卡片样式+.btn大按钮样式；
@@ -487,7 +493,7 @@ window.addEventListener('load', function(){
     <summary>📋 关于 / Obsidian 搬家说明</summary>
     <div class="kv" style="margin-top:6px;">
       <b style="color:#4a7c59;">📌 本软件为新版正房（学习笔记双链版已留档，功能并入本软件）。</b><br>
-      <b>版本：</b>v0.8.1（2026-09-11）收信断根修：大管家的信不再被静默吞（收不进就原样保留），修「我的笔记」收起时笔记行溢出挡点击<br><b>上一版：</b>v0.8.0（2026-09-11）信息流通三连：点亮出题可📮寄到习题学习、大管家回程票（?from=guanjia亮顶条）、开门自动收大管家寄来的信存成笔记<br><b>上一版：</b>v0.7.0（2026-09-11）收编公共件hx-common+AI统一面板（🏥浮标→🤖AI两层面板），速记「补充上一条」照留<br><b>上一版：</b>v0.6.2（2026-09-11）切片断根修：断点续切（切到一半接着切不重来）、本地连败自动送云端机器人代办（关软件也切）、云端切好自动取回、💰切片账本（每本书花了多少）、速记「补充上一条」<br><b>上一版：</b>v0.6.0（2026-09-10）鱼骨头化：「✨ 新建笔记」收进一条折叠行，张开后🤖AI帮我学/✍️自己手写是两条文字行（只动版面，功能没变）<br><b>上一版：</b>v0.5.3 速记自动上行：记下的东西自动到网上，AI接班自己看<br><br>
+      <b>版本：</b>v0.9.0（2026-09-12）地基补强：单体备份邮路（没壳时笔记自动进GitHub中转区永远重试，网通了自己送）+壳内仓管员一本账+坚果云镜像+开门拉回中转件<br><b>上一版：</b>v0.8.1（2026-09-11）收信断根修：大管家的信不再被静默吞（收不进就原样保留），修「我的笔记」收起时笔记行溢出挡点击<br><b>上一版：</b>v0.8.0（2026-09-11）信息流通三连：点亮出题可📮寄到习题学习、大管家回程票（?from=guanjia亮顶条）、开门自动收大管家寄来的信存成笔记<br><b>上一版：</b>v0.7.0（2026-09-11）收编公共件hx-common+AI统一面板（🏥浮标→🤖AI两层面板），速记「补充上一条」照留<br><b>上一版：</b>v0.6.2（2026-09-11）切片断根修：断点续切（切到一半接着切不重来）、本地连败自动送云端机器人代办（关软件也切）、云端切好自动取回、💰切片账本（每本书花了多少）、速记「补充上一条」<br><b>上一版：</b>v0.6.0（2026-09-10）鱼骨头化：「✨ 新建笔记」收进一条折叠行，张开后🤖AI帮我学/✍️自己手写是两条文字行（只动版面，功能没变）<br><b>上一版：</b>v0.5.3 速记自动上行：记下的东西自动到网上，AI接班自己看<br><br>
       <b>⭐ 头一条铁律（Obsidian 搬家）：</b>小涛笔记里所有内容的<b>真身是标准 Markdown 文件</b>，
       全部存在 GitHub 仓库的 <b>vault/</b> 区——那就是一座现成的 Obsidian 仓库。<br>
       <b>搬家方法：</b>把仓库里 vault/ 文件夹下载到电脑/手机（或坚果云同步它），
@@ -673,7 +679,7 @@ window.addEventListener('load', function(){
 (function(){
 __bc('D脚本启动');
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.8.1' /* 收信断根修+details溢出修 v0.8.1 2026-09-11（tester实证两案，只动2处其余一行未动）：①D9b收信从页底独立script挪进主闭包启动流程（原块调不到主IIFE的loadNotes/saveNotes/uid/strHash/vaultQueue，ReferenceError被try/catch吞掉→toast不亮、笔记没存、inbox却被清成[]，数据丢失级）；并立军规=全部存成功才清空xt_inbox_v1，任何一步失败inbox原样保留下回再收 ②首页「📚我的笔记」details收起时noteList仍渲染溢出盖住下方设置卡挡点击（hit-test实证），修=CSS一行details.card:not([open])>:not(summary)真隐藏 */ /* 信息流通普查断点三连 v0.8.0 2026-09-11（只动3处其余一行未动）：①D5点亮→出题结果页加第4钮「📮寄到习题学习」——题目文本按software-xiti.html收信端格式（单个对象{title,text}）写localStorage xitixuexi_inbox，打开习题自动收；②D6c大管家回程票（照抄血气v0.12.0现成写法）：?from=guanjia亮顶条「← 返回大管家」（文件名自适应software-前缀规矩），?pt=顺手写hx_gj_curpt（全家统一记号，血气v0.16.0先例）；③D9b开门收大管家的信：读xt_inbox_v1（数组[{title,text,pt,ts}]，大管家v0.27.0寄来）逐条存成笔记（照xt_notes_v1现有结构，标题加[病人名]前缀），收完清空写回[]，空则静默；无壳全try/catch不报错 */ /* 收编公共件+AI面板 v0.7.0 2026-09-11（照大管家v0.23.0/0.24.0已验证先例）：内嵌速记snippet整块退役改HX.sj一行接入（「补充上一条」extraBtn照留不退役，自动上行HX.sj自带）+AI_MANIFEST 7条接HX.ai统一面板（AI帮我学/问资料/重切/重写总结/送云端代办/AI改笔记/点亮菜单，run全指现有按钮本体未动）；hx-common不在时主功能照常、速记/AI静默降级 */ /* 切片断根修 v0.6.2 2026-09-11（洪老师拍板"一项一项完成"，挂号#63/#64/#65/#66）：
+var SW_VERSION = '0.9.0' /* SPEC2单体备份邮路+仓管员+坚果云镜像+中转拉回（地基补强）v0.9.0 2026-09-12（只加不破坏，全守卫全try，HX缺席=上版原样）：主数据键=xt_notes_v1（LS_NOTES，笔记正文所在的最大数据键，saveNotes是全家唯一保存口；xt_books_v1/xt_lib_v1台账体小、章正文在IndexedDB，本班只接这一个键不贪多）。①保存点saveNotes改三岔：有壳（HX.store.has()）走HX.store.set一本账+闲时HX.dav.mirror镜像hxdata_xt_notes_v1.json到坚果云，绝不走relay；无壳走原有localStorage老路+HX.relay.add中转邮路 ②开门hxCommonLoad成功回调加HX.relay.init('小涛笔记')；闲时2秒HX.dav.rescue([xt_notes_v1])（只补缺失不盖已有）→HX.store.sync对账后补renderList→HX.relay.pull拉回中转件 ③版本0.8.1→0.9.0三处留痕（本注释链/顶部修改记录/📋关于） */ /* 收信断根修+details溢出修 v0.8.1 2026-09-11（tester实证两案，只动2处其余一行未动）：①D9b收信从页底独立script挪进主闭包启动流程（原块调不到主IIFE的loadNotes/saveNotes/uid/strHash/vaultQueue，ReferenceError被try/catch吞掉→toast不亮、笔记没存、inbox却被清成[]，数据丢失级）；并立军规=全部存成功才清空xt_inbox_v1，任何一步失败inbox原样保留下回再收 ②首页「📚我的笔记」details收起时noteList仍渲染溢出盖住下方设置卡挡点击（hit-test实证），修=CSS一行details.card:not([open])>:not(summary)真隐藏 */ /* 信息流通普查断点三连 v0.8.0 2026-09-11（只动3处其余一行未动）：①D5点亮→出题结果页加第4钮「📮寄到习题学习」——题目文本按software-xiti.html收信端格式（单个对象{title,text}）写localStorage xitixuexi_inbox，打开习题自动收；②D6c大管家回程票（照抄血气v0.12.0现成写法）：?from=guanjia亮顶条「← 返回大管家」（文件名自适应software-前缀规矩），?pt=顺手写hx_gj_curpt（全家统一记号，血气v0.16.0先例）；③D9b开门收大管家的信：读xt_inbox_v1（数组[{title,text,pt,ts}]，大管家v0.27.0寄来）逐条存成笔记（照xt_notes_v1现有结构，标题加[病人名]前缀），收完清空写回[]，空则静默；无壳全try/catch不报错 */ /* 收编公共件+AI面板 v0.7.0 2026-09-11（照大管家v0.23.0/0.24.0已验证先例）：内嵌速记snippet整块退役改HX.sj一行接入（「补充上一条」extraBtn照留不退役，自动上行HX.sj自带）+AI_MANIFEST 7条接HX.ai统一面板（AI帮我学/问资料/重切/重写总结/送云端代办/AI改笔记/点亮菜单，run全指现有按钮本体未动）；hx-common不在时主功能照常、速记/AI静默降级 */ /* 切片断根修 v0.6.2 2026-09-11（洪老师拍板"一项一项完成"，挂号#63/#64/#65/#66）：
    ①#66断点续切：AI切到一半的书记着批次进度（sliceBatch），中断后续切不从头——病根=此前任何中断都整本重切、钱全白花，几本书一个月切不完就是它；
      粗切完成的书换AI重切仍整本重来（旧块全换），手动「重新AI切片」照旧全量；
    ②#63自动化：巡逻失败"当天不再碰"改退避2小时再试（网络抖一下不再废一天）；本地连败2次的书自动送云端代办（GitHub Actions机器人切，关掉软件它也切）；
@@ -726,7 +732,20 @@ function hxPut(ownKey, val){ localStorage.setItem(ownKey, val); localStorage.set
 var LS_NOTES = 'xt_notes_v1';
 var LS_BILL = 'xt_aibill_v1';
 function loadNotes(){ try{ var v = JSON.parse(localStorage.getItem(LS_NOTES) || '[]'); return Array.isArray(v) ? v : []; }catch(e){ return []; } }
-function saveNotes(list){ localStorage.setItem(LS_NOTES, JSON.stringify(list)); }
+/* v0.9.0 SPEC2单体备份+壳内铁仓库：主数据键选 xt_notes_v1（LS_NOTES——笔记正文全在这一个键，loadNotes/saveNotes全走它；书台账xt_books_v1/资料台账xt_lib_v1体小且章正文在IndexedDB，本班只接这一个最大的笔记数据键，不贪多）。
+   有壳（HX.store在且文件夹可用）走HX.store.set一本账+闲时HX.dav.mirror镜像坚果云，绝不走relay；无壳走原有localStorage老路+HX.relay.add中转邮路。HX缺席/全炸=老行为原样。 */
+function saveNotes(list){
+  var v = JSON.stringify(list);
+  try{
+    if(window.HX && HX.store && HX.store.has && HX.store.has()){
+      HX.store.set(LS_NOTES, v);
+      try{ if(HX.dav && HX.dav.mirror) HX.dav.mirror('hxdata_' + LS_NOTES + '.json'); }catch(e){}
+      return;
+    }
+  }catch(e){}
+  localStorage.setItem(LS_NOTES, v);
+  try{ if(window.HX && HX.relay && HX.relay.add) HX.relay.add(LS_NOTES, v); }catch(e){}
+}
 function getNote(id){ return loadNotes().filter(function(n){ return n.id === id; })[0] || null; }
 /* AI 价目表（2026-08-14官价，每月由Kimi复查更新），单位：元/百万tokens（人民币）。
    查不到的型号按 kimi-k2.5 价估算。 */
@@ -3391,6 +3410,13 @@ var XT_AI_MANIFEST=[
 ];
 hxCommonLoad(function(){
   try{ HX.sj.init({app:'小涛笔记', extraBtn:{label:'补充上一条'}}); }catch(e){} /* v0.7.0收编：速记+自动上行由HX.sj接管，「补充上一条」不退役 */
+  /* v0.9.0 SPEC2：开门 HX.relay.init（单体挂备份状态条开送，壳内队列恒空🟢无害）；闲时2秒 rescue(只补缺失不盖已有)→sync对账→pull拉回中转件。全守卫全try，HX缺席=老行为原样 */
+  try{ if(window.HX && HX.relay && HX.relay.init) HX.relay.init('小涛笔记'); }catch(e){}
+  setTimeout(function(){
+    try{ if(window.HX && HX.relay && HX.relay.pull) HX.relay.pull(); }catch(e){}
+    try{ if(window.HX && HX.dav && HX.dav.rescue) HX.dav.rescue([LS_NOTES]); }catch(e){}
+    try{ if(window.HX && HX.store && HX.store.sync){ HX.store.sync([LS_NOTES], function(){ try{ renderList(); }catch(e){} }); } }catch(e){}
+  }, 2000);
   try{ if(window.HX&&HX.ai) HX.ai.init({app:'小涛笔记', manifest:XT_AI_MANIFEST,
     getSection:function(){
       try{ if(!$('libPage').classList.contains('hidden')) return '资料详情'; }catch(e){}

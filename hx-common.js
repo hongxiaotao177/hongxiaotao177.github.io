@@ -1,6 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    hx-common.js —— 全家9件软件共用公共件母版
-   HX_COMMON_VERSION = '0.2.0'（2026-09-10 plan2 军规：钥匙统一+收公共块+不崩溃压倒一切）
+   HX_COMMON_VERSION = '0.5.0'（2026-09-10 plan2 军规：钥匙统一+收公共块+不崩溃压倒一切）
+   v0.5.0 2026-09-12：新增中转邮路HX.relay（单体备份永远重试+回读核对才销号+大白话状态条🟢🟡🔴）+坚果云腿HX.dav（壳内铁仓库：mirror镜像/rescue救命腿只补缺失不盖已有）；其余一行未动
    v0.4.0 2026-09-12：新增仓管员HX.store，地基工程一期规矩A/B落地（规矩A：一套门存取；规矩B：时间定新旧、冲突留档不覆盖）；修正：真源文件名前缀hxdata_沿用大管家旧档、兼容老hxStore裸档按mtime认读并升级信封、留档文件名放行中文「_冲突_」字样、留档名时分补秒防同分互盖；其余一行未动
    v0.3.0 2026-09-11：部件自升级HX.selfUp（洪老师拍板彻底治"壳内部件不更新"病根：开门闲时比对云端version-hx-common.json，旧了静默下载新版写回授权文件夹，下次开门生效；全程不弹窗，没壳/没网跳过）；其余一行未动
    v0.2.0 2026-09-11：新增HX.ai统一AI面板（两层结构+定位置顶+AI功能生成器，洪老师2026-09-11拍板方法论落地试点）；HX.sj面板加「🤖AI」入口钮；其余一行未动
@@ -12,6 +13,8 @@
      HX.selfCheck(app, swVersion)  版本自检（学习笔记 ghSelfCheck 通用化，API优先失败走raw直链带?t=防缓存）
      HX.bill    全家AI账本 hx_aibill（照抄学习笔记 hxBill 实现格式）
      HX.store   仓管员：一套门存取（has/get/set/remove/sync/conflicts），壳内文件夹hxdata_<key>.json真源+localStorage缓存，时间定新旧、双动冲突留档（地基工程一期）
+     HX.relay   中转邮路：单体备份走GitHub私有仓transit/（永远重试+退避+回读核对才销号+大白话状态条），壳内pull拉回销号
+     HX.dav     坚果云腿：壳内铁仓库（ok/mirror闲时镜像/rescue救命腿只补缺失不盖已有）
 
    接入说明（各软件照抄下面这段，三级查找照 guanjia-pdf-engine.js 已验证先例）：
      ① LearnShell.readFile('hx-common.js') 读壳授权文件夹（file://下fetch常被拦，readFile可靠）
@@ -25,7 +28,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 (function(){
   'use strict';
-  var HX_COMMON_VERSION = '0.4.0'; /* v0.4.0 2026-09-12：新增仓管员HX.store，地基工程一期规矩A/B落地 */ /* v0.3.0 2026-09-11：部件自升级HX.selfUp（病根：壳里旧版公共件永远不升级→AI面板等新功能装了也白装；开门闲时20秒比对云端version-hx-common.json，旧了静默下载写回授权文件夹，下次开门用新的，全程不弹窗） */ /* v0.2.0 2026-09-11：新增HX.ai统一AI面板（两层结构+定位置顶+AI功能生成器，洪老师2026-09-11拍板方法论落地试点）；HX.sj面板加「🤖AI」入口钮；其余一行未动 */ /* v0.1.1 2026-09-10：HX.sj.init 加可选 extraBtn（大管家#43「补充上一条」补回，洪老师点名功能）；不传仍是2钮版，默认行为不变 */
+  var HX_COMMON_VERSION = '0.5.0'; /* v0.5.0 2026-09-12：新增中转邮路HX.relay+坚果云腿HX.dav */ /* v0.4.0 2026-09-12：新增仓管员HX.store，地基工程一期规矩A/B落地 */ /* v0.3.0 2026-09-11：部件自升级HX.selfUp（病根：壳里旧版公共件永远不升级→AI面板等新功能装了也白装；开门闲时20秒比对云端version-hx-common.json，旧了静默下载写回授权文件夹，下次开门用新的，全程不弹窗） */ /* v0.2.0 2026-09-11：新增HX.ai统一AI面板（两层结构+定位置顶+AI功能生成器，洪老师2026-09-11拍板方法论落地试点）；HX.sj面板加「🤖AI」入口钮；其余一行未动 */ /* v0.1.1 2026-09-10：HX.sj.init 加可选 extraBtn（大管家#43「补充上一条」补回，洪老师点名功能）；不传仍是2钮版，默认行为不变 */
   if(window.HX && window.HX.HX_COMMON_VERSION){ return; } /* 已装过不重复装 */
   var HX = { HX_COMMON_VERSION: HX_COMMON_VERSION, ok: true };
   function warn(m){ try{ if(window.console && console.warn) console.warn('[hx-common] '+m); }catch(e){} }
@@ -790,6 +793,280 @@
     return st;
   })();
 
+  /* ════ 5.7 中转邮路 HX.relay（v0.5.0 新增，SPEC2：单体备份是命根子，GitHub被拒就永远重试，回读核对才销号） ════
+     队列 localStorage hx_relay_out = [{key,v,ts,tries,nextT}]（v=值字符串，ts=数据时间，同key只留最新）。
+     送件：putB64 到 transit/relay_<key清洗同fname规则>.json，信封 {v,ts,from:app,t:Date.now()}；
+     回读核对（重新GET比对v/ts一致）才算送到→销号；失败 tries++、nextT=now+退避[1,5,15,30,30…]分钟（封顶第4档）。
+     全程不弹窗；状态条 #hxRelayBar 三态大白话（🟢都送上去了/🟡有N件在等网/🔴请开科学上网），点击=立即flush+明细浮层。
+     pull()（壳内用）：list transit/ 逐个relay_*.json读信封→HX.store.set→deleteFile销号，单件失败跳过；无钥匙/无壳静默返回0。 */
+  HX.relay = (function(){
+    var ry = {};
+    var QK = 'hx_relay_out';
+    var APP = '';
+    var BACKOFF = [1, 5, 15, 30]; /* 退避分钟表，tries封顶第4档 */
+    var timer = null, flushing = false;
+    var barEl = null, panelEl = null;
+    function rkey(key){ return String(key).replace(/[^一-龥a-zA-Z0-9_-]/g,'_'); } /* key清洗同仓管员fname规则 */
+    function tname(key){ return 'transit/relay_' + rkey(key) + '.json'; }
+    function qRead(){ try{ var a = JSON.parse(lsGet(QK) || '[]'); return (a && typeof a.length === 'number') ? a : []; }catch(e){ return []; } }
+    function qWrite(q){ try{ lsSet(QK, JSON.stringify(q || [])); }catch(e){} }
+    /* 失败记账：tries++、nextT按退避表、lastT留作明细浮层显示 */
+    function bump(it){
+      try{
+        var q = qRead();
+        for(var i = 0; i < q.length; i++){
+          if(q[i] && q[i].key === it.key && (+q[i].ts || 0) === (+it.ts || 0)){
+            q[i].tries = (+q[i].tries || 0) + 1;
+            var idx = q[i].tries - 1; if(idx < 0) idx = 0; if(idx > BACKOFF.length - 1) idx = BACKOFF.length - 1;
+            q[i].nextT = Date.now() + BACKOFF[idx] * 60000;
+            q[i].lastT = Date.now();
+          }
+        }
+        qWrite(q);
+      }catch(e){}
+    }
+    /* 送一件 → Promise<true=销号/false=记账留下>；回读核对一致才算送到 */
+    function sendOne(it){
+      return new Promise(function(resolve){
+        try{
+          var env = { v: String(it.v), ts: (+it.ts) || 0, from: APP || 'unknown', t: Date.now() };
+          var nm = tname(it.key);
+          HX.gh.putB64(nm, HX.gh.b64enc(JSON.stringify(env)), 'relay ' + it.key).then(function(){
+            return HX.gh.readJson(nm); /* 回读核对 */
+          }).then(function(back){
+            if(back && back.data && String(back.data.v) === env.v && (+back.data.ts || 0) === env.ts){
+              var q = qRead();
+              for(var i = q.length - 1; i >= 0; i--){
+                if(q[i] && q[i].key === it.key && (+q[i].ts || 0) === (+it.ts || 0)) q.splice(i, 1); /* 只销这一件，同key更新件不动 */
+              }
+              qWrite(q);
+              resolve(true);
+            }else{ bump(it); resolve(false); } /* 回读内容不符：不销号，留下次 */
+          }).catch(function(){ bump(it); resolve(false); });
+        }catch(e){ try{ bump(it); }catch(e2){} resolve(false); }
+      });
+    }
+    /* add：同key upsert只留最新，tries=0 nextT=现在，顺手触发一次送 */
+    ry.add = function(key, v){
+      try{
+        var q = qRead(), now = Date.now();
+        var it = { key: String(key), v: String(v), ts: now, tries: 0, nextT: now };
+        var found = false;
+        for(var i = 0; i < q.length; i++){ if(q[i] && q[i].key === it.key){ q[i] = it; found = true; break; } }
+        if(!found) q.push(it);
+        qWrite(q);
+        updBar();
+        try{ ry.flush(); }catch(e){}
+      }catch(e){}
+    };
+    /* flush：只送到期件（nextT<=now），串行逐件；返回 Promise<销号几件> */
+    ry.flush = function(){
+      try{
+        if(flushing){ setTimeout(function(){ try{ ry.flush(); }catch(e){} }, 300); return Promise.resolve(0); } /* 正送着：稍候补一轮，新件不丢 */
+        if(!HX.gh.ready()){ updBar(); return Promise.resolve(0); } /* 没GitHub钥匙：队列躺着等，不丢 */
+        flushing = true;
+        var q = qRead(), now = Date.now(), sent = 0;
+        var seq = Promise.resolve();
+        for(var i = 0; i < q.length; i++){
+          (function(it){
+            if(!it || (+it.nextT || 0) > now) return;
+            seq = seq.then(function(){ return sendOne(it); }).then(function(ok){ if(ok) sent++; });
+          })(q[i]);
+        }
+        return seq.then(function(){ flushing = false; updBar(); return sent; }, function(){ flushing = false; updBar(); return sent; });
+      }catch(e){ flushing = false; return Promise.resolve(0); }
+    };
+    /* 状态条：fixed顶部细条，暖底圆角，点击=全部立即重送+明细浮层 */
+    function mkBar(){
+      try{
+        if(!document || !document.body) return;
+        if(barEl && barEl.parentNode){ updBar(); return; }
+        barEl = document.getElementById('hxRelayBar');
+        if(!barEl){
+          barEl = document.createElement('div');
+          barEl.id = 'hxRelayBar';
+          barEl.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99998;text-align:center;font-size:12px;padding:3px 10px;cursor:pointer;display:none;border-radius:0 0 8px 8px;';
+          document.body.appendChild(barEl);
+          barEl.onclick = function(){
+            try{
+              var q = qRead();
+              for(var i = 0; i < q.length; i++){ if(q[i]) q[i].nextT = 0; } /* 点我一下=全部立即重送 */
+              qWrite(q);
+              ry.flush();
+              togglePanel();
+            }catch(e){}
+          };
+        }
+        updBar();
+      }catch(e){}
+    }
+    function updBar(){
+      try{
+        if(!barEl) return; /* 没init不挂条 */
+        var q = qRead();
+        var maxTries = 0;
+        for(var i = 0; i < q.length; i++){ if(q[i] && (+q[i].tries || 0) > maxTries) maxTries = (+q[i].tries || 0); }
+        barEl.style.display = 'block';
+        if(!q.length){
+          barEl.style.background = '#e7f5e9'; barEl.style.color = '#2f6b3a';
+          barEl.textContent = '🟢 备份都已送上去了';
+        }else if(maxTries >= 5){
+          barEl.style.background = '#fdecea'; barEl.style.color = '#a13025';
+          barEl.textContent = '🔴 送不出去，多半是GitHub被拦了。请开科学上网，开好了点我一下，我马上重送';
+        }else{
+          barEl.style.background = '#fff7e0'; barEl.style.color = '#8a6d1a';
+          barEl.textContent = '🟡 有' + q.length + '件在等网，网通了自己送，不用管';
+        }
+      }catch(e){}
+    }
+    /* 明细浮层：各件key/上次试送/下次时间，可关，非alert */
+    function togglePanel(){
+      try{
+        if(!document || !document.body) return;
+        if(panelEl && panelEl.parentNode){ panelEl.parentNode.removeChild(panelEl); panelEl = null; return; }
+        panelEl = document.createElement('div');
+        panelEl.id = 'hxRelayPanel';
+        panelEl.style.cssText = 'position:fixed;top:28px;left:50%;transform:translateX(-50%);z-index:99999;background:#fffdf5;border:1px solid #e5d9b0;border-radius:10px;padding:10px 14px;font-size:12px;max-width:92%;box-shadow:0 2px 10px rgba(0,0,0,.18);color:#333;';
+        function fmt(t){ if(!t) return '—'; var d = new Date(+t); return (d.getHours()<10?'0':'')+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes()+':'+(d.getSeconds()<10?'0':'')+d.getSeconds(); }
+        var html = '<b>中转邮路明细</b>';
+        var q = qRead();
+        if(!q.length) html += '<div style="margin-top:6px">队列空，没有待送的件</div>';
+        for(var i = 0; i < q.length; i++){
+          if(!q[i]) continue;
+          html += '<div style="margin-top:6px;border-top:1px dashed #e5d9b0;padding-top:4px">' +
+                  '键：' + String(q[i].key).replace(/[<>&]/g, '') +
+                  '　已试：' + (+q[i].tries || 0) + '次' +
+                  '　上次试送：' + fmt(q[i].lastT) +
+                  '　下次试送：' + fmt(q[i].nextT) + '</div>';
+        }
+        html += '<div style="text-align:right;margin-top:8px"><span id="hxRelayPanelX" style="cursor:pointer;color:#a13025;border:1px solid #a13025;border-radius:6px;padding:2px 10px">关闭</span></div>';
+        panelEl.innerHTML = html;
+        document.body.appendChild(panelEl);
+        var x = document.getElementById('hxRelayPanelX');
+        if(x) x.onclick = function(){ try{ if(panelEl && panelEl.parentNode) panelEl.parentNode.removeChild(panelEl); panelEl = null; }catch(e){} };
+      }catch(e){}
+    }
+    /* init(app)：开门必flush一次+每60秒查到期件+挂状态条 */
+    ry.init = function(app){
+      try{
+        APP = String(app || '');
+        mkBar();
+        try{ ry.flush(); }catch(e){}
+        if(timer) try{ clearInterval(timer); }catch(e){}
+        timer = setInterval(function(){
+          try{
+            var q = qRead(), now = Date.now(), due = false;
+            for(var i = 0; i < q.length; i++){ if(q[i] && (+q[i].nextT || 0) <= now){ due = true; break; } }
+            updBar();
+            if(due) ry.flush();
+          }catch(e){}
+        }, 60000);
+      }catch(e){}
+    };
+    /* pull（壳内用）：list transit/ →逐个relay_*.json读信封→HX.store.set→deleteFile销号；返回 Promise<拉了几件>；单件失败跳过不碍其他件 */
+    ry.pull = function(){
+      return new Promise(function(resolve){
+        try{
+          if(!window.LearnShell || !HX.gh.ready()){ resolve(0); return; } /* 无壳/无GitHub钥匙静默 */
+          HX.gh.fetch(HX.gh.fileUrl('transit'), { headers: HX.gh.headers() }).then(function(resp){
+            if(resp.status === 404) return [];
+            if(!resp.ok) return resp.text().then(function(t){ throw new Error(ghErr(resp.status, t)); });
+            return resp.json();
+          }).then(function(list){
+            if(!list || typeof list.length !== 'number' || !list.length){ resolve(0); return; }
+            var names = [];
+            for(var i = 0; i < list.length; i++){
+              if(list[i] && list[i].name && /^relay_.*\.json$/.test(list[i].name)) names.push(list[i].name);
+            }
+            var got = 0, seq = Promise.resolve();
+            names.forEach(function(nm){
+              seq = seq.then(function(){
+                return new Promise(function(res2){
+                  try{
+                    var key = nm.replace(/^relay_/, '').replace(/\.json$/, '');
+                    HX.gh.readJson('transit/' + nm).then(function(r){
+                      if(r && r.data && r.data.v !== undefined && r.data.v !== null){
+                        try{ if(HX.store && HX.store.set) HX.store.set(key, String(r.data.v)); }catch(e){}
+                        HX.gh.deleteFile('transit/' + nm, 'relay销号 ' + key).then(function(){ got++; res2(); }, function(){ res2(); });
+                      }else res2();
+                    }).catch(function(){ res2(); }); /* 单件失败跳过 */
+                  }catch(e){ res2(); }
+                });
+              });
+            });
+            seq.then(function(){ resolve(got); }, function(){ resolve(got); });
+          }).catch(function(){ resolve(0); });
+        }catch(e){ resolve(0); }
+      });
+    };
+    function ghErr(st2, t){ try{ return HX.gh.errText(st2, t); }catch(e){ return 'HTTP ' + st2; } }
+    return ry;
+  })();
+
+  /* ════ 5.8 坚果云腿 HX.dav（v0.5.0 新增，SPEC2：壳内铁仓库，地基补强） ════
+     现成桥（MainActivity）：LearnShell.davUp(user,pass,fileName,davDir)/davDown(user,pass,path,saveName)/davList(user,pass,path)，
+     都同步返回String、"err:"开头=失败；钥匙 HX.keys.dav()（hx_dav_user/hx_dav_pass）。
+     mirror(fileName)：闲时把 hxdata_<key>.json 镜像到 /学习套装数据/（debounce 10秒）；失败静默，下次闲时再试。
+     rescue(keys)：开门sync前，文件夹里缺失的 hxdata_<key>.json 才davDown拉回——只补缺失，不盖已有（文件夹是真源）；失败静默。 */
+  HX.dav = (function(){
+    var dv = {};
+    var DAV_DIR = '/学习套装数据/';
+    var mTimers = {}; /* 每个文件名一颗debounce定时器 */
+    function sh(){ try{ return (window.LearnShell && LearnShell.davUp && LearnShell.davDown && LearnShell.davList) ? LearnShell : null; }catch(e){ return null; } }
+    function dfname(key){ return 'hxdata_' + String(key).replace(/[^一-龥a-zA-Z0-9_-]/g,'_') + '.json'; } /* 同仓管员fname规则 */
+    /* LearnShell.davUp在 && 钥匙齐 */
+    dv.ok = function(){ try{ return !!(sh() && HX.keys.dav()); }catch(e){ return false; } };
+    /* 闲时镜像：直接davUp该文件名到 /学习套装数据/；debounce 10秒；失败静默下次闲时再试 */
+    dv.mirror = function(fileName){
+      try{
+        var fn = String(fileName || '');
+        if(!fn) return;
+        if(mTimers[fn]) try{ clearTimeout(mTimers[fn]); }catch(e){}
+        mTimers[fn] = setTimeout(function(){
+          try{
+            if(!dv.ok()) return;
+            var k = HX.keys.dav();
+            sh().davUp(k.user, k.pass, fn, DAV_DIR); /* "err:"开头=失败：静默 */
+          }catch(e){}
+        }, 10000);
+      }catch(e){}
+    };
+    /* 救命腿：对folder里缺失的 hxdata_<key>.json，davList查有则davDown拉回；只补缺失不盖已有 */
+    dv.rescue = function(keys){
+      try{
+        if(!dv.ok()) return;
+        keys = keys || [];
+        var L = sh(), k = HX.keys.dav();
+        var lst = '';
+        try{ lst = String(L.davList(k.user, k.pass, DAV_DIR) || ''); }catch(e){ return; }
+        if(lst.indexOf('err:') === 0) return;
+        var names = [], i;
+        try{
+          var j = JSON.parse(lst);
+          if(j && typeof j.length === 'number'){
+            for(i = 0; i < j.length; i++){
+              if(typeof j[i] === 'string') names.push(j[i]);
+              else if(j[i] && j[i].name) names.push(String(j[i].name));
+            }
+          }
+        }catch(e){ names = lst.split(/[\r\n,]+/); } /* 非JSON就按行/逗号切 */
+        for(i = 0; i < keys.length; i++){
+          try{
+            var fn = dfname(keys[i]);
+            var cur = null;
+            try{ cur = L.readFile(fn); }catch(e){}
+            if(cur) continue; /* 文件夹是真源：已有件绝不盖 */
+            var has = false;
+            for(var j2 = 0; j2 < names.length; j2++){ if(names[j2] === fn){ has = true; break; } }
+            if(!has) continue;
+            L.davDown(k.user, k.pass, DAV_DIR + fn, fn);
+          }catch(e){}
+        }
+      }catch(e){}
+    };
+    return dv;
+  })();
+
   /* ════ 6. 三级加载器现成代码（接入方照抄；军规1：加载失败主功能照常，只静默降级） ════ */
   HX.loadLoaderSnippet = [
     "/* hx-common.js 三级加载（照 guanjia-pdf-engine.js 已验证先例）：",
@@ -862,5 +1139,5 @@
 
   window.HX = HX;
   try{ HX.selfUp(); }catch(e){} /* v0.3.0：装完即排闲时自检自升级（内部全try，绝不出错） */
-  try{ if(window.console && console.info) console.info('[hx-common] v'+HX_COMMON_VERSION+' 已装（keys/gh/sj/selfCheck/bill/ai）'); }catch(e){}
+  try{ if(window.console && console.info) console.info('[hx-common] v'+HX_COMMON_VERSION+' 已装（keys/gh/sj/selfCheck/bill/ai/store/relay/dav）'); }catch(e){}
 })();
