@@ -42,6 +42,18 @@ window.addEventListener('load', function(){
   小涛笔记（学习笔记2代）· 单文件版
 ==========================================================
   修改记录：
+   v0.10.0 2026-09-12 地基二期·剩余家底接仓管员+邮路（只加不破坏，全守卫全try，HX缺席=上版原样）：
+        ①书台账xt_books_v1/资料台账xt_lib_v1注册仓管员：saveBooks/saveLib照v0.9.0主笔记键
+          xt_notes_v1同款三岔——有壳HX.store.set一本账+闲时HX.dav.mirror镜像hxdata_xt_books_v1.json
+          /hxdata_xt_lib_v1.json坚果云（绝不走relay）；无壳原有localStorage老路+HX.relay.add中转。
+        ②IndexedDB章正文接邮路：章正文每次变更debounce 30秒，整库导出成一个JSON字符串，
+          有壳HX.store.set('xt_chapters_v1')落账+dav.mirror('hxdata_xt_chapters_v1.json')；
+          无壳JSON的UTF-8字节数>900000跳过relay只落本地（GitHub Contents API一兆限制留余量），
+          否则HX.relay.add。开门sync后IndexedDB空而仓管员里xt_chapters_v1有值→灌回IndexedDB
+          （恢复场景）；IndexedDB非空则以IndexedDB为准不动。
+        ③寄习题xitixuexi_inbox改走仓管员：有壳HX.store.set落真源文件夹，无壳localStorage老路
+          效果相同。
+        ④xt_inbox_v1注册进rescue/sync键数组，收信从对齐后的缓存读（sync对账后重跑gjInboxCheck）。
    v0.9.0 2026-09-12 SPEC2单体备份邮路+仓管员+坚果云镜像+中转拉回（地基补强，只加不破坏）：
         主数据键=xt_notes_v1（笔记正文所在的最大数据键，只接这一个）。保存点saveNotes三岔：
         有壳走HX.store.set一本账+闲时HX.dav.mirror镜像坚果云；无壳走原有localStorage老路
@@ -493,7 +505,7 @@ window.addEventListener('load', function(){
     <summary>📋 关于 / Obsidian 搬家说明</summary>
     <div class="kv" style="margin-top:6px;">
       <b style="color:#4a7c59;">📌 本软件为新版正房（学习笔记双链版已留档，功能并入本软件）。</b><br>
-      <b>版本：</b>v0.9.0（2026-09-12）地基补强：单体备份邮路（没壳时笔记自动进GitHub中转区永远重试，网通了自己送）+壳内仓管员一本账+坚果云镜像+开门拉回中转件<br><b>上一版：</b>v0.8.1（2026-09-11）收信断根修：大管家的信不再被静默吞（收不进就原样保留），修「我的笔记」收起时笔记行溢出挡点击<br><b>上一版：</b>v0.8.0（2026-09-11）信息流通三连：点亮出题可📮寄到习题学习、大管家回程票（?from=guanjia亮顶条）、开门自动收大管家寄来的信存成笔记<br><b>上一版：</b>v0.7.0（2026-09-11）收编公共件hx-common+AI统一面板（🏥浮标→🤖AI两层面板），速记「补充上一条」照留<br><b>上一版：</b>v0.6.2（2026-09-11）切片断根修：断点续切（切到一半接着切不重来）、本地连败自动送云端机器人代办（关软件也切）、云端切好自动取回、💰切片账本（每本书花了多少）、速记「补充上一条」<br><b>上一版：</b>v0.6.0（2026-09-10）鱼骨头化：「✨ 新建笔记」收进一条折叠行，张开后🤖AI帮我学/✍️自己手写是两条文字行（只动版面，功能没变）<br><b>上一版：</b>v0.5.3 速记自动上行：记下的东西自动到网上，AI接班自己看<br><br>
+      <b>版本：</b>v0.10.0（2026-09-12）地基二期·剩余家底接仓管员+邮路：书台账xt_books_v1/资料台账xt_lib_v1注册仓管员（有壳落真源文件夹+坚果云镜像，无壳走中转邮路）、IndexedDB章正文变更30秒自动导出备份（换机/重装能灌回来）、寄习题改走仓管员一本账、收信从对齐后的缓存读<br><b>上一版：</b>v0.9.0（2026-09-12）地基补强：单体备份邮路（没壳时笔记自动进GitHub中转区永远重试，网通了自己送）+壳内仓管员一本账+坚果云镜像+开门拉回中转件<br><b>上一版：</b>v0.8.1（2026-09-11）收信断根修：大管家的信不再被静默吞（收不进就原样保留），修「我的笔记」收起时笔记行溢出挡点击<br><b>上一版：</b>v0.8.0（2026-09-11）信息流通三连：点亮出题可📮寄到习题学习、大管家回程票（?from=guanjia亮顶条）、开门自动收大管家寄来的信存成笔记<br><b>上一版：</b>v0.7.0（2026-09-11）收编公共件hx-common+AI统一面板（🏥浮标→🤖AI两层面板），速记「补充上一条」照留<br><b>上一版：</b>v0.6.2（2026-09-11）切片断根修：断点续切（切到一半接着切不重来）、本地连败自动送云端机器人代办（关软件也切）、云端切好自动取回、💰切片账本（每本书花了多少）、速记「补充上一条」<br><b>上一版：</b>v0.6.0（2026-09-10）鱼骨头化：「✨ 新建笔记」收进一条折叠行，张开后🤖AI帮我学/✍️自己手写是两条文字行（只动版面，功能没变）<br><b>上一版：</b>v0.5.3 速记自动上行：记下的东西自动到网上，AI接班自己看<br><br>
       <b>⭐ 头一条铁律（Obsidian 搬家）：</b>小涛笔记里所有内容的<b>真身是标准 Markdown 文件</b>，
       全部存在 GitHub 仓库的 <b>vault/</b> 区——那就是一座现成的 Obsidian 仓库。<br>
       <b>搬家方法：</b>把仓库里 vault/ 文件夹下载到电脑/手机（或坚果云同步它），
@@ -679,7 +691,7 @@ window.addEventListener('load', function(){
 (function(){
 __bc('D脚本启动');
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.9.0' /* SPEC2单体备份邮路+仓管员+坚果云镜像+中转拉回（地基补强）v0.9.0 2026-09-12（只加不破坏，全守卫全try，HX缺席=上版原样）：主数据键=xt_notes_v1（LS_NOTES，笔记正文所在的最大数据键，saveNotes是全家唯一保存口；xt_books_v1/xt_lib_v1台账体小、章正文在IndexedDB，本班只接这一个键不贪多）。①保存点saveNotes改三岔：有壳（HX.store.has()）走HX.store.set一本账+闲时HX.dav.mirror镜像hxdata_xt_notes_v1.json到坚果云，绝不走relay；无壳走原有localStorage老路+HX.relay.add中转邮路 ②开门hxCommonLoad成功回调加HX.relay.init('小涛笔记')；闲时2秒HX.dav.rescue([xt_notes_v1])（只补缺失不盖已有）→HX.store.sync对账后补renderList→HX.relay.pull拉回中转件 ③版本0.8.1→0.9.0三处留痕（本注释链/顶部修改记录/📋关于） */ /* 收信断根修+details溢出修 v0.8.1 2026-09-11（tester实证两案，只动2处其余一行未动）：①D9b收信从页底独立script挪进主闭包启动流程（原块调不到主IIFE的loadNotes/saveNotes/uid/strHash/vaultQueue，ReferenceError被try/catch吞掉→toast不亮、笔记没存、inbox却被清成[]，数据丢失级）；并立军规=全部存成功才清空xt_inbox_v1，任何一步失败inbox原样保留下回再收 ②首页「📚我的笔记」details收起时noteList仍渲染溢出盖住下方设置卡挡点击（hit-test实证），修=CSS一行details.card:not([open])>:not(summary)真隐藏 */ /* 信息流通普查断点三连 v0.8.0 2026-09-11（只动3处其余一行未动）：①D5点亮→出题结果页加第4钮「📮寄到习题学习」——题目文本按software-xiti.html收信端格式（单个对象{title,text}）写localStorage xitixuexi_inbox，打开习题自动收；②D6c大管家回程票（照抄血气v0.12.0现成写法）：?from=guanjia亮顶条「← 返回大管家」（文件名自适应software-前缀规矩），?pt=顺手写hx_gj_curpt（全家统一记号，血气v0.16.0先例）；③D9b开门收大管家的信：读xt_inbox_v1（数组[{title,text,pt,ts}]，大管家v0.27.0寄来）逐条存成笔记（照xt_notes_v1现有结构，标题加[病人名]前缀），收完清空写回[]，空则静默；无壳全try/catch不报错 */ /* 收编公共件+AI面板 v0.7.0 2026-09-11（照大管家v0.23.0/0.24.0已验证先例）：内嵌速记snippet整块退役改HX.sj一行接入（「补充上一条」extraBtn照留不退役，自动上行HX.sj自带）+AI_MANIFEST 7条接HX.ai统一面板（AI帮我学/问资料/重切/重写总结/送云端代办/AI改笔记/点亮菜单，run全指现有按钮本体未动）；hx-common不在时主功能照常、速记/AI静默降级 */ /* 切片断根修 v0.6.2 2026-09-11（洪老师拍板"一项一项完成"，挂号#63/#64/#65/#66）：
+var SW_VERSION = '0.10.0' /* 地基二期·剩余家底接仓管员+邮路 v0.10.0 2026-09-12（只加不破坏，全守卫全try，HX缺席=上版原样）：①书台账xt_books_v1/资料台账xt_lib_v1注册仓管员，saveBooks/saveLib照v0.9.0主笔记键同款三岔（有壳HX.store.set+闲时dav.mirror；无壳localStorage老路+relay.add） ②IndexedDB章正文接邮路：章正文变更debounce 30秒整库导出成一个JSON走HX.store.set('xt_chapters_v1')+dav.mirror('hxdata_xt_chapters_v1.json')；无壳UTF-8字节>900000跳过relay只落本地（GitHub一兆限制留余量）否则relay.add；开门sync后IndexedDB空而仓管员有值→灌回IndexedDB，非空以IndexedDB为准 ③寄习题xitixuexi_inbox改走仓管员（有壳落真源文件夹，无壳localStorage老路效果相同） ④xt_inbox_v1注册进rescue/sync键数组，收信从对齐后的缓存读（sync后重跑gjInboxCheck） ⑤版本0.9.0→0.10.0三处留痕（本注释链/顶部修改记录/📋关于） */ /* SPEC2单体备份邮路+仓管员+坚果云镜像+中转拉回（地基补强）v0.9.0 2026-09-12（只加不破坏，全守卫全try，HX缺席=上版原样）：主数据键=xt_notes_v1（LS_NOTES，笔记正文所在的最大数据键，saveNotes是全家唯一保存口；xt_books_v1/xt_lib_v1台账体小、章正文在IndexedDB，本班只接这一个键不贪多）。①保存点saveNotes改三岔：有壳（HX.store.has()）走HX.store.set一本账+闲时HX.dav.mirror镜像hxdata_xt_notes_v1.json到坚果云，绝不走relay；无壳走原有localStorage老路+HX.relay.add中转邮路 ②开门hxCommonLoad成功回调加HX.relay.init('小涛笔记')；闲时2秒HX.dav.rescue([xt_notes_v1])（只补缺失不盖已有）→HX.store.sync对账后补renderList→HX.relay.pull拉回中转件 ③版本0.8.1→0.9.0三处留痕（本注释链/顶部修改记录/📋关于） */ /* 收信断根修+details溢出修 v0.8.1 2026-09-11（tester实证两案，只动2处其余一行未动）：①D9b收信从页底独立script挪进主闭包启动流程（原块调不到主IIFE的loadNotes/saveNotes/uid/strHash/vaultQueue，ReferenceError被try/catch吞掉→toast不亮、笔记没存、inbox却被清成[]，数据丢失级）；并立军规=全部存成功才清空xt_inbox_v1，任何一步失败inbox原样保留下回再收 ②首页「📚我的笔记」details收起时noteList仍渲染溢出盖住下方设置卡挡点击（hit-test实证），修=CSS一行details.card:not([open])>:not(summary)真隐藏 */ /* 信息流通普查断点三连 v0.8.0 2026-09-11（只动3处其余一行未动）：①D5点亮→出题结果页加第4钮「📮寄到习题学习」——题目文本按software-xiti.html收信端格式（单个对象{title,text}）写localStorage xitixuexi_inbox，打开习题自动收；②D6c大管家回程票（照抄血气v0.12.0现成写法）：?from=guanjia亮顶条「← 返回大管家」（文件名自适应software-前缀规矩），?pt=顺手写hx_gj_curpt（全家统一记号，血气v0.16.0先例）；③D9b开门收大管家的信：读xt_inbox_v1（数组[{title,text,pt,ts}]，大管家v0.27.0寄来）逐条存成笔记（照xt_notes_v1现有结构，标题加[病人名]前缀），收完清空写回[]，空则静默；无壳全try/catch不报错 */ /* 收编公共件+AI面板 v0.7.0 2026-09-11（照大管家v0.23.0/0.24.0已验证先例）：内嵌速记snippet整块退役改HX.sj一行接入（「补充上一条」extraBtn照留不退役，自动上行HX.sj自带）+AI_MANIFEST 7条接HX.ai统一面板（AI帮我学/问资料/重切/重写总结/送云端代办/AI改笔记/点亮菜单，run全指现有按钮本体未动）；hx-common不在时主功能照常、速记/AI静默降级 */ /* 切片断根修 v0.6.2 2026-09-11（洪老师拍板"一项一项完成"，挂号#63/#64/#65/#66）：
    ①#66断点续切：AI切到一半的书记着批次进度（sliceBatch），中断后续切不从头——病根=此前任何中断都整本重切、钱全白花，几本书一个月切不完就是它；
      粗切完成的书换AI重切仍整本重来（旧块全换），手动「重新AI切片」照旧全量；
    ②#63自动化：巡逻失败"当天不再碰"改退避2小时再试（网络抖一下不再废一天）；本地连败2次的书自动送云端代办（GitHub Actions机器人切，关掉软件它也切）；
@@ -1497,7 +1509,19 @@ $('btnExportMd').addEventListener('click', function(){
 var LS_LIB = 'xt_lib_v1';
 var GRADES = { guide: '🟢 指南', journal: '📄 期刊', book: '📘 书籍', ai: '🟠 AI·待核' };
 function loadLib(){ try{ var v = JSON.parse(localStorage.getItem(LS_LIB) || '[]'); return Array.isArray(v) ? v : []; }catch(e){ return []; } }
-function saveLib(list){ localStorage.setItem(LS_LIB, JSON.stringify(list)); }
+/* v0.10.0 地基二期：xt_lib_v1注册仓管员（照v0.9.0主笔记键xt_notes_v1同款三岔）——有壳走HX.store.set一本账+闲时HX.dav.mirror镜像hxdata_xt_lib_v1.json坚果云、绝不走relay；无壳走原有localStorage老路+HX.relay.add中转邮路。全守卫全try，HX缺席=上版原样 */
+function saveLib(list){
+  var v = JSON.stringify(list);
+  try{
+    if(window.HX && HX.store && HX.store.has && HX.store.has()){
+      HX.store.set(LS_LIB, v);
+      try{ if(HX.dav && HX.dav.mirror) HX.dav.mirror('hxdata_' + LS_LIB + '.json'); }catch(e){}
+      return;
+    }
+  }catch(e){}
+  localStorage.setItem(LS_LIB, v);
+  try{ if(window.HX && HX.relay && HX.relay.add) HX.relay.add(LS_LIB, v); }catch(e){}
+}
 function getLib(id){ return loadLib().filter(function(x){ return x.id === id; })[0] || null; }
 
 /* --- IndexedDB（切块正文 + pdf.js 缓存 + 未切完原文） --- */
@@ -2563,9 +2587,95 @@ $('btnAnsToNote').addEventListener('click', function(){
    账本：所有写书AI调用 aiBookCtx(book.id)，what 用 '拟目录'/'压素材'/'写书'。 */
 var LS_BOOKS = 'xt_books_v1';
 function loadBooks(){ try{ var v = JSON.parse(localStorage.getItem(LS_BOOKS) || '[]'); return Array.isArray(v) ? v : []; }catch(e){ return []; } }
-function saveBooks(list){ localStorage.setItem(LS_BOOKS, JSON.stringify(list)); }
+/* v0.10.0 地基二期：xt_books_v1注册仓管员（照v0.9.0主笔记键xt_notes_v1同款三岔）——有壳走HX.store.set一本账+闲时HX.dav.mirror镜像hxdata_xt_books_v1.json坚果云、绝不走relay；无壳走原有localStorage老路+HX.relay.add中转邮路。全守卫全try，HX缺席=上版原样 */
+function saveBooks(list){
+  var v = JSON.stringify(list);
+  try{
+    if(window.HX && HX.store && HX.store.has && HX.store.has()){
+      HX.store.set(LS_BOOKS, v);
+      try{ if(HX.dav && HX.dav.mirror) HX.dav.mirror('hxdata_' + LS_BOOKS + '.json'); }catch(e){}
+      return;
+    }
+  }catch(e){}
+  localStorage.setItem(LS_BOOKS, v);
+  try{ if(window.HX && HX.relay && HX.relay.add) HX.relay.add(LS_BOOKS, v); }catch(e){}
+}
 function getBook(id){ return loadBooks().filter(function(b){ return b.id === id; })[0] || null; }
 function bookChapKey(bid, cid){ return bid + '_' + cid; }
+
+/* v0.10.0 地基二期：IndexedDB章正文接邮路（章正文=书台账里每章按bookChapKey存进chunks仓的正文，台账已在仓管员，正文本体本班接进来）。
+   每次章正文变更后debounce 30秒，把整个章正文库导出成一个JSON字符串（{bookChapKey:正文}对象）：
+   有壳（HX.store.has()）走HX.store.set('xt_chapters_v1',...)落账+闲时HX.dav.mirror('hxdata_xt_chapters_v1.json')镜像坚果云，绝不走relay；
+   无壳走原有本地老路localStorage落一份+HX.relay.add中转——但该JSON的UTF-8字节数>900000时跳过relay只落本地
+   （GitHub Contents API一兆限制留余量，硬塞必炸邮路，本地这份不丢，有壳换机照常用）。
+   全程if(window.HX&&HX.xxx)守卫+try，HX缺席/失败静默=上版行为原样 */
+var LS_CHAPS = 'xt_chapters_v1';
+var _chapExpTimer = null;
+function chaptersDump(){
+  return new Promise(function(res){
+    var out = {};
+    try{
+      var books = loadBooks();
+      var chain = Promise.resolve();
+      (books || []).forEach(function(b){
+        ((b && b.chapters) || []).forEach(function(c){
+          chain = chain.then(function(){
+            return idbGet('chunks', bookChapKey(b.id, c.id)).then(function(d){
+              if(d && typeof d.text === 'string') out[bookChapKey(b.id, c.id)] = d.text;
+            }).catch(function(){});
+          });
+        });
+      });
+      chain.then(function(){ res(JSON.stringify(out)); }, function(){ res(JSON.stringify(out)); });
+    }catch(e){ res(JSON.stringify(out)); }
+  });
+}
+function chaptersFlush(){
+  chaptersDump().then(function(v){
+    try{
+      if(window.HX && HX.store && HX.store.has && HX.store.has()){
+        HX.store.set(LS_CHAPS, v);
+        try{ if(HX.dav && HX.dav.mirror) HX.dav.mirror('hxdata_' + LS_CHAPS + '.json'); }catch(e){}
+        return;
+      }
+    }catch(e){}
+    try{ localStorage.setItem(LS_CHAPS, v); }catch(e){}
+    /* UTF-8字节数>900000跳过relay只落本地：GitHub Contents API一兆限制留余量 */
+    try{
+      var bytes = 0;
+      try{ bytes = (new Blob([v])).size; }catch(e2){ bytes = unescape(encodeURIComponent(v)).length; }
+      if(bytes > 900000) return;
+    }catch(e){ return; }
+    try{ if(window.HX && HX.relay && HX.relay.add) HX.relay.add(LS_CHAPS, v); }catch(e){}
+  });
+}
+function chaptersChanged(){
+  try{ if(_chapExpTimer) clearTimeout(_chapExpTimer); }catch(e){}
+  try{ _chapExpTimer = setTimeout(function(){ try{ chaptersFlush(); }catch(e){} }, 30000); }catch(e){}
+}
+/* 恢复场景：开门sync对账后，IndexedDB章正文全空而仓管员/缓存里xt_chapters_v1有值→灌回IndexedDB；IndexedDB非空则以IndexedDB为准不动。全try静默 */
+function chaptersRestore(){
+  try{
+    chaptersDump().then(function(cur){
+      try{
+        if(cur && cur !== '{}') return; /* IndexedDB非空：以IndexedDB为准不动 */
+        var raw = null;
+        try{ if(window.HX && HX.store && HX.store.get) raw = HX.store.get(LS_CHAPS, null); }catch(e){}
+        if(!raw){ try{ raw = localStorage.getItem(LS_CHAPS); }catch(e){} }
+        if(!raw) return;
+        var obj = null;
+        try{ obj = JSON.parse(raw); }catch(e){ obj = null; }
+        if(!obj) return;
+        var chain = Promise.resolve();
+        Object.keys(obj).forEach(function(k){
+          chain = chain.then(function(){
+            return idbPut('chunks', { id: k, text: String(obj[k] || '') }).catch(function(){});
+          });
+        });
+      }catch(e){}
+    });
+  }catch(e){}
+}
 
 /* 目录文本 → 章名清单（按行解析，剥"第X章/1./-"前导） */
 function parseToc(text){
@@ -2698,6 +2808,7 @@ function openBook(id){
       bb.chapters = bb.chapters.filter(function(x){ return x.id !== c.id; });
       saveBooks(bs);
       idbDelPrefix('chunks', bookChapKey(b.id, c.id)).catch(function(){});
+      try{ chaptersChanged(); }catch(e){} /* v0.10.0 章正文变更→debounce30s导出邮路 */
       openBook(b.id);
     });
     box.appendChild(row);
@@ -2719,6 +2830,7 @@ $('btnBookDel').addEventListener('click', function(){
   if(!confirm('确定删除《' + b.title + '》整本书？（各章正文一起删）')) return;
   idbDelPrefix('chunks', b.id + '_').catch(function(){});
   saveBooks(loadBooks().filter(function(x){ return x.id !== curBookId; }));
+  try{ chaptersChanged(); }catch(e){} /* v0.10.0 章正文变更→debounce30s导出邮路 */
   showPage('home'); renderBooks();
   toast('🗑 已删除', 1500);
 });
@@ -2876,6 +2988,7 @@ $('btnChapWrite').addEventListener('click', function(){
       var content = String(txt || '').trim();
       if(content.indexOf('本章来源') < 0) content += bookSrcSection(mats, useAI);   /* AI没写清单就本地兜底挂上 */
       return idbPut('chunks', { id: bookChapKey(b.id, ch.id), text: content }).then(function(){
+        try{ chaptersChanged(); }catch(e){} /* v0.10.0 章正文变更→debounce30s导出邮路 */
         var bs = loadBooks(); var bb = bs.filter(function(x){ return x.id === b.id; })[0];
         var cc = bb.chapters.filter(function(x){ return x.id === ch.id; })[0];
         cc.state = '已写';
@@ -2906,6 +3019,7 @@ $('btnChapEdit').addEventListener('click', function(){
 $('btnChapSave').addEventListener('click', function(){
   var txt = $('chapTa').value;
   idbPut('chunks', { id: bookChapKey(curBookId, curChapId), text: txt }).then(function(){
+    try{ chaptersChanged(); }catch(e){} /* v0.10.0 章正文变更→debounce30s导出邮路 */
     var bs = loadBooks(); var bb = bs.filter(function(x){ return x.id === curBookId; })[0];
     if(bb){
       var cc = bb.chapters.filter(function(x){ return x.id === curChapId; })[0];
@@ -3411,11 +3525,18 @@ var XT_AI_MANIFEST=[
 hxCommonLoad(function(){
   try{ HX.sj.init({app:'小涛笔记', extraBtn:{label:'补充上一条'}}); }catch(e){} /* v0.7.0收编：速记+自动上行由HX.sj接管，「补充上一条」不退役 */
   /* v0.9.0 SPEC2：开门 HX.relay.init（单体挂备份状态条开送，壳内队列恒空🟢无害）；闲时2秒 rescue(只补缺失不盖已有)→sync对账→pull拉回中转件。全守卫全try，HX缺席=老行为原样 */
+  /* v0.10.0 地基二期：仓管员键数组注册齐活——主笔记xt_notes_v1+书台账xt_books_v1+资料台账xt_lib_v1+章正文xt_chapters_v1+收信件xt_inbox_v1（rescue/sync同一批）；sync对账后补renderLib/renderBooks、重跑gjInboxCheck收对齐后的信、chaptersRestore灌回章正文（仅IndexedDB空时） */
   try{ if(window.HX && HX.relay && HX.relay.init) HX.relay.init('小涛笔记'); }catch(e){}
   setTimeout(function(){
     try{ if(window.HX && HX.relay && HX.relay.pull) HX.relay.pull(); }catch(e){}
-    try{ if(window.HX && HX.dav && HX.dav.rescue) HX.dav.rescue([LS_NOTES]); }catch(e){}
-    try{ if(window.HX && HX.store && HX.store.sync){ HX.store.sync([LS_NOTES], function(){ try{ renderList(); }catch(e){} }); } }catch(e){}
+    try{ if(window.HX && HX.dav && HX.dav.rescue) HX.dav.rescue([LS_NOTES, LS_BOOKS, LS_LIB, LS_CHAPS, 'xt_inbox_v1']); }catch(e){}
+    try{ if(window.HX && HX.store && HX.store.sync){ HX.store.sync([LS_NOTES, LS_BOOKS, LS_LIB, LS_CHAPS, 'xt_inbox_v1'], function(){
+      try{ renderList(); }catch(e){}
+      try{ renderLib(); }catch(e){}
+      try{ renderBooks(); }catch(e){}
+      try{ gjInboxCheck(); }catch(e){} /* v0.10.0：收信从对齐后的缓存读 */
+      try{ chaptersRestore(); }catch(e){} /* v0.10.0：IndexedDB空而仓管员有章正文→灌回 */
+    }); } }catch(e){}
   }, 2000);
   try{ if(window.HX&&HX.ai) HX.ai.init({app:'小涛笔记', manifest:XT_AI_MANIFEST,
     getSection:function(){
@@ -3612,10 +3733,15 @@ function glowResult(txt){
     /* v0.8.0 D5 寄到习题学习：格式照 software-xiti.html ghCheckInbox 收信端（单个对象，必带.text可带.title，启动时收） */
     var bx = glowEl('button', 'gl-btn', '📮 寄到习题学习');
     bx.addEventListener('click', function(){
+      /* v0.10.0 地基二期：寄习题改走仓管员一本账——有壳HX.store.set落真源文件夹（内部同写localStorage缓存，习题那边照读），无壳走原有localStorage老路效果相同。全守卫全try */
+      var xv = JSON.stringify({ title: '点亮出题·' + glowSel.slice(0, 18).replace(/\n/g, ' '), text: txt });
       try{
-        localStorage.setItem('xitixuexi_inbox', JSON.stringify({ title: '点亮出题·' + glowSel.slice(0, 18).replace(/\n/g, ' '), text: txt }));
+        if(window.HX && HX.store && HX.store.set){ HX.store.set('xitixuexi_inbox', xv); }
+        else localStorage.setItem('xitixuexi_inbox', xv);
         toast('📮 已寄到习题学习，打开习题自动收', 3000);
-      }catch(e){}
+      }catch(e){
+        try{ localStorage.setItem('xitixuexi_inbox', xv); toast('📮 已寄到习题学习，打开习题自动收', 3000); }catch(e2){}
+      }
     });
     row.appendChild(bx);
   }
