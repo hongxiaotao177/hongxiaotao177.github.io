@@ -1,1 +1,1 @@
-{"version": "1.14.2", "dl": "index.html", "note": "CUR同步断点全治七件"}
+{"version": "1.15.0", "dl": "index.html", "note": "版本检查并发+硬超时：一个卡死不再拖累别人；CUR对齐"}
