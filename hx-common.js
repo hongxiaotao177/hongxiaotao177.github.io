@@ -31,13 +31,44 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 (function(){
   'use strict';
-  var HX_COMMON_VERSION = '0.7.0'; /* v0.7.0 2026-09-12：HX.dav全异步化（根治#75/#77同步联网卡死主线程）——走壳v1.6.0新davAsync后台桥+HX._davCb回调，ts对账逻辑一行未改；旧壳没davAsync一律静默跳过绝不回退同步老路，壳升级后自动恢复 */ /* v0.6.0 2026-09-12 地基二期：HX.dav的rescue升级为ts对账（云端新超5秒留档_冲突_后盖回/本地新或相等顺手davUp追平/云端缺顺手davUp补齐） */ /* v0.5.0 2026-09-12：新增中转邮路HX.relay+坚果云腿HX.dav */ /* v0.4.0 2026-09-12：新增仓管员HX.store，地基工程一期规矩A/B落地 */ /* v0.3.0 2026-09-11：部件自升级HX.selfUp（病根：壳里旧版公共件永远不升级→AI面板等新功能装了也白装；开门闲时20秒比对云端version-hx-common.json，旧了静默下载写回授权文件夹，下次开门用新的，全程不弹窗） */ /* v0.2.0 2026-09-11：新增HX.ai统一AI面板（两层结构+定位置顶+AI功能生成器，洪老师2026-09-11拍板方法论落地试点）；HX.sj面板加「🤖AI」入口钮；其余一行未动 */ /* v0.1.1 2026-09-10：HX.sj.init 加可选 extraBtn（大管家#43「补充上一条」补回，洪老师点名功能）；不传仍是2钮版，默认行为不变 */
+  var HX_COMMON_VERSION = '0.8.0'; /* v0.8.0 2026-09-13：开门静默令（洪老师拍板：开门不许自动同步/不许自动查版本，点了才做）——全家自动联网（dav rescue/mirror、relay闲时送与pull、selfUp、selfCheck、速记开门补推）统一过HX._autoNetOk闸门：默认全关，3秒内真有点击（=点了按钮）或localStorage hx_auto_net=1才放行；新增HX.syncNow()一件全手动补做；本地存取（HX.store/localStorage/壳文件）不联网不受影响；其余一行未动 /* v0.7.0 2026-09-12：HX.dav全异步化（根治#75/#77同步联网卡死主线程）——走壳v1.6.0新davAsync后台桥+HX._davCb回调，ts对账逻辑一行未改；旧壳没davAsync一律静默跳过绝不回退同步老路，壳升级后自动恢复 */ /* v0.6.0 2026-09-12 地基二期：HX.dav的rescue升级为ts对账（云端新超5秒留档_冲突_后盖回/本地新或相等顺手davUp追平/云端缺顺手davUp补齐） */ /* v0.5.0 2026-09-12：新增中转邮路HX.relay+坚果云腿HX.dav */ /* v0.4.0 2026-09-12：新增仓管员HX.store，地基工程一期规矩A/B落地 */ /* v0.3.0 2026-09-11：部件自升级HX.selfUp（病根：壳里旧版公共件永远不升级→AI面板等新功能装了也白装；开门闲时20秒比对云端version-hx-common.json，旧了静默下载写回授权文件夹，下次开门用新的，全程不弹窗） */ /* v0.2.0 2026-09-11：新增HX.ai统一AI面板（两层结构+定位置顶+AI功能生成器，洪老师2026-09-11拍板方法论落地试点）；HX.sj面板加「🤖AI」入口钮；其余一行未动 */ /* v0.1.1 2026-09-10：HX.sj.init 加可选 extraBtn（大管家#43「补充上一条」补回，洪老师点名功能）；不传仍是2钮版，默认行为不变 */
   if(window.HX && window.HX.HX_COMMON_VERSION){ return; } /* 已装过不重复装 */
   var HX = { HX_COMMON_VERSION: HX_COMMON_VERSION, ok: true };
   function warn(m){ try{ if(window.console && console.warn) console.warn('[hx-common] '+m); }catch(e){} }
   function lsGet(k){ try{ return localStorage.getItem(k)||''; }catch(e){ return ''; } }
   function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
   function trim(s){ return String(s||'').replace(/^\s+|\s+$/g,''); }
+
+  /* ════ 0.9 开门静默闸门（v0.8.0，洪老师2026-09-13拍板：开门不要同步不要查版本，点了才做） ════
+     规矩：凡"自动/闲时/开门"触发的联网（坚果云腿、中转邮路、自升级、版本自检、速记开门补推）一律先过HX._autoNetOk()；
+     放行只有两种：①3秒内真有手指点击（=点了按钮，点啥干啥）②localStorage hx_auto_net='1'（总开关，默认关）。
+     只卡联网；本地存取（HX.store/localStorage/壳文件桥）一行不动照常。 */
+  HX._lastTap = 0;
+  try{
+    var _tapFn = function(){ HX._lastTap = Date.now(); };
+    document.addEventListener('pointerdown', _tapFn, true);
+    document.addEventListener('touchstart', _tapFn, true);
+    document.addEventListener('click', _tapFn, true);
+  }catch(e){}
+  HX._autoNetOk = function(manual){
+    try{
+      if(manual === true) return true;
+      if(lsGet('hx_auto_net') === '1') return true; /* 总开关：想恢复全自动就开关=1 */
+      return (Date.now() - (HX._lastTap || 0)) < 3000; /* 刚点了按钮（3秒内）才放行 */
+    }catch(e){ return false; }
+  };
+  HX.setAutoNet = function(on){ lsSet('hx_auto_net', on ? '1' : '0'); }; /* 总开关（默认关=开门静默） */
+  /* 一件全手动补做：坚果云对账(需调用方传keys)+中转邮路收发+部件自升级+速记补推；返回Promise，全程异步不卡界面 */
+  HX.syncNow = function(davKeys){
+    try{ HX._lastTap = Date.now(); }catch(e){}
+    var jobs = [];
+    try{ if(HX.dav && HX.dav.rescue && davKeys && davKeys.length) jobs.push(Promise.resolve(HX.dav.rescue(davKeys))); }catch(e){}
+    try{ if(HX.relay && HX.relay.flush) jobs.push(Promise.resolve(HX.relay.flush(true))); }catch(e){}
+    try{ if(HX.relay && HX.relay.pull) jobs.push(Promise.resolve(HX.relay.pull(true))); }catch(e){}
+    try{ if(HX.selfUp) jobs.push(Promise.resolve(HX.selfUp(true))); }catch(e){}
+    try{ if(HX.sj && HX.sj.upload) HX.sj.upload(); }catch(e){}
+    return Promise.all(jobs).then(function(){ return true; }, function(){ return false; });
+  };
 
   /* ════ 1. 钥匙 HX.keys（plan2军规4：fallback兼容旧数据不丢；写Key一律只写hx_apikey） ════ */
   HX.keys = {
@@ -234,6 +265,7 @@
       var done = function(state, remote){ try{ resolve({ state:state, remote:remote||null }); }catch(e){} };
       try{
         opts = opts || {};
+        if(!HX._autoNetOk(opts.manual)){ done('off', null); return; } /* v0.8.0 开门静默令：开门不自查版本 */
         var name = 'version-' + app + '.json';
         var g = HX.keys.gh();
         var hasApi = !!(g && g.t && g.u && g.r);
@@ -396,7 +428,7 @@
       if(sjExtraBtn && $('hxSjAppend')) $('hxSjAppend').addEventListener('click', appendLast); /* v0.1.1 extraBtn */
       $('hxSjClose').addEventListener('click', function(){ $('hxSjPanel').style.display='none'; });
       if(HX.ai && HX.ai.ready && HX.ai.ready()){ var sjAiBtn=$('hxSjAiBtn'); if(sjAiBtn) sjAiBtn.addEventListener('click', function(){ try{ $('hxSjPanel').style.display='none'; }catch(e){} try{ HX.ai.open(); }catch(e){} }); } /* v0.2.0 AI面板入口：点击=关速记面板+HX.ai.open() */
-      setTimeout(function(){ try{ sjUpload(); }catch(e){} }, 8000); /* 速记自动上行：开门闲时对账补推（上次没网漏的在这补） */
+      setTimeout(function(){ try{ if(HX._autoNetOk()) sjUpload(); }catch(e){} }, 8000); /* 速记自动上行：开门闲时对账补推（上次没网漏的在这补）；v0.8.0开门静默令：没点按钮不补 */
     }
     /* 一行接入：HX.sj.init({app:'软件名', getCtx:fn可选})；重复调用只补上下文不重复绑 */
     sj.init = function(opt){
@@ -863,8 +895,9 @@
       }catch(e){}
     };
     /* flush：只送到期件（nextT<=now），串行逐件；返回 Promise<销号几件> */
-    ry.flush = function(){
+    ry.flush = function(manual){
       try{
+        if(!HX._autoNetOk(manual)) return Promise.resolve(0); /* v0.8.0 开门静默令 */
         if(flushing){ setTimeout(function(){ try{ ry.flush(); }catch(e){} }, 300); return Promise.resolve(0); } /* 正送着：稍候补一轮，新件不丢 */
         if(!HX.gh.ready()){ updBar(); return Promise.resolve(0); } /* 没GitHub钥匙：队列躺着等，不丢 */
         flushing = true;
@@ -967,9 +1000,10 @@
       }catch(e){}
     };
     /* pull（壳内用）：list transit/ →逐个relay_*.json读信封→HX.store.set→deleteFile销号；返回 Promise<拉了几件>；单件失败跳过不碍其他件 */
-    ry.pull = function(){
+    ry.pull = function(manual){
       return new Promise(function(resolve){
         try{
+          if(!HX._autoNetOk(manual)){ resolve(0); return; } /* v0.8.0 开门静默令 */
           if(!window.LearnShell || !HX.gh.ready()){ resolve(0); return; } /* 无壳/无GitHub钥匙静默 */
           HX.gh.fetch(HX.gh.fileUrl('transit'), { headers: HX.gh.headers() }).then(function(resp){
             if(resp.status === 404) return [];
@@ -1052,6 +1086,7 @@
         if(mTimers[fn]) try{ clearTimeout(mTimers[fn]); }catch(e){}
         mTimers[fn] = setTimeout(function(){
           try{
+            if(!HX._autoNetOk()) return; /* v0.8.0 开门静默令 */
             if(!dv.ok() || !dv.asyncOk()) return; /* 旧壳静默跳过 */
             davCall('up', fn, DAV_DIR); /* fire-and-forget，回调不用等 */
           }catch(e){}
@@ -1063,6 +1098,7 @@
        本地较新或相等→顺手davUp追平；云端没有→顺手davUp补齐；单件失败跳过不碍其他件 */
     dv.rescue = function(keys){
       try{
+        if(!HX._autoNetOk()) return; /* v0.8.0 开门静默令：没点按钮不联网 */
         if(!dv.ok() || !dv.asyncOk()) return; /* 旧壳静默跳过 */
         keys = keys || [];
         var L = sh();
@@ -1155,8 +1191,9 @@
      治法：开门闲时（约20秒）读云端 version-hx-common.json 比对 HX_COMMON_VERSION，
      旧了→静默下载新版js→写回壳授权文件夹 hx-common.js，下次开门自动用新的。
      全程静默不弹窗；没壳/没网/下载内容不像本体一律跳过不写，绝不影响任何功能（军规1）。 */
-  HX.selfUp = function(){
+  HX.selfUp = function(manual){
     try{
+      if(!HX._autoNetOk(manual)) return; /* v0.8.0 开门静默令 */
       if(!window.LearnShell || !LearnShell.folderSet || !LearnShell.folderSet()) return; /* 浏览器里没处写，跳过 */
       setTimeout(function(){
         try{
