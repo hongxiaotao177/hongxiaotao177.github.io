@@ -1,1 +1,1 @@
-{"version": "0.7.0", "dl": "hx-common.js", "note": "dav全异步化（davAsync后台桥），根治同步卡死"}
+{"version": "0.8.0", "dl": "hx-common.js", "note": "开门静默令：自动联网全关，点了才做（HX._autoNetOk闸门）"}
