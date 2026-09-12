@@ -1,1 +1,1 @@
-{"version":"0.6.0","dl":"hx-common.js","note":"中转邮路HX.relay（单体备份永远重试+大白话状态条）+坚果云腿HX.dav铁仓库（地基补强）"}
+{"version": "0.7.0", "dl": "hx-common.js", "note": "dav全异步化（davAsync后台桥），根治同步卡死"}
