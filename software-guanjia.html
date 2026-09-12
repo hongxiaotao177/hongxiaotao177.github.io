@@ -8,6 +8,14 @@
   红小涛学习套装 · 病人大管家
   定位：全家资料的"管家"。按病人归堆（血气/呼吸机/脱敏病历，天然有章），
         按知识搜索（笔记/习题，全靠AI名片）。
+  v0.30.1 2026-09-12 止血（挂号#75 洪老师真机报：脱敏间选文件夹一点就死机、页面冻住不能滚动）：
+    ①病根：v0.29.0/v0.30.0加的坚果云腿HX.dav.rescue/mirror——壳JS桥davList/davUp/davDown全是同步联网调用，
+      闲时一次最多十几次同步HTTP坚果云，网慢把主线程卡死=点啥都没反应（前天好的，昨天到今天代码变化才出）。
+    ②修：三处HX.dav调用注释停用（hxStore.set两处mirror+闲时watcher一处rescue），功能本体保留不删，
+      GitHub中转relay照常（异步不卡）。
+    ③根治=壳Java侧dav挪后台线程，列二期候选；记忆库#75+pits_病人大管家留案底不销号。
+    ④改前备份software-guanjia_备份_20260912_2101已双推（GitHub私有仓+坚果云）。
+    ⑤版本升v0.30.1：SW_VERSION、界面版本行（verTop照走SW_VERSION）、关于（dsm_aboutInfo）同步。
   v0.30.0 2026-09-12 地基二期（邮路一本账+副本瘦身，只改清单内两处，其他一行未动）：
     ①寄小涛邮路一本账：病历详情页「📮寄给小涛笔记」写xt_inbox_v1改走仓管员hxStore.set
       （有壳落真源文件夹hxdata_xt_inbox_v1.json；无壳hxStore内部走localStorage老路，效果与v0.29.0完全一致）；
@@ -558,13 +566,13 @@ var hxStore=(function(){
     if(hasHX()){
       try{ HX.store.set(key, sv);
         try{ if(window.HX&&HX.relay&&!(HX.store.has&&HX.store.has())) HX.relay.add(key, sv); }catch(e2){}
-        try{ if(window.HX&&HX.dav&&HX.dav.mirror) HX.dav.mirror(fn(key)); }catch(e2){}
+        /* v0.30.1止血（挂号#75）：HX.dav.mirror停用——dav桥同步联网卡死主线程，根治待壳改版（记忆库#75/pits_病人大管家），功能本体不删 */
         return;
       }catch(e){}
     }
     try{ localStorage.setItem(key,JSON.stringify(obj)); }catch(e){} if(bridged()){ try{ LearnShell.writeFile(fn(key), b64(JSON.stringify(obj))); }catch(e){} }
     try{ if(window.HX&&HX.relay&&!(HX.store&&HX.store.has&&HX.store.has())) HX.relay.add(key, sv!==null?sv:JSON.stringify(obj)); }catch(e){}
-    try{ if(window.HX&&HX.dav&&HX.dav.mirror) HX.dav.mirror(fn(key)); }catch(e){}
+    /* v0.30.1止血（挂号#75）：HX.dav.mirror停用——同上，根治待壳改版 */
   }
   function sync(){
     /* v0.28.0班修（集成测试抓到）：HX.store.sync把新数据灌进localStorage后，老路{pulled}返回值被吞，
@@ -605,8 +613,8 @@ hxStore.reg('hx_cards_v1'); hxStore.reg('hx_patients'); hxStore.reg('hx_inbox_v1
   /* v0.29.0班修①（集成测抓到）：HX.relay.init挪出本块——本IIFE先于hxCommonLoad执行，HX必不在=死代码；改挪进hxReady回调（照血气~3055） */
   try{ ['touchstart','click','keydown','scroll'].forEach(function(ev){ document.addEventListener(ev,function(){ lastAct=Date.now(); },{passive:true,capture:true}); }); }catch(e){}
   (function w(){ if(Date.now()-lastAct>=3000){
-    /* v0.29.0 救命腿（SPEC2共同规矩3）：开门sync前，文件夹缺失的hxdata文件从坚果云/学习套装数据/拉回——只补缺失，不盖已有；失败静默 */
-    try{ if(window.HX&&HX.dav&&HX.dav.rescue) HX.dav.rescue(hxStore.keys()); }catch(e){}
+    /* v0.30.1止血（挂号#75 洪老师真机报：点选文件夹死机）：HX.dav.rescue停用——dav桥（davList/davUp/davDown）是同步联网调用，
+       闲时一次最多十几次同步HTTP坚果云，网慢把主线程卡死=页面冻住不能滚动点啥都没反应；根治=壳Java侧dav挪后台线程（二期候选），功能本体保留不删 */
     try{ var r=hxStore.sync();
       if(r&&r.pulled){ try{ toast('🗄️ 文件夹里有新数据，已对齐，刷新一下看最新的',3000); }catch(e){} setTimeout(function(){ location.reload(); },2000); }
       else if(r&&r.moved){ try{ toast('🗄️ 本地数据已搬进文件夹（'+r.moved+'份）'); }catch(e){} }
@@ -1026,7 +1034,7 @@ hxStore.reg('hx_cards_v1'); hxStore.reg('hx_patients'); hxStore.reg('hx_inbox_v1
 </div>
 
 <script>
-var SW_VERSION = "0.30.0"; /* v0.30.0 2026-09-12 地基二期（邮路一本账+副本瘦身，只改清单内）：①寄小涛邮路一本账——详情页「📮寄给小涛笔记」写xt_inbox_v1改走仓管员hxStore.set（有壳落真源文件夹hxdata_xt_inbox_v1.json，无壳走localStorage老路效果相同），信封格式不变 ②副本瘦身（图纸规矩D）：D6a收件回写不再双写——副本瘦身：一本账xt_notes_v1，study_notes_v1停写留旧（老数据原地不动不删）；openPick/scanSources两处读study_notes_v1改读xt_notes_v1 ③SW_VERSION/顶部注释/关于三处同步（详见文件顶部修改记录） */ /* v0.29.0 2026-09-12 地基补强（SPEC2二、四软件接入共同规矩落地大管家）：①hxStore薄壳set加单体备份邮路——HX.store.has()为false（无壳）时HX.relay.add同一份值，有壳绝不走relay ②闲时watcher加HX.relay.pull()中转拉回（拉到>0件照现有pulled逻辑toast+刷新）+HX.dav.rescue(注册键数组)放开门sync前只补缺失 ③保存后闲时HX.dav.mirror对应hxdata_<键>.json到坚果云 ④开门HX.relay.init('大管家')挂状态条（单体显眼，壳内恒🟢无害）⑤全程if(window.HX&&HX.relay)/HX.dav守卫+try，HX缺席行为与v0.28.0完全一致 ⑥SW_VERSION/顶部注释/关于三处同步（详见文件顶部修改记录） */ /* v0.28.0 2026-09-12 地基工程一期（SPEC.md军规，只改清单内其他一行未动）：①hxStore收编成HX.store薄壳代理（对外set/reg/sync名字签名一个不变，HX.store缺席时完全走原有本地老路不白屏）②sync冲突回调→顶部红条明示（样式照抄delFailReport，可点✕关，不弹窗不阻塞）③收件规矩C补时间戳——文件名无日期时间样式的入库fname末尾补「_收件MMDD_HHMM」（parseDocFname不动）④两处PPT信箱「寄新信会盖掉它」hxConfirm拆除——不再问，旧信先改名「ppt_inbox_旧信_时分」留档再寄新信 ⑤dsmh_remember脱敏存档同名键写入前旧值挪「键名_冲突_HHMM」留档 ⑥SW_VERSION/顶部注释/关于三处同步（详见文件顶部修改记录） */ /* v0.27.0 2026-09-11 信息流通三连（断点D6/D9，只改这三处其他一行未动）：①D6a收件「合并/新建资料」回写study_notes_v1同一动作顺手双写小涛笔记正房xt_notes_v1（结构照抄小涛：数组元素{id,title,content,createdAt,updatedAt,fp}，fp=strHash同款FNV）②D6b工具箱加第6个链接「📘 小涛笔记」（文件名自适应照抄现有写法，带?from=guanjia&pt=当前病人）③D9病历详情页按钮排加「📮寄给小涛笔记」：该病人聚合病历文本（复用hzGatherText）+标题push进xt_inbox_v1（数组，元素{title,text,pt,ts}），toast「已寄给小涛笔记」，无壳也照做（localStorage同源共享）（详见文件顶部修改记录） */ /* v0.26.0 2026-09-11 收件两修（D1断点"不许静默吞"，只改收件扫描一带）：①可收文件类型扩成txt/pdf/md（parseDocFname/补日期重试正则同步），拍病历导出的「代号-完整资料.md」能被扫描看到 ②凡被收件扫描看到但parseDocFname解析不ok或类型不收的文件一律进「❓拿不准」清单（hx_gj_unsure_v1，原因写明"类型不收"/解析why），登记pd.seen防重复报，原件不删、不走seen补刀；可用拿不准浮层「✅是病人」转正收进名册（详见文件顶部修改记录） */ /* v0.25.0 2026-09-11 速记四连（②⑤⑥⑦，只加不改）：①脱敏间「📥 拉测试病历」HX.gh从云端仓shared/拉两份测试病历走正常进件同一条路进脱敏间待处理（没钥匙/没网提示拉不动）②脱敏间「📁本地病历夹」浮层勾选库里病历回炉重脱敏（hx_pdocs_v1不动不删）③拿不准浮层加「✅是病人」填床号/姓/诊断按正常收件进库+删原件 ④工具箱「选择病人▾」浮层（名册病人+脱敏间文件两区）+名册点病人行顺手写hx_gj_curpt（详见文件顶部修改记录） */ /* v0.24.0 2026-09-11 AI面板试点（洪老师拍板方法论落地）：AI_MANIFEST 8条+浮标「🤖AI」统一入口+原AI按钮改唤起面板定位（HX不在降级原行为）+AI功能生成器接aiChat通道；现有AI功能本体一行未动 */ /* v0.23.0 2026-09-10 收编公共件hx-common.js（plan2军规：钥匙统一HX.keys/速记改HX.sj/账本改HX.bill/gh传输收编，不崩溃压倒一切，详见文件顶部修改记录） */ /* v0.22.0 2026-09-10 全鱼骨头收尾：紫AI大钮压行（挂号#55销号）+工具箱链接去边框+问AI三钮行化，只动版面（详见文件顶部修改记录） */ /* v0.21.1 2026-09-10 预览对照不分横竖屏一律左右分栏+删横屏提醒条（洪老师拍板"把这个做好"） */ /* v0.21.0 2026-09-10 脱敏体检五站浮层+原文不即毁（详见文件顶部修改记录） */ /* v0.20.0 2026-09-10 预览流程恢复原版格局+AI闭环六连（详见文件顶部修改记录）：①预览排版恢复+手机横竖屏适配 ②窄屏前8行折叠 ③📤交给AI查脱敏（dsm_buildAIView独立新函数，规则引擎未动） ④📥导入AI规则（快照+导入双存版本库） ⑤规则版本库hx_dsm_rulelib_v1 ⑥版本同步 */ /* v0.19.0 2026-09-10 速记10连改·全面鱼骨化（挂号#42~51，详见文件顶部修改记录）：名册inline展开明细/速记补充上一条/脱敏间编号折叠行/导出简化/做名片下划线 */ /* v0.18.0 2026-09-10 真机八连修（毛病34~41）：名册删除手段/收库即毁原文/删聚合病历独立框/导出进清单/AI直达钮/删蓝框功能鱼骨化/删当前病人展开区/文件条目窄行 */ /* 速记自动上行 v0.17.1 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* v0.17.0 2026-09-10 HTML会诊PPT（洪老师拍板做HTML不做pptx，纯加法）：详情页「📋 会诊PPT」按钮→第4套会诊稿提示词走aiChat出五栏目（AI失败留「（AI没回话，请手填）」占位照常出片）+本地宽松验单解析器（日期时间+项目名+数值+单位四件套，项目名取冒号前短名）挑≥2时间点指标（PCT/IL-6/乳酸/肌酐/白细胞/CRP/体温模糊匹配优先，最多6个）纯SVG趋势图（最新值红点+数字）→一页一屏HTML幻灯片（点按/滑动/键盘翻页，页脚页码，白底深灰大字+暖色细线标题）→三处产出：壳「脱敏导出_」前缀dsm_shellWriteVerified回读对账、名册kind=report「📋 会诊PPT」徽标+🖥放映按钮、浏览器blob下载；无壳无AI纯浏览器也出演示片 */ /* 速记 v0.16.1 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */ /* v0.16.0 2026-09-10 问AI升级（洪老师拍板）：
+var SW_VERSION = "0.30.1"; /* v0.30.1 2026-09-12 止血（挂号#75 洪老师真机报：脱敏间「📂选文件夹/📄看文件选文件」一点就死机、页面冻住不能滚动）——病根：09-12地基补强/二期给闲时watcher和存盘链路加了坚果云腿HX.dav.rescue/mirror，而壳JS桥davList/davUp/davDown全是同步联网调用，闲时一次最多十几次同步HTTP坚果云，网慢把主线程卡死=点啥都没反应（铁律：昨天到今天代码变化，前天没事）。修：三处HX.dav调用注释停用（hxStore.set两处mirror+闲时watcher一处rescue），功能本体保留不删，GitHub中转relay照常（异步不卡）；根治=壳Java侧dav挪后台线程，列二期候选，记忆库#75+pits_病人大管家留案底不销号。改前备份software-guanjia_备份_20260912_2101已双推（GitHub+坚果云）。SW_VERSION/顶部注释/关于三处同步 */ /* v0.30.0 2026-09-12 地基二期（邮路一本账+副本瘦身，只改清单内）：①寄小涛邮路一本账——详情页「📮寄给小涛笔记」写xt_inbox_v1改走仓管员hxStore.set（有壳落真源文件夹hxdata_xt_inbox_v1.json，无壳走localStorage老路效果相同），信封格式不变 ②副本瘦身（图纸规矩D）：D6a收件回写不再双写——副本瘦身：一本账xt_notes_v1，study_notes_v1停写留旧（老数据原地不动不删）；openPick/scanSources两处读study_notes_v1改读xt_notes_v1 ③SW_VERSION/顶部注释/关于三处同步（详见文件顶部修改记录） */ /* v0.29.0 2026-09-12 地基补强（SPEC2二、四软件接入共同规矩落地大管家）：①hxStore薄壳set加单体备份邮路——HX.store.has()为false（无壳）时HX.relay.add同一份值，有壳绝不走relay ②闲时watcher加HX.relay.pull()中转拉回（拉到>0件照现有pulled逻辑toast+刷新）+HX.dav.rescue(注册键数组)放开门sync前只补缺失 ③保存后闲时HX.dav.mirror对应hxdata_<键>.json到坚果云 ④开门HX.relay.init('大管家')挂状态条（单体显眼，壳内恒🟢无害）⑤全程if(window.HX&&HX.relay)/HX.dav守卫+try，HX缺席行为与v0.28.0完全一致 ⑥SW_VERSION/顶部注释/关于三处同步（详见文件顶部修改记录） */ /* v0.28.0 2026-09-12 地基工程一期（SPEC.md军规，只改清单内其他一行未动）：①hxStore收编成HX.store薄壳代理（对外set/reg/sync名字签名一个不变，HX.store缺席时完全走原有本地老路不白屏）②sync冲突回调→顶部红条明示（样式照抄delFailReport，可点✕关，不弹窗不阻塞）③收件规矩C补时间戳——文件名无日期时间样式的入库fname末尾补「_收件MMDD_HHMM」（parseDocFname不动）④两处PPT信箱「寄新信会盖掉它」hxConfirm拆除——不再问，旧信先改名「ppt_inbox_旧信_时分」留档再寄新信 ⑤dsmh_remember脱敏存档同名键写入前旧值挪「键名_冲突_HHMM」留档 ⑥SW_VERSION/顶部注释/关于三处同步（详见文件顶部修改记录） */ /* v0.27.0 2026-09-11 信息流通三连（断点D6/D9，只改这三处其他一行未动）：①D6a收件「合并/新建资料」回写study_notes_v1同一动作顺手双写小涛笔记正房xt_notes_v1（结构照抄小涛：数组元素{id,title,content,createdAt,updatedAt,fp}，fp=strHash同款FNV）②D6b工具箱加第6个链接「📘 小涛笔记」（文件名自适应照抄现有写法，带?from=guanjia&pt=当前病人）③D9病历详情页按钮排加「📮寄给小涛笔记」：该病人聚合病历文本（复用hzGatherText）+标题push进xt_inbox_v1（数组，元素{title,text,pt,ts}），toast「已寄给小涛笔记」，无壳也照做（localStorage同源共享）（详见文件顶部修改记录） */ /* v0.26.0 2026-09-11 收件两修（D1断点"不许静默吞"，只改收件扫描一带）：①可收文件类型扩成txt/pdf/md（parseDocFname/补日期重试正则同步），拍病历导出的「代号-完整资料.md」能被扫描看到 ②凡被收件扫描看到但parseDocFname解析不ok或类型不收的文件一律进「❓拿不准」清单（hx_gj_unsure_v1，原因写明"类型不收"/解析why），登记pd.seen防重复报，原件不删、不走seen补刀；可用拿不准浮层「✅是病人」转正收进名册（详见文件顶部修改记录） */ /* v0.25.0 2026-09-11 速记四连（②⑤⑥⑦，只加不改）：①脱敏间「📥 拉测试病历」HX.gh从云端仓shared/拉两份测试病历走正常进件同一条路进脱敏间待处理（没钥匙/没网提示拉不动）②脱敏间「📁本地病历夹」浮层勾选库里病历回炉重脱敏（hx_pdocs_v1不动不删）③拿不准浮层加「✅是病人」填床号/姓/诊断按正常收件进库+删原件 ④工具箱「选择病人▾」浮层（名册病人+脱敏间文件两区）+名册点病人行顺手写hx_gj_curpt（详见文件顶部修改记录） */ /* v0.24.0 2026-09-11 AI面板试点（洪老师拍板方法论落地）：AI_MANIFEST 8条+浮标「🤖AI」统一入口+原AI按钮改唤起面板定位（HX不在降级原行为）+AI功能生成器接aiChat通道；现有AI功能本体一行未动 */ /* v0.23.0 2026-09-10 收编公共件hx-common.js（plan2军规：钥匙统一HX.keys/速记改HX.sj/账本改HX.bill/gh传输收编，不崩溃压倒一切，详见文件顶部修改记录） */ /* v0.22.0 2026-09-10 全鱼骨头收尾：紫AI大钮压行（挂号#55销号）+工具箱链接去边框+问AI三钮行化，只动版面（详见文件顶部修改记录） */ /* v0.21.1 2026-09-10 预览对照不分横竖屏一律左右分栏+删横屏提醒条（洪老师拍板"把这个做好"） */ /* v0.21.0 2026-09-10 脱敏体检五站浮层+原文不即毁（详见文件顶部修改记录） */ /* v0.20.0 2026-09-10 预览流程恢复原版格局+AI闭环六连（详见文件顶部修改记录）：①预览排版恢复+手机横竖屏适配 ②窄屏前8行折叠 ③📤交给AI查脱敏（dsm_buildAIView独立新函数，规则引擎未动） ④📥导入AI规则（快照+导入双存版本库） ⑤规则版本库hx_dsm_rulelib_v1 ⑥版本同步 */ /* v0.19.0 2026-09-10 速记10连改·全面鱼骨化（挂号#42~51，详见文件顶部修改记录）：名册inline展开明细/速记补充上一条/脱敏间编号折叠行/导出简化/做名片下划线 */ /* v0.18.0 2026-09-10 真机八连修（毛病34~41）：名册删除手段/收库即毁原文/删聚合病历独立框/导出进清单/AI直达钮/删蓝框功能鱼骨化/删当前病人展开区/文件条目窄行 */ /* 速记自动上行 v0.17.1 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* v0.17.0 2026-09-10 HTML会诊PPT（洪老师拍板做HTML不做pptx，纯加法）：详情页「📋 会诊PPT」按钮→第4套会诊稿提示词走aiChat出五栏目（AI失败留「（AI没回话，请手填）」占位照常出片）+本地宽松验单解析器（日期时间+项目名+数值+单位四件套，项目名取冒号前短名）挑≥2时间点指标（PCT/IL-6/乳酸/肌酐/白细胞/CRP/体温模糊匹配优先，最多6个）纯SVG趋势图（最新值红点+数字）→一页一屏HTML幻灯片（点按/滑动/键盘翻页，页脚页码，白底深灰大字+暖色细线标题）→三处产出：壳「脱敏导出_」前缀dsm_shellWriteVerified回读对账、名册kind=report「📋 会诊PPT」徽标+🖥放映按钮、浏览器blob下载；无壳无AI纯浏览器也出演示片 */ /* 速记 v0.16.1 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */ /* v0.16.0 2026-09-10 问AI升级（洪老师拍板）：
    ①提示词三套升四套，缺省内容换新规格：第1套病历质检（先整格式→找四类缺陷→⟦R⟧标红⟦B⟧醒目给修改意见）、第2套病情摘要/交班（一页交班摘要）、第3套检验解读（按时间重排+异常值方向+趋势+通俗解读）、第4套会诊稿（新增：五个固定栏目）；老用户已存的自定义提示词一个字不动，只在缺p4时补第4套（一次性迁移标记hx_gj_askai_v16mig）。
    ②脱敏间导出区加「🤖 AI分析」按钮：只把当前勾选（复用v0.15.0 dsm_selFiles过滤）且已脱敏的文本发给AI，原文绝不出去；弹出与病历详情同款四套提示词弹窗，复用aiChat通道和⟦R⟧/⟦B⟧渲染+「复制干净版」。
    ③问AI结果改全屏浮层：出结果后弹窗撑满屏（askai_full），结果区不再限52vh高，红/醒目两色渲染保留；关上或重开恢复小窗。
@@ -5982,6 +5990,7 @@ function dsm_aboutInfo() {
         '• 智能脱敏：姓名+职称、医院、身份证等\n' +
         '• 排除词功能：解决"平素体健"误脱敏\n' +
         '• AI提示词模板：排除词/职称/医院\n' +
+        '• v0.30.1：止血——坚果云自动备份腿（rescue/mirror）暂停：它是同步联网，网慢会把页面卡死（#75）；功能留着没删，根治等壳改版；GitHub中转照常；\n' +
         '• v0.30.0：地基二期——「📮寄给小涛笔记」改走仓管员一本账（有壳直接落文件夹真源，没壳照旧存本机，效果一样）；\n' +
         '  收件「合并/新建资料」副本瘦身：只写小涛笔记一本账（xt_notes_v1），学习笔记旧账（study_notes_v1）停写留旧、老数据原地不动；\n' +
         '• v0.29.0：地基补强——单体（没装壳）保存时数据顺手塞进中转邮路（GitHub私有仓transit/，壳开门拉回，不怕丢）；\n' +
