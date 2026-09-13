@@ -2,6 +2,12 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.16.0 2026-09-13 版本检查归管家+国内网提速（洪老师真机报"国内网检查很慢，科学上网明显快"+拍板"版本号全归管家做，软件别擅自上网"）：
+      病根：每件软件先问GitHub API（美国服务器），问不动了才换公开站——国内网11件挨个白等超时；
+        模拟真机实测（X5+CPU6x降速）：国内网13.1秒 vs 科学上网5.0秒（真机X5连接池小，差距更大）。
+      治：①壳v1.7.1+管家会VERCHECK手艺时，点「检查新版本」=投信给管家后台慢慢查（GitHub API→公开站→坚果云三通道按序试），
+        新版由管家下载到授权文件夹管家专区（mgver_前缀文件）+记小账本mg_ver.json，主界面取信后从专区装新版，界面全程不碰网络；
+        管家不会这手艺（老壳）→自动回落老流程，一行不动 ②老流程提速：API挂一次本轮后面全走公开站，不再挨个白等。
     v1.15.0 2026-09-12 版本检查并发+硬超时（洪老师真机报：前3个✅后7个全卡"正在查…"好久不动）：
       病根=顺序排队挨个查，一个请求挂起（X5老内核abort掐不断GitHub挂起连接）后面全堵死连坐；
       修：①各软件/部件并发各查各的，一个卡死不拖累别人 ②hardLimit硬超时：查版本20秒/下载80秒到点强制跳下一家
@@ -446,7 +452,7 @@ hxCommonLoad(function(){
 <script>
 /* ==================== 套装主界面自检器官（v1.1.0） ==================== */
 /* 本界面对应的四个软件当前内装版本（每次发版跟着改） */
-var CUR = { notes:"2.18.1", xiti:"1.15.0", bridge:"1.6.0", xueqi:"0.20.1", ppt:"0.19.0", xiaotao:"0.10.0", guanjia:"0.30.1", pai:"0.10.0", index:"1.15.0" /* v1.15.0 检查并发+硬超时根治排队连坐；CUR全量对齐云端现行（又抓CUR落伍老毛病） */ };
+var CUR = { notes:"2.18.1", xiti:"1.15.0", bridge:"1.6.0", xueqi:"0.20.1", ppt:"0.19.0", xiaotao:"0.10.2", guanjia:"0.30.3", pai:"0.10.0", index:"1.16.0" /* v1.16.0 版本检查归管家+国内网提速；CUR全量对齐云端现行（xiaotao0.10.2/guanjia0.30.3） */ };
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
 try{ var _sv=JSON.parse(localStorage.getItem("hx_suite_ver")||"{}"); Object.keys(_sv).forEach(function(k){ if(_sv[k]) CUR[k]=_sv[k]; }); }catch(e){}
 /* key: [云端软件文件, 壳内文件名, 云端版本文件, 标签id] */
@@ -626,7 +632,8 @@ function hxRawGet(name){
   updMsg("🔍 正在检查" + keys.length + "个软件有没有新版…");
   function fetchJson(name){
     /* 统一返回"文件内容文本"：API优先，失败/没Token走公开直链 */
-    if(hasApi){
+    /* v1.16.0 国内网提速：API挂一次（超时/不通），本轮后面全走公开站，不再挨个白等超时 */
+    if(hasApi && !apiDead){
       return ghFetch(base+encodeURIComponent(name), {headers:H}).then(function(r){
         if(!r.ok) throw new Error("HTTP "+r.status);
         return r.json().then(function(j){
@@ -637,10 +644,11 @@ function hxRawGet(name){
             if(!r2.ok) throw new Error("HTTP "+r2.status); return r2.text(); });
           throw new Error("empty content");
         });
-      }).catch(function(e){ return hxRawGet(name); });
+      }).catch(function(e){ apiDead=true; return hxRawGet(name); });
     }
     return hxRawGet(name);
   }
+  var apiDead=false; /* v1.16.0 */
   /* v1.1.5 踩坑：旧版把"ppt已装0.1.1"的假记忆写进了 hx_suite_ver（其实从没装上），
      光看版本记忆会永远跳过下载。所以现在"版本不用更新"还要再敲一下文件的门：
      壳里 fetch 本地文件，404=没装→照样下载（记忆不可信，实物为准） */
@@ -831,13 +839,108 @@ function hxRawGet(name){
   /* v1.9.0 洪老师拍板：开门三停——这行现在只有手动点「🔍 检查新版本」立了 hx_ver_manual 标记才会走到
      （门口 _manualGo 关卡已拦住一切自动触发）；hxIdle0 保留，手动流程跑起来后每步仍给您让路 */
   /* v1.15.0 并发启动：9件软件+2部件各查各的，槽位预填"正在查"，一个卡死其余照常 */
-  hxIdle0().then(function(){
-    keys.forEach(function(k, idx){ progLog[idx]="⏳ "+(k==="index"?"主界面自己":SUITE[k][1].replace(".html",""))+"：正在查…"; });
-    PARTS.forEach(function(p, pi){ progLog[keys.length+pi]="⏳ 部件"+p[0]+"：正在查…"; });
-    renderProg();
-    keys.forEach(function(k, idx){ checkKey(k, idx); });
-    PARTS.forEach(function(p, pi){ checkPart(pi); });
-  });
+  function legacyRun(){
+    hxIdle0().then(function(){
+      keys.forEach(function(k, idx){ progLog[idx]="⏳ "+(k==="index"?"主界面自己":SUITE[k][1].replace(".html",""))+"：正在查…"; });
+      PARTS.forEach(function(p, pi){ progLog[keys.length+pi]="⏳ 部件"+p[0]+"：正在查…"; });
+      renderProg();
+      keys.forEach(function(k, idx){ checkKey(k, idx); });
+      PARTS.forEach(function(p, pi){ checkPart(pi); });
+    });
+  }
+  /* ═══ v1.16.0 版本检查归管家（洪老师2026-09-13拍板"版本号全归管家做，软件别擅自上网"） ═══
+     壳v1.7.1+管家会VERCHECK手艺 → 主界面不自己上网：投信（全家清单+本机版本+三通道地址+坚果云钥匙）；
+     管家后台慢慢查（GitHub API→公开站→坚果云），新版下载到管家专区 mgver_<文件名>，回信 vercheck 明细；
+     主界面每4秒取信：same→✅；downloaded→从专区读件装壳（软件shellWrite/部件writeFile）+删专区件；
+     管家不会这手艺（老壳回信无vercheck字段）→自动回落legacyRun老流程，一行不动。 */
+  var __mgVer=(function(){ try{ return !!(window.LearnShell && LearnShell.mgOn && LearnShell.mgOn()==='1' && LearnShell.folderSet && LearnShell.folderSet()); }catch(e){ return false; } })();
+  if(__mgVer){
+    (function(){
+      var vid='vercheck_'+Date.now();
+      var rawBase='https://hongxiaotao177.github.io/';
+      var items=[];
+      keys.forEach(function(k){ items.push({key:k, localName:SUITE[k][1], cur:CUR[k]||'0', verFile:SUITE[k][2], dl:SUITE[k][0], part:0,
+        verApi:base+encodeURIComponent(SUITE[k][2]), verRaw:rawBase+encodeURIComponent(SUITE[k][2]),
+        dlApi:base+encodeURIComponent(SUITE[k][0]), dlRaw:rawBase+encodeURIComponent(SUITE[k][0])}); });
+      PARTS.forEach(function(p){ items.push({key:p[0], localName:p[0], cur:partLocalVer(p[0],p[2])||'0', verFile:p[1], dl:p[0], part:1,
+        verApi:base+encodeURIComponent(p[1]), verRaw:rawBase+encodeURIComponent(p[1]),
+        dlApi:base+encodeURIComponent(p[0]), dlRaw:rawBase+encodeURIComponent(p[0])}); });
+      var letter={id:vid, method:'VERCHECK', tok:(c.tok||''), items:items};
+      try{ var dk=null; try{ if(window.HX&&HX.keys&&HX.keys.dav) dk=HX.keys.dav(); }catch(e){}
+        if(dk&&dk.user) letter.dav={user:dk.user, pass:dk.pass, base:'https://dav.jianguoyun.com/dav/'+encodeURIComponent('学习套装备份')+'/'}; }catch(e){}
+      items.forEach(function(it, i){ progLog[i]="⏳ "+(it.part?("部件"+it.key):(it.key==="index"?"主界面自己":it.localName.replace(".html","")))+"：管家后台查…"; });
+      renderProg();
+      updMsg("🔍 已把查版本的活交给通信管家——它在后台慢慢查（国内网慢也不碍事），查完这里自动出结果，您该干嘛干嘛。");
+      try{ LearnShell.writeFile('mg_out_'+vid+'.json', u8enc(JSON.stringify(letter))); }catch(e){ updMsg('⚠️ 投信没成功，改由主界面自己查…'); legacyRun(); return; }
+      var tStart=Date.now();
+      var timer=setInterval(function(){
+        var b64=null; try{ b64=LearnShell.readFile('mg_in_'+vid+'.json'); }catch(e){}
+        if(b64){
+          clearInterval(timer);
+          try{ LearnShell.deleteFile('mg_in_'+vid+'.json'); }catch(e){}
+          var resp=null;
+          try{ resp=JSON.parse(decodeURIComponent(escape(atob(String(b64).replace(/\s+/g,''))))); }catch(e){}
+          if(!resp || !resp.vercheck){ updMsg('🔍 管家是老版本不会查版本，改由主界面自己查…'); legacyRun(); return; }
+          var dlJobs=[];
+          resp.vercheck.forEach(function(r, i){
+            var nm=(function(){ var it=null; items.forEach(function(x){ if(x.key===r.key) it=x; }); return it?(it.part?("部件"+it.key):(it.key==="index"?"主界面自己":it.localName.replace(".html",""))):r.key; })();
+            if(r.state==='same'){ progLog[i]="✅ "+nm+"：已是最新（本机=云端 v"+r.cur+"）"; }
+            else if(r.state==='downloaded'){ progLog[i]="📥 "+nm+"：本机v"+(r.cur||"?")+" / 云端v"+r.cloud+"，管家已下载，正在装进壳…"; dlJobs.push(r.key); }
+            else if(r.state==='dlfail'){ progLog[i]="❌ "+nm+"：有新版v"+r.cloud+"但下载没成功，下次再试"; failed.push(r.key); }
+            else{ progLog[i]="⚠️ "+nm+"：版本没查到（网络不通），跳过"; failed.push(r.key); }
+            if(r.cloud) cloudVer[r.key]=r.cloud;
+          });
+          renderProg();
+          /* 装新版：从管家专区读件写壳，串行一个个来 */
+          (function applyOne(){
+            if(!dlJobs.length){
+              /* 收尾三句人话（照finish风格） */
+              if(updated.length){
+                updMsg(progLog.join("\n")+"\n\n✅ 已自动更新："+updated.join("、")+"\n旧版不用管，新版备份已存进您的文件夹。\n3秒后自动刷新…");
+                try{ window.LearnShell.toast("✅ 套装已自动更新"); }catch(e){}
+                setTimeout(function(){ location.reload(); }, 3000);
+              }else if(failed.length){
+                updMsg(progLog.join("\n")+"\n\n⚠️ 有没查成/没下成的："+failed.join("、")+"\n不影响使用，下次打开会再试。");
+              }else{
+                updMsg(progLog.join("\n")+"\n\n✅ "+keys.length+"个软件全部是最新版，放心用");
+              }
+              return;
+            }
+            var rk=dlJobs.shift();
+            var it=null; items.forEach(function(x){ if(x.key===rk) it=x; });
+            if(!it){ applyOne(); return; }
+            var fb=null; try{ fb=LearnShell.readFile('mgver_'+it.localName); }catch(e){}
+            if(!fb){ failed.push(it.localName); var fi2=0; items.forEach(function(x,xi){ if(x.key===rk) fi2=xi; }); progLog[fi2]="❌ "+it.localName.replace(".html","")+"：管家专区的件没读到，下次再试"; renderProg(); applyOne(); return; }
+            var okw=false;
+            if(it.part){
+              try{ if(it.cur && it.cur!=="0"){ try{ LearnShell.writeFile(it.localName.replace(".js","")+"_v"+it.cur+".js", LearnShell.readFile(it.localName)); }catch(e){} } }catch(e){}
+              try{ okw=!!LearnShell.writeFile(it.localName, fb); }catch(e){}
+            }else{
+              okw=shellWrite(it.localName, fb);
+            }
+            var fi=0; items.forEach(function(x,xi){ if(x.key===rk) fi=xi; });
+            var nm2=it.part?("部件"+it.key):(it.key==="index"?"主界面自己":it.localName.replace(".html",""));
+            if(okw){
+              try{ LearnShell.deleteFile('mgver_'+it.localName); }catch(e){}
+              if(!it.part){ CUR[rk]=cloudVer[rk]||CUR[rk]; try{ localStorage.setItem("hx_suite_ver", JSON.stringify(CUR)); }catch(e){} }
+              updated.push(it.localName.replace(".html","")+"→v"+(cloudVer[rk]||"?"));
+              progLog[fi]="✅ "+nm2+"：已装上 v"+(cloudVer[rk]||"?");
+            }else{
+              failed.push(it.localName);
+              progLog[fi]="❌ "+nm2+"：写入没成功，下次再试";
+            }
+            renderProg();
+            setTimeout(applyOne, 50);
+          })();
+          return;
+        }
+        if(Date.now()-tStart>10*60*1000){ clearInterval(timer);
+          updMsg(progLog.join("\n")+"\n\n⚠️ 管家查了10分钟还没回信（多半是没网）。信不丢，网通了管家会补查补下载；想立刻查就再点一次「🔍 检查新版本」。"); }
+      }, 4000);
+    })();
+    return;
+  }
+  legacyRun();
 })();
 
 /* v1.9.0 洪老师拍板：开门三停——原v1.8.0"闲时3天自动对账"（自动拉8个云端版本表、对不上就自动刷新重查重下）
