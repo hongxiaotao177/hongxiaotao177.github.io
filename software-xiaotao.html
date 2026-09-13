@@ -42,6 +42,14 @@ window.addEventListener('load', function(){
   小涛笔记（学习笔记2代）· 单文件版
 ==========================================================
   修改记录：
+   v0.10.2 2026-09-13 资料库一拉开就卡住根治（挂号#87，洪老师真机报案+拍板方案C）：
+        病根=拉开资料库巡逻兵patrolKick立刻开跑：splitParas整本几MB原文同步切分+云端代办大件b64编解码，
+          全堵主线程，页面冻住；点「我的笔记」慢是连坐。
+        治=①拉开资料库改延迟3秒+亮条给选择权（3秒后自动开切/▶马上开切/✋本次不跑，合上抽屉取消倒计时）；
+        ②新增splitParasAsync：刀法与splitParas一字不差（同2000字/同标点表/同硬切规矩），但每干20毫秒
+          setTimeout(0)让界面喘口气；巡逻路先异步切好段落传给sliceLibItem第三参，手动路照走同步版不动；
+        ③云端代办自动送书/取回结果改走ghPutFileAsync/ghGetFileAsync（TextEncoder/TextDecoder分块让气，
+          报文格式与老板一字不差，老机器自动回落）；其他gh调用点一行未动。
    v0.10.1 2026-09-13 开门愣住根治（洪老师真机报案：点小涛笔记能进但愣住十几秒，显示正常不能滑不能点）：
         病根=①开门HX.store.sync对账名单含章正文大件xt_chapters_v1，主线程同步读壳文件+b64解码+JSON解析
           几MB大件，同步活堵死主线程；②chaptersRestore每次开门都chaptersDump()整库导出成一大串再判空，白干重活。
@@ -389,6 +397,7 @@ window.addEventListener('load', function(){
     <!-- v0.3.28 自动切片巡逻（本地，跟设置里的"云端切片巡逻兵"两码事） -->
     <div id="patrolBar" class="hidden" style="margin-top:6px; background:#eef5ff; border:1px solid #b8d0ee; border-radius:10px; padding:8px 10px; font-size:14px;">
       <span id="patrolText"></span>
+      <button class="btn secondary" id="btnPatrolNow" style="display:none; padding:4px 10px; font-size:13px; margin-left:8px;">▶ 马上开切</button>
       <button class="btn secondary" id="btnPatrolPause" style="padding:4px 10px; font-size:13px; margin-left:8px;">⏸ 暂停</button>
     </div>
     <div id="patrolHint" class="hint hidden" style="margin-top:6px;">🔑 未填Key，巡逻休息中</div>
@@ -512,7 +521,7 @@ window.addEventListener('load', function(){
     <summary>📋 关于 / Obsidian 搬家说明</summary>
     <div class="kv" style="margin-top:6px;">
       <b style="color:#4a7c59;">📌 本软件为新版正房（学习笔记双链版已留档，功能并入本软件）。</b><br>
-      <b>版本：</b>v0.10.1（2026-09-13）开门愣住根治：开门对账摘掉章正文大件（只对4个小件秒完）+恢复检查改轻查询（空库才搬大件），治"点进来愣住十几秒不能滑不能点"；章正文30秒自动备份照常被<br><b>上一版：</b>v0.10.0（2026-09-12）地基二期·剩余家底接仓管员+邮路：书台账xt_books_v1/资料台账xt_lib_v1注册仓管员（有壳落真源文件夹+坚果云镜像，无壳走中转邮路）、IndexedDB章正文变更30秒自动导出备份（换机/重装能灌回来）、寄习题改走仓管员一本账、收信从对齐后的缓存读<br><b>上一版：</b>v0.9.0（2026-09-12）地基补强：单体备份邮路（没壳时笔记自动进GitHub中转区永远重试，网通了自己送）+壳内仓管员一本账+坚果云镜像+开门拉回中转件<br><b>上一版：</b>v0.8.1（2026-09-11）收信断根修：大管家的信不再被静默吞（收不进就原样保留），修「我的笔记」收起时笔记行溢出挡点击<br><b>上一版：</b>v0.8.0（2026-09-11）信息流通三连：点亮出题可📮寄到习题学习、大管家回程票（?from=guanjia亮顶条）、开门自动收大管家寄来的信存成笔记<br><b>上一版：</b>v0.7.0（2026-09-11）收编公共件hx-common+AI统一面板（🏥浮标→🤖AI两层面板），速记「补充上一条」照留<br><b>上一版：</b>v0.6.2（2026-09-11）切片断根修：断点续切（切到一半接着切不重来）、本地连败自动送云端机器人代办（关软件也切）、云端切好自动取回、💰切片账本（每本书花了多少）、速记「补充上一条」<br><b>上一版：</b>v0.6.0（2026-09-10）鱼骨头化：「✨ 新建笔记」收进一条折叠行，张开后🤖AI帮我学/✍️自己手写是两条文字行（只动版面，功能没变）<br><b>上一版：</b>v0.5.3 速记自动上行：记下的东西自动到网上，AI接班自己看<br><br>
+      <b>版本：</b>v0.10.2（2026-09-13）资料库一拉开就卡住根治：巡逻兵改"拉开后3秒才开工+亮条可选马上开切/本次不跑"，切书干活改细嚼慢咽（每20毫秒让界面喘气），拉开资料库随时能滑能点；切法/账本/云端机器人不变<br><b>上一版：</b>v0.10.1（2026-09-13）开门愣住根治：开门对账摘掉章正文大件（只对4个小件秒完）+恢复检查改轻查询（空库才搬大件），治"点进来愣住十几秒不能滑不能点"；章正文30秒自动备份照常被<br><b>上一版：</b>v0.10.0（2026-09-12）地基二期·剩余家底接仓管员+邮路：书台账xt_books_v1/资料台账xt_lib_v1注册仓管员（有壳落真源文件夹+坚果云镜像，无壳走中转邮路）、IndexedDB章正文变更30秒自动导出备份（换机/重装能灌回来）、寄习题改走仓管员一本账、收信从对齐后的缓存读<br><b>上一版：</b>v0.9.0（2026-09-12）地基补强：单体备份邮路（没壳时笔记自动进GitHub中转区永远重试，网通了自己送）+壳内仓管员一本账+坚果云镜像+开门拉回中转件<br><b>上一版：</b>v0.8.1（2026-09-11）收信断根修：大管家的信不再被静默吞（收不进就原样保留），修「我的笔记」收起时笔记行溢出挡点击<br><b>上一版：</b>v0.8.0（2026-09-11）信息流通三连：点亮出题可📮寄到习题学习、大管家回程票（?from=guanjia亮顶条）、开门自动收大管家寄来的信存成笔记<br><b>上一版：</b>v0.7.0（2026-09-11）收编公共件hx-common+AI统一面板（🏥浮标→🤖AI两层面板），速记「补充上一条」照留<br><b>上一版：</b>v0.6.2（2026-09-11）切片断根修：断点续切（切到一半接着切不重来）、本地连败自动送云端机器人代办（关软件也切）、云端切好自动取回、💰切片账本（每本书花了多少）、速记「补充上一条」<br><b>上一版：</b>v0.6.0（2026-09-10）鱼骨头化：「✨ 新建笔记」收进一条折叠行，张开后🤖AI帮我学/✍️自己手写是两条文字行（只动版面，功能没变）<br><b>上一版：</b>v0.5.3 速记自动上行：记下的东西自动到网上，AI接班自己看<br><br>
       <b>⭐ 头一条铁律（Obsidian 搬家）：</b>小涛笔记里所有内容的<b>真身是标准 Markdown 文件</b>，
       全部存在 GitHub 仓库的 <b>vault/</b> 区——那就是一座现成的 Obsidian 仓库。<br>
       <b>搬家方法：</b>把仓库里 vault/ 文件夹下载到电脑/手机（或坚果云同步它），
@@ -698,7 +707,7 @@ window.addEventListener('load', function(){
 (function(){
 __bc('D脚本启动');
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.10.1' /* 开门愣住根治 v0.10.1 2026-09-13（洪老师真机报案：点小涛笔记能进但愣住十几秒不能滑不能点；病根=开门sync把章正文大件xt_chapters_v1也算进对账名单，主线程同步读壳文件+b64解码+解析几MB，加上chaptersRestore每次开门都chaptersDump整库导出再判空白干重活；治=①开门sync名单摘掉LS_CHAPS只对4个小件，章正文备份照chaptersFlush debounce30秒落账不变 ②chaptersRestore判空改idbCount轻查询，空库才读大件灌回；只动这2处+留痕，其余一行未动） */ /* 地基二期·剩余家底接仓管员+邮路 v0.10.0 2026-09-12（只加不破坏，全守卫全try，HX缺席=上版原样）：①书台账xt_books_v1/资料台账xt_lib_v1注册仓管员，saveBooks/saveLib照v0.9.0主笔记键同款三岔（有壳HX.store.set+闲时dav.mirror；无壳localStorage老路+relay.add） ②IndexedDB章正文接邮路：章正文变更debounce 30秒整库导出成一个JSON走HX.store.set('xt_chapters_v1')+dav.mirror('hxdata_xt_chapters_v1.json')；无壳UTF-8字节>900000跳过relay只落本地（GitHub一兆限制留余量）否则relay.add；开门sync后IndexedDB空而仓管员有值→灌回IndexedDB，非空以IndexedDB为准 ③寄习题xitixuexi_inbox改走仓管员（有壳落真源文件夹，无壳localStorage老路效果相同） ④xt_inbox_v1注册进rescue/sync键数组，收信从对齐后的缓存读（sync后重跑gjInboxCheck） ⑤版本0.9.0→0.10.0三处留痕（本注释链/顶部修改记录/📋关于） */ /* SPEC2单体备份邮路+仓管员+坚果云镜像+中转拉回（地基补强）v0.9.0 2026-09-12（只加不破坏，全守卫全try，HX缺席=上版原样）：主数据键=xt_notes_v1（LS_NOTES，笔记正文所在的最大数据键，saveNotes是全家唯一保存口；xt_books_v1/xt_lib_v1台账体小、章正文在IndexedDB，本班只接这一个键不贪多）。①保存点saveNotes改三岔：有壳（HX.store.has()）走HX.store.set一本账+闲时HX.dav.mirror镜像hxdata_xt_notes_v1.json到坚果云，绝不走relay；无壳走原有localStorage老路+HX.relay.add中转邮路 ②开门hxCommonLoad成功回调加HX.relay.init('小涛笔记')；闲时2秒HX.dav.rescue([xt_notes_v1])（只补缺失不盖已有）→HX.store.sync对账后补renderList→HX.relay.pull拉回中转件 ③版本0.8.1→0.9.0三处留痕（本注释链/顶部修改记录/📋关于） */ /* 收信断根修+details溢出修 v0.8.1 2026-09-11（tester实证两案，只动2处其余一行未动）：①D9b收信从页底独立script挪进主闭包启动流程（原块调不到主IIFE的loadNotes/saveNotes/uid/strHash/vaultQueue，ReferenceError被try/catch吞掉→toast不亮、笔记没存、inbox却被清成[]，数据丢失级）；并立军规=全部存成功才清空xt_inbox_v1，任何一步失败inbox原样保留下回再收 ②首页「📚我的笔记」details收起时noteList仍渲染溢出盖住下方设置卡挡点击（hit-test实证），修=CSS一行details.card:not([open])>:not(summary)真隐藏 */ /* 信息流通普查断点三连 v0.8.0 2026-09-11（只动3处其余一行未动）：①D5点亮→出题结果页加第4钮「📮寄到习题学习」——题目文本按software-xiti.html收信端格式（单个对象{title,text}）写localStorage xitixuexi_inbox，打开习题自动收；②D6c大管家回程票（照抄血气v0.12.0现成写法）：?from=guanjia亮顶条「← 返回大管家」（文件名自适应software-前缀规矩），?pt=顺手写hx_gj_curpt（全家统一记号，血气v0.16.0先例）；③D9b开门收大管家的信：读xt_inbox_v1（数组[{title,text,pt,ts}]，大管家v0.27.0寄来）逐条存成笔记（照xt_notes_v1现有结构，标题加[病人名]前缀），收完清空写回[]，空则静默；无壳全try/catch不报错 */ /* 收编公共件+AI面板 v0.7.0 2026-09-11（照大管家v0.23.0/0.24.0已验证先例）：内嵌速记snippet整块退役改HX.sj一行接入（「补充上一条」extraBtn照留不退役，自动上行HX.sj自带）+AI_MANIFEST 7条接HX.ai统一面板（AI帮我学/问资料/重切/重写总结/送云端代办/AI改笔记/点亮菜单，run全指现有按钮本体未动）；hx-common不在时主功能照常、速记/AI静默降级 */ /* 切片断根修 v0.6.2 2026-09-11（洪老师拍板"一项一项完成"，挂号#63/#64/#65/#66）：
+var SW_VERSION = '0.10.2' /* 资料库一拉开就卡住根治 v0.10.2 2026-09-13（挂号#87，洪老师真机报案+拍板方案C：洪老师v0.10.1实测"点资料库/我的笔记没反应要等很久"；病根=拉开资料库巡逻兵patrolKick立刻开跑，splitParas整本几MB原文同步切分+云端代办ghPutFile/ghGetFile大件b64编解码全堵主线程；治=①拉开后延迟3秒+亮条给选择权（3秒后自动开切/▶马上开切/✋本次不跑）②splitParasAsync细嚼慢咽每20ms让界面喘气（刀法与splitParas一字不差，续切/取回拼装不受影响）③云端代办自动送/取回走b64encAsync/b64decAsync异步通道（TextEncoder/Decoder分块让气，报文格式不变，老机器无TextEncoder自动回落老同步函数）；手动按钮等老调用点一行未动） */ /* 开门愣住根治 v0.10.1 2026-09-13（洪老师真机报案：点小涛笔记能进但愣住十几秒不能滑不能点；病根=开门sync把章正文大件xt_chapters_v1也算进对账名单，主线程同步读壳文件+b64解码+解析几MB，加上chaptersRestore每次开门都chaptersDump整库导出再判空白干重活；治=①开门sync名单摘掉LS_CHAPS只对4个小件，章正文备份照chaptersFlush debounce30秒落账不变 ②chaptersRestore判空改idbCount轻查询，空库才读大件灌回；只动这2处+留痕，其余一行未动） */ /* 地基二期·剩余家底接仓管员+邮路 v0.10.0 2026-09-12（只加不破坏，全守卫全try，HX缺席=上版原样）：①书台账xt_books_v1/资料台账xt_lib_v1注册仓管员，saveBooks/saveLib照v0.9.0主笔记键同款三岔（有壳HX.store.set+闲时dav.mirror；无壳localStorage老路+relay.add） ②IndexedDB章正文接邮路：章正文变更debounce 30秒整库导出成一个JSON走HX.store.set('xt_chapters_v1')+dav.mirror('hxdata_xt_chapters_v1.json')；无壳UTF-8字节>900000跳过relay只落本地（GitHub一兆限制留余量）否则relay.add；开门sync后IndexedDB空而仓管员有值→灌回IndexedDB，非空以IndexedDB为准 ③寄习题xitixuexi_inbox改走仓管员（有壳落真源文件夹，无壳localStorage老路效果相同） ④xt_inbox_v1注册进rescue/sync键数组，收信从对齐后的缓存读（sync后重跑gjInboxCheck） ⑤版本0.9.0→0.10.0三处留痕（本注释链/顶部修改记录/📋关于） */ /* SPEC2单体备份邮路+仓管员+坚果云镜像+中转拉回（地基补强）v0.9.0 2026-09-12（只加不破坏，全守卫全try，HX缺席=上版原样）：主数据键=xt_notes_v1（LS_NOTES，笔记正文所在的最大数据键，saveNotes是全家唯一保存口；xt_books_v1/xt_lib_v1台账体小、章正文在IndexedDB，本班只接这一个键不贪多）。①保存点saveNotes改三岔：有壳（HX.store.has()）走HX.store.set一本账+闲时HX.dav.mirror镜像hxdata_xt_notes_v1.json到坚果云，绝不走relay；无壳走原有localStorage老路+HX.relay.add中转邮路 ②开门hxCommonLoad成功回调加HX.relay.init('小涛笔记')；闲时2秒HX.dav.rescue([xt_notes_v1])（只补缺失不盖已有）→HX.store.sync对账后补renderList→HX.relay.pull拉回中转件 ③版本0.8.1→0.9.0三处留痕（本注释链/顶部修改记录/📋关于） */ /* 收信断根修+details溢出修 v0.8.1 2026-09-11（tester实证两案，只动2处其余一行未动）：①D9b收信从页底独立script挪进主闭包启动流程（原块调不到主IIFE的loadNotes/saveNotes/uid/strHash/vaultQueue，ReferenceError被try/catch吞掉→toast不亮、笔记没存、inbox却被清成[]，数据丢失级）；并立军规=全部存成功才清空xt_inbox_v1，任何一步失败inbox原样保留下回再收 ②首页「📚我的笔记」details收起时noteList仍渲染溢出盖住下方设置卡挡点击（hit-test实证），修=CSS一行details.card:not([open])>:not(summary)真隐藏 */ /* 信息流通普查断点三连 v0.8.0 2026-09-11（只动3处其余一行未动）：①D5点亮→出题结果页加第4钮「📮寄到习题学习」——题目文本按software-xiti.html收信端格式（单个对象{title,text}）写localStorage xitixuexi_inbox，打开习题自动收；②D6c大管家回程票（照抄血气v0.12.0现成写法）：?from=guanjia亮顶条「← 返回大管家」（文件名自适应software-前缀规矩），?pt=顺手写hx_gj_curpt（全家统一记号，血气v0.16.0先例）；③D9b开门收大管家的信：读xt_inbox_v1（数组[{title,text,pt,ts}]，大管家v0.27.0寄来）逐条存成笔记（照xt_notes_v1现有结构，标题加[病人名]前缀），收完清空写回[]，空则静默；无壳全try/catch不报错 */ /* 收编公共件+AI面板 v0.7.0 2026-09-11（照大管家v0.23.0/0.24.0已验证先例）：内嵌速记snippet整块退役改HX.sj一行接入（「补充上一条」extraBtn照留不退役，自动上行HX.sj自带）+AI_MANIFEST 7条接HX.ai统一面板（AI帮我学/问资料/重切/重写总结/送云端代办/AI改笔记/点亮菜单，run全指现有按钮本体未动）；hx-common不在时主功能照常、速记/AI静默降级 */ /* 切片断根修 v0.6.2 2026-09-11（洪老师拍板"一项一项完成"，挂号#63/#64/#65/#66）：
    ①#66断点续切：AI切到一半的书记着批次进度（sliceBatch），中断后续切不从头——病根=此前任何中断都整本重切、钱全白花，几本书一个月切不完就是它；
      粗切完成的书换AI重切仍整本重来（旧块全换），手动「重新AI切片」照旧全量；
    ②#63自动化：巡逻失败"当天不再碰"改退避2小时再试（网络抖一下不再废一天）；本地连败2次的书自动送云端代办（GitHub Actions机器人切，关掉软件它也切）；
@@ -1209,6 +1218,75 @@ function ghUrl(path){
 function ghHeaders(){ return { 'Authorization': 'token ' + ghCfg().tok, 'Accept': 'application/vnd.github+json' }; }
 function b64enc(s){ return btoa(unescape(encodeURIComponent(s))); }
 function b64dec(s){ return decodeURIComponent(escape(atob(String(s).replace(/\s+/g, '')))); }
+/* v0.10.2 细嚼慢咽两件套（治"点资料库卡住"挂号#87：拉开资料库巡逻兵立刻整本几MB原文切分/b64编码，主线程冻死页面）：
+   大件编解码走原生TextEncoder/TextDecoder+分小块让气（每块之间setTimeout(0)把主线程还给界面）；
+   老浏览器没TextEncoder时回落老同步函数（结果一字不差，只是不让气）。只新增，b64enc/b64dec本体一行未动 */
+function b64encAsync(s){
+  return new Promise(function(res){
+    try{
+      if(typeof TextEncoder === 'undefined'){ res(b64enc(s)); return; }
+      var bytes = (new TextEncoder()).encode(String(s));
+      var parts = [], i = 0;
+      (function step(){
+        try{
+          var t0 = Date.now();
+          while(i < bytes.length){
+            var end = Math.min(i + 32768, bytes.length);
+            parts.push(String.fromCharCode.apply(null, bytes.subarray(i, end)));
+            i = end;
+            if(Date.now() - t0 > 20 && i < bytes.length){ setTimeout(step, 0); return; }
+          }
+          res(btoa(parts.join('')));
+        }catch(e){ res(b64enc(s)); }
+      })();
+    }catch(e){ res(b64enc(s)); }
+  });
+}
+function b64decAsync(s){
+  return new Promise(function(res){
+    try{
+      if(typeof TextDecoder === 'undefined'){ res(b64dec(s)); return; }
+      var bin = atob(String(s).replace(/\s+/g, ''));
+      var bytes = new Uint8Array(bin.length);
+      var i = 0;
+      (function step(){
+        try{
+          var t0 = Date.now();
+          while(i < bin.length){
+            var end = Math.min(i + 65536, bin.length);
+            for(var j = i; j < end; j++) bytes[j] = bin.charCodeAt(j);
+            i = end;
+            if(Date.now() - t0 > 20 && i < bin.length){ setTimeout(step, 0); return; }
+          }
+          res((new TextDecoder()).decode(bytes));
+        }catch(e){ res(b64dec(s)); }
+      })();
+    }catch(e){ res(b64dec(s)); }
+  });
+}
+/* 云端代办专用异步版（大件走b64encAsync/b64decAsync让气；网络/报文格式与同步版一字不差；只供cloudAutoRound调用，其他调用点照走老同步函数不动） */
+function ghPutFileAsync(path, contentStr, msg){
+  return fetchWithTimeout(ghUrl(path), { headers: ghHeaders() }).then(function(resp){
+    if(resp.status === 404) return null;
+    if(!resp.ok) throw new Error('读旧文件失败');
+    return resp.json();
+  }).then(function(old){
+    return b64encAsync(contentStr).then(function(b64){
+      var body = { message: msg, content: b64 };
+      if(old && old.sha) body.sha = old.sha;
+      return fetchWithTimeout(ghUrl(path), { method: 'PUT', headers: ghHeaders(), body: JSON.stringify(body) });
+    });
+  }).then(function(resp){
+    if(!resp.ok) return resp.text().then(function(t){ throw new Error('写入失败 ' + resp.status + '：' + t.slice(0, 100)); });
+  });
+}
+function ghGetFileAsync(path){
+  return fetchWithTimeout(ghUrl(path), { headers: ghHeaders() }).then(function(resp){
+    if(resp.status === 404) return null;
+    if(!resp.ok) throw new Error('读取失败 ' + resp.status);
+    return resp.json();
+  }).then(function(d){ return d ? b64decAsync(d.content) : null; });
+}
 function ghPutFile(path, contentStr, msg){
   return fetchWithTimeout(ghUrl(path), { headers: ghHeaders() }).then(function(resp){
     if(resp.status === 404) return null;
@@ -1666,6 +1744,37 @@ function splitParas(text){
   });
   return out;
 }
+/* v0.10.2 细嚼慢咽版切段（挂号#87）：刀法与splitParas一字不差（同2000字/同标点表/同硬切规矩，切片结果完全一致，
+   断点续切/云端取回拼装不受影响），唯一差别=每干20毫秒就setTimeout(0)让界面喘口气，巡逻自动切大件不再冻页面。
+   只新增；splitParas本体一行未动，手动按钮等老调用点照走同步版 */
+function splitParasAsync(text){
+  return new Promise(function(res){
+    try{
+      var raw = String(text).split(/\n+/).map(function(s){ return s.trim(); }).filter(function(s){ return s.length > 1; });
+      var out = [], idx = 0;
+      (function step(){
+        try{
+          var t0 = Date.now();
+          while(idx < raw.length){
+            var p = raw[idx]; idx++;
+            while(p.length > 2000){
+              var win = p.slice(0, 2000), cut = -1;
+              ['。', '！', '？', '；', ';', '.', '!', '?'].forEach(function(mk){
+                var k = win.lastIndexOf(mk); if(k > cut) cut = k;
+              });
+              if(cut < 1000) cut = 1999; /* 前1000字里找不到标点就硬切在2000字处 */
+              out.push(p.slice(0, cut + 1));
+              p = p.slice(cut + 1).trim();
+            }
+            if(p.length > 1) out.push(p);
+            if(Date.now() - t0 > 20 && idx < raw.length){ setTimeout(step, 0); return; }
+          }
+          res(out);
+        }catch(e){ res(splitParas(text)); } /* 出错回落同步版，结果一致 */
+      })();
+    }catch(e){ res(splitParas(text)); }
+  });
+}
 /* v0.3.27 找"参考文献"节起始段落号（全文最后一次出现 参考文献/References 所在段落），找不到返回-1 */
 function refStartPara(paras){
   var re = /参\s*考\s*文\s*献|References|REFERENCES/, idx = -1;
@@ -1862,9 +1971,9 @@ $('btnShelfGo').addEventListener('click', function(){
   });
   chain.then(function(){ libProg(''); renderLib(); });
 });
-function sliceLibItem(libId, text){
+function sliceLibItem(libId, text, preParas){
   aiBookCtx(libId);   /* v0.3.28：这趟AI记到这本书账上 */
-  var paras = splitParas(text);
+  var paras = preParas || splitParas(text);   /* v0.10.2：巡逻路先splitParasAsync细嚼慢咽切好段落再传进来（preParas），手动路不传照走同步版；批次由同一刀法确定性生成，续切不受影响 */
   /* v0.3.27 正文切片摘除参考文献节：只用该节之前的段落切块/写总结；找不到(idx<0)时行为照旧 */
   var refAt = refStartPara(paras);
   if(refAt >= 0){ paras = paras.slice(0, refAt); text = paras.join('\n'); }
@@ -2036,7 +2145,7 @@ function cloudAutoRound(){
     /* ①自动取回：云端切好的拉回家 */
     lib.forEach(function(x){
       if(x.cloud !== 'sent') return;
-      ghGetFile('done/slice_' + x.id + '.json').then(function(res){
+      ghGetFileAsync('done/slice_' + x.id + '.json').then(function(res){   /* v0.10.2：云端取回走异步解码（几MB结果件b64dec不再堵主线程），格式与老ghGetFile一字不差 */
         if(!res) return; /* 没切好：下回再看（进度纸条手动按钮照可查） */
         try{
           var data = JSON.parse(res);
@@ -2052,8 +2161,8 @@ function cloudAutoRound(){
       if((x.localFails|0) < 2) return;
       libFullText(x.id).then(function(raw){
         if(!raw) return;
-        return ghPutFile('todo/slice_' + x.id + '.txt', raw, '云端代办切片（自动送）：' + x.title).then(function(){
-          return ghPutFile('todo/slice_' + x.id + '.meta.json', JSON.stringify({ id: x.id, title: x.title }), '切片说明');
+        return ghPutFileAsync('todo/slice_' + x.id + '.txt', raw, '云端代办切片（自动送）：' + x.title).then(function(){   /* v0.10.2：自动送书走异步编码（几MB原文b64enc不再堵主线程），报文格式一字不差 */
+          return ghPutFileAsync('todo/slice_' + x.id + '.meta.json', JSON.stringify({ id: x.id, title: x.title }), '切片说明');
         }).then(function(){
           var l2 = loadLib(); var it = l2.filter(function(t){ return t.id === x.id; })[0];
           if(it){ it.cloud = 'sent'; it.localFails = 0; saveLib(l2); renderLib(); }
@@ -2097,7 +2206,9 @@ function patrolNext(){
       var _resume = !!(it2 && !it2.coarse && (it2.sliceBatch|0) > 0 && (it2.chunks||[]).length);
       if(it2 && !_resume){ it2.chunks = []; it2.sliceBatch = 0; it2.coarse = false; it2.done = false; saveLib(l2); }
       return (_resume ? Promise.resolve() : idbDelPrefix('chunks', job.id + '_')).then(function(){
-        return sliceLibItem(job.id, raw);
+        return splitParasAsync(raw);   /* v0.10.2：巡逻路先细嚼慢咽切好段落（每20ms让界面喘气），再交给sliceLibItem；刀法一致续切不受影响 */
+      }).then(function(_paras){
+        return sliceLibItem(job.id, raw, _paras);
       }).then(function(){
         var after = getLib(job.id);
         if(after && libNeedSlice(after)) throw new Error(after.lastErr || 'AI 没切成（还是粗切）');   /* 保险② */
@@ -2119,6 +2230,15 @@ function patrolNext(){
   });
 }
 $('btnPatrolPause').addEventListener('click', function(){
+  /* v0.10.2：倒计时等待中点它=本次不跑（取消自动开切，下次拉开再问） */
+  if(_patrolDelayTimer){
+    try{ clearTimeout(_patrolDelayTimer); _patrolDelayTimer = null; }catch(e){}
+    _patrol.paused = true;
+    var bn0 = $('btnPatrolNow'); if(bn0) bn0.style.display = 'none';
+    patrolBar('✋ 本次不跑（再点「▶ 继续」可立刻开切）');
+    var bp0 = $('btnPatrolPause'); if(bp0) bp0.textContent = '▶ 继续';
+    return;
+  }
   _patrol.paused = !_patrol.paused;
   if(_patrol.paused){
     patrolBar('⏸ 已暂停（跑完手头这本就停）');
@@ -2128,11 +2248,37 @@ $('btnPatrolPause').addEventListener('click', function(){
     else patrolKick();
   }
 });
+/* v0.10.2 方案C（挂号#87，洪老师拍板）：拉开资料库不再立刻巡逻——先亮条给选择权（3秒后自动开切 / ▶马上开切 / ✋本次不跑），
+   开切后全程细嚼慢咽（splitParasAsync/b64Async每20ms让气），界面随时能滑能点 */
+var _patrolDelayTimer = null;
+function patrolKickDelayed(){
+  try{ if(_patrolDelayTimer){ clearTimeout(_patrolDelayTimer); _patrolDelayTimer = null; } }catch(e){}
+  var q = [];
+  try{ if((localStorage.getItem('xt_apikey') || '').trim()) q = patrolScan(); }catch(e){}
+  if(q.length){
+    patrolBar('🤖 有' + q.length + '本待切/待总结：3秒后自动开切（细嚼慢咽，界面照常用）');
+    var bn = $('btnPatrolNow'); if(bn) bn.style.display = '';
+    var bp = $('btnPatrolPause'); if(bp) bp.textContent = '✋ 本次不跑';
+  }
+  _patrolDelayTimer = setTimeout(function(){
+    _patrolDelayTimer = null;
+    var bn2 = $('btnPatrolNow'); if(bn2) bn2.style.display = 'none';
+    try{ if($('libBox').open && !_patrol.paused) patrolKick(); }catch(e){}
+  }, 3000);
+}
+var _btnPatrolNow = $('btnPatrolNow');
+if(_btnPatrolNow) _btnPatrolNow.addEventListener('click', function(){   /* v0.10.2 ▶马上开切：不等倒计时 */
+  try{ if(_patrolDelayTimer){ clearTimeout(_patrolDelayTimer); _patrolDelayTimer = null; } }catch(e){}
+  _btnPatrolNow.style.display = 'none';
+  _patrol.paused = false;
+  patrolKick();
+});
 $('libBox').addEventListener('toggle', function(){
-  if($('libBox').open){ _patrol.paused = false; patrolKick(); }   /* 打开资料库就巡逻 */
+  if($('libBox').open){ _patrol.paused = false; patrolKickDelayed(); }   /* v0.10.2：打开资料库3秒后巡逻才开工（原"打开就巡逻"改延迟+可选择） */
+  else { try{ if(_patrolDelayTimer){ clearTimeout(_patrolDelayTimer); _patrolDelayTimer = null; var bn3=$('btnPatrolNow'); if(bn3) bn3.style.display='none'; } }catch(e){} }   /* 合上就取消倒计时 */
 });
 document.addEventListener('visibilitychange', function(){
-  if(!document.hidden && $('libBox').open) patrolKick();          /* 切回前台继续 */
+  if(!document.hidden && $('libBox').open) patrolKickDelayed();          /* 切回前台继续（v0.10.2同款延迟） */
 });
 
 /* --- 资料列表 --- */
@@ -3570,7 +3716,7 @@ hxCommonLoad(function(){
 
 /* 测试挂钩（ playwright 用，不影响功能 ） */
 window.__xt = { ensureJDB: ensureJDB, refTag: refTag, refSplitLocal: refSplitLocal, refFindSection: refFindSection,
-  refStartPara: refStartPara, refsAiParse: refsAiParse, refsCopyText: refsCopyText, splitParas: splitParas, makeBatches: makeBatches,
+  refStartPara: refStartPara, refsAiParse: refsAiParse, refsCopyText: refsCopyText, splitParas: splitParas, splitParasAsync: splitParasAsync, makeBatches: makeBatches,
   openLib: openLib,
   /* v0.3.28 新挂钩：巡逻 + 账本 */
   patrolScan: patrolScan, patrolKick: patrolKick, patrolState: _patrol, libNeedSlice: libNeedSlice, libNeedBrief: libNeedBrief,
