@@ -1,1 +1,1 @@
-{"version": "0.8.0", "dl": "hx-common.js", "note": "开门静默令：自动联网全关，点了才做（HX._autoNetOk闸门）"}
+{"version": "0.9.0", "dl": "hx-common.js", "note": "双通道通信管家一期：HX.mg投信（mg_out_/mg_in_）+HX.big分块异步大件编解码；gh.fetch自动改道管家，无管家自动走老路，软件零改动"}
