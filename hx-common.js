@@ -31,7 +31,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 (function(){
   'use strict';
-  var HX_COMMON_VERSION = '0.9.0'; /* v0.9.0 2026-09-13：常驻通信管家双通道（洪老师拍板一次做完）——新增HX.mg投信层（壳v1.7.0管家在则GitHub联网写信mg_out_给后台服务代发+回信mg_in_轮询取，网页线程不碰网络；管家不在自动走老fetch，全家零改动）+HX.big大件异步编解码（TextEncoder/Decoder分块让气，无则回落老同步）；改道点=gh.fetch一个收口；_autoNetOk闸门规矩不变 /* v0.8.0 2026-09-13：开门静默令（洪老师拍板：开门不许自动同步/不许自动查版本，点了才做）——全家自动联网（dav rescue/mirror、relay闲时送与pull、selfUp、selfCheck、速记开门补推）统一过HX._autoNetOk闸门：默认全关，3秒内真有点击（=点了按钮）或localStorage hx_auto_net=1才放行；新增HX.syncNow()一件全手动补做；本地存取（HX.store/localStorage/壳文件）不联网不受影响；其余一行未动 /* v0.7.0 2026-09-12：HX.dav全异步化（根治#75/#77同步联网卡死主线程）——走壳v1.6.0新davAsync后台桥+HX._davCb回调，ts对账逻辑一行未改；旧壳没davAsync一律静默跳过绝不回退同步老路，壳升级后自动恢复 */ /* v0.6.0 2026-09-12 地基二期：HX.dav的rescue升级为ts对账（云端新超5秒留档_冲突_后盖回/本地新或相等顺手davUp追平/云端缺顺手davUp补齐） */ /* v0.5.0 2026-09-12：新增中转邮路HX.relay+坚果云腿HX.dav */ /* v0.4.0 2026-09-12：新增仓管员HX.store，地基工程一期规矩A/B落地 */ /* v0.3.0 2026-09-11：部件自升级HX.selfUp（病根：壳里旧版公共件永远不升级→AI面板等新功能装了也白装；开门闲时20秒比对云端version-hx-common.json，旧了静默下载写回授权文件夹，下次开门用新的，全程不弹窗） */ /* v0.2.0 2026-09-11：新增HX.ai统一AI面板（两层结构+定位置顶+AI功能生成器，洪老师2026-09-11拍板方法论落地试点）；HX.sj面板加「🤖AI」入口钮；其余一行未动 */ /* v0.1.1 2026-09-10：HX.sj.init 加可选 extraBtn（大管家#43「补充上一条」补回，洪老师点名功能）；不传仍是2钮版，默认行为不变 */
+  var HX_COMMON_VERSION = '0.9.1'; /* v0.9.1 2026-09-14：HX.store.sync批量抱回（壳v1.7.3 readFiles桥）——多件对账一次JNI全读回，免逐件SAF往返卡主线程（洪老师真机报"点大管家变蓝后定住"，病根=5本账本连环读各约2秒）；旧壳无readFiles自动回落逐件读，逻辑一字未改 /* v0.9.0 2026-09-13：常驻通信管家双通道（洪老师拍板一次做完）——新增HX.mg投信层（壳v1.7.0管家在则GitHub联网写信mg_out_给后台服务代发+回信mg_in_轮询取，网页线程不碰网络；管家不在自动走老fetch，全家零改动）+HX.big大件异步编解码（TextEncoder/Decoder分块让气，无则回落老同步）；改道点=gh.fetch一个收口；_autoNetOk闸门规矩不变 /* v0.8.0 2026-09-13：开门静默令（洪老师拍板：开门不许自动同步/不许自动查版本，点了才做）——全家自动联网（dav rescue/mirror、relay闲时送与pull、selfUp、selfCheck、速记开门补推）统一过HX._autoNetOk闸门：默认全关，3秒内真有点击（=点了按钮）或localStorage hx_auto_net=1才放行；新增HX.syncNow()一件全手动补做；本地存取（HX.store/localStorage/壳文件）不联网不受影响；其余一行未动 /* v0.7.0 2026-09-12：HX.dav全异步化（根治#75/#77同步联网卡死主线程）——走壳v1.6.0新davAsync后台桥+HX._davCb回调，ts对账逻辑一行未改；旧壳没davAsync一律静默跳过绝不回退同步老路，壳升级后自动恢复 */ /* v0.6.0 2026-09-12 地基二期：HX.dav的rescue升级为ts对账（云端新超5秒留档_冲突_后盖回/本地新或相等顺手davUp追平/云端缺顺手davUp补齐） */ /* v0.5.0 2026-09-12：新增中转邮路HX.relay+坚果云腿HX.dav */ /* v0.4.0 2026-09-12：新增仓管员HX.store，地基工程一期规矩A/B落地 */ /* v0.3.0 2026-09-11：部件自升级HX.selfUp（病根：壳里旧版公共件永远不升级→AI面板等新功能装了也白装；开门闲时20秒比对云端version-hx-common.json，旧了静默下载写回授权文件夹，下次开门用新的，全程不弹窗） */ /* v0.2.0 2026-09-11：新增HX.ai统一AI面板（两层结构+定位置顶+AI功能生成器，洪老师2026-09-11拍板方法论落地试点）；HX.sj面板加「🤖AI」入口钮；其余一行未动 */ /* v0.1.1 2026-09-10：HX.sj.init 加可选 extraBtn（大管家#43「补充上一条」补回，洪老师点名功能）；不传仍是2钮版，默认行为不变 */
   if(window.HX && window.HX.HX_COMMON_VERSION){ return; } /* 已装过不重复装 */
   var HX = { HX_COMMON_VERSION: HX_COMMON_VERSION, ok: true };
   function warn(m){ try{ if(window.console && console.warn) console.warn('[hx-common] '+m); }catch(e){} }
@@ -815,13 +815,16 @@
       }catch(e){}
       return 0;
     }
+    /* v0.9.1 批量抱回缓存（壳v1.7.3新readFiles桥）：sync多件对账前一次JNI把名单文件全读回存这里，rRead先查缓存——
+       病根=SAF单件读真机要1~2秒，逐件读连环卡主线程（洪老师真机报"点大管家变蓝后定住"）；null=没批量/旧壳回落逐件读，读完即清 */
+    var batchCache = null;
     /* 读真源文件 → {v,ts} 或 null（没壳/没文件/坏JSON都算没有，单键坏不炸别键）；
        兼容老hxStore裸档：解析不出信封就按裸值认读 v=文件原文、ts=文件mtime，标_bare待sync升级，绝不丢旧数据 */
     function rRead(key){
       try{
         if(!shOk()) return null;
         var fn = fname(key);
-        var b = LearnShell.readFile(fn);
+        var b = (batchCache && Object.prototype.hasOwnProperty.call(batchCache, fn)) ? batchCache[fn] : LearnShell.readFile(fn); /* v0.9.1：批量缓存命中不碰桥 */
         if(!b) return null;
         var txt = HX.gh.b64dec(b);
         var j = null;
@@ -891,10 +894,14 @@
       }catch(e){}
     };
     /* 对账一批键（数组），逐键串行；cb(冲突清单数组)可无；单键炸不影响其他键 */
+    var _rfCbN = 0; /* v0.9.1 异步批量回调编号器 */
     st.sync = function(keys, cb){
       var news = [];
+      try{ keys = keys || []; }catch(e){ keys = []; }
+      /* v0.9.1 对账本体抽成run()（洪老师2026-09-14拍板直接除根）：批量抱回（异步桥优先/同步批量次之）完成后才进run；
+         啥桥都没有直接run=逐件读老路，循环体一字未改 */
+      function run(){
       try{
-        keys = keys || [];
         for(var i = 0; i < keys.length; i++){
           try{
             var key = String(keys[i]);
@@ -946,7 +953,41 @@
         }
         for(var j = 0; j < news.length; j++) pushConflict(news[j]);
       }catch(e){ warn('store.sync: '+((e&&e.message)||e)); }
+      batchCache = null; /* v0.9.1：批量缓存用完即清，下轮重新抱回，绝不拿旧缓存对账 */
       try{ if(cb) cb(news); }catch(e){}
+      } /* run完 */
+      /* v0.9.1 派活：异步桥最优（壳v1.7.3 readFilesAsync，Java后台读，JS主线程零等待零卡顿）；
+         同步批量次之（readFiles一次往返）；都没有=旧壳，直接run走逐件读老路 */
+      try{
+        if(keys.length > 1 && window.LearnShell && LearnShell.readFilesAsync){
+          var _names = [];
+          for(var _bi = 0; _bi < keys.length; _bi++){ try{ _names.push(fname(String(keys[_bi]))); }catch(e){} }
+          var _cbNm = '__hxRfCb' + (++_rfCbN);
+          window[_cbNm] = function(mapJson){
+            try{ delete window[_cbNm]; }catch(e){ window[_cbNm] = undefined; }
+            try{
+              var _map = JSON.parse(mapJson || '{}');
+              if(_map && typeof _map === 'object'){
+                batchCache = {};
+                for(var _bk in _map){ if(Object.prototype.hasOwnProperty.call(_map, _bk)){ try{ batchCache[_bk] = (_map[_bk] === null || _map[_bk] === undefined) ? null : String(_map[_bk]); }catch(e){ batchCache[_bk] = null; } } }
+              }
+            }catch(e){ batchCache = null; }
+            run();
+          };
+          try{ LearnShell.readFilesAsync(JSON.stringify(_names), _cbNm); return; }catch(e){ try{ delete window[_cbNm]; }catch(e2){} }
+        }
+        if(keys.length > 1 && window.LearnShell && LearnShell.readFiles){
+          var _names2 = [];
+          for(var _bi2 = 0; _bi2 < keys.length; _bi2++){ try{ _names2.push(fname(String(keys[_bi2]))); }catch(e){} }
+          var _map2 = null;
+          try{ _map2 = JSON.parse(LearnShell.readFiles(JSON.stringify(_names2)) || '{}'); }catch(e){ _map2 = null; }
+          if(_map2 && typeof _map2 === 'object'){
+            batchCache = {};
+            for(var _bk2 in _map2){ if(Object.prototype.hasOwnProperty.call(_map2, _bk2)){ try{ batchCache[_bk2] = (_map2[_bk2] === null || _map2[_bk2] === undefined) ? null : String(_map2[_bk2]); }catch(e){ batchCache[_bk2] = null; } } }
+          }
+        }
+      }catch(e){ batchCache = null; }
+      run();
     };
     /* 本轮sync累计冲突清单（内存数组） */
     st.conflicts = function(){ try{ return conflictList.slice(); }catch(e){ return []; } };

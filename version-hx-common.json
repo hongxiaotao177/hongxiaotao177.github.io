@@ -1,1 +1,1 @@
-{"version": "0.9.0", "dl": "hx-common.js", "note": "双通道通信管家一期：HX.mg投信（mg_out_/mg_in_）+HX.big分块异步大件编解码；gh.fetch自动改道管家，无管家自动走老路，软件零改动"}
+{"version": "0.9.1", "dl": "hx-common.js", "note": "HX.store.sync批量抱回：壳v1.7.3起readFilesAsync一次JNI读全名单（JS零等待），旧壳回落逐件读；对账逻辑一字未改"}

@@ -452,7 +452,7 @@ hxCommonLoad(function(){
 <script>
 /* ==================== 套装主界面自检器官（v1.1.0） ==================== */
 /* 本界面对应的四个软件当前内装版本（每次发版跟着改） */
-var CUR = { notes:"2.18.1", xiti:"1.15.0", bridge:"1.6.0", xueqi:"0.20.1", ppt:"0.19.0", xiaotao:"0.10.2", guanjia:"0.30.3", pai:"0.10.0", index:"1.16.0" /* v1.16.0 版本检查归管家+国内网提速；CUR全量对齐云端现行（xiaotao0.10.2/guanjia0.30.3） */ };
+var CUR = { notes:"2.18.1", xiti:"1.15.0", bridge:"1.6.0", xueqi:"0.20.1", ppt:"0.19.0", xiaotao:"0.10.2", guanjia:"0.30.4", pai:"0.10.0", index:"1.16.0" /* v1.16.0 版本检查归管家+国内网提速；CUR全量对齐云端现行（xiaotao0.10.2/guanjia0.30.4愣住除根#86配壳v1.7.3） */ };
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
 try{ var _sv=JSON.parse(localStorage.getItem("hx_suite_ver")||"{}"); Object.keys(_sv).forEach(function(k){ if(_sv[k]) CUR[k]=_sv[k]; }); }catch(e){}
 /* key: [云端软件文件, 壳内文件名, 云端版本文件, 标签id] */
