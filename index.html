@@ -2,6 +2,11 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.17.0 2026-09-14 通信管家干活看得见（挂号#89，洪老师："交给通信管家，通信管家在干嘛？应该列出来让我知道"）：
+      壳v1.7.4起管家干活每一步往授权文件夹写进度账本mg_progress.json（本地写文件不联网）；
+      主界面投信查版本后，updLine下方亮「📋 通信管家在干嘛」面板，每4秒读一次账本逐条列出
+      （收信/正在查第几件/有新版已下载/查完回信），取到回信或超时后定格不刷。
+      只加面板+账本读取，投信/取信/装新版流程一行未动；老壳没账本→面板不亮，行为同v1.16.0。
     v1.16.0 2026-09-13 版本检查归管家+国内网提速（洪老师真机报"国内网检查很慢，科学上网明显快"+拍板"版本号全归管家做，软件别擅自上网"）：
       病根：每件软件先问GitHub API（美国服务器），问不动了才换公开站——国内网11件挨个白等超时；
         模拟真机实测（X5+CPU6x降速）：国内网13.1秒 vs 科学上网5.0秒（真机X5连接池小，差距更大）。
@@ -271,6 +276,8 @@
 <main>
 
   <div id="updLine"></div>
+  <!-- v1.17.0（挂号#89）通信管家干活面板：投信查版本后亮，每4秒读管家进度账本mg_progress.json逐条列出；老壳没账本不亮 -->
+  <div id="mgProgBox" style="display:none;margin:0 0 10px;padding:10px 12px;border:1px solid #d8e6dc;border-radius:12px;background:#f4faf5;font-size:13px;line-height:1.8;color:#4a5a4e;"></div>
 
   <!-- v1.9.0 版本校对明示：顶部常驻版本区（只读本机记忆，不联网）；v1.14.0 改三句大白话，版本号小字收进<details>备查 -->
   <div id="verLocalLine" style="font-size:14px;color:#6b6257;margin-bottom:10px;line-height:1.7;"></div>
@@ -452,7 +459,8 @@ hxCommonLoad(function(){
 <script>
 /* ==================== 套装主界面自检器官（v1.1.0） ==================== */
 /* 本界面对应的四个软件当前内装版本（每次发版跟着改） */
-var CUR = { notes:"2.18.1", xiti:"1.15.0", bridge:"1.6.0", xueqi:"0.20.1", ppt:"0.19.0", xiaotao:"0.10.2", guanjia:"0.30.4", pai:"0.10.0", index:"1.16.0" /* v1.16.0 版本检查归管家+国内网提速；CUR全量对齐云端现行（xiaotao0.10.2/guanjia0.30.4愣住除根#86配壳v1.7.3） */ };
+var CUR = { notes:"2.18.1", xiti:"1.15.0", bridge:"1.6.0", xueqi:"0.20.1", ppt:"0.19.0", xiaotao:"0.10.2", guanjia:"0.30.4", pai:"0.10.0", index:"1.17.0" /* v1.17.0 管家干活看得见（#89：管家进度账本面板，配壳v1.7.4）；CUR全量对齐云端现行（guanjia0.30.5原文销毁不愣住#90配壳v1.7.4） */ };
+CUR.guanjia="0.30.5"; /* v1.17.0 同步：大管家v0.30.5（#90） */
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
 try{ var _sv=JSON.parse(localStorage.getItem("hx_suite_ver")||"{}"); Object.keys(_sv).forEach(function(k){ if(_sv[k]) CUR[k]=_sv[k]; }); }catch(e){}
 /* key: [云端软件文件, 壳内文件名, 云端版本文件, 标签id] */
@@ -872,8 +880,25 @@ function hxRawGet(name){
       renderProg();
       updMsg("🔍 已把查版本的活交给通信管家——它在后台慢慢查（国内网慢也不碍事），查完这里自动出结果，您该干嘛干嘛。");
       try{ LearnShell.writeFile('mg_out_'+vid+'.json', u8enc(JSON.stringify(letter))); }catch(e){ updMsg('⚠️ 投信没成功，改由主界面自己查…'); legacyRun(); return; }
+      /* v1.17.0（挂号#89）管家干活面板：读 mg_progress.json 逐条列出；读不到=老壳/账本没建，面板不亮不碍事 */
+      var mgProgOn=false;
+      function mgProgRender(){
+        try{
+          var pb64=LearnShell.readFile('mg_progress.json');
+          if(!pb64) return;
+          var parr=JSON.parse(decodeURIComponent(escape(atob(String(pb64).replace(/\s+/g,'')))));
+          if(!parr||!parr.length) return;
+          var box=document.getElementById('mgProgBox'); if(!box) return;
+          var h='<b>📋 通信管家在干嘛</b><span style="color:#8a9488;">（每几秒自动刷新，查完定格）</span><br>';
+          var show=parr.slice(-10);
+          for(var pi2=0;pi2<show.length;pi2++){ h+=String(show[pi2].t||'')+'　'+String(show[pi2].m||'').replace(/</g,'&lt;')+'<br>'; }
+          box.innerHTML=h; box.style.display='block'; mgProgOn=true;
+        }catch(e){}
+      }
+      mgProgRender();
       var tStart=Date.now();
       var timer=setInterval(function(){
+        mgProgRender(); /* v1.17.0：取信路上顺手刷管家面板 */
         var b64=null; try{ b64=LearnShell.readFile('mg_in_'+vid+'.json'); }catch(e){}
         if(b64){
           clearInterval(timer);

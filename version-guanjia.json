@@ -1,1 +1,1 @@
-{"version": "0.30.4", "dl": "software-guanjia.html", "note": "愣住除根（#86）：配壳v1.7.3批量桥readFilesAsync，对账账本后台一次全抱回，开门不再定住；旧壳自动回落老路", "engine": "guanjia-pdf-engine.js"}
+{"version": "0.30.5", "dl": "software-guanjia.html", "note": "原文销毁不愣住不误报（#90）：配壳v1.7.4异步删桥deleteFileAsync，销毁挪壳后台+复核再删；老壳自动回落老路", "engine": "guanjia-pdf-engine.js"}
