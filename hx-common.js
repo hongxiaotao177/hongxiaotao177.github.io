@@ -31,7 +31,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 (function(){
   'use strict';
-  var HX_COMMON_VERSION = '0.8.0'; /* v0.8.0 2026-09-13：开门静默令（洪老师拍板：开门不许自动同步/不许自动查版本，点了才做）——全家自动联网（dav rescue/mirror、relay闲时送与pull、selfUp、selfCheck、速记开门补推）统一过HX._autoNetOk闸门：默认全关，3秒内真有点击（=点了按钮）或localStorage hx_auto_net=1才放行；新增HX.syncNow()一件全手动补做；本地存取（HX.store/localStorage/壳文件）不联网不受影响；其余一行未动 /* v0.7.0 2026-09-12：HX.dav全异步化（根治#75/#77同步联网卡死主线程）——走壳v1.6.0新davAsync后台桥+HX._davCb回调，ts对账逻辑一行未改；旧壳没davAsync一律静默跳过绝不回退同步老路，壳升级后自动恢复 */ /* v0.6.0 2026-09-12 地基二期：HX.dav的rescue升级为ts对账（云端新超5秒留档_冲突_后盖回/本地新或相等顺手davUp追平/云端缺顺手davUp补齐） */ /* v0.5.0 2026-09-12：新增中转邮路HX.relay+坚果云腿HX.dav */ /* v0.4.0 2026-09-12：新增仓管员HX.store，地基工程一期规矩A/B落地 */ /* v0.3.0 2026-09-11：部件自升级HX.selfUp（病根：壳里旧版公共件永远不升级→AI面板等新功能装了也白装；开门闲时20秒比对云端version-hx-common.json，旧了静默下载写回授权文件夹，下次开门用新的，全程不弹窗） */ /* v0.2.0 2026-09-11：新增HX.ai统一AI面板（两层结构+定位置顶+AI功能生成器，洪老师2026-09-11拍板方法论落地试点）；HX.sj面板加「🤖AI」入口钮；其余一行未动 */ /* v0.1.1 2026-09-10：HX.sj.init 加可选 extraBtn（大管家#43「补充上一条」补回，洪老师点名功能）；不传仍是2钮版，默认行为不变 */
+  var HX_COMMON_VERSION = '0.9.0'; /* v0.9.0 2026-09-13：常驻通信管家双通道（洪老师拍板一次做完）——新增HX.mg投信层（壳v1.7.0管家在则GitHub联网写信mg_out_给后台服务代发+回信mg_in_轮询取，网页线程不碰网络；管家不在自动走老fetch，全家零改动）+HX.big大件异步编解码（TextEncoder/Decoder分块让气，无则回落老同步）；改道点=gh.fetch一个收口；_autoNetOk闸门规矩不变 /* v0.8.0 2026-09-13：开门静默令（洪老师拍板：开门不许自动同步/不许自动查版本，点了才做）——全家自动联网（dav rescue/mirror、relay闲时送与pull、selfUp、selfCheck、速记开门补推）统一过HX._autoNetOk闸门：默认全关，3秒内真有点击（=点了按钮）或localStorage hx_auto_net=1才放行；新增HX.syncNow()一件全手动补做；本地存取（HX.store/localStorage/壳文件）不联网不受影响；其余一行未动 /* v0.7.0 2026-09-12：HX.dav全异步化（根治#75/#77同步联网卡死主线程）——走壳v1.6.0新davAsync后台桥+HX._davCb回调，ts对账逻辑一行未改；旧壳没davAsync一律静默跳过绝不回退同步老路，壳升级后自动恢复 */ /* v0.6.0 2026-09-12 地基二期：HX.dav的rescue升级为ts对账（云端新超5秒留档_冲突_后盖回/本地新或相等顺手davUp追平/云端缺顺手davUp补齐） */ /* v0.5.0 2026-09-12：新增中转邮路HX.relay+坚果云腿HX.dav */ /* v0.4.0 2026-09-12：新增仓管员HX.store，地基工程一期规矩A/B落地 */ /* v0.3.0 2026-09-11：部件自升级HX.selfUp（病根：壳里旧版公共件永远不升级→AI面板等新功能装了也白装；开门闲时20秒比对云端version-hx-common.json，旧了静默下载写回授权文件夹，下次开门用新的，全程不弹窗） */ /* v0.2.0 2026-09-11：新增HX.ai统一AI面板（两层结构+定位置顶+AI功能生成器，洪老师2026-09-11拍板方法论落地试点）；HX.sj面板加「🤖AI」入口钮；其余一行未动 */ /* v0.1.1 2026-09-10：HX.sj.init 加可选 extraBtn（大管家#43「补充上一条」补回，洪老师点名功能）；不传仍是2钮版，默认行为不变 */
   if(window.HX && window.HX.HX_COMMON_VERSION){ return; } /* 已装过不重复装 */
   var HX = { HX_COMMON_VERSION: HX_COMMON_VERSION, ok: true };
   function warn(m){ try{ if(window.console && console.warn) console.warn('[hx-common] '+m); }catch(e){} }
@@ -99,6 +99,123 @@
     }
   };
 
+  /* ════ 1.9 通信管家 HX.mg + 大件助手 HX.big（v0.9.0 2026-09-13，洪老师拍板"双通道一次做完"） ════
+     双通道：有管家（壳v1.7.0+，LearnShell.mgOn()=='1'）时，全家GitHub联网不自己跑——
+     写成一封信 mg_out_<id>.json 投进授权文件夹，常驻服务HxPostService后台代发（5秒一轮+退避重试不丢信），
+     回信 mg_in_<id>.json 网页轮询来取；网页这条界面线程从此不碰网络。
+     没管家（老壳/浏览器）自动走老fetch，一行不用改。Token只进信件文件（本机授权文件夹），不落公开仓。 */
+  HX.big = (function(){
+    var big = {};
+    /* 大件UTF-8→b64：TextEncoder原生+分块拼，每口≤20ms让界面喘气；没TextEncoder回落老同步 */
+    big.enc = function(s){
+      return new Promise(function(res){
+        try{
+          if(typeof TextEncoder === 'undefined'){ res(btoa(unescape(encodeURIComponent(String(s))))); return; }
+          var bytes = (new TextEncoder()).encode(String(s));
+          var parts = [], i = 0;
+          (function step(){
+            try{
+              var t0 = Date.now();
+              while(i < bytes.length){
+                var end = Math.min(i + 32768, bytes.length);
+                parts.push(String.fromCharCode.apply(null, bytes.subarray(i, end)));
+                i = end;
+                if(Date.now() - t0 > 20 && i < bytes.length){ setTimeout(step, 0); return; }
+              }
+              res(btoa(parts.join('')));
+            }catch(e){ res(btoa(unescape(encodeURIComponent(String(s))))); }
+          })();
+        }catch(e){ res(btoa(unescape(encodeURIComponent(String(s))))); }
+      });
+    };
+    /* 大件b64→UTF-8：atob原生+分块装填+TextDecoder；回落老同步 */
+    big.dec = function(s){
+      return new Promise(function(res){
+        try{
+          if(typeof TextDecoder === 'undefined'){ res(decodeURIComponent(escape(atob(String(s).replace(/\s+/g,''))))); return; }
+          var bin = atob(String(s).replace(/\s+/g,''));
+          var bytes = new Uint8Array(bin.length);
+          var i = 0;
+          (function step(){
+            try{
+              var t0 = Date.now();
+              while(i < bin.length){
+                var end = Math.min(i + 65536, bin.length);
+                for(var j = i; j < end; j++) bytes[j] = bin.charCodeAt(j);
+                i = end;
+                if(Date.now() - t0 > 20 && i < bin.length){ setTimeout(step, 0); return; }
+              }
+              res((new TextDecoder()).decode(bytes));
+            }catch(e){ res(decodeURIComponent(escape(atob(String(s).replace(/\s+/g,''))))); }
+          })();
+        }catch(e){ res(decodeURIComponent(escape(atob(String(s).replace(/\s+/g,''))))); }
+      });
+    };
+    return big;
+  })();
+  HX.mg = (function(){
+    var mg = {};
+    var _seq = 0;
+    mg.ok = function(){
+      try{ return !!(window.LearnShell && LearnShell.mgOn && LearnShell.mgOn() === '1'
+                     && LearnShell.folderSet && LearnShell.folderSet()); }catch(e){ return false; }
+    };
+    function fakeResp(status, text){
+      return {
+        status: status, ok: status >= 200 && status < 300,
+        text: function(){ return Promise.resolve(text); },
+        json: function(){ return Promise.resolve(JSON.parse(text)); }
+      };
+    }
+    /* 投一封信+等回信。method/url/bodyStr（JSON字符串或null）。回信超时90秒：网页不等了，信还在管家会继续送（发送类语义不丢） */
+    mg.call = function(method, url, bodyStr){
+      return new Promise(function(resolve, reject){
+        if(!mg.ok()){ reject(new Error('没管家')); return; }
+        var id = 'mg' + Date.now() + '_' + (++_seq) + '_' + Math.floor(Math.random() * 1000);
+        var doWrite = function(bodyB64){
+          try{
+            var letter = { id: id, method: method, url: url, tok: ((HX.gh && HX.gh.cfg) ? (HX.gh.cfg().tok || '') : '') };
+            if(bodyB64 != null) letter.bodyB64 = bodyB64;
+            HX.big.enc(JSON.stringify(letter)).then(function(lb64){
+              try{
+                if(!LearnShell.writeFile('mg_out_' + id + '.json', lb64)){ reject(new Error('投信写不进授权文件夹')); return; }
+              }catch(e){ reject(e); return; }
+              var t0 = Date.now();
+              var timer = setInterval(function(){
+                try{
+                  var rb64 = LearnShell.readFile('mg_in_' + id + '.json');
+                  if(rb64){
+                    clearInterval(timer);
+                    try{ LearnShell.deleteFile('mg_in_' + id + '.json'); }catch(e){}
+                    HX.big.dec(rb64).then(function(txt){
+                      try{
+                        var r = JSON.parse(txt);
+                        if(r.err){ reject(new Error(r.err)); return; }
+                        HX.big.dec(r.bodyB64 || '').then(function(bodyTxt){
+                          resolve(fakeResp(r.status || 0, bodyTxt));
+                        });
+                      }catch(e){ reject(e); }
+                    });
+                    return;
+                  }
+                }catch(e){}
+                if(Date.now() - t0 > 90000){
+                  clearInterval(timer);
+                  reject(new Error('管家90秒没回信（信不丢，管家后台会继续送）'));
+                }
+              }, 2000);
+            });
+          }catch(e){ reject(e); }
+        };
+        try{
+          if(bodyStr != null) HX.big.enc(bodyStr).then(doWrite, function(){ reject(new Error('信体编码失败')); });
+          else doWrite(null);
+        }catch(e){ reject(e); }
+      });
+    };
+    return mg;
+  })();
+
   /* ════ 2. gh传输 HX.gh（以 software-bridge.html 的 gh 函数族为底，GitHub API语义不变） ════ */
   HX.gh = (function(){
     var gh = {};
@@ -114,6 +231,14 @@
              encodeURIComponent(c.repo) + '/contents/' + path;
     };
     gh.fetch = function(url, opts){
+      /* v0.9.0 双通道改道：管家在→投信给常驻服务代发（网页线程不碰网络）；管家不在→老fetch，一行不变 */
+      try{
+        if(HX.mg && HX.mg.ok()){
+          var _m = (opts && opts.method) ? opts.method : 'GET';
+          var _b = (opts && opts.body != null) ? opts.body : null;
+          return HX.mg.call(_m, url, _b);
+        }
+      }catch(e){}
       return new Promise(function(resolve, reject){
         var ctrl = new AbortController();
         var timer = setTimeout(function(){ ctrl.abort(); }, 30000);
