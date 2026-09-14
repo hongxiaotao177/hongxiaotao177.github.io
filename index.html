@@ -465,8 +465,8 @@ hxCommonLoad(function(){
 <script>
 /* ==================== 套装主界面自检器官（v1.1.0） ==================== */
 /* 本界面对应的四个软件当前内装版本（每次发版跟着改） */
-var CUR = { notes:"2.18.1", xiti:"1.16.0", bridge:"1.7.0", xueqi:"0.21.0", ppt:"0.20.0", xiaotao:"0.11.0", guanjia:"0.31.1", pai:"0.11.0", index:"1.18.1" /* v1.18.1 纯CUR同步：大管家v0.31.1（#83 AI面板清单恒空根治）；顺手把班②全家8件CUR落伍补齐（xiti1.16.0/bridge1.7.0/xueqi0.21.0/ppt0.20.0/xiaotao0.11.0/pai0.11.0，CUR落伍老毛病再抓一回） */ };
-CUR.guanjia="0.31.1"; /* v1.18.1 同步：大管家v0.31.1（#83） */
+var CUR = { notes:"2.18.1", xiti:"1.16.0", bridge:"1.7.0", xueqi:"0.21.0", ppt:"0.20.0", xiaotao:"0.11.0", guanjia:"0.32.0", pai:"0.11.0", index:"1.18.2" /* v1.18.1 纯CUR同步：大管家v0.31.1（#83 AI面板清单恒空根治）；顺手把班②全家8件CUR落伍补齐（xiti1.16.0/bridge1.7.0/xueqi0.21.0/ppt0.20.0/xiaotao0.11.0/pai0.11.0，CUR落伍老毛病再抓一回） */ };
+CUR.guanjia="0.32.0"; /* v1.18.2 纯CUR同步：大管家v0.32.0（#79 AI面板两级化提示词可改可存，配套hx-common v0.11.0） */
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
 try{ var _sv=JSON.parse(localStorage.getItem("hx_suite_ver")||"{}"); Object.keys(_sv).forEach(function(k){ if(_sv[k]) CUR[k]=_sv[k]; }); }catch(e){}
 /* key: [云端软件文件, 壳内文件名, 云端版本文件, 标签id] */
