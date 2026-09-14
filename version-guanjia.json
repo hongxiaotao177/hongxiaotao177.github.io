@@ -1,1 +1,1 @@
-{"version": "0.31.1", "dl": "software-guanjia.html", "note": "#83 AI面板清单恒空根治：壳同步路径init先于清单赋值→面板空，包setTimeout让半拍", "engine": "guanjia-pdf-engine.js"}
+{"version": "0.32.0", "dl": "software-guanjia.html", "note": "#79 AI面板两级化：点功能进提示词编辑页，提示词可改可存（覆盖账本hx_aiprompt_v1+问AI老账本hx_gj_askai_v1钩子），配套hx-common v0.11.0", "engine": "guanjia-pdf-engine.js"}
