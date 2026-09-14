@@ -1,5 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    hx-common.js —— 全家9件软件共用公共件母版
+   v0.11.1 2026-09-14：速记📷附图两步走（#94：选图不再立刻记行关面板，挂图行可续写说明，点「记下」图随话进流水；回执写明图存壳里+联网传坚果云/速记图/，传成行尾标☁；✕可撤销）；其余一行未动
    v0.10.0 2026-09-14：安心条HX.step（顶部细进度条+两行小字，愣住定格可拍照定位，洪老师拍板全家统一）+速记📷附图（📷图钮→压图宽≤1280存壳文件夹sjimg_*+行尾挂图+坚果云/学习套装数据/速记图/排队上传）；其余一行未动
    v0.7.0 2026-09-12：HX.dav全异步化（根治#75/#77 dav同步联网卡死主线程）——davCall走壳v1.6.0 davAsync后台桥+回调，
      rescue/mirror逻辑不变只换异步腿；旧壳没davAsync静默跳过（不回退同步老路再卡界面），壳升v1.6.0后自动恢复。
@@ -32,7 +33,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 (function(){
   'use strict';
-  var HX_COMMON_VERSION = '0.11.0'; /* v0.11.0 2026-09-14：AI面板第2级提示词可改可存（挂号#79，洪老师拍板"不搞三级菜单，就两级，点进去就是几套预设提示词，可改可储存"）——条目带prompts时，第2级点某套进编辑页（全文可改+▶用这套发送+💾存为默认+↩恢复出厂）；改过的存覆盖账本hx_aiprompt_v1.<app>（出厂原文一个字不动，恢复出厂=删覆盖）；宿主函数发送前一句HX.ai.pget(id,idx)查覆盖（乙路，不改送不进去）；条目可带pget/pset/preset钩子接管存储（如大管家问AI接管它自己的hx_gj_askai_v1老账本）；新增HX.ai.pget公开口；其余一行未动 /* v0.10.0 2026-09-14：安心条HX.step（顶部细进度条+两行小字，愣住定格定位，洪老师拍板全家统一）+速记📷附图（压图存壳文件夹sjimg_*+行尾挂图+坚果云/学习套装数据/速记图/上传排队）；其余一行未动 /* v0.9.1 2026-09-14：HX.store.sync批量抱回（壳v1.7.3 readFiles桥）——多件对账一次JNI全读回，免逐件SAF往返卡主线程（洪老师真机报"点大管家变蓝后定住"，病根=5本账本连环读各约2秒）；旧壳无readFiles自动回落逐件读，逻辑一字未改 /* v0.9.0 2026-09-13：常驻通信管家双通道（洪老师拍板一次做完）——新增HX.mg投信层（壳v1.7.0管家在则GitHub联网写信mg_out_给后台服务代发+回信mg_in_轮询取，网页线程不碰网络；管家不在自动走老fetch，全家零改动）+HX.big大件异步编解码（TextEncoder/Decoder分块让气，无则回落老同步）；改道点=gh.fetch一个收口；_autoNetOk闸门规矩不变 /* v0.8.0 2026-09-13：开门静默令（洪老师拍板：开门不许自动同步/不许自动查版本，点了才做）——全家自动联网（dav rescue/mirror、relay闲时送与pull、selfUp、selfCheck、速记开门补推）统一过HX._autoNetOk闸门：默认全关，3秒内真有点击（=点了按钮）或localStorage hx_auto_net=1才放行；新增HX.syncNow()一件全手动补做；本地存取（HX.store/localStorage/壳文件）不联网不受影响；其余一行未动 /* v0.7.0 2026-09-12：HX.dav全异步化（根治#75/#77同步联网卡死主线程）——走壳v1.6.0新davAsync后台桥+HX._davCb回调，ts对账逻辑一行未改；旧壳没davAsync一律静默跳过绝不回退同步老路，壳升级后自动恢复 */ /* v0.6.0 2026-09-12 地基二期：HX.dav的rescue升级为ts对账（云端新超5秒留档_冲突_后盖回/本地新或相等顺手davUp追平/云端缺顺手davUp补齐） */ /* v0.5.0 2026-09-12：新增中转邮路HX.relay+坚果云腿HX.dav */ /* v0.4.0 2026-09-12：新增仓管员HX.store，地基工程一期规矩A/B落地 */ /* v0.3.0 2026-09-11：部件自升级HX.selfUp（病根：壳里旧版公共件永远不升级→AI面板等新功能装了也白装；开门闲时20秒比对云端version-hx-common.json，旧了静默下载写回授权文件夹，下次开门用新的，全程不弹窗） */ /* v0.2.0 2026-09-11：新增HX.ai统一AI面板（两层结构+定位置顶+AI功能生成器，洪老师2026-09-11拍板方法论落地试点）；HX.sj面板加「🤖AI」入口钮；其余一行未动 */ /* v0.1.1 2026-09-10：HX.sj.init 加可选 extraBtn（大管家#43「补充上一条」补回，洪老师点名功能）；不传仍是2钮版，默认行为不变 */
+  var HX_COMMON_VERSION = '0.11.1'; /* v0.11.1 2026-09-14：速记📷附图改两步走（挂号#94，洪老师真机验收报「选完图浮窗被关掉没法输说明、图跑哪去不知道」，拍板A+B都做）——①选图不再立刻记行/关面板：压图存壳后面板挂一行「🖼已挂图 sjimg_xxx.jpg（✕可撤销）」，可继续打字补说明，点「记下」图和话一起进流水（save原逻辑未动，只认sjPendImg）；②回执明白话：记下提示图存手机壳文件名+联网传坚果云/学习套装数据/速记图/，上传成功流水行图名后补☁（sjImgUpload出队时回写）；✕撤销=清挂图+出队+删壳文件；其余一行未动 */ /* v0.11.0 2026-09-14：AI面板第2级提示词可改可存（挂号#79，洪老师拍板"不搞三级菜单，就两级，点进去就是几套预设提示词，可改可储存"）——条目带prompts时，第2级点某套进编辑页（全文可改+▶用这套发送+💾存为默认+↩恢复出厂）；改过的存覆盖账本hx_aiprompt_v1.<app>（出厂原文一个字不动，恢复出厂=删覆盖）；宿主函数发送前一句HX.ai.pget(id,idx)查覆盖（乙路，不改送不进去）；条目可带pget/pset/preset钩子接管存储（如大管家问AI接管它自己的hx_gj_askai_v1老账本）；新增HX.ai.pget公开口；其余一行未动 /* v0.10.0 2026-09-14：安心条HX.step（顶部细进度条+两行小字，愣住定格定位，洪老师拍板全家统一）+速记📷附图（压图存壳文件夹sjimg_*+行尾挂图+坚果云/学习套装数据/速记图/上传排队）；其余一行未动 /* v0.9.1 2026-09-14：HX.store.sync批量抱回（壳v1.7.3 readFiles桥）——多件对账一次JNI全读回，免逐件SAF往返卡主线程（洪老师真机报"点大管家变蓝后定住"，病根=5本账本连环读各约2秒）；旧壳无readFiles自动回落逐件读，逻辑一字未改 /* v0.9.0 2026-09-13：常驻通信管家双通道（洪老师拍板一次做完）——新增HX.mg投信层（壳v1.7.0管家在则GitHub联网写信mg_out_给后台服务代发+回信mg_in_轮询取，网页线程不碰网络；管家不在自动走老fetch，全家零改动）+HX.big大件异步编解码（TextEncoder/Decoder分块让气，无则回落老同步）；改道点=gh.fetch一个收口；_autoNetOk闸门规矩不变 /* v0.8.0 2026-09-13：开门静默令（洪老师拍板：开门不许自动同步/不许自动查版本，点了才做）——全家自动联网（dav rescue/mirror、relay闲时送与pull、selfUp、selfCheck、速记开门补推）统一过HX._autoNetOk闸门：默认全关，3秒内真有点击（=点了按钮）或localStorage hx_auto_net=1才放行；新增HX.syncNow()一件全手动补做；本地存取（HX.store/localStorage/壳文件）不联网不受影响；其余一行未动 /* v0.7.0 2026-09-12：HX.dav全异步化（根治#75/#77同步联网卡死主线程）——走壳v1.6.0新davAsync后台桥+HX._davCb回调，ts对账逻辑一行未改；旧壳没davAsync一律静默跳过绝不回退同步老路，壳升级后自动恢复 */ /* v0.6.0 2026-09-12 地基二期：HX.dav的rescue升级为ts对账（云端新超5秒留档_冲突_后盖回/本地新或相等顺手davUp追平/云端缺顺手davUp补齐） */ /* v0.5.0 2026-09-12：新增中转邮路HX.relay+坚果云腿HX.dav */ /* v0.4.0 2026-09-12：新增仓管员HX.store，地基工程一期规矩A/B落地 */ /* v0.3.0 2026-09-11：部件自升级HX.selfUp（病根：壳里旧版公共件永远不升级→AI面板等新功能装了也白装；开门闲时20秒比对云端version-hx-common.json，旧了静默下载写回授权文件夹，下次开门用新的，全程不弹窗） */ /* v0.2.0 2026-09-11：新增HX.ai统一AI面板（两层结构+定位置顶+AI功能生成器，洪老师2026-09-11拍板方法论落地试点）；HX.sj面板加「🤖AI」入口钮；其余一行未动 */ /* v0.1.1 2026-09-10：HX.sj.init 加可选 extraBtn（大管家#43「补充上一条」补回，洪老师点名功能）；不传仍是2钮版，默认行为不变 */
   if(window.HX && window.HX.HX_COMMON_VERSION){ return; } /* 已装过不重复装 */
   var HX = { HX_COMMON_VERSION: HX_COMMON_VERSION, ok: true };
   function warn(m){ try{ if(window.console && console.warn) console.warn('[hx-common] '+m); }catch(e){} }
@@ -445,6 +446,7 @@
     var HX_SJ_APP = '';       /* 速记：本软件名，init 时各软件传自己的名 */
     var sjGetCtx = null;      /* 可选：各软件附加上下文（如当前卡片/病人） */
     var sjExtraBtn = null;    /* v0.1.1 可选：extraBtn:{label:'补充上一条'}——面板多一钮，把话接到最后一行末尾（大管家#43原文逻辑） */
+    var sjPendImg = '';      /* v0.11.1 待挂图文件名：选了图还没点「记下」，空=没挂 */
     var inited = false;
     function $(id){ return document.getElementById(id); }
     function bridged(){ try{ return !!(window.LearnShell&&LearnShell.folderSet&&LearnShell.folderSet()); }catch(e){ return false; } }
@@ -493,11 +495,42 @@
           var fn=q[i];
           try{
             HX.dav.upFile(fn, '/学习套装数据/速记图/').then(function(r){
-              try{ if(r && String(r).indexOf('err:')!==0) sjImgQueue(null, fn); }catch(e){}
+              try{ if(r && String(r).indexOf('err:')!==0){ sjImgQueue(null, fn); sjImgMarkCloud(fn); } }catch(e){}
               next(i+1);
             }, function(){ next(i+1); });
           }catch(e){ next(i+1); }
         })(0);
+      }catch(e){}
+    }
+    /* v0.11.1 图传上坚果云后回写流水：找到含「附图 文件名」且还没标☁的行，图名后补☁（一句替换，原话一字不动），写回后顺手上行 */
+    function sjImgMarkCloud(fn){
+      try{
+        if(!bridged()) return;
+        var b=LearnShell.readFile('速记流水.txt'); if(!b) return;
+        var txt=b64d(b); if(!txt) return;
+        var tag='附图 '+fn;
+        if(txt.indexOf(tag+'☁')>=0) return;
+        if(txt.indexOf(tag)<0) return;
+        var neu=txt.replace(tag, tag+'☁');
+        LearnShell.writeFile('速记流水.txt', b64e(neu));
+        try{ localStorage.setItem('hx_sj_uplocal',''); }catch(e){} /* 内容变了，逼sjUpload重推 */
+        try{ sjUpload(); }catch(e){}
+      }catch(e){}
+    }
+    /* v0.11.1 挂图行显隐：fn空=藏，有字=显示「🖼已挂图 文件名（✕撤销）」 */
+    function sjImgLineShow(fn){
+      try{
+        var el=$('hxSjImgLine'); if(!el) return;
+        if(!fn){ el.style.display='none'; el.innerHTML=''; return; }
+        el.innerHTML='🖼已挂图 '+fn+' <button id="hxSjImgUndo" type="button" style="flex:none;font-size:13px;padding:2px 8px;background:#efe9df;color:#6b6257;border:none;border-radius:8px;cursor:pointer">✕撤销</button>　<span style="color:#8a7f70">写完说明点「记下」一起存</span>';
+        el.style.display='block';
+        var ub=$('hxSjImgUndo');
+        if(ub) ub.addEventListener('click', function(){
+          try{ var f=sjPendImg; sjPendImg=''; sjImgLineShow('');
+            if(f){ try{ sjImgQueue(null, f); }catch(e){} try{ LearnShell.deleteFile(f); }catch(e){} }
+            sjToast('图已撤销，没存');
+          }catch(e){}
+        });
       }catch(e){}
     }
     /* v0.10.0 📷附图：读文件→Image→canvas压到宽≤1280（等比）→jpeg0.72→存壳sjimg_YYYYMMDD_HHMMSS.jpg+流水行尾挂图+入队试传 */
@@ -518,23 +551,11 @@
                 var d=new Date();
                 var fn='sjimg_'+d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+'_'+pad(d.getHours())+pad(d.getMinutes())+pad(d.getSeconds())+'.jpg';
                 LearnShell.writeFile(fn, b64);
-                var ta=$('hxSjText'); var v=(ta.value||'').replace(/^\s+|\s+$/g,'');
-                var ts=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes());
-                var ctx=''; /* ctx拼接逻辑照抄save()，save原逻辑一行未动 */
-                try{ var pt=localStorage.getItem('hx_gj_curpt'); if(pt){ pt=String(pt).replace(/^["']+|["']+$/g,''); if(pt) ctx+='　病人:'+pt; } }catch(e){}
-                try{ var t=(document.title||'').replace(/^\s+|\s+$/g,''); if(t) ctx+='　页面:'+t; }catch(e){}
-                try{ if(sjGetCtx){ var c=sjGetCtx(); if(c) ctx+=String(c); } }catch(e){}
-                var line='['+ts+'] 【'+HX_SJ_APP+'】'+(v?v+'　':'')+'📷附图 '+fn+ctx;
-                var old='';
-                try{ var b=LearnShell.readFile('速记流水.txt'); if(b) old=b64d(b); }catch(e){ old=''; }
-                var neu=old+((old&&old.charAt(old.length-1)!=='\n')?'\n':'')+line+'\n';
-                try{
-                  LearnShell.writeFile('速记流水.txt', b64e(neu));
-                  sjToast('已记下+图'); ta.value=''; $('hxSjPanel').style.display='none';
-                  sjImgQueue(fn); /* 图存成入队 */
-                  try{ sjImgUpload(); }catch(e){} /* 立刻尝试上传坚果云速记图/，失败留队 */
-                  try{ sjUpload(); }catch(e){} /* 顺手自动上行，失败静默下回补 */
-                }catch(e){ sjToast('没存成：'+e.message); }
+                /* v0.11.1 改两步走（#94洪老师拍板A）：选图不再立刻记行/清框/关面板——只挂图，说明照写，点「记下」图随话进流水 */
+                sjPendImg=fn; sjImgLineShow(fn);
+                sjToast('图已挂上，写完说明点「记下」');
+                sjImgQueue(fn); /* 图存成先入队 */
+                try{ sjImgUpload(); }catch(e){} /* 立刻尝试上传坚果云速记图/，失败留队 */
               }catch(e){ sjToast('图没存成'); }
             };
             img.onerror=function(){ sjToast('图读不出来'); };
@@ -545,7 +566,7 @@
         fr.readAsDataURL(file);
       }catch(e){ sjToast('图没存成'); }
     }
-    function sjToast(m){ var t=$('hxSjToast'); if(!t) return; t.textContent=m; t.style.display='block'; clearTimeout(t._t); t._t=setTimeout(function(){ t.style.display='none'; },2200); }
+    function sjToast(m,ms){ var t=$('hxSjToast'); if(!t) return; t.textContent=m; t.style.display='block'; clearTimeout(t._t); t._t=setTimeout(function(){ t.style.display='none'; },(ms||2200)); } /* v0.11.1 加可选时长：回执长话给足时间看 */
     function openPanel(){ var p=$('hxSjPanel'); if(!p) return; p.style.display=(p.style.display==='block')?'none':'block'; if(p.style.display==='block'){ $('hxSjHint').style.display=bridged()?'none':'block'; try{ $('hxSjText').focus(); }catch(e){} } }
     function save(){
       var ta=$('hxSjText'); var v=(ta.value||'').replace(/^\s+|\s+$/g,'');
@@ -557,13 +578,22 @@
       try{ var pt=localStorage.getItem('hx_gj_curpt'); if(pt){ pt=String(pt).replace(/^["']+|["']+$/g,''); if(pt) ctx+='　病人:'+pt; } }catch(e){}
       try{ var t=(document.title||'').replace(/^\s+|\s+$/g,''); if(t) ctx+='　页面:'+t; }catch(e){}
       try{ if(sjGetCtx){ var c=sjGetCtx(); if(c) ctx+=String(c); } }catch(e){} /* 各软件自加上下文，出错不碍速记 */
-      var line='['+ts+'] 【'+HX_SJ_APP+'】'+v+ctx;
+      var imgBit=''; /* v0.11.1：有挂图则行尾补「📷附图 文件名」，传过网的带☁ */
+      if(sjPendImg){
+        var q0=[]; try{ q0=JSON.parse(localStorage.getItem('hx_sjimg_pend')||'[]'); }catch(e){ q0=[]; }
+        var inQ=false; for(var qi=0;qi<q0.length;qi++){ if(q0[qi]===sjPendImg){ inQ=true; break; } }
+        imgBit=(v?'　':'')+'📷附图 '+sjPendImg+(inQ?'':'☁');
+      }
+      var line='['+ts+'] 【'+HX_SJ_APP+'】'+v+imgBit+ctx;
       var old='';
       try{ var b=LearnShell.readFile('速记流水.txt'); if(b) old=b64d(b); }catch(e){ old=''; }
       var neu=old+((old&&old.charAt(old.length-1)!=='\n')?'\n':'')+line+'\n';
       try{
+        var hadImg=sjPendImg; /* v0.11.1 记下前留一份，回执要用 */
         LearnShell.writeFile('速记流水.txt', b64e(neu));
-        sjToast('已记下'); ta.value=''; $('hxSjPanel').style.display='none';
+        if(hadImg){ sjToast('已记下+图：图存手机壳里 '+hadImg+'，联网后传坚果云/学习套装数据/速记图/，传成行尾标☁', 6000); sjPendImg=''; sjImgLineShow(''); }
+        else sjToast('已记下');
+        ta.value=''; $('hxSjPanel').style.display='none';
         try{ sjUpload(); }catch(e){} /* 速记自动上行：本地存成后顺手推上网，失败静默下回补 */
       }catch(e){ sjToast('没存成：'+e.message); }
     }
@@ -606,6 +636,7 @@
           '<div id="hxSjDot" title="速记">🏥</div>'+
           '<div id="hxSjPanel">'+
           '  <textarea id="hxSjText" placeholder="发现啥毛病，写一句…"></textarea>'+
+          '  <div id="hxSjImgLine" style="display:none;font-size:13px;color:#4a4238;margin-top:6px;background:#f5efe4;border-radius:8px;padding:4px 8px"></div>'+ /* v0.11.1 挂图行：选了图没记下时显示 */
           '  <div class="hxSjBtns"><button id="hxSjSave" type="button">记下</button>'+
           '<button id="hxSjImg" type="button" style="background:#efe9df;color:#6b6257;">📷图</button>'+ /* v0.10.0 附图钮：始终在「记下」旁，样式同关闭钮 */
           (sjExtraBtn ? '<button id="hxSjAppend" type="button" style="background:#b8925a;color:#fff;">'+String(sjExtraBtn.label||'补充上一条')+'</button>' : '')+ /* v0.1.1 extraBtn：不传不出这钮，默认2钮版 */
