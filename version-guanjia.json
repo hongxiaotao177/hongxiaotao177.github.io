@@ -1,1 +1,1 @@
-{"version": "0.32.0", "dl": "software-guanjia.html", "note": "#79 AI面板两级化：点功能进提示词编辑页，提示词可改可存（覆盖账本hx_aiprompt_v1+问AI老账本hx_gj_askai_v1钩子），配套hx-common v0.11.0", "engine": "guanjia-pdf-engine.js"}
+{"version": "0.33.0", "dl": "software-guanjia.html", "note": "病历统一输入口：名册换文件夹+人话报告；名册送脱敏间；脱敏间进件收折叠；开门不再自动找病历；原文不再自动删、满1个月提醒手动删（#96/#97/#98，洪老师2026-09-14拍板）", "engine": "guanjia-pdf-engine.js"}
