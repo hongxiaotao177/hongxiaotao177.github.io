@@ -1,1 +1,1 @@
-{"version": "0.31.0", "dl": "software-guanjia.html", "note": "安心条HX.step接入：开门对账/PDF解析/导出/原文销毁两行小字定格可拍照定位", "engine": "guanjia-pdf-engine.js"}
+{"version": "0.31.1", "dl": "software-guanjia.html", "note": "#83 AI面板清单恒空根治：壳同步路径init先于清单赋值→面板空，包setTimeout让半拍", "engine": "guanjia-pdf-engine.js"}
