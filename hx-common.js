@@ -32,7 +32,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 (function(){
   'use strict';
-  var HX_COMMON_VERSION = '0.10.0'; /* v0.10.0 2026-09-14：安心条HX.step（顶部细进度条+两行小字，愣住定格定位，洪老师拍板全家统一）+速记📷附图（压图存壳文件夹sjimg_*+行尾挂图+坚果云/学习套装数据/速记图/上传排队）；其余一行未动 /* v0.9.1 2026-09-14：HX.store.sync批量抱回（壳v1.7.3 readFiles桥）——多件对账一次JNI全读回，免逐件SAF往返卡主线程（洪老师真机报"点大管家变蓝后定住"，病根=5本账本连环读各约2秒）；旧壳无readFiles自动回落逐件读，逻辑一字未改 /* v0.9.0 2026-09-13：常驻通信管家双通道（洪老师拍板一次做完）——新增HX.mg投信层（壳v1.7.0管家在则GitHub联网写信mg_out_给后台服务代发+回信mg_in_轮询取，网页线程不碰网络；管家不在自动走老fetch，全家零改动）+HX.big大件异步编解码（TextEncoder/Decoder分块让气，无则回落老同步）；改道点=gh.fetch一个收口；_autoNetOk闸门规矩不变 /* v0.8.0 2026-09-13：开门静默令（洪老师拍板：开门不许自动同步/不许自动查版本，点了才做）——全家自动联网（dav rescue/mirror、relay闲时送与pull、selfUp、selfCheck、速记开门补推）统一过HX._autoNetOk闸门：默认全关，3秒内真有点击（=点了按钮）或localStorage hx_auto_net=1才放行；新增HX.syncNow()一件全手动补做；本地存取（HX.store/localStorage/壳文件）不联网不受影响；其余一行未动 /* v0.7.0 2026-09-12：HX.dav全异步化（根治#75/#77同步联网卡死主线程）——走壳v1.6.0新davAsync后台桥+HX._davCb回调，ts对账逻辑一行未改；旧壳没davAsync一律静默跳过绝不回退同步老路，壳升级后自动恢复 */ /* v0.6.0 2026-09-12 地基二期：HX.dav的rescue升级为ts对账（云端新超5秒留档_冲突_后盖回/本地新或相等顺手davUp追平/云端缺顺手davUp补齐） */ /* v0.5.0 2026-09-12：新增中转邮路HX.relay+坚果云腿HX.dav */ /* v0.4.0 2026-09-12：新增仓管员HX.store，地基工程一期规矩A/B落地 */ /* v0.3.0 2026-09-11：部件自升级HX.selfUp（病根：壳里旧版公共件永远不升级→AI面板等新功能装了也白装；开门闲时20秒比对云端version-hx-common.json，旧了静默下载写回授权文件夹，下次开门用新的，全程不弹窗） */ /* v0.2.0 2026-09-11：新增HX.ai统一AI面板（两层结构+定位置顶+AI功能生成器，洪老师2026-09-11拍板方法论落地试点）；HX.sj面板加「🤖AI」入口钮；其余一行未动 */ /* v0.1.1 2026-09-10：HX.sj.init 加可选 extraBtn（大管家#43「补充上一条」补回，洪老师点名功能）；不传仍是2钮版，默认行为不变 */
+  var HX_COMMON_VERSION = '0.11.0'; /* v0.11.0 2026-09-14：AI面板第2级提示词可改可存（挂号#79，洪老师拍板"不搞三级菜单，就两级，点进去就是几套预设提示词，可改可储存"）——条目带prompts时，第2级点某套进编辑页（全文可改+▶用这套发送+💾存为默认+↩恢复出厂）；改过的存覆盖账本hx_aiprompt_v1.<app>（出厂原文一个字不动，恢复出厂=删覆盖）；宿主函数发送前一句HX.ai.pget(id,idx)查覆盖（乙路，不改送不进去）；条目可带pget/pset/preset钩子接管存储（如大管家问AI接管它自己的hx_gj_askai_v1老账本）；新增HX.ai.pget公开口；其余一行未动 /* v0.10.0 2026-09-14：安心条HX.step（顶部细进度条+两行小字，愣住定格定位，洪老师拍板全家统一）+速记📷附图（压图存壳文件夹sjimg_*+行尾挂图+坚果云/学习套装数据/速记图/上传排队）；其余一行未动 /* v0.9.1 2026-09-14：HX.store.sync批量抱回（壳v1.7.3 readFiles桥）——多件对账一次JNI全读回，免逐件SAF往返卡主线程（洪老师真机报"点大管家变蓝后定住"，病根=5本账本连环读各约2秒）；旧壳无readFiles自动回落逐件读，逻辑一字未改 /* v0.9.0 2026-09-13：常驻通信管家双通道（洪老师拍板一次做完）——新增HX.mg投信层（壳v1.7.0管家在则GitHub联网写信mg_out_给后台服务代发+回信mg_in_轮询取，网页线程不碰网络；管家不在自动走老fetch，全家零改动）+HX.big大件异步编解码（TextEncoder/Decoder分块让气，无则回落老同步）；改道点=gh.fetch一个收口；_autoNetOk闸门规矩不变 /* v0.8.0 2026-09-13：开门静默令（洪老师拍板：开门不许自动同步/不许自动查版本，点了才做）——全家自动联网（dav rescue/mirror、relay闲时送与pull、selfUp、selfCheck、速记开门补推）统一过HX._autoNetOk闸门：默认全关，3秒内真有点击（=点了按钮）或localStorage hx_auto_net=1才放行；新增HX.syncNow()一件全手动补做；本地存取（HX.store/localStorage/壳文件）不联网不受影响；其余一行未动 /* v0.7.0 2026-09-12：HX.dav全异步化（根治#75/#77同步联网卡死主线程）——走壳v1.6.0新davAsync后台桥+HX._davCb回调，ts对账逻辑一行未改；旧壳没davAsync一律静默跳过绝不回退同步老路，壳升级后自动恢复 */ /* v0.6.0 2026-09-12 地基二期：HX.dav的rescue升级为ts对账（云端新超5秒留档_冲突_后盖回/本地新或相等顺手davUp追平/云端缺顺手davUp补齐） */ /* v0.5.0 2026-09-12：新增中转邮路HX.relay+坚果云腿HX.dav */ /* v0.4.0 2026-09-12：新增仓管员HX.store，地基工程一期规矩A/B落地 */ /* v0.3.0 2026-09-11：部件自升级HX.selfUp（病根：壳里旧版公共件永远不升级→AI面板等新功能装了也白装；开门闲时20秒比对云端version-hx-common.json，旧了静默下载写回授权文件夹，下次开门用新的，全程不弹窗） */ /* v0.2.0 2026-09-11：新增HX.ai统一AI面板（两层结构+定位置顶+AI功能生成器，洪老师2026-09-11拍板方法论落地试点）；HX.sj面板加「🤖AI」入口钮；其余一行未动 */ /* v0.1.1 2026-09-10：HX.sj.init 加可选 extraBtn（大管家#43「补充上一条」补回，洪老师点名功能）；不传仍是2钮版，默认行为不变 */
   if(window.HX && window.HX.HX_COMMON_VERSION){ return; } /* 已装过不重复装 */
   var HX = { HX_COMMON_VERSION: HX_COMMON_VERSION, ok: true };
   function warn(m){ try{ if(window.console && console.warn) console.warn('[hx-common] '+m); }catch(e){} }
@@ -652,7 +652,7 @@
   })();
 
   /* ════ 5.5 统一AI面板 HX.ai（v0.2.0 新增，洪老师2026-09-11拍板方法论落地试点） ════
-     两层结构：第1层功能清单（getSection()对上的条目置顶标「本页」）→第2层条目详情（有prompts列提示词套/无则「▶ 开始」大钮）；
+     两层结构：第1层功能清单（getSection()对上的条目置顶标「本页」）→第2层条目详情（有prompts列提示词套，点一套进编辑页可改可存（v0.11.0）/无则「▶ 开始」大钮）；
      壳统一芯自带：各软件传自己的AI_MANIFEST，面板只调条目run，不新造取数通道；账本/钥匙HX.ai自身不碰（唯一例外：生成器条目走宿主send）。
      防重入：面板触发run执行期间ready()短暂返false——宿主原按钮拦截行（HX.ai.ready()判断）就会放行原行为，不会又弹面板套娃。 */
   HX.ai = (function(){
@@ -667,6 +667,20 @@
     function lsKey(){ return 'hx_aiext_v1.'+_app; }
     function extLoad(){ try{ var a=JSON.parse(localStorage.getItem(lsKey())||'[]'); return (a && a.length) ? a : []; }catch(e){ return []; } }
     function extSave(a){ try{ localStorage.setItem(lsKey(), JSON.stringify(a||[])); }catch(e){} }
+    /* v0.11.0 提示词覆盖账本：hx_aiprompt_v1.<app>={条目id:{套号:改后全文}}；出厂默认在manifest里，恢复出厂=删覆盖 */
+    function ovKey(){ return 'hx_aiprompt_v1.'+_app; }
+    function ovLoad(){ try{ return JSON.parse(localStorage.getItem(ovKey())||'{}')||{}; }catch(e){ return {}; } }
+    function ovSave(o){ try{ localStorage.setItem(ovKey(), JSON.stringify(o||{})); }catch(e){} }
+    var _pend=null; /* 一次性待发：▶用这套发送时编辑框没存的话也照新话发（doSend前摆上，跑完即清） */
+    /* 有效提示词：钩子pget > 一次性待发 > 覆盖账本 > 出厂默认（仅面板内用；宿主函数用ai.pget只到覆盖账本为止） */
+    function effPrompt(it, i){
+      try{
+        if(typeof it.pget==='function'){ var v=it.pget(i); if(v!=null) return String(v); }
+      }catch(e){}
+      if(_pend && _pend.id===it.id && _pend.idx===i) return _pend.text;
+      var ov=ovLoad(); var hit=ov[it.id]; if(hit && hit[i]!=null) return String(hit[i]);
+      return String((it.prompts&&it.prompts[i]&&it.prompts[i].text)||'');
+    }
     /* 生成器条目的run：走宿主send（sys=提示词，user=选中文字或'（无资料）'）；没通道/没Key都只toast不崩 */
     function extRun(x){
       try{
@@ -727,8 +741,48 @@
       $('hxAiBack').addEventListener('click', renderL1);
       var go=$('hxAiGo'); if(go) go.addEventListener('click', function(){ doRun(it); });
       Array.prototype.forEach.call(body.querySelectorAll('[data-hxaip]'), function(el){
-        el.addEventListener('click', function(){ doRun(it); }); /* 点一套=执行run：取数/发送/结果宿主自己管 */
+        el.addEventListener('click', function(){ renderPEdit(it, parseInt(el.getAttribute('data-hxaip'),10)); }); /* v0.11.0 点一套=进编辑页（可改可存再发送） */
       });
+    }
+    /* v0.11.0 提示词编辑页：全文可改；▶用这套发送（没存也照新话发）/💾存为默认/↩恢复出厂 */
+    function renderPEdit(it, i){
+      var body=$('hxAiBody'); if(!body) return;
+      var pname=(it.prompts&&it.prompts[i]&&it.prompts[i].name)||('第'+(i+1)+'套');
+      body.innerHTML='<div class="hxAiBack" id="hxAiBack">← 返回</div>'+
+        '<div class="hxAiL2Title">'+escH(it.icon||'🤖')+' '+escH(it.name||it.id)+' · '+escH(pname)+'</div>'+
+        '<div class="hxAiDesc">提示词可改；改完点「💾存为默认」下回还用这套，「▶用这套发送」=就用屏幕上这份发</div>'+
+        '<textarea id="hxAiTa" class="hxAiTa" rows="10"></textarea>'+
+        '<div class="hxAiBtnRow">'+
+        '<button id="hxAiSend" type="button" class="hxAiGo" style="flex:1.4;margin-top:0">▶ 用这套发送</button>'+
+        '<button id="hxAiSaveP" type="button" class="hxAiBtn2">💾 存为默认</button>'+
+        '<button id="hxAiResetP" type="button" class="hxAiBtn2">↩ 恢复出厂</button>'+
+        '</div>';
+      var ta=$('hxAiTa'); ta.value=effPrompt(it, i);
+      $('hxAiBack').addEventListener('click', function(){ renderL2(it); });
+      $('hxAiSend').addEventListener('click', function(){ doSend(it, i, ta.value); });
+      $('hxAiSaveP').addEventListener('click', function(){
+        try{
+          if(typeof it.pset==='function'){ it.pset(i, ta.value); }
+          else { var ov=ovLoad(); if(!ov[it.id]) ov[it.id]={}; ov[it.id][i]=ta.value; ovSave(ov); }
+          aiToast('💾 已存为默认');
+        }catch(e){ warn('ai pset: '+((e&&e.message)||e)); }
+      });
+      $('hxAiResetP').addEventListener('click', function(){
+        try{
+          if(typeof it.preset==='function'){ it.preset(i); }
+          else { var ov=ovLoad(); if(ov[it.id]){ delete ov[it.id][i]; } ovSave(ov); }
+          ta.value=effPrompt(it, i); aiToast('↩ 已恢复出厂');
+        }catch(e){ warn('ai preset: '+((e&&e.message)||e)); }
+      });
+    }
+    /* v0.11.0 带提示词发送：runWith钩子优先（宿主自己把话送进它老流程）；没有则摆一次性待发后跑run（宿主函数里pget查账取用） */
+    function doSend(it, i, text){
+      _inRun=true;
+      try{
+        if(typeof it.runWith==='function'){ it.runWith(i, text); }
+        else { _pend={id:it.id, idx:i, text:text}; try{ it.run(); }finally{ _pend=null; } }
+      }catch(e){ warn('ai send: '+((e&&e.message)||e)); }
+      _inRun=false;
     }
     /* 面板触发run：执行期间ready()返false防宿主拦截行套娃；错误只warn不外抛 */
     function doRun(it){
@@ -797,6 +851,9 @@
           "#hxAiBody .hxAiDesc{font-size:13px;color:#8a8178;padding:4px 0 8px}\n"+
           "#hxAiBody .hxAiGo{display:block;width:100%;font-size:18px;padding:12px 0;border:none;border-radius:10px;background:#7a9e7e;color:#fff;cursor:pointer;margin-top:8px}\n"+
           "#hxAiBody .hxAiResult{white-space:pre-wrap;word-break:break-word;font-size:14px;line-height:1.7;color:#4a4238;background:#fff;border:1px solid #e5ddd0;border-radius:10px;padding:10px;max-height:46vh;overflow:auto}\n"+
+          "#hxAiBody .hxAiTa{width:100%;box-sizing:border-box;font-size:14px;line-height:1.6;color:#4a4238;background:#fff;border:1px solid #d8cfc0;border-radius:10px;padding:8px}\n"+
+          "#hxAiBody .hxAiBtnRow{display:flex;gap:8px;margin-top:8px;align-items:stretch}\n"+
+          "#hxAiBody .hxAiBtn2{flex:1;font-size:14px;padding:10px 0;border:none;border-radius:10px;background:#efe9df;color:#6b6257;cursor:pointer}\n"+
           "#hxAiFoot{margin-top:8px;text-align:center}\n"+
           "#hxAiAdd{border:none;background:none;color:#1a73e8;font-size:14px;text-decoration:underline;cursor:pointer;padding:6px}\n"+
           "#hxSjPanel #hxSjAiBtn{background:#efe9df;color:#6b6257}\n"+
@@ -862,6 +919,16 @@
     };
     /* HX.ai.ready()：面板是否可用（UI注入成功）；面板触发run执行期间短暂返false防套娃 */
     ai.ready = function(){ return !!(_uiOk && !_inRun); };
+    /* v0.11.0 HX.ai.pget(itemId, idx)：宿主函数发送前查一句——一次性待发>覆盖账本>都没有返null（宿主用自己内嵌出厂值）。
+       用法：sys = (window.HX&&HX.ai&&HX.ai.pget ? HX.ai.pget('条目id',0) : null) || sys; */
+    ai.pget = function(itemId, idx){
+      try{
+        if(_pend && _pend.id===itemId && _pend.idx===idx) return _pend.text;
+        var ov=ovLoad(); var hit=ov[itemId];
+        if(hit && hit[idx]!=null) return String(hit[idx]);
+      }catch(e){}
+      return null;
+    };
     return ai;
   })();
 
