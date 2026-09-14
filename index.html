@@ -2,6 +2,10 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.18.0 2026-09-14 安心条HX.step接入（洪老师2026-09-14拍板：开门/重活两行小字定格可拍照定位）：
+      只加埋点一行不动：①手动查版本全流程（begin于起步/upd每件查完/done于finish，管家路径收尾同done）；
+      ②🔄同步syncShared（begin/第3步逐件upd/完成done/总catch里fail）；③📤备份到坚果云bkDavGo
+      （begin/逐件upd/完成done，按钮catch里fail）。全部带护栏 if(window.HX&&HX.step)，旧公共件照常跑。
     v1.17.0 2026-09-14 通信管家干活看得见（挂号#89，洪老师："交给通信管家，通信管家在干嘛？应该列出来让我知道"）：
       壳v1.7.4起管家干活每一步往授权文件夹写进度账本mg_progress.json（本地写文件不联网）；
       主界面投信查版本后，updLine下方亮「📋 通信管家在干嘛」面板，每4秒读一次账本逐条列出
@@ -411,7 +415,7 @@
 
 </main>
 
-<footer>红小涛的学习园地 · 主界面 v1.15.0 · 由 Kimi 协助维护</footer>  <!-- v1.8.0 页脚亮版本号：真机验收一眼看清自己是不是新版 -->
+<footer>红小涛的学习园地 · 主界面 v1.18.0 · 由 Kimi 协助维护</footer>  <!-- v1.8.0 页脚亮版本号：真机验收一眼看清自己是不是新版 -->
 
 <script>
 /* ==================== v1.12.0 hx-common.js 三级加载（plan2军规1/2，照 guanjia-pdf-engine.js 已验证先例） ====================
@@ -459,7 +463,7 @@ hxCommonLoad(function(){
 <script>
 /* ==================== 套装主界面自检器官（v1.1.0） ==================== */
 /* 本界面对应的四个软件当前内装版本（每次发版跟着改） */
-var CUR = { notes:"2.18.1", xiti:"1.15.0", bridge:"1.6.0", xueqi:"0.20.1", ppt:"0.19.0", xiaotao:"0.10.2", guanjia:"0.30.4", pai:"0.10.0", index:"1.17.0" /* v1.17.0 管家干活看得见（#89：管家进度账本面板，配壳v1.7.4）；CUR全量对齐云端现行（guanjia0.30.5原文销毁不愣住#90配壳v1.7.4） */ };
+var CUR = { notes:"2.18.1", xiti:"1.15.0", bridge:"1.6.0", xueqi:"0.20.1", ppt:"0.19.0", xiaotao:"0.10.2", guanjia:"0.30.4", pai:"0.10.0", index:"1.18.0" /* v1.17.0 管家干活看得见（#89：管家进度账本面板，配壳v1.7.4）；CUR全量对齐云端现行（guanjia0.30.5原文销毁不愣住#90配壳v1.7.4） */ };
 CUR.guanjia="0.30.5"; /* v1.17.0 同步：大管家v0.30.5（#90） */
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
 try{ var _sv=JSON.parse(localStorage.getItem("hx_suite_ver")||"{}"); Object.keys(_sv).forEach(function(k){ if(_sv[k]) CUR[k]=_sv[k]; }); }catch(e){}
@@ -638,6 +642,7 @@ function hxRawGet(name){
   var updated=[], failed=[];
   window.__hxVerActive=true; /* v1.7.0 版本直播优先：坚果云提醒等不得覆盖updLine */
   updMsg("🔍 正在检查" + keys.length + "个软件有没有新版…");
+  if(window.HX&&HX.step){ try{ HX.step.begin('IDX.ver.start','正在查全家软件有没有新版…'); }catch(e){} } /* v1.18.0 安心条 */
   function fetchJson(name){
     /* 统一返回"文件内容文本"：API优先，失败/没Token走公开直链 */
     /* v1.16.0 国内网提速：API挂一次（超时/不通），本轮后面全走公开站，不再挨个白等超时 */
@@ -720,7 +725,7 @@ function hxRawGet(name){
   function slotTotal(){ return keys.length + PARTS.length; }
   function renderProg(){ updMsg("🔍 检查新版本（" + slotDone + "/" + slotTotal() + "）\n" + progLog.join("\n")); }
   function setSlot(i, line){ progLog[i]=line; renderProg(); }
-  function doneOne(){ slotDone++; renderProg(); if(slotDone>=slotTotal()) finish(); }
+  function doneOne(){ slotDone++; renderProg(); if(window.HX&&HX.step){ try{ HX.step.upd('IDX.ver.check','正在查版本',slotDone,slotTotal()); }catch(e){} } if(slotDone>=slotTotal()) finish(); } /* v1.18.0 安心条upd */
   /* v1.9.0 升级后复核（洪老师拍板）：手动升级跑完后，自动重读一遍本机记录+探实际文件在不在，
      和云端版本对账——只读不下载。对得上→"升级完成，本机=云端 vX"；对不上→红字写明本机/云端+最可能原因。 */
   function verifyAfter(done){
@@ -823,6 +828,7 @@ function hxRawGet(name){
     }).catch(function(e){ var _em=(e&&e.message)||"网络不通"; if(/abort/i.test(_em)) _em="网络不通或太慢"; setSlot(slot, "⚠️ "+cnName+"：版本文件没读到（"+_em+"），跳过"); doneOne(); });  /* 单个版本文件读不到不拖累别人 */
   }
   function finish(){
+    if(window.HX&&HX.step){ try{ HX.step.done('版本查完了'); }catch(e){} } /* v1.18.0 安心条done */
     /* v1.7.0 进度直播定格：结果常驻第一屏不消失，您看清了再点进去（洪老师拍板2026-09-08） */
     /* v1.9.0 洪老师拍板：开门三停——原v1.8.0"对账②"（跑完5秒自动再全查重下一遍）删除，自动化只认手动按钮；
        升级为"升级后复核"（verifyAfter，只读不下载），见下面 updated 分支。 */
@@ -919,6 +925,7 @@ function hxRawGet(name){
           /* 装新版：从管家专区读件写壳，串行一个个来 */
           (function applyOne(){
             if(!dlJobs.length){
+              if(window.HX&&HX.step){ try{ HX.step.done('版本查完了'); }catch(e){} } /* v1.18.0 安心条done（管家路径收尾） */
               /* 收尾三句人话（照finish风格） */
               if(updated.length){
                 updMsg(progLog.join("\n")+"\n\n✅ 已自动更新："+updated.join("、")+"\n旧版不用管，新版备份已存进您的文件夹。\n3秒后自动刷新…");
@@ -992,6 +999,7 @@ function syncShared(manual){
   if(!manual && st.okT && (Date.now()-st.okT)<6*3600*1000) return;  /* 6小时内刚同步过 */
   var base='https://api.github.com/repos/'+encodeURIComponent(c.user)+'/'+encodeURIComponent(c.repo)+'/contents/';
   var H=ghHeaders();
+  if(window.HX&&HX.step){ try{ HX.step.begin('IDX.sync.start','正在同步：点名文件夹和仓库…'); }catch(e){} } /* v1.18.0 安心条 */
   sprog('⇅ 同步 第1步/共4步：点名文件夹和仓库shared区…');
   var folderFiles=[], repoFiles=[], meta={files:{}};
   (manual?Promise.resolve():hxIdle0()).then(function(){  /* v1.6.2 自动同步先等你闲下来；手动点的立刻干 */
@@ -1036,6 +1044,7 @@ function syncShared(manual){
     var seq=Promise.resolve();
     plan.forEach(function(it){
       seq=seq.then(hxIdle0).then(function(){  /* v1.6.2 每搬一个文件前看你闲不闲，你在操作就让路 */
+        if(window.HX&&HX.step){ try{ HX.step.upd('IDX.sync.move','正在搬文件',done.up+done.down+done.fail,total); }catch(e){} } /* v1.18.0 安心条 */
         sprog('⇅ 同步 第3步/共4步：正在搬（'+(done.up+done.down+done.fail+1)+'/'+total+'）'+(it.act==='up'?'⬆️上传 ':'⬇️下载 ')+it.name+'…');
         if(it.act==='up'){
           var b64=window.LearnShell.readFile(it.name);
@@ -1068,6 +1077,7 @@ function syncShared(manual){
         if(j&&j.sha) body.sha=j.sha;
         return ghFetch(base+encodeURIComponent('shared-meta.json'),{method:'PUT',headers:H,body:JSON.stringify(body)});
       }).then(function(){
+        if(window.HX&&HX.step){ try{ HX.step.done('同步完成了'); }catch(e){} } /* v1.18.0 安心条done */
         syncStateSet({okT:Date.now(), up:done.up, down:done.down});
         var msg='✅ 同步完成：上传'+done.up+'件、下载'+done.down+'件'+(done.fail?'、失败'+done.fail+'件（下次再试）':'');
         if(skipped.length) msg+='；跳过'+skipped.length+'件：'+skipped.slice(0,3).join('、')+(skipped.length>3?'等':'');
@@ -1075,6 +1085,7 @@ function syncShared(manual){
       });
     });
   }).catch(function(e){
+    if(window.HX&&HX.step){ try{ HX.step.fail('同步没跑成，拍照发给AI看看'); }catch(e2){} } /* v1.18.0 安心条fail */
     sprog('⚠️ 同步没跑成：'+((e&&e.message)||'网络不通')+'——不影响使用，下次再点🔄试试');
   });
 }
@@ -1358,8 +1369,10 @@ function bkDavGo(){
   try{ ledger=JSON.parse(localStorage.getItem('hx_bkdav_ledger_v1')||'{}'); }catch(e){ ledger={}; }
   var okN=0, skipN=0, fails=[], idx=0, total=list.length;
   var btn=document.getElementById('bkDavBtn'); if(btn) btn.disabled=true;
+  if(window.HX&&HX.step){ try{ HX.step.begin('IDX.bkup.start','正在备份到坚果云…',total); }catch(e){} } /* v1.18.0 安心条 */
   function bkStep(){
     if(idx>=total){
+      if(window.HX&&HX.step){ try{ HX.step.done('备份完成了'); }catch(e){} } /* v1.18.0 安心条done */
       /* v1.14.0 备份报告说人话：共X件，Y件没变跳过，Z件已传（❌失败W件），失败仍逐件列文件名 */
       var msg='📤 备份完成：共'+total+'件，'+skipN+'件没变跳过，'+okN+'件已传（❌失败'+fails.length+'件）';
       if(fails.length) msg+='：'+fails.join('；');
@@ -1368,6 +1381,7 @@ function bkDavGo(){
       return;
     }
     var f=list[idx];
+    if(window.HX&&HX.step){ try{ HX.step.upd('IDX.bkup.up','正在备份到坚果云',idx,total); }catch(e){} } /* v1.18.0 安心条 */
     line.textContent='📤 正在备份到坚果云… '+(idx+1)+'/'+total+'（'+f.name+'）';
     setTimeout(function(){ /* 让进度先画到屏上再传 */
       idx++;
@@ -1387,6 +1401,7 @@ function bkDavGo(){
   bkStep();
 }
 document.getElementById('bkDavBtn').addEventListener('click', function(){ try{ bkDavGo(); }catch(e){
+  if(window.HX&&HX.step){ try{ HX.step.fail('备份没跑成，拍照发给AI看看'); }catch(e2){} } /* v1.18.0 安心条fail */
   var line=document.getElementById('bkDavLine'); if(line) line.textContent='⚠️ 备份没跑成：'+String((e&&e.message)||e);
 } });
 </script>

@@ -42,6 +42,12 @@ window.addEventListener('load', function(){
   小涛笔记（学习笔记2代）· 单文件版
 ==========================================================
   修改记录：
+   v0.11.0 2026-09-14 安心条HX.step接入（洪老师2026-09-14拍板：开门/重活两行小字定格可拍照定位）：
+        埋点=①开门启动begin（XT.open.boot）+开门sync对账upd/done（XT.open.sync）；
+        ②重活splitParasAsync细嚼慢咽切段begin/upd/done（XT.slice.paras，让气点顺手报idx进度，回落同步版也算done）；
+        ③重活sliceLibItem AI切片begin/逐批upd/done+拒绝fail（XT.slice.ai）；
+        ④重活自动切片巡逻逐本upd/单本done/单本fail/全完done（XT.patrol）。
+        全部带护栏if(window.HX&&HX.step){try{...}catch(e){}}，hx-common不在/旧版=上版原样照跑；其余一行未动。
    v0.10.2 2026-09-13 资料库一拉开就卡住根治（挂号#87，洪老师真机报案+拍板方案C）：
         病根=拉开资料库巡逻兵patrolKick立刻开跑：splitParas整本几MB原文同步切分+云端代办大件b64编解码，
           全堵主线程，页面冻住；点「我的笔记」慢是连坐。
@@ -521,7 +527,7 @@ window.addEventListener('load', function(){
     <summary>📋 关于 / Obsidian 搬家说明</summary>
     <div class="kv" style="margin-top:6px;">
       <b style="color:#4a7c59;">📌 本软件为新版正房（学习笔记双链版已留档，功能并入本软件）。</b><br>
-      <b>版本：</b>v0.10.2（2026-09-13）资料库一拉开就卡住根治：巡逻兵改"拉开后3秒才开工+亮条可选马上开切/本次不跑"，切书干活改细嚼慢咽（每20毫秒让界面喘气），拉开资料库随时能滑能点；切法/账本/云端机器人不变<br><b>上一版：</b>v0.10.1（2026-09-13）开门愣住根治：开门对账摘掉章正文大件（只对4个小件秒完）+恢复检查改轻查询（空库才搬大件），治"点进来愣住十几秒不能滑不能点"；章正文30秒自动备份照常被<br><b>上一版：</b>v0.10.0（2026-09-12）地基二期·剩余家底接仓管员+邮路：书台账xt_books_v1/资料台账xt_lib_v1注册仓管员（有壳落真源文件夹+坚果云镜像，无壳走中转邮路）、IndexedDB章正文变更30秒自动导出备份（换机/重装能灌回来）、寄习题改走仓管员一本账、收信从对齐后的缓存读<br><b>上一版：</b>v0.9.0（2026-09-12）地基补强：单体备份邮路（没壳时笔记自动进GitHub中转区永远重试，网通了自己送）+壳内仓管员一本账+坚果云镜像+开门拉回中转件<br><b>上一版：</b>v0.8.1（2026-09-11）收信断根修：大管家的信不再被静默吞（收不进就原样保留），修「我的笔记」收起时笔记行溢出挡点击<br><b>上一版：</b>v0.8.0（2026-09-11）信息流通三连：点亮出题可📮寄到习题学习、大管家回程票（?from=guanjia亮顶条）、开门自动收大管家寄来的信存成笔记<br><b>上一版：</b>v0.7.0（2026-09-11）收编公共件hx-common+AI统一面板（🏥浮标→🤖AI两层面板），速记「补充上一条」照留<br><b>上一版：</b>v0.6.2（2026-09-11）切片断根修：断点续切（切到一半接着切不重来）、本地连败自动送云端机器人代办（关软件也切）、云端切好自动取回、💰切片账本（每本书花了多少）、速记「补充上一条」<br><b>上一版：</b>v0.6.0（2026-09-10）鱼骨头化：「✨ 新建笔记」收进一条折叠行，张开后🤖AI帮我学/✍️自己手写是两条文字行（只动版面，功能没变）<br><b>上一版：</b>v0.5.3 速记自动上行：记下的东西自动到网上，AI接班自己看<br><br>
+      <b>版本：</b>v0.11.0（2026-09-14）安心条HX.step接入：顶部细进度条+两行小字（上面人话/下面机械码），开门、切段落、AI切片、自动巡逻到哪一步都亮着；卡住就定格在最后一句，拍照发AI就能定位<br><b>上一版：</b>v0.10.2（2026-09-13）资料库一拉开就卡住根治：巡逻兵改"拉开后3秒才开工+亮条可选马上开切/本次不跑"，切书干活改细嚼慢咽（每20毫秒让界面喘气），拉开资料库随时能滑能点；切法/账本/云端机器人不变<br><b>上一版：</b>v0.10.1（2026-09-13）开门愣住根治：开门对账摘掉章正文大件（只对4个小件秒完）+恢复检查改轻查询（空库才搬大件），治"点进来愣住十几秒不能滑不能点"；章正文30秒自动备份照常被<br><b>上一版：</b>v0.10.0（2026-09-12）地基二期·剩余家底接仓管员+邮路：书台账xt_books_v1/资料台账xt_lib_v1注册仓管员（有壳落真源文件夹+坚果云镜像，无壳走中转邮路）、IndexedDB章正文变更30秒自动导出备份（换机/重装能灌回来）、寄习题改走仓管员一本账、收信从对齐后的缓存读<br><b>上一版：</b>v0.9.0（2026-09-12）地基补强：单体备份邮路（没壳时笔记自动进GitHub中转区永远重试，网通了自己送）+壳内仓管员一本账+坚果云镜像+开门拉回中转件<br><b>上一版：</b>v0.8.1（2026-09-11）收信断根修：大管家的信不再被静默吞（收不进就原样保留），修「我的笔记」收起时笔记行溢出挡点击<br><b>上一版：</b>v0.8.0（2026-09-11）信息流通三连：点亮出题可📮寄到习题学习、大管家回程票（?from=guanjia亮顶条）、开门自动收大管家寄来的信存成笔记<br><b>上一版：</b>v0.7.0（2026-09-11）收编公共件hx-common+AI统一面板（🏥浮标→🤖AI两层面板），速记「补充上一条」照留<br><b>上一版：</b>v0.6.2（2026-09-11）切片断根修：断点续切（切到一半接着切不重来）、本地连败自动送云端机器人代办（关软件也切）、云端切好自动取回、💰切片账本（每本书花了多少）、速记「补充上一条」<br><b>上一版：</b>v0.6.0（2026-09-10）鱼骨头化：「✨ 新建笔记」收进一条折叠行，张开后🤖AI帮我学/✍️自己手写是两条文字行（只动版面，功能没变）<br><b>上一版：</b>v0.5.3 速记自动上行：记下的东西自动到网上，AI接班自己看<br><br>
       <b>⭐ 头一条铁律（Obsidian 搬家）：</b>小涛笔记里所有内容的<b>真身是标准 Markdown 文件</b>，
       全部存在 GitHub 仓库的 <b>vault/</b> 区——那就是一座现成的 Obsidian 仓库。<br>
       <b>搬家方法：</b>把仓库里 vault/ 文件夹下载到电脑/手机（或坚果云同步它），
@@ -707,7 +713,7 @@ window.addEventListener('load', function(){
 (function(){
 __bc('D脚本启动');
 var $ = function(id){ return document.getElementById(id); };
-var SW_VERSION = '0.10.2' /* 资料库一拉开就卡住根治 v0.10.2 2026-09-13（挂号#87，洪老师真机报案+拍板方案C：洪老师v0.10.1实测"点资料库/我的笔记没反应要等很久"；病根=拉开资料库巡逻兵patrolKick立刻开跑，splitParas整本几MB原文同步切分+云端代办ghPutFile/ghGetFile大件b64编解码全堵主线程；治=①拉开后延迟3秒+亮条给选择权（3秒后自动开切/▶马上开切/✋本次不跑）②splitParasAsync细嚼慢咽每20ms让界面喘气（刀法与splitParas一字不差，续切/取回拼装不受影响）③云端代办自动送/取回走b64encAsync/b64decAsync异步通道（TextEncoder/Decoder分块让气，报文格式不变，老机器无TextEncoder自动回落老同步函数）；手动按钮等老调用点一行未动） */ /* 开门愣住根治 v0.10.1 2026-09-13（洪老师真机报案：点小涛笔记能进但愣住十几秒不能滑不能点；病根=开门sync把章正文大件xt_chapters_v1也算进对账名单，主线程同步读壳文件+b64解码+解析几MB，加上chaptersRestore每次开门都chaptersDump整库导出再判空白干重活；治=①开门sync名单摘掉LS_CHAPS只对4个小件，章正文备份照chaptersFlush debounce30秒落账不变 ②chaptersRestore判空改idbCount轻查询，空库才读大件灌回；只动这2处+留痕，其余一行未动） */ /* 地基二期·剩余家底接仓管员+邮路 v0.10.0 2026-09-12（只加不破坏，全守卫全try，HX缺席=上版原样）：①书台账xt_books_v1/资料台账xt_lib_v1注册仓管员，saveBooks/saveLib照v0.9.0主笔记键同款三岔（有壳HX.store.set+闲时dav.mirror；无壳localStorage老路+relay.add） ②IndexedDB章正文接邮路：章正文变更debounce 30秒整库导出成一个JSON走HX.store.set('xt_chapters_v1')+dav.mirror('hxdata_xt_chapters_v1.json')；无壳UTF-8字节>900000跳过relay只落本地（GitHub一兆限制留余量）否则relay.add；开门sync后IndexedDB空而仓管员有值→灌回IndexedDB，非空以IndexedDB为准 ③寄习题xitixuexi_inbox改走仓管员（有壳落真源文件夹，无壳localStorage老路效果相同） ④xt_inbox_v1注册进rescue/sync键数组，收信从对齐后的缓存读（sync后重跑gjInboxCheck） ⑤版本0.9.0→0.10.0三处留痕（本注释链/顶部修改记录/📋关于） */ /* SPEC2单体备份邮路+仓管员+坚果云镜像+中转拉回（地基补强）v0.9.0 2026-09-12（只加不破坏，全守卫全try，HX缺席=上版原样）：主数据键=xt_notes_v1（LS_NOTES，笔记正文所在的最大数据键，saveNotes是全家唯一保存口；xt_books_v1/xt_lib_v1台账体小、章正文在IndexedDB，本班只接这一个键不贪多）。①保存点saveNotes改三岔：有壳（HX.store.has()）走HX.store.set一本账+闲时HX.dav.mirror镜像hxdata_xt_notes_v1.json到坚果云，绝不走relay；无壳走原有localStorage老路+HX.relay.add中转邮路 ②开门hxCommonLoad成功回调加HX.relay.init('小涛笔记')；闲时2秒HX.dav.rescue([xt_notes_v1])（只补缺失不盖已有）→HX.store.sync对账后补renderList→HX.relay.pull拉回中转件 ③版本0.8.1→0.9.0三处留痕（本注释链/顶部修改记录/📋关于） */ /* 收信断根修+details溢出修 v0.8.1 2026-09-11（tester实证两案，只动2处其余一行未动）：①D9b收信从页底独立script挪进主闭包启动流程（原块调不到主IIFE的loadNotes/saveNotes/uid/strHash/vaultQueue，ReferenceError被try/catch吞掉→toast不亮、笔记没存、inbox却被清成[]，数据丢失级）；并立军规=全部存成功才清空xt_inbox_v1，任何一步失败inbox原样保留下回再收 ②首页「📚我的笔记」details收起时noteList仍渲染溢出盖住下方设置卡挡点击（hit-test实证），修=CSS一行details.card:not([open])>:not(summary)真隐藏 */ /* 信息流通普查断点三连 v0.8.0 2026-09-11（只动3处其余一行未动）：①D5点亮→出题结果页加第4钮「📮寄到习题学习」——题目文本按software-xiti.html收信端格式（单个对象{title,text}）写localStorage xitixuexi_inbox，打开习题自动收；②D6c大管家回程票（照抄血气v0.12.0现成写法）：?from=guanjia亮顶条「← 返回大管家」（文件名自适应software-前缀规矩），?pt=顺手写hx_gj_curpt（全家统一记号，血气v0.16.0先例）；③D9b开门收大管家的信：读xt_inbox_v1（数组[{title,text,pt,ts}]，大管家v0.27.0寄来）逐条存成笔记（照xt_notes_v1现有结构，标题加[病人名]前缀），收完清空写回[]，空则静默；无壳全try/catch不报错 */ /* 收编公共件+AI面板 v0.7.0 2026-09-11（照大管家v0.23.0/0.24.0已验证先例）：内嵌速记snippet整块退役改HX.sj一行接入（「补充上一条」extraBtn照留不退役，自动上行HX.sj自带）+AI_MANIFEST 7条接HX.ai统一面板（AI帮我学/问资料/重切/重写总结/送云端代办/AI改笔记/点亮菜单，run全指现有按钮本体未动）；hx-common不在时主功能照常、速记/AI静默降级 */ /* 切片断根修 v0.6.2 2026-09-11（洪老师拍板"一项一项完成"，挂号#63/#64/#65/#66）：
+var SW_VERSION = '0.11.0' /* 安心条HX.step接入 v0.11.0 2026-09-14（洪老师2026-09-14拍板：开门/重活两行小字定格可拍照定位）：开门启动begin+sync对账upd/done（XT.open.*）、splitParasAsync切段begin/upd/done（XT.slice.paras）、sliceLibItem切片begin/逐批upd/done/拒绝fail（XT.slice.ai）、自动巡逻逐本upd/单本done/fail/全完done（XT.patrol）；全护栏if(window.HX&&HX.step)try/catch，HX缺席=上版原样；版本0.10.2→0.11.0三处留痕（本注释链/顶部修改记录/📋关于），其余一行未动 */ /* 资料库一拉开就卡住根治 v0.10.2 2026-09-13（挂号#87，洪老师真机报案+拍板方案C：洪老师v0.10.1实测"点资料库/我的笔记没反应要等很久"；病根=拉开资料库巡逻兵patrolKick立刻开跑，splitParas整本几MB原文同步切分+云端代办ghPutFile/ghGetFile大件b64编解码全堵主线程；治=①拉开后延迟3秒+亮条给选择权（3秒后自动开切/▶马上开切/✋本次不跑）②splitParasAsync细嚼慢咽每20ms让界面喘气（刀法与splitParas一字不差，续切/取回拼装不受影响）③云端代办自动送/取回走b64encAsync/b64decAsync异步通道（TextEncoder/Decoder分块让气，报文格式不变，老机器无TextEncoder自动回落老同步函数）；手动按钮等老调用点一行未动） */ /* 开门愣住根治 v0.10.1 2026-09-13（洪老师真机报案：点小涛笔记能进但愣住十几秒不能滑不能点；病根=开门sync把章正文大件xt_chapters_v1也算进对账名单，主线程同步读壳文件+b64解码+解析几MB，加上chaptersRestore每次开门都chaptersDump整库导出再判空白干重活；治=①开门sync名单摘掉LS_CHAPS只对4个小件，章正文备份照chaptersFlush debounce30秒落账不变 ②chaptersRestore判空改idbCount轻查询，空库才读大件灌回；只动这2处+留痕，其余一行未动） */ /* 地基二期·剩余家底接仓管员+邮路 v0.10.0 2026-09-12（只加不破坏，全守卫全try，HX缺席=上版原样）：①书台账xt_books_v1/资料台账xt_lib_v1注册仓管员，saveBooks/saveLib照v0.9.0主笔记键同款三岔（有壳HX.store.set+闲时dav.mirror；无壳localStorage老路+relay.add） ②IndexedDB章正文接邮路：章正文变更debounce 30秒整库导出成一个JSON走HX.store.set('xt_chapters_v1')+dav.mirror('hxdata_xt_chapters_v1.json')；无壳UTF-8字节>900000跳过relay只落本地（GitHub一兆限制留余量）否则relay.add；开门sync后IndexedDB空而仓管员有值→灌回IndexedDB，非空以IndexedDB为准 ③寄习题xitixuexi_inbox改走仓管员（有壳落真源文件夹，无壳localStorage老路效果相同） ④xt_inbox_v1注册进rescue/sync键数组，收信从对齐后的缓存读（sync后重跑gjInboxCheck） ⑤版本0.9.0→0.10.0三处留痕（本注释链/顶部修改记录/📋关于） */ /* SPEC2单体备份邮路+仓管员+坚果云镜像+中转拉回（地基补强）v0.9.0 2026-09-12（只加不破坏，全守卫全try，HX缺席=上版原样）：主数据键=xt_notes_v1（LS_NOTES，笔记正文所在的最大数据键，saveNotes是全家唯一保存口；xt_books_v1/xt_lib_v1台账体小、章正文在IndexedDB，本班只接这一个键不贪多）。①保存点saveNotes改三岔：有壳（HX.store.has()）走HX.store.set一本账+闲时HX.dav.mirror镜像hxdata_xt_notes_v1.json到坚果云，绝不走relay；无壳走原有localStorage老路+HX.relay.add中转邮路 ②开门hxCommonLoad成功回调加HX.relay.init('小涛笔记')；闲时2秒HX.dav.rescue([xt_notes_v1])（只补缺失不盖已有）→HX.store.sync对账后补renderList→HX.relay.pull拉回中转件 ③版本0.8.1→0.9.0三处留痕（本注释链/顶部修改记录/📋关于） */ /* 收信断根修+details溢出修 v0.8.1 2026-09-11（tester实证两案，只动2处其余一行未动）：①D9b收信从页底独立script挪进主闭包启动流程（原块调不到主IIFE的loadNotes/saveNotes/uid/strHash/vaultQueue，ReferenceError被try/catch吞掉→toast不亮、笔记没存、inbox却被清成[]，数据丢失级）；并立军规=全部存成功才清空xt_inbox_v1，任何一步失败inbox原样保留下回再收 ②首页「📚我的笔记」details收起时noteList仍渲染溢出盖住下方设置卡挡点击（hit-test实证），修=CSS一行details.card:not([open])>:not(summary)真隐藏 */ /* 信息流通普查断点三连 v0.8.0 2026-09-11（只动3处其余一行未动）：①D5点亮→出题结果页加第4钮「📮寄到习题学习」——题目文本按software-xiti.html收信端格式（单个对象{title,text}）写localStorage xitixuexi_inbox，打开习题自动收；②D6c大管家回程票（照抄血气v0.12.0现成写法）：?from=guanjia亮顶条「← 返回大管家」（文件名自适应software-前缀规矩），?pt=顺手写hx_gj_curpt（全家统一记号，血气v0.16.0先例）；③D9b开门收大管家的信：读xt_inbox_v1（数组[{title,text,pt,ts}]，大管家v0.27.0寄来）逐条存成笔记（照xt_notes_v1现有结构，标题加[病人名]前缀），收完清空写回[]，空则静默；无壳全try/catch不报错 */ /* 收编公共件+AI面板 v0.7.0 2026-09-11（照大管家v0.23.0/0.24.0已验证先例）：内嵌速记snippet整块退役改HX.sj一行接入（「补充上一条」extraBtn照留不退役，自动上行HX.sj自带）+AI_MANIFEST 7条接HX.ai统一面板（AI帮我学/问资料/重切/重写总结/送云端代办/AI改笔记/点亮菜单，run全指现有按钮本体未动）；hx-common不在时主功能照常、速记/AI静默降级 */ /* 切片断根修 v0.6.2 2026-09-11（洪老师拍板"一项一项完成"，挂号#63/#64/#65/#66）：
    ①#66断点续切：AI切到一半的书记着批次进度（sliceBatch），中断后续切不从头——病根=此前任何中断都整本重切、钱全白花，几本书一个月切不完就是它；
      粗切完成的书换AI重切仍整本重来（旧块全换），手动「重新AI切片」照旧全量；
    ②#63自动化：巡逻失败"当天不再碰"改退避2小时再试（网络抖一下不再废一天）；本地连败2次的书自动送云端代办（GitHub Actions机器人切，关掉软件它也切）；
@@ -1748,6 +1754,7 @@ function splitParas(text){
    断点续切/云端取回拼装不受影响），唯一差别=每干20毫秒就setTimeout(0)让界面喘口气，巡逻自动切大件不再冻页面。
    只新增；splitParas本体一行未动，手动按钮等老调用点照走同步版 */
 function splitParasAsync(text){
+  if(window.HX&&HX.step){ try{ HX.step.begin('XT.slice.paras','正在细嚼慢咽切段落') }catch(e){} } /* v0.11.0 安心条：重活开头 */
   return new Promise(function(res){
     try{
       var raw = String(text).split(/\n+/).map(function(s){ return s.trim(); }).filter(function(s){ return s.length > 1; });
@@ -1767,12 +1774,13 @@ function splitParasAsync(text){
               p = p.slice(cut + 1).trim();
             }
             if(p.length > 1) out.push(p);
-            if(Date.now() - t0 > 20 && idx < raw.length){ setTimeout(step, 0); return; }
+            if(Date.now() - t0 > 20 && idx < raw.length){ if(window.HX&&HX.step){ try{ HX.step.upd('XT.slice.paras','正在细嚼慢咽切段落',idx,raw.length) }catch(e){} } /* v0.11.0 安心条：让气顺手报进度 */ setTimeout(step, 0); return; }
           }
+          if(window.HX&&HX.step){ try{ HX.step.done('段落切好了') }catch(e){} } /* v0.11.0 安心条：重活结尾 */
           res(out);
-        }catch(e){ res(splitParas(text)); } /* 出错回落同步版，结果一致 */
+        }catch(e){ if(window.HX&&HX.step){ try{ HX.step.done('段落切好了') }catch(e2){} } /* v0.11.0 安心条：回落同步版也算切完 */ res(splitParas(text)); } /* 出错回落同步版，结果一致 */
       })();
-    }catch(e){ res(splitParas(text)); }
+    }catch(e){ if(window.HX&&HX.step){ try{ HX.step.done('段落切好了') }catch(e2){} } /* v0.11.0 安心条：回落同步版也算切完 */ res(splitParas(text)); }
   });
 }
 /* v0.3.27 找"参考文献"节起始段落号（全文最后一次出现 参考文献/References 所在段落），找不到返回-1 */
@@ -1973,6 +1981,7 @@ $('btnShelfGo').addEventListener('click', function(){
 });
 function sliceLibItem(libId, text, preParas){
   aiBookCtx(libId);   /* v0.3.28：这趟AI记到这本书账上 */
+  if(window.HX&&HX.step){ try{ HX.step.begin('XT.slice.ai','正在AI切片') }catch(e){} } /* v0.11.0 安心条：重活开头 */
   var paras = preParas || splitParas(text);   /* v0.10.2：巡逻路先splitParasAsync细嚼慢咽切好段落再传进来（preParas），手动路不传照走同步版；批次由同一刀法确定性生成，续切不受影响 */
   /* v0.3.27 正文切片摘除参考文献节：只用该节之前的段落切块/写总结；找不到(idx<0)时行为照旧 */
   var refAt = refStartPara(paras);
@@ -1995,6 +2004,7 @@ function sliceLibItem(libId, text, preParas){
     if(bi < startBatch) return; /* v0.6.2 断点续切：已切的批跳过不重复花钱 */
     chain = chain.then(function(){
       libProg('✂️ 《' + (getLib(libId) || {}).title + '》切片中 第' + (bi + 1) + '批/共' + batches.length + '批…');
+      if(window.HX&&HX.step){ try{ HX.step.upd('XT.slice.ai','正在AI切片',bi + 1,batches.length) }catch(e){} } /* v0.11.0 安心条：逐批报进度 */
       var pr;
       if(hasKey){
         pr = aiSliceBatch(paras, idxArr, allChunks.length + 1);
@@ -2041,7 +2051,7 @@ function sliceLibItem(libId, text, preParas){
     var it = getLib(libId);
     if(it && it.coarse) return;
     return idbDelPrefix('kv', 'raw_' + libId).catch(function(){});
-  }).then(function(){ renderLib(); });
+  }).then(function(){ if(window.HX&&HX.step){ try{ HX.step.done('切片入库完成') }catch(e){} } /* v0.11.0 安心条：重活结尾 */ renderLib(); }, function(e){ if(window.HX&&HX.step){ try{ HX.step.fail('切片出错：' + (e && e.message ? e.message : '未知')) }catch(e2){} } /* v0.11.0 安心条：fail配对定格 */ throw e; });
 }
 function libWriteBrief(libId, text){
   aiBookCtx(libId);   /* v0.3.28：这趟AI记到这本书账上 */
@@ -2188,6 +2198,7 @@ function patrolNext(){
   if(_patrol.paused || !patrolAwake()){ _patrol.running = false; patrolBar(''); return; }
   if(_patrol.i >= _patrol.q.length){
     _patrol.running = false; patrolBar(''); renderLib();
+    if(window.HX&&HX.step){ try{ HX.step.done('自动切片巡逻完，书库都齐了') }catch(e){} } /* v0.11.0 安心条：巡逻重活结尾 */
     toast('✅ 自动切片巡逻完，书库都齐了', 2500);
     return;
   }
@@ -2197,6 +2208,7 @@ function patrolNext(){
   it.autoTryDay = patrolToday(); it.autoFail = ''; saveLib(lib);   /* 保险③：今天自动碰过它了，同一天最多1次 */
   var verb = job.kind === 'slice' ? '正在切' : '正在写总结';
   patrolBar('🤖 巡逻中：' + verb + '《' + job.title + '》（第' + (_patrol.i + 1) + '/' + _patrol.q.length + '本）…');
+  if(window.HX&&HX.step){ try{ HX.step.upd('XT.patrol','巡逻中：' + verb + '《' + job.title + '》',_patrol.i + 1,_patrol.q.length) }catch(e){} } /* v0.11.0 安心条：巡逻逐本报进度 */
   libFullText(job.id).then(function(raw){
     if(!raw) throw new Error('正文丢失，没法自动弄（点详情手动处理）');
     if(job.kind === 'slice'){
@@ -2219,9 +2231,11 @@ function patrolNext(){
       if(after && libNeedBrief(after)) throw new Error(after.lastErr || '总结没生成');               /* 保险② */
     });
   }).then(function(){
+    if(window.HX&&HX.step){ try{ HX.step.done('这本弄好了：《' + job.title + '》') }catch(e){} } /* v0.11.0 安心条：巡逻单本done */
     var l3 = loadLib(); var it3 = l3.filter(function(x){ return x.id === job.id; })[0];
     if(it3){ it3.autoFail = ''; it3.autoFailT = 0; it3.localFails = 0; saveLib(l3); renderLib(); } /* v0.6.2 成功清退避/连败 */
   }).catch(function(e){
+    if(window.HX&&HX.step){ try{ HX.step.fail('巡逻出错：' + (e && e.message ? e.message : '未知')) }catch(e2){} } /* v0.11.0 安心条：巡逻单本fail配对定格 */
     var l4 = loadLib(); var it4 = l4.filter(function(x){ return x.id === job.id; })[0];
     if(it4){ it4.autoFail = aiErrText(e); it4.autoFailT = Date.now(); it4.localFails = (it4.localFails|0)+1; saveLib(l4); renderLib(); }   /* 保险②+v0.6.2退避时间戳+连败计数（≥2次自动送云端） */
   }).then(function(){
@@ -3257,6 +3271,7 @@ $('btnBookExport').addEventListener('click', function(){
 });
 
 /* ==================== 启动 ==================== */
+if(window.HX&&HX.step){ try{ HX.step.begin('XT.open.boot','正在开门：小涛笔记') }catch(e){} } /* v0.11.0 安心条：开门第一行 */
 loadSettings();
 billRender();
 renderList();
@@ -3692,6 +3707,7 @@ hxCommonLoad(function(){
   /* v0.10.0 地基二期：仓管员键数组注册齐活——主笔记xt_notes_v1+书台账xt_books_v1+资料台账xt_lib_v1+章正文xt_chapters_v1+收信件xt_inbox_v1（rescue/sync同一批）；sync对账后补renderLib/renderBooks、重跑gjInboxCheck收对齐后的信、chaptersRestore灌回章正文（仅IndexedDB空时） */
   try{ if(window.HX && HX.relay && HX.relay.init) HX.relay.init('小涛笔记'); }catch(e){}
   setTimeout(function(){
+    if(window.HX&&HX.step){ try{ HX.step.upd('XT.open.sync','正在对账：笔记与书库') }catch(e){} } /* v0.11.0 安心条：开门对账步 */
     try{ if(window.HX && HX.relay && HX.relay.pull) HX.relay.pull(); }catch(e){}
     try{ if(window.HX && HX.dav && HX.dav.rescue) HX.dav.rescue([LS_NOTES, LS_BOOKS, LS_LIB, LS_CHAPS, 'xt_inbox_v1']); }catch(e){}
     try{ if(window.HX && HX.store && HX.store.sync){ HX.store.sync([LS_NOTES, LS_BOOKS, LS_LIB, 'xt_inbox_v1'], function(){ /* v0.10.1：sync名单摘掉章正文大件LS_CHAPS——开门sync在主线程同步读壳文件+b64解码+解析，章正文攒到几MB后每次开门卡十几秒（洪老师真机报案）；章正文备份照chaptersFlush debounce30秒落账不变，恢复照chaptersRestore空库才灌，数据保护不减 */
@@ -3700,6 +3716,7 @@ hxCommonLoad(function(){
       try{ renderBooks(); }catch(e){}
       try{ gjInboxCheck(); }catch(e){} /* v0.10.0：收信从对齐后的缓存读 */
       try{ chaptersRestore(); }catch(e){} /* v0.10.0：IndexedDB空而仓管员有章正文→灌回 */
+      if(window.HX&&HX.step){ try{ HX.step.done('开门好了') }catch(e){} } /* v0.11.0 安心条：开门对账完定格 */
     }); } }catch(e){}
   }, 2000);
   try{ if(window.HX&&HX.ai) HX.ai.init({app:'小涛笔记', manifest:XT_AI_MANIFEST,

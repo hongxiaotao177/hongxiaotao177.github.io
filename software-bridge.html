@@ -4,6 +4,10 @@
  文件桥 —— AI 与手机文件夹之间的桥（单文件 HTML，第三个协同软件）
 ====================================================================
  修改记录：
+   v1.7.0 (2026-09-14) 安心条HX.step接入（洪老师2026-09-14拍板：开门/重活两行小字定格可拍照定位）：
+        只加埋点一行不动：①开门（dirRestore取回句柄begin→闲时列完文件夹done）；
+        ②⬆️传给AI uploadFile（begin/传完done/catch里fail）；③📥收AI文件 receiveFiles（begin/收完done/catch里fail）；
+        ④📦打包 doPack（begin/打完done/catch里fail）。全部带护栏 if(window.HX&&HX.step)，旧公共件照常跑。
    v1.6.0 (2026-09-11) 断点D10「拿不准」可见（照信息流通普查_2026-09-11.md，只改这一条其他一行未动）：
         主页向导卡下加一行小字（.hint 风格，照鱼骨头版面）：读 localStorage hx_gj_unsure_v1（数组，大管家登记），
         非空则显示「❓大管家拿不准X份（点我去处理）」，点了跳大管家——文件名自适应照全家规矩：
@@ -486,7 +490,7 @@ function fmtTime(t){ return new Date(t).toLocaleString(); }
 
 /* ==================== GitHub 通信（移植学习笔记/习题学习同套） ==================== */
 var BR_GH_USER = 'br_gh_user', BR_GH_TOK = 'br_gh_tok', BR_GH_REPO = 'br_gh_repo', BR_GH_CHECK = 'br_gh_check';
-var SW_VERSION = window.SW_VERSION = '1.6.0'; /* v1.6.0 2026-09-11 断点D10「拿不准」可见：主页一行小字读 hx_gj_unsure_v1，非空显示「❓大管家拿不准X份（点我去处理）」跳大管家（文件名自适应：仓/公开站 software-guanjia.html，壳内/桌面中文名），空或读不到不显示，无壳不报错；开门+闲时3秒各查一次（详见文件顶部修改记录） */ /* 公共件收编 v1.5.0 2026-09-10：hx-common.js三级加载（missing只降级提示不白屏）；速记snippet删→HX.sj.init({app:'文件桥'})；内嵌19个gh函数族删→HX.gh.*（本件是母本，语义一致；b64/cmpVer留本机兜底，打包/主界面刷新不受影响）；ghSelfCheck删→HX.selfCheck('bridge',SW_VERSION)（黄条UI原样只换数据源）；云设置写钥匙只写hx_gh_*三样（hxSync镜像br_gh_*旧键不丢）；公共件没装上时GitHub搬运提示「公共件未装」、本地列表照常；AI往来/打包/坚果云直通车/向导/showDirectoryPicker一行未动 */ /* v1.4.0 2026-09-10 全鱼骨头化：五卡→五折叠行、大按钮全压文字行，纯版面 */ /* 速记自动上行 v1.3.3 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* 速记 v1.3.2 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */ /* v1.2.3补：挂window治第二个script块拿不到（ReferenceError被try静默吞，页头永远旧版字样） */ /* v1.2.2 版本字样治病根：头顶+标题代码自动填SW_VERSION（此前硬编码v1.2.0忘了跟） */ /* v1.2.1 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */ /* v1.2.3 主界面刷新免Token备用路+送上去全选 */
+var SW_VERSION = window.SW_VERSION = '1.7.0'; /* v1.7.0 2026-09-14 安心条HX.step接入（洪老师2026-09-14拍板：开门/重活两行小字定格可拍照定位）：开门/传给AI/收AI文件/打包4处埋点，全带护栏，其余一行未动（详见文件顶部修改记录） */ /* v1.6.0 2026-09-11 断点D10「拿不准」可见：主页一行小字读 hx_gj_unsure_v1，非空显示「❓大管家拿不准X份（点我去处理）」跳大管家（文件名自适应：仓/公开站 software-guanjia.html，壳内/桌面中文名），空或读不到不显示，无壳不报错；开门+闲时3秒各查一次（详见文件顶部修改记录） */ /* 公共件收编 v1.5.0 2026-09-10：hx-common.js三级加载（missing只降级提示不白屏）；速记snippet删→HX.sj.init({app:'文件桥'})；内嵌19个gh函数族删→HX.gh.*（本件是母本，语义一致；b64/cmpVer留本机兜底，打包/主界面刷新不受影响）；ghSelfCheck删→HX.selfCheck('bridge',SW_VERSION)（黄条UI原样只换数据源）；云设置写钥匙只写hx_gh_*三样（hxSync镜像br_gh_*旧键不丢）；公共件没装上时GitHub搬运提示「公共件未装」、本地列表照常；AI往来/打包/坚果云直通车/向导/showDirectoryPicker一行未动 */ /* v1.4.0 2026-09-10 全鱼骨头化：五卡→五折叠行、大按钮全压文字行，纯版面 */ /* 速记自动上行 v1.3.3 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* 速记 v1.3.2 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */ /* v1.2.3补：挂window治第二个script块拿不到（ReferenceError被try静默吞，页头永远旧版字样） */ /* v1.2.2 版本字样治病根：头顶+标题代码自动填SW_VERSION（此前硬编码v1.2.0忘了跟） */ /* v1.2.1 公共钱罐v2时间戳版：新Token一处填全家跟新，旧Token不再复活 */ /* v1.2.3 主界面刷新免Token备用路+送上去全选 */
 /* v1.1.2 公共钱罐：Token/仓库名/API Key 一处填、处处有（四软件+主界面共享 hx_*，自己的空了就抄公共的，自己填了就写进公共的） */
 (function(){
   var HX_MAP=[["br_gh_user", "hx_gh_user"], ["br_gh_tok", "hx_gh_tok"], ["br_gh_repo", "hx_gh_repo"]];
@@ -837,7 +841,10 @@ function refreshFiles(){
   var box = $('fileList');
   if(inShell){
     if(!window.LearnShell.folderSet()){ box.innerHTML=''; $('dirStatus').textContent='还没授权文件夹'; return Promise.resolve(); }
-    $('dirStatus').textContent = '已授权：' + window.LearnShell.folderName() + '（壳APP直连，点🔄可刷新）';
+    /* 2026-09-14修：旧壳无folderName护栏 */
+    var _fname = '';
+    try{ if(window.LearnShell && typeof window.LearnShell.folderName === 'function'){ _fname = window.LearnShell.folderName() || ''; } }catch(e){ _fname = ''; }
+    $('dirStatus').textContent = '已授权：' + _fname + '（壳APP直连，点🔄可刷新）';
     var slist = [];
     try{ slist = JSON.parse(window.LearnShell.listFiles() || '[]'); }catch(e){}
     slist.sort(function(a, b){ return b.t - a.t; });
@@ -886,6 +893,7 @@ function uploadFile(fi){
   if(!hxOk()){ toast('公共件 hx-common.js 未装上，GitHub搬运暂不可用（本地文件夹功能照常）', 4000); return; } /* v1.5.0 军规1降级 */
   if(!ghReady()){ toast('请先在「☁️ 云设置」里填好并保存', 3500); return; }
   toast('⏳ 正在传「' + fi.name + '」…', 2500);
+  if(window.HX&&HX.step){ try{ HX.step.begin('BR.up.send','正在传给AI：'+fi.name); }catch(e){} } /* v1.7.0 安心条 */
   var tName = 'transit/' + fi.name;
   var headP = inShell
     ? Promise.resolve(window.LearnShell.readFile(fi.name)).then(function(b64){
@@ -902,10 +910,12 @@ function uploadFile(fi){
       return ghWriteJson('bridge-inbox.json', data, r.sha, '文件桥登记上传 ' + fi.name);
     });
   }).then(function(){
+    if(window.HX&&HX.step){ try{ HX.step.done('传好了'); }catch(e){} } /* v1.7.0 安心条done */
     ioLog('⬆️ 已传「' + fi.name + '」（' + fmtSize(fi.size) + '）——跟 AI 说一声文件名它就能读到');
     toast('✅ 已传给AI中转站，跟AI说一声文件名', 4000);
   }).catch(function(e){
     if(!inShell && dirStaleErr(e)){ dirReauthRetry(function(){ uploadFile(fi); }); return; } /* v1.0.3 */
+    if(window.HX&&HX.step){ try{ HX.step.fail('传给AI没成功，拍照发给AI看看'); }catch(e2){} } /* v1.7.0 安心条fail */
     ioLog('❌ 传「' + fi.name + '」失败：' + ((e && e.message) || e));
     toast('❌ 上传失败：' + ((e && e.message) || '网络不通'), 4000);
   });
@@ -917,12 +927,13 @@ function receiveFiles(_raOnce){
   if(!ghReady()){ toast('请先在「☁️ 云设置」里填好并保存', 3500); return; }
   if(!dirOk()){ toast('请先授权文件夹，文件才有地方放', 3500); return; }
   toast('📥 正在检查AI发来的文件…', 2500);
+  if(window.HX&&HX.step){ try{ HX.step.begin('BR.recv.check','正在检查AI发来的文件…'); }catch(e){} } /* v1.7.0 安心条 */
   var box;
   ghReadJson('bridge-outbox.json').then(function(r){
-    if(!r.data || !Array.isArray(r.data.deliveries)){ ioLog('📭 没有AI发来的文件'); toast('📭 没有新文件', 2500); return null; }
+    if(!r.data || !Array.isArray(r.data.deliveries)){ if(window.HX&&HX.step){ try{ HX.step.done('没有新文件'); }catch(e){} } ioLog('📭 没有AI发来的文件'); toast('📭 没有新文件', 2500); return null; } /* v1.7.0 安心条done */
     box = r;
     var pend = r.data.deliveries.filter(function(d){ return !d.done; });
-    if(!pend.length){ ioLog('📭 没有AI发来的新文件'); toast('📭 没有新文件', 2500); return null; }
+    if(!pend.length){ if(window.HX&&HX.step){ try{ HX.step.done('没有新文件'); }catch(e){} } ioLog('📭 没有AI发来的新文件'); toast('📭 没有新文件', 2500); return null; } /* v1.7.0 安心条done */
     var chain = Promise.resolve();
     var got = 0;
     pend.forEach(function(d){
@@ -952,6 +963,7 @@ function receiveFiles(_raOnce){
     return chain.then(function(){
       return ghWriteJson('bridge-outbox.json', box.data, box.sha, '文件桥回执');
     }).then(function(){
+      if(window.HX&&HX.step){ try{ HX.step.done('收文件收完了'); }catch(e){} } /* v1.7.0 安心条done */
       if(got){
         var anyDl = pend.some(function(d){ return d.viaDownload; });
         toast(anyDl ? ('✅ 收到 ' + got + ' 个文件，部分经浏览器下载到「下载」目录')
@@ -966,6 +978,7 @@ function receiveFiles(_raOnce){
       else dirStaleHandle();
       return;
     }
+    if(window.HX&&HX.step){ try{ HX.step.fail('收文件没成功，拍照发给AI看看'); }catch(e2){} } /* v1.7.0 安心条fail */
     ioLog('❌ 接收失败：' + ((e && e.message) || e));
     toast('❌ 接收失败：' + ((e && e.message) || '网络不通'), 4000);
   });
@@ -1080,6 +1093,7 @@ function doPack(forSelf){
   if(!dirOk()){ toast('请先授权文件夹', 3000); return; }
   packLogEl.textContent = '';
   packLog('正在收集文件…');
+  if(window.HX&&HX.step){ try{ HX.step.begin('BR.pack.collect','正在打包：收集文件…'); }catch(e){} } /* v1.7.0 安心条 */
   var includeBig = $('packBig').checked;
   collectFolderFiles(includeBig).then(function(files){
     if(!files.length){ packLog('文件夹里没有可打的 .html 软件'); return null; }
@@ -1101,11 +1115,13 @@ function doPack(forSelf){
         entries.push({ name: 'config.json', data: teEncode(JSON.stringify(cfg, null, 2)) });
         packLog('  装入 config.json（随行配置卡）');
       }
+      if(window.HX&&HX.step){ try{ HX.step.upd('BR.pack.zip','正在打zip包…'); }catch(e){} } /* v1.7.0 安心条 */
       var zip = buildZip(entries);
       var zipName = (forSelf ? '医学软件包_给自己_' : '医学软件包_给别人_') +
         new Date().getFullYear() + String(new Date().getMonth() + 1) + String(new Date().getDate()) + '.zip';
       if(inShell){
         if(window.LearnShell.writeFile(zipName, u8ToB64(zip))){
+          if(window.HX&&HX.step){ try{ HX.step.done('打包完成了'); }catch(e){} } /* v1.7.0 安心条done（壳内存文件夹路径） */
           packLog('✅ 已存进文件夹：' + zipName);
           toast('✅ 打包完成，已存进文件夹：' + zipName, 4000);
         }else{
@@ -1121,8 +1137,10 @@ function doPack(forSelf){
       setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
       packLog('✅ 打包完成，共 ' + entries.length + ' 个文件（' + fmtSize(zip.length) + '），已开始下载');
       if(forSelf) packLog('⚠️ 这个包含Token，只能自己用，别发给别人！');
+      if(window.HX&&HX.step){ try{ HX.step.done('打包完成了'); }catch(e){} } /* v1.7.0 安心条done */
     });
   }).catch(function(e){
+    if(window.HX&&HX.step){ try{ HX.step.fail('打包没成功，拍照发给AI看看'); }catch(e2){} } /* v1.7.0 安心条fail */
     packLog('❌ 打包失败：' + ((e && e.message) || e));
   });
 }
@@ -1579,9 +1597,12 @@ try{
   var lastCheck = localStorage.getItem(BR_GH_CHECK);
   if(lastCheck) $('ghCheck').textContent = lastCheck;
 }catch(e){}
+if(window.HX&&HX.step){ try{ HX.step.begin('BR.open.boot','正在开门：取回您的文件夹…'); }catch(e){} } /* v1.7.0 安心条 */
 dirRestore().then(function(){
   updWizard(); scanConfigJson(); /* v1.3.1 开门静默化：refreshAll里的refreshFiles走SAF慢桥listFiles，挪3秒闲时再列文件夹，先秒开 */
-  setTimeout(function(){ refreshFiles(); }, 3000);
+  setTimeout(function(){ Promise.resolve(refreshFiles()).then(function(){ /* v1.7.0 安心条done（文件夹列完=开门完） */
+    if(window.HX&&HX.step){ try{ HX.step.done('开门好了'); }catch(e){} }
+  }, function(){ if(window.HX&&HX.step){ try{ HX.step.done('开门好了'); }catch(e){} } }); }, 3000);
   /* 打开 3 秒后自动自检一次（配置齐全才查） */
   setTimeout(function(){ if(ghReady()) ghSelfCheck(false); }, 3000);
 });

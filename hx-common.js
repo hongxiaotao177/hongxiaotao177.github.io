@@ -1,5 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    hx-common.js —— 全家9件软件共用公共件母版
+   v0.10.0 2026-09-14：安心条HX.step（顶部细进度条+两行小字，愣住定格可拍照定位，洪老师拍板全家统一）+速记📷附图（📷图钮→压图宽≤1280存壳文件夹sjimg_*+行尾挂图+坚果云/学习套装数据/速记图/排队上传）；其余一行未动
    v0.7.0 2026-09-12：HX.dav全异步化（根治#75/#77 dav同步联网卡死主线程）——davCall走壳v1.6.0 davAsync后台桥+回调，
      rescue/mirror逻辑不变只换异步腿；旧壳没davAsync静默跳过（不回退同步老路再卡界面），壳升v1.6.0后自动恢复。
    HX_COMMON_VERSION = '0.6.0'（2026-09-10 plan2 军规：钥匙统一+收公共块+不崩溃压倒一切）
@@ -12,12 +13,12 @@
    收编四样+账本（AI底座不收）：
      HX.keys    钥匙统一读取（hx_apikey→bg_apikey→xt_apikey；hx_gh_*→br_gh_*；hx_qwenkey→bg_qwen_key；hx_dav_*）
      HX.gh      GitHub 传输（以 software-bridge.html 的19个gh函数为底，统一命名空间 HX.gh.*）
-     HX.sj      浮标速记+自动上行（从 software-notes.html 原文提取，8份MD5一致版）
+     HX.sj      浮标速记+自动上行（从 software-notes.html 原文提取，8份MD5一致版）+📷附图（压图存壳sjimg_*+行尾挂图+坚果云速记图/排队传）
      HX.selfCheck(app, swVersion)  版本自检（学习笔记 ghSelfCheck 通用化，API优先失败走raw直链带?t=防缓存）
      HX.bill    全家AI账本 hx_aibill（照抄学习笔记 hxBill 实现格式）
      HX.store   仓管员：一套门存取（has/get/set/remove/sync/conflicts），壳内文件夹hxdata_<key>.json真源+localStorage缓存，时间定新旧、双动冲突留档（地基工程一期）
      HX.relay   中转邮路：单体备份走GitHub私有仓transit/（永远重试+退避+回读核对才销号+大白话状态条），壳内pull拉回销号
-     HX.dav     坚果云腿：壳内铁仓库（ok/mirror闲时镜像/rescue救命腿只补缺失不盖已有）
+     HX.dav     坚果云腿：壳内铁仓库（ok/mirror闲时镜像/rescue救命腿只补缺失不盖已有；dv.upFile(fileName,remoteDir)：公开单件上传（速记附图用））
 
    接入说明（各软件照抄下面这段，三级查找照 guanjia-pdf-engine.js 已验证先例）：
      ① LearnShell.readFile('hx-common.js') 读壳授权文件夹（file://下fetch常被拦，readFile可靠）
@@ -31,7 +32,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 (function(){
   'use strict';
-  var HX_COMMON_VERSION = '0.9.1'; /* v0.9.1 2026-09-14：HX.store.sync批量抱回（壳v1.7.3 readFiles桥）——多件对账一次JNI全读回，免逐件SAF往返卡主线程（洪老师真机报"点大管家变蓝后定住"，病根=5本账本连环读各约2秒）；旧壳无readFiles自动回落逐件读，逻辑一字未改 /* v0.9.0 2026-09-13：常驻通信管家双通道（洪老师拍板一次做完）——新增HX.mg投信层（壳v1.7.0管家在则GitHub联网写信mg_out_给后台服务代发+回信mg_in_轮询取，网页线程不碰网络；管家不在自动走老fetch，全家零改动）+HX.big大件异步编解码（TextEncoder/Decoder分块让气，无则回落老同步）；改道点=gh.fetch一个收口；_autoNetOk闸门规矩不变 /* v0.8.0 2026-09-13：开门静默令（洪老师拍板：开门不许自动同步/不许自动查版本，点了才做）——全家自动联网（dav rescue/mirror、relay闲时送与pull、selfUp、selfCheck、速记开门补推）统一过HX._autoNetOk闸门：默认全关，3秒内真有点击（=点了按钮）或localStorage hx_auto_net=1才放行；新增HX.syncNow()一件全手动补做；本地存取（HX.store/localStorage/壳文件）不联网不受影响；其余一行未动 /* v0.7.0 2026-09-12：HX.dav全异步化（根治#75/#77同步联网卡死主线程）——走壳v1.6.0新davAsync后台桥+HX._davCb回调，ts对账逻辑一行未改；旧壳没davAsync一律静默跳过绝不回退同步老路，壳升级后自动恢复 */ /* v0.6.0 2026-09-12 地基二期：HX.dav的rescue升级为ts对账（云端新超5秒留档_冲突_后盖回/本地新或相等顺手davUp追平/云端缺顺手davUp补齐） */ /* v0.5.0 2026-09-12：新增中转邮路HX.relay+坚果云腿HX.dav */ /* v0.4.0 2026-09-12：新增仓管员HX.store，地基工程一期规矩A/B落地 */ /* v0.3.0 2026-09-11：部件自升级HX.selfUp（病根：壳里旧版公共件永远不升级→AI面板等新功能装了也白装；开门闲时20秒比对云端version-hx-common.json，旧了静默下载写回授权文件夹，下次开门用新的，全程不弹窗） */ /* v0.2.0 2026-09-11：新增HX.ai统一AI面板（两层结构+定位置顶+AI功能生成器，洪老师2026-09-11拍板方法论落地试点）；HX.sj面板加「🤖AI」入口钮；其余一行未动 */ /* v0.1.1 2026-09-10：HX.sj.init 加可选 extraBtn（大管家#43「补充上一条」补回，洪老师点名功能）；不传仍是2钮版，默认行为不变 */
+  var HX_COMMON_VERSION = '0.10.0'; /* v0.10.0 2026-09-14：安心条HX.step（顶部细进度条+两行小字，愣住定格定位，洪老师拍板全家统一）+速记📷附图（压图存壳文件夹sjimg_*+行尾挂图+坚果云/学习套装数据/速记图/上传排队）；其余一行未动 /* v0.9.1 2026-09-14：HX.store.sync批量抱回（壳v1.7.3 readFiles桥）——多件对账一次JNI全读回，免逐件SAF往返卡主线程（洪老师真机报"点大管家变蓝后定住"，病根=5本账本连环读各约2秒）；旧壳无readFiles自动回落逐件读，逻辑一字未改 /* v0.9.0 2026-09-13：常驻通信管家双通道（洪老师拍板一次做完）——新增HX.mg投信层（壳v1.7.0管家在则GitHub联网写信mg_out_给后台服务代发+回信mg_in_轮询取，网页线程不碰网络；管家不在自动走老fetch，全家零改动）+HX.big大件异步编解码（TextEncoder/Decoder分块让气，无则回落老同步）；改道点=gh.fetch一个收口；_autoNetOk闸门规矩不变 /* v0.8.0 2026-09-13：开门静默令（洪老师拍板：开门不许自动同步/不许自动查版本，点了才做）——全家自动联网（dav rescue/mirror、relay闲时送与pull、selfUp、selfCheck、速记开门补推）统一过HX._autoNetOk闸门：默认全关，3秒内真有点击（=点了按钮）或localStorage hx_auto_net=1才放行；新增HX.syncNow()一件全手动补做；本地存取（HX.store/localStorage/壳文件）不联网不受影响；其余一行未动 /* v0.7.0 2026-09-12：HX.dav全异步化（根治#75/#77同步联网卡死主线程）——走壳v1.6.0新davAsync后台桥+HX._davCb回调，ts对账逻辑一行未改；旧壳没davAsync一律静默跳过绝不回退同步老路，壳升级后自动恢复 */ /* v0.6.0 2026-09-12 地基二期：HX.dav的rescue升级为ts对账（云端新超5秒留档_冲突_后盖回/本地新或相等顺手davUp追平/云端缺顺手davUp补齐） */ /* v0.5.0 2026-09-12：新增中转邮路HX.relay+坚果云腿HX.dav */ /* v0.4.0 2026-09-12：新增仓管员HX.store，地基工程一期规矩A/B落地 */ /* v0.3.0 2026-09-11：部件自升级HX.selfUp（病根：壳里旧版公共件永远不升级→AI面板等新功能装了也白装；开门闲时20秒比对云端version-hx-common.json，旧了静默下载写回授权文件夹，下次开门用新的，全程不弹窗） */ /* v0.2.0 2026-09-11：新增HX.ai统一AI面板（两层结构+定位置顶+AI功能生成器，洪老师2026-09-11拍板方法论落地试点）；HX.sj面板加「🤖AI」入口钮；其余一行未动 */ /* v0.1.1 2026-09-10：HX.sj.init 加可选 extraBtn（大管家#43「补充上一条」补回，洪老师点名功能）；不传仍是2钮版，默认行为不变 */
   if(window.HX && window.HX.HX_COMMON_VERSION){ return; } /* 已装过不重复装 */
   var HX = { HX_COMMON_VERSION: HX_COMMON_VERSION, ok: true };
   function warn(m){ try{ if(window.console && console.warn) console.warn('[hx-common] '+m); }catch(e){} }
@@ -471,7 +472,78 @@
         }).then(function(resp){ if(!resp.ok) throw 0; return resp.json(); }).then(function(){
           try{ localStorage.setItem('hx_sj_uplocal',txt); }catch(e){}
         }).catch(function(){ /* 静默：没网/钥匙不好使都不打搅，下回记下自动补 */ });
+        try{ sjImgUpload(); }catch(e){} /* v0.10.0 顺带清hx_sjimg_pend队列：逐件upFile，成功出队失败留 */
       }catch(e){}
+    }
+    /* v0.10.0 📷附图：localStorage队列hx_sjimg_pend（JSON数组存文件名），上传成功出队、失败留队下回补 */
+    function sjImgQueue(fn, rm){
+      var q=[]; try{ q=JSON.parse(localStorage.getItem('hx_sjimg_pend')||'[]'); }catch(e){ q=[]; }
+      if(rm){ var n=[]; for(var i=0;i<q.length;i++){ if(q[i]!==rm) n.push(q[i]); } q=n; }
+      else if(fn){ q.push(fn); }
+      try{ localStorage.setItem('hx_sjimg_pend', JSON.stringify(q)); }catch(e){}
+      return q;
+    }
+    /* 逐件upFile到坚果云/学习套装数据/速记图/：成功出队，失败留队 */
+    function sjImgUpload(){
+      try{
+        if(!(HX.dav && typeof HX.dav.upFile==='function')) return;
+        var q=sjImgQueue();
+        (function next(i){
+          if(i>=q.length) return;
+          var fn=q[i];
+          try{
+            HX.dav.upFile(fn, '/学习套装数据/速记图/').then(function(r){
+              try{ if(r && String(r).indexOf('err:')!==0) sjImgQueue(null, fn); }catch(e){}
+              next(i+1);
+            }, function(){ next(i+1); });
+          }catch(e){ next(i+1); }
+        })(0);
+      }catch(e){}
+    }
+    /* v0.10.0 📷附图：读文件→Image→canvas压到宽≤1280（等比）→jpeg0.72→存壳sjimg_YYYYMMDD_HHMMSS.jpg+流水行尾挂图+入队试传 */
+    function saveImg(file){
+      try{
+        if(!bridged()){ try{ $('hxSjHint').style.display='block'; }catch(e){} sjToast('请在手机壳里用'); return; }
+        var fr=new FileReader();
+        fr.onload=function(){
+          try{
+            var img=new Image();
+            img.onload=function(){
+              try{
+                var w=img.width, h=img.height;
+                if(w>1280){ h=Math.round(h*1280/w); w=1280; }
+                var cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+                cv.getContext('2d').drawImage(img,0,0,w,h);
+                var b64=String(cv.toDataURL('image/jpeg',0.72)).replace(/^data:[^;]*;base64,/,'');
+                var d=new Date();
+                var fn='sjimg_'+d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+'_'+pad(d.getHours())+pad(d.getMinutes())+pad(d.getSeconds())+'.jpg';
+                LearnShell.writeFile(fn, b64);
+                var ta=$('hxSjText'); var v=(ta.value||'').replace(/^\s+|\s+$/g,'');
+                var ts=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes());
+                var ctx=''; /* ctx拼接逻辑照抄save()，save原逻辑一行未动 */
+                try{ var pt=localStorage.getItem('hx_gj_curpt'); if(pt){ pt=String(pt).replace(/^["']+|["']+$/g,''); if(pt) ctx+='　病人:'+pt; } }catch(e){}
+                try{ var t=(document.title||'').replace(/^\s+|\s+$/g,''); if(t) ctx+='　页面:'+t; }catch(e){}
+                try{ if(sjGetCtx){ var c=sjGetCtx(); if(c) ctx+=String(c); } }catch(e){}
+                var line='['+ts+'] 【'+HX_SJ_APP+'】'+(v?v+'　':'')+'📷附图 '+fn+ctx;
+                var old='';
+                try{ var b=LearnShell.readFile('速记流水.txt'); if(b) old=b64d(b); }catch(e){ old=''; }
+                var neu=old+((old&&old.charAt(old.length-1)!=='\n')?'\n':'')+line+'\n';
+                try{
+                  LearnShell.writeFile('速记流水.txt', b64e(neu));
+                  sjToast('已记下+图'); ta.value=''; $('hxSjPanel').style.display='none';
+                  sjImgQueue(fn); /* 图存成入队 */
+                  try{ sjImgUpload(); }catch(e){} /* 立刻尝试上传坚果云速记图/，失败留队 */
+                  try{ sjUpload(); }catch(e){} /* 顺手自动上行，失败静默下回补 */
+                }catch(e){ sjToast('没存成：'+e.message); }
+              }catch(e){ sjToast('图没存成'); }
+            };
+            img.onerror=function(){ sjToast('图读不出来'); };
+            img.src=String(fr.result||'');
+          }catch(e){ sjToast('图没存成'); }
+        };
+        fr.onerror=function(){ sjToast('图读不出来'); };
+        fr.readAsDataURL(file);
+      }catch(e){ sjToast('图没存成'); }
     }
     function sjToast(m){ var t=$('hxSjToast'); if(!t) return; t.textContent=m; t.style.display='block'; clearTimeout(t._t); t._t=setTimeout(function(){ t.style.display='none'; },2200); }
     function openPanel(){ var p=$('hxSjPanel'); if(!p) return; p.style.display=(p.style.display==='block')?'none':'block'; if(p.style.display==='block'){ $('hxSjHint').style.display=bridged()?'none':'block'; try{ $('hxSjText').focus(); }catch(e){} } }
@@ -535,11 +607,13 @@
           '<div id="hxSjPanel">'+
           '  <textarea id="hxSjText" placeholder="发现啥毛病，写一句…"></textarea>'+
           '  <div class="hxSjBtns"><button id="hxSjSave" type="button">记下</button>'+
+          '<button id="hxSjImg" type="button" style="background:#efe9df;color:#6b6257;">📷图</button>'+ /* v0.10.0 附图钮：始终在「记下」旁，样式同关闭钮 */
           (sjExtraBtn ? '<button id="hxSjAppend" type="button" style="background:#b8925a;color:#fff;">'+String(sjExtraBtn.label||'补充上一条')+'</button>' : '')+ /* v0.1.1 extraBtn：不传不出这钮，默认2钮版 */
           '<button id="hxSjClose" type="button">关上</button>'+
           ((HX.ai && HX.ai.ready && HX.ai.ready()) ? '<button id="hxSjAiBtn" type="button" style="background:#efe9df;color:#6b6257;">🤖AI</button>' : '')+ /* v0.2.0 AI面板入口：HX.ai已init且UI就绪才出这钮，不出现不影响速记 */
           '</div>'+
           '  <div id="hxSjHint">浏览器里存不了，请在手机壳里用</div>'+
+          '  <input type="file" accept="image/*" id="hxSjImgInput" style="display:none">'+ /* v0.10.0 附图隐藏input */
           '</div>'+
           '<div id="hxSjToast"></div>';
         while(wrap.firstChild){ document.body.appendChild(wrap.firstChild); }
@@ -552,6 +626,8 @@
       $('hxSjSave').addEventListener('click', save);
       if(sjExtraBtn && $('hxSjAppend')) $('hxSjAppend').addEventListener('click', appendLast); /* v0.1.1 extraBtn */
       $('hxSjClose').addEventListener('click', function(){ $('hxSjPanel').style.display='none'; });
+      var sjImgBtn=$('hxSjImg'); if(sjImgBtn) sjImgBtn.addEventListener('click', function(){ try{ $('hxSjImgInput').click(); }catch(e){} }); /* v0.10.0 点📷图→触发隐藏input */
+      var sjImgIn=$('hxSjImgInput'); if(sjImgIn) sjImgIn.addEventListener('change', function(){ try{ var f=sjImgIn.files&&sjImgIn.files[0]; if(f) saveImg(f); sjImgIn.value=''; }catch(e){} }); /* v0.10.0 选图→压图存壳+挂行+排队传 */
       if(HX.ai && HX.ai.ready && HX.ai.ready()){ var sjAiBtn=$('hxSjAiBtn'); if(sjAiBtn) sjAiBtn.addEventListener('click', function(){ try{ $('hxSjPanel').style.display='none'; }catch(e){} try{ HX.ai.open(); }catch(e){} }); } /* v0.2.0 AI面板入口：点击=关速记面板+HX.ai.open() */
       setTimeout(function(){ try{ if(HX._autoNetOk()) sjUpload(); }catch(e){} }, 8000); /* 速记自动上行：开门闲时对账补推（上次没网漏的在这补）；v0.8.0开门静默令：没点按钮不补 */
     }
@@ -1312,7 +1388,92 @@
         }, function(){});
       }catch(e){}
     };
+    dv.upFile = function(fileName, remoteDir){ return davCall('up', fileName, remoteDir); }; /* v0.10.0：公开单件上传（速记附图用），dav其余一行不动 */
     return dv;
+  })();
+
+  /* ════ 5.9 安心条 HX.step（v0.10.0 新增，洪老师2026-09-14拍板全家统一：软件愣住时顶部细进度条+两行小字定格，拍照发AI即可定位） ════
+     零初始化、随调随出、UI首次调用时自动注入；全局只此一条（新begin替换旧内容），begin/upd幂等（重复调同一mech只更新内容）；
+     行1=人话（human原文），行2=机械码（等宽字体，若有i/total追加空格+i/total）；pointer-events:none绝不挡点击；
+     主线程卡死时最后一条upd自然定格——不加看门狗/超时自动隐藏；全程try/catch静默降级，出错console.warn不外抛。 */
+  HX.step = (function(){
+    var st = {};
+    /* 2026-09-14修Bug①：done()淡出/复位定时器句柄留存，fail/begin/upd/hide先清掉，免竞态把红字藏掉 */
+    var _doneT1 = null, _doneT2 = null;
+    function clearDoneTimers(){
+      try{ if(_doneT1!=null){ clearTimeout(_doneT1); _doneT1=null; } }catch(e){}
+      try{ if(_doneT2!=null){ clearTimeout(_doneT2); _doneT2=null; } }catch(e){}
+    }
+    function $(id){ return document.getElementById(id); }
+    function ensure(){
+      if($('hxStepBar')) return true;
+      try{
+        if(!document.body) return false;
+        var s=document.createElement('style'); s.id='hxStepStyle';
+        s.textContent=
+          "#hxStepBar{position:fixed;left:0;right:0;top:0;z-index:99999;pointer-events:none;background:rgba(255,253,248,.92);display:none}\n"+
+          "#hxStepProg{height:4px;background:#7a9e7e;width:0%;transition:width .25s ease}\n"+
+          "#hxStepL1{font-size:12px;line-height:1.4;color:#6b6257;padding:3px 10px 0}\n"+
+          "#hxStepL2{font-size:12px;line-height:1.4;color:#6b6257;padding:0 10px 3px;font-family:monospace}";
+        document.head.appendChild(s);
+        var bar=document.createElement('div'); bar.id='hxStepBar';
+        bar.innerHTML='<div id="hxStepProg"></div><div id="hxStepL1"></div><div id="hxStepL2"></div>';
+        document.body.appendChild(bar);
+        return true;
+      }catch(e){ warn('step UI注入失败: '+((e&&e.message)||e)); return false; }
+    }
+    function paint(mech, human, i, total){
+      try{
+        if(!ensure()) return;
+        var b=$('hxStepBar'); if(b) b.style.display='block';
+        var l1=$('hxStepL1'), l2=$('hxStepL2'), pg=$('hxStepProg');
+        if(l1){ l1.textContent=String(human||''); l1.style.color='#6b6257'; }
+        var m2=String(mech||'');
+        if(l2) l2.textContent=(i!=null && total) ? (m2+' '+i+'/'+total) : m2;
+        if(pg){
+          if(i!=null && total){ var r=(+total>0)?(+i)/(+total):0; if(r<0) r=0; if(r>1) r=1; pg.style.opacity='1'; pg.style.width=(r*100)+'%'; }
+          else { pg.style.opacity='0.4'; pg.style.width='60%'; } /* 无total不确定进度：固定60%宽半透明 */
+        }
+      }catch(e){ warn('step paint: '+((e&&e.message)||e)); }
+    }
+    /* begin(mech, human, total) 开一档活 */
+    st.begin = function(mech, human, total){
+      try{ clearDoneTimers(); paint(mech, human, (total?0:null), total); }catch(e){ warn('step begin: '+((e&&e.message)||e)); }
+    };
+    /* upd(mech, human, i, total) 更新进度 */
+    st.upd = function(mech, human, i, total){
+      try{ clearDoneTimers(); paint(mech, human, (i!=null?i:null), total); }catch(e){ warn('step upd: '+((e&&e.message)||e)); }
+    };
+    /* done(human) 干完：进度条拉满、行1变绿字(human或'好了')，2秒后整条淡出隐藏 */
+    st.done = function(human){
+      try{
+        if(!ensure()) return;
+        var b=$('hxStepBar'); if(b) b.style.display='block';
+        var l1=$('hxStepL1'), pg=$('hxStepProg');
+        if(l1){ l1.textContent=String(human||'好了'); l1.style.color='#7a9e7e'; }
+        if(pg){ pg.style.opacity='1'; pg.style.width='100%'; }
+        _doneT1 = setTimeout(function(){
+          try{
+            var bb=$('hxStepBar'); if(!bb) return;
+            bb.style.transition='opacity .4s'; bb.style.opacity='0';
+            _doneT2 = setTimeout(function(){ try{ bb.style.display='none'; bb.style.opacity='1'; }catch(e){} }, 400);
+          }catch(e){}
+        }, 2000);
+      }catch(e){ warn('step done: '+((e&&e.message)||e)); }
+    };
+    /* fail(human) 出错：行1变红字#a05848，定格不消失（等拍照） */
+    st.fail = function(human){
+      try{
+        clearDoneTimers();
+        if(!ensure()) return;
+        var b=$('hxStepBar'); if(b) b.style.display='block';
+        var l1=$('hxStepL1');
+        if(l1){ l1.textContent=String(human||''); l1.style.color='#a05848'; }
+      }catch(e){ warn('step fail: '+((e&&e.message)||e)); }
+    };
+    /* hide() 立刻隐藏 */
+    st.hide = function(){ try{ clearDoneTimers(); var b=$('hxStepBar'); if(b) b.style.display='none'; }catch(e){} };
+    return st;
   })();
 
   /* ════ 6. 三级加载器现成代码（接入方照抄；军规1：加载失败主功能照常，只静默降级） ════ */

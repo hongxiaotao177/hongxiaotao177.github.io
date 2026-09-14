@@ -1,1 +1,1 @@
-{"version": "0.9.1", "dl": "hx-common.js", "note": "HX.store.sync批量抱回：壳v1.7.3起readFilesAsync一次JNI读全名单（JS零等待），旧壳回落逐件读；对账逻辑一字未改"}
+{"version": "0.10.0", "dl": "hx-common.js", "note": "安心条HX.step（顶部细进度条+两行小字，愣住定格拍照定位）+速记📷附图（压图存壳sjimg_*+流水挂图+坚果云速记图上传排队）"}

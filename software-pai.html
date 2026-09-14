@@ -6,6 +6,7 @@
 <title>拍病历</title>
 <!--
 修改记录:
+拍病历 v0.11.0 2026-09-14 安心条HX.step接入（洪老师2026-09-14拍板：开门/重活两行小字定格可拍照定位）：开门装公共件/对账/识别队列/照片备份/炒菜AI分析埋点，全程if(window.HX&&HX.step){try{}catch(e){}}护栏，HX缺席=原样；其余一行未动。
 拍病历 v0.10.0 2026-09-12 单体备份邮路+坚果云镜像+中转拉回（地基补强）：①三键save在HX.store.set旁加「无壳时HX.relay.add同键同值」（有壳绝不走relay）；②开门HX.relay.init('拍病历')挂状态条；③onHxReady闲时sync前HX.relay.pull()+HX.dav.rescue三键（只补缺失不盖已有）；④保存后闲时HX.dav.mirror对应hxdata文件；HX缺席=v0.9.0原样全守卫+try。
 拍病历 v0.9.0 2026-09-12 地基一期接仓管员HX.store（三键pai_patients/pai_entries/hx_pai_ptmap_v1双写真源+开门闲时对账+冲突首页提示条+saveEntries条目补ts；HX缺席静默降级；照片备份/导出/识别链路一行未动）。
 拍病历 v0.8.0 2026-09-11 D2认?pt= + D4b照片备份出IndexedDB（只改这两处，其余一行未动）：①回程票扩认?pt=（不再要求from=guanjia）——带pt=就写hx_gj_curpt，查hx_pai_ptmap_v1反查代号：有→自动选中那个代号进拍照流，没有→记pai_pt_nocode，首页知情行提示「这个病人还没代号，建一个就自动关联」（建档paiPtMapLink自动关联后清除）；②照片只存IndexedDB换机即丢——新入库打脏标记pai_photos_dirty+3秒闲时自动备份，读出全部照片打成JSON（数组:{代号,条目id,base64}）写壳文件夹pai_photos_bak.json（LearnShell.writeFile，无壳静默跳过），总base64超2MB拆_1of2/_2of2两块各写各（病根档案①JS桥截断教训），写完清脏，设置页加文字行「💾立即备份照片到文件夹」手动触发+toast报件数。
@@ -273,7 +274,7 @@ table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:
       <div class="row" style="margin-top:8px"><button class="btn red sm" id="btnBillClear">🧹 清空账本</button></div>
     </div>
     <div class="card"><b>看门人日志</b><div id="guardLog" class="small" style="margin-top:6px"></div></div>
-    <div class="small" style="text-align:center;margin-top:8px">拍病历 v0.10.0</div><!-- v0.8.0 关于版本号 -->
+    <div class="small" style="text-align:center;margin-top:8px">拍病历 v0.11.0</div><!-- v0.8.0 关于版本号 -->
   </div>
 </div>
 
@@ -344,7 +345,7 @@ table.tt td,table.tt th{border:1px solid var(--line);padding:4px 6px;text-align:
 
 <script>
 'use strict';
-const SW_VERSION='0.10.0' /* v0.10.0 2026-09-12 单体备份邮路+坚果云镜像+中转拉回(地基补强):①savePatients/saveEntries/paiPtMapLink三处HX.store.set旁加无壳时HX.relay.add(同键同值,有壳绝不走relay);②开门HX.relay.init('拍病历');③onHxReady闲时sync前HX.relay.pull()+HX.dav.rescue(['pai_patients','pai_entries','hx_pai_ptmap_v1']);④三键保存后闲时HX.dav.mirror对应hxdata文件;HX缺席=v0.9.0原样全守卫+try */ /* v0.9.0 2026-09-12 地基一期接仓管员HX.store:①savePatients/saveEntries/paiPtMapLink三处LS.set后追加HX.store.set双写(pai_patients/pai_entries/hx_pai_ptmap_v1);②HX装好后开门闲时3秒HX.store.sync三键对账,远端新→仓管员回灌localStorage缓存后补renderHome重渲染,冲突→首页红字提示条「对账发现N处两头都改过：新的已用上，旧的已留档」(样式照抄gjHint);③saveEntries条目无ts补ts:Date.now()(time字段不动);HX缺席全程静默降级老行为不变;照片备份/导出/识别链路一行未动 */ /* v0.8.0 2026-09-11 D2认?pt=+D4b照片备份出IndexedDB:①D2=回程票扩认?pt=(不再要求from=guanjia)——带pt=写hx_gj_curpt,查hx_pai_ptmap_v1反查代号,有→自动选中那个代号进拍照流,没有→记pai_pt_nocode首页知情行提示「这个病人还没代号，建一个就自动关联」(建档paiPtMapLink自动关联后清除);②D4b=照片只存IndexedDB换机即丢——新入库打脏标记pai_photos_dirty+入库后3秒闲时自动备份,读全部照片打成JSON(数组:{代号,条目id,base64})写壳文件夹pai_photos_bak.json(LearnShell.writeFile,无壳静默跳过),超2MB拆pai_photos_bak_1of2/2of2.json两块各写各(病根档案①JS桥截断教训),写完清脏,设置页加「💾立即备份照片到文件夹」手动+toast报件数 */ /* v0.7.0 2026-09-11 D11三套标识并一套·pai侧只知情不合并(洪老师拍板统一记号hx_gj_curpt):毛病=拍病历匿名代号(如Rmttsw119735)跟大管家当前病人记号localStorage hx_gj_curpt(如"16黄热射病")互不认,不知道谁是谁;病根=D11三套标识并一套。改法=①开门读hx_gj_curpt,有值就在首页顶/拍照页顶加一行小字「大管家当前病人：XX」,纯显示不自动绑定不动代号体系;②收新病人建档/选病人定当前代号后,hx_gj_curpt有值且本代号还没关联过时,把「代号→hx_gj_curpt病人名」记进localStorage新键hx_pai_ptmap_v1(对象:代号→病人名),已有关联不覆盖;③当前代号在hx_pai_ptmap_v1有对应且与hx_gj_curpt不一致时,拍照页提示行显示「本代号对应：XX／大管家当前：YY」两行小字让用户知情。不做自动改名、不做自动合并,代号体系一行未动 */ /* v0.6.0 2026-09-10 接入hx-common.js:三级加载+HX.sj.init+HX.gh.putFile/getFile+HX.keys+HX.bill,xt_gh_*一次性搬家hx_gh_*旧键保留,HX缺失主功能照常只降级提示 */ /* v0.5.0 2026-09-10 首屏鱼骨头化:病人卡墙→名单行(点行=拍照流,库入口收小字行),「＋收新病人」大按钮→文字行开合原表单,顶栏队列/⚙️→文字行;只改输出HTML+CSS,数据流/变量名/存储键名不动 */ /* 速记自动上行 v0.4.8 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* 速记 v0.4.7 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */; /* v0.4.6 大管家回程票：从病人大管家点过来（?from=guanjia）亮顶条「← 返回大管家」一键回家；不带参数打开零影响 */;
+const SW_VERSION='0.11.0' /* v0.11.0 2026-09-14 安心条HX.step接入（洪老师2026-09-14拍板：开门/重活两行小字定格可拍照定位）：开门装公共件begin/对账upd+done；识别队列/照片备份/炒菜AI分析重活begin-done/fail配对；全程护栏HX缺席原样；其余一行未动 */ /* v0.10.0 2026-09-12 单体备份邮路+坚果云镜像+中转拉回(地基补强):①savePatients/saveEntries/paiPtMapLink三处HX.store.set旁加无壳时HX.relay.add(同键同值,有壳绝不走relay);②开门HX.relay.init('拍病历');③onHxReady闲时sync前HX.relay.pull()+HX.dav.rescue(['pai_patients','pai_entries','hx_pai_ptmap_v1']);④三键保存后闲时HX.dav.mirror对应hxdata文件;HX缺席=v0.9.0原样全守卫+try */ /* v0.9.0 2026-09-12 地基一期接仓管员HX.store:①savePatients/saveEntries/paiPtMapLink三处LS.set后追加HX.store.set双写(pai_patients/pai_entries/hx_pai_ptmap_v1);②HX装好后开门闲时3秒HX.store.sync三键对账,远端新→仓管员回灌localStorage缓存后补renderHome重渲染,冲突→首页红字提示条「对账发现N处两头都改过：新的已用上，旧的已留档」(样式照抄gjHint);③saveEntries条目无ts补ts:Date.now()(time字段不动);HX缺席全程静默降级老行为不变;照片备份/导出/识别链路一行未动 */ /* v0.8.0 2026-09-11 D2认?pt=+D4b照片备份出IndexedDB:①D2=回程票扩认?pt=(不再要求from=guanjia)——带pt=写hx_gj_curpt,查hx_pai_ptmap_v1反查代号,有→自动选中那个代号进拍照流,没有→记pai_pt_nocode首页知情行提示「这个病人还没代号，建一个就自动关联」(建档paiPtMapLink自动关联后清除);②D4b=照片只存IndexedDB换机即丢——新入库打脏标记pai_photos_dirty+入库后3秒闲时自动备份,读全部照片打成JSON(数组:{代号,条目id,base64})写壳文件夹pai_photos_bak.json(LearnShell.writeFile,无壳静默跳过),超2MB拆pai_photos_bak_1of2/2of2.json两块各写各(病根档案①JS桥截断教训),写完清脏,设置页加「💾立即备份照片到文件夹」手动+toast报件数 */ /* v0.7.0 2026-09-11 D11三套标识并一套·pai侧只知情不合并(洪老师拍板统一记号hx_gj_curpt):毛病=拍病历匿名代号(如Rmttsw119735)跟大管家当前病人记号localStorage hx_gj_curpt(如"16黄热射病")互不认,不知道谁是谁;病根=D11三套标识并一套。改法=①开门读hx_gj_curpt,有值就在首页顶/拍照页顶加一行小字「大管家当前病人：XX」,纯显示不自动绑定不动代号体系;②收新病人建档/选病人定当前代号后,hx_gj_curpt有值且本代号还没关联过时,把「代号→hx_gj_curpt病人名」记进localStorage新键hx_pai_ptmap_v1(对象:代号→病人名),已有关联不覆盖;③当前代号在hx_pai_ptmap_v1有对应且与hx_gj_curpt不一致时,拍照页提示行显示「本代号对应：XX／大管家当前：YY」两行小字让用户知情。不做自动改名、不做自动合并,代号体系一行未动 */ /* v0.6.0 2026-09-10 接入hx-common.js:三级加载+HX.sj.init+HX.gh.putFile/getFile+HX.keys+HX.bill,xt_gh_*一次性搬家hx_gh_*旧键保留,HX缺失主功能照常只降级提示 */ /* v0.5.0 2026-09-10 首屏鱼骨头化:病人卡墙→名单行(点行=拍照流,库入口收小字行),「＋收新病人」大按钮→文字行开合原表单,顶栏队列/⚙️→文字行;只改输出HTML+CSS,数据流/变量名/存储键名不动 */ /* 速记自动上行 v0.4.8 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* 速记 v0.4.7 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */; /* v0.4.6 大管家回程票：从病人大管家点过来（?from=guanjia）亮顶条「← 返回大管家」一键回家；不带参数打开零影响 */;
 const $=id=>document.getElementById(id);
 const esc=s=>s; // 一律textContent渲染
 function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',2200);}
@@ -964,18 +965,24 @@ async function callVisionSmart(ph){
 }
 async function runQueue(){
   if(S.qRunning)return;S.qRunning=true;
+  // v0.11.0 安心条：识别队列是本件重活，开头begin/每张upd/出错fail/全完done
+  const qTot=S.photos.filter(x=>x.status==='queued').length;let qIdx=0,qFail=0;
+  if(window.HX&&HX.step){ try{ HX.step.begin('PAI.ocr.run','开始识别队列',qTot); }catch(e){} }
   try{
     let ph;
     while((ph=S.photos.find(x=>x.status==='queued'))){
       ph.status='doing';if($('vQueue').classList.contains('on'))renderQueue();
+      qIdx++;if(window.HX&&HX.step){ try{ HX.step.upd('PAI.ocr.recog','正在识别病历照片',qIdx,qTot); }catch(e){} } // v0.11.0
       try{ph.text=await callVisionSmart(ph); // v0.4.4 记账进了smart(横图两趟记两笔)
         ph.status='done';
         if(ph.hasArch)ph.data=null; // v0.2.0 识别完成且idb已存档:内存丢原始大图防内存爆(重试的fail不丢)
       }
-      catch(e){ph.status='fail';ph.err=String(e.message||e);}
+      catch(e){ph.status='fail';ph.err=String(e.message||e);qFail++;if(window.HX&&HX.step){ try{ HX.step.fail('这张没认出：'+ph.err.slice(0,30)); }catch(e2){} }} // v0.11.0 安心条fail定格
       if($('vQueue').classList.contains('on'))renderQueue();
     }
-  }finally{S.qRunning=false;}
+  }finally{S.qRunning=false;
+    if(window.HX&&HX.step){ try{ if(!qFail)HX.step.done('识别完了'); }catch(e){} } // v0.11.0 有失败留红条定格等拍照
+  }
 }
 $('btnQ').addEventListener('click',openQueue);
 document.querySelectorAll('.qBack').forEach(b=>b.addEventListener('click',()=>{show('vHome');renderHome();}));
@@ -1280,6 +1287,7 @@ async function paiPhotosBackup(manual){
   try{
     if(!manual&&localStorage.getItem('pai_photos_dirty')!=='1')return; // 不脏不备
     if(!(window.LearnShell&&LearnShell.writeFile)){if(manual)toast('没在手机壳里，写不了文件夹');return;} // 无壳静默跳过,手动点提示一句
+    if(window.HX&&HX.step){ try{ HX.step.begin('PAI.photobak','正在备份照片到文件夹'); }catch(e){} } // v0.11.0 安心条：大文件读写重活
     const rows=await IDB.all();
     if(!rows){if(manual)toast('读本机照片库失败');return;}
     const ps=patients(),es=entries();
@@ -1297,8 +1305,9 @@ async function paiPhotosBackup(manual){
     }
     let n=0;for(const f of files){LearnShell.writeFile(f[0],JSON.stringify(f[1]));n+=f[1].length;}
     localStorage.removeItem('pai_photos_dirty');
+    if(window.HX&&HX.step){ try{ HX.step.done('照片备份好了'); }catch(e){} } // v0.11.0 安心条done
     if(manual)toast('已备份照片'+n+'件到文件夹（'+files.length+'个文件）');
-  }catch(e){if(manual)toast('备份失败:'+(e.message||e));}
+  }catch(e){if(window.HX&&HX.step){ try{ HX.step.fail('照片备份没成'); }catch(e2){} }if(manual)toast('备份失败:'+(e.message||e));} // v0.11.0 安心条fail定格
 }
 /* 备份包:只有代号+内容,无真名。照片只在本机IndexedDB('pai-db'),不随备份走,换机需重拍/重传 */
 function buildBackup(){
@@ -1532,6 +1541,7 @@ $('btnFry').addEventListener('click',async()=>{
   const pl=buildCookPayload();
   if(!cookPickEntries().length&&!isCourseRecipe(pl.recipeId)){toast('选不到菜：库里这个范围没有条目');return;}
   $('fryMsg').textContent='炒菜中…';$('btnFry').disabled=true;
+  if(window.HX&&HX.step){ try{ HX.step.begin('PAI.fry.cook','正在炒菜：AI分析病历'); }catch(e){} } // v0.11.0 安心条：AI长活
   try{
     const sys=guardOut(pl.sys),user=guardOut(pl.user); // 看门人:出门换代号
     const t0=Date.now();
@@ -1540,7 +1550,8 @@ $('btnFry').addEventListener('click',async()=>{
     // 自动存档:类别AI分析,记菜谱名
     const es=entries();es.push({id:'e'+Date.now(),pid:S.cookPid,cat:'AI分析',time:Date.now(),text:out,recipe:pl.recipeName});saveEntries(es);
     showResult(out,pl,t0);
-  }catch(e){$('fryMsg').textContent='炒糊了:'+(e.message||e);}
+    if(window.HX&&HX.step){ try{ HX.step.done('菜出锅了'); }catch(e){} } // v0.11.0 安心条done
+  }catch(e){if(window.HX&&HX.step){ try{ HX.step.fail('炒糊了，拍照发AI'); }catch(e2){} }$('fryMsg').textContent='炒糊了:'+(e.message||e);} // v0.11.0 安心条fail定格
   finally{$('fryMsg').textContent=$('fryMsg').textContent==='炒菜中…'?'':$('fryMsg').textContent;$('btnFry').disabled=false;}
 });
 function showResult(out,pl,t0){
@@ -1651,6 +1662,7 @@ function hxCommonInstall(good, miss){
 /* v0.6.0 接上公共件：速记改 HX.sj.init（页面已无内嵌snippet，UI由HX自动注入）；
    missing只降级提示，不弹窗不卡屏，主功能照常 */
 hxCommonLoad(function(){
+  if(window.HX&&HX.step){ try{ HX.step.begin('PAI.open.hx','正在开门：公共件装好了'); }catch(e){} } /* v0.11.0 安心条：开门关键步 */
   try{ HX.sj.init({app:'拍病历'}); }catch(e){}
   /* v0.10.0 开门:HX.relay.init挂状态条+开送(单体),壳内照调队列恒空显示🟢无害 */
   try{ if(window.HX&&HX.relay&&HX.relay.init) HX.relay.init('拍病历'); }catch(e){}
@@ -1661,8 +1673,10 @@ hxCommonLoad(function(){
         /* v0.10.0 壳内开门闲时:中转拉回+坚果云救命腿(只补缺失不盖已有),都在sync前 */
         try{ if(window.HX&&HX.relay&&HX.relay.pull) HX.relay.pull(); }catch(e){}
         try{ if(window.HX&&HX.dav&&HX.dav.rescue) HX.dav.rescue(['pai_patients','pai_entries','hx_pai_ptmap_v1']); }catch(e){}
+        if(window.HX&&HX.step){ try{ HX.step.upd('PAI.open.sync','正在对账：病历库'); }catch(e){} } /* v0.11.0 安心条：开门对账 */
         try{
           HX.store.sync(['pai_patients','pai_entries','hx_pai_ptmap_v1'],function(cl){
+            if(window.HX&&HX.step){ try{ HX.step.done('开门好了'); }catch(e){} } /* v0.11.0 安心条：开门结束 */
             try{
               if(cl&&cl.length){var el=document.getElementById('syncConflictHint');if(el){el.textContent='对账发现'+cl.length+'处两头都改过：新的已用上，旧的已留档';el.style.display='';}}
               if(window.__pj&&__pj.renderHome)__pj.renderHome();
