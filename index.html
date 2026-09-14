@@ -2,6 +2,8 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.18.1 2026-09-14 纯CUR同步：大管家v0.31.1（#83 AI面板清单恒空根治，init包setTimeout让出同步栈）；
+      顺手补齐班②全家8件CUR落伍（xiti1.16.0/bridge1.7.0/xueqi0.21.0/ppt0.20.0/xiaotao0.11.0/pai0.11.0），其余一行未动。
     v1.18.0 2026-09-14 安心条HX.step接入（洪老师2026-09-14拍板：开门/重活两行小字定格可拍照定位）：
       只加埋点一行不动：①手动查版本全流程（begin于起步/upd每件查完/done于finish，管家路径收尾同done）；
       ②🔄同步syncShared（begin/第3步逐件upd/完成done/总catch里fail）；③📤备份到坚果云bkDavGo
@@ -415,7 +417,7 @@
 
 </main>
 
-<footer>红小涛的学习园地 · 主界面 v1.18.0 · 由 Kimi 协助维护</footer>  <!-- v1.8.0 页脚亮版本号：真机验收一眼看清自己是不是新版 -->
+<footer>红小涛的学习园地 · 主界面 v1.18.1 · 由 Kimi 协助维护</footer>  <!-- v1.8.0 页脚亮版本号：真机验收一眼看清自己是不是新版 -->
 
 <script>
 /* ==================== v1.12.0 hx-common.js 三级加载（plan2军规1/2，照 guanjia-pdf-engine.js 已验证先例） ====================
@@ -463,8 +465,8 @@ hxCommonLoad(function(){
 <script>
 /* ==================== 套装主界面自检器官（v1.1.0） ==================== */
 /* 本界面对应的四个软件当前内装版本（每次发版跟着改） */
-var CUR = { notes:"2.18.1", xiti:"1.15.0", bridge:"1.6.0", xueqi:"0.20.1", ppt:"0.19.0", xiaotao:"0.10.2", guanjia:"0.30.4", pai:"0.10.0", index:"1.18.0" /* v1.17.0 管家干活看得见（#89：管家进度账本面板，配壳v1.7.4）；CUR全量对齐云端现行（guanjia0.30.5原文销毁不愣住#90配壳v1.7.4） */ };
-CUR.guanjia="0.30.5"; /* v1.17.0 同步：大管家v0.30.5（#90） */
+var CUR = { notes:"2.18.1", xiti:"1.16.0", bridge:"1.7.0", xueqi:"0.21.0", ppt:"0.20.0", xiaotao:"0.11.0", guanjia:"0.31.1", pai:"0.11.0", index:"1.18.1" /* v1.18.1 纯CUR同步：大管家v0.31.1（#83 AI面板清单恒空根治）；顺手把班②全家8件CUR落伍补齐（xiti1.16.0/bridge1.7.0/xueqi0.21.0/ppt0.20.0/xiaotao0.11.0/pai0.11.0，CUR落伍老毛病再抓一回） */ };
+CUR.guanjia="0.31.1"; /* v1.18.1 同步：大管家v0.31.1（#83） */
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
 try{ var _sv=JSON.parse(localStorage.getItem("hx_suite_ver")||"{}"); Object.keys(_sv).forEach(function(k){ if(_sv[k]) CUR[k]=_sv[k]; }); }catch(e){}
 /* key: [云端软件文件, 壳内文件名, 云端版本文件, 标签id] */
