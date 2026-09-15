@@ -1,5 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    hx-common.js —— 全家9件软件共用公共件母版
+   v0.12.0 2026-09-15：新增HX.fm手机文件夹逛一逛（Android壳全盘文件桥MANAGE_EXTERNAL_STORAGE六桥契约：fmGranted→"1"/"0"、fmAsk跳权限设置页、fmRoots列内部存储+U盘/SD挂载点、fmList目录在前、fmWalk递归只文件壳限2000、fmRead→base64）——ensure没权限弹引导浮层「去允许」+每秒轮询30秒超时；pick全屏仿电脑资源管理器（面包屑每段可点回跳+搜索框+「含子文件夹」勾默认勾走fmWalk按名过滤平铺、📁目录点进、文件按扩展名出图标txt📄/pdf📕/图🖼/其他📎带大小日期、多选「✅收N份」/单选点中即定/挑文件夹可选当前或点进子目录再选；✕/取消=cb(null)）；read封装fmRead→Promise(base64)；无壳/老壳桥不存在一律静默降级不报错；其余一行未动
    v0.11.1 2026-09-14：速记📷附图两步走（#94：选图不再立刻记行关面板，挂图行可续写说明，点「记下」图随话进流水；回执写明图存壳里+联网传坚果云/速记图/，传成行尾标☁；✕可撤销）；其余一行未动
    v0.10.0 2026-09-14：安心条HX.step（顶部细进度条+两行小字，愣住定格可拍照定位，洪老师拍板全家统一）+速记📷附图（📷图钮→压图宽≤1280存壳文件夹sjimg_*+行尾挂图+坚果云/学习套装数据/速记图/排队上传）；其余一行未动
    v0.7.0 2026-09-12：HX.dav全异步化（根治#75/#77 dav同步联网卡死主线程）——davCall走壳v1.6.0 davAsync后台桥+回调，
@@ -20,6 +21,7 @@
      HX.store   仓管员：一套门存取（has/get/set/remove/sync/conflicts），壳内文件夹hxdata_<key>.json真源+localStorage缓存，时间定新旧、双动冲突留档（地基工程一期）
      HX.relay   中转邮路：单体备份走GitHub私有仓transit/（永远重试+退避+回读核对才销号+大白话状态条），壳内pull拉回销号
      HX.dav     坚果云腿：壳内铁仓库（ok/mirror闲时镜像/rescue救命腿只补缺失不盖已有；dv.upFile(fileName,remoteDir)：公开单件上传（速记附图用））
+     HX.fm      手机文件夹逛一逛（v0.12.0：ok/has/ensure权限引导/pick全屏仿资源管理器挑文件挑文件夹/read读文件base64；无壳静默降级）
 
    接入说明（各软件照抄下面这段，三级查找照 guanjia-pdf-engine.js 已验证先例）：
      ① LearnShell.readFile('hx-common.js') 读壳授权文件夹（file://下fetch常被拦，readFile可靠）
@@ -33,7 +35,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 (function(){
   'use strict';
-  var HX_COMMON_VERSION = '0.11.1'; /* v0.11.1 2026-09-14：速记📷附图改两步走（挂号#94，洪老师真机验收报「选完图浮窗被关掉没法输说明、图跑哪去不知道」，拍板A+B都做）——①选图不再立刻记行/关面板：压图存壳后面板挂一行「🖼已挂图 sjimg_xxx.jpg（✕可撤销）」，可继续打字补说明，点「记下」图和话一起进流水（save原逻辑未动，只认sjPendImg）；②回执明白话：记下提示图存手机壳文件名+联网传坚果云/学习套装数据/速记图/，上传成功流水行图名后补☁（sjImgUpload出队时回写）；✕撤销=清挂图+出队+删壳文件；其余一行未动 */ /* v0.11.0 2026-09-14：AI面板第2级提示词可改可存（挂号#79，洪老师拍板"不搞三级菜单，就两级，点进去就是几套预设提示词，可改可储存"）——条目带prompts时，第2级点某套进编辑页（全文可改+▶用这套发送+💾存为默认+↩恢复出厂）；改过的存覆盖账本hx_aiprompt_v1.<app>（出厂原文一个字不动，恢复出厂=删覆盖）；宿主函数发送前一句HX.ai.pget(id,idx)查覆盖（乙路，不改送不进去）；条目可带pget/pset/preset钩子接管存储（如大管家问AI接管它自己的hx_gj_askai_v1老账本）；新增HX.ai.pget公开口；其余一行未动 /* v0.10.0 2026-09-14：安心条HX.step（顶部细进度条+两行小字，愣住定格定位，洪老师拍板全家统一）+速记📷附图（压图存壳文件夹sjimg_*+行尾挂图+坚果云/学习套装数据/速记图/上传排队）；其余一行未动 /* v0.9.1 2026-09-14：HX.store.sync批量抱回（壳v1.7.3 readFiles桥）——多件对账一次JNI全读回，免逐件SAF往返卡主线程（洪老师真机报"点大管家变蓝后定住"，病根=5本账本连环读各约2秒）；旧壳无readFiles自动回落逐件读，逻辑一字未改 /* v0.9.0 2026-09-13：常驻通信管家双通道（洪老师拍板一次做完）——新增HX.mg投信层（壳v1.7.0管家在则GitHub联网写信mg_out_给后台服务代发+回信mg_in_轮询取，网页线程不碰网络；管家不在自动走老fetch，全家零改动）+HX.big大件异步编解码（TextEncoder/Decoder分块让气，无则回落老同步）；改道点=gh.fetch一个收口；_autoNetOk闸门规矩不变 /* v0.8.0 2026-09-13：开门静默令（洪老师拍板：开门不许自动同步/不许自动查版本，点了才做）——全家自动联网（dav rescue/mirror、relay闲时送与pull、selfUp、selfCheck、速记开门补推）统一过HX._autoNetOk闸门：默认全关，3秒内真有点击（=点了按钮）或localStorage hx_auto_net=1才放行；新增HX.syncNow()一件全手动补做；本地存取（HX.store/localStorage/壳文件）不联网不受影响；其余一行未动 /* v0.7.0 2026-09-12：HX.dav全异步化（根治#75/#77同步联网卡死主线程）——走壳v1.6.0新davAsync后台桥+HX._davCb回调，ts对账逻辑一行未改；旧壳没davAsync一律静默跳过绝不回退同步老路，壳升级后自动恢复 */ /* v0.6.0 2026-09-12 地基二期：HX.dav的rescue升级为ts对账（云端新超5秒留档_冲突_后盖回/本地新或相等顺手davUp追平/云端缺顺手davUp补齐） */ /* v0.5.0 2026-09-12：新增中转邮路HX.relay+坚果云腿HX.dav */ /* v0.4.0 2026-09-12：新增仓管员HX.store，地基工程一期规矩A/B落地 */ /* v0.3.0 2026-09-11：部件自升级HX.selfUp（病根：壳里旧版公共件永远不升级→AI面板等新功能装了也白装；开门闲时20秒比对云端version-hx-common.json，旧了静默下载写回授权文件夹，下次开门用新的，全程不弹窗） */ /* v0.2.0 2026-09-11：新增HX.ai统一AI面板（两层结构+定位置顶+AI功能生成器，洪老师2026-09-11拍板方法论落地试点）；HX.sj面板加「🤖AI」入口钮；其余一行未动 */ /* v0.1.1 2026-09-10：HX.sj.init 加可选 extraBtn（大管家#43「补充上一条」补回，洪老师点名功能）；不传仍是2钮版，默认行为不变 */
+  var HX_COMMON_VERSION = '0.12.0'; /* v0.12.0 2026-09-15：新增HX.fm手机文件夹逛一逛（壳全盘文件桥六桥+ensure权限引导浮层+pick全屏仿资源管理器+read封装Promise）；其余一行未动 */ /* v0.11.1 2026-09-14：速记📷附图改两步走（挂号#94，洪老师真机验收报「选完图浮窗被关掉没法输说明、图跑哪去不知道」，拍板A+B都做）——①选图不再立刻记行/关面板：压图存壳后面板挂一行「🖼已挂图 sjimg_xxx.jpg（✕可撤销）」，可继续打字补说明，点「记下」图和话一起进流水（save原逻辑未动，只认sjPendImg）；②回执明白话：记下提示图存手机壳文件名+联网传坚果云/学习套装数据/速记图/，上传成功流水行图名后补☁（sjImgUpload出队时回写）；✕撤销=清挂图+出队+删壳文件；其余一行未动 */ /* v0.11.0 2026-09-14：AI面板第2级提示词可改可存（挂号#79，洪老师拍板"不搞三级菜单，就两级，点进去就是几套预设提示词，可改可储存"）——条目带prompts时，第2级点某套进编辑页（全文可改+▶用这套发送+💾存为默认+↩恢复出厂）；改过的存覆盖账本hx_aiprompt_v1.<app>（出厂原文一个字不动，恢复出厂=删覆盖）；宿主函数发送前一句HX.ai.pget(id,idx)查覆盖（乙路，不改送不进去）；条目可带pget/pset/preset钩子接管存储（如大管家问AI接管它自己的hx_gj_askai_v1老账本）；新增HX.ai.pget公开口；其余一行未动 /* v0.10.0 2026-09-14：安心条HX.step（顶部细进度条+两行小字，愣住定格定位，洪老师拍板全家统一）+速记📷附图（压图存壳文件夹sjimg_*+行尾挂图+坚果云/学习套装数据/速记图/上传排队）；其余一行未动 /* v0.9.1 2026-09-14：HX.store.sync批量抱回（壳v1.7.3 readFiles桥）——多件对账一次JNI全读回，免逐件SAF往返卡主线程（洪老师真机报"点大管家变蓝后定住"，病根=5本账本连环读各约2秒）；旧壳无readFiles自动回落逐件读，逻辑一字未改 /* v0.9.0 2026-09-13：常驻通信管家双通道（洪老师拍板一次做完）——新增HX.mg投信层（壳v1.7.0管家在则GitHub联网写信mg_out_给后台服务代发+回信mg_in_轮询取，网页线程不碰网络；管家不在自动走老fetch，全家零改动）+HX.big大件异步编解码（TextEncoder/Decoder分块让气，无则回落老同步）；改道点=gh.fetch一个收口；_autoNetOk闸门规矩不变 /* v0.8.0 2026-09-13：开门静默令（洪老师拍板：开门不许自动同步/不许自动查版本，点了才做）——全家自动联网（dav rescue/mirror、relay闲时送与pull、selfUp、selfCheck、速记开门补推）统一过HX._autoNetOk闸门：默认全关，3秒内真有点击（=点了按钮）或localStorage hx_auto_net=1才放行；新增HX.syncNow()一件全手动补做；本地存取（HX.store/localStorage/壳文件）不联网不受影响；其余一行未动 /* v0.7.0 2026-09-12：HX.dav全异步化（根治#75/#77同步联网卡死主线程）——走壳v1.6.0新davAsync后台桥+HX._davCb回调，ts对账逻辑一行未改；旧壳没davAsync一律静默跳过绝不回退同步老路，壳升级后自动恢复 */ /* v0.6.0 2026-09-12 地基二期：HX.dav的rescue升级为ts对账（云端新超5秒留档_冲突_后盖回/本地新或相等顺手davUp追平/云端缺顺手davUp补齐） */ /* v0.5.0 2026-09-12：新增中转邮路HX.relay+坚果云腿HX.dav */ /* v0.4.0 2026-09-12：新增仓管员HX.store，地基工程一期规矩A/B落地 */ /* v0.3.0 2026-09-11：部件自升级HX.selfUp（病根：壳里旧版公共件永远不升级→AI面板等新功能装了也白装；开门闲时20秒比对云端version-hx-common.json，旧了静默下载写回授权文件夹，下次开门用新的，全程不弹窗） */ /* v0.2.0 2026-09-11：新增HX.ai统一AI面板（两层结构+定位置顶+AI功能生成器，洪老师2026-09-11拍板方法论落地试点）；HX.sj面板加「🤖AI」入口钮；其余一行未动 */ /* v0.1.1 2026-09-10：HX.sj.init 加可选 extraBtn（大管家#43「补充上一条」补回，洪老师点名功能）；不传仍是2钮版，默认行为不变 */
   if(window.HX && window.HX.HX_COMMON_VERSION){ return; } /* 已装过不重复装 */
   var HX = { HX_COMMON_VERSION: HX_COMMON_VERSION, ok: true };
   function warn(m){ try{ if(window.console && console.warn) console.warn('[hx-common] '+m); }catch(e){} }
@@ -1572,6 +1574,254 @@
     /* hide() 立刻隐藏 */
     st.hide = function(){ try{ clearDoneTimers(); var b=$('hxStepBar'); if(b) b.style.display='none'; }catch(e){} };
     return st;
+  })();
+
+  /* ════ 5.96 手机文件夹逛一逛 HX.fm（v0.12.0 新增；Android壳全盘文件桥，MANAGE_EXTERNAL_STORAGE权限） ════
+     壳桥契约（定死）：fmGranted()→"1"/"0"；fmAsk()跳权限设置页；fmRoots()→JSON[{name,path}]（内部存储+U盘/SD挂载点）；
+     fmList(path)→JSON[{name,path,dir,size,t}]（目录在前）；fmWalk(path)→JSON[{name,path,size,t}]（递归只文件，壳侧限2000条）；fmRead(path)→base64。
+     无壳/老壳：桥方法不存在，has()=false、ok()=false，ensure/pick静默cb(false/null)，绝不报错（军规1）。 */
+  HX.fm = (function(){
+    var fm = {};
+    function $f(id){ return document.getElementById(id); }
+    function escH(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    /* v0.12.0（2026-09-15）：桥方法在不在（不管权限给没给） */
+    fm.has = function(){
+      try{ var L=window.LearnShell; return !!(L && L.fmGranted && L.fmAsk && L.fmRoots && L.fmList && L.fmWalk && L.fmRead); }catch(e){ return false; }
+    };
+    /* v0.12.0（2026-09-15）：全盘权限给没给（壳返回字符串"1"才算给） */
+    fm.ok = function(){
+      try{ var L=window.LearnShell; return !!(L && L.fmGranted && L.fmGranted()==='1'); }catch(e){ return false; }
+    };
+    function fmJson(str, def){ try{ var a=JSON.parse(String(str==null?'':str)); return a||def; }catch(e){ return def; } }
+    function fmtSize(n){
+      n=(+n)||0;
+      if(n<1024) return n+'B';
+      if(n<1048576) return (n/1024).toFixed(1)+'K';
+      if(n<1073741824) return (n/1048576).toFixed(1)+'M';
+      return (n/1073741824).toFixed(1)+'G';
+    }
+    function fmtDate(t){
+      try{
+        t=(+t)||0; if(t<=0) return '';
+        if(t<1e12) t=t*1000; /* 秒级时间戳补成毫秒 */
+        var d=new Date(t); function p2(x){ return (x<10?'0':'')+x; }
+        return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());
+      }catch(e){ return ''; }
+    }
+    /* v0.12.0（2026-09-15）：按扩展名出图标：txt/md📄、pdf📕、图🖼、其他📎 */
+    function fmIcon(name){
+      var ext='';
+      try{ var i=String(name||'').lastIndexOf('.'); if(i>=0) ext=String(name).slice(i+1).toLowerCase(); }catch(e){}
+      if(ext==='txt'||ext==='md'||ext==='log') return '📄';
+      if(ext==='pdf') return '📕';
+      if(ext==='jpg'||ext==='jpeg'||ext==='png'||ext==='gif'||ext==='webp'||ext==='bmp') return '🖼';
+      return '📎';
+    }
+    /* v0.12.0（2026-09-15）：共用全屏罩+白底圆角卡（照现有面板风格，不引新色） */
+    function fmOverlay(inner){
+      var ov=document.createElement('div');
+      ov.style.cssText='position:fixed;left:0;top:0;right:0;bottom:0;z-index:100000;background:rgba(60,50,40,.35);display:flex;align-items:center;justify-content:center;';
+      var box=document.createElement('div');
+      box.style.cssText='position:relative;background:#fffdf8;border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.18);width:100%;max-width:640px;height:100%;max-height:94%;margin:8px;display:flex;flex-direction:column;overflow:hidden;color:#6b6257;font-size:15px;';
+      box.innerHTML=inner;
+      ov.appendChild(box);
+      document.body.appendChild(ov);
+      return { ov:ov, box:box };
+    }
+    function rmNode(n){ try{ if(n && n.parentNode) n.parentNode.removeChild(n); }catch(e){} }
+    /* v0.12.0（2026-09-15）：ensure(cb)：已给权限→cb(true)；有桥没给→弹引导浮层「去允许」调fmAsk()+每秒轮询fmGranted()变"1"即cb(true)，30秒超时cb(false)；无桥cb(false) */
+    fm.ensure = function(cb){
+      cb = (typeof cb==='function') ? cb : function(){};
+      try{ if(fm.ok()){ cb(true); return; } }catch(e){}
+      if(!fm.has()){ try{ cb(false); }catch(e){} return; }
+      try{
+        var done=false, waited=0, timer=null;
+        var ui=fmOverlay(
+          '<div id="hxFmAskX" style="position:absolute;right:8px;top:6px;font-size:20px;color:#8b8272;cursor:pointer;padding:4px 10px;">✕</div>'+
+          '<div style="padding:34px 22px 24px;text-align:center;">'+
+          '<div style="font-size:26px;margin-bottom:10px;">📂</div>'+
+          '<div style="font-size:17px;margin-bottom:8px;">要逛手机文件夹，请点一下允许</div>'+
+          '<div style="font-size:13px;color:#8b8272;margin-bottom:18px;">点下面的钮跳到手机设置页，点上「允许」再回来就行</div>'+
+          '<button id="hxFmAskGo" type="button" style="background:#7a9e7e;color:#fff;border:none;border-radius:8px;padding:11px 30px;font-size:15px;cursor:pointer;">去允许</button>'+
+          '<div id="hxFmAskWait" style="font-size:12px;color:#8b8272;margin-top:14px;display:none;">正看着呢，允许了就自动接着走…</div>'+
+          '</div>');
+        function fin(v){
+          if(done) return; done=true;
+          try{ if(timer!=null) clearInterval(timer); }catch(e){}
+          rmNode(ui.ov);
+          try{ cb(v); }catch(e){}
+        }
+        $f('hxFmAskX').addEventListener('click', function(){ fin(false); });
+        $f('hxFmAskGo').addEventListener('click', function(){
+          try{ window.LearnShell.fmAsk(); }catch(e){}
+          try{ $f('hxFmAskWait').style.display='block'; }catch(e){}
+        });
+        timer=setInterval(function(){
+          try{
+            waited++;
+            if(fm.ok()){ fin(true); return; }
+            if(waited>=30) fin(false); /* 30秒没动静算放弃 */
+          }catch(e){}
+        }, 1000);
+      }catch(e){ warn('fm ensure: '+((e&&e.message)||e)); try{ cb(false); }catch(e2){} }
+    };
+    /* v0.12.0（2026-09-15）：pick(opt,cb) 全屏浮层仿电脑资源管理器挑文件/挑文件夹
+       opt={multi:true/false, mode:'files'/'folder', walk:true/false, title}
+       cb：files模式=[{name,path,size,t}]或null；folder模式=path字符串或null；✕/取消=null */
+    fm.pick = function(opt, cb){
+      opt=opt||{}; cb=(typeof cb==='function')?cb:function(){};
+      if(!fm.ok()){ try{ cb(null); }catch(e){} return; } /* 没权限请宿主先走ensure */
+      try{ pickRun(opt, cb); }catch(e){ warn('fm pick: '+((e&&e.message)||e)); try{ cb(null); }catch(e2){} }
+    };
+    function pickRun(opt, cb){
+      var multi=!!opt.multi;
+      var mode=(opt.mode==='folder')?'folder':'files';
+      var st={ cur:null, sel:{}, selN:0, done:false, deb:null }; /* cur=null=根列表屏 */
+      var title=String(opt.title||(mode==='folder'?'挑个文件夹':'挑文件'));
+      var walkDef=(opt.walk!==false); /* walk默认勾 */
+      var ui=fmOverlay(
+        '<div style="display:flex;align-items:center;padding:10px 12px 6px;border-bottom:1px solid #e8e0d2;">'+
+        '<div style="flex:1;font-size:16px;">'+escH(title)+'</div>'+
+        '<div id="hxFmX" style="font-size:20px;color:#8b8272;cursor:pointer;padding:2px 8px;">✕</div></div>'+
+        '<div id="hxFmCrumb" style="padding:6px 12px;font-size:13px;color:#7a9e7e;border-bottom:1px solid #e8e0d2;word-break:break-all;"></div>'+
+        '<div style="display:flex;align-items:center;padding:8px 12px;border-bottom:1px solid #e8e0d2;">'+
+        '<input id="hxFmKw" type="text" placeholder="🔍 搜名字…" style="flex:1;border:1px solid #ddd2ba;border-radius:8px;padding:7px 10px;font-size:14px;color:#6b6257;background:#fff;outline:none;"/>'+
+        '<label style="margin-left:10px;font-size:13px;color:#8b8272;white-space:nowrap;"><input id="hxFmWalk" type="checkbox" style="vertical-align:-2px;"/> 含子文件夹</label></div>'+
+        '<div id="hxFmList" style="flex:1;overflow:auto;padding:4px 0;"></div>'+
+        '<div style="display:flex;align-items:center;padding:10px 12px;border-top:1px solid #e8e0d2;">'+
+        '<div id="hxFmInfo" style="flex:1;font-size:13px;color:#8b8272;"></div>'+
+        (mode==='folder'
+          ? '<button id="hxFmOk" type="button" style="background:#7a9e7e;color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:14px;margin-right:8px;cursor:pointer;">✅就选这个文件夹</button>'
+          : (multi
+            ? '<button id="hxFmOk" type="button" style="background:#7a9e7e;color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:14px;margin-right:8px;cursor:pointer;">✅收0份</button>'
+            : ''))+
+        '<button id="hxFmCancel" type="button" style="background:#fff;color:#6b6257;border:1px solid #ddd2ba;border-radius:8px;padding:9px 16px;font-size:14px;cursor:pointer;">取消</button></div>');
+      var wk=$f('hxFmWalk'); if(wk) wk.checked=walkDef;
+      function fin(v){
+        if(st.done) return; st.done=true;
+        try{ if(st.deb) clearTimeout(st.deb); }catch(e){}
+        rmNode(ui.ov);
+        try{ cb(v); }catch(e){}
+      }
+      function kw(){ try{ var i=$f('hxFmKw'); return trim(i?i.value:''); }catch(e){ return ''; } }
+      function walkOn(){ try{ var w=$f('hxFmWalk'); return !!(w&&w.checked); }catch(e){ return false; } }
+      function refreshInfo(){
+        try{
+          var info=$f('hxFmInfo'); if(info) info.textContent = (mode==='files'&&multi) ? ('已勾 '+st.selN+' 份') : '';
+          if(mode==='files'&&multi){ var ok=$f('hxFmOk'); if(ok) ok.textContent='✅收'+st.selN+'份'; }
+          if(mode==='folder'){ var ok2=$f('hxFmOk'); if(ok2) ok2.style.opacity = st.cur ? '1' : '.5'; }
+        }catch(e){}
+      }
+      /* v0.12.0（2026-09-15）：面包屑每段可点回跳；🏠手机=回根列表 */
+      function renderCrumb(){
+        var c=$f('hxFmCrumb'); if(!c) return;
+        var html='<span data-hxfmp="__ROOT__" style="cursor:pointer;">🏠 手机</span>';
+        if(st.cur){
+          var segs=String(st.cur).split('/'), path='', i;
+          for(i=0;i<segs.length;i++){
+            if(segs[i]==='') continue;
+            path+='/'+segs[i];
+            html+=' <span style="color:#b3a892;">›</span> <span data-hxfmp="'+escH(path)+'" style="cursor:pointer;">'+escH(segs[i])+'</span>';
+          }
+        }
+        c.innerHTML=html;
+        Array.prototype.forEach.call(c.querySelectorAll('[data-hxfmp]'), function(el){
+          el.addEventListener('click', function(){
+            var p=el.getAttribute('data-hxfmp');
+            st.cur=(p==='__ROOT__')?null:p;
+            var k=$f('hxFmKw'); if(k) k.value='';
+            loadList();
+          });
+        });
+      }
+      /* v0.12.0（2026-09-15）：取数——根=fmRoots；搜索框有字+walk勾=fmWalk(当前目录)按名字过滤平铺；否则fmList目录在前 */
+      function fetchRows(){
+        var L=window.LearnShell, k=kw(), rows=[], i;
+        if(st.cur==null){
+          var roots=fmJson(L.fmRoots(), []);
+          for(i=0;i<roots.length;i++){ if(roots[i]&&roots[i].path) rows.push({name:String(roots[i].name||roots[i].path), path:String(roots[i].path), dir:true, size:0, t:0}); }
+          return rows;
+        }
+        if(k!=='' && walkOn()){
+          var all=fmJson(L.fmWalk(st.cur), []);
+          var kl=k.toLowerCase();
+          for(i=0;i<all.length;i++){
+            var f=all[i]; if(!f||!f.path) continue;
+            if(String(f.name||'').toLowerCase().indexOf(kl)>=0) rows.push({name:String(f.name||''), path:String(f.path), dir:false, size:(+f.size)||0, t:(+f.t)||0});
+          }
+          return rows;
+        }
+        var ls=fmJson(L.fmList(st.cur), []), dirs=[], files=[];
+        for(i=0;i<ls.length;i++){
+          var it=ls[i]; if(!it||!it.path) continue;
+          var row={name:String(it.name||''), path:String(it.path), dir:!!it.dir, size:(+it.size)||0, t:(+it.t)||0};
+          if(k!=='' && row.name.toLowerCase().indexOf(k.toLowerCase())<0) continue;
+          if(row.dir) dirs.push(row); else files.push(row);
+        }
+        return dirs.concat(files);
+      }
+      function loadList(){
+        try{
+          renderCrumb();
+          var box=$f('hxFmList'); if(!box) return;
+          var rows=[];
+          try{ rows=fetchRows(); }catch(e){ warn('fm 取目录: '+((e&&e.message)||e)); }
+          var html='', i;
+          if(st.cur==null && !rows.length) html='<div style="padding:24px;text-align:center;color:#8b8272;font-size:13px;">没摸到存储位置</div>';
+          else if(!rows.length) html='<div style="padding:24px;text-align:center;color:#8b8272;font-size:13px;">这里是空的</div>';
+          for(i=0;i<rows.length;i++){
+            var r=rows[i], on=!!st.sel[r.path];
+            html+='<div data-hxfmi="'+i+'" style="display:flex;align-items:center;padding:9px 12px;cursor:pointer;border-bottom:1px solid #f3ecdf;'+(on?'background:#eef4ee;':'')+'">'+
+              ((mode==='files'&&multi&&!r.dir) ? '<span style="width:22px;font-size:15px;">'+(on?'☑':'☐')+'</span>' : '')+
+              '<span style="font-size:18px;margin-right:8px;">'+(r.dir?'📁':fmIcon(r.name))+'</span>'+
+              '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escH(r.name)+'</span>'+
+              (!r.dir ? '<span style="font-size:12px;color:#8b8272;margin-left:8px;white-space:nowrap;">'+fmtSize(r.size)+' '+fmtDate(r.t)+'</span>' : '<span style="font-size:12px;color:#8b8272;margin-left:8px;">›</span>')+
+              '</div>';
+          }
+          box.innerHTML=html;
+          Array.prototype.forEach.call(box.querySelectorAll('[data-hxfmi]'), function(el){
+            el.addEventListener('click', function(){
+              var idx=parseInt(el.getAttribute('data-hxfmi'),10);
+              var r=rows[idx]; if(!r) return;
+              if(r.dir){ st.cur=r.path; var k=$f('hxFmKw'); if(k) k.value=''; loadList(); return; } /* 📁目录点进入 */
+              if(mode==='folder') return; /* 挑文件夹时文件行只看不点 */
+              if(!multi){ fin([{name:r.name, path:r.path, size:r.size, t:r.t}]); return; } /* 单选点中即定 */
+              if(st.sel[r.path]){ delete st.sel[r.path]; st.selN--; }
+              else { st.sel[r.path]={name:r.name, path:r.path, size:r.size, t:r.t}; st.selN++; }
+              loadList(); refreshInfo();
+            });
+          });
+          refreshInfo();
+        }catch(e){ warn('fm 列表: '+((e&&e.message)||e)); }
+      }
+      $f('hxFmX').addEventListener('click', function(){ fin(null); }); /* 右上角✕=cb(null) */
+      $f('hxFmCancel').addEventListener('click', function(){ fin(null); });
+      var okB=$f('hxFmOk');
+      if(okB) okB.addEventListener('click', function(){
+        if(mode==='folder'){ if(st.cur) fin(String(st.cur)); return; } /* 就选这个文件夹（根列表屏不可点） */
+        if(st.selN>0){ var a=[]; for(var p in st.sel){ if(Object.prototype.hasOwnProperty.call(st.sel,p)) a.push(st.sel[p]); } fin(a); }
+      });
+      var kwI=$f('hxFmKw');
+      if(kwI) kwI.addEventListener('input', function(){
+        try{ if(st.deb) clearTimeout(st.deb); }catch(e){}
+        st.deb=setTimeout(function(){ loadList(); }, 300); /* 打字歇300毫秒再搜，免卡 */
+      });
+      if(wk) wk.addEventListener('change', function(){ loadList(); });
+      loadList();
+    }
+    /* v0.12.0（2026-09-15）：读文件→Promise(base64)；无桥/读不到=reject，宿主自己catch */
+    fm.read = function(path){
+      return new Promise(function(res, rej){
+        try{
+          var L=window.LearnShell;
+          if(!L || !L.fmRead){ rej(new Error('没有文件桥')); return; }
+          var b64=L.fmRead(String(path||''));
+          if(typeof b64!=='string'){ rej(new Error('读不到这个文件')); return; }
+          res(b64);
+        }catch(e){ rej(e); }
+      });
+    };
+    return fm;
   })();
 
   /* ════ 6. 三级加载器现成代码（接入方照抄；军规1：加载失败主功能照常，只静默降级） ════ */
