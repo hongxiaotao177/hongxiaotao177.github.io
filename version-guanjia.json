@@ -1,1 +1,1 @@
-{"version": "0.33.2", "dl": "software-guanjia.html", "note": "#100收病历文件夹修复：换文件夹真选完才算数（对比前后文件夹名）；点收病历先查U盘文件夹在不在/不在自动重选/没记住直接选；搜到N份先人话播报名单；seen账本加文件夹维度防跨文件夹误删（洪老师GO拍板）", "engine": "guanjia-pdf-engine.js"}
+{"version": "0.33.3", "dl": "software-guanjia.html", "note": "#101接入HX.fm资源管理器：收病历/换文件夹可走自家面板逛U盘进子文件夹多选收（原件留U盘不动）；老壳自动回落v0.33.2 SAF路；含v0.33.2 #100修复", "engine": "guanjia-pdf-engine.js"}
