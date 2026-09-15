@@ -35,7 +35,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 (function(){
   'use strict';
-  var HX_COMMON_VERSION = '0.12.0'; /* v0.12.0 2026-09-15：新增HX.fm手机文件夹逛一逛（壳全盘文件桥六桥+ensure权限引导浮层+pick全屏仿资源管理器+read封装Promise）；其余一行未动 */ /* v0.11.1 2026-09-14：速记📷附图改两步走（挂号#94，洪老师真机验收报「选完图浮窗被关掉没法输说明、图跑哪去不知道」，拍板A+B都做）——①选图不再立刻记行/关面板：压图存壳后面板挂一行「🖼已挂图 sjimg_xxx.jpg（✕可撤销）」，可继续打字补说明，点「记下」图和话一起进流水（save原逻辑未动，只认sjPendImg）；②回执明白话：记下提示图存手机壳文件名+联网传坚果云/学习套装数据/速记图/，上传成功流水行图名后补☁（sjImgUpload出队时回写）；✕撤销=清挂图+出队+删壳文件；其余一行未动 */ /* v0.11.0 2026-09-14：AI面板第2级提示词可改可存（挂号#79，洪老师拍板"不搞三级菜单，就两级，点进去就是几套预设提示词，可改可储存"）——条目带prompts时，第2级点某套进编辑页（全文可改+▶用这套发送+💾存为默认+↩恢复出厂）；改过的存覆盖账本hx_aiprompt_v1.<app>（出厂原文一个字不动，恢复出厂=删覆盖）；宿主函数发送前一句HX.ai.pget(id,idx)查覆盖（乙路，不改送不进去）；条目可带pget/pset/preset钩子接管存储（如大管家问AI接管它自己的hx_gj_askai_v1老账本）；新增HX.ai.pget公开口；其余一行未动 /* v0.10.0 2026-09-14：安心条HX.step（顶部细进度条+两行小字，愣住定格定位，洪老师拍板全家统一）+速记📷附图（压图存壳文件夹sjimg_*+行尾挂图+坚果云/学习套装数据/速记图/上传排队）；其余一行未动 /* v0.9.1 2026-09-14：HX.store.sync批量抱回（壳v1.7.3 readFiles桥）——多件对账一次JNI全读回，免逐件SAF往返卡主线程（洪老师真机报"点大管家变蓝后定住"，病根=5本账本连环读各约2秒）；旧壳无readFiles自动回落逐件读，逻辑一字未改 /* v0.9.0 2026-09-13：常驻通信管家双通道（洪老师拍板一次做完）——新增HX.mg投信层（壳v1.7.0管家在则GitHub联网写信mg_out_给后台服务代发+回信mg_in_轮询取，网页线程不碰网络；管家不在自动走老fetch，全家零改动）+HX.big大件异步编解码（TextEncoder/Decoder分块让气，无则回落老同步）；改道点=gh.fetch一个收口；_autoNetOk闸门规矩不变 /* v0.8.0 2026-09-13：开门静默令（洪老师拍板：开门不许自动同步/不许自动查版本，点了才做）——全家自动联网（dav rescue/mirror、relay闲时送与pull、selfUp、selfCheck、速记开门补推）统一过HX._autoNetOk闸门：默认全关，3秒内真有点击（=点了按钮）或localStorage hx_auto_net=1才放行；新增HX.syncNow()一件全手动补做；本地存取（HX.store/localStorage/壳文件）不联网不受影响；其余一行未动 /* v0.7.0 2026-09-12：HX.dav全异步化（根治#75/#77同步联网卡死主线程）——走壳v1.6.0新davAsync后台桥+HX._davCb回调，ts对账逻辑一行未改；旧壳没davAsync一律静默跳过绝不回退同步老路，壳升级后自动恢复 */ /* v0.6.0 2026-09-12 地基二期：HX.dav的rescue升级为ts对账（云端新超5秒留档_冲突_后盖回/本地新或相等顺手davUp追平/云端缺顺手davUp补齐） */ /* v0.5.0 2026-09-12：新增中转邮路HX.relay+坚果云腿HX.dav */ /* v0.4.0 2026-09-12：新增仓管员HX.store，地基工程一期规矩A/B落地 */ /* v0.3.0 2026-09-11：部件自升级HX.selfUp（病根：壳里旧版公共件永远不升级→AI面板等新功能装了也白装；开门闲时20秒比对云端version-hx-common.json，旧了静默下载写回授权文件夹，下次开门用新的，全程不弹窗） */ /* v0.2.0 2026-09-11：新增HX.ai统一AI面板（两层结构+定位置顶+AI功能生成器，洪老师2026-09-11拍板方法论落地试点）；HX.sj面板加「🤖AI」入口钮；其余一行未动 */ /* v0.1.1 2026-09-10：HX.sj.init 加可选 extraBtn（大管家#43「补充上一条」补回，洪老师点名功能）；不传仍是2钮版，默认行为不变 */
+  var HX_COMMON_VERSION = '0.12.1'; /* v0.12.1 2026-09-15（挂号#104，洪老师真机报"U盘病历一个没显示+进到深层回不到上一层"）：HX.fm专修——①文件排序改按修改时间新→旧（实锤：壳侧按名排，中文名病历全沉到套装hxdata_*等英文名件后面，翻不到就当没有；新拷的病历时间最新，直接浮顶），文件夹仍在前；②空名/乱码名件不再哑巴，标「（名字读不出）」照列；③列表顶部加小字「本层共N项」（搜索时「搜到N项」）让他知道看没看全；④面包屑行🏠旁加显眼「⬅返回上一层」钮，有上级即亮，点=回父目录；面包屑回跳改走浏览足迹栈（旧法按"/"拼路径，SAF的safdoc://URI里全是斜杠，点中段必坏——实锤修掉）；⑤pick加opt.hideKit=true时过滤套装自有件（hxdata_*.json、hx-common*.js、guanjia-pdf-engine.js、version-*.json、速记流水.txt、mg_开头、mgver_开头、sjimg_开头、原文库_开头、dsm_开头，文件夹照列），默认false不动其他场景；⑥folder模式底部加「＋在此新建文件夹」钮（壳v1.8.4新fmMkdir桥，X5里prompt不稳，用行内小浮层输名字）；其余一行未动 */ /* v0.12.0 2026-09-15：新增HX.fm手机文件夹逛一逛（壳全盘文件桥六桥+ensure权限引导浮层+pick全屏仿资源管理器+read封装Promise）；其余一行未动 */ /* v0.11.1 2026-09-14：速记📷附图改两步走（挂号#94，洪老师真机验收报「选完图浮窗被关掉没法输说明、图跑哪去不知道」，拍板A+B都做）——①选图不再立刻记行/关面板：压图存壳后面板挂一行「🖼已挂图 sjimg_xxx.jpg（✕可撤销）」，可继续打字补说明，点「记下」图和话一起进流水（save原逻辑未动，只认sjPendImg）；②回执明白话：记下提示图存手机壳文件名+联网传坚果云/学习套装数据/速记图/，上传成功流水行图名后补☁（sjImgUpload出队时回写）；✕撤销=清挂图+出队+删壳文件；其余一行未动 */ /* v0.11.0 2026-09-14：AI面板第2级提示词可改可存（挂号#79，洪老师拍板"不搞三级菜单，就两级，点进去就是几套预设提示词，可改可储存"）——条目带prompts时，第2级点某套进编辑页（全文可改+▶用这套发送+💾存为默认+↩恢复出厂）；改过的存覆盖账本hx_aiprompt_v1.<app>（出厂原文一个字不动，恢复出厂=删覆盖）；宿主函数发送前一句HX.ai.pget(id,idx)查覆盖（乙路，不改送不进去）；条目可带pget/pset/preset钩子接管存储（如大管家问AI接管它自己的hx_gj_askai_v1老账本）；新增HX.ai.pget公开口；其余一行未动 /* v0.10.0 2026-09-14：安心条HX.step（顶部细进度条+两行小字，愣住定格定位，洪老师拍板全家统一）+速记📷附图（压图存壳文件夹sjimg_*+行尾挂图+坚果云/学习套装数据/速记图/上传排队）；其余一行未动 /* v0.9.1 2026-09-14：HX.store.sync批量抱回（壳v1.7.3 readFiles桥）——多件对账一次JNI全读回，免逐件SAF往返卡主线程（洪老师真机报"点大管家变蓝后定住"，病根=5本账本连环读各约2秒）；旧壳无readFiles自动回落逐件读，逻辑一字未改 /* v0.9.0 2026-09-13：常驻通信管家双通道（洪老师拍板一次做完）——新增HX.mg投信层（壳v1.7.0管家在则GitHub联网写信mg_out_给后台服务代发+回信mg_in_轮询取，网页线程不碰网络；管家不在自动走老fetch，全家零改动）+HX.big大件异步编解码（TextEncoder/Decoder分块让气，无则回落老同步）；改道点=gh.fetch一个收口；_autoNetOk闸门规矩不变 /* v0.8.0 2026-09-13：开门静默令（洪老师拍板：开门不许自动同步/不许自动查版本，点了才做）——全家自动联网（dav rescue/mirror、relay闲时送与pull、selfUp、selfCheck、速记开门补推）统一过HX._autoNetOk闸门：默认全关，3秒内真有点击（=点了按钮）或localStorage hx_auto_net=1才放行；新增HX.syncNow()一件全手动补做；本地存取（HX.store/localStorage/壳文件）不联网不受影响；其余一行未动 /* v0.7.0 2026-09-12：HX.dav全异步化（根治#75/#77同步联网卡死主线程）——走壳v1.6.0新davAsync后台桥+HX._davCb回调，ts对账逻辑一行未改；旧壳没davAsync一律静默跳过绝不回退同步老路，壳升级后自动恢复 */ /* v0.6.0 2026-09-12 地基二期：HX.dav的rescue升级为ts对账（云端新超5秒留档_冲突_后盖回/本地新或相等顺手davUp追平/云端缺顺手davUp补齐） */ /* v0.5.0 2026-09-12：新增中转邮路HX.relay+坚果云腿HX.dav */ /* v0.4.0 2026-09-12：新增仓管员HX.store，地基工程一期规矩A/B落地 */ /* v0.3.0 2026-09-11：部件自升级HX.selfUp（病根：壳里旧版公共件永远不升级→AI面板等新功能装了也白装；开门闲时20秒比对云端version-hx-common.json，旧了静默下载写回授权文件夹，下次开门用新的，全程不弹窗） */ /* v0.2.0 2026-09-11：新增HX.ai统一AI面板（两层结构+定位置顶+AI功能生成器，洪老师2026-09-11拍板方法论落地试点）；HX.sj面板加「🤖AI」入口钮；其余一行未动 */ /* v0.1.1 2026-09-10：HX.sj.init 加可选 extraBtn（大管家#43「补充上一条」补回，洪老师点名功能）；不传仍是2钮版，默认行为不变 */
   if(window.HX && window.HX.HX_COMMON_VERSION){ return; } /* 已装过不重复装 */
   var HX = { HX_COMMON_VERSION: HX_COMMON_VERSION, ok: true };
   function warn(m){ try{ if(window.console && console.warn) console.warn('[hx-common] '+m); }catch(e){} }
@@ -1579,6 +1579,7 @@
   /* ════ 5.96 手机文件夹逛一逛 HX.fm（v0.12.0 新增；Android壳全盘文件桥，MANAGE_EXTERNAL_STORAGE权限） ════
      壳桥契约（定死）：fmGranted()→"1"/"0"；fmAsk()跳权限设置页；fmRoots()→JSON[{name,path}]（内部存储+U盘/SD挂载点）；
      fmList(path)→JSON[{name,path,dir,size,t}]（目录在前）；fmWalk(path)→JSON[{name,path,size,t}]（递归只文件，壳侧限2000条）；fmRead(path)→base64。
+     v0.12.1（2026-09-15，挂号#104）补：第七桥fmMkdir(parentPath,name)→"1"/"0"（壳v1.8.4起；老壳没有则pick的新建钮提示升级，不影响其他）。
      无壳/老壳：桥方法不存在，has()=false、ok()=false，ensure/pick静默cb(false/null)，绝不报错（军规1）。 */
   HX.fm = (function(){
     var fm = {};
@@ -1616,6 +1617,17 @@
       if(ext==='pdf') return '📕';
       if(ext==='jpg'||ext==='jpeg'||ext==='png'||ext==='gif'||ext==='webp'||ext==='bmp') return '🖼';
       return '📎';
+    }
+    /* v0.12.1（2026-09-15，挂号#104）：收病历场景hideKit=true时过滤套装自有文件（只文件，文件夹照列），默认false不动其他场景 */
+    function isKitFile(name){
+      var n=String(name||'').toLowerCase();
+      if(n==='guanjia-pdf-engine.js'||n==='速记流水.txt') return true;
+      if(/^hxdata_.*\.json$/.test(n)) return true;
+      if(/^hx-common.*\.js$/.test(n)) return true;
+      if(/^version-.*\.json$/.test(n)) return true;
+      if(n.indexOf('mg_')===0||n.indexOf('mgver_')===0||n.indexOf('sjimg_')===0) return true;
+      if(n.indexOf('原文库_')===0||n.indexOf('dsm_')===0) return true;
+      return false;
     }
     /* v0.12.0（2026-09-15）：共用全屏罩+白底圆角卡（照现有面板风格，不引新色） */
     function fmOverlay(inner){
@@ -1666,7 +1678,7 @@
       }catch(e){ warn('fm ensure: '+((e&&e.message)||e)); try{ cb(false); }catch(e2){} }
     };
     /* v0.12.0（2026-09-15）：pick(opt,cb) 全屏浮层仿电脑资源管理器挑文件/挑文件夹
-       opt={multi:true/false, mode:'files'/'folder', walk:true/false, title}
+       opt={multi:true/false, mode:'files'/'folder', walk:true/false, title, hideKit:true/false（v0.12.1：true=收病历场景藏套装自有文件，默认false）}
        cb：files模式=[{name,path,size,t}]或null；folder模式=path字符串或null；✕/取消=null */
     fm.pick = function(opt, cb){
       opt=opt||{}; cb=(typeof cb==='function')?cb:function(){};
@@ -1676,7 +1688,8 @@
     function pickRun(opt, cb){
       var multi=!!opt.multi;
       var mode=(opt.mode==='folder')?'folder':'files';
-      var st={ cur:null, sel:{}, selN:0, done:false, deb:null }; /* cur=null=根列表屏 */
+      var hideKit=!!opt.hideKit; /* v0.12.1（2026-09-15）：收病历场景藏套装自有文件 */
+      var st={ cur:null, hist:[], sel:{}, selN:0, done:false, deb:null }; /* cur=null=根列表屏 */ /* v0.12.1（2026-09-15，挂号#104）：hist浏览足迹栈[{path,name}]，面包屑与⬅返回都走它（旧法按"/"拆路径，SAF的safdoc://URI里全是斜杠，点中段回跳必坏——实锤修掉） */
       var title=String(opt.title||(mode==='folder'?'挑个文件夹':'挑文件'));
       var walkDef=(opt.walk!==false); /* walk默认勾 */
       var ui=fmOverlay(
@@ -1691,7 +1704,9 @@
         '<div style="display:flex;align-items:center;padding:10px 12px;border-top:1px solid #e8e0d2;">'+
         '<div id="hxFmInfo" style="flex:1;font-size:13px;color:#8b8272;"></div>'+
         (mode==='folder'
-          ? '<button id="hxFmOk" type="button" style="background:#7a9e7e;color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:14px;margin-right:8px;cursor:pointer;">✅就选这个文件夹</button>'
+          ? /* v0.12.1（2026-09-15，挂号#104）：folder模式加「＋在此新建文件夹」钮，壳v1.8.4 fmMkdir桥 */
+            '<button id="hxFmMkdir" type="button" style="background:#fff;color:#7a9e7e;border:1px solid #7a9e7e;border-radius:8px;padding:9px 12px;font-size:14px;margin-right:8px;cursor:pointer;">＋在此新建文件夹</button>'+
+            '<button id="hxFmOk" type="button" style="background:#7a9e7e;color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:14px;margin-right:8px;cursor:pointer;">✅就选这个文件夹</button>'
           : (multi
             ? '<button id="hxFmOk" type="button" style="background:#7a9e7e;color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:14px;margin-right:8px;cursor:pointer;">✅收0份</button>'
             : ''))+
@@ -1709,26 +1724,35 @@
         try{
           var info=$f('hxFmInfo'); if(info) info.textContent = (mode==='files'&&multi) ? ('已勾 '+st.selN+' 份') : '';
           if(mode==='files'&&multi){ var ok=$f('hxFmOk'); if(ok) ok.textContent='✅收'+st.selN+'份'; }
-          if(mode==='folder'){ var ok2=$f('hxFmOk'); if(ok2) ok2.style.opacity = st.cur ? '1' : '.5'; }
+          if(mode==='folder'){ var ok2=$f('hxFmOk'); if(ok2) ok2.style.opacity = st.cur ? '1' : '.5';
+            var mk=$f('hxFmMkdir'); if(mk) mk.style.opacity = st.cur ? '1' : '.5'; /* v0.12.1（2026-09-15）：根列表屏没有"在此"，新建钮压灰 */ }
         }catch(e){}
       }
       /* v0.12.0（2026-09-15）：面包屑每段可点回跳；🏠手机=回根列表 */
+      /* v0.12.1（2026-09-15，挂号#104）：①🏠旁加显眼「⬅返回上一层」钮，有上级即亮，点=回父目录；②每段回跳改走hist足迹栈（data-hxfmp记栈下标不记路径），修掉SAF safdoc://URI含斜杠按"/"拼路径点中段必坏的实锤 */
       function renderCrumb(){
         var c=$f('hxFmCrumb'); if(!c) return;
-        var html='<span data-hxfmp="__ROOT__" style="cursor:pointer;">🏠 手机</span>';
-        if(st.cur){
-          var segs=String(st.cur).split('/'), path='', i;
-          for(i=0;i<segs.length;i++){
-            if(segs[i]==='') continue;
-            path+='/'+segs[i];
-            html+=' <span style="color:#b3a892;">›</span> <span data-hxfmp="'+escH(path)+'" style="cursor:pointer;">'+escH(segs[i])+'</span>';
-          }
+        var canBack=st.hist.length>0;
+        var html='<span id="hxFmBack" style="cursor:'+(canBack?'pointer':'default')+';font-size:14px;color:'+(canBack?'#fff':'#b3a892')+';background:'+(canBack?'#7a9e7e':'#eee6d6')+';border-radius:8px;padding:3px 10px;margin-right:6px;white-space:nowrap;">⬅返回上一层</span>'+
+          '<span data-hxfmp="__ROOT__" style="cursor:pointer;">🏠 手机</span>';
+        var i;
+        for(i=0;i<st.hist.length;i++){
+          html+=' <span style="color:#b3a892;">›</span> <span data-hxfmp="'+i+'" style="cursor:pointer;">'+escH(st.hist[i].name)+'</span>';
         }
         c.innerHTML=html;
+        var bk=$f('hxFmBack');
+        if(bk && canBack) bk.addEventListener('click', function(){
+          st.hist.pop();
+          st.cur=st.hist.length?st.hist[st.hist.length-1].path:null;
+          var k=$f('hxFmKw'); if(k) k.value='';
+          loadList();
+        });
         Array.prototype.forEach.call(c.querySelectorAll('[data-hxfmp]'), function(el){
           el.addEventListener('click', function(){
             var p=el.getAttribute('data-hxfmp');
-            st.cur=(p==='__ROOT__')?null:p;
+            if(p==='__ROOT__'){ st.hist=[]; }
+            else { st.hist=st.hist.slice(0, parseInt(p,10)+1); }
+            st.cur=st.hist.length?st.hist[st.hist.length-1].path:null;
             var k=$f('hxFmKw'); if(k) k.value='';
             loadList();
           });
@@ -1747,17 +1771,27 @@
           var kl=k.toLowerCase();
           for(i=0;i<all.length;i++){
             var f=all[i]; if(!f||!f.path) continue;
-            if(String(f.name||'').toLowerCase().indexOf(kl)>=0) rows.push({name:String(f.name||''), path:String(f.path), dir:false, size:(+f.size)||0, t:(+f.t)||0});
+            /* v0.12.1（2026-09-15，挂号#104）：空名/乱码名不静默跳过，标「（名字读不出）」照列；hideKit过滤套装自有件 */
+            var nm=String(f.name||''); if(nm==='') nm='（名字读不出）';
+            if(hideKit && isKitFile(nm)) continue;
+            if(nm.toLowerCase().indexOf(kl)>=0) rows.push({name:nm, path:String(f.path), dir:false, size:(+f.size)||0, t:(+f.t)||0});
           }
+          /* v0.12.1（2026-09-15，挂号#104）：搜索平铺也按修改时间新→旧排 */
+          rows.sort(function(a,b){ return (b.t-a.t)||(a.name<b.name?-1:(a.name>b.name?1:0)); });
           return rows;
         }
         var ls=fmJson(L.fmList(st.cur), []), dirs=[], files=[];
         for(i=0;i<ls.length;i++){
           var it=ls[i]; if(!it||!it.path) continue;
-          var row={name:String(it.name||''), path:String(it.path), dir:!!it.dir, size:(+it.size)||0, t:(+it.t)||0};
+          /* v0.12.1（2026-09-15，挂号#104）：空名/乱码名不静默跳过，标「（名字读不出）」照列（SAF的DocumentFile.getName对个别exFAT中文名会回null） */
+          var nm2=String(it.name||''); if(nm2==='') nm2='（名字读不出）';
+          var row={name:nm2, path:String(it.path), dir:!!it.dir, size:(+it.size)||0, t:(+it.t)||0};
+          if(!row.dir && hideKit && isKitFile(nm2)) continue; /* v0.12.1（2026-09-15）：hideKit只滤文件，文件夹照常列 */
           if(k!=='' && row.name.toLowerCase().indexOf(k.toLowerCase())<0) continue;
           if(row.dir) dirs.push(row); else files.push(row);
         }
+        /* v0.12.1（2026-09-15，挂号#104）：文件夹在前保持壳侧顺序，文件按修改时间新→旧排（实锤：旧版按名排，中文名病历全沉到hxdata_*等英文名套装件后面，洪老师翻不到当没有；新拷的病历时间最新直接浮顶） */
+        files.sort(function(a,b){ return (b.t-a.t)||(a.name<b.name?-1:(a.name>b.name?1:0)); });
         return dirs.concat(files);
       }
       function loadList(){
@@ -1767,6 +1801,8 @@
           var rows=[];
           try{ rows=fetchRows(); }catch(e){ warn('fm 取目录: '+((e&&e.message)||e)); }
           var html='', i;
+          /* v0.12.1（2026-09-15，挂号#104）：顶部小字告诉他看没看全——根屏「共N个存储位置」/搜索「搜到N项」/平时「本层共N项」 */
+          if(rows.length) html='<div style="padding:4px 12px;font-size:12px;color:#b3a892;">'+(kw()!==''?('搜到 '+rows.length+' 项'):(st.cur==null?('共 '+rows.length+' 个存储位置'):('本层共 '+rows.length+' 项')))+'</div>';
           if(st.cur==null && !rows.length) html='<div style="padding:24px;text-align:center;color:#8b8272;font-size:13px;">没摸到存储位置</div>';
           else if(!rows.length) html='<div style="padding:24px;text-align:center;color:#8b8272;font-size:13px;">这里是空的</div>';
           for(i=0;i<rows.length;i++){
@@ -1783,7 +1819,7 @@
             el.addEventListener('click', function(){
               var idx=parseInt(el.getAttribute('data-hxfmi'),10);
               var r=rows[idx]; if(!r) return;
-              if(r.dir){ st.cur=r.path; var k=$f('hxFmKw'); if(k) k.value=''; loadList(); return; } /* 📁目录点进入 */
+              if(r.dir){ st.hist.push({path:r.path, name:r.name}); st.cur=r.path; var k=$f('hxFmKw'); if(k) k.value=''; loadList(); return; } /* 📁目录点进入 */ /* v0.12.1（2026-09-15，挂号#104）：进目录同时记hist足迹，⬅返回/面包屑回跳都靠它 */
               if(mode==='folder') return; /* 挑文件夹时文件行只看不点 */
               if(!multi){ fin([{name:r.name, path:r.path, size:r.size, t:r.t}]); return; } /* 单选点中即定 */
               if(st.sel[r.path]){ delete st.sel[r.path]; st.selN--; }
@@ -1801,6 +1837,41 @@
         if(mode==='folder'){ if(st.cur) fin(String(st.cur)); return; } /* 就选这个文件夹（根列表屏不可点） */
         if(st.selN>0){ var a=[]; for(var p in st.sel){ if(Object.prototype.hasOwnProperty.call(st.sel,p)) a.push(st.sel[p]); } fin(a); }
       });
+      /* v0.12.1（2026-09-15，挂号#104）：folder模式「＋在此新建文件夹」——X5里window.prompt不稳（部分版本直接返回null），改用行内小浮层输名字；调壳v1.8.4 fmMkdir桥，成则刷新列表 */
+      var mkB=$f('hxFmMkdir');
+      if(mkB) mkB.addEventListener('click', function(){
+        if(!st.cur) return; /* 根列表屏没有"在此"，钮已压灰 */
+        var L=window.LearnShell;
+        if(!L || !L.fmMkdir){ fmToast('手机壳太旧，没有新建文件夹这手艺，请先升级壳'); return; }
+        var lay=document.createElement('div');
+        lay.style.cssText='position:absolute;left:16px;right:16px;bottom:64px;z-index:5;background:#fffdf8;border:1px solid #ddd2ba;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.15);padding:12px;';
+        lay.innerHTML='<div style="font-size:14px;margin-bottom:8px;">新文件夹叫啥名？</div>'+
+          '<input id="hxFmMkName" type="text" placeholder="例如：新病历" style="width:100%;box-sizing:border-box;border:1px solid #ddd2ba;border-radius:8px;padding:8px 10px;font-size:14px;color:#6b6257;background:#fff;outline:none;"/>'+
+          '<div style="text-align:right;margin-top:10px;">'+
+          '<button id="hxFmMkNo" type="button" style="background:#fff;color:#6b6257;border:1px solid #ddd2ba;border-radius:8px;padding:7px 14px;font-size:13px;margin-right:8px;cursor:pointer;">算了</button>'+
+          '<button id="hxFmMkYes" type="button" style="background:#7a9e7e;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:13px;cursor:pointer;">建好</button></div>';
+        ui.box.appendChild(lay);
+        function closeMk(){ rmNode(lay); }
+        $f('hxFmMkNo').addEventListener('click', closeMk);
+        $f('hxFmMkYes').addEventListener('click', function(){
+          var nm=trim($f('hxFmMkName') ? $f('hxFmMkName').value : '');
+          if(nm===''){ fmToast('名字没填'); return; }
+          if(nm.indexOf('/')>=0){ fmToast('名字里不能有斜杠'); return; }
+          var r='0'; try{ r=String(L.fmMkdir(st.cur, nm)); }catch(e){}
+          if(r==='1'){ closeMk(); fmToast('建好了'); loadList(); }
+          else fmToast('没建成，这位置可能不让建');
+        });
+      });
+      /* v0.12.1（2026-09-15，挂号#104）：行内小提示条（3秒自消），免alert卡壳 */
+      function fmToast(msg){
+        try{
+          var t=document.createElement('div');
+          t.style.cssText='position:absolute;left:50%;bottom:70px;transform:translateX(-50%);background:rgba(60,50,40,.92);color:#fff;font-size:13px;border-radius:8px;padding:8px 16px;z-index:6;white-space:nowrap;';
+          t.textContent=msg;
+          ui.box.appendChild(t);
+          setTimeout(function(){ rmNode(t); }, 3000);
+        }catch(e){}
+      }
       var kwI=$f('hxFmKw');
       if(kwI) kwI.addEventListener('input', function(){
         try{ if(st.deb) clearTimeout(st.deb); }catch(e){}
