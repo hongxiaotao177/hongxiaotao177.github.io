@@ -1,1 +1,1 @@
-{"version": "0.33.1", "dl": "software-guanjia.html", "note": "#99删除除根：脱敏间删条目/清空连存档一起删；名册隐藏名单落壳真源+注册同步；收件跳过已删病人（洪老师GO拍板）", "engine": "guanjia-pdf-engine.js"}
+{"version": "0.33.2", "dl": "software-guanjia.html", "note": "#100收病历文件夹修复：换文件夹真选完才算数（对比前后文件夹名）；点收病历先查U盘文件夹在不在/不在自动重选/没记住直接选；搜到N份先人话播报名单；seen账本加文件夹维度防跨文件夹误删（洪老师GO拍板）", "engine": "guanjia-pdf-engine.js"}
