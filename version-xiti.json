@@ -1,1 +1,6 @@
-{"version": "1.16.0", "dl": "software-xiti.html", "note": "安心条HX.step接入：开门/导入/AI出题/错题导出两行小字定格可拍照定位"}
+{
+ "version": "1.16.0",
+ "dl": "software-xiti.html",
+ "note": "安心条HX.step接入：开门/导入/AI出题/错题导出两行小字定格可拍照定位",
+ "sig": "d04fe40506f546c7"
+}
