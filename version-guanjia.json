@@ -1,7 +1,7 @@
 {
- "version": "0.35.1",
+ "version": "0.35.2",
  "dl": "software-guanjia.html",
- "note": "删过的病人手动收病历能收回来（自动移出不再显示名单）/防重照旧不重复收但不再播报/其余同0.35.0",
- "engine": "guanjia-pdf-engine.js",
- "sig": "1be6665f296c267f"
+ "note": "详情页「原状病历」清单PDF排前txt排后（速记15:55脱敏病例显示PDF优先；时间线/脱敏间/预览三处早已排前，此块漏网）",
+ "sig": "00888189bad69d7e",
+ "engine": "guanjia-pdf-engine.js"
 }
