@@ -2,6 +2,7 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.18.6 2026-09-16（洪老师真机截图实锤+拍板"都做"）：①查版本10分钟撒手错报"没网"根治——改继续慢慢等（安心条换话/60分钟才收手），回信到了照装；②新增闲时自动对账（每12小时一次，开门45秒没点没碰才从坚果云读11个版本号小文件对一遍，有新版只亮一行提醒绝不自动装，一动就停）；③PARTS/partLocalVer挪全局供对账共用（一行未改）；配壳v1.9.5管家VERCHECK通道调头（坚果云→公开站→GitHub）。
     v1.18.5 2026-09-16 纯CUR同步：大管家v0.35.1（删过的病人手动收得回/防重不播报），其余一行未动。
     v1.18.4 2026-09-14 纯CUR同步：大管家v0.33.1（#99 删除除根），其余一行未动。
     v1.18.3 2026-09-14 纯CUR同步：大管家v0.33.0（#96/#97/#98 病历统一输入口+名册送脱敏间+脱敏间进件折叠+原文满月提醒）；顺手补页脚版本字样（v1.18.2留痕缺失一并补），其余一行未动。
@@ -420,7 +421,7 @@
 
 </main>
 
-<footer>红小涛的学习园地 · 主界面 v1.18.5 · 由 Kimi 协助维护</footer>  <!-- v1.8.0 页脚亮版本号：真机验收一眼看清自己是不是新版 -->
+<footer>红小涛的学习园地 · 主界面 v1.18.6 · 由 Kimi 协助维护</footer>  <!-- v1.8.0 页脚亮版本号：真机验收一眼看清自己是不是新版 -->
 
 <script>
 /* ==================== v1.12.0 hx-common.js 三级加载（plan2军规1/2，照 guanjia-pdf-engine.js 已验证先例） ====================
@@ -470,6 +471,7 @@ hxCommonLoad(function(){
 /* 本界面对应的四个软件当前内装版本（每次发版跟着改） */
 var CUR = { notes:"2.18.1", xiti:"1.16.0", bridge:"1.7.0", xueqi:"0.21.0", ppt:"0.20.0", xiaotao:"0.11.0", guanjia:"0.33.1", pai:"0.11.0", index:"1.18.4" /* v1.18.1 纯CUR同步：大管家v0.31.1（#83 AI面板清单恒空根治）；顺手把班②全家8件CUR落伍补齐（xiti1.16.0/bridge1.7.0/xueqi0.21.0/ppt0.20.0/xiaotao0.11.0/pai0.11.0，CUR落伍老毛病再抓一回） */ };
 CUR.guanjia="0.35.1"; /* v1.18.5 纯CUR同步：大管家v0.35.1（#108 删过的病人手动收得回+移出黑名单/防重跳过不播报） */
+CUR.index="1.18.6"; /* v1.18.6 顺手补CUR落伍：主界面自己1.18.4→1.18.6 */
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
 try{ var _sv=JSON.parse(localStorage.getItem("hx_suite_ver")||"{}"); Object.keys(_sv).forEach(function(k){ if(_sv[k]) CUR[k]=_sv[k]; }); }catch(e){}
 /* key: [云端软件文件, 壳内文件名, 云端版本文件, 标签id] */
@@ -490,6 +492,25 @@ Object.keys(SUITE).forEach(function(k){
   var el = document.getElementById(SUITE[k][3]);
   if(el) el.textContent = "本机 v" + CUR[k];
 });
+/* ═══ v1.13.0 PARTS部件名单（断根修"壳内部件不更新"，洪老师2026-09-11拍板） ═══
+   部件（hx-common.js/guanjia-pdf-engine.js）住授权文件夹，走writeFile，不走applyUpdate（那是壳web目录的通道）。
+   9件软件查完接着查部件：壳里读不到或版本比云端旧→下载新版写进文件夹，下次开门生效；复核行同样列部件。
+   v1.15.0：部件与软件一样并发各查各的+硬超时，槽位跟在9件软件后面
+   v1.18.6：PARTS/partLocalVer从手动查版本块里挪到全局（一行未改），供新增的闲时自动对账共用同一份名单 */
+var PARTS = [
+  ["hx-common.js",          "version-hx-common.json",          /HX_COMMON_VERSION\s*=\s*'([\d.]+)'/],
+  ["guanjia-pdf-engine.js", "version-guanjia-pdf-engine.json", /PDF引擎包[^\n]*?v([\d.]+)/]
+];
+function partLocalVer(name, re){
+  try{
+    if(!window.LearnShell) return "";
+    var f=null; try{ f=LearnShell.readFile(name); }catch(e){}
+    if(!f) return "";
+    var t=decodeURIComponent(escape(atob(String(f).replace(/\s+/g,''))));
+    var m=t.slice(0,2000).match(re);
+    return m? m[1] : "";
+  }catch(e){ return ""; }
+}
 /* v1.14.0 版本区说人话（洪老师拍板）：顶部一排版本号60岁看不懂对错，改三句大白话——
    第1句 对完没/几处对不上；第2句 逐条点名谁对不上，全对就"没有要修的"；
    第3句 对不上给「🔧 点我补齐」按钮（走原"检查新版本"手动流程补齐），全对显示"什么都不用做"。
@@ -756,24 +777,7 @@ function hxRawGet(name){
       }).catch(function(){ allOk=false; lines.push("❌ "+cn+"：本机文件探不到，可能原因：文件没写进去；壳还没刷新"); one(); });
     })();
   }
-  /* ═══ v1.13.0 PARTS部件名单（断根修"壳内部件不更新"，洪老师2026-09-11拍板） ═══
-     部件（hx-common.js/guanjia-pdf-engine.js）住授权文件夹，走writeFile，不走applyUpdate（那是壳web目录的通道）。
-     9件软件查完接着查部件：壳里读不到或版本比云端旧→下载新版写进文件夹，下次开门生效；复核行同样列部件。
-     v1.15.0：部件与软件一样并发各查各的+硬超时，槽位跟在9件软件后面 */
-  var PARTS = [
-    ["hx-common.js",          "version-hx-common.json",          /HX_COMMON_VERSION\s*=\s*'([\d.]+)'/],
-    ["guanjia-pdf-engine.js", "version-guanjia-pdf-engine.json", /PDF\u5f15\u64ce\u5305[^\n]*?v([\d.]+)/]
-  ];
-  function partLocalVer(name, re){
-    try{
-      if(!window.LearnShell) return "";
-      var f=null; try{ f=LearnShell.readFile(name); }catch(e){}
-      if(!f) return "";
-      var t=decodeURIComponent(escape(atob(String(f).replace(/\s+/g,''))));
-      var m=t.slice(0,2000).match(re);
-      return m? m[1] : "";
-    }catch(e){ return ""; }
-  }
+  /* v1.18.6：PARTS/partLocalVer已挪全局（供闲时自动对账共用同一份名单），此处直接引用，一行未改 */
   function checkPart(pi){
     var slot = keys.length + pi;
     var pName=PARTS[pi][0], pVer=PARTS[pi][1], pRe=PARTS[pi][2];
@@ -908,6 +912,7 @@ function hxRawGet(name){
       }
       mgProgRender();
       var tStart=Date.now();
+      var slowTold=false; /* v1.18.6：10分钟只说一次"还在查"，不再撒手 */
       var timer=setInterval(function(){
         mgProgRender(); /* v1.17.0：取信路上顺手刷管家面板 */
         var b64=null; try{ b64=LearnShell.readFile('mg_in_'+vid+'.json'); }catch(e){}
@@ -971,13 +976,79 @@ function hxRawGet(name){
           })();
           return;
         }
-        if(Date.now()-tStart>10*60*1000){ clearInterval(timer);
-          updMsg(progLog.join("\n")+"\n\n⚠️ 管家查了10分钟还没回信（多半是没网）。信不丢，网通了管家会补查补下载；想立刻查就再点一次「🔍 检查新版本」。"); }
+        /* v1.18.6（洪老师真机截图实锤+拍板）：旧法10分钟就撒手还错报"没网"——其实管家在排队慢查，回信到了没人取。
+           改：10分钟只换成实话提示并继续慢慢等（安心条同步换话）；60分钟实在没回信才收手，信不丢下次开门管家照补 */
+        if(Date.now()-tStart>10*60*1000 && !slowTold){ slowTold=true;
+          try{ if(window.HX&&HX.step){ HX.step.upd('IDX.ver.start','管家还在后台慢慢查，查完自动装，不用管'); } }catch(e){}
+          updMsg(progLog.join("\n")+"\n\n🐢 管家还在后台慢慢查（不是没网，是查得慢）。查完这里自动出结果、自动装新版，您该干嘛干嘛，不用守着。"); }
+        if(Date.now()-tStart>60*60*1000){ clearInterval(timer);
+          updMsg(progLog.join("\n")+"\n\n⚠️ 管家查了一个小时还没回信（多半是真没网）。信不丢，网通了管家会补查补下载；想立刻查就再点一次「🔍 检查新版本」。"); }
       }, 4000);
     })();
     return;
   }
   legacyRun();
+})();
+
+/* ═══ v1.18.6 闲时自动对账（洪老师2026-09-16拍板"都做…一天一次半天一次都行，我一动他就停"）═══
+   规矩：每12小时最多一次；开门45秒后您没点没碰才开始；只从坚果云读11个版本号小文件（共约2KB）跟本机对一遍；
+   对上了不吭声；对不上只亮一行提醒——绝不自动下载自动装（升级仍只认手动「🔍 检查新版本」，开门三停不破）；
+   您一点一碰（点/摸/按键/滚动）立刻停，本次不再跑；没网/老壳/没配坚果云钥匙一律静默跳过不报错。 */
+(function(){
+  try{
+    if(!window.LearnShell || !LearnShell.folderSet || !LearnShell.folderSet()) return;
+    if(!(window.HX && HX.keys && HX.keys.dav)) return;
+    var dk=null; try{ dk=HX.keys.dav(); }catch(e){}
+    if(!dk || !dk.user) return;
+    if(typeof LearnShell.davAsync!=='function') return; /* 老壳没异步桥：静默跳过 */
+    try{ if((Date.now()-(+localStorage.getItem('hx_veraudit_ts')||0)) < 12*3600*1000) return; }catch(e){}
+    var stopped=false;
+    var evs=['pointerdown','touchstart','keydown','scroll'];
+    var onMove=function(){ stopped=true; try{ evs.forEach(function(ev){ window.removeEventListener(ev, onMove, true); }); }catch(e){} };
+    evs.forEach(function(ev){ try{ window.addEventListener(ev, onMove, {capture:true, passive:true}); }catch(e){} });
+    setTimeout(function(){
+      try{
+        if(stopped) return;
+        try{ localStorage.setItem('hx_veraudit_ts', String(Date.now())); }catch(e){}
+        var items=[];
+        Object.keys(SUITE).forEach(function(k){ items.push({nm:(k==="index"?"主界面":SUITE[k][1].replace(".html","")), vf:SUITE[k][2], cur:CUR[k]||'0'}); });
+        PARTS.forEach(function(p){ items.push({nm:"部件"+p[0], vf:p[1], cur:partLocalVer(p[0],p[2])||'0'}); });
+        function davDown(rp, sn){ return new Promise(function(res){
+          var cbId='va'+Date.now()+'_'+Math.floor(Math.random()*1000000);
+          HX._davCbs=HX._davCbs||{};
+          HX._davCbs[cbId]=function(r){ delete HX._davCbs[cbId]; res(typeof r==='string'?r:null); }; /* 验证员抓漏：用完即删，不攒死键 */
+          setTimeout(function(){ if(HX._davCbs && HX._davCbs[cbId]){ delete HX._davCbs[cbId]; res(null); } },60000);
+          LearnShell.davAsync('down', dk.user, dk.pass, String(rp), String(sn), cbId);
+        }); }
+        var news=[], i=0, tmp='__veraudit_vf.json';
+        (function one(){
+          if(stopped){ try{ LearnShell.deleteFile(tmp); }catch(e){} return; } /* 一动就停：清临时件即收工 */
+          if(i>=items.length){
+            try{ LearnShell.deleteFile(tmp); }catch(e){}
+            if(news.length){
+              updMsg("📦 闲时对账发现云端有新版："+news.join("；")+"\n点第一行「🔍 检查新版本」就升级；不点也不碍事，半天后再提醒您。");
+            }
+            return;
+          }
+          var it=items[i++];
+          try{ LearnShell.deleteFile(tmp); }catch(e){} /* 仿真抓虫：先清临时件，防上一件残留被误当本件（张冠李戴误报） */
+          davDown('/学习套装备份/'+it.vf, tmp).then(function(dres){
+            try{
+              if(!stopped && dres && String(dres).indexOf('err:')!==0){ /* err:开头=下载失败，不读临时件 */
+                var b64=null; try{ b64=LearnShell.readFile(tmp); }catch(e){}
+                if(b64){
+                  var txt=decodeURIComponent(escape(atob(String(b64).replace(/\s+/g,''))));
+                  var cv=''; try{ cv=JSON.parse(txt).version||''; }catch(e){}
+                  if(cv && cmpVer(cv, it.cur)>0) news.push(it.nm+" v"+cv+"（本机v"+it.cur+"）");
+                }
+              }
+            }catch(e){}
+            one();
+          });
+        })();
+      }catch(e){}
+    }, 45000);
+  }catch(e){}
 })();
 
 /* v1.9.0 洪老师拍板：开门三停——原v1.8.0"闲时3天自动对账"（自动拉8个云端版本表、对不上就自动刷新重查重下）
