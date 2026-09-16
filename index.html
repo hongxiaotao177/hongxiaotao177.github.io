@@ -2,6 +2,9 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.19.1 2026-09-16（洪老师拍板"把这个多余的命令取消掉"）：「🔍 检查新版本」按钮（顶部+管理工具抽屉两处）onclick 立
+      hx_sj_skip_once 标记——按钮刷新页面时不再带出 hx-common 开门闲时的速记流水.txt上行（多余的同步命令摘除）；
+      配 hx-common v0.13.2 闲时上行认标记跳过一次。「记下后上行」等其他入口一行未动。
     v1.19.0 2026-09-16（通信链路大扫除，洪老师拍板"全部一起办完"）：
       ①12小时闲时自动对账整段取消——查版本归管家一家（壳v2.0.0每天闲时静默查一次+验「学习有用」暗号指纹后自动装），
         免两条路提醒打架；②开门顺手存 mg_suite.json 全家清单给管家每日查用（只写本地不联网）；
@@ -307,7 +310,7 @@
   <div id="syncBar" style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
     <button class="tag" id="btnSyncTop" style="padding:12px 10px;border:none;cursor:pointer;"><!-- v1.11.0 padding微调=行高满44px -->🔄 同步</button>
     <!-- v1.10.0 洪老师拍板：「🔍 检查新版本」上第一行与🔄同步并列；功能=管理工具里同款（清标记+立hx_ver_manual+刷新重查），直播与复核结论在下方updLine；管理工具原按钮保留不动 -->
-    <button class="tag" id="btnVerTop" style="padding:12px 10px;border:none;cursor:pointer;" onclick="try{sessionStorage.removeItem('hx_ver_checked');sessionStorage.setItem('hx_ver_manual','1');}catch(e){};var _st=document.getElementById('syncTopMsg');if(_st)_st.textContent='🔍 正在查新版本，请稍等…';updMsg('🔍 正在查新版本，请稍等…');setTimeout(function(){location.reload();},120);">🔍 检查新版本</button>
+    <button class="tag" id="btnVerTop" style="padding:12px 10px;border:none;cursor:pointer;" onclick="try{sessionStorage.removeItem('hx_ver_checked');sessionStorage.setItem('hx_ver_manual','1');sessionStorage.setItem('hx_sj_skip_once','1');}catch(e){};var _st=document.getElementById('syncTopMsg');if(_st)_st.textContent='🔍 正在查新版本，请稍等…';updMsg('🔍 正在查新版本，请稍等…');setTimeout(function(){location.reload();},120);">🔍 检查新版本</button>
     <span id="syncTopMsg" style="font-size:13px;color:#8a8178;">不按它，绝不同步</span>
   </div>
 
@@ -411,7 +414,7 @@
     <!-- v1.4.8 备份自理班：手动检查更新按钮（点=清标记+刷新重查，自检IIFE自然重跑）
          （v1.9.0 必改处报备：开门三停后自检不再自动起步，此手动按钮加立 hx_ver_manual 标记，功能不变） -->
     <div style="margin-top:10px;">
-      <button class="tag" style="padding:10px 14px; border:none; cursor:pointer;" onclick="try{sessionStorage.removeItem('hx_ver_checked');sessionStorage.setItem('hx_ver_manual','1');}catch(e){};updMsg('🔍 正在查新版本，请稍等…');setTimeout(function(){location.reload();},120);">🔍 检查新版本</button>
+      <button class="tag" style="padding:10px 14px; border:none; cursor:pointer;" onclick="try{sessionStorage.removeItem('hx_ver_checked');sessionStorage.setItem('hx_ver_manual','1');sessionStorage.setItem('hx_sj_skip_once','1');}catch(e){};updMsg('🔍 正在查新版本，请稍等…');setTimeout(function(){location.reload();},120);">🔍 检查新版本</button>
       <div class="desc" style="margin-top:6px; font-size:12px;">v1.9.0起开门不再自动查；各软件本机版本号见顶部一行小字和卡片角标，想查新版点我。</div>
     </div>
     <!-- v1.8.0 清缓存按钮（洪老师拍板）：发了版手机还是旧版时点我——清本机版本记忆+自检标记，刷新后8个全重查重下
@@ -432,7 +435,7 @@
 
 </main>
 
-<footer>红小涛的学习园地 · 主界面 v1.19.0 · 由 Kimi 协助维护</footer>  <!-- v1.8.0 页脚亮版本号：真机验收一眼看清自己是不是新版 -->
+<footer>红小涛的学习园地 · 主界面 v1.19.1 · 由 Kimi 协助维护</footer>  <!-- v1.8.0 页脚亮版本号：真机验收一眼看清自己是不是新版 -->
 
 <script>
 /* ==================== v1.12.0 hx-common.js 三级加载（plan2军规1/2，照 guanjia-pdf-engine.js 已验证先例） ====================
@@ -484,6 +487,7 @@ var CUR = { notes:"2.18.1", xiti:"1.16.0", bridge:"1.7.0", xueqi:"0.21.0", ppt:"
 CUR.guanjia="0.35.1"; /* v1.18.5 纯CUR同步：大管家v0.35.1（#108 删过的病人手动收得回+移出黑名单/防重跳过不播报） */
 CUR.index="1.18.7"; /* v1.18.7 顺手补CUR：主界面自己1.18.6→1.18.7 */
 CUR.index="1.19.0"; /* v1.19.0 通信链路大扫除：闲时对账取消归管家+开门存清单+专区自动装+管家路补留档复核 */
+CUR.index="1.19.1"; /* v1.19.1 摘多余命令：检查新版本按钮立hx_sj_skip_once，刷新不再带速记闲时上行 */
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
 try{ var _sv=JSON.parse(localStorage.getItem("hx_suite_ver")||"{}"); Object.keys(_sv).forEach(function(k){ if(_sv[k]) CUR[k]=_sv[k]; }); }catch(e){}
 /* key: [云端软件文件, 壳内文件名, 云端版本文件, 标签id] */
