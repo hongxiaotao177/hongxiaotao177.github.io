@@ -2,6 +2,12 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.19.0 2026-09-16（通信链路大扫除，洪老师拍板"全部一起办完"）：
+      ①12小时闲时自动对账整段取消——查版本归管家一家（壳v2.0.0每天闲时静默查一次+验「学习有用」暗号指纹后自动装），
+        免两条路提醒打架；②开门顺手存 mg_suite.json 全家清单给管家每日查用（只写本地不联网）；
+      ③开门发现管家专区 mgver_ 有件（管家趁您不用手机备好的新版）自动走原查装链路装上；
+      ④D刀对齐：管家路装软件补新版留档+收尾补升级后复核verifyAfter（全对上才3秒刷新，对不上红字定格）；
+      手动「🔍 检查新版本」全链路/等回信话术/回落老流程一行未动。
     v1.18.7 2026-09-16（修理清单#2/#4，洪老师真机实锤"管家喊回信已写好但回信没到，主界面干等15分钟像卡75%"，GO拍板"开工"）：
       ①等管家回信超过2分钟没等到，不再干等——把文件夹里实际存在的mg_/mgver_件名如实列出（信在哪、叫什么名一眼看穿），
         附「🔄 点我重新查」钮（清自检标记重投一封信）；②安心条等待话术改明白——"在等管家回信（已等N分钟），不是卡死"，
@@ -426,7 +432,7 @@
 
 </main>
 
-<footer>红小涛的学习园地 · 主界面 v1.18.7 · 由 Kimi 协助维护</footer>  <!-- v1.8.0 页脚亮版本号：真机验收一眼看清自己是不是新版 -->
+<footer>红小涛的学习园地 · 主界面 v1.19.0 · 由 Kimi 协助维护</footer>  <!-- v1.8.0 页脚亮版本号：真机验收一眼看清自己是不是新版 -->
 
 <script>
 /* ==================== v1.12.0 hx-common.js 三级加载（plan2军规1/2，照 guanjia-pdf-engine.js 已验证先例） ====================
@@ -477,6 +483,7 @@ hxCommonLoad(function(){
 var CUR = { notes:"2.18.1", xiti:"1.16.0", bridge:"1.7.0", xueqi:"0.21.0", ppt:"0.20.0", xiaotao:"0.11.0", guanjia:"0.33.1", pai:"0.11.0", index:"1.18.4" /* v1.18.1 纯CUR同步：大管家v0.31.1（#83 AI面板清单恒空根治）；顺手把班②全家8件CUR落伍补齐（xiti1.16.0/bridge1.7.0/xueqi0.21.0/ppt0.20.0/xiaotao0.11.0/pai0.11.0，CUR落伍老毛病再抓一回） */ };
 CUR.guanjia="0.35.1"; /* v1.18.5 纯CUR同步：大管家v0.35.1（#108 删过的病人手动收得回+移出黑名单/防重跳过不播报） */
 CUR.index="1.18.7"; /* v1.18.7 顺手补CUR：主界面自己1.18.6→1.18.7 */
+CUR.index="1.19.0"; /* v1.19.0 通信链路大扫除：闲时对账取消归管家+开门存清单+专区自动装+管家路补留档复核 */
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
 try{ var _sv=JSON.parse(localStorage.getItem("hx_suite_ver")||"{}"); Object.keys(_sv).forEach(function(k){ if(_sv[k]) CUR[k]=_sv[k]; }); }catch(e){}
 /* key: [云端软件文件, 壳内文件名, 云端版本文件, 标签id] */
@@ -515,6 +522,30 @@ function partLocalVer(name, re){
     var m=t.slice(0,2000).match(re);
     return m? m[1] : "";
   }catch(e){ return ""; }
+}
+/* ═══ v1.19.0 管家每日静默查装配套（洪老师2026-09-16拍板）：开门顺手把"全家清单+本机版本+三通道+钥匙"
+   存一份 mg_suite.json 到家目录。管家（壳v2.0.0+）每天闲时读它自动查版本：验「学习有用」暗号指纹→
+   您没在用就后台自动装好（下次开门即新版），您正用着就先问您。本函数只写本地文件不联网，写砸静默不碍事。 ═══ */
+function mgSuiteWrite(){
+  try{
+    if(!window.LearnShell || !LearnShell.folderSet || !LearnShell.folderSet()) return;
+    if(typeof LearnShell.writeFile!=='function') return;
+    var c=ghCfg();
+    var hasApi=!!(c.user && c.tok && c.repo);
+    var base=hasApi ? ("https://api.github.com/repos/"+encodeURIComponent(c.user)+"/"+encodeURIComponent(c.repo)+"/contents/") : "";
+    var rawBase='https://hongxiaotao177.github.io/';
+    var items=[];
+    Object.keys(SUITE).forEach(function(k){ items.push({key:k, localName:SUITE[k][1], cur:CUR[k]||'0', verFile:SUITE[k][2], dl:SUITE[k][0], part:0,
+      verApi:base+encodeURIComponent(SUITE[k][2]), verRaw:rawBase+encodeURIComponent(SUITE[k][2]),
+      dlApi:base+encodeURIComponent(SUITE[k][0]), dlRaw:rawBase+encodeURIComponent(SUITE[k][0])}); });
+    PARTS.forEach(function(p){ items.push({key:p[0], localName:p[0], cur:partLocalVer(p[0],p[2])||'0', verFile:p[1], dl:p[0], part:1,
+      verApi:base+encodeURIComponent(p[1]), verRaw:rawBase+encodeURIComponent(p[1]),
+      dlApi:base+encodeURIComponent(p[0]), dlRaw:rawBase+encodeURIComponent(p[0])}); });
+    var pack={id:'suite', tok:(c.tok||''), items:items, ts:Date.now()};
+    try{ var dk=null; try{ if(window.HX&&HX.keys&&HX.keys.dav) dk=HX.keys.dav(); }catch(e){}
+      if(dk&&dk.user) pack.dav={user:dk.user, pass:dk.pass, base:'https://dav.jianguoyun.com/dav/'+encodeURIComponent('学习套装备份')+'/'}; }catch(e){}
+    LearnShell.writeFile('mg_suite.json', u8enc(JSON.stringify(pack)));
+  }catch(e){}
 }
 /* v1.14.0 版本区说人话（洪老师拍板）：顶部一排版本号60岁看不懂对错，改三句大白话——
    第1句 对完没/几处对不上；第2句 逐条点名谁对不上，全对就"没有要修的"；
@@ -959,9 +990,17 @@ function hxRawGet(name){
               if(window.HX&&HX.step){ try{ HX.step.done('版本查完了'); }catch(e){} } /* v1.18.0 安心条done（管家路径收尾） */
               /* 收尾三句人话（照finish风格） */
               if(updated.length){
-                updMsg(progLog.join("\n")+"\n\n✅ 已自动更新："+updated.join("、")+"\n旧版不用管，新版备份已存进您的文件夹。\n3秒后自动刷新…");
+                try{ sessionStorage.setItem("hx_postaudit","1"); }catch(e){} /* v1.19.0 D刀：与老流程对齐，刷新回来后自动对账① */
                 try{ window.LearnShell.toast("✅ 套装已自动更新"); }catch(e){}
-                setTimeout(function(){ location.reload(); }, 3000);
+                /* v1.19.0 D刀对齐：管家路收尾也跑升级后复核（verifyAfter，只读不下载）——
+                   全对上3秒自动刷新；对不上红字定格不刷新（老路finish一直如此，管家路此前直接刷新漏了复核） */
+                updMsg(progLog.join("\n")+"\n\n✅ 已自动更新："+updated.join("、")+"\n旧版不用管，新版备份已存进您的文件夹。\n正在复核版本…");
+                verifyAfter(function(vlines, allOk){
+                  var el=document.getElementById("updLine");
+                  updMsg(progLog.join("\n")+"\n\n✅ 已自动更新："+updated.join("、")+"\n旧版不用管，新版备份已存进您的文件夹。\n\n—— 升级后复核 ——\n"+vlines.join("\n")+(allOk?"\n3秒后自动刷新…":"\n\n⚠️ 有对不上的，请再点一次「🔍 检查新版本」重试"));
+                  if(!allOk){ el.style.background="#fdecec"; el.style.border="1px solid #eec2c2"; el.style.color="#a33"; }
+                  else setTimeout(function(){ location.reload(); }, 3000);
+                });
               }else if(failed.length){
                 updMsg(progLog.join("\n")+"\n\n⚠️ 有没查成/没下成的："+failed.join("、")+"\n不影响使用，下次打开会再试。");
               }else{
@@ -985,7 +1024,9 @@ function hxRawGet(name){
             var nm2=it.part?("部件"+it.key):(it.key==="index"?"主界面自己":it.localName.replace(".html",""));
             if(okw){
               try{ LearnShell.deleteFile('mgver_'+it.localName); }catch(e){}
-              if(!it.part){ CUR[rk]=cloudVer[rk]||CUR[rk]; try{ localStorage.setItem("hx_suite_ver", JSON.stringify(CUR)); }catch(e){} }
+              if(!it.part){ CUR[rk]=cloudVer[rk]||CUR[rk]; try{ localStorage.setItem("hx_suite_ver", JSON.stringify(CUR)); }catch(e){}
+                /* v1.19.0 D刀对齐：管家路装软件也留档新版备份（老路dlWrite一直有，管家路此前漏了） */
+                try{ LearnShell.writeFile(it.localName.replace(".html","")+"_v"+(cloudVer[rk]||"?")+".html", fb); }catch(e){} }
               updated.push(it.localName.replace(".html","")+"→v"+(cloudVer[rk]||"?"));
               progLog[fi]="✅ "+nm2+"：已装上 v"+(cloudVer[rk]||"?");
             }else{
@@ -1011,64 +1052,23 @@ function hxRawGet(name){
   legacyRun();
 })();
 
-/* ═══ v1.18.6 闲时自动对账（洪老师2026-09-16拍板"都做…一天一次半天一次都行，我一动他就停"）═══
-   规矩：每12小时最多一次；开门45秒后您没点没碰才开始；只从坚果云读11个版本号小文件（共约2KB）跟本机对一遍；
-   对上了不吭声；对不上只亮一行提醒——绝不自动下载自动装（升级仍只认手动「🔍 检查新版本」，开门三停不破）；
-   您一点一碰（点/摸/按键/滚动）立刻停，本次不再跑；没网/老壳/没配坚果云钥匙一律静默跳过不报错。 */
+/* ═══ v1.19.0 洪老师拍板：12小时闲时自动对账整段取消——查版本归管家一家（每天闲时静默查一次+
+   验暗号自动装），主界面不再另起一路对账，免两条路提醒打架。原对账规矩（只提醒不自动装）由管家接棒。 ═══
+   开门三件事：①顺手存清单给管家 ②发现管家已备好新版（专区有件）就自动装 */
+try{ mgSuiteWrite(); }catch(e){}
 (function(){
   try{
     if(!window.LearnShell || !LearnShell.folderSet || !LearnShell.folderSet()) return;
-    if(!(window.HX && HX.keys && HX.keys.dav)) return;
-    var dk=null; try{ dk=HX.keys.dav(); }catch(e){}
-    if(!dk || !dk.user) return;
-    if(typeof LearnShell.davAsync!=='function') return; /* 老壳没异步桥：静默跳过 */
-    try{ if((Date.now()-(+localStorage.getItem('hx_veraudit_ts')||0)) < 12*3600*1000) return; }catch(e){}
-    var stopped=false;
-    var evs=['pointerdown','touchstart','keydown','scroll'];
-    var onMove=function(){ stopped=true; try{ evs.forEach(function(ev){ window.removeEventListener(ev, onMove, true); }); }catch(e){} };
-    evs.forEach(function(ev){ try{ window.addEventListener(ev, onMove, {capture:true, passive:true}); }catch(e){} });
-    setTimeout(function(){
-      try{
-        if(stopped) return;
-        try{ localStorage.setItem('hx_veraudit_ts', String(Date.now())); }catch(e){}
-        var items=[];
-        Object.keys(SUITE).forEach(function(k){ items.push({nm:(k==="index"?"主界面":SUITE[k][1].replace(".html","")), vf:SUITE[k][2], cur:CUR[k]||'0'}); });
-        PARTS.forEach(function(p){ items.push({nm:"部件"+p[0], vf:p[1], cur:partLocalVer(p[0],p[2])||'0'}); });
-        function davDown(rp, sn){ return new Promise(function(res){
-          var cbId='va'+Date.now()+'_'+Math.floor(Math.random()*1000000);
-          HX._davCbs=HX._davCbs||{};
-          HX._davCbs[cbId]=function(r){ delete HX._davCbs[cbId]; res(typeof r==='string'?r:null); }; /* 验证员抓漏：用完即删，不攒死键 */
-          setTimeout(function(){ if(HX._davCbs && HX._davCbs[cbId]){ delete HX._davCbs[cbId]; res(null); } },60000);
-          LearnShell.davAsync('down', dk.user, dk.pass, String(rp), String(sn), cbId);
-        }); }
-        var news=[], i=0, tmp='__veraudit_vf.json';
-        (function one(){
-          if(stopped){ try{ LearnShell.deleteFile(tmp); }catch(e){} return; } /* 一动就停：清临时件即收工 */
-          if(i>=items.length){
-            try{ LearnShell.deleteFile(tmp); }catch(e){}
-            if(news.length){
-              updMsg("📦 闲时对账发现云端有新版："+news.join("；")+"\n点第一行「🔍 检查新版本」就升级；不点也不碍事，半天后再提醒您。");
-            }
-            return;
-          }
-          var it=items[i++];
-          try{ LearnShell.deleteFile(tmp); }catch(e){} /* 仿真抓虫：先清临时件，防上一件残留被误当本件（张冠李戴误报） */
-          davDown('/学习套装备份/'+it.vf, tmp).then(function(dres){
-            try{
-              if(!stopped && dres && String(dres).indexOf('err:')!==0){ /* err:开头=下载失败，不读临时件 */
-                var b64=null; try{ b64=LearnShell.readFile(tmp); }catch(e){}
-                if(b64){
-                  var txt=decodeURIComponent(escape(atob(String(b64).replace(/\s+/g,''))));
-                  var cv=''; try{ cv=JSON.parse(txt).version||''; }catch(e){}
-                  if(cv && cmpVer(cv, it.cur)>0) news.push(it.nm+" v"+cv+"（本机v"+it.cur+"）");
-                }
-              }
-            }catch(e){}
-            one();
-          });
-        })();
-      }catch(e){}
-    }, 45000);
+    var lf=null; try{ lf=LearnShell.listFiles(); }catch(e){}
+    if(!lf) return;
+    var arr=[]; try{ arr=JSON.parse(lf||'[]'); }catch(e){}
+    var ready=[];
+    for(var i=0;i<arr.length;i++){ var nm=String(arr[i].name||''); if(nm.indexOf('mgver_')===0) ready.push(nm.slice(6)); }
+    if(!ready.length) return;
+    /* 专区有件=管家在您不用手机时已下载好新版（它当时看您在工作就没装）。自动走原查装链路装上 */
+    updMsg("📦 管家趁您不用手机时备好了新版（"+ready.join("、")+"），这就给您装上…");
+    try{ sessionStorage.removeItem('hx_ver_checked'); sessionStorage.setItem('hx_ver_manual','1'); }catch(e){}
+    setTimeout(function(){ location.reload(); }, 1500);
   }catch(e){}
 })();
 
