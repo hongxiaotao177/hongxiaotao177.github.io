@@ -1,1 +1,6 @@
-{"version": "0.11.0", "dl": "software-xiaotao.html", "note": "安心条HX.step接入：开门对账/切片巡逻两行小字定格可拍照定位"}
+{
+ "version": "0.11.0",
+ "dl": "software-xiaotao.html",
+ "note": "安心条HX.step接入：开门对账/切片巡逻两行小字定格可拍照定位",
+ "sig": "c8026d1dc257947a"
+}
