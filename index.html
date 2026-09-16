@@ -2,6 +2,11 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.18.7 2026-09-16（修理清单#2/#4，洪老师真机实锤"管家喊回信已写好但回信没到，主界面干等15分钟像卡75%"，GO拍板"开工"）：
+      ①等管家回信超过2分钟没等到，不再干等——把文件夹里实际存在的mg_/mgver_件名如实列出（信在哪、叫什么名一眼看穿），
+        附「🔄 点我重新查」钮（清自检标记重投一封信）；②安心条等待话术改明白——"在等管家回信（已等N分钟），不是卡死"，
+        每分钟自动跳字（原固定"正在查…"看着像75%卡死；#4落点在等信现场本文件，hx-common一行未动）；
+      取信/装新版/回落老流程逻辑一行未动。配壳v1.9.9（管家回读校验+闲时降频）。
     v1.18.6 2026-09-16（洪老师真机截图实锤+拍板"都做"）：①查版本10分钟撒手错报"没网"根治——改继续慢慢等（安心条换话/60分钟才收手），回信到了照装；②新增闲时自动对账（每12小时一次，开门45秒没点没碰才从坚果云读11个版本号小文件对一遍，有新版只亮一行提醒绝不自动装，一动就停）；③PARTS/partLocalVer挪全局供对账共用（一行未改）；配壳v1.9.5管家VERCHECK通道调头（坚果云→公开站→GitHub）。
     v1.18.5 2026-09-16 纯CUR同步：大管家v0.35.1（删过的病人手动收得回/防重不播报），其余一行未动。
     v1.18.4 2026-09-14 纯CUR同步：大管家v0.33.1（#99 删除除根），其余一行未动。
@@ -421,7 +426,7 @@
 
 </main>
 
-<footer>红小涛的学习园地 · 主界面 v1.18.6 · 由 Kimi 协助维护</footer>  <!-- v1.8.0 页脚亮版本号：真机验收一眼看清自己是不是新版 -->
+<footer>红小涛的学习园地 · 主界面 v1.18.7 · 由 Kimi 协助维护</footer>  <!-- v1.8.0 页脚亮版本号：真机验收一眼看清自己是不是新版 -->
 
 <script>
 /* ==================== v1.12.0 hx-common.js 三级加载（plan2军规1/2，照 guanjia-pdf-engine.js 已验证先例） ====================
@@ -471,7 +476,7 @@ hxCommonLoad(function(){
 /* 本界面对应的四个软件当前内装版本（每次发版跟着改） */
 var CUR = { notes:"2.18.1", xiti:"1.16.0", bridge:"1.7.0", xueqi:"0.21.0", ppt:"0.20.0", xiaotao:"0.11.0", guanjia:"0.33.1", pai:"0.11.0", index:"1.18.4" /* v1.18.1 纯CUR同步：大管家v0.31.1（#83 AI面板清单恒空根治）；顺手把班②全家8件CUR落伍补齐（xiti1.16.0/bridge1.7.0/xueqi0.21.0/ppt0.20.0/xiaotao0.11.0/pai0.11.0，CUR落伍老毛病再抓一回） */ };
 CUR.guanjia="0.35.1"; /* v1.18.5 纯CUR同步：大管家v0.35.1（#108 删过的病人手动收得回+移出黑名单/防重跳过不播报） */
-CUR.index="1.18.6"; /* v1.18.6 顺手补CUR落伍：主界面自己1.18.4→1.18.6 */
+CUR.index="1.18.7"; /* v1.18.7 顺手补CUR：主界面自己1.18.6→1.18.7 */
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
 try{ var _sv=JSON.parse(localStorage.getItem("hx_suite_ver")||"{}"); Object.keys(_sv).forEach(function(k){ if(_sv[k]) CUR[k]=_sv[k]; }); }catch(e){}
 /* key: [云端软件文件, 壳内文件名, 云端版本文件, 标签id] */
@@ -913,8 +918,24 @@ function hxRawGet(name){
       mgProgRender();
       var tStart=Date.now();
       var slowTold=false; /* v1.18.6：10分钟只说一次"还在查"，不再撒手 */
+      var diagTold=false; /* v1.18.7 修理清单#2：2分钟自诊断只说一次 */
+      var lastWaitMin=-1; /* v1.18.7 修理清单#4：安心条分钟跳字，变了才重画 */
       var timer=setInterval(function(){
         mgProgRender(); /* v1.17.0：取信路上顺手刷管家面板 */
+        /* v1.18.7 修理清单#4：安心条等待话术改明白（已等N分钟，不是卡死），分钟变了才重画 */
+        try{ if(window.HX&&HX.step){ var _wmin=Math.floor((Date.now()-tStart)/60000); if(_wmin!==lastWaitMin){ lastWaitMin=_wmin; HX.step.upd('IDX.ver.start','在等管家回信（已等'+_wmin+'分钟），不是卡死，管家查完这里自动出结果'); } } }catch(e){}
+        /* v1.18.7 修理清单#2：等回信超2分钟没等到→列出文件夹里实际的mg_/mgver_件名+重新查钮，不再干等 */
+        if(Date.now()-tStart>2*60*1000 && !diagTold){ diagTold=true;
+          try{
+            var _lf=LearnShell.listFiles(); var _mg=[];
+            try{ var _la=JSON.parse(_lf||'[]'); for(var _li=0;_li<_la.length;_li++){ var _ln=String(_la[_li].name||''); if(_ln.indexOf('mg_')===0||_ln.indexOf('mgver_')===0){ var _ld=new Date(+_la[_li].t||0); _mg.push(_ln+'（'+Math.round((+_la[_li].size||0)/1024*10)/10+'KB，'+('0'+_ld.getHours()).slice(-2)+':'+('0'+_ld.getMinutes()).slice(-2)+'）'); } } }catch(e){}
+            updMsg("⏳ 等管家回信超过2分钟了。您的文件夹里管家相关的件现在长这样：\n"+(_mg.length?_mg.join("\n"):"（一个都没有）")+"\n\n① 有 mg_in_vercheck_ 开头的=回信到了，马上会自动取，不用管\n② 没有 mg_in_=管家回信没写成（多半它已红字记账），点下面按钮重新查一次");
+            try{ var _el=document.getElementById("updLine"); var _br=document.createElement('br'); _el.appendChild(_br);
+              var _btn=document.createElement('button'); _btn.textContent='🔄 点我重新查'; _btn.style.cssText='font-size:18px;padding:10px 22px;margin-top:8px;border:none;border-radius:10px;background:#7a9e7e;color:#fff;cursor:pointer;';
+              _btn.onclick=function(){ try{ sessionStorage.removeItem('hx_ver_checked'); sessionStorage.setItem('hx_ver_manual','1'); }catch(e){} location.reload(); };
+              _el.appendChild(_btn); }catch(e){}
+          }catch(e){}
+        }
         var b64=null; try{ b64=LearnShell.readFile('mg_in_'+vid+'.json'); }catch(e){}
         if(b64){
           clearInterval(timer);
