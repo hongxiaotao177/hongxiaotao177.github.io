@@ -1,6 +1,6 @@
 {
  "v": 1,
- "t": 1789634400127,
+ "t": 1789637374867,
  "items": [
   {
    "key": "notes",
@@ -40,9 +40,9 @@
   },
   {
    "key": "guanjia",
-   "version": "0.40.0",
+   "version": "0.41.0",
    "dl": "software-guanjia.html",
-   "sig": "95ac5bb9449a8677"
+   "sig": "5e6f4e51caa546f9"
   },
   {
    "key": "pai",
