@@ -2,6 +2,10 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.19.4 2026-09-17（班⑧，循环事故根治，洪老师拍板方案C）：病根=专区大件（大管家580KB→b64约80万字符）过JS桥
+      readFile被X5截断/失败→大件永远装不上→专区件清不掉→开门见件又投信→死循环（真机17:40~19:56循环451轮）。
+      改=装件内容hxRawGet公开站现取优先（文本不过桥，多大都不怕），专区老路兜底；开门直装段同改+已装版本跳过
+      （防删除失败反复装）；管家回信applyOne装件段同改。查版本/投信/账本/清单其余一行未动。
     v1.19.3 2026-09-17（班⑦，洪老师真机截图报"一开门就自动跳查版本/装新版很烦"+拍板方案A）：开门发现管家专区备好新版
       改原地逐件直装（不投信不重查11件不弹大框不跑整链），装完一行小字报结果+3秒一次安静刷新生效；
       只改开门专区段，查版本/投信/装件老链路一行未动；手动「🔍 检查新版本」行为照旧。
@@ -492,7 +496,7 @@ var CUR = { notes:"2.18.1", xiti:"1.16.0", bridge:"1.7.0", xueqi:"0.21.0", ppt:"
 CUR.guanjia="0.35.1"; /* v1.18.5 纯CUR同步：大管家v0.35.1（#108 删过的病人手动收得回+移出黑名单/防重跳过不播报） */
 CUR.index="1.18.7"; /* v1.18.7 顺手补CUR：主界面自己1.18.6→1.18.7 */
 CUR.index="1.19.0"; /* v1.19.0 通信链路大扫除：闲时对账取消归管家+开门存清单+专区自动装+管家路补留档复核 */
-CUR.index="1.19.3"; /* v1.19.3 开门专区直装静默化：备好新版原地装不刷新重跑整链，装完一行小字+3秒一次安静刷新；v1.19.2 点检查先读账本mg_ver.json秒显；v1.19.1 摘多余命令 */
+CUR.index="1.19.4"; /* v1.19.4 循环事故根治方案C：装件内容不过桥（hxRawGet公开站现取优先，专区老路兜底，已装跳过），治大件装不上死循环；v1.19.3 开门专区直装静默化；v1.19.2 点检查先读账本mg_ver.json秒显；v1.19.1 摘多余命令 */
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
 try{ var _sv=JSON.parse(localStorage.getItem("hx_suite_ver")||"{}"); Object.keys(_sv).forEach(function(k){ if(_sv[k]) CUR[k]=_sv[k]; }); }catch(e){}
 /* key: [云端软件文件, 壳内文件名, 云端版本文件, 标签id] */
@@ -1039,30 +1043,41 @@ function hxRawGet(name){
             var rk=dlJobs.shift();
             var it=null; items.forEach(function(x){ if(x.key===rk) it=x; });
             if(!it){ applyOne(); return; }
-            var fb=null; try{ fb=LearnShell.readFile('mgver_'+it.localName); }catch(e){}
-            if(!fb){ failed.push(it.localName); var fi2=0; items.forEach(function(x,xi){ if(x.key===rk) fi2=xi; }); progLog[fi2]="❌ "+it.localName.replace(".html","")+"：管家专区的件没读到，下次再试"; renderProg(); applyOne(); return; }
-            var okw=false;
-            if(it.part){
-              try{ if(it.cur && it.cur!=="0"){ try{ LearnShell.writeFile(it.localName.replace(".js","")+"_v"+it.cur+".js", LearnShell.readFile(it.localName)); }catch(e){} } }catch(e){}
-              try{ okw=!!LearnShell.writeFile(it.localName, fb); }catch(e){}
-            }else{
-              okw=shellWrite(it.localName, fb);
-            }
             var fi=0; items.forEach(function(x,xi){ if(x.key===rk) fi=xi; });
             var nm2=it.part?("部件"+it.key):(it.key==="index"?"主界面自己":it.localName.replace(".html",""));
-            if(okw){
-              try{ LearnShell.deleteFile('mgver_'+it.localName); }catch(e){}
-              if(!it.part){ CUR[rk]=cloudVer[rk]||CUR[rk]; try{ localStorage.setItem("hx_suite_ver", JSON.stringify(CUR)); }catch(e){}
-                /* v1.19.0 D刀对齐：管家路装软件也留档新版备份（老路dlWrite一直有，管家路此前漏了） */
-                try{ LearnShell.writeFile(it.localName.replace(".html","")+"_v"+(cloudVer[rk]||"?")+".html", fb); }catch(e){} }
-              updated.push(it.localName.replace(".html","")+"→v"+(cloudVer[rk]||"?"));
-              progLog[fi]="✅ "+nm2+"：已装上 v"+(cloudVer[rk]||"?");
-            }else{
-              failed.push(it.localName);
-              progLog[fi]="❌ "+nm2+"：写入没成功，下次再试";
-            }
-            renderProg();
-            setTimeout(applyOne, 50);
+            /* v1.19.4（班⑧循环事故根治，方案C）：装件内容不过桥——专区大件（大管家580KB→b64约80万字符）
+               过JS桥readFile被X5截断/失败=大件永远装不上。改先hxRawGet公开站现取（文本不过桥），失败再回落专区老路 */
+            progLog[fi]="📥 "+nm2+"：正在取件装进壳…"; renderProg();
+            var _go=function(fb){
+              if(!fb){ failed.push(it.localName); progLog[fi]="❌ "+nm2+"：件没取到（网络不通），下次再试"; renderProg(); applyOne(); return; }
+              var okw=false;
+              if(it.part){
+                try{ if(it.cur && it.cur!=="0"){ try{ var _ob=LearnShell.readFile(it.localName); if(_ob) LearnShell.writeFile(it.localName.replace(".js","")+"_v"+it.cur+".js", _ob); }catch(e){} } }catch(e){}
+                try{ okw=!!LearnShell.writeFile(it.localName, fb); }catch(e){}
+              }else{
+                okw=shellWrite(it.localName, fb);
+              }
+              if(okw){
+                try{ LearnShell.deleteFile('mgver_'+it.localName); }catch(e){}
+                if(!it.part){ CUR[rk]=cloudVer[rk]||CUR[rk]; try{ localStorage.setItem("hx_suite_ver", JSON.stringify(CUR)); }catch(e){}
+                  /* v1.19.0 D刀对齐：管家路装软件也留档新版备份（老路dlWrite一直有，管家路此前漏了） */
+                  try{ LearnShell.writeFile(it.localName.replace(".html","")+"_v"+(cloudVer[rk]||"?")+".html", fb); }catch(e){} }
+                updated.push(it.localName.replace(".html","")+"→v"+(cloudVer[rk]||"?"));
+                progLog[fi]="✅ "+nm2+"：已装上 v"+(cloudVer[rk]||"?");
+              }else{
+                failed.push(it.localName);
+                progLog[fi]="❌ "+nm2+"：写入没成功，下次再试";
+              }
+              renderProg();
+              setTimeout(applyOne, 50);
+            };
+            /* 先公开站现取（不过桥），失败回落专区老路 */
+            try{
+              hxRawGet(it.dl).then(function(_txt){ _go(u8enc(_txt)); }).catch(function(e){
+                var fb=null; try{ fb=LearnShell.readFile('mgver_'+it.localName); }catch(e2){}
+                _go(fb);
+              });
+            }catch(e){ var fb2=null; try{ fb2=LearnShell.readFile('mgver_'+it.localName); }catch(e3){} _go(fb2); }
           })();
           return;
         }
@@ -1126,35 +1141,61 @@ try{ mgSuiteWrite(); }catch(e){}
       try{ return !!window.LearnShell.applyUpdate(name, b64); }catch(e){ return false; }
     }
     var _done=[], _fail=[];
-    for(var j=0;j<ready.length;j++){
-      var _ln=ready[j]; /* 去掉mgver_前缀后的文件名，如 index.html / hx-common.js */
-      var _fb=null; try{ _fb=LearnShell.readFile('mgver_'+_ln); }catch(e){}
-      if(!_fb){ _fail.push(_ln); continue; }
+    /* v1.19.4（2026-09-17班⑧，循环事故根治，洪老师拍板方案C）：装件内容不过桥——
+       病根=专区大件（大管家580KB→b64约80万字符）过JS桥readFile被X5截断/失败，装件永远失败
+       →专区件清不掉→开门见件又投信→死循环。改：装件内容用hxRawGet从公开站现取（文本在JS里不过桥，
+       多大都不怕），专区件只当"有新版"的信号，现取失败才回落专区老路；已是最新的跳过并清专区件，
+       防删除失败时反复装。 */
+    function _installOne(idx){
+      if(idx>=ready.length){
+        if(_done.length){
+          try{ window.LearnShell.toast("✅ 套装已自动更新"); }catch(e){}
+          updMsg("✅ 已装好新版："+_done.join("、")+(_fail.length?"。有"+_fail.length+"件没装成（"+_fail.join("、")+"），下次开门再试":"")+"。3秒后自动刷新生效…");
+          setTimeout(function(){ location.reload(); }, 3000);
+        }else if(_fail.length){
+          updMsg("⚠️ 新版没装成（"+_fail.join("、")+"），不影响使用，下次开门再试。");
+        }
+        return;
+      }
+      var _ln=ready[idx]; /* 去掉mgver_前缀后的文件名，如 index.html / hx-common.js */
       var _k=_keyOf[_ln]||"";
       var _isPart=(_ln.slice(-3)==='.js');
       var _cv=_verBook[_k]||"?";
-      var _okw=false;
-      if(_isPart){
-        try{ var _re=/[\d.]+/; for(var _pi=0;_pi<PARTS.length;_pi++){ if(PARTS[_pi][0]===_ln){ _re=PARTS[_pi][2]; break; } }
-          var _oldV=partLocalVer(_ln, _re); if(_oldV){ try{ LearnShell.writeFile(_ln.replace(".js","")+"_v"+_oldV+".js", LearnShell.readFile(_ln)); }catch(e){} } }catch(e){}
-        try{ _okw=!!LearnShell.writeFile(_ln, _fb); }catch(e){}
-      }else{
-        _okw=_mgShellWrite(_ln, _fb);
-        if(_okw && _cv!=="?"){ try{ LearnShell.writeFile(_ln.replace(".html","")+"_v"+_cv+".html", _fb); }catch(e){} }
+      /* 已是最新：跳过+试删专区件（删不掉下次开门还会跳过，不再重装） */
+      if(!_isPart && _k && _cv!=="?" && CUR[_k]===_cv){ try{ LearnShell.deleteFile('mgver_'+_ln); }catch(e){} _installOne(idx+1); return; }
+      /* 现取下载名：软件=SUITE[k][0]云端名，部件=文件名本体 */
+      var _dlName=_isPart?_ln:((_k&&SUITE[_k])?SUITE[_k][0]:_ln);
+      function _withBody(fb){
+        var _okw=false;
+        if(_isPart){
+          try{ var _re=/[\d.]+/; for(var _pi=0;_pi<PARTS.length;_pi++){ if(PARTS[_pi][0]===_ln){ _re=PARTS[_pi][2]; break; } }
+            var _oldV=partLocalVer(_ln, _re); if(_oldV){ try{ var _ob=LearnShell.readFile(_ln); if(_ob) LearnShell.writeFile(_ln.replace(".js","")+"_v"+_oldV+".js", _ob); }catch(e){} } }catch(e){}
+          try{ _okw=!!LearnShell.writeFile(_ln, fb); }catch(e){}
+        }else{
+          _okw=_mgShellWrite(_ln, fb);
+          if(_okw && _cv!=="?"){ try{ LearnShell.writeFile(_ln.replace(".html","")+"_v"+_cv+".html", fb); }catch(e){} }
+        }
+        if(_okw){
+          try{ LearnShell.deleteFile('mgver_'+_ln); }catch(e){}
+          if(!_isPart && _k && _cv!=="?"){ CUR[_k]=_cv; try{ localStorage.setItem("hx_suite_ver", JSON.stringify(CUR)); }catch(e){} }
+          _done.push(_ln.replace(".html","").replace(".js","")+"→v"+_cv);
+        }else{ _fail.push(_ln); }
+        setTimeout(function(){ _installOne(idx+1); }, 50);
       }
-      if(_okw){
-        try{ LearnShell.deleteFile('mgver_'+_ln); }catch(e){}
-        if(!_isPart && _k && _cv!=="?"){ CUR[_k]=_cv; try{ localStorage.setItem("hx_suite_ver", JSON.stringify(CUR)); }catch(e){} }
-        _done.push(_ln.replace(".html","").replace(".js","")+"→v"+_cv);
-      }else{ _fail.push(_ln); }
+      try{
+        hxRawGet(_dlName).then(function(_txt){ _withBody(u8enc(_txt)); }).catch(function(e){
+          /* 现取失败回落专区老路（小件仍可用） */
+          var fb=null; try{ fb=LearnShell.readFile('mgver_'+_ln); }catch(e2){}
+          if(!fb){ _fail.push(_ln); setTimeout(function(){ _installOne(idx+1); }, 50); return; }
+          _withBody(fb);
+        });
+      }catch(e){ /* 独立验证工兵建议补：极老壳hxRawGet同步抛也回落专区，与applyOne侧防御对齐 */
+        var fb3=null; try{ fb3=LearnShell.readFile('mgver_'+_ln); }catch(e2){}
+        if(!fb3){ _fail.push(_ln); setTimeout(function(){ _installOne(idx+1); }, 50); return; }
+        _withBody(fb3);
+      }
     }
-    if(_done.length){
-      try{ window.LearnShell.toast("✅ 套装已自动更新"); }catch(e){}
-      updMsg("✅ 已装好管家备好的新版："+_done.join("、")+(_fail.length?"。有"+_fail.length+"件没装成（"+_fail.join("、")+"），下次开门再试":"")+"。3秒后自动刷新生效…");
-      setTimeout(function(){ location.reload(); }, 3000);
-    }else if(_fail.length){
-      updMsg("⚠️ 管家备好的新版没装成（"+_fail.join("、")+"），不影响使用，下次开门再试。");
-    }
+    _installOne(0);
   }catch(e){}
 })();
 
