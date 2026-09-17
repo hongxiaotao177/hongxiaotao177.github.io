@@ -2,6 +2,8 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.19.2 2026-09-17（班⑤，挂号#115，洪老师拍板"同意开工"）：点「🔍 检查新版本」先读管家账本mg_ver.json秒显上次结论（带查的时刻），
+        管家真查到后自动覆盖——账本读不到/读坏不碍事，投信/等回信/装新版老链路一行未动；配套壳v2.0.1管家每10分钟勤看布告栏version-all.json。
     v1.19.1 2026-09-16（洪老师拍板"把这个多余的命令取消掉"）：「🔍 检查新版本」按钮（顶部+管理工具抽屉两处）onclick 立
       hx_sj_skip_once 标记——按钮刷新页面时不再带出 hx-common 开门闲时的速记流水.txt上行（多余的同步命令摘除）；
       配 hx-common v0.13.2 闲时上行认标记跳过一次。「记下后上行」等其他入口一行未动。
@@ -487,7 +489,7 @@ var CUR = { notes:"2.18.1", xiti:"1.16.0", bridge:"1.7.0", xueqi:"0.21.0", ppt:"
 CUR.guanjia="0.35.1"; /* v1.18.5 纯CUR同步：大管家v0.35.1（#108 删过的病人手动收得回+移出黑名单/防重跳过不播报） */
 CUR.index="1.18.7"; /* v1.18.7 顺手补CUR：主界面自己1.18.6→1.18.7 */
 CUR.index="1.19.0"; /* v1.19.0 通信链路大扫除：闲时对账取消归管家+开门存清单+专区自动装+管家路补留档复核 */
-CUR.index="1.19.1"; /* v1.19.1 摘多余命令：检查新版本按钮立hx_sj_skip_once，刷新不再带速记闲时上行 */
+CUR.index="1.19.2"; /* v1.19.2 点检查先读账本mg_ver.json秒显；v1.19.1 摘多余命令：检查新版本按钮立hx_sj_skip_once，刷新不再带速记闲时上行 */
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
 try{ var _sv=JSON.parse(localStorage.getItem("hx_suite_ver")||"{}"); Object.keys(_sv).forEach(function(k){ if(_sv[k]) CUR[k]=_sv[k]; }); }catch(e){}
 /* key: [云端软件文件, 壳内文件名, 云端版本文件, 标签id] */
@@ -934,6 +936,25 @@ function hxRawGet(name){
       items.forEach(function(it, i){ progLog[i]="⏳ "+(it.part?("部件"+it.key):(it.key==="index"?"主界面自己":it.localName.replace(".html","")))+"：管家后台查…"; });
       renderProg();
       updMsg("🔍 已把查版本的活交给通信管家——它在后台慢慢查（国内网慢也不碍事），查完这里自动出结果，您该干嘛干嘛。");
+      /* v1.19.2（班⑤，挂号#115）：先读管家账本mg_ver.json秒显上次结论（管家闲时勤看布告栏攒的），真查到自动覆盖 */
+      try{
+        var _bk64=LearnShell.readFile('mg_ver.json');
+        if(_bk64){
+          var _bk=JSON.parse(decodeURIComponent(escape(atob(String(_bk64).replace(/\s+/g,'')))));
+          if(_bk&&_bk.items&&_bk.items.length){
+            var _bt=new Date(+_bk.t||0);
+            var _bs=('0'+(_bt.getMonth()+1)).slice(-2)+'-'+('0'+_bt.getDate()).slice(-2)+' '+('0'+_bt.getHours()).slice(-2)+':'+('0'+_bt.getMinutes()).slice(-2);
+            _bk.items.forEach(function(r){
+              for(var _i2=0;_i2<items.length;_i2++){ if(items[_i2].key===r.key){
+                var _nm2=(items[_i2].part?("部件"+r.key):(r.key==="index"?"主界面自己":items[_i2].localName.replace(".html","")));
+                if(r.state==='same') progLog[_i2]="✅ "+_nm2+"：已是最新（账本"+_bs+"存的，管家补真查中）";
+                else if(r.state==='downloaded') progLog[_i2]="📥 "+_nm2+"：云端有v"+(r.cloud||"?")+"（账本"+_bs+"存的，管家补真查中）";
+                break; } }
+            });
+            renderProg();
+          }
+        }
+      }catch(e){}
       try{ LearnShell.writeFile('mg_out_'+vid+'.json', u8enc(JSON.stringify(letter))); }catch(e){ updMsg('⚠️ 投信没成功，改由主界面自己查…'); legacyRun(); return; }
       /* v1.17.0（挂号#89）管家干活面板：读 mg_progress.json 逐条列出；读不到=老壳/账本没建，面板不亮不碍事 */
       var mgProgOn=false;
