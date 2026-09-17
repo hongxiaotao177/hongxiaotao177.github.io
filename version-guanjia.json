@@ -1,7 +1,7 @@
 {
- "version": "0.38.0",
+ "version": "0.39.0",
  "dl": "software-guanjia.html",
- "note": "流程大简化：清场一次/保险柜取消/新病人进场脱敏间自清/聚合后只留聚合件/点亮补绑+随行AI/删除账治#99复发",
- "sig": "b0759f44dc512790",
+ "note": "聚合同产标红件（⟦R⟧记号未脱敏原文，点亮→浮窗AI修规则），放脱敏间+名册两处；防自聚合",
+ "sig": "d15ad821de98f7ef",
  "engine": "guanjia-pdf-engine.js"
 }
