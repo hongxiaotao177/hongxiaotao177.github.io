@@ -1,7 +1,7 @@
 {
- "version": "0.39.0",
+ "version": "0.40.0",
  "dl": "software-guanjia.html",
- "note": "聚合同产标红件（⟦R⟧记号未脱敏原文，点亮→浮窗AI修规则），放脱敏间+名册两处；防自聚合",
- "sig": "d15ad821de98f7ef",
+ "note": "挂号#116删病人三窝齐端（登记账+血气呼吸机档案柜连根拔），治未命名病人删了复活",
+ "sig": "95ac5bb9449a8677",
  "engine": "guanjia-pdf-engine.js"
 }
