@@ -1,0 +1,72 @@
+{
+ "v": 1,
+ "t": 1789634400127,
+ "items": [
+  {
+   "key": "notes",
+   "version": "2.18.1",
+   "dl": "software-notes.html",
+   "sig": "f58d913fc24ea2de"
+  },
+  {
+   "key": "xiti",
+   "version": "1.16.0",
+   "dl": "software-xiti.html",
+   "sig": "d04fe40506f546c7"
+  },
+  {
+   "key": "bridge",
+   "version": "1.7.0",
+   "dl": "software-bridge.html",
+   "sig": "0e0fee25c9ff91a1"
+  },
+  {
+   "key": "xueqi",
+   "version": "0.21.0",
+   "dl": "software-xueqi.html",
+   "sig": "2deeb0f6dd66875f"
+  },
+  {
+   "key": "ppt",
+   "version": "0.20.0",
+   "dl": "software-ppt.html",
+   "sig": "7cd16eccfc04d6d4"
+  },
+  {
+   "key": "xiaotao",
+   "version": "0.11.0",
+   "dl": "software-xiaotao.html",
+   "sig": "c8026d1dc257947a"
+  },
+  {
+   "key": "guanjia",
+   "version": "0.40.0",
+   "dl": "software-guanjia.html",
+   "sig": "95ac5bb9449a8677"
+  },
+  {
+   "key": "pai",
+   "version": "0.11.0",
+   "dl": "software-pai.html",
+   "sig": "97e38ee15c91e8b9"
+  },
+  {
+   "key": "index",
+   "version": "1.19.2",
+   "dl": "index.html",
+   "sig": "39d4e92c9fe3f71f"
+  },
+  {
+   "key": "hx-common.js",
+   "version": "0.14.0",
+   "dl": "hx-common.js",
+   "sig": "f218fe782bea12c6"
+  },
+  {
+   "key": "guanjia-pdf-engine.js",
+   "version": "0.8.0",
+   "dl": "guanjia-pdf-engine.js",
+   "sig": "642bec57aa21469c"
+  }
+ ]
+}
