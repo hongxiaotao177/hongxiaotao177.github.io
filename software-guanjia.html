@@ -8,6 +8,10 @@
   红小涛学习套装 · 病人大管家
   定位：全家资料的"管家"。按病人归堆（血气/呼吸机/脱敏病历，天然有章），
         按知识搜索（笔记/习题，全靠AI名片）。
+  v0.44.0第四刀 2026-09-18（验证工兵终审REVISE，版本号不变）：人名正则贪心吞4字回调拒脱后正则不回头漏脱（'李 四 记录'）——人名类标签值/职称后姓名值正则量词{1,3}改懒惰{1,3}?先试最短（'李 四'+空格边界即命中，验明正身通过就脱；四字复合姓自动加长命中）；连带（已报备）：highlight同步标红块挪到最前push，否则姓名+职称规则先把「医师」裹span、职称+冒号规则认不出导致人名漏红（顺序对齐desensitize）；两文件引擎仍逐字相同；其余一行未动。
+  v0.44.0第三刀 2026-09-18（验证工兵终审REVISE，版本号不变）：人名值贪心没除根（'李 四 记录'被当四字名）——新增dsm_COMPOUND复合姓表+dsm_nameOk验明正身（候选名去空格：2~3字首字在百家姓/4字前两字复合姓才算人名），人名类标签规则与职称后姓名规则替换改回调、不合格原样不脱，highlight同款不合格不标红；desensitize+highlight两函数同款同步，两文件引擎仍逐字相同；其余一行未动。
+  v0.44.0返工 2026-09-18（验证工兵终审REVISE，版本号不变）：①人民医院通配改回调剥「前往到住入转去在于」动词前缀，保留前缀只脱医院名（'前往深河人民医院就诊'→'前往***就诊'）②人名类标签值/职称后姓名值正则末尾加前瞻边界(?=\s|$|[，。；：、）)\n]|\d)，防多吃下一个词首字；desensitize+highlight两函数同款同步，改完两文件引擎仍逐字相同；其余一行未动。
+  v0.44.0 2026-09-18 班②（效果图v2洪老师拍板+脱敏规则补强）：①脱敏规则补强——初代v5.0规矩补回：21标签「标签：值」整段脱（人名类值容忍名字中间一个空格，值已是***跳过）、职称+冒号+姓名通配、日期/时间脱敏（****-**-** / **:**）、医院通配安全化收窄中文字2~15字（初代\S+会多吃半个句子）；新立第5组规则「全院职工名录」rules.staff=[]（默认空名单洪老师后给），localStorage键dsm_rules_staff照四组同款存取链，设置区加👥职工名录编辑框（一行一个），规则版本库快照与diff加staff组；第二步姓名+职称正则放宽容忍名字中间空格；dsm_formatText验单时间分段正则连带放宽认星号时间（连带必改已报备）；highlight同步标红 ②排版改版——主页面「🤖AI功能」折叠卡隐藏入口（AI走浮窗，底层函数不删不动）、「📕PDF引擎」状态框只藏不删；脱敏间标题行下依次=📥收病历折叠行→📤导出/其他折叠行（原导出/AI改名内容不动，第一行放「📤拷出单体脱敏工具」钮dsm_exportStandalone）→病人卡列表；病人卡展开区改双方框（📕脱敏前红暖框/🔒脱敏后绿框，一律并排各半宽限高200px可滚动，点行开现有全屏浮层），取代v0.42.0窄屏两条下划线 ③版本0.43.0→0.44.0三处留痕（SW_VERSION注释链/本条/关于页dsm_aboutInfo）；其余一行未动。
   v0.41.0 2026-09-17 班⑥（挂号#117，速记16:40/16:42两条，洪老师拍板"同意开工"）：①标红补色——全屏浮层挂body在#dsmWrap外，标红样式够不着=点全屏看原文不红（标了不显色），CSS纯加一行.dsm_fullOverlay .dsm_highlight-red照抄院内标红样式 ②收件副本恢复真名——废v0.14.1假「聚合」显示名，"聚合"名只留🧩真产物；其余一行未动。
   v0.43.0 2026-09-18 班①（挂号#120，洪老师真机三毛病+拍板"开工"）：①PDF引擎链重做——病根=装/读都过JS桥大桥被X5截断（PIT-COMMON-002军规漏网），治=dsm_engineTxtOk完整性验+留存改IndexedDB不过桥+公开站60秒现取兜底+开门闲4秒自动预加载 ②聚合防御——PDF进聚合前再过一遍脱敏（两处）+PDF没读出字toast明说+名册收件原文条目标「原文未脱敏」 ③身份病根实锤=gj_sendToDsm一律登记type='文本'，按真名后缀记身份+预览双保险；「TXT验单」改叫「验单」；脱敏规则引擎一个字符未动。
   v0.42.0 2026-09-17 班⑨（挂号#119，洪老师逐条确认"脱敏间彻底重排"）：①首页=病人卡列表，点病人卡=自动脱敏该病人名下PDF+TXT（PDF排前TXT排后）并自动显示预览 ②脱敏规则照现有不动 ③脱敏前预览真红字标红（dsm_highlightSensitive真span引擎不动，历史_标红_件⟦R⟧记号逆转换成span防御显示）④🧩聚合只出TXT一件「{pkey}_聚合_{MMDD}.txt」（脱敏后PDF文字前+TXT验单后），放脱敏间+名册两处，不再产_标红_件、不再清场 ⑤收病历入口保留并合并进默认折起的「📥 收病历（点我展开）」区，壳内经HX.fm记上次位置hx_gj_fmpath ⑥字段点亮HX.pick一行不动 ⑦旧1234折叠壳（运行时包壳IIFE）删光 ⑧手机窄屏=每份文件两条下划线（脱敏前/脱敏后）带身份「PDF病历」「TXT验单」，宽屏左右并列标题带身份；导出/AI区默认折起「📤 导出/AI（点我展开）」；其余一行未动。
@@ -850,7 +854,8 @@ hxStore.reg('hx_gj_deleted_v1'); /* v0.38.0 ⑦（#99复发）：删除账归仓
   <div class="ver">v<span id="verTop">?</span> · 全家的资料管家：病人归堆 + 知识搜索（名片打底）</div>
   <!-- v0.18.0 毛病38（洪老师真机报"做了半天ai功能在哪里没有发现"）：开门全卡折叠，AI埋在中间找不到；顶上加直达入口，点了撑开「问AI查资料」卡滚过去 -->
   <!-- v0.22.0 挂号#55销号：紫色大按钮压成普通文字行，位置不变、点击行为不变，样式与折叠行一致 -->
-  <div class="card"><h2 id="btnAiEntry" class="foldable" style="margin:0;padding-top:12px;padding-bottom:12px;min-height:44px;"
+  <!-- v0.44.0（效果图v2洪老师拍板）：主页面第1个「🤖AI功能」折叠卡隐藏入口（AI走浮窗），只藏不删，底层函数一律不动 -->
+  <div class="card" style="display:none;"><h2 id="btnAiEntry" class="foldable" style="margin:0;padding-top:12px;padding-bottom:12px;min-height:44px;"
     onclick="try{ if(typeof foldSetters!=='undefined'&&foldSetters['ask']) foldSetters['ask'](true); var hs=document.querySelectorAll('.card > h2'); for(var i=0;i<hs.length;i++){ if(hs[i].textContent.indexOf('问AI查资料')>=0){ hs[i].scrollIntoView({block:'start'}); break; } } }catch(e){}">🤖 AI功能 <span class="fold-arrow">▸</span></h2></div>
 
   <!-- v0.12.0 E2 手机版全屏对照：窄屏（max-width:700px）下.dsm_compare改单列上下排（上原文标红、下脱敏后）+ 全屏浮层样式 -->
@@ -884,7 +889,8 @@ hxStore.reg('hx_gj_deleted_v1'); /* v0.38.0 ⑦（#99复发）：删除账归仓
     <div id="dsmWrap">
 <div class="dsm_container">
 <!-- PDF加载 -->
-<div class="dsm_pdf-loader" id="dsm_pdfLoader">
+<!-- v0.44.0（效果图v2洪老师拍板）：「📕PDF引擎」状态框隐藏（v0.43.0起开门自动预加载，框不给用户看），只藏不删 -->
+<div class="dsm_pdf-loader" id="dsm_pdfLoader" style="display:none;">
     <div class="dsm_loader-row">
         <div class="dsm_loader-title"><span class="dsm_spinner" id="dsm_pdfSpinner" style="display:none;"></span><span id="dsm_pdfLoaderTitle">📕 PDF引擎：用到时才装（装一次）</span></div>
         <div class="dsm_progress-wrap"><div class="dsm_progress-fill" id="dsm_pdfProgressFill"></div></div>
@@ -933,6 +939,25 @@ hxStore.reg('hx_gj_deleted_v1'); /* v0.38.0 ⑦（#99复发）：删除账归仓
 </div>
 </div>
 
+<!-- 导出 -->
+<!-- v0.42.0（挂号#119）：导出/AI整区默认折起「📤 导出/其他（点我展开）」（功能一行不删，元素原样挪入）；v0.44.0（效果图v2）：改名「📤 导出/其他」并挪到收病历折叠行之下、病人卡列表之上，内容不动，第一行加「📤拷出单体脱敏工具」钮 -->
+<div style="cursor:pointer;font-size:14px;font-weight:600;color:#4a4238;padding:8px 2px 4px;user-select:none;border-top:1px solid #efe9df;margin-top:6px;" onclick="var _b=document.getElementById('dsm_exportBox');if(!_b)return;var _s=_b.style.display==='none';_b.style.display=_s?'':'none';this.textContent=_s?'▾ 📤 导出/其他（点我收起）':'▸ 📤 导出/其他（点我展开）';">▸ 📤 导出/其他（点我展开）</div>
+<div id="dsm_exportBox" style="display:none;">
+<!-- v0.44.0③（效果图v2）：拷出单体脱敏工具钮放本区第一行（走下载，存哪您指定；实现见dsm_exportStandalone） -->
+<div style="margin:0 0 10px;"><button class="dsm_btn-primary" onclick="dsm_exportStandalone()">📤 拷出单体脱敏工具（走下载，存哪您指定）</button></div>
+<div class="dsm_export-section">
+<span class="dsm_label">📤 导出：</span>
+<select id="dsm_exportFormat" onchange="dsm_updateExportFileName()" style="padding:5px 10px;border:1px solid #ddd;border-radius:5px;font-size:13px;background:#fff;cursor:pointer">
+    <option value="html">📄 HTML</option>
+    <option value="txt">📝 TXT</option>
+    <option value="md">📋 Markdown</option>
+</select>
+<input class="dsm_path-input" id="dsm_exportFileName" placeholder="文件名自动生成" value="">
+<button class="dsm_btn-primary" onclick="dsm_exportReport()">📤 导出报告</button>
+<button class="dsm_btn-primary" onclick="if(window.HX&&HX.ai&&HX.ai.ready&&HX.ai.ready()){ HX.ai.open('dsm-askai'); return; }dsm_askAI()" style="background:#8e44ad;">🤖 AI分析</button><!-- v0.16.0 脱敏间AI分析入口：只发勾选且已脱敏的文本，原文不出这台机器 --><!-- v0.24.0 AI面板唤起两行插最前；HX不在放行原行为 -->
+</div>
+</div>
+
 <!-- 病人列表 -->
 <div class="dsm_patient-section">
 <div class="dsm_section-title">👤 病人列表</div>
@@ -945,23 +970,6 @@ hxStore.reg('hx_gj_deleted_v1'); /* v0.38.0 ⑦（#99复发）：删除账归仓
 <div class="dsm_actions"><button onclick="dsm_makeAgg()" style="background:#e8f5e9;border:1px solid #27ae60;color:#1e7e34;border-radius:5px;">🧩 形成聚合文件</button></div><!-- v0.42.0（挂号#119）①④：独立「📋预览」钮删掉（点病人卡自动脱敏+自动预览），🧩聚合钮保留在选中病人展开区显眼处（dsm_previewData函数本体保留，别处照调） --><!-- v0.37.0 挂号#114：聚合明钮（原来只有收库时自动聚，洪老师找不到入口） -->
 </div>
 <div class="dsm_file-list" id="dsm_fileList"><div class="dsm_empty-state">请选择一位病人</div></div>
-</div>
-
-<!-- 导出 -->
-<!-- v0.42.0（挂号#119）：导出/AI整区默认折起「📤 导出/AI（点我展开）」（功能一行不删，元素原样挪入） -->
-<div style="cursor:pointer;font-size:14px;font-weight:600;color:#4a4238;padding:8px 2px 4px;user-select:none;border-top:1px solid #efe9df;margin-top:6px;" onclick="var _b=document.getElementById('dsm_exportBox');if(!_b)return;var _s=_b.style.display==='none';_b.style.display=_s?'':'none';this.textContent=_s?'▾ 📤 导出/AI（点我收起）':'▸ 📤 导出/AI（点我展开）';">▸ 📤 导出/AI（点我展开）</div>
-<div id="dsm_exportBox" style="display:none;">
-<div class="dsm_export-section">
-<span class="dsm_label">📤 导出：</span>
-<select id="dsm_exportFormat" onchange="dsm_updateExportFileName()" style="padding:5px 10px;border:1px solid #ddd;border-radius:5px;font-size:13px;background:#fff;cursor:pointer">
-    <option value="html">📄 HTML</option>
-    <option value="txt">📝 TXT</option>
-    <option value="md">📋 Markdown</option>
-</select>
-<input class="dsm_path-input" id="dsm_exportFileName" placeholder="文件名自动生成" value="">
-<button class="dsm_btn-primary" onclick="dsm_exportReport()">📤 导出报告</button>
-<button class="dsm_btn-primary" onclick="if(window.HX&&HX.ai&&HX.ai.ready&&HX.ai.ready()){ HX.ai.open('dsm-askai'); return; }dsm_askAI()" style="background:#8e44ad;">🤖 AI分析</button><!-- v0.16.0 脱敏间AI分析入口：只发勾选且已脱敏的文本，原文不出这台机器 --><!-- v0.24.0 AI面板唤起两行插最前；HX不在放行原行为 -->
-</div>
 </div>
 
 <!-- 预览 -->
@@ -1019,6 +1027,12 @@ hxStore.reg('hx_gj_deleted_v1'); /* v0.38.0 ⑦（#99复发）：删除账归仓
         <input id="dsm_keywordInput" placeholder="如：张三" onkeydown="if(event.key==='Enter')dsm_addKeyword()">
         <button onclick="dsm_addKeyword()">➕ 添加</button>
     </div>
+
+    <hr class="dsm_divider">
+
+    <!-- v0.44.0⑤ 全院职工名录（新立第5组规则，名单洪老师后给，默认空）：一行一个名字，引擎逐条全文脱成*** -->
+    <label>👥 职工名录（全院职工姓名，一行一个）</label>
+    <textarea id="dsm_staffTextarea" rows="4" placeholder="一行一个名字"></textarea>
 
     <hr class="dsm_divider">
 
@@ -1267,7 +1281,7 @@ hxStore.reg('hx_gj_deleted_v1'); /* v0.38.0 ⑦（#99复发）：删除账归仓
 </div>
 
 <script>
-var SW_VERSION = "0.43.0"; /* v0.43.0（2026-09-18 班①，挂号#120，洪老师拍板"开工"）：①PDF引擎链重做——坏包病根=装/读都过JS桥大桥被X5截断（PIT-COMMON-002军规漏网），治=全来源先过dsm_engineTxtOk完整性验+留存改IndexedDB不过桥+公开站60秒现取兜底+开门闲4秒自动预加载（不再"用到才装"）②聚合防御——PDF部分进聚合前强制再过一遍脱敏（两处），PDF没读出字没进聚合toast明说不再静默漏，名册收件原文条目加红小字「原文未脱敏」③身份病根实锤——gj_sendToDsm一律登记type='文本'致PDF标成验单，按真名后缀记身份+预览双保险（type或后缀任一认PDF），洪老师拍板「TXT验单」改叫「验单」（聚合分节标同步改）；脱敏规则引擎一个字符未动；其余一行未动 */ /* v0.42.0（2026-09-17 班⑨，挂号#119，洪老师逐条确认）：脱敏间彻底重排——首页病人卡、点卡自动脱敏+预览（PDF前TXT后）、收病历5入口折起「📥 收病历」且壳内HX.fm记hx_gj_fmpath、🧩聚合只出{pkey}_聚合_{MMDD}.txt一件（不清场不产_标红_件）、窄屏两行/宽屏两栏标题带身份「PDF病历」「TXT验单」、旧1234折叠壳删光、导出/AI区折起；详见文件顶部v0.42.0条 */ /* v0.41.0（2026-09-17 班⑥，挂号#117，速记16:40/16:42两条，洪老师拍板"同意开工"）：①标红补色——全屏浮层挂document.body在#dsmWrap院子外，标红样式#dsmWrap .dsm_highlight-red够不着=点「未脱敏原文全屏看」不红（标了不显色），CSS纯加一行.dsm_fullOverlay .dsm_highlight-red照抄院内样式 ②收件副本恢复真名——废v0.14.1假「聚合」显示名（那时还没有真聚合功能，现在误导成"没按钮就有聚合件"），清单显示真文件名，"聚合"名只留🧩产物；脱敏/聚合/收件等其余一行未动 */ /* v0.40.0（2026-09-17 班⑤，挂号#116，洪老师拍板"三窝齐端"）：删病人连根拔——①登记账hx_patients里这人（含出院状态/别名）一并删（旧版只删病历条目，人壳留着→每次归堆复活，"删三次又回来"的病根）②血气/呼吸机档案柜（bgdb）里该名下原始记录一并删（原"原始记录不动"老规矩经洪老师2026-09-17亲口改判删除）③云端存档随hxStore对账自动带走；删除账hx_gj_deleted_v1照记（闲时自动收仍拦），手动收不拦老规矩不动 */ /* v0.39.0（2026-09-17 班④，洪老师拍板）：①设计规定——浮窗AI+文件点亮=通用处理通道 ②聚合时同产「_标红_MMDD.txt」（未脱敏原文敏感词带⟦R⟧记号，dsm_markSensitive复用highlight同套规则，供点亮→浮窗AI修理脱敏规则）③标红件放两处（脱敏间清单与聚合件并排+名册kind=mark留底防清空丢失）④单体版不动——原件在U盘/文件夹原地没动，想再做重新选文件即可（办法二）；版本0.38.0→0.39.0三处留痕；其余一行未动 */  /* v0.38.0（2026-09-17 班③，洪老师拍板流程大简化+清场+#99复发根治+点亮见效）：①一次性全清场（名册hx_pdocs_v1/脱敏间hx_dsm_v1/保险柜hx_dsmraw_v1/拿不准/删除账，旗标hx_gj_reset_v1只清一次，hxStore.set落真源）②原文保险柜取消（归档/横幅调用停用，函数本体保留）③新病人进场脱敏间自动全清空（本批pkey与现有无交集才清）④聚合后脱敏间只留聚合件（进内存+存档清空重记+清单重渲，同修"聚合件不显示"）⑤名册/脱敏清单重渲后补绑HX.pick点亮 ⑥问AI发送前HX.pick.get()有效则点亮文件脱敏后文本随行（标注【点亮文件：fname】，只送脱敏后）⑦删除账hx_gj_deleted_v1治#99复发（闲时自动收跳过/手动收不拦且收进移出/清场同清）⑧版本三处留痕；其余一行未动 */  /* v0.37.0（2026-09-17 班②，挂号#113/#114）：①窄屏脱敏预览两行字点行全屏看一份（dsm_narrowRows+dsm_fullOne，宽屏左右分栏照旧）②脱敏间加「🧩 形成聚合文件」明钮dsm_makeAgg，成品放两处（脱敏间hx_dsm_v1+名册kind=agg）；详见文件顶部v0.37.0条，其余一行未动 */ /* v0.35.2（2026-09-16 班④，速记15:55洪老师"脱敏的病例显示应该显示pdf版的病历，然后再显示txt版的病例"）：详情页「原状病历」清单补PDF排前排序（时间线/脱敏间清单/预览三处早已PDF排前，此处漏网）；其余一行未动 */ /* v0.35.1（2026-09-16 班②，洪老师真机报"删光病人后收病历收不进"拍板"删掉了再收进来也是有可能的"）：①docInboxFmTake加第2参manual——手动收（🔄钮）遇删过的病人不再拦截，顺手把他移出隐藏名单照收（=收回来了）；闲时自动收仍拦（防U盘原件没清前删了白删，#99不复活）②防重保留（同名同大小同修改时间不重复收）但不再播报"跳过N份收过的"（洪老师：这提示没有必要）③补上v0.33.3留下的窟窿：被拦份数_ptHidN从此有去处（闲时拦截照旧静默，手动路不再存在被拦）；SAF老路/脱敏/销毁等其余一行未动 */ /* v0.35.0（2026-09-16 班①，病人大管家五连：①收病历防重——fm收料口收进前查seen三件套（f/z/t，seen条目有d且记着hx_gj_fmpath时要求d一致，老条目宽松兼容），收过的跳过并人话报名单；删脱敏间「📥收进病历库」「🗑️清空数据」两钮（函数本体保留，收库走读完自动收）②送脱敏间PDF+TXT一起送、同名同内容只送第一份、送前confirm人话清单 ③dsm_admitToLib收库时同pkey有PDF成品+txt成品自动生成kind=agg聚合条目进hx_pdocs_v1 ④AI回复回家——askaiSend成功且有pkey则存kind=ai条目进名册（aiChat已记账不重复记），名册显🤖徽章 ⑤脱敏间手机化——文件行下划线点开全屏浮层（顶部「未脱敏原文/脱敏后」两行可点切换，默认脱敏后）、病人名点开/收起名下清单每份带✕可删（连hx_dsm_v1存档一起删）；接点亮——名册病历行/脱敏间文件行加data-pkey/data-fname，hxReady后HX.pick在则bind（老hx-common静默跳过）） */ /* v0.34.1（2026-09-15，规则改动自动留账，洪老师2026-09-15拍板）：①dsm_importAIRules快照后纯插入dsm_rulesDiff算四类diff（新增=新有旧无/删除=旧有新无）②dsm_rulelibAdd加第3参diff存进版本库记录（老调用不传兼容）③规则版本库每条加「🔍看改动」浮层（绿加红删灰没动，老版本没diff显示「老版本没记账」）④导入成功toast末尾补「改动已记账」⑤三处留痕；脱敏/收件/销毁等链路一字未动 */ /* v0.34.0（2026-09-15，挂号#107，洪老师定工作流："PDF才是真身要脱敏；TXT验单没敏感信息只聚合用；所有自动删病历的全部去掉改手工删；PDF放前面我重点关注"）：①收件三链自动删原件全撤（主删/补刀/转正删），收进登记seen防重，原件一个不动 ②PDF当真身：归堆/详情页有正文显正文给全套功能钮、列表PDF永远排最前、无正文老PDF如实口径提示重收 ③送脱敏间只送有正文PDF ④拿不准止血：套装件名永不进拿不准+旧清单自清（治分家后误扫家目录）⑤闲时自动扫改道：有fm桥认记住的U盘文件夹fmWalk自动收新件（落实"第2次打开先查缺省文件夹搜出文件"），不再扫家目录；fm路收进登记seen防重收 ⑥简介/流程注释口径同步。原文保险柜手动销毁链一字未动 */ /* v0.33.5（2026-09-15，挂号#106，洪老师真机报"06病人PDF送脱敏间送不成功"）：病根=PDF收件只登记不读正文，送脱敏间只送有正文条目。治=①fm路收PDF当场内嵌引擎解析正文入库（读不出照老规矩只登记不拦收件）②送脱敏间放行有正文PDF，无正文老PDF计数并toast请重收。其余一行未动 */ /* v0.33.4（2026-09-15，挂号#104）：两处HX.fm.pick加hideKit:true隐藏套装自有文件，其余一行未动 */ /* v0.33.3（2026-09-15，挂号#101）：接入hx-common v0.12.0 HX.fm自家仿电脑资源管理器取代系统SAF选择器——①🔄现在收一次病历有桥走ensure+pick多选面板逐件read收料（新收料口docInboxFmTake，原件留在U盘没动不删），没权限/无桥回落v0.33.2老SAF路 ②📂换文件夹有桥走pick folder模式记localStorage hx_gj_fmpath，取消/无桥回落老SAF pick（oldName对比逻辑原样保留在docFolderOldPick）；docInboxScan开头有hx_gj_fmpath且fm.ok()时fmWalk播报名单（含子文件夹），收仍走老路只收第一层 ③版本三处留痕；SAF老路全部逻辑一字未动。详见文件顶部v0.33.3条 */ /* v0.33.2（2026-09-15，挂号#100）：①📂换文件夹记oldName、pollFolder回调里folderName变了才报成功，没变报「没换成」②🔄现在收一次病历manual路径——无文件夹直接pick唤起选完接着扫、有文件夹先listFiles探活（失败toast「记住的文件夹不在了（U盘拔出了？）请重选」并自动pick）+搜到先人话播报名单再收件 ④seen入档补d=folderName、seenHas有d要求同文件夹+三件套全中、无d旧条目兼容老三件套；闲时自动扫/解析/删除链一字未动。留痕三处同步，详见文件顶部v0.33.2条 */ /* v0.33.1 2026-09-14 删病人除根（挂号#99「删掉的病人重启后又回来」，18:02速记，洪老师拍板方案A+B+C，只改这三条其他一行未动）：A脱敏间删除除根——dsm_deletePatient删内存后dsmhLoad读档→delete存档patients[name]→dsmhSave落档；dsm_clearAllData清内存后存档patients={}落档（全try护栏，dsmh_restore自愈段一字未动，PIT-GJ-010；脱敏存档是工作缓存不是病历数据，删档不犯军规） B名册隐藏名单落真源——ptHideSave同时走hxStore.set('hx_gj_pthide_v1',a)（有hxStore才走、try护栏），登记处补hxStore.reg('hx_gj_pthide_v1')（SYNC_KEYS由KEYS过滤自动生成，注册后自动进小件对账，表达式不动） C收件断重收——docInboxScan在parseDocFname ok后push前查ptIsHidden，命中隐藏pkey不入库不计数，原件照现规矩删+登记seen走原链。留痕三处同步，详见文件顶部v0.33.1条 */ /* v0.33.0 2026-09-14 班⑦六连（挂号#96/#97/#98+16:29/16:37速记，洪老师2026-09-14拍板，只改清单A~G其他一行未动）：A名册h2加「📂换文件夹」（复用🗄️pick链路）+docInboxScan报告人话化（扫描本体一字未动） B名册展开区加「🛡送脱敏间」（灌dsm_APP.patients+dsmh_remember存档，守PIT-GJ-010） C脱敏间进件5入口收进默认折起的「📥自己取病历」行（收进病历库/清空常显，运行时包壳） D开门不再自动跑dsmh_restore/dsmraw_tick/dsmraw_bar（首次展开才restore+旗标防重，60秒巡逻删） E原文不再自动销毁改满月提醒手动删（dsmraw_tick只统计满30天份数，横幅文案改+满月标红，三档时限UI注释藏起本体不删，destroy链一字未动） F导出回写名册timeStr补docHm时分（admit本带时分不动） G版本0.32.0→0.33.0三处留痕；#99不混进本版。详见文件顶部v0.33.0条 */ /* v0.32.0 2026-09-14 AI面板两级化·提示词可改可存（挂号#79，洪老师拍板："不搞三级菜单，就两级，点进去就是几套预设提示词，提示词可修改、可储存"）：①AI_MANIFEST 8条补提示词套——问AI/脱敏AI分析5套+规则体检p5+会诊PPT p4走钩子直读直写老账本hx_gj_askai_v1（一本账不另立）；两路一起查3套/做名片1套/AI理目录1套出厂原文抄进manifest，改动存面板覆盖账本hx_aiprompt_v1，函数发送前各加一句HX.ai.pget查覆盖（乙路每条一句，发送逻辑一行未动）；点亮菜单本来自带三级可改提示词，面板只指路 ②版本号0.31.1→0.32.0三处留痕（本注释链/顶部修改记录/关于页） ③配套hx-common v0.11.0面板第2级编辑页。v0.31.1 2026-09-14 AI面板清单恒空根治（挂号#83，洪老师真机报"病人大管家所有AI功能都没接上"，班③playwright壳同步路径仿真实锤）：病根=hxReady回调在壳readFile同步路径下先于var AI_MANIFEST赋值执行，init拿到undefined，面板恒显"本软件还没配AI功能清单"；治=init包setTimeout(0)让出同步栈；只动hxReady回调里init这一处+留痕，其余一行未动；普查小涛/血气/PPT/习题四家manifest均在init前赋值无此患 */ /* v0.31.0 2026-09-14 安心条HX.step接入（洪老师2026-09-14拍板：开门/重活两行小字定格可拍照定位）：开门begin/首屏upd/对账done（异步批量回调里）+批量读件/PDF解析/导出报告/原文销毁4处重活done/fail配对，全程if(window.HX&&HX.step)护栏+try静默降级；详见文件顶部v0.31.0条 */ /* v0.30.5 2026-09-14 原文销毁不愣住+不误报（挂号#90，洪老师真机报"升级后开大管家愣几秒，然后红字原文没删成"，拍板"按你的喜好干活"）：病根=dsmraw_destroy走壳同步桥deleteFile+紧接listFiles全量枚举核对，SAF慢活堵主线程=愣几秒；且删完立刻枚举常读到系统缓存旧清单→误报"没删成"。治=壳v1.7.4新异步桥deleteFileAsync（删+800ms复核+还在再删一次全在壳后台线程，回调报deleted/notfound/fail），本函数优先走异步桥主线程零等待；老壳没这桥自动回落原同步老路（一字未动）。成败两路口抽成dsmraw_destroy_done/dsmraw_destroy_fail两小函数供两条路共用，判定规矩不变：真没删成才红字+条目标delFail留横幅。只动销毁这一带，其余一行未动。v0.30.4 2026-09-14 愣住除根（挂号#86续）：壳v1.7.3 readFiles/readFilesAsync批量桥+hx-common v0.9.1异步批量对账，JS主线程零等待；详见文件顶部v0.30.4条。v0.30.3 2026-09-13 开门愣住根治（挂号#86，洪老师真机报"装壳后打开大管家还是愣住"）——病根与#85小涛笔记同根：闲时sync名单混着三个大件（hx_pdocs_v1病历库/hx_dsmraw_v1原文保险柜/hx_dsm_v1脱敏存档），HX.store.sync主线程同步读壳文件+b64解码+JSON解析几MB=每次闲时卡十几秒；模拟真机（X5+CPU6x降速+19MB壳文件）实测复现首开卡2.2秒+自动刷新、二开仍卡2.3秒。治=①sync名单摘三大件只对5小件（名片/名册/收件箱/阅读进度/PPT任务） ②闲时watcher加大件空库灌回（本机null才单键sync读灌，本机有值含空壳"{}"一行不动绝不白读）。只动这2处+留痕，其余一行未动 */ /* v0.30.2 2026-09-12 恢复坚果云腿（#75根治落地：hx-common v0.7.0 dav全异步走壳v1.6.0 davAsync后台桥，主线程零占用；三处dav调用恢复，旧壳dav.asyncOk为假自动静默跳过不卡） */ /* v0.30.1 2026-09-12 止血（挂号#75 洪老师真机报：脱敏间「📂选文件夹/📄看文件选文件」一点就死机、页面冻住不能滚动）——病根：09-12地基补强/二期给闲时watcher和存盘链路加了坚果云腿HX.dav.rescue/mirror，而壳JS桥davList/davUp/davDown全是同步联网调用，闲时一次最多十几次同步HTTP坚果云，网慢把主线程卡死=点啥都没反应（铁律：昨天到今天代码变化，前天没事）。修：三处HX.dav调用注释停用（hxStore.set两处mirror+闲时watcher一处rescue），功能本体保留不删，GitHub中转relay照常（异步不卡）；根治=壳Java侧dav挪后台线程，列二期候选，记忆库#75+pits_病人大管家留案底不销号。改前备份software-guanjia_备份_20260912_2101已双推（GitHub+坚果云）。SW_VERSION/顶部注释/关于三处同步 */ /* v0.30.0 2026-09-12 地基二期（邮路一本账+副本瘦身，只改清单内）：①寄小涛邮路一本账——详情页「📮寄给小涛笔记」写xt_inbox_v1改走仓管员hxStore.set（有壳落真源文件夹hxdata_xt_inbox_v1.json，无壳走localStorage老路效果相同），信封格式不变 ②副本瘦身（图纸规矩D）：D6a收件回写不再双写——副本瘦身：一本账xt_notes_v1，study_notes_v1停写留旧（老数据原地不动不删）；openPick/scanSources两处读study_notes_v1改读xt_notes_v1 ③SW_VERSION/顶部注释/关于三处同步（详见文件顶部修改记录） */ /* v0.29.0 2026-09-12 地基补强（SPEC2二、四软件接入共同规矩落地大管家）：①hxStore薄壳set加单体备份邮路——HX.store.has()为false（无壳）时HX.relay.add同一份值，有壳绝不走relay ②闲时watcher加HX.relay.pull()中转拉回（拉到>0件照现有pulled逻辑toast+刷新）+HX.dav.rescue(注册键数组)放开门sync前只补缺失 ③保存后闲时HX.dav.mirror对应hxdata_<键>.json到坚果云 ④开门HX.relay.init('大管家')挂状态条（单体显眼，壳内恒🟢无害）⑤全程if(window.HX&&HX.relay)/HX.dav守卫+try，HX缺席行为与v0.28.0完全一致 ⑥SW_VERSION/顶部注释/关于三处同步（详见文件顶部修改记录） */ /* v0.28.0 2026-09-12 地基工程一期（SPEC.md军规，只改清单内其他一行未动）：①hxStore收编成HX.store薄壳代理（对外set/reg/sync名字签名一个不变，HX.store缺席时完全走原有本地老路不白屏）②sync冲突回调→顶部红条明示（样式照抄delFailReport，可点✕关，不弹窗不阻塞）③收件规矩C补时间戳——文件名无日期时间样式的入库fname末尾补「_收件MMDD_HHMM」（parseDocFname不动）④两处PPT信箱「寄新信会盖掉它」hxConfirm拆除——不再问，旧信先改名「ppt_inbox_旧信_时分」留档再寄新信 ⑤dsmh_remember脱敏存档同名键写入前旧值挪「键名_冲突_HHMM」留档 ⑥SW_VERSION/顶部注释/关于三处同步（详见文件顶部修改记录） */ /* v0.27.0 2026-09-11 信息流通三连（断点D6/D9，只改这三处其他一行未动）：①D6a收件「合并/新建资料」回写study_notes_v1同一动作顺手双写小涛笔记正房xt_notes_v1（结构照抄小涛：数组元素{id,title,content,createdAt,updatedAt,fp}，fp=strHash同款FNV）②D6b工具箱加第6个链接「📘 小涛笔记」（文件名自适应照抄现有写法，带?from=guanjia&pt=当前病人）③D9病历详情页按钮排加「📮寄给小涛笔记」：该病人聚合病历文本（复用hzGatherText）+标题push进xt_inbox_v1（数组，元素{title,text,pt,ts}），toast「已寄给小涛笔记」，无壳也照做（localStorage同源共享）（详见文件顶部修改记录） */ /* v0.26.0 2026-09-11 收件两修（D1断点"不许静默吞"，只改收件扫描一带）：①可收文件类型扩成txt/pdf/md（parseDocFname/补日期重试正则同步），拍病历导出的「代号-完整资料.md」能被扫描看到 ②凡被收件扫描看到但parseDocFname解析不ok或类型不收的文件一律进「❓拿不准」清单（hx_gj_unsure_v1，原因写明"类型不收"/解析why），登记pd.seen防重复报，原件不删、不走seen补刀；可用拿不准浮层「✅是病人」转正收进名册（详见文件顶部修改记录） */ /* v0.25.0 2026-09-11 速记四连（②⑤⑥⑦，只加不改）：①脱敏间「📥 拉测试病历」HX.gh从云端仓shared/拉两份测试病历走正常进件同一条路进脱敏间待处理（没钥匙/没网提示拉不动）②脱敏间「📁本地病历夹」浮层勾选库里病历回炉重脱敏（hx_pdocs_v1不动不删）③拿不准浮层加「✅是病人」填床号/姓/诊断按正常收件进库+删原件 ④工具箱「选择病人▾」浮层（名册病人+脱敏间文件两区）+名册点病人行顺手写hx_gj_curpt（详见文件顶部修改记录） */ /* v0.24.0 2026-09-11 AI面板试点（洪老师拍板方法论落地）：AI_MANIFEST 8条+浮标「🤖AI」统一入口+原AI按钮改唤起面板定位（HX不在降级原行为）+AI功能生成器接aiChat通道；现有AI功能本体一行未动 */ /* v0.23.0 2026-09-10 收编公共件hx-common.js（plan2军规：钥匙统一HX.keys/速记改HX.sj/账本改HX.bill/gh传输收编，不崩溃压倒一切，详见文件顶部修改记录） */ /* v0.22.0 2026-09-10 全鱼骨头收尾：紫AI大钮压行（挂号#55销号）+工具箱链接去边框+问AI三钮行化，只动版面（详见文件顶部修改记录） */ /* v0.21.1 2026-09-10 预览对照不分横竖屏一律左右分栏+删横屏提醒条（洪老师拍板"把这个做好"） */ /* v0.21.0 2026-09-10 脱敏体检五站浮层+原文不即毁（详见文件顶部修改记录） */ /* v0.20.0 2026-09-10 预览流程恢复原版格局+AI闭环六连（详见文件顶部修改记录）：①预览排版恢复+手机横竖屏适配 ②窄屏前8行折叠 ③📤交给AI查脱敏（dsm_buildAIView独立新函数，规则引擎未动） ④📥导入AI规则（快照+导入双存版本库） ⑤规则版本库hx_dsm_rulelib_v1 ⑥版本同步 */ /* v0.19.0 2026-09-10 速记10连改·全面鱼骨化（挂号#42~51，详见文件顶部修改记录）：名册inline展开明细/速记补充上一条/脱敏间编号折叠行/导出简化/做名片下划线 */ /* v0.18.0 2026-09-10 真机八连修（毛病34~41）：名册删除手段/收库即毁原文/删聚合病历独立框/导出进清单/AI直达钮/删蓝框功能鱼骨化/删当前病人展开区/文件条目窄行 */ /* 速记自动上行 v0.17.1 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* v0.17.0 2026-09-10 HTML会诊PPT（洪老师拍板做HTML不做pptx，纯加法）：详情页「📋 会诊PPT」按钮→第4套会诊稿提示词走aiChat出五栏目（AI失败留「（AI没回话，请手填）」占位照常出片）+本地宽松验单解析器（日期时间+项目名+数值+单位四件套，项目名取冒号前短名）挑≥2时间点指标（PCT/IL-6/乳酸/肌酐/白细胞/CRP/体温模糊匹配优先，最多6个）纯SVG趋势图（最新值红点+数字）→一页一屏HTML幻灯片（点按/滑动/键盘翻页，页脚页码，白底深灰大字+暖色细线标题）→三处产出：壳「脱敏导出_」前缀dsm_shellWriteVerified回读对账、名册kind=report「📋 会诊PPT」徽标+🖥放映按钮、浏览器blob下载；无壳无AI纯浏览器也出演示片 */ /* 速记 v0.16.1 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */ /* v0.16.0 2026-09-10 问AI升级（洪老师拍板）：
+var SW_VERSION = "0.44.0"; /* v0.44.0（2026-09-18 班②，效果图v2洪老师拍板+脱敏规则补强）：①脱敏规则补强——初代v5.0规矩补回（21标签「标签：值」整段脱/职称+冒号+姓名通配/日期时间脱敏/医院通配安全化收窄中文字2~15字），新立第5组规则「全院职工名录」（rules.staff默认空名单洪老师后给，localStorage键dsm_rules_staff，设置区👥编辑框+版本库快照diff加staff组，AI导入/换用不带staff组不许误清），第二步姓名+职称正则放宽容忍名字中间一个空格；dsm_formatText验单时间分段正则连带放宽认「**:**」（连带必改已报备）；dsm_highlightSensitive同步标红 ②排版改版——主页面「🤖AI功能」折叠卡与「📕PDF引擎」状态框只藏不删；脱敏间标题行下依次=「📥收病历」折叠行/「📤导出/其他」折叠行（原导出/AI区改名内容不动，第一行加「📤拷出单体脱敏工具」钮dsm_exportStandalone：GitHub钱罐读私有仓xuexi-backup→失败退坚果云/学习套装备份/→Blob下载壳里退化LearnShell.writeFile写授权文件夹）/病人卡列表，其他区块相对顺序不动；病人卡展开区改双方框（左📕脱敏前红暖框右🔒脱敏后绿框，一律并排各半宽min-width:0，壳里限高约200px可滚动，点行开现有全屏浮层），取代v0.42.0窄屏两条下划线展现，🧩聚合钮原位不动，底层数据/函数不动 ③留痕三处同步；其余一行未动 */ /* v0.43.0（2026-09-18 班①，挂号#120，洪老师拍板"开工"）：①PDF引擎链重做——坏包病根=装/读都过JS桥大桥被X5截断（PIT-COMMON-002军规漏网），治=全来源先过dsm_engineTxtOk完整性验+留存改IndexedDB不过桥+公开站60秒现取兜底+开门闲4秒自动预加载（不再"用到才装"）②聚合防御——PDF部分进聚合前强制再过一遍脱敏（两处），PDF没读出字没进聚合toast明说不再静默漏，名册收件原文条目加红小字「原文未脱敏」③身份病根实锤——gj_sendToDsm一律登记type='文本'致PDF标成验单，按真名后缀记身份+预览双保险（type或后缀任一认PDF），洪老师拍板「TXT验单」改叫「验单」（聚合分节标同步改）；脱敏规则引擎一个字符未动；其余一行未动 */ /* v0.42.0（2026-09-17 班⑨，挂号#119，洪老师逐条确认）：脱敏间彻底重排——首页病人卡、点卡自动脱敏+预览（PDF前TXT后）、收病历5入口折起「📥 收病历」且壳内HX.fm记hx_gj_fmpath、🧩聚合只出{pkey}_聚合_{MMDD}.txt一件（不清场不产_标红_件）、窄屏两行/宽屏两栏标题带身份「PDF病历」「TXT验单」、旧1234折叠壳删光、导出/AI区折起；详见文件顶部v0.42.0条 */ /* v0.41.0（2026-09-17 班⑥，挂号#117，速记16:40/16:42两条，洪老师拍板"同意开工"）：①标红补色——全屏浮层挂document.body在#dsmWrap院子外，标红样式#dsmWrap .dsm_highlight-red够不着=点「未脱敏原文全屏看」不红（标了不显色），CSS纯加一行.dsm_fullOverlay .dsm_highlight-red照抄院内样式 ②收件副本恢复真名——废v0.14.1假「聚合」显示名（那时还没有真聚合功能，现在误导成"没按钮就有聚合件"），清单显示真文件名，"聚合"名只留🧩产物；脱敏/聚合/收件等其余一行未动 */ /* v0.40.0（2026-09-17 班⑤，挂号#116，洪老师拍板"三窝齐端"）：删病人连根拔——①登记账hx_patients里这人（含出院状态/别名）一并删（旧版只删病历条目，人壳留着→每次归堆复活，"删三次又回来"的病根）②血气/呼吸机档案柜（bgdb）里该名下原始记录一并删（原"原始记录不动"老规矩经洪老师2026-09-17亲口改判删除）③云端存档随hxStore对账自动带走；删除账hx_gj_deleted_v1照记（闲时自动收仍拦），手动收不拦老规矩不动 */ /* v0.39.0（2026-09-17 班④，洪老师拍板）：①设计规定——浮窗AI+文件点亮=通用处理通道 ②聚合时同产「_标红_MMDD.txt」（未脱敏原文敏感词带⟦R⟧记号，dsm_markSensitive复用highlight同套规则，供点亮→浮窗AI修理脱敏规则）③标红件放两处（脱敏间清单与聚合件并排+名册kind=mark留底防清空丢失）④单体版不动——原件在U盘/文件夹原地没动，想再做重新选文件即可（办法二）；版本0.38.0→0.39.0三处留痕；其余一行未动 */  /* v0.38.0（2026-09-17 班③，洪老师拍板流程大简化+清场+#99复发根治+点亮见效）：①一次性全清场（名册hx_pdocs_v1/脱敏间hx_dsm_v1/保险柜hx_dsmraw_v1/拿不准/删除账，旗标hx_gj_reset_v1只清一次，hxStore.set落真源）②原文保险柜取消（归档/横幅调用停用，函数本体保留）③新病人进场脱敏间自动全清空（本批pkey与现有无交集才清）④聚合后脱敏间只留聚合件（进内存+存档清空重记+清单重渲，同修"聚合件不显示"）⑤名册/脱敏清单重渲后补绑HX.pick点亮 ⑥问AI发送前HX.pick.get()有效则点亮文件脱敏后文本随行（标注【点亮文件：fname】，只送脱敏后）⑦删除账hx_gj_deleted_v1治#99复发（闲时自动收跳过/手动收不拦且收进移出/清场同清）⑧版本三处留痕；其余一行未动 */  /* v0.37.0（2026-09-17 班②，挂号#113/#114）：①窄屏脱敏预览两行字点行全屏看一份（dsm_narrowRows+dsm_fullOne，宽屏左右分栏照旧）②脱敏间加「🧩 形成聚合文件」明钮dsm_makeAgg，成品放两处（脱敏间hx_dsm_v1+名册kind=agg）；详见文件顶部v0.37.0条，其余一行未动 */ /* v0.35.2（2026-09-16 班④，速记15:55洪老师"脱敏的病例显示应该显示pdf版的病历，然后再显示txt版的病例"）：详情页「原状病历」清单补PDF排前排序（时间线/脱敏间清单/预览三处早已PDF排前，此处漏网）；其余一行未动 */ /* v0.35.1（2026-09-16 班②，洪老师真机报"删光病人后收病历收不进"拍板"删掉了再收进来也是有可能的"）：①docInboxFmTake加第2参manual——手动收（🔄钮）遇删过的病人不再拦截，顺手把他移出隐藏名单照收（=收回来了）；闲时自动收仍拦（防U盘原件没清前删了白删，#99不复活）②防重保留（同名同大小同修改时间不重复收）但不再播报"跳过N份收过的"（洪老师：这提示没有必要）③补上v0.33.3留下的窟窿：被拦份数_ptHidN从此有去处（闲时拦截照旧静默，手动路不再存在被拦）；SAF老路/脱敏/销毁等其余一行未动 */ /* v0.35.0（2026-09-16 班①，病人大管家五连：①收病历防重——fm收料口收进前查seen三件套（f/z/t，seen条目有d且记着hx_gj_fmpath时要求d一致，老条目宽松兼容），收过的跳过并人话报名单；删脱敏间「📥收进病历库」「🗑️清空数据」两钮（函数本体保留，收库走读完自动收）②送脱敏间PDF+TXT一起送、同名同内容只送第一份、送前confirm人话清单 ③dsm_admitToLib收库时同pkey有PDF成品+txt成品自动生成kind=agg聚合条目进hx_pdocs_v1 ④AI回复回家——askaiSend成功且有pkey则存kind=ai条目进名册（aiChat已记账不重复记），名册显🤖徽章 ⑤脱敏间手机化——文件行下划线点开全屏浮层（顶部「未脱敏原文/脱敏后」两行可点切换，默认脱敏后）、病人名点开/收起名下清单每份带✕可删（连hx_dsm_v1存档一起删）；接点亮——名册病历行/脱敏间文件行加data-pkey/data-fname，hxReady后HX.pick在则bind（老hx-common静默跳过）） */ /* v0.34.1（2026-09-15，规则改动自动留账，洪老师2026-09-15拍板）：①dsm_importAIRules快照后纯插入dsm_rulesDiff算四类diff（新增=新有旧无/删除=旧有新无）②dsm_rulelibAdd加第3参diff存进版本库记录（老调用不传兼容）③规则版本库每条加「🔍看改动」浮层（绿加红删灰没动，老版本没diff显示「老版本没记账」）④导入成功toast末尾补「改动已记账」⑤三处留痕；脱敏/收件/销毁等链路一字未动 */ /* v0.34.0（2026-09-15，挂号#107，洪老师定工作流："PDF才是真身要脱敏；TXT验单没敏感信息只聚合用；所有自动删病历的全部去掉改手工删；PDF放前面我重点关注"）：①收件三链自动删原件全撤（主删/补刀/转正删），收进登记seen防重，原件一个不动 ②PDF当真身：归堆/详情页有正文显正文给全套功能钮、列表PDF永远排最前、无正文老PDF如实口径提示重收 ③送脱敏间只送有正文PDF ④拿不准止血：套装件名永不进拿不准+旧清单自清（治分家后误扫家目录）⑤闲时自动扫改道：有fm桥认记住的U盘文件夹fmWalk自动收新件（落实"第2次打开先查缺省文件夹搜出文件"），不再扫家目录；fm路收进登记seen防重收 ⑥简介/流程注释口径同步。原文保险柜手动销毁链一字未动 */ /* v0.33.5（2026-09-15，挂号#106，洪老师真机报"06病人PDF送脱敏间送不成功"）：病根=PDF收件只登记不读正文，送脱敏间只送有正文条目。治=①fm路收PDF当场内嵌引擎解析正文入库（读不出照老规矩只登记不拦收件）②送脱敏间放行有正文PDF，无正文老PDF计数并toast请重收。其余一行未动 */ /* v0.33.4（2026-09-15，挂号#104）：两处HX.fm.pick加hideKit:true隐藏套装自有文件，其余一行未动 */ /* v0.33.3（2026-09-15，挂号#101）：接入hx-common v0.12.0 HX.fm自家仿电脑资源管理器取代系统SAF选择器——①🔄现在收一次病历有桥走ensure+pick多选面板逐件read收料（新收料口docInboxFmTake，原件留在U盘没动不删），没权限/无桥回落v0.33.2老SAF路 ②📂换文件夹有桥走pick folder模式记localStorage hx_gj_fmpath，取消/无桥回落老SAF pick（oldName对比逻辑原样保留在docFolderOldPick）；docInboxScan开头有hx_gj_fmpath且fm.ok()时fmWalk播报名单（含子文件夹），收仍走老路只收第一层 ③版本三处留痕；SAF老路全部逻辑一字未动。详见文件顶部v0.33.3条 */ /* v0.33.2（2026-09-15，挂号#100）：①📂换文件夹记oldName、pollFolder回调里folderName变了才报成功，没变报「没换成」②🔄现在收一次病历manual路径——无文件夹直接pick唤起选完接着扫、有文件夹先listFiles探活（失败toast「记住的文件夹不在了（U盘拔出了？）请重选」并自动pick）+搜到先人话播报名单再收件 ④seen入档补d=folderName、seenHas有d要求同文件夹+三件套全中、无d旧条目兼容老三件套；闲时自动扫/解析/删除链一字未动。留痕三处同步，详见文件顶部v0.33.2条 */ /* v0.33.1 2026-09-14 删病人除根（挂号#99「删掉的病人重启后又回来」，18:02速记，洪老师拍板方案A+B+C，只改这三条其他一行未动）：A脱敏间删除除根——dsm_deletePatient删内存后dsmhLoad读档→delete存档patients[name]→dsmhSave落档；dsm_clearAllData清内存后存档patients={}落档（全try护栏，dsmh_restore自愈段一字未动，PIT-GJ-010；脱敏存档是工作缓存不是病历数据，删档不犯军规） B名册隐藏名单落真源——ptHideSave同时走hxStore.set('hx_gj_pthide_v1',a)（有hxStore才走、try护栏），登记处补hxStore.reg('hx_gj_pthide_v1')（SYNC_KEYS由KEYS过滤自动生成，注册后自动进小件对账，表达式不动） C收件断重收——docInboxScan在parseDocFname ok后push前查ptIsHidden，命中隐藏pkey不入库不计数，原件照现规矩删+登记seen走原链。留痕三处同步，详见文件顶部v0.33.1条 */ /* v0.33.0 2026-09-14 班⑦六连（挂号#96/#97/#98+16:29/16:37速记，洪老师2026-09-14拍板，只改清单A~G其他一行未动）：A名册h2加「📂换文件夹」（复用🗄️pick链路）+docInboxScan报告人话化（扫描本体一字未动） B名册展开区加「🛡送脱敏间」（灌dsm_APP.patients+dsmh_remember存档，守PIT-GJ-010） C脱敏间进件5入口收进默认折起的「📥自己取病历」行（收进病历库/清空常显，运行时包壳） D开门不再自动跑dsmh_restore/dsmraw_tick/dsmraw_bar（首次展开才restore+旗标防重，60秒巡逻删） E原文不再自动销毁改满月提醒手动删（dsmraw_tick只统计满30天份数，横幅文案改+满月标红，三档时限UI注释藏起本体不删，destroy链一字未动） F导出回写名册timeStr补docHm时分（admit本带时分不动） G版本0.32.0→0.33.0三处留痕；#99不混进本版。详见文件顶部v0.33.0条 */ /* v0.32.0 2026-09-14 AI面板两级化·提示词可改可存（挂号#79，洪老师拍板："不搞三级菜单，就两级，点进去就是几套预设提示词，提示词可修改、可储存"）：①AI_MANIFEST 8条补提示词套——问AI/脱敏AI分析5套+规则体检p5+会诊PPT p4走钩子直读直写老账本hx_gj_askai_v1（一本账不另立）；两路一起查3套/做名片1套/AI理目录1套出厂原文抄进manifest，改动存面板覆盖账本hx_aiprompt_v1，函数发送前各加一句HX.ai.pget查覆盖（乙路每条一句，发送逻辑一行未动）；点亮菜单本来自带三级可改提示词，面板只指路 ②版本号0.31.1→0.32.0三处留痕（本注释链/顶部修改记录/关于页） ③配套hx-common v0.11.0面板第2级编辑页。v0.31.1 2026-09-14 AI面板清单恒空根治（挂号#83，洪老师真机报"病人大管家所有AI功能都没接上"，班③playwright壳同步路径仿真实锤）：病根=hxReady回调在壳readFile同步路径下先于var AI_MANIFEST赋值执行，init拿到undefined，面板恒显"本软件还没配AI功能清单"；治=init包setTimeout(0)让出同步栈；只动hxReady回调里init这一处+留痕，其余一行未动；普查小涛/血气/PPT/习题四家manifest均在init前赋值无此患 */ /* v0.31.0 2026-09-14 安心条HX.step接入（洪老师2026-09-14拍板：开门/重活两行小字定格可拍照定位）：开门begin/首屏upd/对账done（异步批量回调里）+批量读件/PDF解析/导出报告/原文销毁4处重活done/fail配对，全程if(window.HX&&HX.step)护栏+try静默降级；详见文件顶部v0.31.0条 */ /* v0.30.5 2026-09-14 原文销毁不愣住+不误报（挂号#90，洪老师真机报"升级后开大管家愣几秒，然后红字原文没删成"，拍板"按你的喜好干活"）：病根=dsmraw_destroy走壳同步桥deleteFile+紧接listFiles全量枚举核对，SAF慢活堵主线程=愣几秒；且删完立刻枚举常读到系统缓存旧清单→误报"没删成"。治=壳v1.7.4新异步桥deleteFileAsync（删+800ms复核+还在再删一次全在壳后台线程，回调报deleted/notfound/fail），本函数优先走异步桥主线程零等待；老壳没这桥自动回落原同步老路（一字未动）。成败两路口抽成dsmraw_destroy_done/dsmraw_destroy_fail两小函数供两条路共用，判定规矩不变：真没删成才红字+条目标delFail留横幅。只动销毁这一带，其余一行未动。v0.30.4 2026-09-14 愣住除根（挂号#86续）：壳v1.7.3 readFiles/readFilesAsync批量桥+hx-common v0.9.1异步批量对账，JS主线程零等待；详见文件顶部v0.30.4条。v0.30.3 2026-09-13 开门愣住根治（挂号#86，洪老师真机报"装壳后打开大管家还是愣住"）——病根与#85小涛笔记同根：闲时sync名单混着三个大件（hx_pdocs_v1病历库/hx_dsmraw_v1原文保险柜/hx_dsm_v1脱敏存档），HX.store.sync主线程同步读壳文件+b64解码+JSON解析几MB=每次闲时卡十几秒；模拟真机（X5+CPU6x降速+19MB壳文件）实测复现首开卡2.2秒+自动刷新、二开仍卡2.3秒。治=①sync名单摘三大件只对5小件（名片/名册/收件箱/阅读进度/PPT任务） ②闲时watcher加大件空库灌回（本机null才单键sync读灌，本机有值含空壳"{}"一行不动绝不白读）。只动这2处+留痕，其余一行未动 */ /* v0.30.2 2026-09-12 恢复坚果云腿（#75根治落地：hx-common v0.7.0 dav全异步走壳v1.6.0 davAsync后台桥，主线程零占用；三处dav调用恢复，旧壳dav.asyncOk为假自动静默跳过不卡） */ /* v0.30.1 2026-09-12 止血（挂号#75 洪老师真机报：脱敏间「📂选文件夹/📄看文件选文件」一点就死机、页面冻住不能滚动）——病根：09-12地基补强/二期给闲时watcher和存盘链路加了坚果云腿HX.dav.rescue/mirror，而壳JS桥davList/davUp/davDown全是同步联网调用，闲时一次最多十几次同步HTTP坚果云，网慢把主线程卡死=点啥都没反应（铁律：昨天到今天代码变化，前天没事）。修：三处HX.dav调用注释停用（hxStore.set两处mirror+闲时watcher一处rescue），功能本体保留不删，GitHub中转relay照常（异步不卡）；根治=壳Java侧dav挪后台线程，列二期候选，记忆库#75+pits_病人大管家留案底不销号。改前备份software-guanjia_备份_20260912_2101已双推（GitHub+坚果云）。SW_VERSION/顶部注释/关于三处同步 */ /* v0.30.0 2026-09-12 地基二期（邮路一本账+副本瘦身，只改清单内）：①寄小涛邮路一本账——详情页「📮寄给小涛笔记」写xt_inbox_v1改走仓管员hxStore.set（有壳落真源文件夹hxdata_xt_inbox_v1.json，无壳走localStorage老路效果相同），信封格式不变 ②副本瘦身（图纸规矩D）：D6a收件回写不再双写——副本瘦身：一本账xt_notes_v1，study_notes_v1停写留旧（老数据原地不动不删）；openPick/scanSources两处读study_notes_v1改读xt_notes_v1 ③SW_VERSION/顶部注释/关于三处同步（详见文件顶部修改记录） */ /* v0.29.0 2026-09-12 地基补强（SPEC2二、四软件接入共同规矩落地大管家）：①hxStore薄壳set加单体备份邮路——HX.store.has()为false（无壳）时HX.relay.add同一份值，有壳绝不走relay ②闲时watcher加HX.relay.pull()中转拉回（拉到>0件照现有pulled逻辑toast+刷新）+HX.dav.rescue(注册键数组)放开门sync前只补缺失 ③保存后闲时HX.dav.mirror对应hxdata_<键>.json到坚果云 ④开门HX.relay.init('大管家')挂状态条（单体显眼，壳内恒🟢无害）⑤全程if(window.HX&&HX.relay)/HX.dav守卫+try，HX缺席行为与v0.28.0完全一致 ⑥SW_VERSION/顶部注释/关于三处同步（详见文件顶部修改记录） */ /* v0.28.0 2026-09-12 地基工程一期（SPEC.md军规，只改清单内其他一行未动）：①hxStore收编成HX.store薄壳代理（对外set/reg/sync名字签名一个不变，HX.store缺席时完全走原有本地老路不白屏）②sync冲突回调→顶部红条明示（样式照抄delFailReport，可点✕关，不弹窗不阻塞）③收件规矩C补时间戳——文件名无日期时间样式的入库fname末尾补「_收件MMDD_HHMM」（parseDocFname不动）④两处PPT信箱「寄新信会盖掉它」hxConfirm拆除——不再问，旧信先改名「ppt_inbox_旧信_时分」留档再寄新信 ⑤dsmh_remember脱敏存档同名键写入前旧值挪「键名_冲突_HHMM」留档 ⑥SW_VERSION/顶部注释/关于三处同步（详见文件顶部修改记录） */ /* v0.27.0 2026-09-11 信息流通三连（断点D6/D9，只改这三处其他一行未动）：①D6a收件「合并/新建资料」回写study_notes_v1同一动作顺手双写小涛笔记正房xt_notes_v1（结构照抄小涛：数组元素{id,title,content,createdAt,updatedAt,fp}，fp=strHash同款FNV）②D6b工具箱加第6个链接「📘 小涛笔记」（文件名自适应照抄现有写法，带?from=guanjia&pt=当前病人）③D9病历详情页按钮排加「📮寄给小涛笔记」：该病人聚合病历文本（复用hzGatherText）+标题push进xt_inbox_v1（数组，元素{title,text,pt,ts}），toast「已寄给小涛笔记」，无壳也照做（localStorage同源共享）（详见文件顶部修改记录） */ /* v0.26.0 2026-09-11 收件两修（D1断点"不许静默吞"，只改收件扫描一带）：①可收文件类型扩成txt/pdf/md（parseDocFname/补日期重试正则同步），拍病历导出的「代号-完整资料.md」能被扫描看到 ②凡被收件扫描看到但parseDocFname解析不ok或类型不收的文件一律进「❓拿不准」清单（hx_gj_unsure_v1，原因写明"类型不收"/解析why），登记pd.seen防重复报，原件不删、不走seen补刀；可用拿不准浮层「✅是病人」转正收进名册（详见文件顶部修改记录） */ /* v0.25.0 2026-09-11 速记四连（②⑤⑥⑦，只加不改）：①脱敏间「📥 拉测试病历」HX.gh从云端仓shared/拉两份测试病历走正常进件同一条路进脱敏间待处理（没钥匙/没网提示拉不动）②脱敏间「📁本地病历夹」浮层勾选库里病历回炉重脱敏（hx_pdocs_v1不动不删）③拿不准浮层加「✅是病人」填床号/姓/诊断按正常收件进库+删原件 ④工具箱「选择病人▾」浮层（名册病人+脱敏间文件两区）+名册点病人行顺手写hx_gj_curpt（详见文件顶部修改记录） */ /* v0.24.0 2026-09-11 AI面板试点（洪老师拍板方法论落地）：AI_MANIFEST 8条+浮标「🤖AI」统一入口+原AI按钮改唤起面板定位（HX不在降级原行为）+AI功能生成器接aiChat通道；现有AI功能本体一行未动 */ /* v0.23.0 2026-09-10 收编公共件hx-common.js（plan2军规：钥匙统一HX.keys/速记改HX.sj/账本改HX.bill/gh传输收编，不崩溃压倒一切，详见文件顶部修改记录） */ /* v0.22.0 2026-09-10 全鱼骨头收尾：紫AI大钮压行（挂号#55销号）+工具箱链接去边框+问AI三钮行化，只动版面（详见文件顶部修改记录） */ /* v0.21.1 2026-09-10 预览对照不分横竖屏一律左右分栏+删横屏提醒条（洪老师拍板"把这个做好"） */ /* v0.21.0 2026-09-10 脱敏体检五站浮层+原文不即毁（详见文件顶部修改记录） */ /* v0.20.0 2026-09-10 预览流程恢复原版格局+AI闭环六连（详见文件顶部修改记录）：①预览排版恢复+手机横竖屏适配 ②窄屏前8行折叠 ③📤交给AI查脱敏（dsm_buildAIView独立新函数，规则引擎未动） ④📥导入AI规则（快照+导入双存版本库） ⑤规则版本库hx_dsm_rulelib_v1 ⑥版本同步 */ /* v0.19.0 2026-09-10 速记10连改·全面鱼骨化（挂号#42~51，详见文件顶部修改记录）：名册inline展开明细/速记补充上一条/脱敏间编号折叠行/导出简化/做名片下划线 */ /* v0.18.0 2026-09-10 真机八连修（毛病34~41）：名册删除手段/收库即毁原文/删聚合病历独立框/导出进清单/AI直达钮/删蓝框功能鱼骨化/删当前病人展开区/文件条目窄行 */ /* 速记自动上行 v0.17.1 2026-09-10：速记自动上行（2026-09-10 洪老师拍板：记下的东西自动到网上，AI接班自己看，不许手动传）：「记下」本地存成后自动把整份「速记流水.txt」PUT到仓根目录同名文件，开门闲时8秒补一次对账（没网漏的行下回自动补，整份覆盖自愈）；钥匙抄公共钱罐hx_gh_*，没钥匙/没网静默跳过不打搅；上行成功记localStorage hx_sj_uplocal对账，内容没变不重复推。纯加法，现有功能一行未动。 */ /* v0.17.0 2026-09-10 HTML会诊PPT（洪老师拍板做HTML不做pptx，纯加法）：详情页「📋 会诊PPT」按钮→第4套会诊稿提示词走aiChat出五栏目（AI失败留「（AI没回话，请手填）」占位照常出片）+本地宽松验单解析器（日期时间+项目名+数值+单位四件套，项目名取冒号前短名）挑≥2时间点指标（PCT/IL-6/乳酸/肌酐/白细胞/CRP/体温模糊匹配优先，最多6个）纯SVG趋势图（最新值红点+数字）→一页一屏HTML幻灯片（点按/滑动/键盘翻页，页脚页码，白底深灰大字+暖色细线标题）→三处产出：壳「脱敏导出_」前缀dsm_shellWriteVerified回读对账、名册kind=report「📋 会诊PPT」徽标+🖥放映按钮、浏览器blob下载；无壳无AI纯浏览器也出演示片 */ /* 速记 v0.16.1 2026-09-10 浮标速记（洪老师拍板方案A：软件内常驻圆点）：右下角半透明圆点🏥→弹小输入框→「记下」经壳桥readFile/writeFile把新行（时间+软件名+上下文，大管家带hx_gj_curpt当前病人）追加进授权文件夹「速记流水.txt」，toast「已记下」；无壳浏览器降级提示「请在手机壳里用」不报错。snippet自包含只依赖window.LearnShell，全家9文件同一套，只加不改 */ /* v0.16.0 2026-09-10 问AI升级（洪老师拍板）：
    ①提示词三套升四套，缺省内容换新规格：第1套病历质检（先整格式→找四类缺陷→⟦R⟧标红⟦B⟧醒目给修改意见）、第2套病情摘要/交班（一页交班摘要）、第3套检验解读（按时间重排+异常值方向+趋势+通俗解读）、第4套会诊稿（新增：五个固定栏目）；老用户已存的自定义提示词一个字不动，只在缺p4时补第4套（一次性迁移标记hx_gj_askai_v16mig）。
    ②脱敏间导出区加「🤖 AI分析」按钮：只把当前勾选（复用v0.15.0 dsm_selFiles过滤）且已脱敏的文本发给AI，原文绝不出去；弹出与病历详情同款四套提示词弹窗，复用aiChat通道和⟦R⟧/⟦B⟧渲染+「复制干净版」。
    ③问AI结果改全屏浮层：出结果后弹窗撑满屏（askai_full），结果区不再限52vh高，红/醒目两色渲染保留；关上或重开恢复小窗。
@@ -1574,6 +1588,7 @@ function keyInputAsk(){
    ⑤验单格式（洪老师口述）：txt里"前面一个时间后面跟内容，同一天多项检验时间相同或只差几分几秒"——写进第1套提示词让AI按类别分组+组内按时间重排。 */
 var LS_ASKAI='hx_gj_askai_v1';
 /* v0.16.0 提示词三套升四套（洪老师新规格）：第1/2/3套缺省内容整份换新，新增第4套会诊稿 */
+/* 与浮窗AI同源：浮窗AI改动时必须同步本文件——2026-09-18洪老师立规矩 */
 var ASKAI_DEF={
 p1:'你是一位资深病案质控医生。请按顺序完成三件事：\n\n【第一步·整理格式】\n先把这份聚合病历的格式整理好：删掉多余空格、星号、乱码，重排成规范病历格式，整理到能直接复制粘贴回病历系统。\n\n【第二步·找缺陷】\n在整理好的病历里找四类缺陷：①文字描述缺陷 ②诊断缺陷 ③鉴别诊断缺陷 ④病程记录缺陷。\n\n【第三步·标记】\n你怀疑有问题的地方用 ⟦R⟧问题原文⟦/R⟧ 标红，修改意见紧跟其后用 ⟦B⟧修改意见：……⟦/B⟧ 标出。\n\n病历全文如下：\n',
 p2:'你是一位资深临床医生。请把下面这份聚合病历浓缩成一页交班摘要，分条列、用大白话，包括：\n1. 主要诊断\n2. 当前问题清单\n3. 近24小时病情变化\n4. 待办事项\n重要发现用 ⟦R⟧⟦/R⟧ 标出，建议用 ⟦B⟧⟦/B⟧ 标出。\n\n病历全文如下：\n',
@@ -2374,6 +2389,63 @@ function dsm_textToFile(name, text){
   try{ f=new File([text], name, {type:'text/plain'}); }catch(e){}
   if(!f){ try{ f=new Blob([text], {type:'text/plain'}); f.name=name; }catch(e){ return null; } }
   return f;
+}
+/* ═════ v0.44.0③ 📤拷出单体脱敏工具：①取件——先用 hx_gh_tok/hx_gh_repo 钱罐走GitHub API（HX.gh链路照dsm_pullTestDocs同款）读私有仓 xuexi-backup 的「脱敏工具_单体版.html」（base64解码），失败则壳里走 HX.dav/LearnShell.davDown 从坚果云 /学习套装备份/脱敏工具_单体版.html 取；②取到后从内容里正则出单体版SW_VERSION，文件名定为「脱敏工具_单体版_v版本号.html」（取不到版本号用原名，不耽误拷）；③交付——浏览器环境用Blob+a[download]触发系统下载；壳里若下载不可用则退化用LearnShell.writeFile写授权文件夹并toast明说路径；④每一步失败都toast人话，不静默 ═════ */
+function dsm_exportStandalone(){
+  function _fail(msg){ try{ dsm_showToast('❌ 拷出单体工具没成：'+msg, 'error', 6000); }catch(e){ try{ toast('❌ 拷出单体工具没成：'+msg); }catch(e2){} } }
+  function _deliver(txt){
+    var ver='';
+    try{ var m=String(txt).match(/SW_VERSION\s*=\s*["']([^"']+)["']/); if(m) ver=m[1]; }catch(e){}
+    var fname=ver ? ('脱敏工具_单体版_v'+ver+'.html') : '脱敏工具_单体版.html';
+    /* ③交付：浏览器用Blob+a[download]触发系统下载（存哪您在下载框里指定） */
+    try{
+      var blob=new Blob([txt], {type:'text/html;charset=utf-8'});
+      var a=document.createElement('a');
+      a.href=URL.createObjectURL(blob); a.download=fname;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      dsm_showToast('📤 已走系统下载：'+fname+'（存哪您在下载框里指定）', 'success', 5000);
+      return;
+    }catch(e){}
+    /* 壳里下载不可用→退化用LearnShell.writeFile写授权文件夹并toast明说路径 */
+    try{
+      if(window.LearnShell && LearnShell.writeFile){
+        var wr=LearnShell.writeFile(fname, txt);
+        if(typeof wr==='string' && wr.indexOf('err:')===0){ _fail('写授权文件夹没成：'+wr); return; }
+        dsm_showToast('📤 已拷进授权文件夹：'+fname, 'success', 6000);
+        return;
+      }
+    }catch(e){ _fail('写授权文件夹没成：'+e.message); return; }
+    _fail('这台机器下载和写文件夹都不通');
+  }
+  function _davFetch(){ /* ①b 坚果云退路（壳里才有这条桥） */
+    try{
+      if(!(window.LearnShell && LearnShell.davDown && LearnShell.readFile)){ _fail('GitHub拉不动，壳里坚果云桥也没有（没在壳里开？）'); return; }
+      var dk=(window.HX&&HX.keys&&HX.keys.dav)?HX.keys.dav():null;
+      if(!dk){ _fail('GitHub拉不动，坚果云钥匙也没填'); return; }
+      dsm_showToast('改从坚果云取单体工具…', 'info', 3000);
+      var r=LearnShell.davDown(dk.user, dk.pass, '/学习套装备份/脱敏工具_单体版.html', '脱敏工具_单体版_下载临时.html');
+      if(typeof r==='string' && r.indexOf('err:')===0){ _fail('坚果云取件没成：'+r); return; }
+      var txt=LearnShell.readFile('脱敏工具_单体版_下载临时.html');
+      if(!txt || (typeof txt==='string' && txt.indexOf('err:')===0)){ _fail('坚果云取回了但读不出内容'); return; }
+      _deliver(txt);
+    }catch(e){ _fail('坚果云取件出错：'+e.message); }
+  }
+  /* ①a 先走GitHub钱罐读私有仓xuexi-backup（仓库名就是hx_gh_repo钱罐里那把） */
+  try{
+    if(window.HX&&HX.gh&&HX.gh.ready&&HX.gh.ready()){
+      dsm_showToast('正在从GitHub仓取单体工具…', 'info', 3000);
+      HX.gh.fetch(HX.gh.fileUrl('脱敏工具_单体版.html'), {headers:HX.gh.headers()}).then(function(resp){
+        if(!resp.ok) throw new Error('HTTP '+resp.status);
+        return resp.json();
+      }).then(function(j){
+        var txt=HX.gh.b64dec(j.content||'');
+        if(!txt){ _fail('GitHub取回了空内容'); return; }
+        _deliver(txt);
+      }, function(e){ _davFetch(); }); /* GitHub失败退坚果云 */
+      return;
+    }
+  }catch(e){}
+  _davFetch(); /* 没GitHub钥匙直接走坚果云 */
 }
 function dsm_pullTestDocs(){
   if(!(window.HX&&HX.gh&&HX.gh.ready&&HX.gh.ready())){ toast('拉不动：没钥匙或没网'); return; }
@@ -4187,7 +4259,8 @@ var dsm_APP = {
         titles: ['主治医师', '主管护师', '医师', '护士', '主任', '教授', '副主任医师', '主任医师', '主任护师'],
         hospitals: ['暨南大学附属第五医院', '深河人民医院'],
         keywords: ['张三', '李四', '王五', '赵六'],
-        excludes: ['平素体健', '神志清楚', '生命体征', '精神状态', '意识清楚', '家属']
+        excludes: ['平素体健', '神志清楚', '生命体征', '精神状态', '意识清楚', '家属'],
+        staff: [] /* v0.44.0⑤ 第5组规则「全院职工名录」默认空 */
     },
     aiPrompt: '',
     pdfLoaded: false,
@@ -5223,7 +5296,8 @@ function dsm_formatText(text) {
 
     // === 第三步：验单专用 - 在时间戳前自动插入换行 ===
     // 例：2026/9/7 13:59:30 / 2026-06-09 08:59 / 2026/6/9 7:56:31
-    result = result.replace(/(\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2}\s+\d{1,2}:\d{2}(?::\d{2})?)/g, '\n$1');
+    /* v0.44.0③连带必改（已报备）：本步验单按时间分段靠认时间格式——本版脱敏引擎补回日期/时间脱敏后，时间已被脱成「****-**-** **:**」，不认就分段全瞎；本正则同步放宽认脱敏后的星号日期时间 */
+    result = result.replace(/((?:\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2}|\*{4}-\*{2}-\*{2})\s+(?:\d{1,2}:\d{2}(?::\d{2})?|\*{2}:\*{2}(?::\*{2})?))/g, '\n$1');
 
     // === 第四步：病历专用 - 合并被PDF断行的句子 ===
     // 规则：如果上一行不以句末标点(。！？；)或冒号结尾，且下一行不以
@@ -5244,7 +5318,7 @@ function dsm_formatText(text) {
         var curTrimmed = cur.trim();
         var nextTrimmed = next.trim();
         // 下一行如果是新段落开头，不合并
-        var isNewBlock = /^(\d+[、\.]|[一二三四五六七八九十]+[、\.]|\d{4}[\/\-]\d|第\s*\d+\s*页|姓名\s*[:：]|入院|转[入出]|主诉|目前|诊断|诊疗|上级医师|医师签名|检查描述|诊断结论)/.test(nextTrimmed);
+        var isNewBlock = /^(\d+[、\.]|[一二三四五六七八九十]+[、\.]|\d{4}[\/\-]\d|\*{4}-\*{2}|第\s*\d+\s*页|姓名\s*[:：]|入院|转[入出]|主诉|目前|诊断|诊疗|上级医师|医师签名|检查描述|诊断结论)/.test(nextTrimmed); /* v0.44.0③连带必改（已报备）：日期脱成****-**-**后也要认作新段落开头，否则脱敏后病历断行合并会瞎 */
         // 上一行如果以句末标点结尾，不合并
         var curEndsSentence = /[。！？；：]$/.test(curTrimmed);
         if (isNewBlock || curEndsSentence) {
@@ -5290,6 +5364,16 @@ function dsm_updateExportFileName() {
 // ============================================================
 //  ★★★ 脱敏函数 - 带排除词支持 ★★★
 // ============================================================
+/* 复合姓表（2026-09-18第三刀，验证工兵终审REVISE）：人名值验明正身用，别再靠正则长度猜 */
+var dsm_COMPOUND = ['欧阳','司马','上官','夏侯','诸葛','闻人','东方','赫连','皇甫','尉迟','公羊','澹台','公冶','宗政','濮阳','淳于','单于','太叔','申屠','公孙','仲孙','轩辕','令狐','钟离','宇文','长孙','慕容','司徒','南宫'];
+/* 第三刀：候选名去空格后验明正身——2~3字且首字在百家姓dsm_SURNAMES / 4字且前两字在复合姓dsm_COMPOUND 才算人名，否则不脱不红 */
+function dsm_nameOk(nm) {
+    if (!nm) return false;
+    if ((nm.length === 2 || nm.length === 3) && dsm_SURNAMES.indexOf(nm.charAt(0)) >= 0) return true;
+    if (nm.length === 4 && dsm_COMPOUND.indexOf(nm.substring(0, 2)) >= 0) return true;
+    return false;
+}
+
 function dsm_desensitizeWithDebug(text) {
     if (!text) return { original: '', result: '', changes: [] };
     var original = text;
@@ -5299,6 +5383,7 @@ function dsm_desensitizeWithDebug(text) {
     var hospitals = dsm_APP.rules.hospitals || [];
     var keywords = dsm_APP.rules.keywords || [];
     var excludes = dsm_APP.rules.excludes || [];
+    var staff = dsm_APP.rules.staff || []; /* v0.44.0⑤ 新立第5组规则「全院职工名录」（默认空，名单洪老师后给） */
 
     // 第一步：智能识别患者姓名（考虑排除词）
     var patientNames = dsm_extractPatientNames(result, excludes);
@@ -5319,11 +5404,74 @@ function dsm_desensitizeWithDebug(text) {
         }
     });
 
+    /* v0.44.0① 标签规则，初代v5.0规矩补回（病根：病程记录漏医师名字——初代21标签「标签：值」脱法搬家时丢了）：
+       人名类标签值容忍PDF抽出的名字中间带一个空格，其余标签值\S+；值已是***开头跳过不再脱 */
+    var dsm_labelList = ['姓名','性别','年龄','科室','床号','住院号','门诊号','病历号','医保号','身份证号','手机','电话','地址','住址','医师签名','上级医师签名','主治医师','上级医师','联系人','家属电话','工作单位'];
+    var dsm_labelNameCls = ['姓名','医师签名','上级医师签名','主治医师','上级医师','联系人']; /* 人名类标签 */
+    dsm_labelList.forEach(function(lb) {
+        var valRe = (dsm_labelNameCls.indexOf(lb) >= 0) ? '[\\u4e00-\\u9fa5](?:\\s?[\\u4e00-\\u9fa5]){1,3}?(?=\\s|$|[，。；：、）)\\n]|\\d)' : '\\S+'; /* 返工2（验证工兵终审REVISE）：值末尾加前瞻边界，防多吃下一个词首字（'王明 今日'只吃'王明'） */ /* 第四刀：{1,3}改懒惰{1,3}?先试最短，贪心吞4字回调拒脱后正则不回头会漏脱（'李 四 记录'先试'李 四'即命中），验明正身dsm_nameOk兜底 */
+        var pattern = new RegExp('(' + lb + ')\\s*[:：]\\s*(' + valRe + ')', 'g');
+        result = result.replace(pattern, function(m, g1, g2) {
+            if (g2.indexOf('***') === 0) return m; /* 值已是***开头，跳过不再脱 */
+            /* 第三刀（验证工兵终审REVISE）：人名类标签值过百家姓/复合姓验明正身，不合格原样返回不脱（'李 四 记录'不当四字名） */
+            if (dsm_labelNameCls.indexOf(lb) >= 0 && !dsm_nameOk(g2.replace(/\s/g, ''))) return m;
+            if (changes.indexOf('标签:' + lb) === -1) changes.push('标签:' + lb);
+            return g1 + '：***';
+        });
+    });
+
+    /* v0.44.0② 职称+冒号+姓名通配（初代规矩补回）：病程记录「主任医师：张三」式签名 */
+    var dsm_titleColonRe = /(主任医师|副主任医师|主治医师|住院医师|主管护师|主任护师|查房医师|值班医师|进修医师|规培医师|实习医师|经管医师|医师|医生|护士|护师)\s*[：:]\s*([\u4e00-\u9fa5](?:\s?[\u4e00-\u9fa5]){1,3}?(?=\s|$|[，。；：、）)\n]|\d))/g; /* 返工2：值末尾加前瞻边界 */ /* 第四刀：改懒惰先试最短 */
+    /* 第三刀：替换改回调验明正身，不合格原样返回不脱 */
+    result = result.replace(dsm_titleColonRe, function(m, g1, g2) {
+        if (!dsm_nameOk(g2.replace(/\s/g, ''))) return m;
+        if (changes.indexOf('职称后姓名') === -1) changes.push('职称后姓名');
+        return g1 + '：***';
+    });
+
+    /* v0.44.0③ 日期/时间脱敏（初代规矩补回） */
+    var dsm_dtRules = [
+        { p: /\d{4}[-\/.]\d{1,2}[-\/.]\d{1,2}/g, r: '****-**-**', l: '日期' },
+        { p: /\d{4}年\d{1,2}月\d{1,2}日/g, r: '****年**月**日', l: '日期' },
+        { p: /\d{1,2}:\d{2}:\d{2}/g, r: '**:**:**', l: '时间' },
+        { p: /\d{1,2}:\d{2}/g, r: '**:**', l: '时间' }
+    ];
+    dsm_dtRules.forEach(function(rule) {
+        if (rule.p.test(result)) {
+            result = result.replace(rule.p, rule.r);
+            if (changes.indexOf(rule.l) === -1) changes.push(rule.l);
+        }
+    });
+
+    /* v0.44.0④ 医院通配（初代规矩补回，安全化）：初代用\S+会多吃半个句子，收窄为中文字2~15字 */
+    var dsm_hospWildRules = [
+        { p: /[\u4e00-\u9fa5]{2,15}人民医院/g, r: function(m){ var _pre='前往到住入转去在于',_i=0; while(_i<m.length-1 && _pre.indexOf(m.charAt(_i))>=0 && (m.length-_i-1)>=6){ _i++; } return m.slice(0,_i)+'***'; } /* 返工1（验证工兵终审REVISE）：剥「前往到住入转去在于」动词前缀，保留前缀原文只脱医院名（前往***就诊）；剩<2字+人民医院就不剥 */},
+        { p: /于[\u4e00-\u9fa5]{2,15}医院(就诊|完善)/g, r: '于***$1' }
+    ];
+    dsm_hospWildRules.forEach(function(rule) {
+        if (rule.p.test(result)) {
+            result = result.replace(rule.p, rule.r);
+            if (changes.indexOf('医院通配') === -1) changes.push('医院通配');
+        }
+    });
+
+    /* v0.44.0⑤ 全院职工名录（第5组规则rules.staff）：逐条（长度≥2）全文替换*** */
+    staff.forEach(function(nm) {
+        if (!nm || nm.length < 2) return;
+        try {
+            var pattern = new RegExp(nm, 'g');
+            if (pattern.test(result)) {
+                result = result.replace(pattern, '***');
+                if (changes.indexOf('职工:' + nm) === -1) changes.push('职工:' + nm);
+            }
+        } catch(e) {}
+    });
+
     // 第二步：姓名+职称
     var sortedTitles = titles.slice().sort(function(a, b) { return b.length - a.length; });
     sortedTitles.forEach(function(title) {
         if (!title) return;
-        var pattern = new RegExp('([\u4e00-\u9fa5]{2,4})\\s*(' + title + ')', 'g');
+        var pattern = new RegExp('([\u4e00-\u9fa5](?:\\s?[\\u4e00-\\u9fa5]){1,3})\\s*(' + title + ')', 'g'); /* v0.44.0⑥ 容忍PDF抽出的名字中间带一个空格 */
         if (pattern.test(result)) {
             result = result.replace(pattern, '***$2');
             if (changes.indexOf('姓名+' + title) === -1) changes.push('姓名+' + title);
@@ -5394,7 +5542,32 @@ function dsm_highlightSensitive(text) {
     var hospitals = dsm_APP.rules.hospitals || [];
     var keywords = dsm_APP.rules.keywords || [];
     var excludes = dsm_APP.rules.excludes || [];
+    var staff = dsm_APP.rules.staff || []; /* v0.44.0⑤ 职工名录（同脱敏函数） */
     var highlightRules = [];
+    /* 第四刀连带（已报备）：同步标红块挪到最前push——否则姓名+职称规则先把「医师」裹进span，职称+冒号规则认不出，人名漏红（顺序对齐desensitize：标签/职称通配在第二步之前） */
+    /* v0.44.0 同步标红（与dsm_desensitizeWithDebug同一批新规矩：标签规则/职称后姓名/日期时间/医院通配/职工名录；改规矩两处同步） */
+    var dsm_hlLabels = ['姓名','性别','年龄','科室','床号','住院号','门诊号','病历号','医保号','身份证号','手机','电话','地址','住址','医师签名','上级医师签名','主治医师','上级医师','联系人','家属电话','工作单位'];
+    var dsm_hlNameCls = ['姓名','医师签名','上级医师签名','主治医师','上级医师','联系人'];
+    dsm_hlLabels.forEach(function(lb) {
+        var valRe = (dsm_hlNameCls.indexOf(lb) >= 0) ? '[\\u4e00-\\u9fa5](?:\\s?[\\u4e00-\\u9fa5]){1,3}?(?=\\s|$|[，。；：、）)\\n]|\\d)' : '\\S+'; /* 返工2：同脱敏函数加前瞻边界 */ /* 第四刀：改懒惰先试最短 */
+        highlightRules.push({ p: new RegExp('(' + lb + ')\\s*[:：]\\s*(' + valRe + ')', 'g'), r: function(m, g1, g2) { /* 第三刀：人名类不合格不标红 */ if (g2 && dsm_hlNameCls.indexOf(lb) >= 0 && !dsm_nameOk(String(g2).replace(/\s/g, ''))) return m; return '<span class="dsm_highlight-red">' + m + '</span>'; } });
+    });
+    var dsm_hlExtra = [
+        /\d{4}[-\/.]\d{1,2}[-\/.]\d{1,2}/g, /\d{4}年\d{1,2}月\d{1,2}日/g, /\d{1,2}:\d{2}:\d{2}/g, /\d{1,2}:\d{2}/g,
+        /于[\u4e00-\u9fa5]{2,15}医院(就诊|完善)/g
+    ];
+    dsm_hlExtra.forEach(function(pattern) {
+        highlightRules.push({ p: pattern, r: function(m) { return '<span class="dsm_highlight-red">' + m + '</span>'; } });
+    });
+    /* 第三刀：职称后姓名改回调验明正身，不合格不标红（前瞻边界同返工2） */ /* 第四刀：改懒惰先试最短 */
+    highlightRules.push({ p: /(主任医师|副主任医师|主治医师|住院医师|主管护师|主任护师|查房医师|值班医师|进修医师|规培医师|实习医师|经管医师|医师|医生|护士|护师)\s*[：:]\s*([\u4e00-\u9fa5](?:\s?[\u4e00-\u9fa5]){1,3}?(?=\s|$|[，。；：、）)\n]|\d))/g, r: function(m, g1, g2) { if (!g2 || !dsm_nameOk(String(g2).replace(/\s/g, ''))) return m; return '<span class="dsm_highlight-red">' + m + '</span>'; } });
+    /* 返工1（验证工兵终审REVISE）：人民医院通配剥动词前缀，前缀不红只红医院名 */
+    highlightRules.push({ p: /[\u4e00-\u9fa5]{2,15}人民医院/g, r: function(m){ var _pre='前往到住入转去在于',_i=0; while(_i<m.length-1 && _pre.indexOf(m.charAt(_i))>=0 && (m.length-_i-1)>=6){ _i++; } return m.slice(0,_i)+'<span class="dsm_highlight-red">'+m.slice(_i)+'</span>'; } /* 返工1：同款剥前缀，只红医院名 */ });
+    staff.forEach(function(nm) {
+        if (!nm || nm.length < 2) return;
+        try { highlightRules.push({ p: new RegExp(nm, 'g'), r: function(m) { return '<span class="dsm_highlight-red">' + m + '</span>'; } }); } catch(e) {}
+    });
+
 
     var patientNames = dsm_extractPatientNames(result, excludes);
     patientNames.forEach(function(name) {
@@ -5409,7 +5582,7 @@ function dsm_highlightSensitive(text) {
     var sortedTitles = titles.slice().sort(function(a, b) { return b.length - a.length; });
     sortedTitles.forEach(function(title) {
         if (!title) return;
-        highlightRules.push({ p: new RegExp('([\u4e00-\u9fa5]{2,4})\\s*(' + title + ')', 'g'), r: '<span class="dsm_highlight-red">$1$2</span>' });
+        highlightRules.push({ p: new RegExp('([\u4e00-\u9fa5](?:\\s?[\\u4e00-\\u9fa5]){1,3})\\s*(' + title + ')', 'g'), r: '<span class="dsm_highlight-red">$1$2</span>' }); /* v0.44.0⑥ 同脱敏函数：容忍名字中间一个空格 */
     });
 
     hospitals.forEach(function(hospital) {
@@ -5575,6 +5748,7 @@ function dsm_previewData() {
         /* v0.14.0 毛病27：同一份病历的PDF和它的文本副本内容一样，预览重复出现。
            按内容指纹（长度+前80字）去重：内容相同的只渲染第一份，其余收成一行小字说明 */
         var _seenFp = {};
+        var _dualL = '', _dualR = ''; /* v0.44.0（效果图v2）：双方框左右两框的行攒这里 */
         textFiles.forEach(function(f) {
             var c = content[f.name];
             var _fpTxt = c && c.text ? c.text : '';
@@ -5618,14 +5792,25 @@ function dsm_previewData() {
                 html += '<div style="font-size:12px;color:#e74c3c;margin-bottom:6px;">⚠️ 未检测到敏感词</div>';
             }
             
-            /* v0.37.0 挂号#113：窄屏手机专用两行字（未脱敏原文一行/脱敏后一行，点哪行全屏看哪份）；宽屏CSS藏起这两行照旧左右分栏 */
-            html += '<div class="dsm_narrowRows"><div class="dsm_nrow" style="color:#c0392b;" onclick="dsm_fullOne(' + _fi + ',\'o\')">📄 脱敏前·' + _idName + '（点我全屏看）</div><div class="dsm_nrow" style="color:#27ae60;" onclick="dsm_fullOne(' + _fi + ',\'d\')">🔒 脱敏后·' + _idName + '（点我全屏看）</div></div>'; /* v0.42.0（挂号#119）⑧：窄屏两条下划线带身份「PDF病历」「TXT验单」 */
-            html += '<div class="dsm_compare">';
-            /* v0.20.0 ②窄屏截断：每框前8行+折叠提示（宽屏dsm_foldPre原样全显） */
-            html += '<div class="dsm_original"><div class="dsm_label">📋 脱敏前·' + _idName + '（红色=要脱的）</div>' + dsm_foldPre(highlightedText, 'o' + _fi) + '</div>'; /* v0.42.0（挂号#119）⑧：宽屏label带身份 */
-            html += '<div class="dsm_desensitized"><div class="dsm_label">🔒 脱敏后·' + _idName + '</div>' + dsm_foldPre(formattedResult, 'd' + _fi) + '</div>'; /* v0.42.0（挂号#119）⑧ */
-            html += '</div></div>';
+            /* v0.44.0（效果图v2洪老师拍板）：病人卡展开区改双方框——v0.42.0窄屏两条下划线+宽屏dsm_compare两栏统统由下方双方框取代（一律并排各半宽，窄屏也row、min-width:0，照v0.21.1先例）；
+               此处只攒左右两行（行号_fi对应dsm_fullData缓存，点行照走dsm_fullOne开现有全屏浮层dsm_fullOverlay，脱敏前那份带真红字）；底层数据/函数不动 */
+            var _idShort = (_idName === 'PDF病历') ? '病历' : ((_idName === '验单' || _idName === 'TXT验单') ? '验单' : _idName); /* 身份名按v0.43.0已修的type真名：PDF→病历、TXT→验单 */
+            _dualL += '<div style="cursor:pointer;font-weight:700;font-size:14px;padding:6px 4px;border-bottom:1px dashed #f0d9d9;color:#c0392b;text-decoration:underline;word-break:break-all;" onclick="dsm_fullOne(' + _fi + ',\'o\')">脱敏前·' + _idShort + '</div>';
+            _dualR += '<div style="cursor:pointer;font-weight:700;font-size:14px;padding:6px 4px;border-bottom:1px dashed #d4e8d4;color:#27ae60;text-decoration:underline;word-break:break-all;" onclick="dsm_fullOne(' + _fi + ',\'d\')">脱敏后·' + _idShort + '</div>';
+            html += '</div>';
         });
+    }
+
+    /* v0.44.0（效果图v2）：双方框摆展开区最前——左框「📕脱敏前（自己看，有红字）」红暖色边框、右框「🔒脱敏后（送AI用，已干净）」绿边框，两框壳里限高约200px可滚动 */
+    if (_dualL) {
+        html = '<div class="dsm_section-block"><div style="display:flex;flex-direction:row;flex-wrap:nowrap;gap:10px;">' +
+            '<div style="flex:1;min-width:0;width:50%;background:#fff8f6;border:1px solid #e8b4a8;border-radius:6px;padding:8px;">' +
+            '<div style="font-weight:700;color:#c0392b;font-size:13px;margin-bottom:4px;">📕 脱敏前（自己看，有红字）</div>' +
+            '<div style="max-height:200px;overflow-y:auto;">' + _dualL + '</div></div>' +
+            '<div style="flex:1;min-width:0;width:50%;background:#f4faf4;border:1px solid #a8d5a2;border-radius:6px;padding:8px;">' +
+            '<div style="font-weight:700;color:#27ae60;font-size:13px;margin-bottom:4px;">🔒 脱敏后（送AI用，已干净）</div>' +
+            '<div style="max-height:200px;overflow-y:auto;">' + _dualR + '</div></div>' +
+            '</div></div>' + html;
     }
 
     /* v0.14.0：有被去重滤掉的重复文件时，向洪老师说明哪几份为什么不显示 */
@@ -5981,11 +6166,12 @@ function dsm_rulelibSave(a) { try { localStorage.setItem(LS_RULELIB, JSON.string
 function dsm_rulelibCur() { try { return localStorage.getItem(LS_RULELIB_CUR) || ''; } catch(e) { return ''; } }
 function dsm_rulesSnapshot() {
     return { titles: (dsm_APP.rules.titles || []).slice(), hospitals: (dsm_APP.rules.hospitals || []).slice(),
-             keywords: (dsm_APP.rules.keywords || []).slice(), excludes: (dsm_APP.rules.excludes || []).slice() };
+             keywords: (dsm_APP.rules.keywords || []).slice(), excludes: (dsm_APP.rules.excludes || []).slice(),
+             staff: (dsm_APP.rules.staff || []).slice() }; /* v0.44.0⑤ 快照带上职工名录组 */
 }
 /* v0.34.1 规则改动留账：算四类diff——added=新有旧无，removed=旧有新无；四类=titles职称/hospitals医院/keywords关键词/excludes排除词 */
 function dsm_rulesDiff(oldR, newR) {
-    var cats = ['titles', 'hospitals', 'keywords', 'excludes'];
+    var cats = ['titles', 'hospitals', 'keywords', 'excludes', 'staff']; /* v0.44.0⑤ diff四类组加staff职工名录 */
     var d = { added: {}, removed: {} };
     cats.forEach(function(c) {
         var o = (oldR && oldR[c]) || [], n = (newR && newR[c]) || [];
@@ -6007,13 +6193,16 @@ function dsm_ruleApply(rules) {
     dsm_APP.rules.hospitals = (rules.hospitals || []).slice();
     dsm_APP.rules.keywords = (rules.keywords || []).slice();
     dsm_APP.rules.excludes = (rules.excludes || []).slice();
+    /* v0.44.0⑤ 职工名录：快照/AI导入不带staff组时不许误清现行名单（有才覆盖，没有在原地不动） */
+    if (rules.staff) dsm_APP.rules.staff = (rules.staff || []).slice();
     try {
         localStorage.setItem('dsm_rules_titles', JSON.stringify(dsm_APP.rules.titles));
         localStorage.setItem('dsm_rules_hospitals', JSON.stringify(dsm_APP.rules.hospitals));
         localStorage.setItem('dsm_rules_keywords', JSON.stringify(dsm_APP.rules.keywords));
         localStorage.setItem('dsm_rules_excludes', JSON.stringify(dsm_APP.rules.excludes));
+        localStorage.setItem('dsm_rules_staff', JSON.stringify(dsm_APP.rules.staff || [])); /* v0.44.0⑤ */
     } catch(e) {}
-    try { dsm_renderExcludes(); dsm_renderTitles(); dsm_renderHospitals(); dsm_renderKeywords(); dsm_updateRulesTextarea(); } catch(e) {}
+    try { dsm_renderExcludes(); dsm_renderTitles(); dsm_renderHospitals(); dsm_renderKeywords(); dsm_updateRulesTextarea(); dsm_renderStaff(); } catch(e) {} /* v0.44.0⑤ */
     if (dsm_APP.currentPatient) { try { dsm_previewData(); } catch(e) {} }
 }
 function dsm_rulelibInit() {
@@ -6074,7 +6263,7 @@ function dsm_rulelibDiff(id) {
     if (!d || !d.added || !d.removed) {
         h += '<div style="font-size:13px;color:#8a8178;">老版本没记账（这版是留账功能上线前存的，没有改动记录）</div>';
     } else {
-        var cats = [['titles', '职称'], ['hospitals', '医院'], ['keywords', '关键词'], ['excludes', '排除词']];
+        var cats = [['titles', '职称'], ['hospitals', '医院'], ['keywords', '关键词'], ['excludes', '排除词'], ['staff', '职工名录']]; /* v0.44.0⑤ */
         cats.forEach(function(cp) {
             var c = cp[0], cn = cp[1];
             var ad = d.added[c] || [], rm = d.removed[c] || [];
@@ -6658,6 +6847,12 @@ function dsm_removeKeyword(val) {
     }
 }
 
+/* v0.44.0⑤ 职工名录（第5组规则）：照四组同款存取链（localStorage键dsm_rules_staff），设置区一个textarea一行一个名字 */
+function dsm_renderStaff() {
+    var ta = document.getElementById('dsm_staffTextarea');
+    if (ta) ta.value = (dsm_APP.rules.staff || []).join('\n');
+}
+
 // ============================================================
 //  更新完整规则文本
 // ============================================================
@@ -6778,6 +6973,9 @@ function dsm_saveAllSettings() {
     if (parsed.hospitals.length > 0) dsm_APP.rules.hospitals = parsed.hospitals;
     if (parsed.keywords.length > 0) dsm_APP.rules.keywords = parsed.keywords;
     if (parsed.excludes.length > 0) dsm_APP.rules.excludes = parsed.excludes;
+    /* v0.44.0⑤ 职工名录：textarea一行一个名字；允许清空（不走"非空才覆盖"老规矩，这组就是要能清空） */
+    var staffTa = document.getElementById('dsm_staffTextarea');
+    dsm_APP.rules.staff = (staffTa ? staffTa.value : '').split('\n').map(function(s){ return s.trim(); }).filter(function(s){ return s; });
     
     // 保存提示词
     var promptText = document.getElementById('dsm_promptInput').value.trim();
@@ -6792,6 +6990,7 @@ function dsm_saveAllSettings() {
         localStorage.setItem('dsm_rules_hospitals', JSON.stringify(dsm_APP.rules.hospitals));
         localStorage.setItem('dsm_rules_keywords', JSON.stringify(dsm_APP.rules.keywords));
         localStorage.setItem('dsm_rules_excludes', JSON.stringify(dsm_APP.rules.excludes));
+        localStorage.setItem('dsm_rules_staff', JSON.stringify(dsm_APP.rules.staff || [])); /* v0.44.0⑤ */
     } catch(e) {}
     
     // 刷新UI
@@ -6799,6 +6998,7 @@ function dsm_saveAllSettings() {
     dsm_renderTitles();
     dsm_renderHospitals();
     dsm_renderKeywords();
+    dsm_renderStaff(); /* v0.44.0⑤ */
     dsm_updateRulesTextarea();
     
     dsm_closeSettings();
@@ -6818,6 +7018,7 @@ function dsm_openSettings() {
     dsm_renderTitles();
     dsm_renderHospitals();
     dsm_renderKeywords();
+    dsm_renderStaff(); /* v0.44.0⑤ 开设置回填职工名录框 */
     dsm_updateRulesTextarea();
     document.getElementById('dsm_promptInput').value = dsm_APP.aiPrompt || '';
     // 默认选中自定义
@@ -6864,6 +7065,7 @@ function dsm_aboutInfo() {
         '• 智能脱敏：姓名+职称、医院、身份证等\n' +
         '• 排除词功能：解决"平素体健"误脱敏\n' +
         '• AI提示词模板：排除词/职称/医院\n' +
+        '• v0.44.0：脱敏规则补强（初代规矩补回：21个「标签：值」整段脱、职称+冒号+姓名、日期时间、医院通配收窄防多吃）+新立「👥职工名录」规则组（设置里一行一个名字，名单后给）；主页面AI功能卡/PDF引擎框藏起不碍眼；脱敏间=收病历→导出/其他→病人卡，点病人出左右双方框（左脱敏前红框右脱敏后绿框，点哪行全屏看哪份）；「📤拷出单体脱敏工具」在导出/其他区第一行；\n' +
         '• v0.43.0：PDF引擎开门就自动装（不再用到才装；本地留存不过桥不怕截断，装坏包会自动重下）；聚合里PDF部分强制再脱一遍、没读出字会明说；名册里收件存的原文标红小字「原文未脱敏」；验单就叫「验单」不再叫TXT验单；\n' +
         '• v0.42.0：脱敏间重排——首页就是病人卡，点病人卡自动脱敏+自动出预览（PDF病历在前、验单在后）；手机上每份病历两行下划线「脱敏前/脱敏后」标着「PDF病历」「验单」，点哪行全屏看哪份，电脑上照旧左右对照、标题也带身份；\n' +
         '  收病历的5个入口收进「📥 收病历」折起区（在壳里选文件夹会记住上次位置）；「🧩 形成聚合文件」现在只出一份聚合txt（脱敏后的，PDF在前TXT在后），不再产标红件、也不再清空脱敏间，原文件都还在；导出/AI收进折起区；\n' +
@@ -6946,11 +7148,14 @@ function dsm_loadSettingsFromStorage() {
         var hospitals = localStorage.getItem('dsm_rules_hospitals');
         var keywords = localStorage.getItem('dsm_rules_keywords');
         var excludes = localStorage.getItem('dsm_rules_excludes');
+        var staff = localStorage.getItem('dsm_rules_staff'); /* v0.44.0⑤ 职工名录存取链（照titles同款） */
         var aiPrompt = localStorage.getItem('dsm_aiPrompt');
         if (titles) dsm_APP.rules.titles = JSON.parse(titles);
         if (hospitals) dsm_APP.rules.hospitals = JSON.parse(hospitals);
         if (keywords) dsm_APP.rules.keywords = JSON.parse(keywords);
         if (excludes) dsm_APP.rules.excludes = JSON.parse(excludes);
+        if (staff) dsm_APP.rules.staff = JSON.parse(staff); /* v0.44.0⑤ */
+        if (!Array.isArray(dsm_APP.rules.staff)) dsm_APP.rules.staff = []; /* v0.44.0⑤ 兜底：老存档没这组 */
         if (aiPrompt) dsm_APP.aiPrompt = aiPrompt;
     } catch(e) {}
 }
@@ -6966,7 +7171,8 @@ function dsm_init() {
             titles: ['主治医师', '主管护师', '医师', '护士', '主任', '教授', '副主任医师', '主任医师', '主任护师'],
             hospitals: ['暨南大学附属第五医院', '深河人民医院'],
             keywords: ['张三', '李四', '王五', '赵六'],
-            excludes: ['平素体健', '神志清楚', '生命体征', '精神状态', '意识清楚', '家属']
+            excludes: ['平素体健', '神志清楚', '生命体征', '精神状态', '意识清楚', '家属'],
+            staff: [] /* v0.44.0⑤ */
         };
     }
     dsm_updateExportFileName();
