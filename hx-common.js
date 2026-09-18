@@ -1,5 +1,12 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    hx-common.js —— 全家9件软件共用公共件母版
+   v0.15.0 2026-09-18（洪老师2026-09-18 08:10速记拍板，效果图屏③）：HX.sj速记面板加「↩ 补充上一条」钮——
+     毛病：想在上一条基础上接着写只能凭记忆重打；
+     方案：点钮弹出最近3条速记列表（相对序「上一条/上上条/再上一条」+时间+内容预览前两行，从现行存储读：
+     壳文件「速记流水.txt」为主、localStorage现行镜像键hx_sj_uplocal兜底，不新建平行账本）；
+     点哪条=那条原文整行回填进输入框，洪老师接着加字，点「记下」走原save=新增一条（铁律17：速记只增不删，原条一个字不动）；
+     点列表✕或面板空白处关列表无副作用；一条都没有时toast人话「还没有速记可补」；
+     📷附图链路/自动上行链路/v0.1.1 extraBtn原「补充上一条」（追加到末行那个）一行未动；存储键名一个未改；其余一行未动
    v0.13.2 2026-09-16 班④：闲时速记上行认hx_sj_skip_once标记跳过（摘「检查新版本」按钮带出的多余同步），其余一行未动
    v0.13.0 2026-09-16 班① 第5条：新增长按点亮零件 HX.pick（列表行长按1.5秒点亮该行、账本hx_pick_v1、30秒自动灭、再长按同一行熄灭、点亮别行自动换；触摸+鼠标两路，移动超10px或提前松手取消；堵安卓长按系统菜单）+ HX.ai面板顶部亮牌行（面板打开/每次发送前刷新，显示已点亮文件名或引导语；发送内容仍由宿主决定，不新造数据通道）；其余一行未动
    v0.12.2 2026-09-15（挂号#95，洪老师真机报"速记取图后点输入框又跳图库、不显示取图成功"）：病根=X5壳侧fileChooser回调悬挂在常驻隐藏input上无法自愈，下个手势重放弹图库+saveImg重活链断无回执——①📷取图改每次临时造input用完即弃 ②选图在途闸防重弹（focus+30秒超时兜底复位） ③saveImg改createObjectURL优先+15秒看门狗超时报明白话；其余一行未动
@@ -42,7 +49,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 (function(){
   'use strict';
-  var HX_COMMON_VERSION = '0.14.0'; /* v0.13.2 2026-09-16 班④：洪老师拍板"把这个多余的命令取消掉"——开门闲时8秒速记上行认 hx_sj_skip_once 标记（主界面v1.19.1「检查新版本」按钮所立）跳过本次，查版本刷新不再带出速记流水.txt上行；「记下后上行」等其他入口一行未动 */ /* v0.13.1 2026-09-16 班③：查版本归管家一家——有管家的壳里HX.selfUp开门自查退休（管家每日闲时统一查装+验暗号），没管家的老壳/浏览器照旧；其余一行未动 */ /* v0.13.0 2026-09-16 班① 第5条：新增长按点亮零件 HX.pick（hx_pick_v1账本+30秒自动灭+触摸鼠标两路长按）+ HX.ai面板顶部亮牌行；其余一行未动 */ /* v0.12.2 2026-09-15（挂号#95，洪老师真机报"速记取图后点输入框又跳图库、不显示取图成功"）：病根=X5壳侧fileChooser回调悬挂在常驻隐藏input上无法自愈，下个手势重放弹图库+saveImg重活链断无回执——①📷取图改每次临时造input用完即弃 ②选图在途闸防重弹（focus+30秒超时兜底复位） ③saveImg改createObjectURL优先+15秒看门狗超时报明白话；其余一行未动 */ /* v0.12.1 2026-09-15（挂号#104，洪老师真机报"U盘病历一个没显示+进到深层回不到上一层"）：HX.fm专修——①文件排序改按修改时间新→旧（实锤：壳侧按名排，中文名病历全沉到套装hxdata_*等英文名件后面，翻不到就当没有；新拷的病历时间最新，直接浮顶），文件夹仍在前；②空名/乱码名件不再哑巴，标「（名字读不出）」照列；③列表顶部加小字「本层共N项」（搜索时「搜到N项」）让他知道看没看全；④面包屑行🏠旁加显眼「⬅返回上一层」钮，有上级即亮，点=回父目录；面包屑回跳改走浏览足迹栈（旧法按"/"拼路径，SAF的safdoc://URI里全是斜杠，点中段必坏——实锤修掉）；⑤pick加opt.hideKit=true时过滤套装自有件（hxdata_*.json、hx-common*.js、guanjia-pdf-engine.js、version-*.json、速记流水.txt、mg_开头、mgver_开头、sjimg_开头、原文库_开头、dsm_开头，文件夹照列），默认false不动其他场景；⑥folder模式底部加「＋在此新建文件夹」钮（壳v1.8.4新fmMkdir桥，X5里prompt不稳，用行内小浮层输名字）；其余一行未动 */ /* v0.12.0 2026-09-15：新增HX.fm手机文件夹逛一逛（壳全盘文件桥六桥+ensure权限引导浮层+pick全屏仿资源管理器+read封装Promise）；其余一行未动 */ /* v0.11.1 2026-09-14：速记📷附图改两步走（挂号#94，洪老师真机验收报「选完图浮窗被关掉没法输说明、图跑哪去不知道」，拍板A+B都做）——①选图不再立刻记行/关面板：压图存壳后面板挂一行「🖼已挂图 sjimg_xxx.jpg（✕可撤销）」，可继续打字补说明，点「记下」图和话一起进流水（save原逻辑未动，只认sjPendImg）；②回执明白话：记下提示图存手机壳文件名+联网传坚果云/学习套装数据/速记图/，上传成功流水行图名后补☁（sjImgUpload出队时回写）；✕撤销=清挂图+出队+删壳文件；其余一行未动 */ /* v0.11.0 2026-09-14：AI面板第2级提示词可改可存（挂号#79，洪老师拍板"不搞三级菜单，就两级，点进去就是几套预设提示词，可改可储存"）——条目带prompts时，第2级点某套进编辑页（全文可改+▶用这套发送+💾存为默认+↩恢复出厂）；改过的存覆盖账本hx_aiprompt_v1.<app>（出厂原文一个字不动，恢复出厂=删覆盖）；宿主函数发送前一句HX.ai.pget(id,idx)查覆盖（乙路，不改送不进去）；条目可带pget/pset/preset钩子接管存储（如大管家问AI接管它自己的hx_gj_askai_v1老账本）；新增HX.ai.pget公开口；其余一行未动 /* v0.10.0 2026-09-14：安心条HX.step（顶部细进度条+两行小字，愣住定格定位，洪老师拍板全家统一）+速记📷附图（压图存壳文件夹sjimg_*+行尾挂图+坚果云/学习套装数据/速记图/上传排队）；其余一行未动 /* v0.9.1 2026-09-14：HX.store.sync批量抱回（壳v1.7.3 readFiles桥）——多件对账一次JNI全读回，免逐件SAF往返卡主线程（洪老师真机报"点大管家变蓝后定住"，病根=5本账本连环读各约2秒）；旧壳无readFiles自动回落逐件读，逻辑一字未改 /* v0.9.0 2026-09-13：常驻通信管家双通道（洪老师拍板一次做完）——新增HX.mg投信层（壳v1.7.0管家在则GitHub联网写信mg_out_给后台服务代发+回信mg_in_轮询取，网页线程不碰网络；管家不在自动走老fetch，全家零改动）+HX.big大件异步编解码（TextEncoder/Decoder分块让气，无则回落老同步）；改道点=gh.fetch一个收口；_autoNetOk闸门规矩不变 /* v0.8.0 2026-09-13：开门静默令（洪老师拍板：开门不许自动同步/不许自动查版本，点了才做）——全家自动联网（dav rescue/mirror、relay闲时送与pull、selfUp、selfCheck、速记开门补推）统一过HX._autoNetOk闸门：默认全关，3秒内真有点击（=点了按钮）或localStorage hx_auto_net=1才放行；新增HX.syncNow()一件全手动补做；本地存取（HX.store/localStorage/壳文件）不联网不受影响；其余一行未动 /* v0.7.0 2026-09-12：HX.dav全异步化（根治#75/#77同步联网卡死主线程）——走壳v1.6.0新davAsync后台桥+HX._davCb回调，ts对账逻辑一行未改；旧壳没davAsync一律静默跳过绝不回退同步老路，壳升级后自动恢复 */ /* v0.6.0 2026-09-12 地基二期：HX.dav的rescue升级为ts对账（云端新超5秒留档_冲突_后盖回/本地新或相等顺手davUp追平/云端缺顺手davUp补齐） */ /* v0.5.0 2026-09-12：新增中转邮路HX.relay+坚果云腿HX.dav */ /* v0.4.0 2026-09-12：新增仓管员HX.store，地基工程一期规矩A/B落地 */ /* v0.3.0 2026-09-11：部件自升级HX.selfUp（病根：壳里旧版公共件永远不升级→AI面板等新功能装了也白装；开门闲时20秒比对云端version-hx-common.json，旧了静默下载写回授权文件夹，下次开门用新的，全程不弹窗） */ /* v0.2.0 2026-09-11：新增HX.ai统一AI面板（两层结构+定位置顶+AI功能生成器，洪老师2026-09-11拍板方法论落地试点）；HX.sj面板加「🤖AI」入口钮；其余一行未动 */ /* v0.1.1 2026-09-10：HX.sj.init 加可选 extraBtn（大管家#43「补充上一条」补回，洪老师点名功能）；不传仍是2钮版，默认行为不变 */
+  var HX_COMMON_VERSION = '0.15.0'; /* v0.15.0 2026-09-18（洪老师08:10速记拍板）：HX.sj面板加「↩ 补充上一条」钮——点钮弹最近3条速记列表（相对序+时间+前两行预览，壳文件「速记流水.txt」为主、localStorage现行镜像键hx_sj_uplocal兜底，不新建平行账本），点条=原文整行回填进输入框接着加字，「记下」走原save=新增一条（铁律17原条不动）；✕/点面板空白关列表无副作用；空=toast「还没有速记可补」；附图/上行/extraBtn等其他零件一行未动 */ /* v0.13.2 2026-09-16 班④：洪老师拍板"把这个多余的命令取消掉"——开门闲时8秒速记上行认 hx_sj_skip_once 标记（主界面v1.19.1「检查新版本」按钮所立）跳过本次，查版本刷新不再带出速记流水.txt上行；「记下后上行」等其他入口一行未动 */ /* v0.13.1 2026-09-16 班③：查版本归管家一家——有管家的壳里HX.selfUp开门自查退休（管家每日闲时统一查装+验暗号），没管家的老壳/浏览器照旧；其余一行未动 */ /* v0.13.0 2026-09-16 班① 第5条：新增长按点亮零件 HX.pick（hx_pick_v1账本+30秒自动灭+触摸鼠标两路长按）+ HX.ai面板顶部亮牌行；其余一行未动 */ /* v0.12.2 2026-09-15（挂号#95，洪老师真机报"速记取图后点输入框又跳图库、不显示取图成功"）：病根=X5壳侧fileChooser回调悬挂在常驻隐藏input上无法自愈，下个手势重放弹图库+saveImg重活链断无回执——①📷取图改每次临时造input用完即弃 ②选图在途闸防重弹（focus+30秒超时兜底复位） ③saveImg改createObjectURL优先+15秒看门狗超时报明白话；其余一行未动 */ /* v0.12.1 2026-09-15（挂号#104，洪老师真机报"U盘病历一个没显示+进到深层回不到上一层"）：HX.fm专修——①文件排序改按修改时间新→旧（实锤：壳侧按名排，中文名病历全沉到套装hxdata_*等英文名件后面，翻不到就当没有；新拷的病历时间最新，直接浮顶），文件夹仍在前；②空名/乱码名件不再哑巴，标「（名字读不出）」照列；③列表顶部加小字「本层共N项」（搜索时「搜到N项」）让他知道看没看全；④面包屑行🏠旁加显眼「⬅返回上一层」钮，有上级即亮，点=回父目录；面包屑回跳改走浏览足迹栈（旧法按"/"拼路径，SAF的safdoc://URI里全是斜杠，点中段必坏——实锤修掉）；⑤pick加opt.hideKit=true时过滤套装自有件（hxdata_*.json、hx-common*.js、guanjia-pdf-engine.js、version-*.json、速记流水.txt、mg_开头、mgver_开头、sjimg_开头、原文库_开头、dsm_开头，文件夹照列），默认false不动其他场景；⑥folder模式底部加「＋在此新建文件夹」钮（壳v1.8.4新fmMkdir桥，X5里prompt不稳，用行内小浮层输名字）；其余一行未动 */ /* v0.12.0 2026-09-15：新增HX.fm手机文件夹逛一逛（壳全盘文件桥六桥+ensure权限引导浮层+pick全屏仿资源管理器+read封装Promise）；其余一行未动 */ /* v0.11.1 2026-09-14：速记📷附图改两步走（挂号#94，洪老师真机验收报「选完图浮窗被关掉没法输说明、图跑哪去不知道」，拍板A+B都做）——①选图不再立刻记行/关面板：压图存壳后面板挂一行「🖼已挂图 sjimg_xxx.jpg（✕可撤销）」，可继续打字补说明，点「记下」图和话一起进流水（save原逻辑未动，只认sjPendImg）；②回执明白话：记下提示图存手机壳文件名+联网传坚果云/学习套装数据/速记图/，上传成功流水行图名后补☁（sjImgUpload出队时回写）；✕撤销=清挂图+出队+删壳文件；其余一行未动 */ /* v0.11.0 2026-09-14：AI面板第2级提示词可改可存（挂号#79，洪老师拍板"不搞三级菜单，就两级，点进去就是几套预设提示词，可改可储存"）——条目带prompts时，第2级点某套进编辑页（全文可改+▶用这套发送+💾存为默认+↩恢复出厂）；改过的存覆盖账本hx_aiprompt_v1.<app>（出厂原文一个字不动，恢复出厂=删覆盖）；宿主函数发送前一句HX.ai.pget(id,idx)查覆盖（乙路，不改送不进去）；条目可带pget/pset/preset钩子接管存储（如大管家问AI接管它自己的hx_gj_askai_v1老账本）；新增HX.ai.pget公开口；其余一行未动 /* v0.10.0 2026-09-14：安心条HX.step（顶部细进度条+两行小字，愣住定格定位，洪老师拍板全家统一）+速记📷附图（压图存壳文件夹sjimg_*+行尾挂图+坚果云/学习套装数据/速记图/上传排队）；其余一行未动 /* v0.9.1 2026-09-14：HX.store.sync批量抱回（壳v1.7.3 readFiles桥）——多件对账一次JNI全读回，免逐件SAF往返卡主线程（洪老师真机报"点大管家变蓝后定住"，病根=5本账本连环读各约2秒）；旧壳无readFiles自动回落逐件读，逻辑一字未改 /* v0.9.0 2026-09-13：常驻通信管家双通道（洪老师拍板一次做完）——新增HX.mg投信层（壳v1.7.0管家在则GitHub联网写信mg_out_给后台服务代发+回信mg_in_轮询取，网页线程不碰网络；管家不在自动走老fetch，全家零改动）+HX.big大件异步编解码（TextEncoder/Decoder分块让气，无则回落老同步）；改道点=gh.fetch一个收口；_autoNetOk闸门规矩不变 /* v0.8.0 2026-09-13：开门静默令（洪老师拍板：开门不许自动同步/不许自动查版本，点了才做）——全家自动联网（dav rescue/mirror、relay闲时送与pull、selfUp、selfCheck、速记开门补推）统一过HX._autoNetOk闸门：默认全关，3秒内真有点击（=点了按钮）或localStorage hx_auto_net=1才放行；新增HX.syncNow()一件全手动补做；本地存取（HX.store/localStorage/壳文件）不联网不受影响；其余一行未动 /* v0.7.0 2026-09-12：HX.dav全异步化（根治#75/#77同步联网卡死主线程）——走壳v1.6.0新davAsync后台桥+HX._davCb回调，ts对账逻辑一行未改；旧壳没davAsync一律静默跳过绝不回退同步老路，壳升级后自动恢复 */ /* v0.6.0 2026-09-12 地基二期：HX.dav的rescue升级为ts对账（云端新超5秒留档_冲突_后盖回/本地新或相等顺手davUp追平/云端缺顺手davUp补齐） */ /* v0.5.0 2026-09-12：新增中转邮路HX.relay+坚果云腿HX.dav */ /* v0.4.0 2026-09-12：新增仓管员HX.store，地基工程一期规矩A/B落地 */ /* v0.3.0 2026-09-11：部件自升级HX.selfUp（病根：壳里旧版公共件永远不升级→AI面板等新功能装了也白装；开门闲时20秒比对云端version-hx-common.json，旧了静默下载写回授权文件夹，下次开门用新的，全程不弹窗） */ /* v0.2.0 2026-09-11：新增HX.ai统一AI面板（两层结构+定位置顶+AI功能生成器，洪老师2026-09-11拍板方法论落地试点）；HX.sj面板加「🤖AI」入口钮；其余一行未动 */ /* v0.1.1 2026-09-10：HX.sj.init 加可选 extraBtn（大管家#43「补充上一条」补回，洪老师点名功能）；不传仍是2钮版，默认行为不变 */
   if(window.HX && window.HX.HX_COMMON_VERSION){ return; } /* 已装过不重复装 */
   var HX = { HX_COMMON_VERSION: HX_COMMON_VERSION, ok: true };
   function warn(m){ try{ if(window.console && console.warn) console.warn('[hx-common] '+m); }catch(e){} }
@@ -634,6 +641,54 @@
         try{ sjUpload(); }catch(e){} /* 顺手上行，失败静默下回补 */
       }catch(e){ sjToast('没存成：'+e.message); }
     }
+    /* v0.15.0「↩ 补充上一条」选条回填（洪老师2026-09-18 08:10速记拍板，效果图屏③）：
+       点钮弹最近3条速记列表，点哪条=那条原文整行回填进输入框接着加字；「记下」走原save=新增一条（铁律17：原条一个字不动）。
+       读取来源=现行存储：壳文件「速记流水.txt」为主（与save/appendLast同一条ReadFile路），读不到时用localStorage现行镜像键hx_sj_uplocal兜底；不新建任何平行账本、不改任何键名 */
+    function sjRecentLines(){
+      var txt='';
+      try{ if(bridged()){ var b=LearnShell.readFile('速记流水.txt'); if(b) txt=b64d(b); } }catch(e){ txt=''; } /* v0.15.0 主源：壳文件（照用save同款读法） */
+      if(!txt){ try{ txt=localStorage.getItem('hx_sj_uplocal')||''; }catch(e){ txt=''; } } /* v0.15.0 兜底：localStorage现行镜像键hx_sj_uplocal（上行缓存的整份流水，键名照用不新建） */
+      var lines=(txt||'').split('\n'), out=[];
+      for(var i=lines.length-1;i>=0 && out.length<3;i--){ var s=String(lines[i]).replace(/\s+$/,''); if(s) out.unshift(s); } /* v0.15.0 从尾往前取最近3条非空行，保持原顺序 */
+      return out;
+    }
+    /* v0.15.0 预览文本：剥掉行首[时间]后取前两行，超长截60字（只用于显示，回填用原文整行） */
+    function sjPrevPreview(line){
+      var m=String(line).match(/^\[(.*?)\]\s*/); var body=m?String(line).slice(m[0].length):String(line);
+      var p=body.split('\n').slice(0,2).join(' / '); if(p.length>60) p=p.slice(0,60)+'…';
+      return { ts:(m?m[1]:''), txt:p };
+    }
+    function showPrevList(){
+      var box=$('hxSjPrevList'); if(!box) return;
+      var arr=sjRecentLines();
+      if(!arr.length){ sjToast('还没有速记可补'); return; } /* v0.15.0 一条都没有=toast人话 */
+      var names=['上一条','上上条','再上一条']; /* v0.15.0 相对序：最新一条=上一条 */
+      var h='<div style="display:flex;justify-content:space-between;align-items:center;font-size:14px;color:#6b6257;margin-bottom:4px">'+
+            '<span>点一条回填进输入框，接着写</span>'+
+            '<button id="hxSjPrevX" type="button" style="flex:none;background:#efe9df;color:#6b6257;font-size:14px;padding:2px 10px">✕</button></div>';
+      for(var i=arr.length-1,k=0;i>=0;i--,k++){
+        h+='<div class="hxSjPrevItem" data-i="'+i+'" data-k="'+k+'" style="border:1px solid #e5ddd0;border-radius:8px;padding:6px 8px;margin-bottom:6px;background:#fff;cursor:pointer">'+
+           '<div class="hxSjPrevTs" style="font-size:13px;color:#a05848"></div>'+ /* v0.15.0 终审返工：相对序+时间也改textContent填入（流水原文里的时间戳未转义进innerHTML有注入险，与预览同款防注入） */
+           '<div class="hxSjPrevBody" style="font-size:15px;color:#4a4238;white-space:pre-wrap;word-break:break-all"></div></div>'; /* v0.15.0 预览文字走textContent填入，防原文里<>&进HTML串 */
+      }
+      box.innerHTML=h;
+      var items=box.querySelectorAll('.hxSjPrevItem');
+      for(var j=0;j<items.length;j++){ (function(it){
+        var idx=+it.getAttribute('data-i');
+        var pv=sjPrevPreview(arr[idx]); /* v0.15.0 终审返工：预览+时间戳统一在循环里取一次 */
+        var tsEl=it.querySelector('.hxSjPrevTs'); if(tsEl) tsEl.textContent=names[+it.getAttribute('data-k')]+(pv.ts?'　'+pv.ts:''); /* v0.15.0 终审返工：时间戳textContent赋值，不进innerHTML */
+        var bodyEl=it.querySelector('.hxSjPrevBody'); if(bodyEl) bodyEl.textContent=pv.txt;
+        it.addEventListener('click', function(){
+          try{
+            var ta=$('hxSjText'); ta.value=arr[idx]; /* v0.15.0 原文整行回填（一个字不动），洪老师接着在后面加字；记下走原save=新增一条 */
+            box.style.display='none';
+            try{ ta.focus(); }catch(e){}
+          }catch(e){}
+        });
+      })(items[j]); }
+      var px=$('hxSjPrevX'); if(px) px.addEventListener('click', function(ev){ try{ ev.stopPropagation(); }catch(e){} box.style.display='none'; }); /* v0.15.0 ✕关列表无副作用 */
+      box.style.display='block';
+    }
     /* 页面里还没有速记UI就自动注入（样式+圆点+面板+toast，和9件内嵌版一模一样的结构） */
     function ensureUI(){
       if($('hxSjDot')) return true;
@@ -658,11 +713,13 @@
           '  <textarea id="hxSjText" placeholder="发现啥毛病，写一句…"></textarea>'+
           '  <div id="hxSjImgLine" style="display:none;font-size:13px;color:#4a4238;margin-top:6px;background:#f5efe4;border-radius:8px;padding:4px 8px"></div>'+ /* v0.11.1 挂图行：选了图没记下时显示 */
           '  <div class="hxSjBtns"><button id="hxSjSave" type="button">记下</button>'+
+          '<button id="hxSjPrev" type="button" style="background:#7a8ea0;color:#fff;">↩ 补充上一条</button>'+ /* v0.15.0 选条回填钮：点=弹最近3条列表选一条回填，洪老师2026-09-18拍板 */
           '<button id="hxSjImg" type="button" style="background:#efe9df;color:#6b6257;">📷图</button>'+ /* v0.10.0 附图钮：始终在「记下」旁，样式同关闭钮 */
           (sjExtraBtn ? '<button id="hxSjAppend" type="button" style="background:#b8925a;color:#fff;">'+String(sjExtraBtn.label||'补充上一条')+'</button>' : '')+ /* v0.1.1 extraBtn：不传不出这钮，默认2钮版 */
           '<button id="hxSjClose" type="button">关上</button>'+
           ((HX.ai && HX.ai.ready && HX.ai.ready()) ? '<button id="hxSjAiBtn" type="button" style="background:#efe9df;color:#6b6257;">🤖AI</button>' : '')+ /* v0.2.0 AI面板入口：HX.ai已init且UI就绪才出这钮，不出现不影响速记 */
           '</div>'+
+          '  <div id="hxSjPrevList" style="display:none;margin-top:8px;max-height:240px;overflow-y:auto"></div>'+ /* v0.15.0 最近3条选条列表容器：默认藏，点「↩ 补充上一条」才填内容亮出 */
           '  <div id="hxSjHint">浏览器里存不了，请在手机壳里用</div>'+
           '</div>'+
           '<div id="hxSjToast"></div>';
@@ -675,6 +732,8 @@
       dot.addEventListener('click', openPanel);
       $('hxSjSave').addEventListener('click', save);
       if(sjExtraBtn && $('hxSjAppend')) $('hxSjAppend').addEventListener('click', appendLast); /* v0.1.1 extraBtn */
+      var sjPrevBtn=$('hxSjPrev'); if(sjPrevBtn) sjPrevBtn.addEventListener('click', function(){ try{ var box=$('hxSjPrevList'); if(box && box.style.display==='block'){ box.style.display='none'; return; } showPrevList(); }catch(e){} }); /* v0.15.0 ↩补充上一条：列表开着再点=收起（无副作用），否则弹最近3条 */
+      var sjPanelBk=$('hxSjPanel'); if(sjPanelBk) sjPanelBk.addEventListener('click', function(ev){ try{ var box=$('hxSjPrevList'); if(box && box.style.display==='block' && ev.target===sjPanelBk) box.style.display='none'; }catch(e){} }); /* v0.15.0 点面板空白处关列表（点在条目/按钮上不动），无副作用 */
       $('hxSjClose').addEventListener('click', function(){ $('hxSjPanel').style.display='none'; });
       var sjImgBtn=$('hxSjImg'); if(sjImgBtn) sjImgBtn.addEventListener('click', function(){ try{
         if(sjImgPicking){ try{ sjToast('选图窗口已打开，请稍候'); }catch(e){} return; } /* v0.12.2 挂号#95：选图在途闸，防X5重放手势再弹图库 */
