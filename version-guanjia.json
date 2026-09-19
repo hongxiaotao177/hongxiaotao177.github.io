@@ -1,6 +1,6 @@
 {
- "version": "0.52.1",
+ "version": "0.52.2",
  "dl": "software-guanjia.html",
- "note": "班⑦AI面板四刀刀A落地侧：HX.ai.init加litText钩子给自建条目供点亮文件脱敏后文本（照问AI随行口径）；配套hx-common v0.16.0，其余一行未动",
- "sig": "fe2fe3370726a648"
+ "note": "班⑧：keyInputAsk千问分支走HX.keys.setQwen落真源（配套hx-common v0.16.1），其余一行未动",
+ "sig": "f5bf9740dfe04a63"
 }
