@@ -1,6 +1,6 @@
 {
  "v": 1,
- "t": 1789804917605,
+ "t": 1789828292414,
  "items": [
   {
    "key": "index",
@@ -10,16 +10,16 @@
   },
   {
    "key": "guanjia",
-   "version": "0.51.0",
+   "version": "0.52.2",
    "dl": "software-guanjia.html",
-   "sig": "148a7841c3ace6b1"
+   "sig": "f5bf9740dfe04a63"
   },
   {
    "key": "hx-common",
-   "version": "0.15.1",
+   "version": "0.16.1",
    "dl": "hx-common.js",
-   "sig": "d6e48ae30a3b80de"
+   "sig": "7e69178adc9357c8"
   }
  ],
- "note": "班⑤：guanjia钓0.51.0（toggle双通道+撤文件清单）；index1.19.6/hx-common0.15.1不动"
+ "note": "班⑧：guanjia钓0.52.2+hx-common钓0.16.1（key落真源）；index1.19.6不动"
 }
