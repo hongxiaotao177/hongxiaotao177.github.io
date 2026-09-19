@@ -1,13 +1,25 @@
 {
  "v": 1,
- "t": 1789647168768,
+ "t": 1789779014973,
  "items": [
   {
    "key": "index",
-   "version": "1.19.4",
+   "version": "1.19.5",
    "dl": "index.html",
-   "sig": "b380c22312747739"
+   "sig": "e8eb3e68add0efba"
+  },
+  {
+   "key": "guanjia",
+   "version": "0.48.0",
+   "dl": "software-guanjia.html",
+   "sig": "336cde958c31965f"
+  },
+  {
+   "key": "hx-common",
+   "version": "0.15.1",
+   "dl": "hx-common.js",
+   "sig": "d6e48ae30a3b80de"
   }
  ],
- "note": "班⑧：布告栏只放index一件钓v1.19.4进手机治循环，其余件等v1.19.4到位后恢复"
+ "note": "班①：v1.19.4真机已到位（壳2.0.2），布告栏恢复——index钓1.19.5+guanjia钓0.48.0（装件现取不过桥已治）+hx-common0.15.1"
 }
