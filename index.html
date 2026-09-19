@@ -2,6 +2,11 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.19.5 2026-09-19（班①，减桥工程治连环谎三刀）：班⑥病根=装件只看写入返回值就记账，X5缓存/没生效不管→账本谎→"已装跳过"→永远卡旧版+谎报升级完成。
+      刀1硬编码校准：CUR.guanjia 0.35.1→0.47.0（壳v2.0.2捆真身）；hx_suite_ver账本覆盖改只许比硬编码新（cmpVer>0才采纳，旧账不再盖真身），校正后CUR写回账本。
+      刀2开门自校对堵谎（只index自己）：账本index>硬编码=上次装主界面没生效→账本index回滚真身+写回+updMsg红字提示再点一次🔍重装。
+      刀3装完说真话：回信装件段/开门直装段装成功话术与verifyAfter对账话术末尾补「版本号以打开软件关于页看到的为准」，判定/记账/调用结构一行未动。
+      其余一行未动。
     v1.19.4 2026-09-17（班⑧，循环事故根治，洪老师拍板方案C）：病根=专区大件（大管家580KB→b64约80万字符）过JS桥
       readFile被X5截断/失败→大件永远装不上→专区件清不掉→开门见件又投信→死循环（真机17:40~19:56循环451轮）。
       改=装件内容hxRawGet公开站现取优先（文本不过桥，多大都不怕），专区老路兜底；开门直装段同改+已装版本跳过
@@ -493,12 +498,17 @@ hxCommonLoad(function(){
 /* ==================== 套装主界面自检器官（v1.1.0） ==================== */
 /* 本界面对应的四个软件当前内装版本（每次发版跟着改） */
 var CUR = { notes:"2.18.1", xiti:"1.16.0", bridge:"1.7.0", xueqi:"0.21.0", ppt:"0.20.0", xiaotao:"0.11.0", guanjia:"0.33.1", pai:"0.11.0", index:"1.18.4" /* v1.18.1 纯CUR同步：大管家v0.31.1（#83 AI面板清单恒空根治）；顺手把班②全家8件CUR落伍补齐（xiti1.16.0/bridge1.7.0/xueqi0.21.0/ppt0.20.0/xiaotao0.11.0/pai0.11.0，CUR落伍老毛病再抓一回） */ };
-CUR.guanjia="0.35.1"; /* v1.18.5 纯CUR同步：大管家v0.35.1（#108 删过的病人手动收得回+移出黑名单/防重跳过不播报） */
+CUR.guanjia="0.47.0"; /* v1.19.5（2026-09-19 班①，减桥工程治连环谎）刀1硬编码校准：壳v2.0.2捆真身大管家0.47.0，CUR落伍老毛病再抓（原v1.18.5 纯CUR同步：大管家v0.35.1，#108 删过的病人手动收得回+移出黑名单/防重跳过不播报） */
 CUR.index="1.18.7"; /* v1.18.7 顺手补CUR：主界面自己1.18.6→1.18.7 */
 CUR.index="1.19.0"; /* v1.19.0 通信链路大扫除：闲时对账取消归管家+开门存清单+专区自动装+管家路补留档复核 */
-CUR.index="1.19.4"; /* v1.19.4 循环事故根治方案C：装件内容不过桥（hxRawGet公开站现取优先，专区老路兜底，已装跳过），治大件装不上死循环；v1.19.3 开门专区直装静默化；v1.19.2 点检查先读账本mg_ver.json秒显；v1.19.1 摘多余命令 */
+CUR.index="1.19.5"; /* v1.19.5（2026-09-19 班①，减桥工程治连环谎三刀）：刀1硬编码校准+账本只许比硬编码新；刀2开门自校对堵谎（账本index吹牛就回滚真身+红字提示）；刀3装完说真话（版本号以关于页为准）；v1.19.4 循环事故根治方案C：装件内容不过桥（hxRawGet公开站现取优先，专区老路兜底，已装跳过），治大件装不上死循环；v1.19.3 开门专区直装静默化；v1.19.2 点检查先读账本mg_ver.json秒显；v1.19.1 摘多余命令 */
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
-try{ var _sv=JSON.parse(localStorage.getItem("hx_suite_ver")||"{}"); Object.keys(_sv).forEach(function(k){ if(_sv[k]) CUR[k]=_sv[k]; }); }catch(e){}
+/* v1.19.5（2026-09-19 班①，减桥工程治连环谎）刀1账本校准：账本只许比硬编码新——cmpVer(_sv[k],CUR[k])>0才采纳，比硬编码低的旧账不再覆盖（cmpVer为629行现有函数，同<script>块内声明提升，此处可用，已grep确认签名cmpVer(a,b)）；校正后的CUR顺手写回hx_suite_ver账本，治班⑥病根"账本谎→已装跳过→永远卡旧版"。index键由刀2单独处理（本文件自身就是index真身，账本index比硬编码新=上次没装成的谎，不采纳） */
+try{ var _sv=JSON.parse(localStorage.getItem("hx_suite_ver")||"{}"); Object.keys(_sv).forEach(function(k){ if(_sv[k] && k!=="index" && cmpVer(_sv[k], CUR[k])>0) CUR[k]=_sv[k]; }); if(_sv.index && cmpVer(_sv.index, CUR.index)>0){ /* v1.19.5 刀2前置：账本index吹牛（>硬编码真身）不采纳，留着由紧接的刀2段回滚+提示 */ }else{ try{ localStorage.setItem("hx_suite_ver", JSON.stringify(CUR)); }catch(e2){} } }catch(e){}
+/* v1.19.5（2026-09-19 班①，减桥工程治连环谎）刀2开门自校对堵谎（主界面自己）：hx_suite_ver账本里index版本>CUR.index硬编码（刀1校正后的值）=上次装主界面没生效（X5缓存旧版/没写进，真身是旧的）→账本index回滚为CUR.index硬编码真身+写回hx_suite_ver+红字提示；其他软件（guanjia等）真身主界面够不着，不做回滚，只index自己。
+   实现报备：直接复用刀1读出的_sv（同<script>块顶层var，此处可见）——账本须拿原始谎账对比硬编码，刀1写回后账本index已被压成真身，重读就再也测不出谎了；
+   时机报备：updMsg定义在627行但与本段同处一个<script>块（492起），函数声明提升此处可调用，且updLine节点（311行）早已就绪，故选直接调updMsg（try护栏兜底）——不选DOM就绪后追加，因本段执行时DOM已具备 */
+try{ if(typeof _sv!=="undefined" && _sv.index && cmpVer(_sv.index, CUR.index)>0){ _sv.index=CUR.index; Object.keys(CUR).forEach(function(k){ if(CUR[k] && typeof _sv[k]==="undefined") _sv[k]=CUR[k]; }); try{ localStorage.setItem("hx_suite_ver", JSON.stringify(_sv)); }catch(e3){} updMsg("⚠️ 上次主界面新版没装成（壳缓存旧版），账本已改回真身 v"+CUR.index+"；请再点一次🔍检查新版本重装"); } }catch(e){}
 /* key: [云端软件文件, 壳内文件名, 云端版本文件, 标签id] */
 var SUITE = {
   notes:  ["software-notes.html",  "学习笔记.html", "version.json",        "tagNotes"],
@@ -813,14 +823,14 @@ function hxRawGet(name){
       fetch(encodeURI(SUITE[k][1]), {cache:"no-store"}).then(function(r){
         var fileOk=r.ok;
         var match = fileOk && cloudVer[k] && cmpVer(CUR[k], cloudVer[k])===0;
-        if(match){ lines.push("✅ "+cn+"：升级完成，本机=云端 v"+CUR[k]); }
+        if(match){ lines.push("✅ "+cn+"：升级完成，本机=云端 v"+CUR[k]+"（以软件关于页为准）"); } /* v1.19.5（2026-09-19 班①，减桥工程治连环谎）刀3装完说真话：对账话术末尾补"以软件关于页为准"，判定逻辑一行未动 */
         else{
           allOk=false;
           var why=[];
           if(!fileOk) why.push("文件没写进壳里（写入失败）");
           if(cloudVer[k] && cmpVer(CUR[k], cloudVer[k])!==0) why.push("下载截断或壳没刷新");
           if(!why.length) why.push("云端版本没读到");
-          lines.push("❌ "+cn+"：升级后版本对不上：本机v"+CUR[k]+" / 云端v"+(cloudVer[k]||"?")+"，可能原因："+why.slice(0,2).join("；"));
+          lines.push("❌ "+cn+"：升级后版本对不上：本机v"+CUR[k]+" / 云端v"+(cloudVer[k]||"?")+"，可能原因："+why.slice(0,2).join("；")+"；以打开软件关于页为准"); /* v1.19.5（2026-09-19 班①，减桥工程治连环谎）刀3装完说真话：对不上的红字话术末尾补"以打开软件关于页为准"，判定逻辑一行未动 */
         }
         one();
       }).catch(function(){ allOk=false; lines.push("❌ "+cn+"：本机文件探不到，可能原因：文件没写进去；壳还没刷新"); one(); });
@@ -1063,7 +1073,7 @@ function hxRawGet(name){
                   /* v1.19.0 D刀对齐：管家路装软件也留档新版备份（老路dlWrite一直有，管家路此前漏了） */
                   try{ LearnShell.writeFile(it.localName.replace(".html","")+"_v"+(cloudVer[rk]||"?")+".html", fb); }catch(e){} }
                 updated.push(it.localName.replace(".html","")+"→v"+(cloudVer[rk]||"?"));
-                progLog[fi]="✅ "+nm2+"：已装上 v"+(cloudVer[rk]||"?");
+                progLog[fi]="✅ "+nm2+"：已装上 v"+(cloudVer[rk]||"?")+"；版本号以打开软件关于页看到的为准"; /* v1.19.5（2026-09-19 班①，减桥工程治连环谎）刀3装完说真话：回信装件段装成功话术末尾补实话一句，记账/判定/progLog结构一行未动 */
               }else{
                 failed.push(it.localName);
                 progLog[fi]="❌ "+nm2+"：写入没成功，下次再试";
@@ -1150,7 +1160,7 @@ try{ mgSuiteWrite(); }catch(e){}
       if(idx>=ready.length){
         if(_done.length){
           try{ window.LearnShell.toast("✅ 套装已自动更新"); }catch(e){}
-          updMsg("✅ 已装好新版："+_done.join("、")+(_fail.length?"。有"+_fail.length+"件没装成（"+_fail.join("、")+"），下次开门再试":"")+"。3秒后自动刷新生效…");
+          updMsg("✅ 已装好新版："+_done.join("、")+(_fail.length?"。有"+_fail.length+"件没装成（"+_fail.join("、")+"），下次开门再试":"")+"。3秒后自动刷新生效…（版本号以打开软件关于页看到的为准）"); /* v1.19.5（2026-09-19 班①，减桥工程治连环谎）刀3装完说真话：开门直装段装成功提示末尾补实话一句，记账/判定/updMsg调用结构一行未动 */
           setTimeout(function(){ location.reload(); }, 3000);
         }else if(_fail.length){
           updMsg("⚠️ 新版没装成（"+_fail.join("、")+"），不影响使用，下次开门再试。");
