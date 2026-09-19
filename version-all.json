@@ -1,6 +1,6 @@
 {
  "v": 1,
- "t": 1789828292414,
+ "t": 1789855200487,
  "items": [
   {
    "key": "index",
@@ -16,10 +16,10 @@
   },
   {
    "key": "hx-common",
-   "version": "0.16.1",
+   "version": "0.16.2",
    "dl": "hx-common.js",
-   "sig": "7e69178adc9357c8"
+   "sig": "d106b8276636c68d"
   }
  ],
- "note": "班⑧：guanjia钓0.52.2+hx-common钓0.16.1（key落真源）；index1.19.6不动"
+ "note": "班⑧续：hx-common钓0.16.2（云端取回钥匙）；guanjia 0.52.2/index 1.19.6不动"
 }
