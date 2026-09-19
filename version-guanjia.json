@@ -1,6 +1,6 @@
 {
- "version": "0.52.2",
+ "version": "0.53.0",
  "dl": "software-guanjia.html",
- "note": "班⑧：keyInputAsk千问分支走HX.keys.setQwen落真源（配套hx-common v0.16.1），其余一行未动",
- "sig": "f5bf9740dfe04a63"
+ "note": "班⑨六刀：问AI取件断根（只发聚合·已脱敏，原文/标红/AI件永不进包，⟦R⟧安检）、详情卡鱼骨头点开才看、文件名说人话、AI回件过目✅才落档带厂商名、发送秒表计时、60秒超时自动重发一次",
+ "sig": "cbcb26db61fc59a0"
 }
