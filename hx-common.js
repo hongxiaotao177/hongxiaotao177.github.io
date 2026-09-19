@@ -52,7 +52,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 (function(){
   'use strict';
-  var HX_COMMON_VERSION = '0.15.2'; /* v0.15.2 2026-09-19 班⑥（挂号#128，洪老师17:01/17:02真机截图报"浮窗选图后输入框被隐藏在顶端"，拍板"开工"）：病根=面板fixed钉在屏下150px，而开面板自动focus+选图回来焦点还在框上→键盘自弹→X5把页面上推→钉住的面板被顶出可视区只剩顶边。治=①开面板不再自动focus（点输入框才弹键盘）②挂图成功主动blur放下焦点；面板结构/挂图/上行/其余零件一行未动 */ /* v0.15.1 2026-09-18 班③（挂号E，洪老师拍板）：AI面板第2级提示词套行改明显大钮（.hxAiPromptBtn：▶图标+边框+圆角+绿系底色，照.hxAiGo绿色系），只改renderL2渲染HTML+CSS字符串，逻辑不动 */ /* v0.15.0 2026-09-18（洪老师08:10速记拍板）：HX.sj面板加「↩ 补充上一条」钮——点钮弹最近3条速记列表（相对序+时间+前两行预览，壳文件「速记流水.txt」为主、localStorage现行镜像键hx_sj_uplocal兜底，不新建平行账本），点条=原文整行回填进输入框接着加字，「记下」走原save=新增一条（铁律17原条不动）；✕/点面板空白关列表无副作用；空=toast「还没有速记可补」；附图/上行/extraBtn等其他零件一行未动 */ /* v0.13.2 2026-09-16 班④：洪老师拍板"把这个多余的命令取消掉"——开门闲时8秒速记上行认 hx_sj_skip_once 标记（主界面v1.19.1「检查新版本」按钮所立）跳过本次，查版本刷新不再带出速记流水.txt上行；「记下后上行」等其他入口一行未动 */ /* v0.13.1 2026-09-16 班③：查版本归管家一家——有管家的壳里HX.selfUp开门自查退休（管家每日闲时统一查装+验暗号），没管家的老壳/浏览器照旧；其余一行未动 */ /* v0.13.0 2026-09-16 班① 第5条：新增长按点亮零件 HX.pick（hx_pick_v1账本+30秒自动灭+触摸鼠标两路长按）+ HX.ai面板顶部亮牌行；其余一行未动 */ /* v0.12.2 2026-09-15（挂号#95，洪老师真机报"速记取图后点输入框又跳图库、不显示取图成功"）：病根=X5壳侧fileChooser回调悬挂在常驻隐藏input上无法自愈，下个手势重放弹图库+saveImg重活链断无回执——①📷取图改每次临时造input用完即弃 ②选图在途闸防重弹（focus+30秒超时兜底复位） ③saveImg改createObjectURL优先+15秒看门狗超时报明白话；其余一行未动 */ /* v0.12.1 2026-09-15（挂号#104，洪老师真机报"U盘病历一个没显示+进到深层回不到上一层"）：HX.fm专修——①文件排序改按修改时间新→旧（实锤：壳侧按名排，中文名病历全沉到套装hxdata_*等英文名件后面，翻不到就当没有；新拷的病历时间最新，直接浮顶），文件夹仍在前；②空名/乱码名件不再哑巴，标「（名字读不出）」照列；③列表顶部加小字「本层共N项」（搜索时「搜到N项」）让他知道看没看全；④面包屑行🏠旁加显眼「⬅返回上一层」钮，有上级即亮，点=回父目录；面包屑回跳改走浏览足迹栈（旧法按"/"拼路径，SAF的safdoc://URI里全是斜杠，点中段必坏——实锤修掉）；⑤pick加opt.hideKit=true时过滤套装自有件（hxdata_*.json、hx-common*.js、guanjia-pdf-engine.js、version-*.json、速记流水.txt、mg_开头、mgver_开头、sjimg_开头、原文库_开头、dsm_开头，文件夹照列），默认false不动其他场景；⑥folder模式底部加「＋在此新建文件夹」钮（壳v1.8.4新fmMkdir桥，X5里prompt不稳，用行内小浮层输名字）；其余一行未动 */ /* v0.12.0 2026-09-15：新增HX.fm手机文件夹逛一逛（壳全盘文件桥六桥+ensure权限引导浮层+pick全屏仿资源管理器+read封装Promise）；其余一行未动 */ /* v0.11.1 2026-09-14：速记📷附图改两步走（挂号#94，洪老师真机验收报「选完图浮窗被关掉没法输说明、图跑哪去不知道」，拍板A+B都做）——①选图不再立刻记行/关面板：压图存壳后面板挂一行「🖼已挂图 sjimg_xxx.jpg（✕可撤销）」，可继续打字补说明，点「记下」图和话一起进流水（save原逻辑未动，只认sjPendImg）；②回执明白话：记下提示图存手机壳文件名+联网传坚果云/学习套装数据/速记图/，上传成功流水行图名后补☁（sjImgUpload出队时回写）；✕撤销=清挂图+出队+删壳文件；其余一行未动 */ /* v0.11.0 2026-09-14：AI面板第2级提示词可改可存（挂号#79，洪老师拍板"不搞三级菜单，就两级，点进去就是几套预设提示词，可改可储存"）——条目带prompts时，第2级点某套进编辑页（全文可改+▶用这套发送+💾存为默认+↩恢复出厂）；改过的存覆盖账本hx_aiprompt_v1.<app>（出厂原文一个字不动，恢复出厂=删覆盖）；宿主函数发送前一句HX.ai.pget(id,idx)查覆盖（乙路，不改送不进去）；条目可带pget/pset/preset钩子接管存储（如大管家问AI接管它自己的hx_gj_askai_v1老账本）；新增HX.ai.pget公开口；其余一行未动 /* v0.10.0 2026-09-14：安心条HX.step（顶部细进度条+两行小字，愣住定格定位，洪老师拍板全家统一）+速记📷附图（压图存壳文件夹sjimg_*+行尾挂图+坚果云/学习套装数据/速记图/上传排队）；其余一行未动 /* v0.9.1 2026-09-14：HX.store.sync批量抱回（壳v1.7.3 readFiles桥）——多件对账一次JNI全读回，免逐件SAF往返卡主线程（洪老师真机报"点大管家变蓝后定住"，病根=5本账本连环读各约2秒）；旧壳无readFiles自动回落逐件读，逻辑一字未改 /* v0.9.0 2026-09-13：常驻通信管家双通道（洪老师拍板一次做完）——新增HX.mg投信层（壳v1.7.0管家在则GitHub联网写信mg_out_给后台服务代发+回信mg_in_轮询取，网页线程不碰网络；管家不在自动走老fetch，全家零改动）+HX.big大件异步编解码（TextEncoder/Decoder分块让气，无则回落老同步）；改道点=gh.fetch一个收口；_autoNetOk闸门规矩不变 /* v0.8.0 2026-09-13：开门静默令（洪老师拍板：开门不许自动同步/不许自动查版本，点了才做）——全家自动联网（dav rescue/mirror、relay闲时送与pull、selfUp、selfCheck、速记开门补推）统一过HX._autoNetOk闸门：默认全关，3秒内真有点击（=点了按钮）或localStorage hx_auto_net=1才放行；新增HX.syncNow()一件全手动补做；本地存取（HX.store/localStorage/壳文件）不联网不受影响；其余一行未动 /* v0.7.0 2026-09-12：HX.dav全异步化（根治#75/#77同步联网卡死主线程）——走壳v1.6.0新davAsync后台桥+HX._davCb回调，ts对账逻辑一行未改；旧壳没davAsync一律静默跳过绝不回退同步老路，壳升级后自动恢复 */ /* v0.6.0 2026-09-12 地基二期：HX.dav的rescue升级为ts对账（云端新超5秒留档_冲突_后盖回/本地新或相等顺手davUp追平/云端缺顺手davUp补齐） */ /* v0.5.0 2026-09-12：新增中转邮路HX.relay+坚果云腿HX.dav */ /* v0.4.0 2026-09-12：新增仓管员HX.store，地基工程一期规矩A/B落地 */ /* v0.3.0 2026-09-11：部件自升级HX.selfUp（病根：壳里旧版公共件永远不升级→AI面板等新功能装了也白装；开门闲时20秒比对云端version-hx-common.json，旧了静默下载写回授权文件夹，下次开门用新的，全程不弹窗） */ /* v0.2.0 2026-09-11：新增HX.ai统一AI面板（两层结构+定位置顶+AI功能生成器，洪老师2026-09-11拍板方法论落地试点）；HX.sj面板加「🤖AI」入口钮；其余一行未动 */ /* v0.1.1 2026-09-10：HX.sj.init 加可选 extraBtn（大管家#43「补充上一条」补回，洪老师点名功能）；不传仍是2钮版，默认行为不变 */
+  var HX_COMMON_VERSION = '0.16.0'; /* v0.16.0 2026-09-19 班⑦（洪老师拍板"开工"，AI面板四刀）：刀A自建条目带点亮病历（init新钩子litText由宿主供脱敏后文本，HX.pick有效则usr附【点亮文件：fname】，没点亮toast提醒照发不带材料；宿主没接钩子自动回落老useSel选中文字/（无资料）） 刀B「＋加AI功能」改AI代写流（①名字②人话要求→宿主send请AI写提示词→过目页可改/🔄重写/✅才存/❌弃；AI通道或Key不在回落手填提示词老路）+自建条目第2层补✏️改/🗑删两钮（删前人话confirm） 刀C固定套编辑页加「🤖让AI帮我改这套」（现话+人话要求→AI新稿只进编辑框过目，💾存为默认才算数，AI不直接落账） 刀D换心两钮「📥自建的灌进来」「🤖照自建的让AI改」（小浮层挑自建不盖编辑框，结果同样只进框，恢复出厂兜底，出厂原文一字不动）；账本键hx_aiext_v1/hx_aiprompt_v1与合并规矩、其他零件一行未动 */ /* v0.15.2 2026-09-19 班⑥（挂号#128，洪老师17:01/17:02真机截图报"浮窗选图后输入框被隐藏在顶端"，拍板"开工"）：病根=面板fixed钉在屏下150px，而开面板自动focus+选图回来焦点还在框上→键盘自弹→X5把页面上推→钉住的面板被顶出可视区只剩顶边。治=①开面板不再自动focus（点输入框才弹键盘）②挂图成功主动blur放下焦点；面板结构/挂图/上行/其余零件一行未动 */ /* v0.15.1 2026-09-18 班③（挂号E，洪老师拍板）：AI面板第2级提示词套行改明显大钮（.hxAiPromptBtn：▶图标+边框+圆角+绿系底色，照.hxAiGo绿色系），只改renderL2渲染HTML+CSS字符串，逻辑不动 */ /* v0.15.0 2026-09-18（洪老师08:10速记拍板）：HX.sj面板加「↩ 补充上一条」钮——点钮弹最近3条速记列表（相对序+时间+前两行预览，壳文件「速记流水.txt」为主、localStorage现行镜像键hx_sj_uplocal兜底，不新建平行账本），点条=原文整行回填进输入框接着加字，「记下」走原save=新增一条（铁律17原条不动）；✕/点面板空白关列表无副作用；空=toast「还没有速记可补」；附图/上行/extraBtn等其他零件一行未动 */ /* v0.13.2 2026-09-16 班④：洪老师拍板"把这个多余的命令取消掉"——开门闲时8秒速记上行认 hx_sj_skip_once 标记（主界面v1.19.1「检查新版本」按钮所立）跳过本次，查版本刷新不再带出速记流水.txt上行；「记下后上行」等其他入口一行未动 */ /* v0.13.1 2026-09-16 班③：查版本归管家一家——有管家的壳里HX.selfUp开门自查退休（管家每日闲时统一查装+验暗号），没管家的老壳/浏览器照旧；其余一行未动 */ /* v0.13.0 2026-09-16 班① 第5条：新增长按点亮零件 HX.pick（hx_pick_v1账本+30秒自动灭+触摸鼠标两路长按）+ HX.ai面板顶部亮牌行；其余一行未动 */ /* v0.12.2 2026-09-15（挂号#95，洪老师真机报"速记取图后点输入框又跳图库、不显示取图成功"）：病根=X5壳侧fileChooser回调悬挂在常驻隐藏input上无法自愈，下个手势重放弹图库+saveImg重活链断无回执——①📷取图改每次临时造input用完即弃 ②选图在途闸防重弹（focus+30秒超时兜底复位） ③saveImg改createObjectURL优先+15秒看门狗超时报明白话；其余一行未动 */ /* v0.12.1 2026-09-15（挂号#104，洪老师真机报"U盘病历一个没显示+进到深层回不到上一层"）：HX.fm专修——①文件排序改按修改时间新→旧（实锤：壳侧按名排，中文名病历全沉到套装hxdata_*等英文名件后面，翻不到就当没有；新拷的病历时间最新，直接浮顶），文件夹仍在前；②空名/乱码名件不再哑巴，标「（名字读不出）」照列；③列表顶部加小字「本层共N项」（搜索时「搜到N项」）让他知道看没看全；④面包屑行🏠旁加显眼「⬅返回上一层」钮，有上级即亮，点=回父目录；面包屑回跳改走浏览足迹栈（旧法按"/"拼路径，SAF的safdoc://URI里全是斜杠，点中段必坏——实锤修掉）；⑤pick加opt.hideKit=true时过滤套装自有件（hxdata_*.json、hx-common*.js、guanjia-pdf-engine.js、version-*.json、速记流水.txt、mg_开头、mgver_开头、sjimg_开头、原文库_开头、dsm_开头，文件夹照列），默认false不动其他场景；⑥folder模式底部加「＋在此新建文件夹」钮（壳v1.8.4新fmMkdir桥，X5里prompt不稳，用行内小浮层输名字）；其余一行未动 */ /* v0.12.0 2026-09-15：新增HX.fm手机文件夹逛一逛（壳全盘文件桥六桥+ensure权限引导浮层+pick全屏仿资源管理器+read封装Promise）；其余一行未动 */ /* v0.11.1 2026-09-14：速记📷附图改两步走（挂号#94，洪老师真机验收报「选完图浮窗被关掉没法输说明、图跑哪去不知道」，拍板A+B都做）——①选图不再立刻记行/关面板：压图存壳后面板挂一行「🖼已挂图 sjimg_xxx.jpg（✕可撤销）」，可继续打字补说明，点「记下」图和话一起进流水（save原逻辑未动，只认sjPendImg）；②回执明白话：记下提示图存手机壳文件名+联网传坚果云/学习套装数据/速记图/，上传成功流水行图名后补☁（sjImgUpload出队时回写）；✕撤销=清挂图+出队+删壳文件；其余一行未动 */ /* v0.11.0 2026-09-14：AI面板第2级提示词可改可存（挂号#79，洪老师拍板"不搞三级菜单，就两级，点进去就是几套预设提示词，可改可储存"）——条目带prompts时，第2级点某套进编辑页（全文可改+▶用这套发送+💾存为默认+↩恢复出厂）；改过的存覆盖账本hx_aiprompt_v1.<app>（出厂原文一个字不动，恢复出厂=删覆盖）；宿主函数发送前一句HX.ai.pget(id,idx)查覆盖（乙路，不改送不进去）；条目可带pget/pset/preset钩子接管存储（如大管家问AI接管它自己的hx_gj_askai_v1老账本）；新增HX.ai.pget公开口；其余一行未动 /* v0.10.0 2026-09-14：安心条HX.step（顶部细进度条+两行小字，愣住定格定位，洪老师拍板全家统一）+速记📷附图（压图存壳文件夹sjimg_*+行尾挂图+坚果云/学习套装数据/速记图/上传排队）；其余一行未动 /* v0.9.1 2026-09-14：HX.store.sync批量抱回（壳v1.7.3 readFiles桥）——多件对账一次JNI全读回，免逐件SAF往返卡主线程（洪老师真机报"点大管家变蓝后定住"，病根=5本账本连环读各约2秒）；旧壳无readFiles自动回落逐件读，逻辑一字未改 /* v0.9.0 2026-09-13：常驻通信管家双通道（洪老师拍板一次做完）——新增HX.mg投信层（壳v1.7.0管家在则GitHub联网写信mg_out_给后台服务代发+回信mg_in_轮询取，网页线程不碰网络；管家不在自动走老fetch，全家零改动）+HX.big大件异步编解码（TextEncoder/Decoder分块让气，无则回落老同步）；改道点=gh.fetch一个收口；_autoNetOk闸门规矩不变 /* v0.8.0 2026-09-13：开门静默令（洪老师拍板：开门不许自动同步/不许自动查版本，点了才做）——全家自动联网（dav rescue/mirror、relay闲时送与pull、selfUp、selfCheck、速记开门补推）统一过HX._autoNetOk闸门：默认全关，3秒内真有点击（=点了按钮）或localStorage hx_auto_net=1才放行；新增HX.syncNow()一件全手动补做；本地存取（HX.store/localStorage/壳文件）不联网不受影响；其余一行未动 /* v0.7.0 2026-09-12：HX.dav全异步化（根治#75/#77同步联网卡死主线程）——走壳v1.6.0新davAsync后台桥+HX._davCb回调，ts对账逻辑一行未改；旧壳没davAsync一律静默跳过绝不回退同步老路，壳升级后自动恢复 */ /* v0.6.0 2026-09-12 地基二期：HX.dav的rescue升级为ts对账（云端新超5秒留档_冲突_后盖回/本地新或相等顺手davUp追平/云端缺顺手davUp补齐） */ /* v0.5.0 2026-09-12：新增中转邮路HX.relay+坚果云腿HX.dav */ /* v0.4.0 2026-09-12：新增仓管员HX.store，地基工程一期规矩A/B落地 */ /* v0.3.0 2026-09-11：部件自升级HX.selfUp（病根：壳里旧版公共件永远不升级→AI面板等新功能装了也白装；开门闲时20秒比对云端version-hx-common.json，旧了静默下载写回授权文件夹，下次开门用新的，全程不弹窗） */ /* v0.2.0 2026-09-11：新增HX.ai统一AI面板（两层结构+定位置顶+AI功能生成器，洪老师2026-09-11拍板方法论落地试点）；HX.sj面板加「🤖AI」入口钮；其余一行未动 */ /* v0.1.1 2026-09-10：HX.sj.init 加可选 extraBtn（大管家#43「补充上一条」补回，洪老师点名功能）；不传仍是2钮版，默认行为不变 */
   if(window.HX && window.HX.HX_COMMON_VERSION){ return; } /* 已装过不重复装 */
   var HX = { HX_COMMON_VERSION: HX_COMMON_VERSION, ok: true };
   function warn(m){ try{ if(window.console && console.warn) console.warn('[hx-common] '+m); }catch(e){} }
@@ -787,6 +787,7 @@
     var _manifest = [];       /* init传：宿主AI功能清单 */
     var _getSection = null;   /* init传：返回当前界面名（定位置顶用） */
     var _send = null;         /* init传（可选）：宿主AI通道 send(sys,user,onOk,onErr)，只给生成器条目用 */
+    var _litText = null;      /* v0.16.0 刀A init传（可选）：宿主点亮取文钩子 litText(pkObj)→脱敏后文本或''；只给自建条目用，HX.ai自身不新造取数通道 */
     var _inited = false, _uiOk = false, _inRun = false;
     function $(id){ return document.getElementById(id); }
     function aiToast(m){ var t=$('hxAiToast'); if(!t) return; t.textContent=m; t.style.display='block'; clearTimeout(t._t); t._t=setTimeout(function(){ t.style.display='none'; },2600); }
@@ -812,13 +813,21 @@
       try{
         if(!_send){ aiToast('本软件还没接AI通道'); return; }
         try{ if(!HX.keys.get() && !HX.keys.getQwen()){ aiToast('还没有API Key，先去设置里填一个'); return; } }catch(e){}
-        var usr='（无资料）';
-        if(x.useSel){ try{ var s=String(window.getSelection ? window.getSelection() : ''); if(s) usr=s; }catch(e){} }
+        /* v0.16.0 刀A：点亮病历优先——HX.pick有效且宿主接了litText钩子则附脱敏后全文（标注【点亮文件：fname】，同大管家问AI随行口径）；
+           没点亮toast提醒照发（不带材料）；宿主没接钩子/钩子取空自动回落老useSel选中文字，再没=（无资料） */
+        var usr='';
+        var _pk=null; try{ _pk=(HX.pick&&HX.pick.get)?HX.pick.get():null; }catch(e){}
+        if(_pk && _pk.fname && typeof _litText==='function'){
+          try{ var _lt=_litText(_pk); if(_lt){ usr='【点亮文件：'+_pk.fname+'】\n'+String(_lt); } }catch(e){}
+        }
+        if(!usr && x.useSel){ try{ var s=String(window.getSelection ? window.getSelection() : ''); if(s) usr=s; }catch(e){} }
+        if(!usr){ usr='（无资料）'; aiToast((_pk&&_pk.fname)?'点亮文件没取到内容，这次只发提示词不带病历':'没点亮文件，这次只发提示词不带病历'); } /* 终审P4修：点亮了但取空换个说法 */
+        else if(_pk && usr.indexOf('【点亮文件：')===0){ aiToast('📌 点亮文件「'+_pk.fname+'」随行发给AI'); } /* 终审P3修：_pk判空防极端击穿 */
         _send(x.text||'', usr, function(r){ showResult(x.name, r); }, function(err){ aiToast('AI这条路不通：'+String(err||'').slice(0,60)); });
       }catch(e){ warn('ai 自建条目: '+((e&&e.message)||e)); }
     }
     function mkExtItem(x){
-      return { id:x.id, name:x.name, icon:x.icon||'🛠', section:x.section||'', desc:x.desc||'自建功能', custom:true, prompts:null, run:function(){ extRun(x); } };
+      return { id:x.id, name:x.name, icon:x.icon||'🛠', section:x.section||'', desc:x.desc||'自建功能', custom:true, prompts:null, _raw:x, run:function(){ extRun(x); } }; /* v0.16.0 刀B：挂_raw供编辑页直读直写原条 */
     }
     /* 合并：manifest在前，自建接末尾；同id以manifest为准 */
     function allItems(){
@@ -864,10 +873,26 @@
         for(var i=0;i<it.prompts.length;i++) html+='<div class="hxAiRow hxAiPromptBtn" data-hxaip="'+i+'"><span class="hxAiPromptIco">▶</span><span class="hxAiName">'+escH(it.prompts[i].name||('第'+(i+1)+'套'))+'</span></div>';
       }else{
         html+='<button id="hxAiGo" type="button" class="hxAiGo">▶ 开始</button>';
+        if(it.custom){ /* v0.16.0 刀B：自建条目补「✏️改/🗑删」两钮 */
+          html+='<div class="hxAiBtnRow">'+
+                '<button id="hxAiExtE" type="button" class="hxAiBtn2">✏️ 改这套</button>'+
+                '<button id="hxAiExtD" type="button" class="hxAiBtn2">🗑 删除</button>'+
+                '</div>';
+        }
       }
       body.innerHTML=html;
       $('hxAiBack').addEventListener('click', renderL1);
       var go=$('hxAiGo'); if(go) go.addEventListener('click', function(){ doRun(it); });
+      /* v0.16.0 刀B：自建改/删接线（删前人话confirm；改=进自建编辑页） */
+      var exE=$('hxAiExtE'); if(exE) exE.addEventListener('click', function(){ renderExtEdit(it); });
+      var exD=$('hxAiExtD'); if(exD) exD.addEventListener('click', function(){
+        try{
+          if(!window.confirm('删掉自建功能「'+(it.name||'')+'」？（提示词一起删，找不回）')) return;
+          var arr=extLoad(), out=[];
+          for(var i=0;i<arr.length;i++){ if(arr[i] && arr[i].id!==it.id) out.push(arr[i]); }
+          extSave(out); renderL1(); aiToast('已删除');
+        }catch(e){ warn('ai 自建删: '+((e&&e.message)||e)); }
+      });
       Array.prototype.forEach.call(body.querySelectorAll('[data-hxaip]'), function(el){
         el.addEventListener('click', function(){ renderPEdit(it, parseInt(el.getAttribute('data-hxaip'),10)); }); /* v0.11.0 点一套=进编辑页（可改可存再发送） */
       });
@@ -884,6 +909,12 @@
         '<button id="hxAiSend" type="button" class="hxAiGo" style="flex:1.4;margin-top:0">▶ 用这套发送</button>'+
         '<button id="hxAiSaveP" type="button" class="hxAiBtn2">💾 存为默认</button>'+
         '<button id="hxAiResetP" type="button" class="hxAiBtn2">↩ 恢复出厂</button>'+
+        '</div>'+
+        /* v0.16.0 刀C/刀D：AI帮改+自建换心（结果都只进编辑框过目，💾存为默认才落账，恢复出厂兜底） */
+        '<div class="hxAiBtnRow">'+
+        '<button id="hxAiAIEdit" type="button" class="hxAiBtn2">🤖 让AI帮我改</button>'+
+        '<button id="hxAiSwap" type="button" class="hxAiBtn2">📥 自建的灌进来</button>'+
+        '<button id="hxAiSwapAI" type="button" class="hxAiBtn2">🤖 照自建的改</button>'+
         '</div>';
       var ta=$('hxAiTa'); ta.value=effPrompt(it, i);
       $('hxAiBack').addEventListener('click', function(){ renderL2(it); });
@@ -902,6 +933,88 @@
           ta.value=effPrompt(it, i); aiToast('↩ 已恢复出厂');
         }catch(e){ warn('ai preset: '+((e&&e.message)||e)); }
       });
+      /* v0.16.0 刀C：让AI帮我改——人话要求+编辑框现话→AI新稿只回进编辑框，💾存为默认才落账 */
+      var aiE=$('hxAiAIEdit'); if(aiE) aiE.addEventListener('click', function(){
+        try{
+          if(!_send){ aiToast('本软件还没接AI通道'); return; }
+          try{ if(!HX.keys.get() && !HX.keys.getQwen()){ aiToast('还没有API Key，先去设置里填一个'); return; } }catch(e){}
+          aiAskHuman('想改成什么样？说人话（比如：加一条顺便看用药冲突）', function(req){
+            if(req===null) return;
+            if(!req){ aiToast('要求要填一句'); return; }
+            aiDraftPrompt(req, ta.value, function(d){ if(d!=null){ ta.value=d; aiToast('新稿已进框，过目后点「💾存为默认」才算数'); } });
+          });
+        }catch(e){ warn('ai AI改: '+((e&&e.message)||e)); }
+      });
+      /* v0.16.0 刀D①：自建整套灌进编辑框（小浮层挑，不盖编辑框） */
+      var sw=$('hxAiSwap'); if(sw) sw.addEventListener('click', function(){
+        renderExtPick('点一套自建的，提示词整套灌进当前编辑框', function(x){
+          if(x){ ta.value=String(x.text||''); aiToast('已灌进框，过目后点「💾存为默认」才算数'); }
+        });
+      });
+      /* v0.16.0 刀D②：照自建的让AI糅一版（现话+自建全文+人话要求） */
+      var swA=$('hxAiSwapAI'); if(swA) swA.addEventListener('click', function(){
+        try{
+          if(!_send){ aiToast('本软件还没接AI通道'); return; }
+          try{ if(!HX.keys.get() && !HX.keys.getQwen()){ aiToast('还没有API Key，先去设置里填一个'); return; } }catch(e){}
+          renderExtPick('点一套自建的当参照，AI照着它改当前这套', function(x){
+            if(!x) return;
+            aiAskHuman('还有啥要求？说人话（没有就写：没有）', function(req){
+              if(req===null) return; /* 终审P1修：取消必须中止，不许吞了照发 */
+              if(!req) req='没有别的要求，参照自建那套把当前这套改好';
+              aiDraftPrompt(req, ta.value, function(d){ if(d!=null){ ta.value=d; aiToast('新稿已进框，过目后点「💾存为默认」才算数'); } }, String(x.text||''));
+            });
+          });
+        }catch(e){ warn('ai 照自建改: '+((e&&e.message)||e)); }
+      });
+    }
+    /* v0.16.0 刀B/C/D共用：问一句人话（宿主hxAsk优先，没有则window.prompt）；取消回null，空串trim后回'' */
+    function aiAskHuman(q, cb){
+      try{
+        if(typeof window.hxAsk==='function'){ window.hxAsk(q,'','',function(v){ if(v===null||v===undefined){ cb(null); return; } cb(String(v||'').replace(/^\s+|\s+$/g,'')); },'好'); }
+        else{ var v=window.prompt(q,''); if(v===null||v===undefined){ cb(null); return; } cb(String(v||'').replace(/^\s+|\s+$/g,'')); }
+      }catch(e){ warn('ai 问人话: '+((e&&e.message)||e)); try{ cb(null); }catch(e2){} }
+    }
+    /* v0.16.0 刀B/C/D共用：AI代写提示词——sys=工程师嘱咐，usr=要求（+现话+参照稿）；结果只回回调进编辑框/过目页，绝不直接落账；
+       等待期面板体顶部插一行小字状态（不盖编辑框），回来即摘；失败toast回null */
+    function aiDraftPrompt(req, curText, cb, refText){
+      try{
+        if(!_send){ aiToast('本软件还没接AI通道'); try{ cb(null); }catch(e0){} return; }
+        var body=$('hxAiBody');
+        try{ if(body && !$('hxAiBusy')){ var busy=document.createElement('div'); busy.id='hxAiBusy'; busy.className='hxAiDesc'; busy.textContent='🤖 AI正在写提示词，稍等…（约几秒到几十秒）'; body.insertBefore(busy, body.firstChild); } }catch(e){}
+        var done=function(v){ try{ var b=$('hxAiBusy'); if(b) b.remove(); }catch(e){} try{ cb(v); }catch(e2){} };
+        var sys='你是一位提示词工程师。用户是医生，要给病历分析AI写一套提示词。请根据用户的要求，写出一段直接可用的提示词（吩咐AI怎么干活的那段话）。要求：中文、具体、可执行、结构清楚；只输出提示词本身，不要解释、不要前后缀。';
+        var usr='【用户要求】\n'+req;
+        if(curText) usr+='\n\n【现有提示词全文，在此基础上改】\n'+curText;
+        if(refText) usr+='\n\n【用户自建的一套提示词，作参照】\n'+refText;
+        _send(sys, usr, function(r){
+          var t=String(r||'').replace(/^\s+|\s+$/g,'');
+          if(!t){ aiToast('AI没写出东西来，点🔄再试'); done(null); return; }
+          done(t);
+        }, function(err){ aiToast('AI这条路不通：'+String(err||'').slice(0,60)); done(null); });
+      }catch(e){ warn('ai 代写: '+((e&&e.message)||e)); try{ cb(null); }catch(e2){} }
+    }
+    /* v0.16.0 刀D：自建套挑选小浮层（挂在面板尾部不盖编辑框）；空=toast提示；✕/选好都收起 */
+    function renderExtPick(title, cb){
+      try{
+        var arr=extLoad();
+        if(!arr.length){ aiToast('还没有自建套，先去底下「＋加AI功能」加一套'); return; }
+        var p=$('hxAiPanel'); if(!p) return;
+        var old=$('hxAiExtPick'); if(old) old.remove();
+        var box=document.createElement('div'); box.id='hxAiExtPick';
+        box.style.cssText='border:1px solid #d8cfc0;border-radius:10px;background:#fff;margin-top:8px;padding:8px';
+        var html='<div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:14px;color:#4a4238">'+escH(title)+'</b><span id="hxAiExtPickX" style="cursor:pointer;padding:2px 8px">✕</span></div>';
+        for(var i=0;i<arr.length;i++){ html+='<div class="hxAiRow" data-extp="'+i+'"><span class="hxAiIco">🛠</span><span class="hxAiName">'+escH(arr[i].name||'')+'</span></div>'; }
+        box.innerHTML=html;
+        p.appendChild(box);
+        $('hxAiExtPickX').addEventListener('click', function(){ box.remove(); });
+        Array.prototype.forEach.call(box.querySelectorAll('[data-extp]'), function(el){
+          el.addEventListener('click', function(){
+            var x=arr[parseInt(el.getAttribute('data-extp'),10)];
+            box.remove();
+            if(x) cb(x);
+          });
+        });
+      }catch(e){ warn('ai 挑自建: '+((e&&e.message)||e)); }
     }
     /* v0.11.0 带提示词发送：runWith钩子优先（宿主自己把话送进它老流程）；没有则摆一次性待发后跑run（宿主函数里pget查账取用） */
     function doSend(it, i, text){
@@ -943,36 +1056,101 @@
         }
       }catch(e){}
     }
-    /* 「＋加AI功能」生成器：依次问三样（宿主hxAsk优先，没有则window.prompt）→存hx_aiext_v1.<app>→进第1层末尾 */
+    /* v0.16.0 刀B：「＋加AI功能」改AI代写流——①问名字②问人话要求→AI代写提示词→过目页（可改/🔄重写/✅才存/❌弃）；
+       AI通道或Key不在时回落手填提示词（老路简化保留）；✅才落账hx_aiext_v1，AI不直接入库；v0.16.0起自建默认吃点亮病历，选中文字问句取消 */
     function genFlow(){
       try{
-        var useAsk=(typeof window.hxAsk==='function');
-        var finish=function(name, ptext, useSel){
-          name=String(name||'').replace(/^\s+|\s+$/g,''); ptext=String(ptext||'').replace(/^\s+|\s+$/g,'');
-          if(!name || !ptext){ aiToast('功能名和提示词都要填'); return; }
-          var arr=extLoad();
-          arr.push({ id:'ext-'+Date.now(), name:name, text:ptext, useSel:!!useSel, icon:'🛠' });
-          extSave(arr);
-          renderL1(); aiToast('已加到清单末尾（标「自建」）');
-        };
-        if(useAsk){
-          window.hxAsk('① 新AI功能叫啥名？','','',function(name){
-            if(name===null||name===undefined) return;
-            window.hxAsk('② 提示词：AI要怎么干？','','',function(ptext){
-              if(ptext===null||ptext===undefined) return;
-              window.hxAsk('③ 带不带当前选中文字？（是/否）','否','',function(s){
-                if(s===null||s===undefined) return;
-                finish(name, ptext, /^(是|y|yes)/i.test(String(s||'').replace(/^\s+|\s+$/g,'')));
-              },'生成');
-            },'下一步');
-          },'下一步');
-        }else{
-          var name2=window.prompt('① 新AI功能叫啥名？',''); if(name2===null||name2===undefined) return;
-          var ptext2=window.prompt('② 提示词：AI要怎么干？',''); if(ptext2===null||ptext2===undefined) return;
-          var s2=window.prompt('③ 带不带当前选中文字？（是/否）','否'); if(s2===null||s2===undefined) return;
-          finish(name2, ptext2, /^(是|y|yes)/i.test(String(s2||'').replace(/^\s+|\s+$/g,'')));
-        }
+        aiAskHuman('① 新AI功能叫啥名？', function(name){
+          if(name===null) return;
+          if(!name){ aiToast('功能名要填'); return; }
+          var aiOk=false;
+          try{ aiOk=(!!_send) && !!(HX.keys.get() || HX.keys.getQwen()); }catch(e){}
+          if(aiOk){
+            aiAskHuman('② 您想让AI干什么？说人话就行（AI帮您写成提示词）', function(req){
+              if(req===null) return;
+              if(!req){ aiToast('要求要填一句'); return; }
+              aiDraftPrompt(req, '', function(draft){
+                if(draft!=null){ renderGenDraft(name, req, draft); }
+                else{ renderL1(); }
+              });
+            });
+          }else{
+            aiAskHuman('② 提示词：AI要怎么干？（没接AI通道/没Key只能手填）', function(ptext){
+              if(ptext===null) return;
+              finishExt({ id:'ext-'+Date.now(), name:name, text:ptext, useSel:false, icon:'🛠' });
+            });
+          }
+        });
       }catch(e){ warn('ai 生成器: '+((e&&e.message)||e)); }
+    }
+    /* v0.16.0 刀B：自建入库（✅才调这里）；名字/提示词空不存 */
+    function finishExt(x){
+      try{
+        x.text=String(x.text||'').replace(/^\s+|\s+$/g,'');
+        if(!x.name || !x.text){ aiToast('功能名和提示词都要填'); return; }
+        var arr=extLoad(); arr.push(x); extSave(arr);
+        renderL1(); aiToast('已加到清单末尾（标「自建」）');
+      }catch(e){ warn('ai 自建存: '+((e&&e.message)||e)); }
+    }
+    /* v0.16.0 刀B：生成器过目页——AI草稿进框可手改；✅存了才进清单；🔄重写（重跑代写，失败回旧稿）；❌弃=回清单啥都不留 */
+    function renderGenDraft(name, req, draft){
+      try{
+        var body=$('hxAiBody'); if(!body) return;
+        body.innerHTML='<div class="hxAiBack" id="hxAiBack">← 返回</div>'+
+          '<div class="hxAiL2Title">🛠 '+escH(name)+' · AI写的提示词草稿</div>'+
+          '<div class="hxAiDesc">过目一遍，字能直接改；✅存了才进清单，❌不要了啥都不留</div>'+
+          '<textarea id="hxAiTa" class="hxAiTa" rows="10"></textarea>'+
+          '<div class="hxAiBtnRow">'+
+          '<button id="hxAiGenOk" type="button" class="hxAiGo" style="flex:1.4;margin-top:0">✅ 就用这套存起来</button>'+
+          '<button id="hxAiGenRe" type="button" class="hxAiBtn2">🔄 重写一版</button>'+
+          '<button id="hxAiGenNo" type="button" class="hxAiBtn2">❌ 不要了</button>'+
+          '</div>';
+        var ta=$('hxAiTa'); ta.value=draft;
+        $('hxAiBack').addEventListener('click', renderL1);
+        $('hxAiGenOk').addEventListener('click', function(){
+          finishExt({ id:'ext-'+Date.now(), name:name, text:ta.value, useSel:false, icon:'🛠' });
+        });
+        $('hxAiGenRe').addEventListener('click', function(){
+          var old2=ta.value;
+          aiDraftPrompt(req, '', function(d){ if(d!=null){ renderGenDraft(name, req, d); } else { renderGenDraft(name, req, old2); } });
+        });
+        $('hxAiGenNo').addEventListener('click', function(){ renderL1(); aiToast('没存，啥都没动'); });
+      }catch(e){ warn('ai 过目页: '+((e&&e.message)||e)); }
+    }
+    /* v0.16.0 刀B：自建条目编辑页——提示词全文可改，💾存回hx_aiext_v1原条；🤖让AI帮我改=人话要求+现话→新稿只回框 */
+    function renderExtEdit(it){
+      try{
+        var body=$('hxAiBody'); if(!body) return;
+        var x=it._raw||{};
+        body.innerHTML='<div class="hxAiBack" id="hxAiBack">← 返回</div>'+
+          '<div class="hxAiL2Title">✏️ 改自建「'+escH(it.name||'')+'」</div>'+
+          '<div class="hxAiDesc">提示词全文可改，💾存回才作数</div>'+
+          '<textarea id="hxAiTa" class="hxAiTa" rows="10"></textarea>'+
+          '<div class="hxAiBtnRow">'+
+          '<button id="hxAiExtS" type="button" class="hxAiGo" style="flex:1.4;margin-top:0">💾 存回</button>'+
+          '<button id="hxAiExtAI" type="button" class="hxAiBtn2">🤖 让AI帮我改</button>'+
+          '</div>';
+        var ta=$('hxAiTa'); ta.value=String(x.text||'');
+        $('hxAiBack').addEventListener('click', function(){ renderL2(it); });
+        $('hxAiExtS').addEventListener('click', function(){
+          try{
+            var arr=extLoad();
+            for(var i=0;i<arr.length;i++){ if(arr[i] && arr[i].id===it.id){ arr[i].text=ta.value; break; } }
+            extSave(arr); aiToast('💾 已存回'); renderL2(it);
+          }catch(e){ warn('ai 自建改: '+((e&&e.message)||e)); }
+        });
+        var exAI=$('hxAiExtAI'); if(exAI) exAI.addEventListener('click', function(){
+          try{
+            if(!_send){ aiToast('本软件还没接AI通道'); return; }
+            try{ if(!HX.keys.get() && !HX.keys.getQwen()){ aiToast('还没有API Key，先去设置里填一个'); return; } }catch(e){}
+            aiAskHuman('想改成什么样？说人话', function(req){
+              if(req===null) return;
+              if(!req){ aiToast('要求要填一句'); return; }
+              aiDraftPrompt(req, ta.value, function(d){ if(d!=null){ ta.value=d; aiToast('新稿已进框，过目后点「💾存回」才算数'); } });
+            });
+          }catch(e){ warn('ai 自建AI改: '+((e&&e.message)||e)); }
+        });
+      }catch(e){ warn('ai 自建编辑: '+((e&&e.message)||e)); }
     }
     function ensureUI(){
       if($('hxAiPanel')) return true;
@@ -1036,7 +1214,7 @@
         b.addEventListener('click', function(){ try{ $('hxSjPanel').style.display='none'; }catch(e){} try{ ai.open(); }catch(e){} });
       }catch(e){}
     }
-    /* HX.ai.init(opt)：opt={app, manifest, getSection, send可选}；重复init只更新manifest不重复绑；document ready后注入UI */
+    /* HX.ai.init(opt)：opt={app, manifest, getSection, send可选, litText可选(v0.16.0)}；重复init只更新manifest不重复绑；document ready后注入UI */
     ai.init = function(opt){
       try{
         opt = opt || {};
@@ -1045,6 +1223,7 @@
         if(opt.manifest && opt.manifest.length!==undefined) _manifest = opt.manifest;
         if(typeof opt.getSection === 'function') _getSection = opt.getSection;
         if(typeof opt.send === 'function') _send = opt.send;
+        if(typeof opt.litText === 'function') _litText = opt.litText; /* v0.16.0 刀A：宿主点亮取文钩子 */
         if(_inited){ return; } /* 重复init只更新manifest等参数，不重复绑 */
         _inited = true;
         var boot = function(){
