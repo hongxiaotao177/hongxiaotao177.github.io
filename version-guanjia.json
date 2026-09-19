@@ -1,7 +1,7 @@
 {
- "version": "0.41.0",
+ "version": "0.48.0",
  "dl": "software-guanjia.html",
- "note": "挂号#117标红补色（浮层补标红样式，点全屏看原文有红字了）+收件副本恢复真名（假\"聚合\"名废掉）",
- "sig": "5e6f4e51caa546f9",
+ "note": "脱敏间自动化：脱敏完自动聚合+聚合件新名+同名替换+开门空白根治；脱敏引擎零改动",
+ "sig": "336cde958c31965f",
  "engine": "guanjia-pdf-engine.js"
 }
