@@ -1,18 +1,18 @@
 {
  "v": 1,
- "t": 1789784016759,
+ "t": 1789798346297,
  "items": [
   {
    "key": "index",
-   "version": "1.19.5",
+   "version": "1.19.6",
    "dl": "index.html",
-   "sig": "e8eb3e68add0efba"
+   "sig": "ba0f83c370c0ec8e"
   },
   {
    "key": "guanjia",
-   "version": "0.49.0",
+   "version": "0.50.0",
    "dl": "software-guanjia.html",
-   "sig": "3a56ca568f55cdc5"
+   "sig": "5e010f9e2d7ab733"
   },
   {
    "key": "hx-common",
@@ -21,5 +21,5 @@
    "sig": "d6e48ae30a3b80de"
   }
  ],
- "note": "班②：guanjia钓0.49.0（AI件去⟦R⟧+四件套补强）；index1.19.5/hx-common0.15.1不动"
+ "note": "班④：index钓1.19.6（页脚死字改活字）；guanjia钓0.50.0补账（真身早0.50.0，布告栏漏记）；hx-common0.15.1不动"
 }
