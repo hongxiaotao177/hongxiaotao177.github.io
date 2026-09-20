@@ -1,6 +1,6 @@
 {
- "version": "0.53.1",
+ "version": "0.53.2",
  "dl": "software-guanjia.html",
- "note": "班⑨续刀：发AI前统一再过一遍脱敏引擎+报数盖掉几类（回退开关hx_gj_sendscan_off=1）",
- "sig": "1622f5632d851fa4"
+ "note": "班⑩：发送分步报（①查信号②探路③已送达等回信）+没网当场拦+发到一半断网立刻报；回退开关hx_gj_probe_off=1",
+ "sig": "25145ee937dce04a"
 }
