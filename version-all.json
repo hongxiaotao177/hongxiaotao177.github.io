@@ -1,12 +1,12 @@
 {
  "v": 1,
- "t": 1789907592381,
+ "t": 1789917732846,
  "items": [
   {
    "key": "index",
-   "version": "1.19.7",
+   "version": "1.19.8",
    "dl": "index.html",
-   "sig": "c958a833ca827e4260"
+   "sig": "68973b285db951ba"
   },
   {
    "key": "guanjia",
@@ -21,5 +21,5 @@
    "sig": "d106b8276636c68d"
   }
  ],
- "note": "班⑮：index钓1.19.7（研发号对照）+guanjia钓0.54.5（撤钥匙恢复升级）；hx-common不动"
+ "note": "班⑮：index升1.19.8（治页脚亮旧号）；guanjia 0.54.5/hx-common 0.16.2不动"
 }
