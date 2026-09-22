@@ -1,6 +1,6 @@
 {
  "v": 1,
- "t": 1789917732846,
+ "t": 1790069202641,
  "items": [
   {
    "key": "index",
@@ -10,9 +10,9 @@
   },
   {
    "key": "guanjia",
-   "version": "0.55.0",
+   "version": "0.55.1",
    "dl": "software-guanjia.html",
-   "sig": "5bbcfc30e5571357"
+   "sig": "02a692a7c214b57c"
   },
   {
    "key": "hx-common",
@@ -21,5 +21,5 @@
    "sig": "d106b8276636c68d"
   }
  ],
- "note": "班⑯：guanjia升0.55.0（工作流改版6场景+名册简化）；index 1.19.8/hx-common 0.16.2不动"
+ "note": "班⑰：guanjia升0.55.1（标红件料源规矩+补录同步脱敏间）；index 1.19.8/hx-common 0.16.2不动"
 }
