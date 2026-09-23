@@ -1,5 +1,11 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    hx-common.js —— 全家9件软件共用公共件母版
+   v0.16.4 2026-09-23（班·批改病历③，洪老师班③拍板「点亮长效」，改码工兵严格照清单动刀，一刀）：
+     刀1 HX.pick点亮长效化——撤掉v0.13.0的30秒自动灭（TTL判定+30秒定时器整段撤）：30秒太短，点亮翻菜单翻半分钟就灭。
+       点亮后一直有效，直到①点亮别的件（set/长按换行覆盖，老行为不动）②手动取消；再长按同一行熄灭老行为不动（不再看30秒）。
+       手动取消=面板顶部亮牌行点亮文字旁加小「✕」，点了清账本+亮牌消失+toast「已取消点亮」；
+       点亮随行发AI的老行为不变（点亮的文件会一直随行，不想要了点✕取消）。账本hx_pick_v1格式{app,pkey,fname,ts}一字不动，老宿主零影响；
+       其余一行未动。
    v0.16.3 2026-09-23（班·批改病历，洪老师拍板，纯加法两刀，其他软件不传新钩子零影响）：
      刀A 新增公开口 HX.ai.openEdit(id, idx)——open(id)进条目第2层后，模拟第idx套提示词按钮的现有点击链
        （querySelector('[data-hxaip="idx"]').click()）自动进该套编辑页，编辑页代码不复制不另起炉灶；
@@ -61,7 +67,7 @@
      HX.relay   中转邮路：单体备份走GitHub私有仓transit/（永远重试+退避+回读核对才销号+大白话状态条），壳内pull拉回销号
      HX.dav     坚果云腿：壳内铁仓库（ok/mirror闲时镜像/rescue救命腿只补缺失不盖已有；dv.upFile(fileName,remoteDir)：公开单件上传（速记附图用））
      HX.fm      手机文件夹逛一逛（v0.12.0：ok/has/ensure权限引导/pick全屏仿资源管理器挑文件挑文件夹/read读文件base64；无壳静默降级）
-     HX.pick    长按点亮零件（v0.13.0 班① 第5条：bind绑长按点亮、账本hx_pick_v1、30秒自动灭、get()公开口；AI面板亮牌只读它）
+     HX.pick    长按点亮零件（v0.13.0 班① 第5条：bind绑长按点亮、账本hx_pick_v1、get()公开口；AI面板亮牌只读它；v0.16.4起点亮长效——30秒自动灭撤掉，点亮一直有效直到换件或点✕取消，洪老师2026-09-23班③拍板）
 
    接入说明（各软件照抄下面这段，三级查找照 guanjia-pdf-engine.js 已验证先例）：
      ① LearnShell.readFile('hx-common.js') 读壳授权文件夹（file://下fetch常被拦，readFile可靠）
@@ -75,7 +81,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 (function(){
   'use strict';
-  var HX_COMMON_VERSION = '0.16.3'; /* v0.16.3 2026-09-23 班·批改病历：刀A新增HX.ai.openEdit(id,idx)（open进第2层后模拟该套按钮现有点击链进编辑页）刀B编辑页加div#hxAiHostBtns容器+宿主钩子opt.editHooks(itemId,idx,api={getText,setText,saveNow同hxAiSaveP存储链,itemId,idx})，不传钩子容器留空版面同老版；纯加法其余一行未动 */ /* v0.16.2 2026-09-19：刀D云端取回（只下不上，一次性救援腿）——HX.keys新增warm()：本地没key时开门自动从坚果云/私有仓读回hxdata_hx_keys.json落真源再灌回localStorage，永不主动上传；其余一行未动 */ /* v0.16.1 2026-09-19：AI钥匙反复丢两刀（刀A Key落壳文件真源hxdata_hx_keys.json换端口不丢+get/getQwen空时回填；刀C AI面板4处守卫改当场填钥匙浮层aiAskKey），其余一行未动 */ /* v0.16.0 2026-09-19 班⑦（洪老师拍板"开工"，AI面板四刀）：刀A自建条目带点亮病历（init新钩子litText由宿主供脱敏后文本，HX.pick有效则usr附【点亮文件：fname】，没点亮toast提醒照发不带材料；宿主没接钩子自动回落老useSel选中文字/（无资料）） 刀B「＋加AI功能」改AI代写流（①名字②人话要求→宿主send请AI写提示词→过目页可改/🔄重写/✅才存/❌弃；AI通道或Key不在回落手填提示词老路）+自建条目第2层补✏️改/🗑删两钮（删前人话confirm） 刀C固定套编辑页加「🤖让AI帮我改这套」（现话+人话要求→AI新稿只进编辑框过目，💾存为默认才算数，AI不直接落账） 刀D换心两钮「📥自建的灌进来」「🤖照自建的让AI改」（小浮层挑自建不盖编辑框，结果同样只进框，恢复出厂兜底，出厂原文一字不动）；账本键hx_aiext_v1/hx_aiprompt_v1与合并规矩、其他零件一行未动 */ /* v0.15.2 2026-09-19 班⑥（挂号#128，洪老师17:01/17:02真机截图报"浮窗选图后输入框被隐藏在顶端"，拍板"开工"）：病根=面板fixed钉在屏下150px，而开面板自动focus+选图回来焦点还在框上→键盘自弹→X5把页面上推→钉住的面板被顶出可视区只剩顶边。治=①开面板不再自动focus（点输入框才弹键盘）②挂图成功主动blur放下焦点；面板结构/挂图/上行/其余零件一行未动 */ /* v0.15.1 2026-09-18 班③（挂号E，洪老师拍板）：AI面板第2级提示词套行改明显大钮（.hxAiPromptBtn：▶图标+边框+圆角+绿系底色，照.hxAiGo绿色系），只改renderL2渲染HTML+CSS字符串，逻辑不动 */ /* v0.15.0 2026-09-18（洪老师08:10速记拍板）：HX.sj面板加「↩ 补充上一条」钮——点钮弹最近3条速记列表（相对序+时间+前两行预览，壳文件「速记流水.txt」为主、localStorage现行镜像键hx_sj_uplocal兜底，不新建平行账本），点条=原文整行回填进输入框接着加字，「记下」走原save=新增一条（铁律17原条不动）；✕/点面板空白关列表无副作用；空=toast「还没有速记可补」；附图/上行/extraBtn等其他零件一行未动 */ /* v0.13.2 2026-09-16 班④：洪老师拍板"把这个多余的命令取消掉"——开门闲时8秒速记上行认 hx_sj_skip_once 标记（主界面v1.19.1「检查新版本」按钮所立）跳过本次，查版本刷新不再带出速记流水.txt上行；「记下后上行」等其他入口一行未动 */ /* v0.13.1 2026-09-16 班③：查版本归管家一家——有管家的壳里HX.selfUp开门自查退休（管家每日闲时统一查装+验暗号），没管家的老壳/浏览器照旧；其余一行未动 */ /* v0.13.0 2026-09-16 班① 第5条：新增长按点亮零件 HX.pick（hx_pick_v1账本+30秒自动灭+触摸鼠标两路长按）+ HX.ai面板顶部亮牌行；其余一行未动 */ /* v0.12.2 2026-09-15（挂号#95，洪老师真机报"速记取图后点输入框又跳图库、不显示取图成功"）：病根=X5壳侧fileChooser回调悬挂在常驻隐藏input上无法自愈，下个手势重放弹图库+saveImg重活链断无回执——①📷取图改每次临时造input用完即弃 ②选图在途闸防重弹（focus+30秒超时兜底复位） ③saveImg改createObjectURL优先+15秒看门狗超时报明白话；其余一行未动 */ /* v0.12.1 2026-09-15（挂号#104，洪老师真机报"U盘病历一个没显示+进到深层回不到上一层"）：HX.fm专修——①文件排序改按修改时间新→旧（实锤：壳侧按名排，中文名病历全沉到套装hxdata_*等英文名件后面，翻不到就当没有；新拷的病历时间最新，直接浮顶），文件夹仍在前；②空名/乱码名件不再哑巴，标「（名字读不出）」照列；③列表顶部加小字「本层共N项」（搜索时「搜到N项」）让他知道看没看全；④面包屑行🏠旁加显眼「⬅返回上一层」钮，有上级即亮，点=回父目录；面包屑回跳改走浏览足迹栈（旧法按"/"拼路径，SAF的safdoc://URI里全是斜杠，点中段必坏——实锤修掉）；⑤pick加opt.hideKit=true时过滤套装自有件（hxdata_*.json、hx-common*.js、guanjia-pdf-engine.js、version-*.json、速记流水.txt、mg_开头、mgver_开头、sjimg_开头、原文库_开头、dsm_开头，文件夹照列），默认false不动其他场景；⑥folder模式底部加「＋在此新建文件夹」钮（壳v1.8.4新fmMkdir桥，X5里prompt不稳，用行内小浮层输名字）；其余一行未动 */ /* v0.12.0 2026-09-15：新增HX.fm手机文件夹逛一逛（壳全盘文件桥六桥+ensure权限引导浮层+pick全屏仿资源管理器+read封装Promise）；其余一行未动 */ /* v0.11.1 2026-09-14：速记📷附图改两步走（挂号#94，洪老师真机验收报「选完图浮窗被关掉没法输说明、图跑哪去不知道」，拍板A+B都做）——①选图不再立刻记行/关面板：压图存壳后面板挂一行「🖼已挂图 sjimg_xxx.jpg（✕可撤销）」，可继续打字补说明，点「记下」图和话一起进流水（save原逻辑未动，只认sjPendImg）；②回执明白话：记下提示图存手机壳文件名+联网传坚果云/学习套装数据/速记图/，上传成功流水行图名后补☁（sjImgUpload出队时回写）；✕撤销=清挂图+出队+删壳文件；其余一行未动 */ /* v0.11.0 2026-09-14：AI面板第2级提示词可改可存（挂号#79，洪老师拍板"不搞三级菜单，就两级，点进去就是几套预设提示词，可改可储存"）——条目带prompts时，第2级点某套进编辑页（全文可改+▶用这套发送+💾存为默认+↩恢复出厂）；改过的存覆盖账本hx_aiprompt_v1.<app>（出厂原文一个字不动，恢复出厂=删覆盖）；宿主函数发送前一句HX.ai.pget(id,idx)查覆盖（乙路，不改送不进去）；条目可带pget/pset/preset钩子接管存储（如大管家问AI接管它自己的hx_gj_askai_v1老账本）；新增HX.ai.pget公开口；其余一行未动 /* v0.10.0 2026-09-14：安心条HX.step（顶部细进度条+两行小字，愣住定格定位，洪老师拍板全家统一）+速记📷附图（压图存壳文件夹sjimg_*+行尾挂图+坚果云/学习套装数据/速记图/上传排队）；其余一行未动 /* v0.9.1 2026-09-14：HX.store.sync批量抱回（壳v1.7.3 readFiles桥）——多件对账一次JNI全读回，免逐件SAF往返卡主线程（洪老师真机报"点大管家变蓝后定住"，病根=5本账本连环读各约2秒）；旧壳无readFiles自动回落逐件读，逻辑一字未改 /* v0.9.0 2026-09-13：常驻通信管家双通道（洪老师拍板一次做完）——新增HX.mg投信层（壳v1.7.0管家在则GitHub联网写信mg_out_给后台服务代发+回信mg_in_轮询取，网页线程不碰网络；管家不在自动走老fetch，全家零改动）+HX.big大件异步编解码（TextEncoder/Decoder分块让气，无则回落老同步）；改道点=gh.fetch一个收口；_autoNetOk闸门规矩不变 /* v0.8.0 2026-09-13：开门静默令（洪老师拍板：开门不许自动同步/不许自动查版本，点了才做）——全家自动联网（dav rescue/mirror、relay闲时送与pull、selfUp、selfCheck、速记开门补推）统一过HX._autoNetOk闸门：默认全关，3秒内真有点击（=点了按钮）或localStorage hx_auto_net=1才放行；新增HX.syncNow()一件全手动补做；本地存取（HX.store/localStorage/壳文件）不联网不受影响；其余一行未动 /* v0.7.0 2026-09-12：HX.dav全异步化（根治#75/#77同步联网卡死主线程）——走壳v1.6.0新davAsync后台桥+HX._davCb回调，ts对账逻辑一行未改；旧壳没davAsync一律静默跳过绝不回退同步老路，壳升级后自动恢复 */ /* v0.6.0 2026-09-12 地基二期：HX.dav的rescue升级为ts对账（云端新超5秒留档_冲突_后盖回/本地新或相等顺手davUp追平/云端缺顺手davUp补齐） */ /* v0.5.0 2026-09-12：新增中转邮路HX.relay+坚果云腿HX.dav */ /* v0.4.0 2026-09-12：新增仓管员HX.store，地基工程一期规矩A/B落地 */ /* v0.3.0 2026-09-11：部件自升级HX.selfUp（病根：壳里旧版公共件永远不升级→AI面板等新功能装了也白装；开门闲时20秒比对云端version-hx-common.json，旧了静默下载写回授权文件夹，下次开门用新的，全程不弹窗） */ /* v0.2.0 2026-09-11：新增HX.ai统一AI面板（两层结构+定位置顶+AI功能生成器，洪老师2026-09-11拍板方法论落地试点）；HX.sj面板加「🤖AI」入口钮；其余一行未动 */ /* v0.1.1 2026-09-10：HX.sj.init 加可选 extraBtn（大管家#43「补充上一条」补回，洪老师点名功能）；不传仍是2钮版，默认行为不变 */
+  var HX_COMMON_VERSION = '0.16.4'; /* v0.16.4 2026-09-23 班·批改病历③：刀1 HX.pick点亮长效（洪老师2026-09-23班③拍板：30秒太短，点亮翻菜单翻半分钟就灭）——撤30秒有效期判定+30秒自动灭定时器，点亮后一直有效直到点亮别的件或手动取消；亮牌行点亮文字旁加小「✕」=清账本+亮牌消失+toast「已取消点亮」；点亮随行发AI老行为不变；账本格式不动，其余一行未动 */ /* v0.16.3 2026-09-23 班·批改病历：刀A新增HX.ai.openEdit(id,idx)（open进第2层后模拟该套按钮现有点击链进编辑页）刀B编辑页加div#hxAiHostBtns容器+宿主钩子opt.editHooks(itemId,idx,api={getText,setText,saveNow同hxAiSaveP存储链,itemId,idx})，不传钩子容器留空版面同老版；纯加法其余一行未动 */ /* v0.16.2 2026-09-19：刀D云端取回（只下不上，一次性救援腿）——HX.keys新增warm()：本地没key时开门自动从坚果云/私有仓读回hxdata_hx_keys.json落真源再灌回localStorage，永不主动上传；其余一行未动 */ /* v0.16.1 2026-09-19：AI钥匙反复丢两刀（刀A Key落壳文件真源hxdata_hx_keys.json换端口不丢+get/getQwen空时回填；刀C AI面板4处守卫改当场填钥匙浮层aiAskKey），其余一行未动 */ /* v0.16.0 2026-09-19 班⑦（洪老师拍板"开工"，AI面板四刀）：刀A自建条目带点亮病历（init新钩子litText由宿主供脱敏后文本，HX.pick有效则usr附【点亮文件：fname】，没点亮toast提醒照发不带材料；宿主没接钩子自动回落老useSel选中文字/（无资料）） 刀B「＋加AI功能」改AI代写流（①名字②人话要求→宿主send请AI写提示词→过目页可改/🔄重写/✅才存/❌弃；AI通道或Key不在回落手填提示词老路）+自建条目第2层补✏️改/🗑删两钮（删前人话confirm） 刀C固定套编辑页加「🤖让AI帮我改这套」（现话+人话要求→AI新稿只进编辑框过目，💾存为默认才算数，AI不直接落账） 刀D换心两钮「📥自建的灌进来」「🤖照自建的让AI改」（小浮层挑自建不盖编辑框，结果同样只进框，恢复出厂兜底，出厂原文一字不动）；账本键hx_aiext_v1/hx_aiprompt_v1与合并规矩、其他零件一行未动 */ /* v0.15.2 2026-09-19 班⑥（挂号#128，洪老师17:01/17:02真机截图报"浮窗选图后输入框被隐藏在顶端"，拍板"开工"）：病根=面板fixed钉在屏下150px，而开面板自动focus+选图回来焦点还在框上→键盘自弹→X5把页面上推→钉住的面板被顶出可视区只剩顶边。治=①开面板不再自动focus（点输入框才弹键盘）②挂图成功主动blur放下焦点；面板结构/挂图/上行/其余零件一行未动 */ /* v0.15.1 2026-09-18 班③（挂号E，洪老师拍板）：AI面板第2级提示词套行改明显大钮（.hxAiPromptBtn：▶图标+边框+圆角+绿系底色，照.hxAiGo绿色系），只改renderL2渲染HTML+CSS字符串，逻辑不动 */ /* v0.15.0 2026-09-18（洪老师08:10速记拍板）：HX.sj面板加「↩ 补充上一条」钮——点钮弹最近3条速记列表（相对序+时间+前两行预览，壳文件「速记流水.txt」为主、localStorage现行镜像键hx_sj_uplocal兜底，不新建平行账本），点条=原文整行回填进输入框接着加字，「记下」走原save=新增一条（铁律17原条不动）；✕/点面板空白关列表无副作用；空=toast「还没有速记可补」；附图/上行/extraBtn等其他零件一行未动 */ /* v0.13.2 2026-09-16 班④：洪老师拍板"把这个多余的命令取消掉"——开门闲时8秒速记上行认 hx_sj_skip_once 标记（主界面v1.19.1「检查新版本」按钮所立）跳过本次，查版本刷新不再带出速记流水.txt上行；「记下后上行」等其他入口一行未动 */ /* v0.13.1 2026-09-16 班③：查版本归管家一家——有管家的壳里HX.selfUp开门自查退休（管家每日闲时统一查装+验暗号），没管家的老壳/浏览器照旧；其余一行未动 */ /* v0.13.0 2026-09-16 班① 第5条：新增长按点亮零件 HX.pick（hx_pick_v1账本+30秒自动灭+触摸鼠标两路长按）+ HX.ai面板顶部亮牌行；其余一行未动 */ /* v0.12.2 2026-09-15（挂号#95，洪老师真机报"速记取图后点输入框又跳图库、不显示取图成功"）：病根=X5壳侧fileChooser回调悬挂在常驻隐藏input上无法自愈，下个手势重放弹图库+saveImg重活链断无回执——①📷取图改每次临时造input用完即弃 ②选图在途闸防重弹（focus+30秒超时兜底复位） ③saveImg改createObjectURL优先+15秒看门狗超时报明白话；其余一行未动 */ /* v0.12.1 2026-09-15（挂号#104，洪老师真机报"U盘病历一个没显示+进到深层回不到上一层"）：HX.fm专修——①文件排序改按修改时间新→旧（实锤：壳侧按名排，中文名病历全沉到套装hxdata_*等英文名件后面，翻不到就当没有；新拷的病历时间最新，直接浮顶），文件夹仍在前；②空名/乱码名件不再哑巴，标「（名字读不出）」照列；③列表顶部加小字「本层共N项」（搜索时「搜到N项」）让他知道看没看全；④面包屑行🏠旁加显眼「⬅返回上一层」钮，有上级即亮，点=回父目录；面包屑回跳改走浏览足迹栈（旧法按"/"拼路径，SAF的safdoc://URI里全是斜杠，点中段必坏——实锤修掉）；⑤pick加opt.hideKit=true时过滤套装自有件（hxdata_*.json、hx-common*.js、guanjia-pdf-engine.js、version-*.json、速记流水.txt、mg_开头、mgver_开头、sjimg_开头、原文库_开头、dsm_开头，文件夹照列），默认false不动其他场景；⑥folder模式底部加「＋在此新建文件夹」钮（壳v1.8.4新fmMkdir桥，X5里prompt不稳，用行内小浮层输名字）；其余一行未动 */ /* v0.12.0 2026-09-15：新增HX.fm手机文件夹逛一逛（壳全盘文件桥六桥+ensure权限引导浮层+pick全屏仿资源管理器+read封装Promise）；其余一行未动 */ /* v0.11.1 2026-09-14：速记📷附图改两步走（挂号#94，洪老师真机验收报「选完图浮窗被关掉没法输说明、图跑哪去不知道」，拍板A+B都做）——①选图不再立刻记行/关面板：压图存壳后面板挂一行「🖼已挂图 sjimg_xxx.jpg（✕可撤销）」，可继续打字补说明，点「记下」图和话一起进流水（save原逻辑未动，只认sjPendImg）；②回执明白话：记下提示图存手机壳文件名+联网传坚果云/学习套装数据/速记图/，上传成功流水行图名后补☁（sjImgUpload出队时回写）；✕撤销=清挂图+出队+删壳文件；其余一行未动 */ /* v0.11.0 2026-09-14：AI面板第2级提示词可改可存（挂号#79，洪老师拍板"不搞三级菜单，就两级，点进去就是几套预设提示词，可改可储存"）——条目带prompts时，第2级点某套进编辑页（全文可改+▶用这套发送+💾存为默认+↩恢复出厂）；改过的存覆盖账本hx_aiprompt_v1.<app>（出厂原文一个字不动，恢复出厂=删覆盖）；宿主函数发送前一句HX.ai.pget(id,idx)查覆盖（乙路，不改送不进去）；条目可带pget/pset/preset钩子接管存储（如大管家问AI接管它自己的hx_gj_askai_v1老账本）；新增HX.ai.pget公开口；其余一行未动 /* v0.10.0 2026-09-14：安心条HX.step（顶部细进度条+两行小字，愣住定格定位，洪老师拍板全家统一）+速记📷附图（压图存壳文件夹sjimg_*+行尾挂图+坚果云/学习套装数据/速记图/上传排队）；其余一行未动 /* v0.9.1 2026-09-14：HX.store.sync批量抱回（壳v1.7.3 readFiles桥）——多件对账一次JNI全读回，免逐件SAF往返卡主线程（洪老师真机报"点大管家变蓝后定住"，病根=5本账本连环读各约2秒）；旧壳无readFiles自动回落逐件读，逻辑一字未改 /* v0.9.0 2026-09-13：常驻通信管家双通道（洪老师拍板一次做完）——新增HX.mg投信层（壳v1.7.0管家在则GitHub联网写信mg_out_给后台服务代发+回信mg_in_轮询取，网页线程不碰网络；管家不在自动走老fetch，全家零改动）+HX.big大件异步编解码（TextEncoder/Decoder分块让气，无则回落老同步）；改道点=gh.fetch一个收口；_autoNetOk闸门规矩不变 /* v0.8.0 2026-09-13：开门静默令（洪老师拍板：开门不许自动同步/不许自动查版本，点了才做）——全家自动联网（dav rescue/mirror、relay闲时送与pull、selfUp、selfCheck、速记开门补推）统一过HX._autoNetOk闸门：默认全关，3秒内真有点击（=点了按钮）或localStorage hx_auto_net=1才放行；新增HX.syncNow()一件全手动补做；本地存取（HX.store/localStorage/壳文件）不联网不受影响；其余一行未动 /* v0.7.0 2026-09-12：HX.dav全异步化（根治#75/#77同步联网卡死主线程）——走壳v1.6.0新davAsync后台桥+HX._davCb回调，ts对账逻辑一行未改；旧壳没davAsync一律静默跳过绝不回退同步老路，壳升级后自动恢复 */ /* v0.6.0 2026-09-12 地基二期：HX.dav的rescue升级为ts对账（云端新超5秒留档_冲突_后盖回/本地新或相等顺手davUp追平/云端缺顺手davUp补齐） */ /* v0.5.0 2026-09-12：新增中转邮路HX.relay+坚果云腿HX.dav */ /* v0.4.0 2026-09-12：新增仓管员HX.store，地基工程一期规矩A/B落地 */ /* v0.3.0 2026-09-11：部件自升级HX.selfUp（病根：壳里旧版公共件永远不升级→AI面板等新功能装了也白装；开门闲时20秒比对云端version-hx-common.json，旧了静默下载写回授权文件夹，下次开门用新的，全程不弹窗） */ /* v0.2.0 2026-09-11：新增HX.ai统一AI面板（两层结构+定位置顶+AI功能生成器，洪老师2026-09-11拍板方法论落地试点）；HX.sj面板加「🤖AI」入口钮；其余一行未动 */ /* v0.1.1 2026-09-10：HX.sj.init 加可选 extraBtn（大管家#43「补充上一条」补回，洪老师点名功能）；不传仍是2钮版，默认行为不变 */
   if(window.HX && window.HX.HX_COMMON_VERSION){ return; } /* 已装过不重复装 */
   var HX = { HX_COMMON_VERSION: HX_COMMON_VERSION, ok: true };
   function warn(m){ try{ if(window.console && console.warn) console.warn('[hx-common] '+m); }catch(e){} }
@@ -1211,8 +1217,21 @@
         var b=$('hxAiPick'); if(!b) return;
         var o=(HX.pick && HX.pick.get) ? HX.pick.get() : null;
         if(o){
-          b.textContent='📄已点亮：'+(o.fname||o.pkey)+'（点✓确认发送 / 再长按换一份）';
+          b.textContent='📄已点亮：'+(o.fname||o.pkey)+'（会一直随行发AI / 再长按换一份）'; /* v0.16.4 刀1：点亮长效后改口（原"点✓确认发送"30秒语境作废） */
           b.style.background='#eef4fb'; b.style.color='#3a5a78'; b.style.borderColor='#c9d9ea';
+          /* v0.16.4 刀1（洪老师2026-09-23班③拍板点亮长效）：亮牌点亮文字旁加小「✕」手动取消——点了清账本+亮牌消失+toast「已取消点亮」；
+             点亮的文件会一直随行发AI，不想要了点这里取消 */
+          try{
+            var _bx=document.createElement('span'); _bx.textContent=' ✕';
+            _bx.style.cssText='cursor:pointer;color:#b0443c;font-weight:700;padding:0 4px;';
+            _bx.addEventListener('click', function(ev){
+              try{ if(ev&&ev.stopPropagation) ev.stopPropagation(); }catch(e){}
+              try{ if(HX.pick&&HX.pick.clear) HX.pick.clear(); }catch(e){}
+              try{ aiToast('已取消点亮'); }catch(e){}
+              try{ pickBadge(); }catch(e){} /* 亮牌当场消失（刷回引导语） */
+            });
+            b.appendChild(_bx);
+          }catch(e){}
         }else{
           b.textContent='请先到列表长按点亮一份文件';
           b.style.background='#f6f2ea'; b.style.color='#8a8178'; b.style.borderColor='#e5ddd0';
@@ -1446,7 +1465,10 @@
   /* ════ 5.5b 长按点亮零件 HX.pick（v0.13.0 新增，2026-09-16 班① 第5条；只增不改原则挂在HX下） ════
      用法：宿主给列表行加 data-pkey="唯一键"（可选 data-fname="文件名"），调 HX.pick.bind(root) 即绑好；
      长按1.5秒未移动超10px=点亮该行（加class hx-picked+写账本hx_pick_v1+toast）；再长按同一行=熄灭，长按别行=自动换；
-     30秒自动灭（定时器+get()惰性校验双保险）；发送方调 HX.pick.get() 取 {app,pkey,fname,ts}，过期返null；
+     v0.16.4（洪老师2026-09-23班③拍板「点亮长效」：30秒太短，点亮翻菜单翻半分钟就灭）——30秒自动灭整段撤掉，
+     点亮后一直有效，直到①点亮别的件（覆盖老行为不动）②手动取消（面板亮牌行的✕或HX.pick.clear()）；
+     点亮随行发AI的老行为不变（点亮的文件会一直随行，不想要了点✕取消）；
+     发送方调 HX.pick.get() 取 {app,pkey,fname,ts}，有就返没有返null（不再过期）；
      无localStorage/无触摸环境一律静默不炸。 */
   HX.pick = (function(){
     var pk = {};
@@ -1454,8 +1476,8 @@
     var LSK = 'hx_pick_v1';   /* 点亮账本键：值 JSON {app,pkey,fname,ts}（ts=Date.now()毫秒） */
     var HOLD_MS = 1500;       /* 长按判定：按住≥1.5秒 */
     var MOVE_PX = 10;         /* 移动超10px=取消本次长按 */
-    var TTL_MS = 30000;       /* 点亮有效期30秒，到点自动灭 */
-    var _killTimer = null;    /* 30秒自动灭定时器 */
+    /* v0.16.4 刀1（洪老师2026-09-23班③拍板「点亮长效」）：TTL_MS与_killTimer（30秒有效期+30秒自动灭定时器）整段撤掉——
+       30秒太短，点亮翻菜单翻半分钟就灭；点亮后一直有效，直到点亮别的件（覆盖）或手动取消（亮牌✕/pk.clear()） */
     var _ctxBound = false;    /* contextmenu 全局只绑一次 */
     function lsGet(){ try{ var s=localStorage.getItem(LSK); if(!s) return null; var o=JSON.parse(s); return (o && o.pkey) ? o : null; }catch(e){ return null; } } /* 无localStorage静默返null */
     function lsSet(o){ try{ localStorage.setItem(LSK, JSON.stringify(o)); }catch(e){} }
@@ -1475,16 +1497,7 @@
     }
     /* 清页面上所有点亮样式 */
     function clearPicked(){ try{ var els=document.querySelectorAll('.hx-picked'); for(var i=0;i<els.length;i++) rmCls(els[i],'hx-picked'); }catch(e){} }
-    /* 30秒自动灭：到点若账本ts未变（没被新点亮顶替）才清账本+清样式 */
-    function armKill(ts){
-      try{ if(_killTimer){ clearTimeout(_killTimer); _killTimer=null; } }catch(e){}
-      _killTimer = setTimeout(function(){
-        try{
-          var o=lsGet();
-          if(o && (+o.ts||0)===ts){ lsDel(); clearPicked(); }
-        }catch(e){}
-      }, TTL_MS);
-    }
+    /* v0.16.4 刀1：armKill（30秒自动灭定时器）整段撤掉——点亮长效，不再到点自动灭（洪老师2026-09-23班③拍板） */
     /* 注入CSS（防重）：点亮样式低饱和蓝；候选行 user-select:none 防长按选中文字 */
     function ensureCss(){
       try{
@@ -1522,10 +1535,9 @@
       var pkey=String(el.getAttribute('data-pkey')||''); if(!pkey) return;
       var cur=lsGet();
       clearPicked(); /* 移除旧点亮行的样式 */
-      if(cur && cur.pkey===pkey && (Date.now()-(+cur.ts||0))<=TTL_MS){
+      if(cur && cur.pkey===pkey){ /* v0.16.4 刀1：长效点亮不再看30秒——再长按同一行=熄灭的老行为不动（原判定带TTL≤30秒才认，撤掉） */
         /* 再长按同一行=熄灭：清class（上面已清）+清账本 */
         lsDel();
-        try{ if(_killTimer){ clearTimeout(_killTimer); _killTimer=null; } }catch(e){}
         pkToast('已熄灭点亮', 3000);
         return;
       }
@@ -1533,8 +1545,8 @@
       addCls(el, 'hx-picked');
       var o={ app:pk.app||'', pkey:pkey, fname:String(el.getAttribute('data-fname')||''), ts:Date.now() };
       lsSet(o);
-      armKill(o.ts);
-      pkToast('已点亮：'+(o.fname||pkey)+'，点🤖就送这份', 3000);
+      /* v0.16.4 刀1：原 armKill(o.ts) 30秒自动灭撤掉——点亮后一直有效，直到点亮别的件或手动取消 */
+      pkToast('已点亮：'+(o.fname||pkey)+'，点🤖就送这份（不要了点亮牌上的✕取消）', 3000); /* v0.16.4 刀1：toast补一句取消指路（点亮会一直随行发AI） */
     }
     /* HX.pick.bind(root)：扫描root（默认document）下所有 [data-pkey] 元素绑长按；元素上记标记防重复绑定 */
     pk.bind = function(root){
@@ -1561,17 +1573,16 @@
         }
       }catch(e){}
     };
-    /* HX.pick.get()：读账本并惰性校验30秒有效期；过期返null并顺手清掉（账本+页面样式） */
+    /* HX.pick.get()：读账本；v0.16.4 刀1撤掉30秒惰性校验（长效点亮=洪老师2026-09-23班③拍板），有就返没有返null，不再过期自动灭 */
     pk.get = function(){
       try{
         var o=lsGet(); if(!o) return null;
-        if(Date.now()-(+o.ts||0) > TTL_MS){ lsDel(); clearPicked(); return null; }
         return { app:String(o.app||''), pkey:String(o.pkey||''), fname:String(o.fname||''), ts:(+o.ts)||0 };
       }catch(e){ return null; }
     };
-    /* HX.pick.clear()：公开熄灭口（宿主发送成功后可主动灭） */
+    /* HX.pick.clear()：公开熄灭口（宿主发送成功后可主动灭；v0.16.4起也是手动取消点亮的唯一口之一，另一口=亮牌✕） */
     pk.clear = function(){
-      try{ lsDel(); clearPicked(); if(_killTimer){ clearTimeout(_killTimer); _killTimer=null; } }catch(e){}
+      try{ lsDel(); clearPicked(); }catch(e){}
     };
     return pk;
   })();
