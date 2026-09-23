@@ -1,6 +1,6 @@
 {
  "v": 1,
- "t": 1790171844005,
+ "t": 1790175775807,
  "items": [
   {
    "key": "index",
@@ -10,16 +10,16 @@
   },
   {
    "key": "guanjia",
-   "version": "0.56.4",
+   "version": "0.56.5",
    "dl": "software-guanjia.html",
-   "sig": "d33e95612e36c923"
+   "sig": "3f4c6a10ebbbefe8"
   },
   {
    "key": "hx-common",
-   "version": "0.16.3",
+   "version": "0.16.4",
    "dl": "hx-common.js",
-   "sig": "ee4a039b65105a47"
+   "sig": "7cd786dabc474c7f"
   }
  ],
- "note": "班②：guanjia升0.56.4（千问流式+挂后台等+全自动磨提示词）；index 1.19.8/hx-common 0.16.3不动"
+ "note": "班③：guanjia升0.56.5+hx-common升0.16.4（点亮直达磨提示词+点亮长效）；index 1.19.8不动"
 }
