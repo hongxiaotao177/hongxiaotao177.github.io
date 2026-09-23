@@ -1,6 +1,6 @@
 {
- "version": "0.16.3",
+ "version": "0.16.4",
  "dl": "hx-common.js",
- "note": "班①：纯加法——HX.ai.openEdit(id,idx)直达第idx套编辑页+编辑页宿主钩子editHooks容器hxAiHostBtns（宿主不传零影响）",
- "sig": "ee4a039b65105a47"
+ "note": "班③：点亮长效化——撤30秒自动灭，点亮一直有效到点亮别的或点✕取消（洪老师拍板，30秒翻菜单就灭太短）",
+ "sig": "7cd786dabc474c7f"
 }
