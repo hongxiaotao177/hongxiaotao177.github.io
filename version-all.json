@@ -1,6 +1,6 @@
 {
  "v": 1,
- "t": 1790133276448,
+ "t": 1790159169215,
  "items": [
   {
    "key": "index",
@@ -10,16 +10,16 @@
   },
   {
    "key": "guanjia",
-   "version": "0.56.2",
+   "version": "0.56.3",
    "dl": "software-guanjia.html",
-   "sig": "7c00bd41fe040d54"
+   "sig": "6bb4857f64176dc1"
   },
   {
    "key": "hx-common",
-   "version": "0.16.2",
+   "version": "0.16.3",
    "dl": "hx-common.js",
-   "sig": "d106b8276636c68d"
+   "sig": "ee4a039b65105a47"
   }
  ],
- "note": "班⑲：guanjia升0.56.2（AI查脱敏规则乱码根治：包裹补现行规则+p5新提示词+回信4096）；index 1.19.8/hx-common 0.16.2不动"
+ "note": "班①：guanjia升0.56.3+hx-common升0.16.3（批改病历三刀+p6补窟窿）；index 1.19.8不动"
 }
