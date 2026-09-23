@@ -1,6 +1,6 @@
 {
  "v": 1,
- "t": 1790091654033,
+ "t": 1790127307039,
  "items": [
   {
    "key": "index",
@@ -10,9 +10,9 @@
   },
   {
    "key": "guanjia",
-   "version": "0.55.2",
+   "version": "0.56.0",
    "dl": "software-guanjia.html",
-   "sig": "625f6397fec1998b"
+   "sig": "7fa01e76fa1f7ffd"
   },
   {
    "key": "hx-common",
@@ -21,5 +21,5 @@
    "sig": "d106b8276636c68d"
   }
  ],
- "note": "班⑰续：guanjia升0.55.2（标红件三段兜底取原文+旧件不删；名册点行看全文/长按点亮/详情卡取消）；index 1.19.8/hx-common 0.16.2不动"
+ "note": "班⑱：guanjia升0.56.0（命名新规：原件去前缀/聚合件·聚合脱敏·MMDD·聚合未脱敏·MMDD/AI件·AI××·MMDD；「出院」改归档入库删原件留聚合AI件）；index 1.19.8/hx-common 0.16.2不动"
 }
