@@ -1,6 +1,6 @@
 {
- "version": "0.16.2",
+ "version": "0.16.3",
  "dl": "hx-common.js",
- "note": "班⑧续：刀D云端取回钥匙——开门warm()本地没key自动从坚果云/私有仓读回hxdata_hx_keys.json灌回（只下不上），洪老师指令「取回来填上」落地",
- "sig": "d106b8276636c68d"
+ "note": "班①：纯加法——HX.ai.openEdit(id,idx)直达第idx套编辑页+编辑页宿主钩子editHooks容器hxAiHostBtns（宿主不传零影响）",
+ "sig": "ee4a039b65105a47"
 }
