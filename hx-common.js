@@ -1,5 +1,13 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    hx-common.js —— 全家9件软件共用公共件母版
+   v0.16.3 2026-09-23（班·批改病历，洪老师拍板，纯加法两刀，其他软件不传新钩子零影响）：
+     刀A 新增公开口 HX.ai.openEdit(id, idx)——open(id)进条目第2层后，模拟第idx套提示词按钮的现有点击链
+       （querySelector('[data-hxaip="idx"]').click()）自动进该套编辑页，编辑页代码不复制不另起炉灶；
+       条目/套不存在或UI没就位静默返回false不炸；
+     刀B 提示词编辑页按钮行旁新增容器 div#hxAiHostBtns（渲染HTML时恒在、宿主没传editHooks或返回空=留空，
+       版面与老版一致）；渲染编辑页末尾调宿主钩子 opt.editHooks(itemId, idx, api)，
+       api={getText读编辑框, setText写编辑框, saveNow与hxAiSaveP同一条存储链（直调it.pset/覆盖账本）, itemId, idx}；
+       全程try护栏，钩子炸了只warn不影响编辑页；其余一行未动
    v0.16.2 2026-09-19（洪老师拍板「我把key放哪了你都知道，你去把它取回来填上」）：刀D云端取回（只下不上，一次性救援腿）——
      HX.keys新增warm()：开门时本地get()/getQwen()都空才动手（本地有key直接return不碰云端）；
      腿①坚果云：davAsync('down',user,pass,'/学习套装数据/hxdata_hx_keys.json','hxdata_hx_keys.json',cbId)同款Promise包装（HX._davCbs+120秒死心），
@@ -67,7 +75,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 (function(){
   'use strict';
-  var HX_COMMON_VERSION = '0.16.2'; /* v0.16.2 2026-09-19：刀D云端取回（只下不上，一次性救援腿）——HX.keys新增warm()：本地没key时开门自动从坚果云/私有仓读回hxdata_hx_keys.json落真源再灌回localStorage，永不主动上传；其余一行未动 */ /* v0.16.1 2026-09-19：AI钥匙反复丢两刀（刀A Key落壳文件真源hxdata_hx_keys.json换端口不丢+get/getQwen空时回填；刀C AI面板4处守卫改当场填钥匙浮层aiAskKey），其余一行未动 */ /* v0.16.0 2026-09-19 班⑦（洪老师拍板"开工"，AI面板四刀）：刀A自建条目带点亮病历（init新钩子litText由宿主供脱敏后文本，HX.pick有效则usr附【点亮文件：fname】，没点亮toast提醒照发不带材料；宿主没接钩子自动回落老useSel选中文字/（无资料）） 刀B「＋加AI功能」改AI代写流（①名字②人话要求→宿主send请AI写提示词→过目页可改/🔄重写/✅才存/❌弃；AI通道或Key不在回落手填提示词老路）+自建条目第2层补✏️改/🗑删两钮（删前人话confirm） 刀C固定套编辑页加「🤖让AI帮我改这套」（现话+人话要求→AI新稿只进编辑框过目，💾存为默认才算数，AI不直接落账） 刀D换心两钮「📥自建的灌进来」「🤖照自建的让AI改」（小浮层挑自建不盖编辑框，结果同样只进框，恢复出厂兜底，出厂原文一字不动）；账本键hx_aiext_v1/hx_aiprompt_v1与合并规矩、其他零件一行未动 */ /* v0.15.2 2026-09-19 班⑥（挂号#128，洪老师17:01/17:02真机截图报"浮窗选图后输入框被隐藏在顶端"，拍板"开工"）：病根=面板fixed钉在屏下150px，而开面板自动focus+选图回来焦点还在框上→键盘自弹→X5把页面上推→钉住的面板被顶出可视区只剩顶边。治=①开面板不再自动focus（点输入框才弹键盘）②挂图成功主动blur放下焦点；面板结构/挂图/上行/其余零件一行未动 */ /* v0.15.1 2026-09-18 班③（挂号E，洪老师拍板）：AI面板第2级提示词套行改明显大钮（.hxAiPromptBtn：▶图标+边框+圆角+绿系底色，照.hxAiGo绿色系），只改renderL2渲染HTML+CSS字符串，逻辑不动 */ /* v0.15.0 2026-09-18（洪老师08:10速记拍板）：HX.sj面板加「↩ 补充上一条」钮——点钮弹最近3条速记列表（相对序+时间+前两行预览，壳文件「速记流水.txt」为主、localStorage现行镜像键hx_sj_uplocal兜底，不新建平行账本），点条=原文整行回填进输入框接着加字，「记下」走原save=新增一条（铁律17原条不动）；✕/点面板空白关列表无副作用；空=toast「还没有速记可补」；附图/上行/extraBtn等其他零件一行未动 */ /* v0.13.2 2026-09-16 班④：洪老师拍板"把这个多余的命令取消掉"——开门闲时8秒速记上行认 hx_sj_skip_once 标记（主界面v1.19.1「检查新版本」按钮所立）跳过本次，查版本刷新不再带出速记流水.txt上行；「记下后上行」等其他入口一行未动 */ /* v0.13.1 2026-09-16 班③：查版本归管家一家——有管家的壳里HX.selfUp开门自查退休（管家每日闲时统一查装+验暗号），没管家的老壳/浏览器照旧；其余一行未动 */ /* v0.13.0 2026-09-16 班① 第5条：新增长按点亮零件 HX.pick（hx_pick_v1账本+30秒自动灭+触摸鼠标两路长按）+ HX.ai面板顶部亮牌行；其余一行未动 */ /* v0.12.2 2026-09-15（挂号#95，洪老师真机报"速记取图后点输入框又跳图库、不显示取图成功"）：病根=X5壳侧fileChooser回调悬挂在常驻隐藏input上无法自愈，下个手势重放弹图库+saveImg重活链断无回执——①📷取图改每次临时造input用完即弃 ②选图在途闸防重弹（focus+30秒超时兜底复位） ③saveImg改createObjectURL优先+15秒看门狗超时报明白话；其余一行未动 */ /* v0.12.1 2026-09-15（挂号#104，洪老师真机报"U盘病历一个没显示+进到深层回不到上一层"）：HX.fm专修——①文件排序改按修改时间新→旧（实锤：壳侧按名排，中文名病历全沉到套装hxdata_*等英文名件后面，翻不到就当没有；新拷的病历时间最新，直接浮顶），文件夹仍在前；②空名/乱码名件不再哑巴，标「（名字读不出）」照列；③列表顶部加小字「本层共N项」（搜索时「搜到N项」）让他知道看没看全；④面包屑行🏠旁加显眼「⬅返回上一层」钮，有上级即亮，点=回父目录；面包屑回跳改走浏览足迹栈（旧法按"/"拼路径，SAF的safdoc://URI里全是斜杠，点中段必坏——实锤修掉）；⑤pick加opt.hideKit=true时过滤套装自有件（hxdata_*.json、hx-common*.js、guanjia-pdf-engine.js、version-*.json、速记流水.txt、mg_开头、mgver_开头、sjimg_开头、原文库_开头、dsm_开头，文件夹照列），默认false不动其他场景；⑥folder模式底部加「＋在此新建文件夹」钮（壳v1.8.4新fmMkdir桥，X5里prompt不稳，用行内小浮层输名字）；其余一行未动 */ /* v0.12.0 2026-09-15：新增HX.fm手机文件夹逛一逛（壳全盘文件桥六桥+ensure权限引导浮层+pick全屏仿资源管理器+read封装Promise）；其余一行未动 */ /* v0.11.1 2026-09-14：速记📷附图改两步走（挂号#94，洪老师真机验收报「选完图浮窗被关掉没法输说明、图跑哪去不知道」，拍板A+B都做）——①选图不再立刻记行/关面板：压图存壳后面板挂一行「🖼已挂图 sjimg_xxx.jpg（✕可撤销）」，可继续打字补说明，点「记下」图和话一起进流水（save原逻辑未动，只认sjPendImg）；②回执明白话：记下提示图存手机壳文件名+联网传坚果云/学习套装数据/速记图/，上传成功流水行图名后补☁（sjImgUpload出队时回写）；✕撤销=清挂图+出队+删壳文件；其余一行未动 */ /* v0.11.0 2026-09-14：AI面板第2级提示词可改可存（挂号#79，洪老师拍板"不搞三级菜单，就两级，点进去就是几套预设提示词，可改可储存"）——条目带prompts时，第2级点某套进编辑页（全文可改+▶用这套发送+💾存为默认+↩恢复出厂）；改过的存覆盖账本hx_aiprompt_v1.<app>（出厂原文一个字不动，恢复出厂=删覆盖）；宿主函数发送前一句HX.ai.pget(id,idx)查覆盖（乙路，不改送不进去）；条目可带pget/pset/preset钩子接管存储（如大管家问AI接管它自己的hx_gj_askai_v1老账本）；新增HX.ai.pget公开口；其余一行未动 /* v0.10.0 2026-09-14：安心条HX.step（顶部细进度条+两行小字，愣住定格定位，洪老师拍板全家统一）+速记📷附图（压图存壳文件夹sjimg_*+行尾挂图+坚果云/学习套装数据/速记图/上传排队）；其余一行未动 /* v0.9.1 2026-09-14：HX.store.sync批量抱回（壳v1.7.3 readFiles桥）——多件对账一次JNI全读回，免逐件SAF往返卡主线程（洪老师真机报"点大管家变蓝后定住"，病根=5本账本连环读各约2秒）；旧壳无readFiles自动回落逐件读，逻辑一字未改 /* v0.9.0 2026-09-13：常驻通信管家双通道（洪老师拍板一次做完）——新增HX.mg投信层（壳v1.7.0管家在则GitHub联网写信mg_out_给后台服务代发+回信mg_in_轮询取，网页线程不碰网络；管家不在自动走老fetch，全家零改动）+HX.big大件异步编解码（TextEncoder/Decoder分块让气，无则回落老同步）；改道点=gh.fetch一个收口；_autoNetOk闸门规矩不变 /* v0.8.0 2026-09-13：开门静默令（洪老师拍板：开门不许自动同步/不许自动查版本，点了才做）——全家自动联网（dav rescue/mirror、relay闲时送与pull、selfUp、selfCheck、速记开门补推）统一过HX._autoNetOk闸门：默认全关，3秒内真有点击（=点了按钮）或localStorage hx_auto_net=1才放行；新增HX.syncNow()一件全手动补做；本地存取（HX.store/localStorage/壳文件）不联网不受影响；其余一行未动 /* v0.7.0 2026-09-12：HX.dav全异步化（根治#75/#77同步联网卡死主线程）——走壳v1.6.0新davAsync后台桥+HX._davCb回调，ts对账逻辑一行未改；旧壳没davAsync一律静默跳过绝不回退同步老路，壳升级后自动恢复 */ /* v0.6.0 2026-09-12 地基二期：HX.dav的rescue升级为ts对账（云端新超5秒留档_冲突_后盖回/本地新或相等顺手davUp追平/云端缺顺手davUp补齐） */ /* v0.5.0 2026-09-12：新增中转邮路HX.relay+坚果云腿HX.dav */ /* v0.4.0 2026-09-12：新增仓管员HX.store，地基工程一期规矩A/B落地 */ /* v0.3.0 2026-09-11：部件自升级HX.selfUp（病根：壳里旧版公共件永远不升级→AI面板等新功能装了也白装；开门闲时20秒比对云端version-hx-common.json，旧了静默下载写回授权文件夹，下次开门用新的，全程不弹窗） */ /* v0.2.0 2026-09-11：新增HX.ai统一AI面板（两层结构+定位置顶+AI功能生成器，洪老师2026-09-11拍板方法论落地试点）；HX.sj面板加「🤖AI」入口钮；其余一行未动 */ /* v0.1.1 2026-09-10：HX.sj.init 加可选 extraBtn（大管家#43「补充上一条」补回，洪老师点名功能）；不传仍是2钮版，默认行为不变 */
+  var HX_COMMON_VERSION = '0.16.3'; /* v0.16.3 2026-09-23 班·批改病历：刀A新增HX.ai.openEdit(id,idx)（open进第2层后模拟该套按钮现有点击链进编辑页）刀B编辑页加div#hxAiHostBtns容器+宿主钩子opt.editHooks(itemId,idx,api={getText,setText,saveNow同hxAiSaveP存储链,itemId,idx})，不传钩子容器留空版面同老版；纯加法其余一行未动 */ /* v0.16.2 2026-09-19：刀D云端取回（只下不上，一次性救援腿）——HX.keys新增warm()：本地没key时开门自动从坚果云/私有仓读回hxdata_hx_keys.json落真源再灌回localStorage，永不主动上传；其余一行未动 */ /* v0.16.1 2026-09-19：AI钥匙反复丢两刀（刀A Key落壳文件真源hxdata_hx_keys.json换端口不丢+get/getQwen空时回填；刀C AI面板4处守卫改当场填钥匙浮层aiAskKey），其余一行未动 */ /* v0.16.0 2026-09-19 班⑦（洪老师拍板"开工"，AI面板四刀）：刀A自建条目带点亮病历（init新钩子litText由宿主供脱敏后文本，HX.pick有效则usr附【点亮文件：fname】，没点亮toast提醒照发不带材料；宿主没接钩子自动回落老useSel选中文字/（无资料）） 刀B「＋加AI功能」改AI代写流（①名字②人话要求→宿主send请AI写提示词→过目页可改/🔄重写/✅才存/❌弃；AI通道或Key不在回落手填提示词老路）+自建条目第2层补✏️改/🗑删两钮（删前人话confirm） 刀C固定套编辑页加「🤖让AI帮我改这套」（现话+人话要求→AI新稿只进编辑框过目，💾存为默认才算数，AI不直接落账） 刀D换心两钮「📥自建的灌进来」「🤖照自建的让AI改」（小浮层挑自建不盖编辑框，结果同样只进框，恢复出厂兜底，出厂原文一字不动）；账本键hx_aiext_v1/hx_aiprompt_v1与合并规矩、其他零件一行未动 */ /* v0.15.2 2026-09-19 班⑥（挂号#128，洪老师17:01/17:02真机截图报"浮窗选图后输入框被隐藏在顶端"，拍板"开工"）：病根=面板fixed钉在屏下150px，而开面板自动focus+选图回来焦点还在框上→键盘自弹→X5把页面上推→钉住的面板被顶出可视区只剩顶边。治=①开面板不再自动focus（点输入框才弹键盘）②挂图成功主动blur放下焦点；面板结构/挂图/上行/其余零件一行未动 */ /* v0.15.1 2026-09-18 班③（挂号E，洪老师拍板）：AI面板第2级提示词套行改明显大钮（.hxAiPromptBtn：▶图标+边框+圆角+绿系底色，照.hxAiGo绿色系），只改renderL2渲染HTML+CSS字符串，逻辑不动 */ /* v0.15.0 2026-09-18（洪老师08:10速记拍板）：HX.sj面板加「↩ 补充上一条」钮——点钮弹最近3条速记列表（相对序+时间+前两行预览，壳文件「速记流水.txt」为主、localStorage现行镜像键hx_sj_uplocal兜底，不新建平行账本），点条=原文整行回填进输入框接着加字，「记下」走原save=新增一条（铁律17原条不动）；✕/点面板空白关列表无副作用；空=toast「还没有速记可补」；附图/上行/extraBtn等其他零件一行未动 */ /* v0.13.2 2026-09-16 班④：洪老师拍板"把这个多余的命令取消掉"——开门闲时8秒速记上行认 hx_sj_skip_once 标记（主界面v1.19.1「检查新版本」按钮所立）跳过本次，查版本刷新不再带出速记流水.txt上行；「记下后上行」等其他入口一行未动 */ /* v0.13.1 2026-09-16 班③：查版本归管家一家——有管家的壳里HX.selfUp开门自查退休（管家每日闲时统一查装+验暗号），没管家的老壳/浏览器照旧；其余一行未动 */ /* v0.13.0 2026-09-16 班① 第5条：新增长按点亮零件 HX.pick（hx_pick_v1账本+30秒自动灭+触摸鼠标两路长按）+ HX.ai面板顶部亮牌行；其余一行未动 */ /* v0.12.2 2026-09-15（挂号#95，洪老师真机报"速记取图后点输入框又跳图库、不显示取图成功"）：病根=X5壳侧fileChooser回调悬挂在常驻隐藏input上无法自愈，下个手势重放弹图库+saveImg重活链断无回执——①📷取图改每次临时造input用完即弃 ②选图在途闸防重弹（focus+30秒超时兜底复位） ③saveImg改createObjectURL优先+15秒看门狗超时报明白话；其余一行未动 */ /* v0.12.1 2026-09-15（挂号#104，洪老师真机报"U盘病历一个没显示+进到深层回不到上一层"）：HX.fm专修——①文件排序改按修改时间新→旧（实锤：壳侧按名排，中文名病历全沉到套装hxdata_*等英文名件后面，翻不到就当没有；新拷的病历时间最新，直接浮顶），文件夹仍在前；②空名/乱码名件不再哑巴，标「（名字读不出）」照列；③列表顶部加小字「本层共N项」（搜索时「搜到N项」）让他知道看没看全；④面包屑行🏠旁加显眼「⬅返回上一层」钮，有上级即亮，点=回父目录；面包屑回跳改走浏览足迹栈（旧法按"/"拼路径，SAF的safdoc://URI里全是斜杠，点中段必坏——实锤修掉）；⑤pick加opt.hideKit=true时过滤套装自有件（hxdata_*.json、hx-common*.js、guanjia-pdf-engine.js、version-*.json、速记流水.txt、mg_开头、mgver_开头、sjimg_开头、原文库_开头、dsm_开头，文件夹照列），默认false不动其他场景；⑥folder模式底部加「＋在此新建文件夹」钮（壳v1.8.4新fmMkdir桥，X5里prompt不稳，用行内小浮层输名字）；其余一行未动 */ /* v0.12.0 2026-09-15：新增HX.fm手机文件夹逛一逛（壳全盘文件桥六桥+ensure权限引导浮层+pick全屏仿资源管理器+read封装Promise）；其余一行未动 */ /* v0.11.1 2026-09-14：速记📷附图改两步走（挂号#94，洪老师真机验收报「选完图浮窗被关掉没法输说明、图跑哪去不知道」，拍板A+B都做）——①选图不再立刻记行/关面板：压图存壳后面板挂一行「🖼已挂图 sjimg_xxx.jpg（✕可撤销）」，可继续打字补说明，点「记下」图和话一起进流水（save原逻辑未动，只认sjPendImg）；②回执明白话：记下提示图存手机壳文件名+联网传坚果云/学习套装数据/速记图/，上传成功流水行图名后补☁（sjImgUpload出队时回写）；✕撤销=清挂图+出队+删壳文件；其余一行未动 */ /* v0.11.0 2026-09-14：AI面板第2级提示词可改可存（挂号#79，洪老师拍板"不搞三级菜单，就两级，点进去就是几套预设提示词，可改可储存"）——条目带prompts时，第2级点某套进编辑页（全文可改+▶用这套发送+💾存为默认+↩恢复出厂）；改过的存覆盖账本hx_aiprompt_v1.<app>（出厂原文一个字不动，恢复出厂=删覆盖）；宿主函数发送前一句HX.ai.pget(id,idx)查覆盖（乙路，不改送不进去）；条目可带pget/pset/preset钩子接管存储（如大管家问AI接管它自己的hx_gj_askai_v1老账本）；新增HX.ai.pget公开口；其余一行未动 /* v0.10.0 2026-09-14：安心条HX.step（顶部细进度条+两行小字，愣住定格定位，洪老师拍板全家统一）+速记📷附图（压图存壳文件夹sjimg_*+行尾挂图+坚果云/学习套装数据/速记图/上传排队）；其余一行未动 /* v0.9.1 2026-09-14：HX.store.sync批量抱回（壳v1.7.3 readFiles桥）——多件对账一次JNI全读回，免逐件SAF往返卡主线程（洪老师真机报"点大管家变蓝后定住"，病根=5本账本连环读各约2秒）；旧壳无readFiles自动回落逐件读，逻辑一字未改 /* v0.9.0 2026-09-13：常驻通信管家双通道（洪老师拍板一次做完）——新增HX.mg投信层（壳v1.7.0管家在则GitHub联网写信mg_out_给后台服务代发+回信mg_in_轮询取，网页线程不碰网络；管家不在自动走老fetch，全家零改动）+HX.big大件异步编解码（TextEncoder/Decoder分块让气，无则回落老同步）；改道点=gh.fetch一个收口；_autoNetOk闸门规矩不变 /* v0.8.0 2026-09-13：开门静默令（洪老师拍板：开门不许自动同步/不许自动查版本，点了才做）——全家自动联网（dav rescue/mirror、relay闲时送与pull、selfUp、selfCheck、速记开门补推）统一过HX._autoNetOk闸门：默认全关，3秒内真有点击（=点了按钮）或localStorage hx_auto_net=1才放行；新增HX.syncNow()一件全手动补做；本地存取（HX.store/localStorage/壳文件）不联网不受影响；其余一行未动 /* v0.7.0 2026-09-12：HX.dav全异步化（根治#75/#77同步联网卡死主线程）——走壳v1.6.0新davAsync后台桥+HX._davCb回调，ts对账逻辑一行未改；旧壳没davAsync一律静默跳过绝不回退同步老路，壳升级后自动恢复 */ /* v0.6.0 2026-09-12 地基二期：HX.dav的rescue升级为ts对账（云端新超5秒留档_冲突_后盖回/本地新或相等顺手davUp追平/云端缺顺手davUp补齐） */ /* v0.5.0 2026-09-12：新增中转邮路HX.relay+坚果云腿HX.dav */ /* v0.4.0 2026-09-12：新增仓管员HX.store，地基工程一期规矩A/B落地 */ /* v0.3.0 2026-09-11：部件自升级HX.selfUp（病根：壳里旧版公共件永远不升级→AI面板等新功能装了也白装；开门闲时20秒比对云端version-hx-common.json，旧了静默下载写回授权文件夹，下次开门用新的，全程不弹窗） */ /* v0.2.0 2026-09-11：新增HX.ai统一AI面板（两层结构+定位置顶+AI功能生成器，洪老师2026-09-11拍板方法论落地试点）；HX.sj面板加「🤖AI」入口钮；其余一行未动 */ /* v0.1.1 2026-09-10：HX.sj.init 加可选 extraBtn（大管家#43「补充上一条」补回，洪老师点名功能）；不传仍是2钮版，默认行为不变 */
   if(window.HX && window.HX.HX_COMMON_VERSION){ return; } /* 已装过不重复装 */
   var HX = { HX_COMMON_VERSION: HX_COMMON_VERSION, ok: true };
   function warn(m){ try{ if(window.console && console.warn) console.warn('[hx-common] '+m); }catch(e){} }
@@ -890,6 +898,7 @@
     var _getSection = null;   /* init传：返回当前界面名（定位置顶用） */
     var _send = null;         /* init传（可选）：宿主AI通道 send(sys,user,onOk,onErr)，只给生成器条目用 */
     var _litText = null;      /* v0.16.0 刀A init传（可选）：宿主点亮取文钩子 litText(pkObj)→脱敏后文本或''；只给自建条目用，HX.ai自身不新造取数通道 */
+    var _editHooks = null;    /* v0.16.3 刀B init传（可选）：宿主编辑页钩子 editHooks(itemId, idx, api)；不传=编辑页容器留空，版面与老版一致 */
     var _inited = false, _uiOk = false, _inRun = false;
     function $(id){ return document.getElementById(id); }
     function aiToast(m){ var t=$('hxAiToast'); if(!t) return; t.textContent=m; t.style.display='block'; clearTimeout(t._t); t._t=setTimeout(function(){ t.style.display='none'; },2600); }
@@ -1046,7 +1055,8 @@
         '<button id="hxAiAIEdit" type="button" class="hxAiBtn2">🤖 让AI帮我改</button>'+
         '<button id="hxAiSwap" type="button" class="hxAiBtn2">📥 自建的灌进来</button>'+
         '<button id="hxAiSwapAI" type="button" class="hxAiBtn2">🤖 照自建的改</button>'+
-        '</div>';
+        '</div>'+
+        '<div id="hxAiHostBtns"></div>'; /* v0.16.3 刀B：宿主钩子容器——宿主传了editHooks才有内容，没传恒空不占版面（空div无样式零影响） */
       var ta=$('hxAiTa'); ta.value=effPrompt(it, i);
       $('hxAiBack').addEventListener('click', function(){ renderL2(it); });
       $('hxAiSend').addEventListener('click', function(){ doSend(it, i, ta.value); });
@@ -1097,6 +1107,28 @@
           });
         }catch(e){ warn('ai 照自建改: '+((e&&e.message)||e)); }
       });
+      /* v0.16.3 刀B：宿主编辑页钩子——渲染编辑页末尾调 _editHooks(itemId, idx, api)，宿主往 #hxAiHostBtns 容器里加自家钮；
+         api.saveNow与「💾存为默认」同一条存储链（it.pset优先，否则覆盖账本hx_aiprompt_v1）；宿主没传钩子/钩子返回空=容器留空，版面同老版；全try护栏 */
+      try{
+        if(typeof _editHooks==='function'){
+          var _hb=$('hxAiHostBtns');
+          if(_hb){
+            _editHooks(String(it.id||''), i, {
+              itemId:String(it.id||''), idx:i,
+              getText:function(){ try{ return String(ta.value||''); }catch(e){ return ''; } },
+              setText:function(v){ try{ ta.value=String(v==null?'':v); }catch(e){} },
+              saveNow:function(){
+                try{
+                  if(typeof it.pset==='function'){ it.pset(i, ta.value); }
+                  else { var ov2=ovLoad(); if(!ov2[it.id]) ov2[it.id]={}; ov2[it.id][i]=ta.value; ovSave(ov2); }
+                  aiToast('💾 已存为默认');
+                  return true;
+                }catch(e){ warn('ai saveNow: '+((e&&e.message)||e)); return false; }
+              }
+            });
+          }
+        }
+      }catch(e){ warn('ai editHooks: '+((e&&e.message)||e)); }
     }
     /* v0.16.0 刀B/C/D共用：问一句人话（宿主hxAsk优先，没有则window.prompt）；取消回null，空串trim后回'' */
     function aiAskHuman(q, cb){
@@ -1355,6 +1387,7 @@
         if(typeof opt.getSection === 'function') _getSection = opt.getSection;
         if(typeof opt.send === 'function') _send = opt.send;
         if(typeof opt.litText === 'function') _litText = opt.litText; /* v0.16.0 刀A：宿主点亮取文钩子 */
+        if(typeof opt.editHooks === 'function') _editHooks = opt.editHooks; /* v0.16.3 刀B：宿主编辑页钩子（不传=容器留空，老版行为不变） */
         if(_inited){ return; } /* 重复init只更新manifest等参数，不重复绑 */
         _inited = true;
         var boot = function(){
@@ -1383,6 +1416,20 @@
     };
     /* HX.ai.ready()：面板是否可用（UI注入成功）；面板触发run执行期间短暂返false防套娃 */
     ai.ready = function(){ return !!(_uiOk && !_inRun); };
+    /* v0.16.3 刀A HX.ai.openEdit(id, idx)：open(id)进该条目第2层后，模拟第idx套提示词按钮的现有点击链
+       （第2层渲染出的 [data-hxaip="idx"] 行 .click()）自动进该套编辑页——编辑页代码不复制不另起炉灶；
+       条目不存在/没这套/UI没就位一律静默返回false，成功返回true */
+    ai.openEdit = function(id, idx){
+      try{
+        ai.open(id); /* 复用open：UI没就位它会自己ensureUI，都不行直接return */
+        var p=$('hxAiPanel'); if(!p || p.style.display!=='block') return false;
+        var body=$('hxAiBody'); if(!body) return false;
+        var btn=body.querySelector('[data-hxaip="'+parseInt(idx,10)+'"]');
+        if(!btn) return false;
+        btn.click(); /* 现有点击链：renderL2绑的click→renderPEdit(it, idx) */
+        return true;
+      }catch(e){ warn('ai openEdit: '+((e&&e.message)||e)); return false; }
+    };
     /* v0.11.0 HX.ai.pget(itemId, idx)：宿主函数发送前查一句——一次性待发>覆盖账本>都没有返null（宿主用自己内嵌出厂值）。
        用法：sys = (window.HX&&HX.ai&&HX.ai.pget ? HX.ai.pget('条目id',0) : null) || sys; */
     ai.pget = function(itemId, idx){
