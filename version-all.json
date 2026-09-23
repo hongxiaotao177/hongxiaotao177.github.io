@@ -1,6 +1,6 @@
 {
  "v": 1,
- "t": 1790159169215,
+ "t": 1790171844005,
  "items": [
   {
    "key": "index",
@@ -10,9 +10,9 @@
   },
   {
    "key": "guanjia",
-   "version": "0.56.3",
+   "version": "0.56.4",
    "dl": "software-guanjia.html",
-   "sig": "6bb4857f64176dc1"
+   "sig": "d33e95612e36c923"
   },
   {
    "key": "hx-common",
@@ -21,5 +21,5 @@
    "sig": "ee4a039b65105a47"
   }
  ],
- "note": "班①：guanjia升0.56.3+hx-common升0.16.3（批改病历三刀+p6补窟窿）；index 1.19.8不动"
+ "note": "班②：guanjia升0.56.4（千问流式+挂后台等+全自动磨提示词）；index 1.19.8/hx-common 0.16.3不动"
 }
