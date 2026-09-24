@@ -1,6 +1,6 @@
 {
  "v": 1,
- "t": 1790238090052,
+ "t": 1790255334494,
  "items": [
   {
    "key": "index",
@@ -10,16 +10,16 @@
   },
   {
    "key": "guanjia",
-   "version": "0.56.7",
+   "version": "0.56.8",
    "dl": "software-guanjia.html",
-   "sig": "9f711a610f24eb96"
+   "sig": "58205328e6d70087"
   },
   {
    "key": "hx-common",
-   "version": "0.16.4",
+   "version": "0.17.0",
    "dl": "hx-common.js",
-   "sig": "7cd786dabc474c7f"
+   "sig": "a314100ea152f05a"
   }
  ],
- "note": "班②：guanjia升0.56.7（Kimi质检空包根治+Kimi流式逐字吐+挂后台明示+绿钮原地进度条）；index 1.19.8/hx-common 0.16.4不动"
+ "note": "班②一期：guanjia 0.56.8+hx-common 0.17.0（面板平铺/带话/收编）；index 1.19.8不动"
 }
