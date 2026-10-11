@@ -1,6 +1,6 @@
 {
- "version": "1.19.9",
+ "version": "1.19.10",
  "dl": "index.html",
- "note": "脱敏间上户口：主界面加脱敏间卡片+SUITE/CUR挂tuomin，单体随检查新版本自动装机",
- "sig": "9677feb73e15c1b8"
+ "note": "修脱敏间404：CUR.tuomin改0（未装填0老坑），检查新版本即自动下载脱敏单体",
+ "sig": "e6ae447d8ddc838e"
 }
