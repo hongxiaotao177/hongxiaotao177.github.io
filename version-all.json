@@ -1,12 +1,12 @@
 {
  "v": 1,
- "t": 1791687270544,
+ "t": 1791688363715,
  "items": [
   {
    "key": "index",
-   "version": "1.19.9",
+   "version": "1.19.10",
    "dl": "index.html",
-   "sig": "9677feb73e15c1b8"
+   "sig": "e6ae447d8ddc838e"
   },
   {
    "key": "guanjia",
@@ -27,5 +27,5 @@
    "sig": "576a2e246b58ffa7"
   }
  ],
- "note": "主界面v1.19.9脱敏间上户口；脱敏单体1.0.0立牌；guanjia 0.57.0/hx-common 0.17.0不动"
+ "note": "主界面v1.19.10修脱敏间404；tuomin 1.0.0/guanjia 0.57.0不动"
 }
