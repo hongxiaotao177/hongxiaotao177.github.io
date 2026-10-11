@@ -1,6 +1,6 @@
 {
- "version": "1.0.0",
+ "version": "1.0.1",
  "dl": "software-tuomin.html",
- "note": "脱敏单体立户：脱敏间从大管家分家自立（130函数原样搬，引擎与母本逐字节一致）",
- "sig": "576a2e246b58ffa7"
+ "note": "第②步首单刀2：reagg补录后fileMeta.size记全长（原记增量长度）",
+ "sig": "5835a12ec0aa10b6"
 }
