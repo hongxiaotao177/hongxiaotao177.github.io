@@ -1,6 +1,6 @@
 {
- "version": "1.0.1",
+ "version": "1.0.2",
  "dl": "software-tuomin.html",
- "note": "第②步首单刀2：reagg补录后fileMeta.size记全长（原记增量长度）",
- "sig": "5835a12ec0aa10b6"
+ "note": "v1.0.2：关于页版本字跟上真身（v1.0.1忘改关于页，认账补刀）；v1.0.1：reagg补录size记全长",
+ "sig": "fc1db1d8a58e8f4a"
 }
