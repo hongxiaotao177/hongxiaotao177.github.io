@@ -5,8 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>脱敏单体</title>
 <!--
-  红小涛学习套装 · 脱敏单体 v1.0.3
+  红小涛学习套装 · 脱敏单体 v1.0.4
   定位：病历脱敏/聚合/标红/规则库/AI体检 单体工具（原病人大管家「🛡 脱敏间」整搬分出）。
+    v1.0.4 2026-10-11 班④（洪老师拍板乙类「都做」）：乙②单体侧storage监听dsm_inbox_v1，单体开着（含后台tab）管家一寄信立刻收件自动脱敏聚合寄回，不用重开门；红线零动。
     v1.0.3 2026-10-11 班③（DeepSeek研究后洪老师拍板"全修"）：双框破出640px卡死电脑撑满屏+顶栏版本字补上+导出单体修好可含数据（dsm_exportCurrent）+AI分析钮直连体检站+帮助弹窗瘦身+死代码清理（foldPre/foldToggle/orientCheck/clearAllData/死CSS/死分支）+报告落款与console的v5.0改脱敏单体；
     v1.0.2 2026-10-11 班②补刀（洪老师真机报"关于页还显1.0.0"）：dsm_aboutInfo关于页版本字跟上真身（v1.0.1忘改关于页，认账）；
     v1.0.1 2026-10-11 班②（洪老师拍板「我选甲」，DeepSeek流水线真单首跑，Kimi终审采用第1轮回件）：
@@ -64,7 +65,7 @@
 <body>
 <div class="wrap">
   <h1>🛡 脱敏单体</h1>
-  <div class="ver">v1.0.3 · 自病人大管家 v0.56.8 分出 · 病历脱敏/聚合/标红/规则库/AI体检</div>
+  <div class="ver">v1.0.4 · 自病人大管家 v0.56.8 分出 · 病历脱敏/聚合/标红/规则库/AI体检</div>
   <style>
     /* v0.21.1 洪老师拍板：不分横竖屏一律左右分栏（左原文标红、右脱敏后各半宽，字号不动，字随栏宽折行） */
     /* v0.37.0 挂号#113（2026-09-17 09:10速记，洪老师拍板）：窄屏手机预览只显两行字（未脱敏原文一行/脱敏后一行），点哪行全屏看哪份；宽屏电脑照旧左右分栏一字不变 */
@@ -1564,7 +1565,7 @@ function dsm_exportFull(){
         var blob=new Blob([html], {type:'text/html;charset=utf-8'});
         var a=document.createElement('a');
         a.href=URL.createObjectURL(blob);
-        a.download='脱敏单体_v1.0.3.html'; /* v1.0.3：SW_VERSION在单体不存在会炸+文件名母本痕迹，改硬编码脱敏单体 */
+        a.download='脱敏单体_v1.0.4.html'; /* v1.0.3：SW_VERSION在单体不存在会炸+文件名母本痕迹，改硬编码脱敏单体 */
         document.body.appendChild(a); a.click(); document.body.removeChild(a);
         dsm_showToast('📦 完整单文件已导出（含PDF引擎）','success');
     }
@@ -1605,7 +1606,7 @@ function dsm_exportCurrent(){
             var pos=html.lastIndexOf('</body>');
             html=html.slice(0,pos)+inject+html.slice(pos);
         }
-        var fname=withData ? '脱敏单体_v1.0.3_含数据.html' : '脱敏单体_v1.0.3_干净.html';
+        var fname=withData ? '脱敏单体_v1.0.4_含数据.html' : '脱敏单体_v1.0.4_干净.html';
         var blob=new Blob([html], {type:'text/html;charset=utf-8'});
         var a=document.createElement('a');
         a.href=URL.createObjectURL(blob);
@@ -3236,7 +3237,7 @@ function dsm_exportReport() {
         document.body.removeChild(link);
         setTimeout(function(){ URL.revokeObjectURL(link.href); }, 5000);
         /* v0.12.0 D1 导出分块防截断：整份报告（含几十页病历PDF文本，常超100KB）一次性过JS桥会被WebView悄悄截断——
-           验单排前保住、病历排后被切掉（实机导出文件结尾没有「由「脱敏单体 v1.0.3」生成」行，已实锤）。
+           验单排前保住、病历排后被切掉（实机导出文件结尾没有「由「脱敏单体 v1.0.4」生成」行，已实锤）。
            修法：写完立刻readFile回读atob对账（长度+尾部120字）→对不上自动重试一次→仍不行拆_1of2/_2of2两块各写各核对→全失败才红字「没存全」。
            注意：LearnShell只有writeFile整写接口（applyUpdateBegin/Chunk/End三件套是壳自更新专用、写壳内目录不是授权文件夹，不可用），
            所以「分块」=拆成两个文件分别整写、分别回读核对。浏览器blob下载路径不动，明示「已下载：文件名」 */
@@ -3293,7 +3294,7 @@ function dsm_shellWriteVerified(fileName, content) {
                 var back = null; try { back = LearnShell.readFile(name); } catch(e) {}
                 if (back) {
                     var dec = ''; try { dec = decodeURIComponent(escape(atob(back))); } catch(e) {}
-                    /* 对账：长度一致 + 尾部120字一致（尾部含「由「脱敏单体 v1.0.3」生成」标志行，截断必露馅） */
+                    /* 对账：长度一致 + 尾部120字一致（尾部含「由「脱敏单体 v1.0.4」生成」标志行，截断必露馅） */
                     if (dec.length === text.length && dec.slice(-120) === text.slice(-120)) return true;
                 }
             } catch(e) {}
@@ -3355,7 +3356,7 @@ function dsm_buildReportHtml(patient, data) {
     body += '<div style="white-space:pre-wrap;background:#f5f0f9;padding:14px;border-radius:5px;font-size:13px;">'+(dsm_APP.aiPrompt||'未设置')+'</div></div>';
     if (body === '') body = '<p style="color:#999;">暂无数据</p>';
     
-    return '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+patient+' 综合报告</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Microsoft YaHei";background:#f5f7fa;color:#333;padding:30px}.container{max-width:1000px;margin:0 auto;background:#fff;border-radius:12px;padding:30px;box-shadow:0 4px 20px rgba(0,0,0,.08)}h1{font-size:26px;color:#0d47a1;border-bottom:3px solid #1a73e8;padding-bottom:12px;margin-bottom:20px}.meta{color:#888;font-size:14px;margin-bottom:20px}.section-block{margin-bottom:24px;padding:16px 20px;background:#f8f9fb;border-radius:8px;border-left:4px solid #1a73e8}.section-block h2{font-size:18px;color:#0d47a1;margin-bottom:10px}.footer{margin-top:30px;padding-top:16px;border-top:1px solid #e8edf5;font-size:12px;color:#999;text-align:center}.disclaimer{background:#fef9e7;padding:12px 16px;border-radius:6px;font-size:13px;color:#7d6608;margin-bottom:20px}</style></head><body><div class="container"><h1>🏥 患者综合医疗报告（脱敏版）</h1><div class="meta">患者：'+patient+' ｜ 生成日期：'+new Date().toLocaleString()+'</div><div class="disclaimer">⚠️ 本报告已自动脱敏，仅供AI分析参考</div>'+body+'<div class="footer">由「脱敏单体 v1.0.3」生成</div></div></body></html>';
+    return '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+patient+' 综合报告</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Microsoft YaHei";background:#f5f7fa;color:#333;padding:30px}.container{max-width:1000px;margin:0 auto;background:#fff;border-radius:12px;padding:30px;box-shadow:0 4px 20px rgba(0,0,0,.08)}h1{font-size:26px;color:#0d47a1;border-bottom:3px solid #1a73e8;padding-bottom:12px;margin-bottom:20px}.meta{color:#888;font-size:14px;margin-bottom:20px}.section-block{margin-bottom:24px;padding:16px 20px;background:#f8f9fb;border-radius:8px;border-left:4px solid #1a73e8}.section-block h2{font-size:18px;color:#0d47a1;margin-bottom:10px}.footer{margin-top:30px;padding-top:16px;border-top:1px solid #e8edf5;font-size:12px;color:#999;text-align:center}.disclaimer{background:#fef9e7;padding:12px 16px;border-radius:6px;font-size:13px;color:#7d6608;margin-bottom:20px}</style></head><body><div class="container"><h1>🏥 患者综合医疗报告（脱敏版）</h1><div class="meta">患者：'+patient+' ｜ 生成日期：'+new Date().toLocaleString()+'</div><div class="disclaimer">⚠️ 本报告已自动脱敏，仅供AI分析参考</div>'+body+'<div class="footer">由「脱敏单体 v1.0.4」生成</div></div></body></html>';
 }
 
 // ============================================================
@@ -3420,7 +3421,7 @@ function dsm_buildReportTxt(patient, data) {
     lines.push(dsm_APP.aiPrompt || '未设置');
     lines.push('');
     lines.push('----------------------------------------');
-    lines.push('由「脱敏单体 v1.0.3」生成');
+    lines.push('由「脱敏单体 v1.0.4」生成');
     return lines.join('\n');
 }
 
@@ -3494,7 +3495,7 @@ function dsm_buildReportMd(patient, data) {
     lines.push('');
     lines.push('---');
     lines.push('');
-    lines.push('*由「脱敏单体 v1.0.3」生成*');
+    lines.push('*由「脱敏单体 v1.0.4」生成*');
     return lines.join('\n');
 }
 
@@ -3860,13 +3861,14 @@ function dsm_closeSettings() {
 // ============================================================
 function dsm_aboutInfo() {
     alert(
-        '🏥 脱敏单体 v1.0.3（自病人大管家 v0.56.8 分出）\n\n' +
+        '🏥 脱敏单体 v1.0.4（自病人大管家 v0.56.8 分出）\n\n' +
         '【用法速览】\n' +
         '① 收病历→自动脱敏+自动聚合，一般不用手动点；\n' +
         '② 左框=脱敏前原文（红字标出被盖信息，自己看），右框=脱敏后（喂AI用）；\n' +
         '③ 「🧩 重做聚合」一般不用点——删了聚合件想补、改了规则想重聚才点；\n' +
         '④ 「📤 导出单体」可把当前这份（可含数据）拷到别的电脑双击就用。\n\n' +
         '【最近版本】\n' +
+        '• v1.0.4：脱敏单体开着（含后台页）管家一寄信立刻收件自动脱敏聚合寄回，不用重开门；\n' +
         '• v1.0.3：双框电脑撑满屏；顶栏版本字修好；导出单体可含数据；AI分析钮直连体检站；帮助瘦身；清死代码；\n' +
         '• v1.0.2：关于页版本字跟上真身；\n' +
         '• v1.0.1：reagg补录size记全长；\n' +
@@ -3935,7 +3937,7 @@ function dsm_init() {
        引擎获取不过桥（完整性验+IndexedDB缓存+公开站现取），全try静默失败不碍开门 */
     try{ setTimeout(function(){ try{ dsm_loadPDFEngine(); }catch(e){} }, 4000); }catch(e){}
     
-    console.log('🏥 脱敏单体 v1.0.3 已加载');
+    console.log('🏥 脱敏单体 v1.0.4 已加载');
     console.log('📊 规则统计：职称 ' + dsm_APP.rules.titles.length + ' 条，医院 ' + dsm_APP.rules.hospitals.length + ' 条');
     console.log('🔴 敏感词 ' + dsm_APP.rules.keywords.length + ' 条，🚫 排除词 ' + dsm_APP.rules.excludes.length + ' 条');
     console.log('👤 百家姓 ' + dsm_SURNAMES.length + ' 个');
@@ -3943,6 +3945,7 @@ function dsm_init() {
 /* v1.0.0（分家第一刀·SPEC 4）：单体开门即 dsm_init + dsmh_restore（恢复脱敏间存档）+ dsm_inboxRead（收管家门口来信）；
    闲4秒预装PDF引擎在dsm_init内保留；折叠机制（makeFoldable/foldSetters/foldSave/dsm_firstExpand）是管家的，单体平铺直开不搬 */
 document.addEventListener('DOMContentLoaded', function(){ try{ dsm_init(); }catch(e){} try{ dsmh_restore(); }catch(e){} try{ dsm_inboxRead(); }catch(e){} });
+try{ window.addEventListener('storage', function(e){ try{ if(e&&e.key==='dsm_inbox_v1'&&e.newValue){ dsm_inboxRead(); } }catch(_e){} }); }catch(_e){} /* v1.0.4 乙②单体侧：管家在别的tab一寄信，本页开着就立刻收件自动脱敏聚合寄回，不用重开门 */
 
 /* ═════ v0.7.0 拖放进件：webkitGetAsEntry递归遍历文件夹，readEntries循环读批 ═════ */
 document.addEventListener('DOMContentLoaded', function() {
