@@ -5,8 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>脱敏单体</title>
 <!--
-  红小涛学习套装 · 脱敏单体 v1.1.1
+  红小涛学习套装 · 脱敏单体 v1.2.0
   定位：病历脱敏/聚合/标红/规则库/AI体检 单体工具（原病人大管家「🛡 脱敏间」整搬分出）。
+    v1.2.0 2026-10-11 班⑨（洪老师拍板"开工"，AI审标红自动改规则+三层后悔药，DeepSeek实现+Kimi终审亲手落地）：刀1点亮件随行发AI——HX.ai.init补传litText钩子（新函数dsm_litTextForAI，点亮标红件全文+现行规则清单+⟦R⟧说明随行，开关hx_dsm_lit_off）；刀2发送前人名安全闸（新函数dsm_maskNamesInMarks，⟦R⟧内2~4全汉字+常见姓盖▢▢防医生真名漏给AI，开关hx_dsm_maskname_off）；刀3 AI回信带===规则开始===免同意自动改规则（新函数dsm_aiRuleAutoApply，改前快照→应用→回读核对→不符自动还原→留版本库，开关hx_dsm_autorule_off）；刀4版本库加「↩️倒回上一版」快钮（新函数dsm_rulelibBack，可连点连倒三层以上，后悔药）。红线（脱敏引擎三件套/buildAIView/buildHalfView/aiChat/dsm_parseAIRules/dsm_ruleApply/dsm_rulelibAdd）一字符未动。
     v1.1.1 2026-10-11 班⑧（洪老师拍板"同意开始"，标红根治三刀，DeepSeek实现+Kimi终审）：刀1 _noRaw判据改数有效红对（新函数dsm_validRedPairs，假红空壳对不算数，开关hx_dsm_redcnt_off）；刀2 viewFile含⟦R⟧件不二次脱敏+默认显示标红pane+两pane标签随件出词（开关hx_dsm_viewfix_off）；刀3 剥孤儿改栈式配对剥（新函数dsm_stripOrphanMarks，四站点统一调用，开关hx_dsm_orphan_off）。引擎三件套与dsm_buildAIView一字符未动。
     v1.1.0 2026-10-11 班⑥（洪老师拍板开工，DeepSeek回件⑤采用+Kimi终审亲手落地截断部分）：刀1半脱敏件顶替纯标红件（dsm_buildHalfView=先标红⟦R⟧再盖硬隐私占位、已标红处跳过不盖，引擎三件套零动）；刀2版面——两小方块窄屏常显只露几行/宽屏照旧撑满、点框看全文长按点亮、删「交给AI查脱敏」钮AI归浮窗、病人卡只显聚合件、数据区空壳删、提示词静态占位框（aiPrompt变量留）、加🗑️重新开始（清内存+存档+锁+保险柜，名册成品不动）；刀3撤「只聚一次」——dsm_autoAggDone改防递归锁，收件/重新开始重置锁必重聚；刀4补浮窗接入HX.sj.init/HX.ai.init（分家漏搬的真bug）+DSM_AI_MANIFEST体检条目。终审修回件一处错：bigZone⟦R⟧转换改剥孤儿成对转span（回件把⟦R⟧换成[敏感]字样整span会丢内容）。
     v1.0.4 2026-10-11 班④（洪老师拍板乙类「都做」）：乙②单体侧storage监听dsm_inbox_v1，单体开着（含后台tab）管家一寄信立刻收件自动脱敏聚合寄回，不用重开门；红线零动。
@@ -67,7 +68,7 @@
 <body>
 <div class="wrap">
   <h1>🛡 脱敏单体</h1>
-  <div class="ver">v1.1.1 · 自病人大管家 v0.56.8 分出 · 病历脱敏/聚合/半脱敏标红/规则库/AI体检</div>
+  <div class="ver">v1.2.0 · 自病人大管家 v0.56.8 分出 · 病历脱敏/聚合/半脱敏标红/规则库/AI体检</div>
   <style>
     /* v0.21.1 洪老师拍板：不分横竖屏一律左右分栏（左原文标红、右脱敏后各半宽，字号不动，字随栏宽折行） */
     /* v0.37.0 挂号#113（2026-09-17 09:10速记，洪老师拍板）：窄屏手机预览只显两行字（未脱敏原文一行/脱敏后一行），点哪行全屏看哪份；宽屏电脑照旧左右分栏一字不变 */
@@ -3118,6 +3119,7 @@ function dsm_rulelibRender() {
     if (!box) return;
     var lib = dsm_rulelibLoad(), cur = dsm_rulelibCur();
     var html = '';
+    if (lib.length >= 2) { html += '<div style="padding:4px 0 6px;"><button style="padding:6px 14px;font-size:14px;border:1px solid #c0392b;color:#c0392b;background:#fff;border-radius:6px;cursor:pointer;font-weight:700;" onclick="dsm_rulelibBack()">↩️ 倒回上一版（后悔药，可连点连倒）</button></div>'; } /* v1.2.0（班⑨）刀4：后悔药快钮 */
     if (!lib.length) { html = '<div style="font-size:12px;color:#999;padding:6px 0;">版本库是空的</div>'; }
     lib.forEach(function(v, i) {
         var d = new Date(v.time || 0);
@@ -3185,6 +3187,17 @@ function dsm_rulelibUse(id) {
     try { localStorage.setItem(LS_RULELIB_CUR, id); } catch(e) {}
     dsm_rulelibRender();
     dsm_showToast('✅ 已换用规则v' + (lib.indexOf(hit) + 1) + '（' + (hit.note || '') + '）', 'success');
+}
+/* v1.2.0（2026-10-11 班⑨）刀4：版本库「↩️倒回上一版」快钮——后悔药，可连点连倒（三层以上都倒得回去） */
+function dsm_rulelibBack() {
+    var lib = dsm_rulelibLoad(), cur = dsm_rulelibCur();
+    if (lib.length < 2) { dsm_showToast('版本库还不够两版，没得更倒', 'warn'); return; }
+    var pos = -1;
+    for (var i = 0; i < lib.length; i++) { if (lib[i].id === cur) { pos = i; break; } }
+    if (pos < 0) pos = lib.length - 1;
+    if (pos <= 0) { dsm_showToast('已经是最早一版了，没得更倒', 'warn'); return; }
+    dsm_rulelibUse(lib[pos - 1].id);
+    dsm_showToast('↩️ 已倒回第' + pos + '版（这版之前还有' + (pos - 1) + '版可再倒）', 'success', 4000);
 }
 function dsm_rulelibNote(id) {
     var lib = dsm_rulelibLoad(), hit = null;
@@ -3929,6 +3942,7 @@ function dsm_aboutInfo() {
         '③ 文件行只摆聚合两件，原始件在不显示；「🗑️重新开始」清空该病人不留痕（名册成品不动）；\n' +
         '④ 「📤 导出单体」可把当前这份（可含数据）拷到别的电脑双击就用。\n\n' +
         '【最近版本】\n' +
+        '• v1.2.0：点亮标红件随行发AI查规则（发送前⟦R⟧内人名自动盖▢▢）；AI回了规则意见自动改规则免同意（改前自动快照）；设置区规则版本库加↩️倒回上一版后悔药；\n' +
         '• v1.1.1：标红根治三刀——假红件不再混进标红件、看标红件默认见红不被二次盖星、剥孤儿不再误伤真红；\n' +
         '• v1.1.0：半脱敏件顶替纯标红件；两小方块手机常显、点看全文长按点亮；AI钮归浮窗（浮窗补上）；加重新开始钮；撤只聚一次老规矩；\n' +
         '• v1.0.4：脱敏单体开着（含后台页）管家一寄信立刻收件自动脱敏聚合寄回，不用重开门；\n' +
@@ -4013,7 +4027,8 @@ document.addEventListener('DOMContentLoaded', function(){ try{ dsm_init(); }catc
   try{ if(window.HX&&HX.sj&&HX.sj.init) HX.sj.init({app:'脱敏间'}); }catch(e){}
   try{ if(window.HX&&HX.ai&&HX.ai.init) setTimeout(function(){ try{ HX.ai.init({app:'脱敏间', manifest:(typeof DSM_AI_MANIFEST!=='undefined'?DSM_AI_MANIFEST:[]),
     getSection:function(){ return '脱敏间'; },
-    send:function(sys,user,onOk,onErr){ aiChat(sys,user,onOk,onErr,{what:'脱敏间'}); }
+    litText:function(pk){ try{ return dsm_litTextForAI(pk); }catch(e){ return ''; } }, /* v1.2.0（班⑨）刀1：点亮件取文钩子（补上传了点亮件内容才真正随行发AI） */
+    send:function(sys,user,onOk,onErr){ aiChat(sys,user,function(r){ try{ if(r&&String(r).indexOf('===规则开始===')>=0){ dsm_aiRuleAutoApply(r); } }catch(e){} onOk(r); },onErr,{what:'脱敏间'}); } /* v1.2.0（班⑨）刀3：回信带规则块就免同意自动改规则，面板照旧显示原话 */
   }); }catch(e){} },0); }catch(e){}
 });
 try{ window.addEventListener('storage', function(e){ try{ if(e&&e.key==='dsm_inbox_v1'&&e.newValue){ dsm_inboxRead(); } }catch(_e){} }); }catch(_e){} /* v1.0.4 乙②单体侧：管家在别的tab一寄信，本页开着就立刻收件自动脱敏聚合寄回，不用重开门 */
@@ -4241,6 +4256,103 @@ function dsm_stripOrphanMarks(s) {
     out.push(s.slice(last));
     while (stack.length) { out[stack.pop()] = ''; }
     return out.join('');
+}
+/* ═════ v1.2.0（2026-10-11 班⑨，洪老师拍板"开工"，DeepSeek实现+Kimi终审）刀1：点亮件取文供AI ═════
+   pk无效/取不到→返''；取到→先过人名闸，再拼【现行规则】清单+⟦R⟧说明行+【半脱敏标红件】全文。 */
+function dsm_litTextForAI(pk) {
+    try {
+        if (localStorage.getItem('hx_dsm_lit_off') === '1') return '';
+        if (!pk || !pk.pkey || !pk.fname) return '';
+        var text = '';
+        try { var p1 = dsm_APP.patients[pk.pkey]; if (p1 && p1.content && p1.content[pk.fname]) text = p1.content[pk.fname].text || ''; } catch(e) {}
+        if (!text) {
+            try { var p2 = dsm_APP.patients[dsm_APP.currentPatient]; if (p2 && p2.content && p2.content[pk.fname]) text = p2.content[pk.fname].text || ''; } catch(e) {}
+        }
+        if (!text) return '';
+        text = dsm_maskNamesInMarks(String(text));
+        var snap = dsm_rulesSnapshot();
+        var lines = [];
+        lines.push('【现行规则】');
+        (snap.titles || []).forEach(function(t) { lines.push('职称:' + t); });
+        (snap.hospitals || []).forEach(function(h) { lines.push('医院:' + h); });
+        (snap.keywords || []).forEach(function(k) { lines.push('关键词:' + k); });
+        (snap.excludes || []).forEach(function(x) { lines.push('排除:' + x); });
+        /* staff职工名录不附——本院真名单不出门 */
+        lines.push('说明：⟦R⟧…⟦/R⟧包住的是软件标红认为可疑的词；▢▢是被我盖掉的人名。请审哪些红标错了、哪些漏标，并把改好的完整规则按===规则开始===…===规则结束===格式输出。');
+        lines.push('');
+        lines.push('【半脱敏标红件】');
+        lines.push(text);
+        return lines.join('\n');
+    } catch(e) { return ''; }
+}
+/* v1.2.0（班⑨）刀2：发送前人名安全闸——⟦R⟧内"像人名"（2~4全汉字+首字为常见姓）盖成▢▢；
+   「性别」「床号」这类红词不是姓氏开头会原样保留，AI才看得见原词审误伤。开关 hx_dsm_maskname_off=1 关闸原样发 */
+function dsm_maskNamesInMarks(text) {
+    try {
+        var s = String(text == null ? '' : text);
+        if (localStorage.getItem('hx_dsm_maskname_off') === '1') return s;
+        var XING = '赵钱孙李周吴郑王冯陈褚卫蒋沈韩杨朱秦尤许何吕施张孔曹严华金魏陶姜戚谢邹喻柏水窦章云苏潘葛奚范彭郎鲁韦昌马苗凤花方俞任袁柳酆鲍史唐费廉岑薛雷贺倪汤滕殷罗毕郝邬安常乐于时傅皮卞齐康伍余元卜顾孟平黄和穆萧尹姚邵湛汪祁毛禹狄米贝明臧计伏成戴谈宋茅庞熊纪舒屈项祝董梁杜阮蓝闵席季麻强贾路娄危江童颜郭梅盛林刁钟徐邱骆高夏蔡田樊胡凌霍虞万支柯昝管卢莫经房裘缪干解应宗丁宣贲邓郁单杭洪包诸左石崔吉钮龚';
+        var re = /⟦R⟧([\s\S]*?)⟦\/R\⟧/g;
+        return s.replace(re, function(full, inner) {
+            var c = String(inner == null ? '' : inner).replace(/^\s+|\s+$/g, '');
+            if (c.length >= 2 && c.length <= 4 && /^[一-龥]+$/.test(c) && XING.indexOf(c.charAt(0)) >= 0) {
+                return '⟦R⟧▢▢⟦/R⟧';
+            }
+            return full;
+        });
+    } catch(e) { return String(text == null ? '' : text); }
+}
+/* v1.2.0（班⑨）刀3：AI回信带规则块→免同意自动改规则（改前快照→应用→回读核对→不符自动还原→留版本库；
+   核对思路照抄dsm_aiCheckRvApply第三关，跳过人工清单。开关 hx_dsm_autorule_off=1 不自动改） */
+function dsm_aiRuleAutoApply(raw) {
+    try {
+        if (localStorage.getItem('hx_dsm_autorule_off') === '1') {
+            dsm_showToast('AI回了规则意见（自动改规则已关，要去设置区📥导入或开 hx_dsm_autorule_off=0）', 'warn', 5000);
+            return;
+        }
+        var parsed = dsm_parseAIRules(raw);
+        if (parsed.err) {
+            dsm_showToast('AI回的规则块没解析出来：' + parsed.err + '（原话在AI面板，可去设置区手动导入）', 'warn', 6000);
+            return;
+        }
+        var oldSnap = dsm_rulesSnapshot();
+        var target = { titles: parsed.rules.titles, hospitals: parsed.rules.hospitals, keywords: parsed.rules.keywords, excludes: parsed.rules.excludes, staff: (oldSnap.staff || []).slice() }; /* staff照抄现行，AI块不带staff不许误清 */
+        var cats4 = ['titles', 'hospitals', 'keywords', 'excludes'];
+        var same = true;
+        for (var ci = 0; ci < cats4.length; ci++) {
+            var k = cats4[ci];
+            var a = (oldSnap[k] || []).slice().sort().join('');
+            var b = (target[k] || []).slice().sort().join('');
+            if (a !== b) { same = false; break; }
+        }
+        if (same) { dsm_showToast('AI给的规则跟现行一模一样，没动', 'info', 4000); return; }
+        dsm_rulelibAdd(oldSnap, 'AI自动改前快照');
+        dsm_ruleApply(target);
+        var back = dsm_rulesSnapshot();
+        var all5 = ['titles', 'hospitals', 'keywords', 'excludes', 'staff'];
+        var ok = true;
+        for (var ki = 0; ki < all5.length; ki++) {
+            var kk = all5[ki];
+            var x = (target[kk] || []).slice().sort().join('');
+            var y = (back[kk] || []).slice().sort().join('');
+            if (x !== y) { ok = false; break; }
+        }
+        if (!ok) {
+            dsm_ruleApply(oldSnap);
+            dsm_showToast('❌ 没改成，已自动还原（规则还是原来的，版本库留了改前快照）', 'error', 6000);
+            return;
+        }
+        var diff = dsm_rulesDiff(oldSnap, back);
+        var r = dsm_rulelibAdd(back, 'AI自动改', diff);
+        try { localStorage.setItem(LS_RULELIB_CUR, r.id); } catch(e) {}
+        try { dsm_rulelibRender(); } catch(e) {}
+        var nAdd = 0, nDel = 0;
+        all5.forEach(function(c) {
+            nAdd += ((diff.added && diff.added[c]) || []).length;
+            nDel += ((diff.removed && diff.removed[c]) || []).length;
+        });
+        dsm_showToast('✅ AI自动改规则成功：新增' + nAdd + '条/删除' + nDel + '条，已存版本库第' + r.ver + '版。改得不好去设置区📚规则版本库点↩️倒回', 'success', 8000);
+    } catch(e) {}
 }
 function dsm_makeAgg(ptName, dateStr) { /* v0.55.0 刀3（2026-09-21 班⑯）最小改：加可选第1参病人名+第2参dateStr(MMDD)，两参都不传照旧=当前病人+今天月日，老调用零影响 */
     var patient = ptName || dsm_APP.currentPatient;
