@@ -1,6 +1,6 @@
 {
  "v": 1,
- "t": 1791694812736,
+ "t": 1791701874880,
  "items": [
   {
    "key": "index",
@@ -10,9 +10,9 @@
   },
   {
    "key": "guanjia",
-   "version": "0.57.0",
+   "version": "0.57.1",
    "dl": "software-guanjia.html",
-   "sig": "fbea7f66f28a1209"
+   "sig": "bc18455465cf2e42"
   },
   {
    "key": "hx-common",
@@ -22,10 +22,10 @@
   },
   {
    "key": "tuomin",
-   "version": "1.0.0",
+   "version": "1.0.1",
    "dl": "software-tuomin.html",
-   "sig": "576a2e246b58ffa7"
+   "sig": "5835a12ec0aa10b6"
   }
  ],
- "note": "主界面v1.19.11清假记忆；其余不动"
+ "note": "第②步首单：管家0.57.1+单体1.0.1；其余不动"
 }
