@@ -1,6 +1,6 @@
 {
- "version": "1.19.10",
+ "version": "1.19.11",
  "dl": "index.html",
- "note": "修脱敏间404：CUR.tuomin改0（未装填0老坑），检查新版本即自动下载脱敏单体",
- "sig": "e6ae447d8ddc838e"
+ "note": "账本校准让路硬编码0（清tuomin假记忆，脱敏单体真下载）",
+ "sig": "e982a0fa36c60780"
 }
