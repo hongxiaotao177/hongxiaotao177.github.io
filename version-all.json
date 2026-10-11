@@ -1,6 +1,6 @@
 {
  "v": 1,
- "t": 1791702448509,
+ "t": 1791710623834,
  "items": [
   {
    "key": "index",
@@ -10,9 +10,9 @@
   },
   {
    "key": "guanjia",
-   "version": "0.57.1",
+   "version": "0.57.2",
    "dl": "software-guanjia.html",
-   "sig": "bc18455465cf2e42"
+   "sig": "984cb637bf26fcd7"
   },
   {
    "key": "hx-common",
@@ -22,9 +22,9 @@
   },
   {
    "key": "tuomin",
-   "version": "1.0.3",
+   "version": "1.0.4",
    "dl": "software-tuomin.html",
-   "sig": "60d29c0654f9d088"
+   "sig": "f4e38ffca2904522"
   }
  ],
  "note": "脱敏单体v1.0.3全修；其余不动"
