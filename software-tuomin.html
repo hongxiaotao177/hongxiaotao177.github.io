@@ -5,8 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>脱敏单体</title>
 <!--
-  红小涛学习套装 · 脱敏单体 v1.0.0
+  红小涛学习套装 · 脱敏单体 v1.0.1
   定位：病历脱敏/聚合/标红/规则库/AI体检 单体工具（原病人大管家「🛡 脱敏间」整搬分出）。
+    v1.0.1 2026-10-11 班②（洪老师拍板「我选甲」，DeepSeek流水线真单首跑，Kimi终审采用第1轮回件）：
+      刀2 dsm_inboxRead 的 reagg 补录分支两处 fileMeta.size 由增量长度改记追加后全长 _newT.length；
+      （注：文件内既有「v1.0.1终审修bug2」字样为分家第一刀终审内标，当时未升号）
     v1.0.0 2026-10-10 分家第一刀（洪老师拍板「同意」，改码工兵A严格照SPEC动刀）：
       自病人大管家 v0.56.8 分出；CSS/HTML/JS照SPEC从母本原样切出拼接；
       名册写入（hx_pdocs_v1）全拆——收库/聚合/标红/报告/删件改寄 dsm_outbox_v1 由大管家落账；
@@ -842,8 +845,8 @@ function dsm_inboxRead(){ /* v1.0.0 新增：开门收管家来信——读 dsm_
             var _newT=_oldT?(_oldT+'\n'+(f.text||'')):(f.text||'');
             rec.content[f.name]={text:_newT, images:[]};
             var has=false; for(var i=0;i<rec.files.length;i++){ if(rec.files[i].name===f.name){ has=true; break; } }
-            if(!has) rec.files.push({name:f.name, size:(f.text||'').length, type:f.type||'文本', ext:f.ext||'txt'});
-            try{ dsmh_remember(it.pkey, f.name, _newT, {name:f.name, size:(f.text||'').length, type:f.type||'文本', ext:f.ext||'txt'}); }catch(e){}
+            if(!has) rec.files.push({name:f.name, size:_newT.length, type:f.type||'文本', ext:f.ext||'txt'}); /* v1.0.1 刀2：补录追加后fileMeta.size记全长 */
+            try{ dsmh_remember(it.pkey, f.name, _newT, {name:f.name, size:_newT.length, type:f.type||'文本', ext:f.ext||'txt'}); }catch(e){} /* v1.0.1 刀2：补录追加后fileMeta.size记全长 */
           }catch(e){}
         });
         try{ dsm_APP.currentPatient=it.pkey; }catch(e){}
