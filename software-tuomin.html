@@ -5,8 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>脱敏单体</title>
 <!--
-  红小涛学习套装 · 脱敏单体 v1.0.2
+  红小涛学习套装 · 脱敏单体 v1.0.3
   定位：病历脱敏/聚合/标红/规则库/AI体检 单体工具（原病人大管家「🛡 脱敏间」整搬分出）。
+    v1.0.3 2026-10-11 班③（DeepSeek研究后洪老师拍板"全修"）：双框破出640px卡死电脑撑满屏+顶栏版本字补上+导出单体修好可含数据（dsm_exportCurrent）+AI分析钮直连体检站+帮助弹窗瘦身+死代码清理（foldPre/foldToggle/orientCheck/clearAllData/死CSS/死分支）+报告落款与console的v5.0改脱敏单体；
     v1.0.2 2026-10-11 班②补刀（洪老师真机报"关于页还显1.0.0"）：dsm_aboutInfo关于页版本字跟上真身（v1.0.1忘改关于页，认账）；
     v1.0.1 2026-10-11 班②（洪老师拍板「我选甲」，DeepSeek流水线真单首跑，Kimi终审采用第1轮回件）：
       刀2 dsm_inboxRead 的 reagg 补录分支两处 fileMeta.size 由增量长度改记追加后全长 _newT.length；
@@ -36,7 +37,7 @@
 </style>
 <style>
 /* ═══ v0.7.0 脱敏间样式（dsm_前缀 + #dsmWrap作用域，不污染大管家） ═══ */
-#dsmWrap, #dsmWrap *{box-sizing:border-box;margin:0;padding:0}#dsmWrap{font-family:'Microsoft YaHei',sans-serif;background:#f0f2f5;color:#333;padding:20px;font-size:14px}#dsmWrap .dsm_container{max-width:1200px;margin:0 auto}#dsmWrap /* 头部 */
+#dsmWrap, #dsmWrap *{box-sizing:border-box;margin:0;padding:0}#dsmWrap{font-family:'Microsoft YaHei',sans-serif;background:#f0f2f5;color:#333;padding:20px;font-size:14px;width:100vw;max-width:2200px;margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw)}/* v1.0.3：破出.wrap的640px卡死，双框电脑撑满屏（.wrap本体不动） */#dsmWrap .dsm_container{max-width:2200px;margin:0 auto}#dsmWrap /* 头部 */
 .dsm_header{background:linear-gradient(135deg,#1a73e8,#0d47a1);color:#fff;padding:16px 24px;border-radius:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px}#dsmWrap .dsm_header h1{font-size:20px;font-weight:600}#dsmWrap .dsm_header .dsm_sub{font-size:12px;opacity:.8}#dsmWrap .dsm_header-actions{display:flex;gap:8px;flex-wrap:wrap}#dsmWrap .dsm_header-actions button{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;padding:5px 14px;border-radius:6px;font-size:12px;cursor:pointer}#dsmWrap .dsm_header-actions button:hover{background:rgba(255,255,255,.3)}#dsmWrap /* PDF加载进度 */
 .dsm_pdf-loader{background:#fff;border-radius:10px;padding:12px 20px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:16px;border-left:4px solid #f39c12}#dsmWrap .dsm_pdf-loader .dsm_loader-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}#dsmWrap .dsm_pdf-loader .dsm_loader-title{font-weight:600;color:#555;font-size:14px;display:flex;align-items:center;gap:8px}#dsmWrap .dsm_pdf-loader .dsm_spinner{display:inline-block;width:18px;height:18px;border:3px solid #f3f3f3;border-top:3px solid #1a73e8;border-radius:50%;animation:dsm_spin 0.8s linear infinite}#dsmWrap .dsm_pdf-loader .dsm_progress-wrap{flex:1;min-width:120px;height:6px;background:#e8edf5;border-radius:4px;overflow:hidden}#dsmWrap .dsm_pdf-loader .dsm_progress-fill{height:100%;background:linear-gradient(90deg,#1a73e8,#0d47a1);width:0%;border-radius:4px;transition:width .3s}#dsmWrap .dsm_pdf-loader .dsm_status-text{font-size:13px;color:#888}#dsmWrap .dsm_pdf-loader .dsm_status-text .dsm_hl{color:#1a73e8;font-weight:600}#dsmWrap .dsm_pdf-loader .dsm_retry-btn{background:#1a73e8;color:#fff;border:none;padding:3px 14px;border-radius:4px;font-size:12px;cursor:pointer}#dsmWrap .dsm_pdf-loader .dsm_retry-btn:hover{background:#1557b0}#dsmWrap .dsm_pdf-loader .dsm_retry-btn.dsm_hidden{display:none}#dsmWrap .dsm_pdf-loader.dsm_ready{border-left-color:#27ae60}#dsmWrap .dsm_pdf-loader.dsm_error{border-left-color:#e74c3c}#dsmWrap /* 状态栏 */
 .dsm_root-info{background:#fff;border-radius:10px;padding:10px 18px;box-shadow:0 1px 4px rgba(0,0,0,.06);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:16px}#dsmWrap .dsm_root-info .dsm_label{font-weight:600;color:#555;font-size:13px}#dsmWrap .dsm_root-info .dsm_path{color:#1a73e8;font-family:Consolas,monospace;font-size:13px;background:#f5f7fa;padding:2px 12px;border-radius:4px;word-break:break-all}#dsmWrap .dsm_root-info .dsm_actions{display:flex;gap:6px}#dsmWrap .dsm_root-info .dsm_actions button{padding:4px 12px;border:1px solid #ddd;background:#fff;border-radius:5px;font-size:12px;cursor:pointer}#dsmWrap .dsm_root-info .dsm_actions button:hover{background:#e8edf5;border-color:#1a73e8}#dsmWrap /* 选择区 */
@@ -45,7 +46,7 @@
 .dsm_patient-section{background:#fff;border-radius:10px;padding:14px 18px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:16px}#dsmWrap .dsm_patient-section .dsm_section-title{font-weight:600;color:#555;font-size:14px;margin-bottom:10px}#dsmWrap .dsm_patient-cards{display:flex;flex-wrap:wrap;gap:8px}#dsmWrap .dsm_patient-card{padding:8px 18px;border:2px solid #e0e4ea;border-radius:6px;cursor:pointer;font-weight:500;background:#fafbfc;font-size:13px;position:relative}#dsmWrap .dsm_patient-card:hover{border-color:#1a73e8;background:#f0f6ff}#dsmWrap .dsm_patient-card.dsm_active{border-color:#1a73e8;background:#e3edfc;color:#0d47a1}#dsmWrap .dsm_patient-card .dsm_del{position:absolute;top:-5px;right:-5px;background:#e74c3c;color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:11px;cursor:pointer;display:none;line-height:18px;text-align:center}#dsmWrap .dsm_patient-card:hover .dsm_del{display:block}#dsmWrap /* 数据区 */
 .dsm_data-section{background:#fff;border-radius:10px;padding:14px 18px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:16px}#dsmWrap .dsm_data-section .dsm_top-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px}#dsmWrap .dsm_data-section .dsm_top-row .dsm_info{font-size:13px;color:#555}#dsmWrap .dsm_data-section .dsm_top-row .dsm_info strong{color:#1a73e8}#dsmWrap .dsm_data-section .dsm_top-row .dsm_actions button{padding:4px 14px;border:1px solid #ddd;background:#fff;border-radius:5px;font-size:12px;cursor:pointer}#dsmWrap .dsm_data-section .dsm_top-row .dsm_actions button:hover{background:#e8edf5;border-color:#1a73e8}#dsmWrap .dsm_file-list{display:flex;flex-direction:column;gap:4px}#dsmWrap .dsm_file-item{display:flex;align-items:center;gap:8px;padding:2px 8px;background:#f8f9fb;border-radius:4px;font-size:13px} /* v0.18.0 毛病41：窄行 */#dsmWrap .dsm_file-item .dsm_status{font-weight:600}#dsmWrap .dsm_file-item .dsm_status.dsm_ok{color:#27ae60}#dsmWrap .dsm_file-item .dsm_status.dsm_err{color:#e74c3c}#dsmWrap .dsm_file-item .dsm_fname{font-family:Consolas,monospace;font-size:12px;color:#333}#dsmWrap .dsm_file-item .dsm_fsize{color:#999;font-size:11px;margin-left:auto}#dsmWrap .dsm_file-item .dsm_ftype{color:#666;font-size:11px;background:#e8edf5;padding:1px 8px;border-radius:4px}#dsmWrap /* 导出 */
 .dsm_export-section{background:#fff;border-radius:10px;padding:12px 18px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:16px;display:flex;flex-wrap:wrap;align-items:center;gap:10px}#dsmWrap .dsm_export-section .dsm_label{font-weight:600;color:#555;font-size:13px}#dsmWrap .dsm_export-section .dsm_path-input{flex:2;min-width:160px;padding:5px 10px;border:1px solid #ddd;border-radius:5px;font-size:12px;background:#f8f9fb;font-family:Consolas,monospace}#dsmWrap .dsm_export-section .dsm_path-input:focus{border-color:#1a73e8;outline:none;background:#fff}#dsmWrap .dsm_export-section .dsm_btn-primary{padding:6px 20px;background:#1a73e8;color:#fff;border:none;border-radius:5px;font-size:14px;font-weight:600;cursor:pointer}#dsmWrap .dsm_export-section .dsm_btn-primary:hover{background:#1557b0}#dsmWrap /* 预览 */
-.dsm_preview-section{background:#fff;border-radius:10px;padding:14px 18px;box-shadow:0 1px 4px rgba(0,0,0,.06);display:none}#dsmWrap .dsm_preview-section.dsm_visible{display:block}#dsmWrap .dsm_preview-section .dsm_preview-title{font-weight:600;color:#333;border-bottom:2px solid #e8edf5;padding-bottom:8px;margin-bottom:12px;font-size:14px}#dsmWrap .dsm_preview-content{max-height:550px;overflow-y:auto;font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word}#dsmWrap .dsm_preview-content .dsm_section-block{margin-bottom:14px;padding:10px 14px;background:#f8f9fb;border-radius:6px;border-left:4px solid #1a73e8}#dsmWrap .dsm_preview-content .dsm_section-block .dsm_title{font-weight:600;color:#0d47a1;font-size:13px;margin-bottom:4px}#dsmWrap .dsm_preview-content .dsm_compare{display:flex;gap:14px;flex-wrap:wrap}#dsmWrap .dsm_preview-content .dsm_compare .dsm_original{flex:1;min-width:280px;background:#fff3f3;padding:10px;border-radius:5px;border:1px solid #f5c6c6}#dsmWrap .dsm_preview-content .dsm_compare .dsm_original .dsm_label{color:#c0392b;font-weight:600;font-size:12px;margin-bottom:3px}#dsmWrap .dsm_preview-content .dsm_compare .dsm_desensitized{flex:1;min-width:280px;background:#f0f7f0;padding:10px;border-radius:5px;border:1px solid #b8d4b8}#dsmWrap .dsm_preview-content .dsm_compare .dsm_desensitized .dsm_label{color:#27ae60;font-weight:600;font-size:12px;margin-bottom:3px}#dsmWrap .dsm_preview-content .dsm_compare pre{white-space:pre-wrap;font-family:Consolas,monospace;font-size:12px;margin:0}#dsmWrap .dsm_highlight-red{color:#c0392b;background:#fdebd0;padding:1px 3px;border-radius:2px;font-weight:600}#dsmWrap /* 弹窗 */
+.dsm_preview-section{background:#fff;border-radius:10px;padding:14px 18px;box-shadow:0 1px 4px rgba(0,0,0,.06);display:none}#dsmWrap .dsm_preview-section.dsm_visible{display:block}#dsmWrap .dsm_preview-section .dsm_preview-title{font-weight:600;color:#333;border-bottom:2px solid #e8edf5;padding-bottom:8px;margin-bottom:12px;font-size:14px}#dsmWrap .dsm_preview-content{max-height:550px;overflow-y:auto;font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word}#dsmWrap .dsm_preview-content .dsm_section-block{margin-bottom:14px;padding:10px 14px;background:#f8f9fb;border-radius:6px;border-left:4px solid #1a73e8}#dsmWrap .dsm_preview-content .dsm_section-block .dsm_title{font-weight:600;color:#0d47a1;font-size:13px;margin-bottom:4px}/* v1.0.3：死CSS .dsm_compare五段删（v0.50后预览不再生成此结构） */#dsmWrap .dsm_highlight-red{color:#c0392b;background:#fdebd0;padding:1px 3px;border-radius:2px;font-weight:600}#dsmWrap /* 弹窗 */
 .dsm_modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.45);z-index:999;justify-content:center;align-items:center}#dsmWrap .dsm_modal-overlay.dsm_visible{display:flex}#dsmWrap .dsm_modal{background:#fff;border-radius:12px;padding:24px 28px;max-width:820px;width:95%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}#dsmWrap .dsm_modal h2{font-size:18px;margin-bottom:12px;color:#0d47a1}#dsmWrap .dsm_modal label{font-weight:600;font-size:13px;display:block;margin:10px 0 4px;color:#555}#dsmWrap .dsm_modal textarea{width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:Consolas,monospace;resize:vertical;min-height:100px}#dsmWrap .dsm_modal textarea:focus{border-color:#1a73e8;outline:none}#dsmWrap .dsm_modal .dsm_modal-actions{display:flex;gap:10px;margin-top:14px;justify-content:flex-end;flex-wrap:wrap}#dsmWrap .dsm_modal .dsm_modal-actions button{padding:6px 20px;border-radius:5px;font-size:13px;cursor:pointer;border:none}#dsmWrap .dsm_modal .dsm_modal-actions .dsm_btn-save{background:#1a73e8;color:#fff}#dsmWrap .dsm_modal .dsm_modal-actions .dsm_btn-save:hover{background:#1557b0}#dsmWrap .dsm_modal .dsm_modal-actions .dsm_btn-close{background:#f0f2f5;color:#333;border:1px solid #ddd}#dsmWrap .dsm_modal .dsm_modal-actions .dsm_btn-close:hover{background:#e4e7ed}#dsmWrap .dsm_modal .dsm_modal-actions .btn-ai{background:#8e44ad;color:#fff}#dsmWrap .dsm_modal .dsm_modal-actions .btn-ai:hover{background:#6c3483}#dsmWrap .dsm_modal .dsm_modal-actions .btn-danger{background:#e74c3c;color:#fff}#dsmWrap .dsm_modal .dsm_modal-actions .btn-danger:hover{background:#c0392b}#dsmWrap /* 规则标签 */
 .dsm_rule-tags{display:flex;flex-wrap:wrap;gap:6px;padding:6px 0}#dsmWrap .dsm_rule-tag{display:inline-flex;align-items:center;gap:4px;background:#e8edf5;padding:3px 10px 3px 14px;border-radius:14px;font-size:12px;color:#333}#dsmWrap .dsm_rule-tag .dsm_del-tag{background:#e74c3c;color:#fff;border:none;border-radius:50%;width:16px;height:16px;font-size:10px;cursor:pointer;line-height:16px;text-align:center}#dsmWrap .dsm_rule-tag .dsm_del-tag:hover{background:#c0392b}#dsmWrap .dsm_rule-tag .dsm_tag-type{font-size:10px;color:#888;margin-right:2px}#dsmWrap .dsm_rule-tag.dsm_exclude{background:#fef9e7;border:1px solid #f39c12}#dsmWrap .dsm_rule-tag.dsm_exclude .dsm_tag-type{color:#f39c12}#dsmWrap /* 提示词模板切换 */
 .dsm_prompt-tabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}#dsmWrap .dsm_prompt-tabs button{padding:4px 14px;border:1px solid #ddd;border-radius:5px;font-size:12px;cursor:pointer;background:#fff}#dsmWrap .dsm_prompt-tabs button:hover{background:#e8edf5}#dsmWrap .dsm_prompt-tabs button.dsm_active{background:#1a73e8;color:#fff;border-color:#1a73e8}#dsmWrap /* 添加行 */
@@ -63,12 +64,10 @@
 <body>
 <div class="wrap">
   <h1>🛡 脱敏单体</h1>
-  <div class="ver">v1.0.0 · 自病人大管家 v0.56.8 分出 · 病历脱敏/聚合/标红/规则库/AI体检</div>
+  <div class="ver">v1.0.3 · 自病人大管家 v0.56.8 分出 · 病历脱敏/聚合/标红/规则库/AI体检</div>
   <style>
     /* v0.21.1 洪老师拍板：不分横竖屏一律左右分栏（左原文标红、右脱敏后各半宽，字号不动，字随栏宽折行） */
     /* v0.37.0 挂号#113（2026-09-17 09:10速记，洪老师拍板）：窄屏手机预览只显两行字（未脱敏原文一行/脱敏后一行），点哪行全屏看哪份；宽屏电脑照旧左右分栏一字不变 */
-    #dsmWrap .dsm_preview-content .dsm_narrowRows{display:none}
-    #dsmWrap .dsm_preview-content .dsm_narrowRows .dsm_nrow{cursor:pointer;font-weight:700;font-size:15px;padding:8px 4px;border-bottom:1px dashed #e6e0d4;text-decoration:underline}
     /* v0.50.0（2026-09-19 班③，挂号#126脱敏间版面改版，洪老师逐条拍板"开工"）：版面统一"上两框、下一聚合框"——
        上两大框（左=未脱敏原文带标红/右=脱敏后）电脑宽屏撑满屏幕可用高度calc(100vh-260px)跟随窗口、不需最大化钮；
        下一聚合文件方框通栏（里面两个下划线文件名）；窄屏（≤700px项目现有断点）两大框默认整藏（display:none），
@@ -81,12 +80,8 @@
     #dsmWrap .dsm_aggBox .dsm_aggRow{cursor:pointer;font-weight:700;font-size:14px;padding:6px 4px;border-bottom:1px dashed #e6dcc0;color:#0d47a1;text-decoration:underline;word-break:break-all;}
     #dsmWrap .dsm_bigToggle{display:none;cursor:pointer;font-size:12px;color:#1a73e8;text-decoration:underline;padding:6px 2px;user-select:none;}
     @media (max-width:700px){
-      #dsmWrap .dsm_preview-content .dsm_compare{flex-direction:row;flex-wrap:nowrap}
-      #dsmWrap .dsm_preview-content .dsm_compare .dsm_original,
-      #dsmWrap .dsm_preview-content .dsm_compare .dsm_desensitized{min-width:0;width:auto;flex:1;padding:6px}
-      /* v0.37.0 挂号#113：窄屏改显两行字、藏起左右两栏（宽屏这两条不生效） */
-      #dsmWrap .dsm_preview-content .dsm_compare{display:none}
-      #dsmWrap .dsm_preview-content .dsm_narrowRows{display:block}
+      /* v1.0.3：死CSS compare/narrowRows段删；窄屏复位防破出100vw横向滚动 */
+      #dsmWrap{width:auto;max-width:1200px;margin-left:0;margin-right:0;padding:10px;}
       /* v0.50.0（挂号#126）窄屏：两大框默认整藏（点「▸ 看原文/脱敏后」加dsm_bigOpen才展开，再点收起）；
          逐文件区块也藏起——屏上只留病人卡+聚合区（聚合区在#dsm_bigZone不在previewContent里，不受影响）；
          展开时框高限60vh防一屏顶穿 */
@@ -97,7 +92,6 @@
       #dsmWrap .dsm_preview-content{display:none}
     }
     /* v0.20.0 ②窄屏折叠提示行 */
-    #dsmWrap .dsm_foldMore{font-size:12px;color:#1a73e8;cursor:pointer;text-decoration:underline;padding:4px 0}
     .dsm_fullOverlay{position:fixed;inset:0;background:#fff;z-index:100000;overflow-y:auto;padding:16px;font-size:16px;line-height:1.8}
     .dsm_fullOverlay .dsm_fullClose{position:fixed;top:10px;right:12px;z-index:100001;background:#c0392b;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:16px;font-weight:700;cursor:pointer}
     .dsm_fullOverlay .dsm_fullTitle{font-weight:700;color:#0d47a1;margin:0 70px 12px 0;font-size:17px}
@@ -168,7 +162,7 @@
 <div style="cursor:pointer;font-size:14px;font-weight:600;color:#4a4238;padding:8px 2px 4px;user-select:none;border-top:1px solid #efe9df;margin-top:6px;" onclick="var _b=document.getElementById('dsm_exportBox');if(!_b)return;var _s=_b.style.display==='none';_b.style.display=_s?'':'none';this.textContent=_s?'▾ 📤 导出/其他（点我收起）':'▸ 📤 导出/其他（点我展开）';">▸ 📤 导出/其他（点我展开）</div>
 <div id="dsm_exportBox" style="display:none;">
 <!-- v0.44.0③（效果图v2）：拷出单体脱敏工具钮放本区第一行（走下载，存哪您指定；实现见dsm_exportStandalone） -->
-<div style="margin:0 0 10px;"><button class="dsm_btn-primary" onclick="dsm_exportStandalone()">📤 拷出单体脱敏工具（走下载，存哪您指定）</button></div>
+<div style="margin:0 0 10px;"><button class="dsm_btn-primary" onclick="dsm_exportCurrent()">📤 导出单体（可含数据，拷出去就能用）</button></div><!-- v1.0.3：拷出云端旧版钮挪进设置弹窗；原位换「导出当前这份」 -->
 <div class="dsm_export-section">
 <span class="dsm_label">📤 导出：</span>
 <select id="dsm_exportFormat" onchange="dsm_updateExportFileName()" style="padding:5px 10px;border:1px solid #ddd;border-radius:5px;font-size:13px;background:#fff;cursor:pointer">
@@ -178,7 +172,7 @@
 </select>
 <input class="dsm_path-input" id="dsm_exportFileName" placeholder="文件名自动生成" value="">
 <button class="dsm_btn-primary" onclick="dsm_exportReport()">📤 导出报告</button>
-<button class="dsm_btn-primary" onclick="if(window.HX&&HX.ai&&HX.ai.ready&&HX.ai.ready()){ HX.ai.open('dsm-askai'); return; }dsm_askAI()" style="background:#8e44ad;">🤖 AI分析</button><!-- v0.16.0 脱敏间AI分析入口：只发勾选且已脱敏的文本，原文不出这台机器 --><!-- v0.24.0 AI面板唤起两行插最前；HX不在放行原行为 -->
+<button class="dsm_btn-primary" onclick="if(window.HX&&HX.ai&&HX.ai.ready&&HX.ai.ready()){ HX.ai.open('dsm-askai'); return; }dsm_aiCheckOpen()" style="background:#8e44ad;">🩺 AI体检站</button><!-- v1.0.3：dsm_askAI在单体是死路（askaiOpen没搬来），改直连体检站 --><!-- v0.16.0 脱敏间AI分析入口：只发勾选且已脱敏的文本，原文不出这台机器 --><!-- v0.24.0 AI面板唤起两行插最前；HX不在放行原行为 -->
 </div>
 </div>
 
@@ -206,7 +200,7 @@
 <div id="dsm_bigZone"></div>
 <div class="dsm_preview-content" id="dsm_previewContent"><div class="dsm_empty-state">暂无数据</div></div>
 <!-- v0.46.0（2026-09-18 班④，速记13:16）①：🧩钮挪位（方案B·静态HTML直搬，最稳）——#dsm_previewContent的innerHTML每次预览重渲会被整个换掉，钮放壳里必丢，故照任务书备选方案把钮静态搬到预览容器元素紧后面，视觉上正跟在「🔒脱敏后」绿框所属双方框下面；按钮文字与onclick=dsm_makeAgg()一字未动 -->
-<div class="dsm_actions" style="margin:6px 0 0;"><button onclick="dsm_makeAgg()" style="background:#e8f5e9;border:1px solid #27ae60;color:#1e7e34;border-radius:5px;">🧩 形成聚合文件</button></div>
+<div class="dsm_actions" style="margin:6px 0 0;"><button onclick="dsm_makeAgg()" style="background:#e8f5e9;border:1px solid #27ae60;color:#1e7e34;border-radius:5px;">🧩 重做聚合（一般不用点）</button><!-- v1.0.3：脱敏聚合已自动，此钮降级为兜底（删件重聚/改规则重聚才用） --></div>
 </div>
 </div>
 
@@ -310,7 +304,7 @@
     <div class="dsm_rule-hint" id="dsm_engineState">状态：检测中…</div>
     <div class="dsm_add-row">
         <button onclick="dsm_installEngine()">📥 安装/重装引擎</button>
-        <button onclick="dsm_exportFull()">📦 导出完整单文件</button>
+        <button onclick="dsm_exportFull()">📦 导出完整单文件</button> <button onclick="dsm_exportStandalone()">📥 从云端取回脱敏单体（还原用，非当前这份）</button><!-- v1.0.3：从导出区挪来 -->
     </div>
 
     <div class="dsm_modal-actions">
@@ -635,6 +629,7 @@ function dsm_textToFile(name, text){
   if(!f){ try{ f=new Blob([text], {type:'text/plain'}); f.name=name; }catch(e){ return null; } }
   return f;
 }
+/* v1.0.3：本函数定位=从云端取回预置单体（还原用，非当前这份）；按钮已挪进设置弹窗，导出当前这份请用 dsm_exportCurrent */
 /* ═════ v0.44.0③ 📤拷出单体脱敏工具：①取件——先用 hx_gh_tok/hx_gh_repo 钱罐走GitHub API（HX.gh链路照dsm_pullTestDocs同款）读私有仓 xuexi-backup 的「脱敏工具_单体版.html」（base64解码），失败则壳里走 HX.dav/LearnShell.davDown 从坚果云 /学习套装备份/脱敏工具_单体版.html 取；②取到后从内容里正则出单体版SW_VERSION，文件名定为「脱敏工具_单体版_v版本号.html」（取不到版本号用原名，不耽误拷）；③交付——浏览器环境用Blob+a[download]触发系统下载；壳里若下载不可用则退化用LearnShell.writeFile写授权文件夹并toast明说路径；④每一步失败都toast人话，不静默 ═════ */
 function dsm_exportStandalone(){
   function _fail(msg){ try{ dsm_showToast('❌ 拷出单体工具没成：'+msg, 'error', 6000); }catch(e){ try{ toast('❌ 拷出单体工具没成：'+msg); }catch(e2){} } }
@@ -1569,7 +1564,7 @@ function dsm_exportFull(){
         var blob=new Blob([html], {type:'text/html;charset=utf-8'});
         var a=document.createElement('a');
         a.href=URL.createObjectURL(blob);
-        a.download='病人大管家_完整版_v'+SW_VERSION+'.html';
+        a.download='脱敏单体_v1.0.3.html'; /* v1.0.3：SW_VERSION在单体不存在会炸+文件名母本痕迹，改硬编码脱敏单体 */
         document.body.appendChild(a); a.click(); document.body.removeChild(a);
         dsm_showToast('📦 完整单文件已导出（含PDF引擎）','success');
     }
@@ -1583,6 +1578,43 @@ function dsm_exportFull(){
         if (dsm_engineInlineReady()) doExport();
         else dsm_showToast('❌ 引擎加载失败，导出取消','error');
     }).catch(function(e){ dsm_showToast('❌ 引擎下载失败：'+e.message,'error'); });
+}
+
+/* v1.0.3 新增（DeepSeek单B回件，Kimi终审采用+一处终审修正：注入值防「斜杠script」记号截断HTML）：
+   「📤 导出单体（可含数据）」——把当前这份导出去，拷到别的电脑双击就用；
+   含数据=把规则库/脱敏存档等localStorage键序列化成<script>注到</body>前，那边开门自动灌回 */
+function dsm_exportCurrent(){
+    var withData=false;
+    try{
+        withData=confirm('要带着您的数据（规则库/脱敏存档）一起导出吗？\n\n确定=含数据（自己电脑用）\n取消=不含数据（干净工具）');
+    }catch(e){ withData=false; }
+    var KEYS=['dsm_rules_titles','dsm_rules_hospitals','dsm_rules_keywords','dsm_rules_excludes','dsm_rules_staff','dsm_aiPrompt','hx_dsm_rulelib_v1','hx_dsm_rulelib_cur','hx_dsm_v1','hx_dsmraw_v1'];
+    try{
+        var html='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
+        if(withData){
+            var _lns=[];
+            for(var i=0;i<KEYS.length;i++){
+                var k=KEYS[i];
+                var v=null;
+                try{ v=localStorage.getItem(k); }catch(e){ v=null; }
+                if(v===null || typeof v==='undefined') continue;
+                var payload=JSON.stringify(v).replace(/<\//g,'<\\/'); /* 终审修正：防病历文本里的「斜杠script」收尾记号把导出件HTML截断 */
+                _lns.push('try{localStorage.setItem('+JSON.stringify(k)+', '+payload+');}catch(e){}');
+            }
+            var inject='<script>\ntry{\n'+_lns.join('\n')+'\n}catch(e){}\n</'+'script>\n</body>';
+            var pos=html.lastIndexOf('</body>');
+            html=html.slice(0,pos)+inject+html.slice(pos);
+        }
+        var fname=withData ? '脱敏单体_v1.0.3_含数据.html' : '脱敏单体_v1.0.3_干净.html';
+        var blob=new Blob([html], {type:'text/html;charset=utf-8'});
+        var a=document.createElement('a');
+        a.href=URL.createObjectURL(blob);
+        a.download=fname;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        dsm_showToast('📤 已导出当前这份：'+fname, 'success', 5000);
+    }catch(e){
+        dsm_showToast('❌ 导出当前这份没成：'+e.message, 'error', 6000);
+    }
 }
 
 function dsm_loadPDFEngine() {
@@ -1889,7 +1921,7 @@ function dsm_askAI() {
     /* v1.0.0（断链补齐，SPEC外不得不动·已报备）：askaiOpen是管家「问AI」弹窗（连同四套提示词弹窗DOM/落名册链）没跟过来；
        单体里AI分析入口降级=明话指路去「🩺 AI体检站」（自带aiChat全链）；函数本体上面拼料逻辑一字未动 */
     if (typeof askaiOpen === 'function') { askaiOpen({ pkey: '脱敏间·' + patient + '（已脱敏）', date: '', text: joined }); }
-    else { dsm_showToast('单体版没有问AI弹窗，请用上面「🩺 AI体检站」或直接复制预览框文本去问AI', 'warn', 5000); }
+    else { dsm_showToast('已为您打开AI体检站', 'info', 3000); dsm_aiCheckOpen(); } /* v1.0.3：死路toast改直连体检站 */
 }
 
 // ============================================================
@@ -2249,45 +2281,17 @@ function dsm_highlightSensitive(text) {
 
 /* ═════ v0.20.0 ② 手机截断显示：窄屏（<700px）每框只显前8行+折叠提示行，点展开/收回；宽屏全显。
    纯前端按\n切行（数据不动）；content是预览用的HTML字符串（标红span/原文都含\n行分隔） ═════ */
-var dsm_foldTotal = {}; /* uid → 总行数（收回时还原提示文案用） */
-function dsm_foldPre(content, uid) {
-    if (!(window.innerWidth < 700)) return '<pre>' + content + '</pre>';
-    var lines = String(content).split('\n');
-    if (lines.length <= 8) return '<pre>' + content + '</pre>';
-    dsm_foldTotal[uid] = lines.length;
-    return '<pre data-foldpre="' + uid + '">' + lines.slice(0, 8).join('\n') + '</pre>' +
-        '<div class="dsm_foldMore" id="dsm_fm_' + uid + '" onclick="dsm_foldToggle(\'' + uid + '\')">…已折叠，点我看全文（共' + lines.length + '行）</div>' +
-        '<pre id="dsm_ff_' + uid + '" style="display:none;">' + content + '</pre>';
-}
-function dsm_foldToggle(uid) {
-    var head = document.querySelector('[data-foldpre="' + uid + '"]');
-    var full = document.getElementById('dsm_ff_' + uid);
-    var more = document.getElementById('dsm_fm_' + uid);
-    if (!head || !full || !more) return;
-    if (full.style.display === 'none') {
-        full.style.display = ''; head.style.display = 'none';
-        more.textContent = '…已展开，点我收回（只显前8行）';
-    } else {
-        full.style.display = 'none'; head.style.display = '';
-        more.textContent = '…已折叠，点我看全文（共' + (dsm_foldTotal[uid] || 0) + '行）';
-    }
-}
+/* v1.0.3：死代码删——dsm_foldPre/dsm_foldToggle/dsm_foldTotal（v0.50后窄屏整藏，折前8行逻辑走不到，无调用方） */
 /* ═════ v0.20.0 ① 横屏提醒条 + resize监听：竖屏（宽<700且宽<高）且预览开着且没关过→亮提醒条；
    横竖屏跨界（700px窄屏界线变化）时预览重渲染一次，截断行数跟着屏宽走 ═════ */
 var dsm_rotateTipOff = false; /* ✕关掉后本session不再弹（内存变量，不落地） */
 var dsm_lastNarrow = null;
-function dsm_orientCheck() {
-    var tip = document.getElementById('dsm_rotateTip');
-    if (!tip) return;
-    var sec = document.getElementById('dsm_previewSection');
-    tip.style.display = 'none'; /* v0.21.1 竖屏已分栏，提醒条永久关闭 */
-}
+/* v1.0.3：死代码删——dsm_orientCheck（提醒条v0.21.1已撤，函数空转） */
 (function(){
     var tm = null;
     window.addEventListener('resize', function() {
         clearTimeout(tm);
         tm = setTimeout(function() {
-            try { dsm_orientCheck(); } catch(e) {}
             var narrow = window.innerWidth < 700;
             if (dsm_lastNarrow !== null && narrow !== dsm_lastNarrow) {
                 var sec = document.getElementById('dsm_previewSection');
@@ -2429,7 +2433,7 @@ function dsm_previewData() {
             /* v0.50.0（2026-09-19 班③，挂号#126）：此处原是v0.44.0双方框左右下划线行（_dualL/_dualR，v0.45.0 D点亮行）——
                整段撤除改攒两大框全文（_bigL标红原文/_bigR脱敏后，每文件带一行分隔标题）；点亮接线移给聚合框两个文件名行（下方bigZone拼装处），
                逐文件看全文仍走标题旁「🔍 看全屏」钮（dsm_fullCompare/dsm_fullData一字未动） */
-            var _idShort = (_idName === 'PDF病历') ? '病历' : ((_idName === '验单' || _idName === 'TXT验单') ? '验单' : _idName); /* 身份名按v0.43.0已修的type真名：PDF→病历、TXT→验单 */
+            var _idShort = (_idName === 'PDF病历') ? '病历' : ((_idName === '验单') ? '验单' : _idName) /* v1.0.3：TXT验单死分支删（v0.43已改名） */; /* 身份名按v0.43.0已修的type真名：PDF→病历、TXT→验单 */
             var _bigHead = '\n══════ ' + _idShort + '：' + f.name + ' ══════\n';
             _bigL += (_bigL ? '\n' : '') + _bigHead + highlightedText;
             _bigR += (_bigR ? '\n' : '') + _bigHead + formattedResult;
@@ -2461,7 +2465,7 @@ function dsm_previewData() {
         _bz += '<div class="dsm_aggBox"><div style="font-weight:700;color:#7d6608;font-size:13px;margin-bottom:2px;">🧩 聚合文件（一次出两件：全脱件送AI、标红件查漏脱）</div>';
         if (_aggFull) _bz += '<div class="dsm_aggRow" data-pkey="' + String(patient).replace(/"/g,'&quot;') + '" data-fname="' + String(_aggFull).replace(/"/g,'&quot;') + '" onclick="dsm_viewFile(\'' + String(_aggFull).replace(/'/g,"\\'") + '\')">📄 ' + _aggFull + '</div>';
         if (_aggMark) _bz += '<div class="dsm_aggRow" style="color:#c0392b;" data-pkey="' + String(patient).replace(/"/g,'&quot;') + '" data-fname="' + String(_aggMark).replace(/"/g,'&quot;') + '" onclick="dsm_viewFile(\'' + String(_aggMark).replace(/'/g,"\\'") + '\')">🔴 ' + _aggMark + '</div>';
-        if (!_aggFull && !_aggMark) _bz += '<div style="font-size:12px;color:#8a8178;padding:4px;">还没有聚合件——点下面「🧩 形成聚合文件」或等自动聚合，一次出全脱+标红两件</div>';
+        if (!_aggFull && !_aggMark) _bz += '<div style="font-size:12px;color:#8a8178;padding:4px;">还没有聚合件——一般会自动聚合，没聚再点下面「🧩 重做聚合」，一次出全脱+标红两件</div>';
         _bz += '</div>';
         _bz += '<div class="dsm_bigToggle" id="dsm_bigToggleEl" onclick="dsm_bigToggleFire(this, event)">▸ 看原文/脱敏后</div>'; /* v0.51.0（班⑤）：内联onclick改走dsm_bigToggleFire（带防抖）；下面再补addEventListener双通道——治洪老师vivo真机"点了没反应"（疑动态innerHTML的内联onclick被该机WebView吞掉） */
         var _bzEl = document.getElementById('dsm_bigZone');
@@ -2489,7 +2493,7 @@ function dsm_previewData() {
     container.innerHTML = html;
     try{ if(window.HX&&HX.pick&&HX.pick.bind) HX.pick.bind(); }catch(e){} /* v0.45.0 D：预览重渲后补绑点亮（照dsm_renderFileList v0.38.0⑤先例，老hx-common静默跳过）；v0.50.0（挂号#126）：聚合框两个文件名行的data-pkey/data-fname也靠这句补绑（bind为整文档扫描，bigZone在其前已填好） */
     dsm_showToast('预览已更新', 'success');
-    try { dsm_lastNarrow = (window.innerWidth < 700); dsm_orientCheck(); } catch(e) {} /* v0.20.0 ①：预览出来后按当前横竖屏决定提醒条 */
+    try { dsm_lastNarrow = (window.innerWidth < 700); } catch(e) {} /* v1.0.3：orientCheck死函数删 */ /* v0.20.0 ①：预览出来后按当前横竖屏决定提醒条 */
 }
 
 /* v0.50.0（2026-09-19 班③，挂号#126）：窄屏「▸ 看原文/脱敏后」小字行点一下展开两大框（加dsm_bigOpen）、再点收起；宽屏CSS恒显两框、本函数无实际效果 */
@@ -3232,7 +3236,7 @@ function dsm_exportReport() {
         document.body.removeChild(link);
         setTimeout(function(){ URL.revokeObjectURL(link.href); }, 5000);
         /* v0.12.0 D1 导出分块防截断：整份报告（含几十页病历PDF文本，常超100KB）一次性过JS桥会被WebView悄悄截断——
-           验单排前保住、病历排后被切掉（实机导出文件结尾没有「由「医疗数据脱敏聚合工具 v5.0」生成」行，已实锤）。
+           验单排前保住、病历排后被切掉（实机导出文件结尾没有「由「脱敏单体 v1.0.3」生成」行，已实锤）。
            修法：写完立刻readFile回读atob对账（长度+尾部120字）→对不上自动重试一次→仍不行拆_1of2/_2of2两块各写各核对→全失败才红字「没存全」。
            注意：LearnShell只有writeFile整写接口（applyUpdateBegin/Chunk/End三件套是壳自更新专用、写壳内目录不是授权文件夹，不可用），
            所以「分块」=拆成两个文件分别整写、分别回读核对。浏览器blob下载路径不动，明示「已下载：文件名」 */
@@ -3252,7 +3256,6 @@ function dsm_exportReport() {
            同名报告更新不重复堆；详情页时间线能直接看全文，不用等文件夹扫描 */
         /* v1.0.0（分家第一刀·SPEC 4.d）：名册挂报告不再直写hx_pdocs_v1，改寄dsm_outbox_v1（op='admit'，kind='report'），同名更新口径由管家收件落账侧执行 */
         try{
-            var _pm=patient.match(/^(\d+)([\u4e00-\u9fa5])(.*)$/);
             var _now=new Date();
             var _fname='脱敏导出_'+fileName;
             var _txt=content.length>300000?content.slice(0,300000)+'\n…（太长已截断存）':content;
@@ -3290,7 +3293,7 @@ function dsm_shellWriteVerified(fileName, content) {
                 var back = null; try { back = LearnShell.readFile(name); } catch(e) {}
                 if (back) {
                     var dec = ''; try { dec = decodeURIComponent(escape(atob(back))); } catch(e) {}
-                    /* 对账：长度一致 + 尾部120字一致（尾部含「由「医疗数据脱敏聚合工具 v5.0」生成」标志行，截断必露馅） */
+                    /* 对账：长度一致 + 尾部120字一致（尾部含「由「脱敏单体 v1.0.3」生成」标志行，截断必露馅） */
                     if (dec.length === text.length && dec.slice(-120) === text.slice(-120)) return true;
                 }
             } catch(e) {}
@@ -3352,7 +3355,7 @@ function dsm_buildReportHtml(patient, data) {
     body += '<div style="white-space:pre-wrap;background:#f5f0f9;padding:14px;border-radius:5px;font-size:13px;">'+(dsm_APP.aiPrompt||'未设置')+'</div></div>';
     if (body === '') body = '<p style="color:#999;">暂无数据</p>';
     
-    return '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+patient+' 综合报告</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Microsoft YaHei";background:#f5f7fa;color:#333;padding:30px}.container{max-width:1000px;margin:0 auto;background:#fff;border-radius:12px;padding:30px;box-shadow:0 4px 20px rgba(0,0,0,.08)}h1{font-size:26px;color:#0d47a1;border-bottom:3px solid #1a73e8;padding-bottom:12px;margin-bottom:20px}.meta{color:#888;font-size:14px;margin-bottom:20px}.section-block{margin-bottom:24px;padding:16px 20px;background:#f8f9fb;border-radius:8px;border-left:4px solid #1a73e8}.section-block h2{font-size:18px;color:#0d47a1;margin-bottom:10px}.footer{margin-top:30px;padding-top:16px;border-top:1px solid #e8edf5;font-size:12px;color:#999;text-align:center}.disclaimer{background:#fef9e7;padding:12px 16px;border-radius:6px;font-size:13px;color:#7d6608;margin-bottom:20px}</style></head><body><div class="container"><h1>🏥 患者综合医疗报告（脱敏版）</h1><div class="meta">患者：'+patient+' ｜ 生成日期：'+new Date().toLocaleString()+'</div><div class="disclaimer">⚠️ 本报告已自动脱敏，仅供AI分析参考</div>'+body+'<div class="footer">由「医疗数据脱敏聚合工具 v5.0」生成</div></div></body></html>';
+    return '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+patient+' 综合报告</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Microsoft YaHei";background:#f5f7fa;color:#333;padding:30px}.container{max-width:1000px;margin:0 auto;background:#fff;border-radius:12px;padding:30px;box-shadow:0 4px 20px rgba(0,0,0,.08)}h1{font-size:26px;color:#0d47a1;border-bottom:3px solid #1a73e8;padding-bottom:12px;margin-bottom:20px}.meta{color:#888;font-size:14px;margin-bottom:20px}.section-block{margin-bottom:24px;padding:16px 20px;background:#f8f9fb;border-radius:8px;border-left:4px solid #1a73e8}.section-block h2{font-size:18px;color:#0d47a1;margin-bottom:10px}.footer{margin-top:30px;padding-top:16px;border-top:1px solid #e8edf5;font-size:12px;color:#999;text-align:center}.disclaimer{background:#fef9e7;padding:12px 16px;border-radius:6px;font-size:13px;color:#7d6608;margin-bottom:20px}</style></head><body><div class="container"><h1>🏥 患者综合医疗报告（脱敏版）</h1><div class="meta">患者：'+patient+' ｜ 生成日期：'+new Date().toLocaleString()+'</div><div class="disclaimer">⚠️ 本报告已自动脱敏，仅供AI分析参考</div>'+body+'<div class="footer">由「脱敏单体 v1.0.3」生成</div></div></body></html>';
 }
 
 // ============================================================
@@ -3417,7 +3420,7 @@ function dsm_buildReportTxt(patient, data) {
     lines.push(dsm_APP.aiPrompt || '未设置');
     lines.push('');
     lines.push('----------------------------------------');
-    lines.push('由「医疗数据脱敏聚合工具 v5.0」生成');
+    lines.push('由「脱敏单体 v1.0.3」生成');
     return lines.join('\n');
 }
 
@@ -3491,7 +3494,7 @@ function dsm_buildReportMd(patient, data) {
     lines.push('');
     lines.push('---');
     lines.push('');
-    lines.push('*由「医疗数据脱敏聚合工具 v5.0」生成*');
+    lines.push('*由「脱敏单体 v1.0.3」生成*');
     return lines.join('\n');
 }
 
@@ -3850,146 +3853,25 @@ function dsm_closeSettings() {
 // ============================================================
 //  清空所有数据
 // ============================================================
-function dsm_clearAllData() {
-    if (!confirm('确定要清空所有数据吗？')) return;
-    dsm_APP.patients = {};
-    /* v0.33.1 A（挂号#99）：存档hx_dsm_v1的patients同步清空落档，防重开restore捞回；全try护栏 */
-    try{ var _caH=dsmhLoad(); if(_caH){ _caH.patients={}; dsmhSave(_caH); } }catch(e){}
-    dsm_APP.currentPatient = null;
-    dsm_APP.allFiles = [];
-    var _cpnEl3=document.getElementById('dsm_currentPatientName'); if(_cpnEl3) _cpnEl3.textContent = '未选择'; /* v0.18.0 毛病40 */
-    document.getElementById('dsm_fileList').innerHTML = '<div class="dsm_empty-state">请选择一位病人</div>';
-    document.getElementById('dsm_patientCards').innerHTML = '<div class="dsm_empty-state">请选择文件夹</div>';
-    document.getElementById('dsm_previewSection').classList.remove('dsm_visible');
-    document.getElementById('dsm_previewContent').innerHTML = '<div class="dsm_empty-state">暂无数据</div>';
-    document.getElementById('dsm_rootPathDisplay').textContent = '未加载';
-    document.getElementById('dsm_fileInfo').textContent = '';
-    document.getElementById('dsm_fileBrowser').classList.remove('dsm_visible');
-    document.getElementById('dsm_browserList').innerHTML = '<div class="dsm_empty-state">请先选择文件夹</div>';
-    document.getElementById('dsm_exportFileName').value = '';
-    dsm_showToast('已清空所有数据', 'success');
-}
+/* v1.0.3：死代码删——dsm_clearAllData（按钮v0.35.0已删，无调用方） */
 
 // ============================================================
 //  关于
 // ============================================================
 function dsm_aboutInfo() {
     alert(
-        '🏥 脱敏单体 v1.0.2（自病人大管家 v0.56.8 分出，原「医疗数据脱敏聚合工具 v5.0」脱敏间整搬）\n\n' +
-        '【核心功能】\n' +
-        '• 选择文件夹，自动识别病人\n' +
-        '• 智能脱敏：姓名+职称、医院、身份证等\n' +
-        '• 排除词功能：解决"平素体健"误脱敏\n' +
-        '• AI提示词模板：排除词/职称/医院\n' +
-        '• v1.0.2：关于页版本号跟上真身（v1.0.1忘了改这页，认账补刀）；\n' +
-        '• v1.0.1：补录重做聚合后文件大小记全长（原记增量，数字不准）；\n' +
-        '• v1.0.0：脱敏单体自立门户（2026-10-10 洪老师拍板「同意」分家，自病人大管家 v0.56.8 分出）——脱敏间整张搬来单过：收管家门口来信（dsm_inbox_v1）、脱敏/聚合/标红/规则库/AI体检全照旧，收库/聚合/报告/删件改寄成品箱（dsm_outbox_v1）由大管家落名册；\n' +
-        '• 以下是大管家 v0.56.8 及更早的老账本（分出前的历史，留底）：\n' +
-        '• v0.56.8：AI面板一层看全（想干什么点一个就发，每个钮写着带什么料）+问AI弹窗先亮料单再发+可写顺带要求（简单话直接带着发/复杂话先让AI改提示词）+自建模板可申请收编进出厂。想走老路：localStorage hx_ai_flat_off=1 面板回两层、hx_gj_extraask_off=1 弹窗不带话；\n' +
-        '• v0.56.7：①质检不再"Kimi没说出话来"——说话额度4096→16384（Kimi现在想也吃额度，4096被想烧光回了空包）；②Kimi回信也改成字一个一个蹦（跟千问一样），还能看到"Kimi正在想…"；③万一还想超了，自动加额再请一回；④质检点🩺后可以关窗去忙，磨完弹话叫您；⑤点亮AI件那行绿钮点了原地变进度条，不用滚到下面找。想走老路：localStorage hx_gj_kimistream_off=1 关Kimi流水、hx_gj_grindprog_off=1 绿钮不变身；\n' +
-        '• v0.56.6：AI回信和质检意见存进病人卡的文件名带厂商和时分了（「…·AI病历·千问·0924_1530.txt」这样，谁写的、几点几分一眼分清）；🩺评病历选谁评改成看账本不靠猜文件名（千问写的就喊Kimi评）；点🩺后不再是黑箱——钮下面多一行小字秒表，哪家正在评、已写多少字、等了几秒都看得见，断了红字告诉您断在哪步；还多出第三钮「✋带我的话磨」：您写几句批示（哪几条意见别理、哪几条要改），连话带质检意见一起给AI把提示词再磨一遍并自动存好；\n' +
-        '• v0.56.5：点亮不再半分钟就灭了——长按点亮一份文件后一直有效（以前30秒就自动灭，翻个菜单就没了），不想要了点浮窗AI顶上亮牌旁边的小「✕」就取消；点亮一份AI写的病历再开浮窗AI，顶上直接多出一条绿色大钮「🩺点我：评它+磨提示词」，点一下软件自己跳进编辑页并自动开跑：请另一家AI评病历→意见存进病人卡→按意见改好提示词自动存，全程不用您动手；\n' +
-        '• v0.56.4：问AI更省心三件事——①千问回信改成"一边写一边上屏"：字一个一个蹦出来，底下实时显示，30秒没新字才死心（以前整封等不到就白等）；②发送中多出「🔔挂后台等」钮：点一下窗口关上您去忙别的，回信到了自动存进病人卡并弹话提醒您，名册里就能看；③改提示词回到老通道：点亮名册里那份AI写的病历，再开浮窗AI进「补写完整病历」编辑页，就多出两个钮——「🩺让另一家评这份病历」全自动跑：评完意见自动存进病人卡、接着AI按意见把提示词改好直接存（不用您过目，这回合磨完点「🔄按新提示词重写」就试新版）；上一版阅读器头顶的「叫AI上来」钮撤了。想走老路：localStorage 里 hx_gj_stream_off=1 关流水回信、hx_gj_bgwait_off=1 不出挂后台钮；\n' +
-        '• v0.56.3：看AI写的病历不满意能当场治了——打开AI回信，头顶多出「🤖 叫AI上来」钮：点一下AI面板自己浮到最上面、直接开到「补写完整病历」提示词编辑页，还多出两个钮：「🩺让另一家评这份病历」=请另一家AI照《病历书写基本规范》挑这份病历的毛病（旧日期冒充本次检查/现病史太长/灌水凑数/格式术语），评完直接在本阅读器里看意见，看完回AI面板照着改提示词；「💾存好并按新提示词重写」=提示词存为默认并立刻按新提示词重发一份病历，新旧两份都在名册里可对比。补写病历的出厂提示词也补了三个窟窿（旧日期必须写明原日期/现病史限300字只写本次起病/没提到的项目整项省略不凑数），您自己改过的提示词一个字不动；不想看到这个钮，把localStorage里 hx_gj_callai_off 设成 1 即可；\n' +
-        '• v0.56.2：治「AI查脱敏规则回信乱码」——根子是老版只把病历发给AI、现行规则没发过去，AI手里没规则只能瞎编。现在发AI的包裹最前面自动附上现行规则清单，提示词也换了新写法（先找漏脱、再找误伤、最后按固定格式输出完整规则），回信长度上限放宽防腰斩；\n' +
-        '• v0.56.1：治两个毛病——①标红件打开不再整篇全红了（以前是说明行一个没关门的红括号把全文染红，现在断根+加保险）②幽灵病人根治（删了名册的文件，脱敏间还藏着旧病人的尸体，送新病人时被捞回来变成两个，现在送新病人前连存档一起查一起清）；\n' +
-        '• v0.56.0：文件改名新规矩——原始病历就用原文件名，不再加「原文·未脱敏」前缀；脱敏后自动形成的两份聚合文件叫「…·聚合脱敏·今天日期」和「…·聚合未脱敏·今天日期」（今天送进去今天聚合，两个日期就一样）；AI回信叫「…·AI病历/AI病程/AI总结/AI会诊/AI教学/AI资料·今天日期」，一眼看出是哪种AI做的，同一天做两次自动加时分；「出院」钮改叫「📦归档入库」——点一下这位病人进病案库，原始PDF和TXT自动删掉，聚合和AI文件全保留；\n' +
-        '• v0.55.2：名册里看文件一步到位——点病人名展开后，点任何一份文件（包括「🤖AI产出」里收着的）直接就看到全文，不再多弹一层一模一样的方框；长按那份文件=点亮，点亮后浮窗AI就能处理它。标红件也更可靠了：重做聚合时软件会先去名册和原文保险柜找真原文来标红，实在找不到才不产标红件、并把原来的旧标红件留着不动（上一版会误删旧的）；\n' +
-        '• v0.55.1：治「聚合标红件没红」——病历刚收进来当场做标红是好的，可重开门或写病程重做聚合时，软件手里拿的是脱敏后的料（***早盖掉了），对着***一个红也标不出来，以前还悄悄交一份全白的标红件。这版起：标不出红就不硬产标红件，并当场用大白话告诉您原因、指路「重新收一次原文件」；顺手补了一个漏：写病程小窗粘的新验单，现在名册总账和脱敏间两边都存，重做聚合不会再漏新验单；\n' +
-        '• v0.55.0：AI面板一下多出6个新帮手——📝补写完整病历、✏️写病程记录、🧭病情总结+下一步、📋会诊大纲→PPT、🎓教学大纲→PPT、🔍查资料→学习文件（先在名册点开一个病人再用）；写病程会弹小窗：选日期、可把今天新验单粘进去（自动先脱敏检查一遍，勾选就顺手存进这位病人的原始总账并重做聚合，聚合件改名「料至某月某日」）；AI回信自动存进病人卡，大纲件和学习件在名册里收进「🤖AI产出」一行不占地方；详情页点文件行=点亮这份（会有提示），点亮大纲件后AI面板尾部会多出「📤送PPT工坊」、点亮学习件多出「📤送习题」；\n' +
-        '• v0.54.5：钥匙不再写死在软件里（那几版不敢公开发，害您手机升不上来）——这版起恢复正常自动升级，MD渲染、回信命名这些新东西才真正到您手上；钥匙有老两条保命腿（存手机文件+丢了自动从云端取回），真都没了才请您填一次；\n' +
-        '• v0.54.4：AI回信好看了也好抄了——名册里打开AI回信，标题大、一条条排得整齐；头顶新增「📋 复制纯文本」，点一下拿到剥光记号的干净文字，直接粘贴病历；回信存进病人卡的文件名改成「…AI回信千问_0920_1830.txt」这样，几封回信一眼分清；\n' +
-        '• v0.54.3：千问写信慢不再被冤杀——等它的时间放宽到2分钟，等的过程中每45秒自动敲一次门（约0.001元），秒表上会告诉您「店还开着，您那封还在写」；AI回信一到自动存进病人卡，不用再点「存进病人卡」；\n' +
-        '• v0.54.2：钥匙写进软件里——这版开门就有钥匙，不用再填；以后就算清了缓存换了内核，也会自动找回来；病人详情页里的文件行也能长按点亮了（以前只在名册清单里灵）；\n' +
-        '• v0.54.1：修「千问15秒死心传染Kimi备胎」的毛病——换Kimi后Kimi照常有60秒想问题；千问死心放宽到45秒（它写大份质检本来就要二三十秒）；报错红字说人话：敲门通没通、有没有备胎可换，一眼看明白；\n' +
-        '• v0.54.0：送信不再黑箱不再傻等——发送前先免费探路（0.5秒死心）再花约0.001元敲门确认AI在不在，不通当场红字说清原因；千问卡住15秒就死心（Kimi想问题本来就慢，60秒照旧），等待超10秒会告诉您「连接没断，还在等」；千问罢工换Kimi时进度条当场换字重新计时，不再干瞪眼；Kimi新增快慢两个模型可选，缺省⚡快的（10秒级出活），想得深可切🧠慢的；\n' +
-        '• v0.53.2：点发送分步报人话，没网当场就知道——①先查手机信号，没信号直接红字「现在手机没信号，等有网了再点发送」，不再傻等；②再花3秒探一下到千问/Kimi的路通不通，不通当场红字「路现在不通，信没发出去」；③路通了才真发，秒表改成「信已送到千问门口，等它写回信…」；④发到一半信号断了会马上红字提醒「这封可能白发了」，网回来还会提示「可以重新发送」；想走老路不探路，把localStorage里 hx_gj_probe_off 设成 1 即可；\n' +
-        '• v0.53.1：发给AI之前一律再用脱敏引擎检查一遍（不管文本从哪条路来），盖掉了几类当场在进度区小字报数；不想查就在localStorage里把 hx_gj_sendscan_off 设成 1 走回老路；\n' +
-        '• v0.53.0：真名不再出门——问AI/会诊PPT/寄小涛一律只发脱敏后的聚合件，没聚合件才发原文且自动再脱一遍；标红件永不外发；\n' +
-        '  详情页病历收成一行（点行才展开看内容和按钮），人话徽章一眼认出「已脱敏/未脱敏标红/AI回复」；AI回复不再自动存档，您看过点「✅存进病人卡」才存（文件名带哪家AI）；\n' +
-        '  发送后显示等了几秒，超过60秒没回音会自动再试一次，还不行才报错；没填Key时当场出输入框（新壳配套）；\n' +
-        '• v0.52.2：钥匙再也不丢了——填一次Key就存进手机文件里，以后就算清了缓存、换了内核，开门自动找回来；AI面板没Key时会当场出输入框，不用再找设置页（配套hx-common v0.16.1+新壳v2.0.7）；\n' +
-        '• v0.52.0：名册里删文件不再"跳出去"——删完还停在这位病人这儿，可以接着点下一份的✕连续删；\n' +
-        '• v0.51.0：脱敏间「▸ 看原文/脱敏后」修好点了没反应的毛病（点出两个小框、再点收起，电脑上两个大框照旧一直在）；文件清单撤掉（默认全选，导出照旧）；\n' +
-        '• v0.50.0：脱敏间版面换新——上面两个大框（左=没脱敏的原文带红字、右=脱敏后），电脑上撑满一屏一次看一大段；下面一个聚合方框，\n' +
-        '  聚合一次出两件（全脱件送AI用+标红件红括号⟦R⟧标出被盖住的信息，查漏脱用），两件都放脱敏间清单和名册里、都能长按点亮送AI分析；\n' +
-        '  手机上两个大框默认收起不占屏，只看病人卡+聚合框，点「▸ 看原文/脱敏后」才展开；\n' +
-        '• v0.49.0：交给AI的体检件不再带⟦R⟧红标记了（洪老师拍板拿掉，文本干净）；遮盖也更严实——医师签名/联系人/住院号/门诊号/病历号/医保号/科室、主任医师这类职称后的名字、医院通配、职工名录全都盖掉；\n' +
-        '• v0.48.0：聚合文件改新名「床号姓诊断聚合0919.txt」样式；同名旧聚合件直接替换成新的不再堆积；点病人卡脱敏完自动帮您聚一份（每病人开门只自动聚一次，删了不会自己补回，要再聚点🧩钮）；修好开门后脱敏间列表偶尔空白的老毛病；\n' +
-        '• v0.47.0：设置区规则不再成串——以前AI改规则回来爱用竖线连成一长串存成一条，看着眼花；现在回来的串自动拆开一个词一个标签，您手里现存的长串也自动拆开去重，不用您动手；\n' +
-        '• v0.46.0：脱敏间文件清单默认折起（点「📂 文件清单（点我展开）」才看见，勾选照旧默认全勾）；「🧩 形成聚合文件」钮挪到脱敏后绿框正下方；「📤交给AI查脱敏」五步窗不再被AI面板挡住，提示条也不会藏到面板后面；问AI送信等60秒没回音会明说「送信超过60秒没回音」，不再干等；\n' +
-        '• v0.45.0：名册里每份病历带✕可删，删的时候名册和脱敏间两头一起删（脱敏间删也会带走名册那份）；预览里PDF病历永远排在验单前面（老件认文件后缀不再认错）；聚合文件病历在前、验单在后；日期和时间不再脱敏（您拍板的：检验结果和病历里的日期时间一律留原文）；双方框里「脱敏前·病历」等4行长按1.5秒也能点亮了；AI体检改三关——发没发成有大字报、AI意见逐条摆出来您点✕挑剩的才改、不点「同意」一个字不改，改完回读核对，没改成自动还原；\n' +
-        '• v0.44.0：脱敏规则补强（初代规矩补回：21个「标签：值」整段脱、职称+冒号+姓名、日期时间、医院通配收窄防多吃）+新立「👥职工名录」规则组（设置里一行一个名字，名单后给）；主页面AI功能卡/PDF引擎框藏起不碍眼；脱敏间=收病历→导出/其他→病人卡，点病人出左右双方框（左脱敏前红框右脱敏后绿框，点哪行全屏看哪份）；「📤拷出单体脱敏工具」在导出/其他区第一行；\n' +
-        '• v0.43.0：PDF引擎开门就自动装（不再用到才装；本地留存不过桥不怕截断，装坏包会自动重下）；聚合里PDF部分强制再脱一遍、没读出字会明说；名册里收件存的原文标红小字「原文未脱敏」；验单就叫「验单」不再叫TXT验单；\n' +
-        '• v0.42.0：脱敏间重排——首页就是病人卡，点病人卡自动脱敏+自动出预览（PDF病历在前、验单在后）；手机上每份病历两行下划线「脱敏前/脱敏后」标着「PDF病历」「验单」，点哪行全屏看哪份，电脑上照旧左右对照、标题也带身份；\n' +
-        '  收病历的5个入口收进「📥 收病历」折起区（在壳里选文件夹会记住上次位置）；「🧩 形成聚合文件」现在只出一份聚合txt（脱敏后的，PDF在前TXT在后），不再产标红件、也不再清空脱敏间，原文件都还在；导出/AI收进折起区；\n' +
-        '• v0.41.0：点「未脱敏原文（点我全屏看）」进去能看到红字标敏感词了（以前标了不显色）；\n' +
-        '  清单里的「聚合.txt/聚合.PDF」假名废掉，收件副本老老实实显示真文件名，"聚合"名只给🧩按钮真拼出来的那份；\n' +
-        '• v0.40.0：删病人连根拔——登记账+血气呼吸机档案柜一起删，删掉的人不再自己回来；\n' +
-        '• v0.39.0：点「🧩 形成聚合文件」一次产两件——脱敏后聚合件（给AI处理用）+未脱敏标红件（⟦R⟧红标记号，修脱敏规则用）；\n' +
-        '  两件都放脱敏间清单+名册名下；点亮标红件再点问AI，AI就能帮您看哪个词漏脱了、哪个误伤了；\n' +
-        '• v0.38.0：流程大简化——保险柜取消不管保密；头回开门全清场一次（名册/脱敏间/拿不准全清，只清一次）；\n' +
-        '  送脱敏间若是新病人，脱敏间自动清空再进（旧聚合件不留着扯皮）；点「🧩 形成聚合文件」后脱敏间只留这份聚合件；\n' +
-        '  文件行长按1.5秒点亮（30秒有效），再点「🤖问AI」发送时点亮的文件脱敏后一起发给AI；\n' +
-        '  删过的病人闲时不再自动收回来（删除账记着），您手动点收病历照样收得回；\n' +
-        '• v0.37.0：手机上脱敏预览收成两行字（未脱敏原文一行/脱敏后一行，点哪行全屏看哪份，电脑照旧左右对照）；脱敏间加「🧩 形成聚合文件」明钮，一按聚一份同时放两处：脱敏间清单+名册病人名下；\n' +
-        '• v0.36.0：防重只认现名册（删病人后插U盘能重收，同名大小变了当新版收）；删病人彻底删不再记隐藏名单；手动收播报跳过名单；看不懂的当场弹框问可改名；送脱敏间同名只送最新；\n' +
-        '• v0.35.2：详情页「原状病历」PDF排前txt排后（脱敏的病例显示PDF优先）；\n' +
-        '• v0.35.1：删过的病人手动收病历能收回来了（收进时自动移出"不再显示"名单）；收过的重复件照旧跳过不重复收（不再逐份播报）；\n' +
-        '• v0.35.0：收病历防重（收过的自动跳过并报名单）；脱敏间删掉「收进病历库/清空数据」两钮（收库照老规矩读完自动收）；\n' +
-        '• 送脱敏间PDF和验单TXT一起送、重复的自动只留一份、送前给您过目名单；脱敏后PDF+TXT自动聚合成一份进名册；\n' +
-        '• AI分析完自动把回复存回名册（🤖徽章那条）；脱敏间文件名点一下全屏看（可切原文/脱敏后），病人名点开可逐份删；\n' +
-        '• v0.34.1：规则改动自动留账——导入AI改的规则自动算清四类（职称/医院/关键词/排除词）新增几条删几条，存进规则版本库；每条点「🔍看改动」绿字看新增、红字看删除，老版本没记账如实说；\n' +
-        '• v0.34.0：规矩正名——PDF病历是真身（排最前、收进读正文、只送它去脱敏）；验单TXT不脱敏只聚合用；收病历再也不删原件，要删您自己删；闲时自动认记住的U盘文件夹收新病历（#107）；\n' +
-        '• v0.33.5：PDF收进就读出正文，送脱敏间/问AI/会诊PPT都能用上PDF了（#106）；\n' +
-        '• v0.33.3：换自家仿电脑资源管理器挑文件/文件夹（不再用系统选择器，U盘可分文件夹找、可搜可多选）；\n' +
-        '  收病历走新面板收的原件留在U盘没动不删；没权限/老壳自动走回老SAF路，行为照旧（#101）；\n' +
-        '• v0.33.2：换文件夹真选完才算数（没换明说「没换成」）；点「现在收一次病历」没文件夹会先请您选、U盘拔了会提醒您重选、收前先说搜到几份啥文件；换文件夹后同名文件不再被误当旧件（#100）；\n' +
-        '• v0.33.1：删病人除根（#99）——脱敏间删病人连存档一起删、清空数据存档同步清空，重开不再复活；\n' +
-        '  名册删人的隐藏名单落文件夹真源；收件扫描遇到删过的病人不再收回来；\n' +
-        '• v0.33.0：名册加「📂换文件夹」入口、收病历报告说人话（#96）；名册每病人加「🛡送脱敏间」（#97一半）；\n' +
-        '  脱敏间进件收进折叠行「📥自己取病历」（#98一半），开门不再自动找病历（首次展开脱敏间才恢复存档）；\n' +
-        '  自本版起原文不再自动销毁，改存满1个月横幅标红提醒、点「立即删」手动删（洪老师2026-09-14拍板）；\n' +
-        '  导出报告挂名册的条目补上时分；\n' +
-        '• v0.31.0：安心条HX.step接入——顶部细进度条+两行小字（第1行人话/第2行机械码），开门对账、读文件、拆PDF、导出、销毁原文愣住时定格在哪行，拍照发AI即可定位；\n' +
-        '• v0.30.5：原文销毁不愣住、不误报——配新壳v1.7.4，销毁挪壳后台线程跑（删+复核+再删一次），\n' +
-        '  开门不再定住几秒；真删过但被误报"没删成"的老毛病也治了；旧壳照常能用（自动走回老删法）（#90）；\n' +
-        '• v0.30.4：愣住除根——配新壳v1.7.3，对账账本由壳后台线程一次全抱回，开门点下就动、不再定住；\n' +
-        '  旧壳照常能用（自动走回老读法）；\n' +
-        '• v0.30.3：开门愣住根治——闲时对账摘掉三个大件（病历库/原文保险柜/脱敏存档），只对5个小件秒完，\n' +
-        '  开门不再卡十几秒（#86，跟小涛笔记v0.10.1同一副药）；大件数据保护不减：换机/清缓存时自动单件灌回；\n' +
-        '• v0.30.2：坚果云自动备份腿恢复——壳升v1.6.0后dav改后台线程跑，不再卡界面（#75根治）；\n' +
-        '• v0.30.1：止血——坚果云自动备份腿（rescue/mirror）暂停：它是同步联网，网慢会把页面卡死（#75）；功能留着没删，根治等壳改版；GitHub中转照常；\n' +
-        '• v0.30.0：地基二期——「📮寄给小涛笔记」改走仓管员一本账（有壳直接落文件夹真源，没壳照旧存本机，效果一样）；\n' +
-        '  收件「合并/新建资料」副本瘦身：只写小涛笔记一本账（xt_notes_v1），学习笔记旧账（study_notes_v1）停写留旧、老数据原地不动；\n' +
-        '• v0.29.0：地基补强——单体（没装壳）保存时数据顺手塞进中转邮路（GitHub私有仓transit/，壳开门拉回，不怕丢）；\n' +
-        '  壳内开门闲时拉中转区（拉到新数据提示后刷新）、从坚果云救回文件夹里缺失的hxdata备份（只补缺失不盖已有）；\n' +
-        '  保存后闲时把hxdata备份镜像到坚果云；单体顶部加中转状态条（🟢通畅/🟡有件待发/🔴送不出），壳内恒🟢不碍眼；\n' +
-        '• v0.28.0：地基工程一期——hxStore收编成HX.store薄壳代理（公共件不在时走原有老路，行为照旧）；对账发现两头都改过顶部出红条明示，旧的改名留档；\n' +
-        '  收件文件名没带日期时间的入库补「_收件月日_时分」；PPT信箱寄新信不再弹确认，旧信自动改名「_旧信_时分」留档；脱敏存档同名写入旧值挪「_冲突_时分」留档；\n' +
-        '• v0.27.0：信息流通三连——收件保留顺手双写进小涛笔记（合并/新建都带过去）；工具箱加「📘 小涛笔记」直达链接；\n' +
-        '  病历详情页加「📮寄给小涛笔记」，该病人聚合病历打包寄过去，小涛笔记开门就能收；\n' +
-        '• v0.26.0：收件两修——可收文件类型扩成txt/pdf/md；立"不许静默吞"规矩，被扫描看到但解析不ok或类型不收的\n' +
-        '  文件一律进「❓拿不准」清单写明原因（原件不删、不重复报），点「✅是病人」可转正收进名册；\n' +
-        '• v0.25.0：速记四连——脱敏间加「📥 拉测试病历」（云端仓拉两份进脱敏间，没钥匙/没网会明说）和「📁本地病历夹」（库里病历勾选回炉重脱敏，库里的不动）；拿不准浮层加「✅是病人」（填床号/姓/诊断就收件进库）；工具箱加「选择病人▾」（名册病人/脱敏间文件两区点选当前病人，名册里点病人行也算选中）；\n' +
-        '• v0.24.0：AI面板试点——🏥浮标→「🤖AI」统一入口，两层结构（功能→提示词套/开始），脱敏间展开时本页功能置顶；原AI按钮改为唤起面板定位（公共件不在时照旧直跑）；面板底部「＋加AI功能」可自建问答式小功能；\n' +
-        '• v0.23.0：收编公共件hx-common.js——钥匙统一HX.keys（写Key只写hx_apikey）、速记改HX.sj一行接入（「补充上一条」照留，hx-common v0.1.1 extraBtn补回）、账本改HX.bill；公共件没装上时主功能照常，只速记浮标静默降级；\n' +
-        '• v0.22.0：全鱼骨头收尾——紫色AI大钮变普通文字行（挂号#55销号）、工具箱链接去边框、问AI三钮改一行一行；\n' +
-        '• v0.21.1：预览对照不分横竖屏一律左右分栏（左原文标红右脱敏后），横屏提醒条删；\n' +
-        '• v0.21.0：📤交给AI查脱敏改五站浮层（选哪份/原文标红/现行规则/AI件确认/直发AI出意见可导入）；收库不再当场毁原文，恢复到点或下次开门才销毁；\n' +
-        '• v0.20.0：预览标题行「📤交给AI查脱敏」导出体检包给AI找漏脱/误脱；\n' +
-        '  设置里「📥导入AI规则」贴回AI改好的规则（自动存版本库）；\n' +
-        '  「📚 规则版本库」随时换用旧版本；手机竖屏有横屏提醒，窄屏预览前8行可展开\n\n' +
-        '【排除词用法】\n' +
-        '1. 预览时发现被误脱敏的词\n' +
-        '2. 复制该词 → 系统设置 → 排除词 → 添加\n' +
-        '3. 重新预览，恢复正常\n\n' +
-        '【AI提示词用法】\n' +
-        '1. 选择模板（排除词/职称/医院）\n' +
-        '2. 复制提示词 → 发给AI\n' +
-        '3. AI输出规则 → 粘贴到完整规则区\n' +
-        '4. 点击保存\n\n' +
-        '⚠️ 本工具仅供辅助参考'
+        '🏥 脱敏单体 v1.0.3（自病人大管家 v0.56.8 分出）\n\n' +
+        '【用法速览】\n' +
+        '① 收病历→自动脱敏+自动聚合，一般不用手动点；\n' +
+        '② 左框=脱敏前原文（红字标出被盖信息，自己看），右框=脱敏后（喂AI用）；\n' +
+        '③ 「🧩 重做聚合」一般不用点——删了聚合件想补、改了规则想重聚才点；\n' +
+        '④ 「📤 导出单体」可把当前这份（可含数据）拷到别的电脑双击就用。\n\n' +
+        '【最近版本】\n' +
+        '• v1.0.3：双框电脑撑满屏；顶栏版本字修好；导出单体可含数据；AI分析钮直连体检站；帮助瘦身；清死代码；\n' +
+        '• v1.0.2：关于页版本字跟上真身；\n' +
+        '• v1.0.1：reagg补录size记全长；\n' +
+        '• v1.0.0：自病人大管家v0.56.8分出成单体。\n\n' +
+        '（更早历史见仓里交接说明，不再堆这里）'
     );
 }
 
@@ -4053,7 +3935,7 @@ function dsm_init() {
        引擎获取不过桥（完整性验+IndexedDB缓存+公开站现取），全try静默失败不碍开门 */
     try{ setTimeout(function(){ try{ dsm_loadPDFEngine(); }catch(e){} }, 4000); }catch(e){}
     
-    console.log('🏥 医疗数据脱敏聚合工具 v5.0 已加载');
+    console.log('🏥 脱敏单体 v1.0.3 已加载');
     console.log('📊 规则统计：职称 ' + dsm_APP.rules.titles.length + ' 条，医院 ' + dsm_APP.rules.hospitals.length + ' 条');
     console.log('🔴 敏感词 ' + dsm_APP.rules.keywords.length + ' 条，🚫 排除词 ' + dsm_APP.rules.excludes.length + ' 条');
     console.log('👤 百家姓 ' + dsm_SURNAMES.length + ' 个');
@@ -4348,7 +4230,7 @@ function dsm_makeAgg(ptName, dateStr) { /* v0.55.0 刀3（2026-09-21 班⑯）�
     if (!_noRaw) { try { dsmh_remember(pr.pkey, markName, markText, { name: markName, size: markText.length, type: '文本', ext: '.txt' }); } catch(e) {} } /* v0.50.0（挂号#126）：标红件同落脱敏间存档；v0.55.1刀1：_noRaw时跳过 */
     try { dsm_renderPatientCards(Object.keys(dsm_APP.patients)); } catch(e) {}
     try { dsm_selectPatient(pr.pkey); } catch(e) {}
-    toast('🧩 已形成聚合件：「' + aggName + '」（脱敏后，PDF病历在前、验单在后）' + (_noRaw ? '' : '＋标红件「' + markName + '」（脱敏前原文，⟦R⟧记号标出被盖住的信息）') + (_pdfMiss ? '；⚠️' + _pdfMiss + '份PDF没读出字没进聚合' : '') + '，放了两处：脱敏间清单 + 名册「' + pr.pkey + '」名下；原文件都还在，没清场' + (_noRaw ? '；🔴标红件没新产：手里料和名册、保险柜里都取不到能标红的原文（多半早已脱敏过）；原来的旧标红件还在没动，要看新标红请把原文件重新收一遍再脱敏' : '') + (typeof _hadOld!=='undefined'&&_hadOld ? '（同名旧聚合件已替换）' : ''), 6000); /* v0.48.0（2026-09-19 班①）改2：toast分支语义改「同名旧聚合件已替换」；v0.50.0（挂号#126）：一次出两件，toast明说；v0.55.1刀1：_noRaw分支明说标红件没产的原因和补救路；v0.55.2刀1：文案同步"旧标红件保留不删+已先试兜底取原文" */
+    toast('🧩 已形成聚合件：「' + aggName + '」（脱敏后，PDF病历在前、验单在后）' + (_noRaw ? '' : '＋标红件「' + markName + '」（脱敏前原文，⟦R⟧记号标出被盖住的信息）') + (_pdfMiss ? '；⚠️' + _pdfMiss + '份PDF没读出字没进聚合' : '') + '，放了两处：脱敏间清单 + 名册「' + pr.pkey + '」名下；原文件都还在，没清场' + (_noRaw ? '；🔴标红件没新产：手里料和名册、保险柜里都取不到能标红的原文（多半早已脱敏过）；原来的旧标红件还在没动，要看新标红请把原文件重新收一遍再脱敏' : '') /* v1.0.3：_hadOld死分支删（从未定义，永远false） */, 6000); /* v0.48.0（2026-09-19 班①）改2：toast分支语义改「同名旧聚合件已替换」；v0.50.0（挂号#126）：一次出两件，toast明说；v0.55.1刀1：_noRaw分支明说标红件没产的原因和补救路；v0.55.2刀1：文案同步"旧标红件保留不删+已先试兜底取原文" */
     /* v1.0.0：renderPatients是管家的，单体删此调用（名册重画由管家收dsm_outbox_v1后做） */
 }
 
@@ -4611,7 +4493,7 @@ function dsmh_restore(){
 
 /* v0.20.0 开门两件套：规则版本库首次建档（幂等，重复开门不重复建）+ 横屏提醒条初始检查 */
 try{ dsm_rulelibInit(); }catch(e){}
-try{ dsm_lastNarrow = (window.innerWidth < 700); dsm_orientCheck(); }catch(e){}
+try{ dsm_lastNarrow = (window.innerWidth < 700); }catch(e){} /* v1.0.3：orientCheck死函数删 */
 </script>
 <script>
 /* ═══════════ v0.8.0 引擎拆出：PDFJS_B64/PDFWORKER_B64 移到同目录 guanjia-pdf-engine.js，
