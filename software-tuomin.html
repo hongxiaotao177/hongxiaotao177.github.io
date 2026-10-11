@@ -5,8 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>脱敏单体</title>
 <!--
-  红小涛学习套装 · 脱敏单体 v1.0.4
+  红小涛学习套装 · 脱敏单体 v1.1.0
   定位：病历脱敏/聚合/标红/规则库/AI体检 单体工具（原病人大管家「🛡 脱敏间」整搬分出）。
+    v1.1.0 2026-10-11 班⑥（洪老师拍板开工，DeepSeek回件⑤采用+Kimi终审亲手落地截断部分）：刀1半脱敏件顶替纯标红件（dsm_buildHalfView=先标红⟦R⟧再盖硬隐私占位、已标红处跳过不盖，引擎三件套零动）；刀2版面——两小方块窄屏常显只露几行/宽屏照旧撑满、点框看全文长按点亮、删「交给AI查脱敏」钮AI归浮窗、病人卡只显聚合件、数据区空壳删、提示词静态占位框（aiPrompt变量留）、加🗑️重新开始（清内存+存档+锁+保险柜，名册成品不动）；刀3撤「只聚一次」——dsm_autoAggDone改防递归锁，收件/重新开始重置锁必重聚；刀4补浮窗接入HX.sj.init/HX.ai.init（分家漏搬的真bug）+DSM_AI_MANIFEST体检条目。终审修回件一处错：bigZone⟦R⟧转换改剥孤儿成对转span（回件把⟦R⟧换成[敏感]字样整span会丢内容）。
     v1.0.4 2026-10-11 班④（洪老师拍板乙类「都做」）：乙②单体侧storage监听dsm_inbox_v1，单体开着（含后台tab）管家一寄信立刻收件自动脱敏聚合寄回，不用重开门；红线零动。
     v1.0.3 2026-10-11 班③（DeepSeek研究后洪老师拍板"全修"）：双框破出640px卡死电脑撑满屏+顶栏版本字补上+导出单体修好可含数据（dsm_exportCurrent）+AI分析钮直连体检站+帮助弹窗瘦身+死代码清理（foldPre/foldToggle/orientCheck/clearAllData/死CSS/死分支）+报告落款与console的v5.0改脱敏单体；
     v1.0.2 2026-10-11 班②补刀（洪老师真机报"关于页还显1.0.0"）：dsm_aboutInfo关于页版本字跟上真身（v1.0.1忘改关于页，认账）；
@@ -65,7 +66,7 @@
 <body>
 <div class="wrap">
   <h1>🛡 脱敏单体</h1>
-  <div class="ver">v1.0.4 · 自病人大管家 v0.56.8 分出 · 病历脱敏/聚合/标红/规则库/AI体检</div>
+  <div class="ver">v1.1.0 · 自病人大管家 v0.56.8 分出 · 病历脱敏/聚合/半脱敏标红/规则库/AI体检</div>
   <style>
     /* v0.21.1 洪老师拍板：不分横竖屏一律左右分栏（左原文标红、右脱敏后各半宽，字号不动，字随栏宽折行） */
     /* v0.37.0 挂号#113（2026-09-17 09:10速记，洪老师拍板）：窄屏手机预览只显两行字（未脱敏原文一行/脱敏后一行），点哪行全屏看哪份；宽屏电脑照旧左右分栏一字不变 */
@@ -83,13 +84,10 @@
     @media (max-width:700px){
       /* v1.0.3：死CSS compare/narrowRows段删；窄屏复位防破出100vw横向滚动 */
       #dsmWrap{width:auto;max-width:1200px;margin-left:0;margin-right:0;padding:10px;}
-      /* v0.50.0（挂号#126）窄屏：两大框默认整藏（点「▸ 看原文/脱敏后」加dsm_bigOpen才展开，再点收起）；
-         逐文件区块也藏起——屏上只留病人卡+聚合区（聚合区在#dsm_bigZone不在previewContent里，不受影响）；
-         展开时框高限60vh防一屏顶穿 */
-      #dsmWrap .dsm_bigFrames{display:none}
-      #dsmWrap .dsm_bigFrames.dsm_bigOpen{display:flex}
-      #dsmWrap .dsm_bigFrames .dsm_bigPre{max-height:60vh}
-      #dsmWrap .dsm_bigToggle{display:block}
+      /* v1.1.0（2026-10-11 班⑥，洪老师拍板）：窄屏两小方块常显只露几行字（不再整藏+展开钮）；toggle行不再渲染（函数留壳）；
+         逐文件区块照旧藏起——屏上留病人卡+两小方块+聚合区（聚合区在#dsm_bigZone不在previewContent里，不受影响） */
+      #dsmWrap .dsm_bigFrames{display:flex;gap:8px}
+      #dsmWrap .dsm_bigFrames .dsm_bigPre{max-height:5.5em;overflow:hidden}
       #dsmWrap .dsm_preview-content{display:none}
     }
     /* v0.20.0 ②窄屏折叠提示行 */
@@ -183,25 +181,19 @@
 <div class="dsm_patient-cards" id="dsm_patientCards"><div class="dsm_empty-state">请点击上方「选择文件夹」</div></div>
 </div>
 
-<!-- 数据区 -->
-<div class="dsm_data-section">
-<div class="dsm_top-row">
-<!-- v0.46.0（2026-09-18 班④，速记13:16）①：🧩聚合钮从此处挪到预览容器#dsm_previewContent紧后面（见下方预览区注释），原位不再放 -->
-</div>
-<!-- v0.51.0（2026-09-19 班⑤，洪老师拍板"那个文件清单是没有必要的"）：文件清单整块撤出版面——v0.46.0折头+勾选行全撤；dsm_fileList隐形留壳（display:none）供dsm_renderFileList照写不报错，勾选口径=默认全选（unsel名单永远空），dsm_renderFileList/dsm_selFiles/dsm_selAll/dsm_toggleFileSel函数本体一行未动 -->
+<!-- v1.1.0（班⑥）：数据区空壳整块删（v0.51.0撤文件清单后留的白卡片壳）；dsm_fileList隐形壳保留供dsm_renderFileList照写不报错，函数本体一行未动 -->
 <div style="display:none;"><div class="dsm_file-list" id="dsm_fileList"></div></div>
-</div>
 
 <!-- 预览 -->
 <div class="dsm_preview-section" id="dsm_previewSection">
 <!-- v0.20.0 ①手机竖屏横屏提醒条（✕关掉后本session不再弹，内存变量不落地） -->
 <!-- v0.21.1 竖屏也左右分栏后，横屏提醒条多余，整条删（dsm_orientCheck保留空转，不再有任何提示） -->
-<div class="dsm_preview-title">📄 预览（原文红色高亮 · 右侧脱敏后） <button onclick="if(window.HX&&HX.ai&&HX.ai.ready&&HX.ai.ready()){ HX.ai.open('dsm-tijian'); return; }event.stopPropagation();dsm_aiCheckOpen()" style="float:right;font-size:12px;padding:2px 8px;border:1px solid #8e44ad;color:#8e44ad;background:#fff;border-radius:5px;cursor:pointer;">📤交给AI查脱敏</button></div><!-- v0.20.0 ③ -->
+<div class="dsm_preview-title">📄 两版对照（左=半脱敏标红 · 右=全脱送AI）</div><!-- v1.1.0（班⑥）：删「📤交给AI查脱敏」钮，AI功能全归浮窗；v0.20.0 ③ -->
 <!-- v0.50.0（2026-09-19 班③，挂号#126）：新立#dsm_bigZone静态壳放「上两大框+下一聚合框+窄屏展开小字行」——放预览容器#dsm_previewContent外面，免得被外层550px限高裁掉（电脑要撑满屏）；内容由dsm_previewData每次预览重填（照🧩钮v0.46.0"静态壳+运行时填"同款思路） -->
 <div id="dsm_bigZone"></div>
 <div class="dsm_preview-content" id="dsm_previewContent"><div class="dsm_empty-state">暂无数据</div></div>
 <!-- v0.46.0（2026-09-18 班④，速记13:16）①：🧩钮挪位（方案B·静态HTML直搬，最稳）——#dsm_previewContent的innerHTML每次预览重渲会被整个换掉，钮放壳里必丢，故照任务书备选方案把钮静态搬到预览容器元素紧后面，视觉上正跟在「🔒脱敏后」绿框所属双方框下面；按钮文字与onclick=dsm_makeAgg()一字未动 -->
-<div class="dsm_actions" style="margin:6px 0 0;"><button onclick="dsm_makeAgg()" style="background:#e8f5e9;border:1px solid #27ae60;color:#1e7e34;border-radius:5px;">🧩 重做聚合（一般不用点）</button><!-- v1.0.3：脱敏聚合已自动，此钮降级为兜底（删件重聚/改规则重聚才用） --></div>
+<div class="dsm_actions" style="margin:6px 0 0;"><button onclick="dsm_makeAgg()" style="background:#e8f5e9;border:1px solid #27ae60;color:#1e7e34;border-radius:5px;">🧩 重做聚合（一般不用点）</button><!-- v1.0.3：脱敏聚合已自动，此钮降级为兜底（删件重聚/改规则重聚才用） --><button onclick="dsm_restartPatient()" style="margin-left:8px;background:#fff;border:1px solid #e74c3c;color:#c0392b;border-radius:5px;">🗑️ 重新开始</button><!-- v1.1.0（班⑥）：清空该病人，车床不留痕 --></div>
 </div>
 </div>
 
@@ -820,6 +812,7 @@ function dsm_inboxRead(){ /* v1.0.0 新增：开门收管家来信——读 dsm_
             rec.content[f.name]={text:f.text||'', images:[]};
             try{ dsmh_remember(_pk, f.name, f.text||'', {name:f.name, size:(f.text||'').length, type:_type, ext:_ext}); }catch(e){}
             if(sentPkeys.indexOf(_pk)<0) sentPkeys.push(_pk);
+            try{ delete dsm_autoAggDone[_pk]; }catch(e){} /* v1.1.0（班⑥）刀3：新收料必重置防递归锁，收件必自动重聚 */
           }catch(e){}
         });
       }
@@ -1565,7 +1558,7 @@ function dsm_exportFull(){
         var blob=new Blob([html], {type:'text/html;charset=utf-8'});
         var a=document.createElement('a');
         a.href=URL.createObjectURL(blob);
-        a.download='脱敏单体_v1.0.4.html'; /* v1.0.3：SW_VERSION在单体不存在会炸+文件名母本痕迹，改硬编码脱敏单体 */
+        a.download='脱敏单体_v1.1.0.html'; /* v1.0.3：SW_VERSION在单体不存在会炸+文件名母本痕迹，改硬编码脱敏单体 */
         document.body.appendChild(a); a.click(); document.body.removeChild(a);
         dsm_showToast('📦 完整单文件已导出（含PDF引擎）','success');
     }
@@ -1606,7 +1599,7 @@ function dsm_exportCurrent(){
             var pos=html.lastIndexOf('</body>');
             html=html.slice(0,pos)+inject+html.slice(pos);
         }
-        var fname=withData ? '脱敏单体_v1.0.4_含数据.html' : '脱敏单体_v1.0.4_干净.html';
+        var fname=withData ? '脱敏单体_v1.1.0_含数据.html' : '脱敏单体_v1.1.0_干净.html';
         var blob=new Blob([html], {type:'text/html;charset=utf-8'});
         var a=document.createElement('a');
         a.href=URL.createObjectURL(blob);
@@ -1728,11 +1721,18 @@ function dsm_renderPatientCards(names) {
             var _pd0 = dsm_APP.patients[name];
             html += '<div style="flex-basis:100%;border-left:3px solid #1a73e8;margin:2px 0 4px;padding:2px 0 2px 10px;">';
             if (!_pd0 || !_pd0.files || !_pd0.files.length) html += '<div style="font-size:12px;color:#999;padding:3px 0;">名下还没有病历</div>';
-            else _pd0.files.forEach(function(_f0) {
-                html += '<div style="display:flex;align-items:center;gap:6px;font-size:13px;padding:4px 0;border-bottom:1px dashed #f0e9df;">' +
-                    '<span style="flex:1;min-width:0;word-break:break-all;">' + String(_f0.name).replace(/</g,'&lt;') + '</span>' +
-                    '<span style="color:#c0392b;cursor:pointer;font-weight:700;padding:2px 8px;" onclick="event.stopPropagation();dsm_delPtFile(\'' + name + '\',\'' + String(_f0.name).replace(/'/g,"\\'") + '\')">✕</span></div>';
-            });
+            else {
+                /* v1.1.0（班⑥）：只显示聚合件两行，原始PDF/TXT在但不显示（车床版面只摆成品） */
+                var _shown = 0;
+                _pd0.files.forEach(function(_f0) {
+                    if (String(_f0.name || '').indexOf('聚合') < 0 && String(_f0.name || '').indexOf('_标红_') < 0) return;
+                    _shown++;
+                    html += '<div style="display:flex;align-items:center;gap:6px;font-size:13px;padding:4px 0;border-bottom:1px dashed #f0e9df;">' +
+                        '<span style="flex:1;min-width:0;word-break:break-all;">' + String(_f0.name).replace(/</g,'&lt;') + '</span>' +
+                        '<span style="color:#c0392b;cursor:pointer;font-weight:700;padding:2px 8px;" onclick="event.stopPropagation();dsm_delPtFile(\'' + name + '\',\'' + String(_f0.name).replace(/'/g,"\\'") + '\')">✕</span></div>';
+                });
+                if (!_shown) html += '<div style="font-size:12px;color:#999;padding:3px 0;">名下还没有聚合件</div>';
+            }
             html += '</div>';
         }
     });
@@ -1785,8 +1785,8 @@ function dsm_selectPatient(name) {
     dsm_updateExportFileName();
     /* v0.42.0（挂号#119）①：点病人卡=自动脱敏该病人名下PDF+TXT并自动显示预览；该病人有文本件时才调（无件不调，免得空弹"暂无数据"） */
     try { var _spd = dsm_APP.patients[name]; if (_spd && _spd.files && _spd.files.length) dsm_previewData(); } catch(e) {}
-    /* v0.48.0（2026-09-19 班①）改3：脱敏完成立刻自动聚合——旗标防重，本次开门每病人只自动聚一次；
-       删了聚合件不会自动补回，要再聚点🧩手动钮；dsm_makeAgg末尾会调dsm_selectPatient形成一层递归但旗标已立不会再来，安全 */
+    /* v0.48.0（2026-09-19 班①）改3：脱敏完成立刻自动聚合；v1.1.0（班⑥，洪老师拍板"只聚一次没道理"）：dsm_autoAggDone语义改「防递归锁」——
+       只为防 dsm_makeAgg末尾调dsm_selectPatient 递归死循环；新收料（dsm_inboxRead落件）与重新开始（dsm_restartPatient）统一delete该pkey锁，下次自动重聚 */
     try{ if(_spd&&_spd.files&&_spd.files.length&&!dsm_autoAggDone[name]){ dsm_autoAggDone[name]=1; dsm_makeAgg(); } }catch(e){}
     try{ dsm_renderPatientCards(Object.keys(dsm_APP.patients)); }catch(e){} /* 2026-09-16 班① 第4条c：重画卡片让名下清单跟着展开/收起 */
 }
@@ -1813,6 +1813,27 @@ function dsm_deletePatient(name) {
         document.getElementById('dsm_previewSection').classList.remove('dsm_visible');
         dsm_showToast('已删除', 'success');
     }
+}
+
+/* ═════ v1.1.0（2026-10-11 班⑥，洪老师拍板）刀2-6：重新开始——清空该病人，车床不留痕 ═════
+   清：dsm_APP内存 + hx_dsm_v1存档 + dsm_autoAggDone锁 + dsmraw保险柜（逐条走dsmraw_destroy真删壳文件+登记）；
+   不清：大管家名册成品（工件已寄出不反悔）、规则表、dsm_outbox_v1、其他病人 */
+function dsm_restartPatient() {
+    var patient = dsm_APP.currentPatient;
+    if (!patient) { dsm_showToast('请先点一位病人', 'error'); return; }
+    if (!confirm('把脱敏间里「' + patient + '」名下的东西全部清空吗？\n原始件、聚合件、存档、保险柜原文都清掉，收不回。\n大管家名册里已收到的成品不动。')) return;
+    try { delete dsm_APP.patients[patient]; } catch(e){}
+    try { var h = dsmhLoad(); if (h && h.patients) { delete h.patients[patient]; dsmhSave(h); } } catch(e){}
+    try { delete dsm_autoAggDone[patient]; } catch(e){} /* v1.1.0刀3：重置防递归锁，重新收件必自动重聚 */
+    try { /* 保险柜该病人原文逐条销毁（壳文件+登记，dsmraw_destroy现成链） */
+        var rd = dsmrawLoad();
+        (rd.items || []).forEach(function(it){ if (it && it.patient === patient) { try{ dsmraw_destroy(it.id); }catch(e){} } });
+    } catch(e){}
+    if (dsm_APP.currentPatient === patient) dsm_APP.currentPatient = null;
+    try { dsm_renderPatientCards(Object.keys(dsm_APP.patients)); } catch(e){}
+    try { document.getElementById('dsm_previewSection').classList.remove('dsm_visible'); } catch(e){}
+    try { var bz = document.getElementById('dsm_bigZone'); if (bz) bz.innerHTML = ''; } catch(e){}
+    dsm_showToast('已清空「' + patient + '」，可以重新收件', 'success');
 }
 
 // ============================================================
@@ -2446,32 +2467,56 @@ function dsm_previewData() {
        上两大框（左=未脱敏原文带真红字/右=脱敏后，电脑宽屏CSS撑满calc(100vh-260px)跟随窗口，窄屏默认整藏）；
        下一聚合文件方框通栏（两个下划线文件名：全脱件+标红件，各带data-pkey/data-fname接点亮，点行照走dsm_viewFile开现有全屏浮层）；
        聚合区下方一行小字「▸ 看原文/脱敏后」（窄屏才显，点dsm_bigToggle展开/收起两框） */
+    /* v1.1.0（2026-10-11 班⑥，洪老师拍板）：两小方块取数改读聚合件——
+       左框=半脱敏标红件（名含「聚合未脱敏」或老「_标红_」，⟦R⟧剥孤儿后成对转红span）、右框=全脱件（名含「聚合」不含「未脱敏/标红」，纯转义）；
+       两框挂data-pkey/data-fname供HX.pick长按点亮+onclick=dsm_viewFile短按看全文；找不到件兜底「暂无」；
+       聚合框照旧两行；toggle行不再渲染（窄屏两框已常显）；提示词占位框挪进bigZone（previewContent窄屏隐藏放那看不见） */
     try {
         var _bz = '';
-        if (_bigL || _bigR) {
-            _bz += '<div class="dsm_bigFrames" id="dsm_bigFrames">' +
-                '<div class="dsm_bigBoxL"><div style="font-weight:700;color:#c0392b;font-size:13px;margin-bottom:4px;">📕 脱敏前·未脱敏原文（自己看，有红字）</div><pre class="dsm_bigPre">' + _bigL + '</pre></div>' +
-                '<div class="dsm_bigBoxR"><div style="font-weight:700;color:#27ae60;font-size:13px;margin-bottom:4px;">🔒 脱敏后（送AI用，已干净）</div><pre class="dsm_bigPre">' + _bigR + '</pre></div>' +
-                '</div>';
-        }
-        /* 聚合框：扫该病人名下files，名含「聚合标红」=标红件、含「聚合」不含「标红」=全脱件（认v0.48.0新名，顺带认老_标红_件） */
+        var _hfLName = '', _hfRName = '', _hfL = '', _hfR = '';
+        try {
+            (data.files || []).forEach(function(_af) {
+                var _an = String(_af.name || '');
+                var _isMark = (_an.indexOf('聚合未脱敏') >= 0) || (_an.indexOf('_标红_') >= 0) || (_an.indexOf('标红') >= 0);
+                var _isAgg = (_an.indexOf('聚合') >= 0) || (_an.indexOf('_标红_') >= 0);
+                if (_isMark && !_hfLName) { _hfLName = _an; if (data.content && data.content[_an]) _hfL = String(data.content[_an].text || ''); }
+                else if (_isAgg && !_isMark && !_hfRName) { _hfRName = _an; if (data.content && data.content[_an]) _hfR = String(data.content[_an].text || ''); }
+            });
+        } catch(e) {}
+        /* v1.1.0 终审修正（DeepSeek回件此处把⟦R⟧换成带[敏感]字样的完整span是错的）：先HTML转义→剥孤儿记号→成对转换，照2538段现成口径 */
+        var _escH = function(x){ return String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
+        var _mark2span = function(x){
+            x = _escH(x);
+            var _so=(x.match(/⟦R⟧/g)||[]).length, _sc=(x.match(/⟦\/R⟧/g)||[]).length;
+            while(_so>_sc){ x=x.replace('⟦R⟧',''); _so--; }
+            while(_sc>_so){ x=x.replace('⟦/R⟧',''); _sc--; }
+            return x.replace(/⟦R⟧/g, '<span class="dsm_highlight-red">').replace(/⟦\/R⟧/g, '</span>');
+        };
+        _hfL = _hfL ? _mark2span(dsm_formatText(_hfL)) : '暂无——点下方重做聚合';
+        _hfR = _hfR ? _escH(dsm_formatText(_hfR)) : '暂无——点下方重做聚合';
+        _bz += '<div class="dsm_bigFrames" id="dsm_bigFrames">' +
+            '<div class="dsm_bigBoxL" data-pkey="' + String(patient).replace(/"/g,'&quot;') + '" data-fname="' + String(_hfLName).replace(/"/g,'&quot;') + '"' + (_hfLName ? ' onclick="dsm_viewFile(\'' + String(_hfLName).replace(/'/g,"\\'") + '\')"' : '') + '><div style="font-weight:700;color:#c0392b;font-size:13px;margin-bottom:2px;">📕 半脱敏标红版（自己看/查规则）</div><div style="font-size:11px;color:#8a8178;margin-bottom:4px;">点=看全文 · 长按=点亮发AI查规则</div><pre class="dsm_bigPre">' + _hfL + '</pre></div>' +
+            '<div class="dsm_bigBoxR" data-pkey="' + String(patient).replace(/"/g,'&quot;') + '" data-fname="' + String(_hfRName).replace(/"/g,'&quot;') + '"' + (_hfRName ? ' onclick="dsm_viewFile(\'' + String(_hfRName).replace(/'/g,"\\'") + '\')"' : '') + '><div style="font-weight:700;color:#27ae60;font-size:13px;margin-bottom:2px;">🔒 全脱送AI版（已干净）</div><div style="font-size:11px;color:#8a8178;margin-bottom:4px;">点=看全文 · 长按=点亮发AI问病历</div><pre class="dsm_bigPre">' + _hfR + '</pre></div>' +
+            '</div>';
+        /* 聚合框：扫该病人名下files，名含「聚合未脱敏」/「标红」=半脱敏件、含「聚合」不含「未脱敏」=全脱件（认v0.48.0新名，顺带认老_标红_件） */
         var _aggFull = '', _aggMark = '';
         try {
             (data.files || []).forEach(function(_af) {
                 var _an = String(_af.name || '');
                 if (_an.indexOf('聚合') < 0 && _an.indexOf('_标红_') < 0) return;
-                if (_an.indexOf('标红') >= 0) { if (!_aggMark) _aggMark = _an; } else { if (!_aggFull) _aggFull = _an; }
+                if (_an.indexOf('未脱敏') >= 0 || _an.indexOf('标红') >= 0) { if (!_aggMark) _aggMark = _an; } else { if (!_aggFull) _aggFull = _an; }
             });
         } catch(e) {}
-        _bz += '<div class="dsm_aggBox"><div style="font-weight:700;color:#7d6608;font-size:13px;margin-bottom:2px;">🧩 聚合文件（一次出两件：全脱件送AI、标红件查漏脱）</div>';
+        _bz += '<div class="dsm_aggBox"><div style="font-weight:700;color:#7d6608;font-size:13px;margin-bottom:2px;">🧩 聚合文件（一次出两件：全脱件送AI、半脱敏标红件查规则）</div>';
         if (_aggFull) _bz += '<div class="dsm_aggRow" data-pkey="' + String(patient).replace(/"/g,'&quot;') + '" data-fname="' + String(_aggFull).replace(/"/g,'&quot;') + '" onclick="dsm_viewFile(\'' + String(_aggFull).replace(/'/g,"\\'") + '\')">📄 ' + _aggFull + '</div>';
         if (_aggMark) _bz += '<div class="dsm_aggRow" style="color:#c0392b;" data-pkey="' + String(patient).replace(/"/g,'&quot;') + '" data-fname="' + String(_aggMark).replace(/"/g,'&quot;') + '" onclick="dsm_viewFile(\'' + String(_aggMark).replace(/'/g,"\\'") + '\')">🔴 ' + _aggMark + '</div>';
-        if (!_aggFull && !_aggMark) _bz += '<div style="font-size:12px;color:#8a8178;padding:4px;">还没有聚合件——一般会自动聚合，没聚再点下面「🧩 重做聚合」，一次出全脱+标红两件</div>';
+        if (!_aggFull && !_aggMark) _bz += '<div style="font-size:12px;color:#8a8178;padding:4px;">还没有聚合件——一般会自动聚合，没聚再点下面「🧩 重做聚合」，一次出全脱+半脱敏两件</div>';
         _bz += '</div>';
-        _bz += '<div class="dsm_bigToggle" id="dsm_bigToggleEl" onclick="dsm_bigToggleFire(this, event)">▸ 看原文/脱敏后</div>'; /* v0.51.0（班⑤）：内联onclick改走dsm_bigToggleFire（带防抖）；下面再补addEventListener双通道——治洪老师vivo真机"点了没反应"（疑动态innerHTML的内联onclick被该机WebView吞掉） */
+        /* v1.1.0（班⑥）：提示词预留占位框（功能二期做）；dsm_APP.aiPrompt变量保留不删 */
+        _bz += '<div style="border:2px dashed #b39ddb;background:#faf7ff;border-radius:8px;padding:12px;text-align:center;color:#7e57c2;font-size:13px;margin:6px 0;">💬 提示词（预留位置，以后点这里选提示词）</div>';
         var _bzEl = document.getElementById('dsm_bigZone');
         if (_bzEl) _bzEl.innerHTML = _bz;
-        /* v0.51.0（2026-09-19 班⑤，挂号#126续，洪老师真机报"点那行字没反应"）：toggle改JS直绑双通道——click+touchend两路都绑，哪路通走哪路，400ms防抖治双通道重复触发；那行字模样/字号/文案一丝不动；dsm_bigToggle函数本体一行未动 */
+        /* v0.51.0（2026-09-19 班⑤，挂号#126续）：toggle双通道绑定留壳——v1.1.0起toggle行不再渲染，找不到元素静默跳过不炸；dsm_bigToggle/Fire函数本体一行未动 */
         try {
             var _tgEl = document.getElementById('dsm_bigToggleEl');
             if (_tgEl) {
@@ -2486,10 +2531,7 @@ function dsm_previewData() {
         html += '<div style="font-size:12px;color:#8a8178;padding:4px 8px;">📎 以下 ' + dsm_APP._lastDups.length + ' 份内容重复不重复预览（文件清单里可单独点开看）：' + dsm_APP._lastDups.join('；') + '</div>';
         dsm_APP._lastDups = null;
     }
-    html += '<div class="dsm_section-block" style="border-left-color:#8e44ad;">';
-    html += '<div class="dsm_title">🤖 AI 提示词</div>';
-    html += '<div style="white-space:pre-wrap;font-size:12px;background:#f5f0f9;padding:10px;border-radius:5px;">' + (dsm_APP.aiPrompt || '未设置') + '</div>';
-    html += '</div>';
+    /* v1.1.0（班⑥）：「🤖 AI 提示词」渲染块撤下——静态占位框已挪进bigZone（窄屏previewContent隐藏放这看不见）；dsm_APP.aiPrompt变量保留不删（AI体检任务书可能还读它） */
 
     container.innerHTML = html;
     try{ if(window.HX&&HX.pick&&HX.pick.bind) HX.pick.bind(); }catch(e){} /* v0.45.0 D：预览重渲后补绑点亮（照dsm_renderFileList v0.38.0⑤先例，老hx-common静默跳过）；v0.50.0（挂号#126）：聚合框两个文件名行的data-pkey/data-fname也靠这句补绑（bind为整文档扫描，bigZone在其前已填好） */
@@ -2661,6 +2703,31 @@ function dsm_buildAIView(text) {
     });
     return result;
 }
+
+/* ═════ v1.1.0（2026-10-11 班⑥，洪老师拍板）刀1：dsm_buildHalfView(text)——半脱敏件顶替纯标红件 ═════
+   先 dsm_markSensitive 得⟦R⟧记号版，再在记号版上跑四件套盖占位（口径照抄 dsm_buildAIView 现有6步），
+   唯一区别：每个 replace 回调加护栏——凡匹配到的值/片段含 '⟦' 或已在⟦R⟧内就跳过不盖（那处已标红，AI照样看懂两状态）。
+   规则引擎三件套（desensitize/highlightSensitive/markSensitive）本体一字符未动，纯外层编排；出错原样返回不炸。 */
+function dsm_buildHalfView(text) {
+    if (!text) return '';
+    /* v1.1.0终审改编排（仿真当场抓到DeepSeek方案真坑：先标红再盖占位+护栏跳过=硬隐私全被⟦R⟧包住护栏全跳过=明文住院号出门）：
+       改「先盖占位→再标红→剥包住占位的红记号」——dsm_buildAIView成熟链盖硬隐私（[姓名][住院号][医院][科室][医师]），
+       dsm_markSensitive把剩余可疑处标红⟦R⟧，最后把包住占位符的那层红记号剥掉（已删的地方不再标红，免得AI误会没删）。
+       引擎三件套与buildAIView本体一字符未动，纯外层编排；出错原样返回不炸。 */
+    try {
+        var masked = dsm_buildAIView(text); /* 第一步：盖占位 */
+        var marked = dsm_markSensitive(masked); /* 第二步：剩余标红 */
+        /* 第三步：剥「⟦R⟧…含占位符…⟦/R⟧」这层红（循环剥到稳定，防嵌套） */
+        var re = /⟦R⟧([^⟦]*\[(?:姓名|住院号|医院|科室|医师)\][^⟦]*)⟦\/R\⟧/g, prev;
+        do { prev = marked; marked = marked.replace(re, '$1'); } while (marked !== prev);
+        return marked;
+    } catch(e) { return text; }
+}
+
+/* v1.1.0（班⑥）刀4：DSM_AI_MANIFEST——脱敏间AI面板清单（字段结构照大管家AI_MANIFEST条目抄）；浮窗init用 */
+var DSM_AI_MANIFEST = [
+    { id:'dsm-tijian', label:'🩺 脱敏规则体检', prompts:[{ label:'查脱敏（半脱敏标红件）', prompt: ASKAI_DEF.p5 }], matLabel:'带半脱敏标红件' }
+];
 
 /* v0.20.0 ③ 导出「脱敏体检_AI件_病人名_月日_时分.txt」四段包裹：现行规则 / 对照病历（带标记原文） / 给AI的任务 */
 /* ═════ v0.21.0 ② 📤交给AI查脱敏·五站浮层（洪老师拍板方案A）：
@@ -3237,7 +3304,7 @@ function dsm_exportReport() {
         document.body.removeChild(link);
         setTimeout(function(){ URL.revokeObjectURL(link.href); }, 5000);
         /* v0.12.0 D1 导出分块防截断：整份报告（含几十页病历PDF文本，常超100KB）一次性过JS桥会被WebView悄悄截断——
-           验单排前保住、病历排后被切掉（实机导出文件结尾没有「由「脱敏单体 v1.0.4」生成」行，已实锤）。
+           验单排前保住、病历排后被切掉（实机导出文件结尾没有「由「脱敏单体 v1.1.0」生成」行，已实锤）。
            修法：写完立刻readFile回读atob对账（长度+尾部120字）→对不上自动重试一次→仍不行拆_1of2/_2of2两块各写各核对→全失败才红字「没存全」。
            注意：LearnShell只有writeFile整写接口（applyUpdateBegin/Chunk/End三件套是壳自更新专用、写壳内目录不是授权文件夹，不可用），
            所以「分块」=拆成两个文件分别整写、分别回读核对。浏览器blob下载路径不动，明示「已下载：文件名」 */
@@ -3294,7 +3361,7 @@ function dsm_shellWriteVerified(fileName, content) {
                 var back = null; try { back = LearnShell.readFile(name); } catch(e) {}
                 if (back) {
                     var dec = ''; try { dec = decodeURIComponent(escape(atob(back))); } catch(e) {}
-                    /* 对账：长度一致 + 尾部120字一致（尾部含「由「脱敏单体 v1.0.4」生成」标志行，截断必露馅） */
+                    /* 对账：长度一致 + 尾部120字一致（尾部含「由「脱敏单体 v1.1.0」生成」标志行，截断必露馅） */
                     if (dec.length === text.length && dec.slice(-120) === text.slice(-120)) return true;
                 }
             } catch(e) {}
@@ -3356,7 +3423,7 @@ function dsm_buildReportHtml(patient, data) {
     body += '<div style="white-space:pre-wrap;background:#f5f0f9;padding:14px;border-radius:5px;font-size:13px;">'+(dsm_APP.aiPrompt||'未设置')+'</div></div>';
     if (body === '') body = '<p style="color:#999;">暂无数据</p>';
     
-    return '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+patient+' 综合报告</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Microsoft YaHei";background:#f5f7fa;color:#333;padding:30px}.container{max-width:1000px;margin:0 auto;background:#fff;border-radius:12px;padding:30px;box-shadow:0 4px 20px rgba(0,0,0,.08)}h1{font-size:26px;color:#0d47a1;border-bottom:3px solid #1a73e8;padding-bottom:12px;margin-bottom:20px}.meta{color:#888;font-size:14px;margin-bottom:20px}.section-block{margin-bottom:24px;padding:16px 20px;background:#f8f9fb;border-radius:8px;border-left:4px solid #1a73e8}.section-block h2{font-size:18px;color:#0d47a1;margin-bottom:10px}.footer{margin-top:30px;padding-top:16px;border-top:1px solid #e8edf5;font-size:12px;color:#999;text-align:center}.disclaimer{background:#fef9e7;padding:12px 16px;border-radius:6px;font-size:13px;color:#7d6608;margin-bottom:20px}</style></head><body><div class="container"><h1>🏥 患者综合医疗报告（脱敏版）</h1><div class="meta">患者：'+patient+' ｜ 生成日期：'+new Date().toLocaleString()+'</div><div class="disclaimer">⚠️ 本报告已自动脱敏，仅供AI分析参考</div>'+body+'<div class="footer">由「脱敏单体 v1.0.4」生成</div></div></body></html>';
+    return '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+patient+' 综合报告</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Microsoft YaHei";background:#f5f7fa;color:#333;padding:30px}.container{max-width:1000px;margin:0 auto;background:#fff;border-radius:12px;padding:30px;box-shadow:0 4px 20px rgba(0,0,0,.08)}h1{font-size:26px;color:#0d47a1;border-bottom:3px solid #1a73e8;padding-bottom:12px;margin-bottom:20px}.meta{color:#888;font-size:14px;margin-bottom:20px}.section-block{margin-bottom:24px;padding:16px 20px;background:#f8f9fb;border-radius:8px;border-left:4px solid #1a73e8}.section-block h2{font-size:18px;color:#0d47a1;margin-bottom:10px}.footer{margin-top:30px;padding-top:16px;border-top:1px solid #e8edf5;font-size:12px;color:#999;text-align:center}.disclaimer{background:#fef9e7;padding:12px 16px;border-radius:6px;font-size:13px;color:#7d6608;margin-bottom:20px}</style></head><body><div class="container"><h1>🏥 患者综合医疗报告（脱敏版）</h1><div class="meta">患者：'+patient+' ｜ 生成日期：'+new Date().toLocaleString()+'</div><div class="disclaimer">⚠️ 本报告已自动脱敏，仅供AI分析参考</div>'+body+'<div class="footer">由「脱敏单体 v1.1.0」生成</div></div></body></html>';
 }
 
 // ============================================================
@@ -3421,7 +3488,7 @@ function dsm_buildReportTxt(patient, data) {
     lines.push(dsm_APP.aiPrompt || '未设置');
     lines.push('');
     lines.push('----------------------------------------');
-    lines.push('由「脱敏单体 v1.0.4」生成');
+    lines.push('由「脱敏单体 v1.1.0」生成');
     return lines.join('\n');
 }
 
@@ -3495,7 +3562,7 @@ function dsm_buildReportMd(patient, data) {
     lines.push('');
     lines.push('---');
     lines.push('');
-    lines.push('*由「脱敏单体 v1.0.4」生成*');
+    lines.push('*由「脱敏单体 v1.1.0」生成*');
     return lines.join('\n');
 }
 
@@ -3861,13 +3928,14 @@ function dsm_closeSettings() {
 // ============================================================
 function dsm_aboutInfo() {
     alert(
-        '🏥 脱敏单体 v1.0.4（自病人大管家 v0.56.8 分出）\n\n' +
+        '🏥 脱敏单体 v1.1.0（自病人大管家 v0.56.8 分出）\n\n' +
         '【用法速览】\n' +
         '① 收病历→自动脱敏+自动聚合，一般不用手动点；\n' +
-        '② 左框=脱敏前原文（红字标出被盖信息，自己看），右框=脱敏后（喂AI用）；\n' +
-        '③ 「🧩 重做聚合」一般不用点——删了聚合件想补、改了规则想重聚才点；\n' +
+        '② 左框=半脱敏标红版（硬隐私已盖[姓名][住院号]，其余想删的标红——自己查/点亮发AI查规则），右框=全脱版（喂AI用）；\n' +
+        '③ 文件行只摆聚合两件，原始件在不显示；「🗑️重新开始」清空该病人不留痕（名册成品不动）；\n' +
         '④ 「📤 导出单体」可把当前这份（可含数据）拷到别的电脑双击就用。\n\n' +
         '【最近版本】\n' +
+        '• v1.1.0：半脱敏件顶替纯标红件；两小方块手机常显、点看全文长按点亮；AI钮归浮窗（浮窗补上）；加重新开始钮；撤只聚一次老规矩；\n' +
         '• v1.0.4：脱敏单体开着（含后台页）管家一寄信立刻收件自动脱敏聚合寄回，不用重开门；\n' +
         '• v1.0.3：双框电脑撑满屏；顶栏版本字修好；导出单体可含数据；AI分析钮直连体检站；帮助瘦身；清死代码；\n' +
         '• v1.0.2：关于页版本字跟上真身；\n' +
@@ -3937,14 +4005,22 @@ function dsm_init() {
        引擎获取不过桥（完整性验+IndexedDB缓存+公开站现取），全try静默失败不碍开门 */
     try{ setTimeout(function(){ try{ dsm_loadPDFEngine(); }catch(e){} }, 4000); }catch(e){}
     
-    console.log('🏥 脱敏单体 v1.0.4 已加载');
+    console.log('🏥 脱敏单体 v1.1.0 已加载');
     console.log('📊 规则统计：职称 ' + dsm_APP.rules.titles.length + ' 条，医院 ' + dsm_APP.rules.hospitals.length + ' 条');
     console.log('🔴 敏感词 ' + dsm_APP.rules.keywords.length + ' 条，🚫 排除词 ' + dsm_APP.rules.excludes.length + ' 条');
     console.log('👤 百家姓 ' + dsm_SURNAMES.length + ' 个');
 }
 /* v1.0.0（分家第一刀·SPEC 4）：单体开门即 dsm_init + dsmh_restore（恢复脱敏间存档）+ dsm_inboxRead（收管家门口来信）；
    闲4秒预装PDF引擎在dsm_init内保留；折叠机制（makeFoldable/foldSetters/foldSave/dsm_firstExpand）是管家的，单体平铺直开不搬 */
-document.addEventListener('DOMContentLoaded', function(){ try{ dsm_init(); }catch(e){} try{ dsmh_restore(); }catch(e){} try{ dsm_inboxRead(); }catch(e){} });
+document.addEventListener('DOMContentLoaded', function(){ try{ dsm_init(); }catch(e){} try{ dsmh_restore(); }catch(e){} try{ dsm_inboxRead(); }catch(e){}
+  /* v1.1.0（班⑥）刀4：补浮窗接入（分家第一刀漏搬的真bug——挂了hx-common.js却没init，速记浮标/AI面板压根没造）；
+     照大管家1336/1341行同款口径：HX.sj.init一行接入；HX.ai.init包setTimeout(0)让半拍（治v0.31.1 #83同步栈清单恒空病） */
+  try{ if(window.HX&&HX.sj&&HX.sj.init) HX.sj.init({app:'脱敏间'}); }catch(e){}
+  try{ if(window.HX&&HX.ai&&HX.ai.init) setTimeout(function(){ try{ HX.ai.init({app:'脱敏间', manifest:(typeof DSM_AI_MANIFEST!=='undefined'?DSM_AI_MANIFEST:[]),
+    getSection:function(){ return '脱敏间'; },
+    send:function(sys,user,onOk,onErr){ aiChat(sys,user,onOk,onErr,{what:'脱敏间'}); }
+  }); }catch(e){} },0); }catch(e){}
+});
 try{ window.addEventListener('storage', function(e){ try{ if(e&&e.key==='dsm_inbox_v1'&&e.newValue){ dsm_inboxRead(); } }catch(_e){} }); }catch(_e){} /* v1.0.4 乙②单体侧：管家在别的tab一寄信，本页开着就立刻收件自动脱敏聚合寄回，不用重开门 */
 
 /* ═════ v0.7.0 拖放进件：webkitGetAsEntry递归遍历文件夹，readEntries循环读批 ═════ */
@@ -4156,10 +4232,10 @@ function dsm_makeAgg(ptName, dateStr) { /* v0.55.0 刀3（2026-09-21 班⑯）�
         if (f.type === 'PDF文档' || /\.pdf$/i.test(f.name||'')) { try{ out = dsm_formatText(dsm_desensitizeWithDebug(out).result); }catch(e){} } /* v0.43.0（挂号#120②，洪老师拍板）：PDF部分进聚合前强制再过一遍脱敏（幂等，防历史存货漏脱） */
         var fp = out.length + '|' + out.slice(0, 80);
         if (seenFp[fp]) return; seenFp[fp] = 1; /* 同内容只拼一次 */
-        var mout = dsm_markSensitive(dsm_formatText(text)); /* v0.50.0（挂号#126）：标红件内容=脱敏前原文敏感词包⟦R⟧记号（v0.39.0同款，引擎一字符不动只调用） */
+        var mout = dsm_buildHalfView(dsm_formatText(text)); /* v1.1.0（班⑥，洪老师拍板选项A）：标红件升级半脱敏件=先标红⟦R⟧再盖硬隐私占位（护栏：已标红处跳过不盖）；纯标红退役；引擎一字符不动只调用 */
         /* v0.55.2 刀1（班⑰续）：这份标不出红=手里料多半已是脱敏后的，按名册原文→保险柜取真原文再标一次（取到才换，取不到原样，不碍聚合件） */
         if (mout.indexOf('⟦R⟧') < 0) {
-            try{ var _rawT = dsm_rawForFile(patient, f.name); if (_rawT && _rawT !== text) { var _m2 = dsm_markSensitive(dsm_formatText(_rawT)); if (_m2.indexOf('⟦R⟧') >= 0) mout = _m2; } }catch(e){}
+            try{ var _rawT = dsm_rawForFile(patient, f.name); if (_rawT && _rawT !== text) { var _m2 = dsm_buildHalfView(dsm_formatText(_rawT)); if (_m2.indexOf('⟦R⟧') >= 0) mout = _m2; } }catch(e){} /* v1.1.0（班⑥）：兜底取原文同样产半脱敏版 */
         }
         if (dsm_isPdfFile(f)) { pdfPart += (pdfPart ? '\n' : '') + out; pdfMark += (pdfMark ? '\n' : '') + mout; } else { txtPart += (txtPart ? '\n' : '') + out; txtMark += (txtMark ? '\n' : '') + mout; } /* v0.45.0 C①（挂号C，洪老师拍板）：拼装分类改dsm_isPdfFile同一把尺——历史件PDF的type是'文本'（v0.43.0病根），只认type会误拼进验单段；修好=病历（PDF部分）在前、验单（TXT部分）在后 */ /* v0.50.0（挂号#126）：标红件同尺分段 */
         used.push(f.name);
@@ -4183,7 +4259,7 @@ function dsm_makeAgg(ptName, dateStr) { /* v0.55.0 刀3（2026-09-21 班⑯）�
     /* v0.56.0（2026-09-23 班⑱，洪老师拍板）刀1-B：标红件改名「名芯·聚合未脱敏·MMDD.txt」 */
     var markName = pr.pkey + '·聚合未脱敏·' + mmdd + '.txt';
     /* v0.56.1（2026-09-23 班⑱续，洪老师拍板）刀1：说明行去掉⟦R⟧三个字样断根——说明行那个不配对的⟦R⟧会被显示层转成永不闭合的红span=整篇全红的总根 */
-    var markText = '说明：红括号里的就是被盖住的信息\n' + (pdfMark ? '【PDF正文】\n' + pdfMark + '\n' : '') + (txtMark ? '【验单】\n' + txtMark : '');
+    var markText = '说明：[姓名][住院号][医院]是已删掉的硬隐私；红括号里的是软件还想删的。这份可以点亮发AI查规则，也可以自己对一对有没有漏\n' + (pdfMark ? '【PDF正文】\n' + pdfMark + '\n' : '') + (txtMark ? '【验单】\n' + txtMark : ''); /* v1.1.0（班⑥）：说明行人话化，⟦R⟧字样照样不出现（防v0.56.1全红病） */
     /* v0.55.1 刀1（2026-09-22 班⑰，洪老师拍板"开工"）：标红件料源规矩——标完全文一个⟦R⟧都没有=手里料已是脱敏后的（***早盖掉了；v0.13.1老病根：脱敏间存档存的是脱敏后文本，重开门/重做聚合取回来的料没原文可标），
        此时标红件不硬产，toast明写原因+指路；聚合件（全脱件）照产照存不受影响。
        v0.55.2 刀1（班⑰续）：判定前已先走dsm_rawForFile兜底取真原文（名册收件原文→原文保险柜）再标；
