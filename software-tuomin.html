@@ -5,8 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>脱敏单体</title>
 <!--
-  红小涛学习套装 · 脱敏单体 v1.1.0
+  红小涛学习套装 · 脱敏单体 v1.1.1
   定位：病历脱敏/聚合/标红/规则库/AI体检 单体工具（原病人大管家「🛡 脱敏间」整搬分出）。
+    v1.1.1 2026-10-11 班⑧（洪老师拍板"同意开始"，标红根治三刀，DeepSeek实现+Kimi终审）：刀1 _noRaw判据改数有效红对（新函数dsm_validRedPairs，假红空壳对不算数，开关hx_dsm_redcnt_off）；刀2 viewFile含⟦R⟧件不二次脱敏+默认显示标红pane+两pane标签随件出词（开关hx_dsm_viewfix_off）；刀3 剥孤儿改栈式配对剥（新函数dsm_stripOrphanMarks，四站点统一调用，开关hx_dsm_orphan_off）。引擎三件套与dsm_buildAIView一字符未动。
     v1.1.0 2026-10-11 班⑥（洪老师拍板开工，DeepSeek回件⑤采用+Kimi终审亲手落地截断部分）：刀1半脱敏件顶替纯标红件（dsm_buildHalfView=先标红⟦R⟧再盖硬隐私占位、已标红处跳过不盖，引擎三件套零动）；刀2版面——两小方块窄屏常显只露几行/宽屏照旧撑满、点框看全文长按点亮、删「交给AI查脱敏」钮AI归浮窗、病人卡只显聚合件、数据区空壳删、提示词静态占位框（aiPrompt变量留）、加🗑️重新开始（清内存+存档+锁+保险柜，名册成品不动）；刀3撤「只聚一次」——dsm_autoAggDone改防递归锁，收件/重新开始重置锁必重聚；刀4补浮窗接入HX.sj.init/HX.ai.init（分家漏搬的真bug）+DSM_AI_MANIFEST体检条目。终审修回件一处错：bigZone⟦R⟧转换改剥孤儿成对转span（回件把⟦R⟧换成[敏感]字样整span会丢内容）。
     v1.0.4 2026-10-11 班④（洪老师拍板乙类「都做」）：乙②单体侧storage监听dsm_inbox_v1，单体开着（含后台tab）管家一寄信立刻收件自动脱敏聚合寄回，不用重开门；红线零动。
     v1.0.3 2026-10-11 班③（DeepSeek研究后洪老师拍板"全修"）：双框破出640px卡死电脑撑满屏+顶栏版本字补上+导出单体修好可含数据（dsm_exportCurrent）+AI分析钮直连体检站+帮助弹窗瘦身+死代码清理（foldPre/foldToggle/orientCheck/clearAllData/死CSS/死分支）+报告落款与console的v5.0改脱敏单体；
@@ -66,7 +67,7 @@
 <body>
 <div class="wrap">
   <h1>🛡 脱敏单体</h1>
-  <div class="ver">v1.1.0 · 自病人大管家 v0.56.8 分出 · 病历脱敏/聚合/半脱敏标红/规则库/AI体检</div>
+  <div class="ver">v1.1.1 · 自病人大管家 v0.56.8 分出 · 病历脱敏/聚合/半脱敏标红/规则库/AI体检</div>
   <style>
     /* v0.21.1 洪老师拍板：不分横竖屏一律左右分栏（左原文标红、右脱敏后各半宽，字号不动，字随栏宽折行） */
     /* v0.37.0 挂号#113（2026-09-17 09:10速记，洪老师拍板）：窄屏手机预览只显两行字（未脱敏原文一行/脱敏后一行），点哪行全屏看哪份；宽屏电脑照旧左右分栏一字不变 */
@@ -1558,7 +1559,7 @@ function dsm_exportFull(){
         var blob=new Blob([html], {type:'text/html;charset=utf-8'});
         var a=document.createElement('a');
         a.href=URL.createObjectURL(blob);
-        a.download='脱敏单体_v1.1.0.html'; /* v1.0.3：SW_VERSION在单体不存在会炸+文件名母本痕迹，改硬编码脱敏单体 */
+        a.download='脱敏单体_v1.1.1.html'; /* v1.0.3：SW_VERSION在单体不存在会炸+文件名母本痕迹，改硬编码脱敏单体 */
         document.body.appendChild(a); a.click(); document.body.removeChild(a);
         dsm_showToast('📦 完整单文件已导出（含PDF引擎）','success');
     }
@@ -1599,7 +1600,7 @@ function dsm_exportCurrent(){
             var pos=html.lastIndexOf('</body>');
             html=html.slice(0,pos)+inject+html.slice(pos);
         }
-        var fname=withData ? '脱敏单体_v1.1.0_含数据.html' : '脱敏单体_v1.1.0_干净.html';
+        var fname=withData ? '脱敏单体_v1.1.1_含数据.html' : '脱敏单体_v1.1.1_干净.html';
         var blob=new Blob([html], {type:'text/html;charset=utf-8'});
         var a=document.createElement('a');
         a.href=URL.createObjectURL(blob);
@@ -2433,7 +2434,7 @@ function dsm_previewData() {
             var formattedOriginal = dsm_formatText(text);
             var highlightedText = dsm_highlightSensitive(formattedOriginal);
             /* v0.56.1（2026-09-23 班⑱续，洪老师拍板）刀2：剥孤儿记号——⟦R⟧比⟦/R⟧多时从头剥多余的⟦R⟧（说明行举例子那种未配对开记号），防未闭合红span染红全篇；⟦/R⟧多同理剥 */
-            if (String(text).indexOf('⟦R⟧') >= 0) { var _so=(highlightedText.match(/⟦R⟧/g)||[]).length, _sc=(highlightedText.match(/⟦\/R⟧/g)||[]).length; while(_so>_sc){ highlightedText=highlightedText.replace('⟦R⟧',''); _so--; } while(_sc>_so){ highlightedText=highlightedText.replace('⟦/R⟧',''); _sc--; } highlightedText = String(highlightedText).replace(/⟦R⟧/g, '<span class="dsm_highlight-red">').replace(/⟦\/R⟧/g, '</span>'); } /* v0.42.0（挂号#119）③：历史_标红_存档⟦R⟧记号逆转换成真span红字再显（照@5747现有替换写法），高亮引擎不动 */
+            if (String(text).indexOf('⟦R⟧') >= 0) { highlightedText = dsm_stripOrphanMarks(highlightedText); /* v1.1.1（班⑧）刀3：栈式剥孤儿 */ highlightedText = String(highlightedText).replace(/⟦R⟧/g, '<span class="dsm_highlight-red">').replace(/⟦\/R⟧/g, '</span>'); } /* v0.42.0（挂号#119）③：历史_标红_存档⟦R⟧记号逆转换成真span红字再显（照@5747现有替换写法），高亮引擎不动 */
             var fileTypeLabel = f.type === 'Markdown' ? '📝 Markdown' : (f.type === 'PDF文档' ? '📕 PDF' : '📄 文本');
             /* v0.42.0（挂号#119）⑧：预览带身份标注——PDF=「PDF病历」、文本类（文本/Markdown/文档）=「验单」（v0.43.0洪老师拍板"TXT验单"改叫"验单"），其他类型照原类型名 */
             /* v0.43.0（挂号#120③）：身份双保险——type或文件名后缀任一认PDF即「PDF病历」（老存档/送脱敏间历史件type全是'文本'，病根见gj_sendToDsm处v0.43.0注释） */
@@ -2487,9 +2488,7 @@ function dsm_previewData() {
         var _escH = function(x){ return String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
         var _mark2span = function(x){
             x = _escH(x);
-            var _so=(x.match(/⟦R⟧/g)||[]).length, _sc=(x.match(/⟦\/R⟧/g)||[]).length;
-            while(_so>_sc){ x=x.replace('⟦R⟧',''); _so--; }
-            while(_sc>_so){ x=x.replace('⟦/R⟧',''); _sc--; }
+            x = dsm_stripOrphanMarks(x); /* v1.1.1（班⑧）刀3：栈式剥孤儿 */
             return x.replace(/⟦R⟧/g, '<span class="dsm_highlight-red">').replace(/⟦\/R⟧/g, '</span>');
         };
         _hfL = _hfL ? _mark2span(dsm_formatText(_hfL)) : '暂无——点下方重做聚合';
@@ -2576,18 +2575,15 @@ function dsm_viewFile(fname) {
     }
     if (!c || !c.text) { dsm_showToast('这份文件没有文本内容', 'warn'); return; }
     var text = c.text;
-    var dbg = dsm_desensitizeWithDebug(text);
+    /* v1.1.1（班⑧）刀2：含⟦R⟧记号的件（半脱敏标红件）不再二次脱敏——会把[住院号]等占位二次盖成***；默认显示标红pane */
+    var _hasMark = (String(text).indexOf('⟦R⟧') >= 0) && localStorage.getItem('hx_dsm_viewfix_off') !== '1';
+    var dbg = _hasMark ? null : dsm_desensitizeWithDebug(text); /* v1.1.1（班⑧）刀2：标红件不二次脱敏 */
     var hl = dsm_highlightSensitive(dsm_formatText(text));
     /* v0.42.0（挂号#119）③：历史_标红_件⟦R⟧记号逆转换成真span红字显示（照@5747现有替换写法），原文/脱敏后两 pane 都转，不再显示⟦R⟧字面 */
-    var _dtxt = dsm_formatText(dbg.result);
+    var _dtxt = _hasMark ? dsm_formatText(text) : dsm_formatText(dbg.result); /* v1.1.1（班⑧）刀2 */
     if (String(text).indexOf('⟦R⟧') >= 0) {
         /* v0.56.1（2026-09-23 班⑱续，洪老师拍板）刀2：剥孤儿记号——⟦R⟧比⟦/R⟧多时从头剥多余的⟦R⟧（说明行举例子那种未配对开记号），防未闭合红span染红全篇；⟦/R⟧多同理剥；hl与_dtxt各剥一次 */
-        var _so=(hl.match(/⟦R⟧/g)||[]).length, _sc=(hl.match(/⟦\/R⟧/g)||[]).length;
-        while(_so>_sc){ hl=hl.replace('⟦R⟧',''); _so--; }
-        while(_sc>_so){ hl=hl.replace('⟦/R⟧',''); _sc--; }
-        _so=(_dtxt.match(/⟦R⟧/g)||[]).length; _sc=(_dtxt.match(/⟦\/R⟧/g)||[]).length;
-        while(_so>_sc){ _dtxt=_dtxt.replace('⟦R⟧',''); _so--; }
-        while(_sc>_so){ _dtxt=_dtxt.replace('⟦/R⟧',''); _sc--; }
+        hl = dsm_stripOrphanMarks(hl); _dtxt = dsm_stripOrphanMarks(_dtxt); /* v1.1.1（班⑧）刀3：栈式剥孤儿 */
         hl = String(hl).replace(/⟦R⟧/g, '<span class="dsm_highlight-red">').replace(/⟦\/R⟧/g, '</span>');
         _dtxt = String(_dtxt).replace(/⟦R⟧/g, '<span class="dsm_highlight-red">').replace(/⟦\/R⟧/g, '</span>');
     }
@@ -2598,12 +2594,12 @@ function dsm_viewFile(fname) {
        原文沿用现有dsm存档内容（不新建存储），带关闭钮 */
     ov.innerHTML = '<button class="dsm_fullClose" onclick="document.getElementById(\'dsm_fullOverlay\').remove()">✕ 关闭</button>' +
         '<div class="dsm_fullTitle">📄 ' + fname + '</div>' +
-        '<div id="dsm_vtabO" style="cursor:pointer;font-weight:700;font-size:15px;color:#c0392b;padding:8px 4px;border-bottom:1px dashed #e6e0d4;" onclick="dsm_viewTab(\'o\')">📋 未脱敏原文</div>' +
-        '<div id="dsm_vtabD" style="cursor:pointer;font-weight:700;font-size:15px;color:#27ae60;padding:8px 4px;border-bottom:1px dashed #e6e0d4;" onclick="dsm_viewTab(\'d\')">🔒 脱敏后</div>' +
+        '<div id="dsm_vtabO" style="cursor:pointer;font-weight:700;font-size:15px;color:#c0392b;padding:8px 4px;border-bottom:1px dashed #e6e0d4;" onclick="dsm_viewTab(\'o\')">' + (_hasMark ? '📕 标红版（红=被盖住的信息）' : '📋 未脱敏原文') + '</div>' +
+        '<div id="dsm_vtabD" style="cursor:pointer;font-weight:700;font-size:15px;color:#27ae60;padding:8px 4px;border-bottom:1px dashed #e6e0d4;" onclick="dsm_viewTab(\'d\')">' + (_hasMark ? '🔒 半脱敏文本（占位已盖好）' : '🔒 脱敏后') + '</div>' +
         '<div class="dsm_fullOrig" id="dsm_vpaneO" style="display:none;"><pre>' + hl + '</pre></div>' +
         '<div class="dsm_fullDes" id="dsm_vpaneD"><pre>' + _dtxt + '</pre></div>';
     document.body.appendChild(ov);
-    dsm_viewTab('d'); /* 默认显示脱敏后 */
+    dsm_viewTab(_hasMark ? 'o' : 'd'); /* v1.1.1（班⑧）刀2：标红件默认显示标红pane，其余照旧默认脱敏后 */
 }
 /* 2026-09-16 班① 第4条b：浮层顶部两行切换（点哪行显示哪份全文，另一份藏起，当前行加下划线标记） */
 function dsm_viewTab(w){
@@ -2797,9 +2793,7 @@ function dsm_aiCheckOpen() {
     /* ── 站4：要交出去的AI件 ── */
     /* v0.56.1（2026-09-23 班⑱续，洪老师拍板）刀2：剥孤儿记号——⟦R⟧比⟦/R⟧多时从头剥多余的⟦R⟧（说明行举例子那种未配对开记号），防未闭合红span染红全篇；⟦/R⟧多同理剥；原表达式先落地成局部变量_aiTxt再剥再转，原替换逻辑等价不动 */
     var _aiTxt = esc(_dsmAICheckPayload);
-    var _so=(_aiTxt.match(/⟦R⟧/g)||[]).length, _sc=(_aiTxt.match(/⟦\/R⟧/g)||[]).length;
-    while(_so>_sc){ _aiTxt=_aiTxt.replace('⟦R⟧',''); _so--; }
-    while(_sc>_so){ _aiTxt=_aiTxt.replace('⟦/R⟧',''); _sc--; }
+    _aiTxt = dsm_stripOrphanMarks(_aiTxt); /* v1.1.1（班⑧）刀3：栈式剥孤儿 */
     var aiHtml = _aiTxt.replace(/⟦R⟧/g, '<span style="color:#c0392b;background:#fdebd0;font-weight:600;">').replace(/⟦\/R⟧/g, '</span>');
     h += '<div style="background:#f5f0f9;border:1px solid #d5c6e0;border-radius:8px;padding:10px 12px;margin-bottom:12px;">';
     h += '<div style="font-weight:700;color:#5a5045;margin-bottom:4px;">④ 这份才是真要发给AI的（[姓名][住院号][医院][科室]已遮盖）</div>';
@@ -3928,13 +3922,14 @@ function dsm_closeSettings() {
 // ============================================================
 function dsm_aboutInfo() {
     alert(
-        '🏥 脱敏单体 v1.1.0（自病人大管家 v0.56.8 分出）\n\n' +
+        '🏥 脱敏单体 v1.1.1（自病人大管家 v0.56.8 分出）\n\n' +
         '【用法速览】\n' +
         '① 收病历→自动脱敏+自动聚合，一般不用手动点；\n' +
         '② 左框=半脱敏标红版（硬隐私已盖[姓名][住院号]，其余想删的标红——自己查/点亮发AI查规则），右框=全脱版（喂AI用）；\n' +
         '③ 文件行只摆聚合两件，原始件在不显示；「🗑️重新开始」清空该病人不留痕（名册成品不动）；\n' +
         '④ 「📤 导出单体」可把当前这份（可含数据）拷到别的电脑双击就用。\n\n' +
         '【最近版本】\n' +
+        '• v1.1.1：标红根治三刀——假红件不再混进标红件、看标红件默认见红不被二次盖星、剥孤儿不再误伤真红；\n' +
         '• v1.1.0：半脱敏件顶替纯标红件；两小方块手机常显、点看全文长按点亮；AI钮归浮窗（浮窗补上）；加重新开始钮；撤只聚一次老规矩；\n' +
         '• v1.0.4：脱敏单体开着（含后台页）管家一寄信立刻收件自动脱敏聚合寄回，不用重开门；\n' +
         '• v1.0.3：双框电脑撑满屏；顶栏版本字修好；导出单体可含数据；AI分析钮直连体检站；帮助瘦身；清死代码；\n' +
@@ -4211,6 +4206,42 @@ function dsm_rawForFile(patient, fname){
     }catch(e){}
     return '';
 }
+/* v1.1.1（2026-10-11 班⑧，洪老师拍板"同意开始"）刀1：有效红对数——数「⟦R⟧内容⟦/R⟧」配对、
+   且内容非空、非纯星号的对数；假红（对已脱敏***料标红产出的空壳红对）不算数。 */
+function dsm_validRedPairs(s) {
+    var n = 0;
+    try {
+        var re = /⟦R⟧([\s\S]*?)⟦\/R⟧/g, m;
+        while ((m = re.exec(String(s || ''))) !== null) {
+            var c = String(m[1] || '').replace(/\s/g, '');
+            if (c && !/^[*＊]+$/.test(c)) n++;
+        }
+    } catch(e) {}
+    return n;
+}
+/* v1.1.1（班⑧）刀3：剥孤儿改栈式配对剥——遇⟦/R⟧时栈空=孤儿闭记号当场剥（不入输出）；
+   扫完栈里剩下的⟦R⟧=孤儿开记号，按位置精确剥；绝不从头剥第一个（老算法会误剥真红开记号）。
+   回退开关 localStorage hx_dsm_orphan_off=1 走老数差从头剥。 */
+function dsm_stripOrphanMarks(s) {
+    s = String(s == null ? '' : s);
+    if (localStorage.getItem('hx_dsm_orphan_off') === '1') {
+        var _so=(s.match(/⟦R⟧/g)||[]).length, _sc=(s.match(/⟦\/R⟧/g)||[]).length;
+        while(_so>_sc){ s=s.replace('⟦R⟧',''); _so--; }
+        while(_sc>_so){ s=s.replace('⟦/R⟧',''); _sc--; }
+        return s;
+    }
+    var re = /⟦R⟧|⟦\/R⟧/g, m, stack = [], out = [], last = 0;
+    while ((m = re.exec(s)) !== null) {
+        out.push(s.slice(last, m.index));
+        if (m[0] === '⟦R⟧') { stack.push(out.length); out.push(m[0]); }
+        else if (stack.length) { stack.pop(); out.push(m[0]); }
+        /* 栈空时遇到的⟦/R⟧=孤儿闭记号：不入out=当场剥 */
+        last = re.lastIndex;
+    }
+    out.push(s.slice(last));
+    while (stack.length) { out[stack.pop()] = ''; }
+    return out.join('');
+}
 function dsm_makeAgg(ptName, dateStr) { /* v0.55.0 刀3（2026-09-21 班⑯）最小改：加可选第1参病人名+第2参dateStr(MMDD)，两参都不传照旧=当前病人+今天月日，老调用零影响 */
     var patient = ptName || dsm_APP.currentPatient;
     if (!patient) { dsm_showToast('请先选择病人', 'error'); return; }
@@ -4234,8 +4265,8 @@ function dsm_makeAgg(ptName, dateStr) { /* v0.55.0 刀3（2026-09-21 班⑯）�
         if (seenFp[fp]) return; seenFp[fp] = 1; /* 同内容只拼一次 */
         var mout = dsm_buildHalfView(dsm_formatText(text)); /* v1.1.0（班⑥，洪老师拍板选项A）：标红件升级半脱敏件=先标红⟦R⟧再盖硬隐私占位（护栏：已标红处跳过不盖）；纯标红退役；引擎一字符不动只调用 */
         /* v0.55.2 刀1（班⑰续）：这份标不出红=手里料多半已是脱敏后的，按名册原文→保险柜取真原文再标一次（取到才换，取不到原样，不碍聚合件） */
-        if (mout.indexOf('⟦R⟧') < 0) {
-            try{ var _rawT = dsm_rawForFile(patient, f.name); if (_rawT && _rawT !== text) { var _m2 = dsm_buildHalfView(dsm_formatText(_rawT)); if (_m2.indexOf('⟦R⟧') >= 0) mout = _m2; } }catch(e){} /* v1.1.0（班⑥）：兜底取原文同样产半脱敏版 */
+        if ((localStorage.getItem('hx_dsm_redcnt_off') === '1' ? (mout.indexOf('⟦R⟧') < 0) : (dsm_validRedPairs(mout) === 0))) { /* v1.1.1（班⑧）刀1：判据改有效红对数，假红骗不了闸 */
+            try{ var _rawT = dsm_rawForFile(patient, f.name); if (_rawT && _rawT !== text) { var _m2 = dsm_buildHalfView(dsm_formatText(_rawT)); if ((localStorage.getItem('hx_dsm_redcnt_off') === '1' ? (_m2.indexOf('⟦R⟧') >= 0) : (dsm_validRedPairs(_m2) > 0))) mout = _m2; /* v1.1.1（班⑧）刀1 */ } }catch(e){} /* v1.1.0（班⑥）：兜底取原文同样产半脱敏版 */
         }
         if (dsm_isPdfFile(f)) { pdfPart += (pdfPart ? '\n' : '') + out; pdfMark += (pdfMark ? '\n' : '') + mout; } else { txtPart += (txtPart ? '\n' : '') + out; txtMark += (txtMark ? '\n' : '') + mout; } /* v0.45.0 C①（挂号C，洪老师拍板）：拼装分类改dsm_isPdfFile同一把尺——历史件PDF的type是'文本'（v0.43.0病根），只认type会误拼进验单段；修好=病历（PDF部分）在前、验单（TXT部分）在后 */ /* v0.50.0（挂号#126）：标红件同尺分段 */
         used.push(f.name);
@@ -4264,7 +4295,7 @@ function dsm_makeAgg(ptName, dateStr) { /* v0.55.0 刀3（2026-09-21 班⑯）�
        此时标红件不硬产，toast明写原因+指路；聚合件（全脱件）照产照存不受影响。
        v0.55.2 刀1（班⑰续）：判定前已先走dsm_rawForFile兜底取真原文（名册收件原文→原文保险柜）再标；
        仍_noRaw=真取不到原文，此时旧标红件名册/内存/存档三侧全保留不删（修v0.55.1同名旧件一并清掉之患） */
-    var _noRaw = (pdfMark + txtMark).indexOf('⟦R⟧') < 0; /* 判定只看正文两段，说明行自带⟦R⟧字样不算数（仿真当场抓到） */
+    var _noRaw = (localStorage.getItem('hx_dsm_redcnt_off') === '1' ? ((pdfMark + txtMark).indexOf('⟦R⟧') < 0) : (dsm_validRedPairs(pdfMark + txtMark) === 0)); /* v1.1.1（班⑧）刀1：判定仍只看正文两段，改数有效红对 */ /* 判定只看正文两段，说明行自带⟦R⟧字样不算数（仿真当场抓到） */
     /* ①名册名下 kind=agg + kind=mark两件（v0.42.0④删掉的kind=mark标红件存放段照v0.39.0恢复）；
        v0.48.0（2026-09-19 班①）改2：同名替换不堆积——先删同pkey且同fname的旧条目，再push新条目；pdocsSave照走；v0.50.0：同名替换对两件都生效 */
     var toLib = false;
