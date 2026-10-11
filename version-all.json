@@ -22,10 +22,10 @@
   },
   {
    "key": "tuomin",
-   "version": "1.0.2",
+   "version": "1.0.3",
    "dl": "software-tuomin.html",
-   "sig": "fc1db1d8a58e8f4a"
+   "sig": "60d29c0654f9d088"
   }
  ],
- "note": "单体补刀1.0.2；其余不动"
+ "note": "脱敏单体v1.0.3全修；其余不动"
 }
