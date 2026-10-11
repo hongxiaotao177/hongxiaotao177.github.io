@@ -1,6 +1,6 @@
 {
- "version": "0.57.1",
+ "version": "0.57.2",
  "dl": "software-guanjia.html",
- "note": "第②步首单刀1：修通「从云端仓拉测试病历」断链，改寄dsm_inbox_v1信由脱敏单体开门自动收",
- "sig": "bc18455465cf2e42"
+ "note": "第②步乙类：脱敏回执（小账+自动点亮+名册绿小字）+storage监听即时收件",
+ "sig": "984cb637bf26fcd7"
 }
