@@ -1,6 +1,6 @@
 {
- "version": "0.57.0",
+ "version": "0.57.1",
  "dl": "software-guanjia.html",
- "note": "分家第一刀：脱敏间从大管家切出自立脱敏单体v1.0.0；管家净瘦3213行，10处接缝改dsm_inbox/outbox邮路收发",
- "sig": "fbea7f66f28a1209"
+ "note": "第②步首单刀1：修通「从云端仓拉测试病历」断链，改寄dsm_inbox_v1信由脱敏单体开门自动收",
+ "sig": "bc18455465cf2e42"
 }
