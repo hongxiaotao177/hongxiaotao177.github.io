@@ -1,12 +1,12 @@
 {
  "v": 1,
- "t": 1791683389733,
+ "t": 1791687270544,
  "items": [
   {
    "key": "index",
-   "version": "1.19.8",
+   "version": "1.19.9",
    "dl": "index.html",
-   "sig": "68973b285db951ba"
+   "sig": "9677feb73e15c1b8"
   },
   {
    "key": "guanjia",
@@ -19,7 +19,13 @@
    "version": "0.17.0",
    "dl": "hx-common.js",
    "sig": "a314100ea152f05a"
+  },
+  {
+   "key": "tuomin",
+   "version": "1.0.0",
+   "dl": "software-tuomin.html",
+   "sig": "576a2e246b58ffa7"
   }
  ],
- "note": "分家第一刀：guanjia 0.57.0挂牌（换牌补课，本体早已631532在位）；index 1.19.8/hx-common 0.17.0不动"
+ "note": "主界面v1.19.9脱敏间上户口；脱敏单体1.0.0立牌；guanjia 0.57.0/hx-common 0.17.0不动"
 }
