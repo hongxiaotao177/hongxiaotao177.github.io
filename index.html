@@ -2,6 +2,9 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.19.11 2026-10-11（班①再续，洪老师真机三图取证：检查直播"脱敏单体已是最新v1.0.0"+复核照红）：
+      病根=v1.19.9假记忆已写进手机账本hx_suite_ver.tuomin="1.0.0"，开门账本校准_sv>CUR就采纳→硬编码改"0"也被账本盖回=永不下载。
+      治=账本校准让路：CUR[k]==="0"（壳里没这文件=实物铁证）时不许账本覆盖。一处判断，其余零动。
     v1.19.10 2026-10-11（班①续，洪老师真机报"脱敏间打开显示404"）：
       病根=CUR.tuomin误写"1.0.0"——CUR含义=壳里内装版本、未装填"0"（本文件第230行白纸黑字，CUR.ppt同款老坑），
       升级链以为本机已装跳过下载→手机没文件→404。治=CUR.tuomin改"0"，下次检查新版本自动下载脱敏单体。
@@ -529,11 +532,12 @@ CUR.index="1.19.7"; /* v1.19.7（2026-09-20班⑮，洪老师问"升级两遍没
 CUR.index="1.19.8";
 CUR.index="1.19.9"; /* v1.19.9（2026-10-11班①）：脱敏间上户口，见顶部修改记录 */
 CUR.index="1.19.10"; /* v1.19.10：修脱敏间404（CUR.tuomin 1.0.0→0） */
+CUR.index="1.19.11"; /* v1.19.11：账本覆盖让路硬编码"0"，清tuomin假记忆 */
 CUR.tuomin="0"; /* v1.19.10修404：CUR=壳内已装版本，单体手机还没装必须填"0"才会下载（CUR.ppt同款老坑，见230行） */ /* v1.19.8（2026-09-20班⑮，洪老师真机报"升级说装成功主界面还是19.6，几次都这样，没重启应该直接变19.7"）病根=班⑮发v1.19.7时新赋值插在同一行旧赋值前面，CUR.index="1.19.7"刚赋上就被同行的CUR.index="1.19.6"盖回→页脚活字永远亮1.19.6（文件真身早是新版，升级链/壳全无辜，大管家0.54.5上机为证）；还连带v1.19.5刀2开门自校对误把账本1.19.7当谎回滚→每次都提示重装。治=删同行可执行旧赋值（注释留档）+升号v1.19.8让真机重新下载。其余一行未动 */
 try{document.getElementById("ftVer").textContent=CUR.index;}catch(eF){} /* v1.19.6 页脚死字改活字：ftVer亮CUR.index真身 */
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
 /* v1.19.5（2026-09-19 班①，减桥工程治连环谎）刀1账本校准：账本只许比硬编码新——cmpVer(_sv[k],CUR[k])>0才采纳，比硬编码低的旧账不再覆盖（cmpVer为629行现有函数，同<script>块内声明提升，此处可用，已grep确认签名cmpVer(a,b)）；校正后的CUR顺手写回hx_suite_ver账本，治班⑥病根"账本谎→已装跳过→永远卡旧版"。index键由刀2单独处理（本文件自身就是index真身，账本index比硬编码新=上次没装成的谎，不采纳） */
-try{ var _sv=JSON.parse(localStorage.getItem("hx_suite_ver")||"{}"); Object.keys(_sv).forEach(function(k){ if(_sv[k] && k!=="index" && cmpVer(_sv[k], CUR[k])>0) CUR[k]=_sv[k]; }); if(_sv.index && cmpVer(_sv.index, CUR.index)>0){ /* v1.19.5 刀2前置：账本index吹牛（>硬编码真身）不采纳，留着由紧接的刀2段回滚+提示 */ }else{ try{ localStorage.setItem("hx_suite_ver", JSON.stringify(CUR)); }catch(e2){} } }catch(e){}
+try{ var _sv=JSON.parse(localStorage.getItem("hx_suite_ver")||"{}"); Object.keys(_sv).forEach(function(k){ if(_sv[k] && k!=="index" && CUR[k]!=="0" && cmpVer(_sv[k], CUR[k])>0) CUR[k]=_sv[k]; }); /* v1.19.11：硬编码"0"=壳里没这文件=实物铁证，账本不许盖过（治tuomin假记忆：v1.19.9误写CUR=1.0.0被账本回填，硬编码改0也被账本盖回=永不下载） */ if(_sv.index && cmpVer(_sv.index, CUR.index)>0){ /* v1.19.5 刀2前置：账本index吹牛（>硬编码真身）不采纳，留着由紧接的刀2段回滚+提示 */ }else{ try{ localStorage.setItem("hx_suite_ver", JSON.stringify(CUR)); }catch(e2){} } }catch(e){}
 /* v1.19.5（2026-09-19 班①，减桥工程治连环谎）刀2开门自校对堵谎（主界面自己）：hx_suite_ver账本里index版本>CUR.index硬编码（刀1校正后的值）=上次装主界面没生效（X5缓存旧版/没写进，真身是旧的）→账本index回滚为CUR.index硬编码真身+写回hx_suite_ver+红字提示；其他软件（guanjia等）真身主界面够不着，不做回滚，只index自己。
    实现报备：直接复用刀1读出的_sv（同<script>块顶层var，此处可见）——账本须拿原始谎账对比硬编码，刀1写回后账本index已被压成真身，重读就再也测不出谎了；
    时机报备：updMsg定义在627行但与本段同处一个<script>块（492起），函数声明提升此处可调用，且updLine节点（311行）早已就绪，故选直接调updMsg（try护栏兜底）——不选DOM就绪后追加，因本段执行时DOM已具备 */
