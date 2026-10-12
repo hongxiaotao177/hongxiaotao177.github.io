@@ -42,6 +42,12 @@ window.addEventListener('load', function(){
   小涛笔记（学习笔记2代）· 单文件版
 ==========================================================
   修改记录：
+   v0.16.0 2026-10-12 章问答文献引文格式（洪老师拍板「接受你的意见，开工」，SPEC_v0.16.0，DS实现+Kimi终审亲手落地）：
+        ①chapChatSys加引文死规矩：涉数据/指南/结论句末标[1][2]角标，===建议新节点===前出===参考文献===段按GB/T 7714-2015列，记不清宁可不列严禁编造；
+        ②新增xtParseRefs拆参考文献段+xtRefQuery提题名做PubMed搜索词；
+        ③renderChapChat气泡句末[n]变上标灰小字+参考文献折叠区（鱼骨头默认收起，每条带🔍查原文跳PubMed验真），旧chat无refs字段兼容；
+        ④btnChapAsk链chat对象加refs字段落台账；btnChapDone收工convo带参考文献行；
+        版本三处留痕（本记录/SW_VERSION注释链/📋关于），红线renderMd/xtParseSuggest等IDENTICAL。
    v0.15.0 2026-10-12 接入AI总台HX.air（洪老师拍板「同意开工」，SPEC_AI总台，DS实现+Kimi终审亲手落地）：
         ①写章认DS——「开写本章」改看章页🐳DS/🤖Kimi选择（以前写死Kimi，选择器只管问答）；DS败且Kimi钥匙在自动换Kimi接着写；
         ②开笔前探路——所选引擎账没测过先探一手（几秒），探完还不通当场红字不白等120秒；
@@ -573,7 +579,7 @@ window.addEventListener('load', function(){
     <summary>📋 关于 / Obsidian 搬家说明</summary>
     <div class="kv" style="margin-top:6px;">
       <b style="color:#4a7c59;">📌 本软件为新版正房（学习笔记双链版已留档，功能并入本软件）。</b><br>
-      <b>版本：</b>v0.15.0（2026-10-12）接入AI总台：写章改看章页选的🐳DS/🤖Kimi（以前写死Kimi）；开写前先探路几秒，不通当场说，不再傻等两分钟；Kimi旧模型死了自动换活模型；AI面板顶部亮「谁活谁死+几点测的」可手动重测；回退开关hx_air_off=1<br><b>上一版：</b>v0.14.0（2026-10-12）章行瘦身+老书一视同仁+长按点亮：老书也有⭐想学/❓不懂/✅已掌握、复习考我、章页问AI（以前只新学习书有）；目录章行变干净（删除/改名收进长按）；长按某一章=点亮它，行下出公共条（改名/删除），同时底部浮窗跟着点亮这章，问AI/出题/变笔记/寄PPT都能直接对这章用<br><b>上一版：</b>v0.13.0（2026-10-12）说实话+对话式问答+收工沉淀：AI调用亮身份读秒不甩锅（铁律25，删"网络太慢"谎话）；章问答改对话式一问一答有记忆、每答不超过200字、可选Kimi/DS；🏁收工AI总结对话收进本章正文<br><b>上一版：</b>v0.12.1（2026-10-12）抢修+DS拟目录：修好上版红条报错（章问答区按钮没装上线，一点开书就报错、新功能全死）；建书加「🐳 DS 拟目录」（DeepSeek，先在⚙️设置里存DeepSeek Key）；学习大纲/写书目录两种模式对DS同样生效<br><b>上一版：</b>v0.12.0（2026-10-12）新书学习大纲化：建书可选🎓学习大纲（AI由浅入深拟知识点）；学习书的章可标⭐想学/❓不懂/✅已掌握，书页🎯复习卡AI出题考你、答对标掌握；章页「🎓学这章」不懂就问AI、可存成笔记；AI建议的新知识点一键长进目录（生长留痕）。总回退开关hx_xt_learn_off=1<br><b>上一版：</b>v0.11.0（2026-09-14）安心条HX.step接入：顶部细进度条+两行小字（上面人话/下面机械码），开门、切段落、AI切片、自动巡逻到哪一步都亮着；卡住就定格在最后一句，拍照发AI就能定位<br><b>上一版：</b>v0.10.2（2026-09-13）资料库一拉开就卡住根治：巡逻兵改"拉开后3秒才开工+亮条可选马上开切/本次不跑"，切书干活改细嚼慢咽（每20毫秒让界面喘气），拉开资料库随时能滑能点；切法/账本/云端机器人不变<br><b>上一版：</b>v0.10.1（2026-09-13）开门愣住根治：开门对账摘掉章正文大件（只对4个小件秒完）+恢复检查改轻查询（空库才搬大件），治"点进来愣住十几秒不能滑不能点"；章正文30秒自动备份照常被<br><b>上一版：</b>v0.10.0（2026-09-12）地基二期·剩余家底接仓管员+邮路：书台账xt_books_v1/资料台账xt_lib_v1注册仓管员（有壳落真源文件夹+坚果云镜像，无壳走中转邮路）、IndexedDB章正文变更30秒自动导出备份（换机/重装能灌回来）、寄习题改走仓管员一本账、收信从对齐后的缓存读<br><b>上一版：</b>v0.9.0（2026-09-12）地基补强：单体备份邮路（没壳时笔记自动进GitHub中转区永远重试，网通了自己送）+壳内仓管员一本账+坚果云镜像+开门拉回中转件<br><b>上一版：</b>v0.8.1（2026-09-11）收信断根修：大管家的信不再被静默吞（收不进就原样保留），修「我的笔记」收起时笔记行溢出挡点击<br><b>上一版：</b>v0.8.0（2026-09-11）信息流通三连：点亮出题可📮寄到习题学习、大管家回程票（?from=guanjia亮顶条）、开门自动收大管家寄来的信存成笔记<br><b>上一版：</b>v0.7.0（2026-09-11）收编公共件hx-common+AI统一面板（🏥浮标→🤖AI两层面板），速记「补充上一条」照留<br><b>上一版：</b>v0.6.2（2026-09-11）切片断根修：断点续切（切到一半接着切不重来）、本地连败自动送云端机器人代办（关软件也切）、云端切好自动取回、💰切片账本（每本书花了多少）、速记「补充上一条」<br><b>上一版：</b>v0.6.0（2026-09-10）鱼骨头化：「✨ 新建笔记」收进一条折叠行，张开后🤖AI帮我学/✍️自己手写是两条文字行（只动版面，功能没变）<br><b>上一版：</b>v0.5.3 速记自动上行：记下的东西自动到网上，AI接班自己看<br><br>
+      <b>版本：</b>v0.16.0（2026-10-12）问文献带引文：章问答里AI回答涉及数据/指南/结论时句末带[1][2]角标，末尾按GB/T 7714标准格式列参考文献（默认折叠不占版面），每条带🔍查原文跳PubMed帮您验真；AI记不清的文献宁可不列，严禁编造<br><b>上一版：</b>v0.15.0（2026-10-12）接入AI总台：写章改看章页选的🐳DS/🤖Kimi（以前写死Kimi）；开写前先探路几秒，不通当场说，不再傻等两分钟；Kimi旧模型死了自动换活模型；AI面板顶部亮「谁活谁死+几点测的」可手动重测；回退开关hx_air_off=1<br><b>上一版：</b>v0.14.0（2026-10-12）章行瘦身+老书一视同仁+长按点亮：老书也有⭐想学/❓不懂/✅已掌握、复习考我、章页问AI（以前只新学习书有）；目录章行变干净（删除/改名收进长按）；长按某一章=点亮它，行下出公共条（改名/删除），同时底部浮窗跟着点亮这章，问AI/出题/变笔记/寄PPT都能直接对这章用<br><b>上一版：</b>v0.13.0（2026-10-12）说实话+对话式问答+收工沉淀：AI调用亮身份读秒不甩锅（铁律25，删"网络太慢"谎话）；章问答改对话式一问一答有记忆、每答不超过200字、可选Kimi/DS；🏁收工AI总结对话收进本章正文<br><b>上一版：</b>v0.12.1（2026-10-12）抢修+DS拟目录：修好上版红条报错（章问答区按钮没装上线，一点开书就报错、新功能全死）；建书加「🐳 DS 拟目录」（DeepSeek，先在⚙️设置里存DeepSeek Key）；学习大纲/写书目录两种模式对DS同样生效<br><b>上一版：</b>v0.12.0（2026-10-12）新书学习大纲化：建书可选🎓学习大纲（AI由浅入深拟知识点）；学习书的章可标⭐想学/❓不懂/✅已掌握，书页🎯复习卡AI出题考你、答对标掌握；章页「🎓学这章」不懂就问AI、可存成笔记；AI建议的新知识点一键长进目录（生长留痕）。总回退开关hx_xt_learn_off=1<br><b>上一版：</b>v0.11.0（2026-09-14）安心条HX.step接入：顶部细进度条+两行小字（上面人话/下面机械码），开门、切段落、AI切片、自动巡逻到哪一步都亮着；卡住就定格在最后一句，拍照发AI就能定位<br><b>上一版：</b>v0.10.2（2026-09-13）资料库一拉开就卡住根治：巡逻兵改"拉开后3秒才开工+亮条可选马上开切/本次不跑"，切书干活改细嚼慢咽（每20毫秒让界面喘气），拉开资料库随时能滑能点；切法/账本/云端机器人不变<br><b>上一版：</b>v0.10.1（2026-09-13）开门愣住根治：开门对账摘掉章正文大件（只对4个小件秒完）+恢复检查改轻查询（空库才搬大件），治"点进来愣住十几秒不能滑不能点"；章正文30秒自动备份照常被<br><b>上一版：</b>v0.10.0（2026-09-12）地基二期·剩余家底接仓管员+邮路：书台账xt_books_v1/资料台账xt_lib_v1注册仓管员（有壳落真源文件夹+坚果云镜像，无壳走中转邮路）、IndexedDB章正文变更30秒自动导出备份（换机/重装能灌回来）、寄习题改走仓管员一本账、收信从对齐后的缓存读<br><b>上一版：</b>v0.9.0（2026-09-12）地基补强：单体备份邮路（没壳时笔记自动进GitHub中转区永远重试，网通了自己送）+壳内仓管员一本账+坚果云镜像+开门拉回中转件<br><b>上一版：</b>v0.8.1（2026-09-11）收信断根修：大管家的信不再被静默吞（收不进就原样保留），修「我的笔记」收起时笔记行溢出挡点击<br><b>上一版：</b>v0.8.0（2026-09-11）信息流通三连：点亮出题可📮寄到习题学习、大管家回程票（?from=guanjia亮顶条）、开门自动收大管家寄来的信存成笔记<br><b>上一版：</b>v0.7.0（2026-09-11）收编公共件hx-common+AI统一面板（🏥浮标→🤖AI两层面板），速记「补充上一条」照留<br><b>上一版：</b>v0.6.2（2026-09-11）切片断根修：断点续切（切到一半接着切不重来）、本地连败自动送云端机器人代办（关软件也切）、云端切好自动取回、💰切片账本（每本书花了多少）、速记「补充上一条」<br><b>上一版：</b>v0.6.0（2026-09-10）鱼骨头化：「✨ 新建笔记」收进一条折叠行，张开后🤖AI帮我学/✍️自己手写是两条文字行（只动版面，功能没变）<br><b>上一版：</b>v0.5.3 速记自动上行：记下的东西自动到网上，AI接班自己看<br><br>
       <b>⭐ 头一条铁律（Obsidian 搬家）：</b>小涛笔记里所有内容的<b>真身是标准 Markdown 文件</b>，
       全部存在 GitHub 仓库的 <b>vault/</b> 区——那就是一座现成的 Obsidian 仓库。<br>
       <b>搬家方法：</b>把仓库里 vault/ 文件夹下载到电脑/手机（或坚果云同步它），
@@ -787,13 +793,13 @@ window.addEventListener('load', function(){
 (function(){
 __bc('D脚本启动');
 var $ = function(id){ return document.getElementById(id); };
-/* v0.15.0 接入AI总台 2026-10-12（洪老师拍板「同意开工」）：写章认DS选择+开笔前探路+callAI/callAI_ds头部问总台（标死补测/活模型自动换/成败上报）+开门HX.air.boot()巡检；申报动处=callAI/callAI_ds头部与收尾各插行、btnChapWrite写书链一段、hxReady加一行、版本三处；红线callAIonce/aiModelsFetch/parseToc/saveBooks/loadBooks/idbGet/idbPut/glowRender/glowSend/glowHide/xt_studySet/xtChapLit/xtChapUnlit/xtChapBindLongpress/makeNote/showMsg/esc/billAiUse/aiBookCtx IDENTICAL */ /* v0.14.0 章行瘦身+老书一视同仁+长按点亮 2026-10-12（洪老师拍板按你意思开工+问浮窗对齐）：拆kind门槛4处老书新书都有新功能；删除改名收进长按公共条；长按章行点亮亮黄底+公共条+浮窗glowSel同步点亮这章（已写章异步补正文1500字）；章行防选中；顺手补班③漏的关于页；版本0.13.0→0.14.0三处留痕（本注释链/顶部修改记录/📋关于），红线零动 */ /* v0.13.0 2026-10-12 班③（洪老师拍板"做彻底一点，按你的意思开工"）：刀A说实话（铁律25：HUD亮AI身份+读秒，aiErrText删"网络太慢"谎话拼真实原文）；刀B章问答改对话式（气泡+记本章最近10轮+每答限200字内+可选Kimi/DS，🌱点名=自动追问）；刀C收工彻底版（🏁AI总结整段对话→预览→收进本章正文/存笔记/不要了）；版本0.12.1→0.13.0三处留痕，红线除申报点外零动 */ /* v0.12.1 抢修+DS拟目录 2026-10-12（洪老师真机报3226行null报错+派活AI成书加DS）：刀A补刀3章问答区HTML六id（chapLearnBox等，上班漏落HTML致绑监听器撞null、其后JS全死）；刀B加🐳DS拟目录（xt_dskey+callAI_ds走deepseek-chat+btnTocDS+价目表进2出3，模式选择生效）；版本0.12.0→0.12.1三处留痕（本注释链/顶部修改记录/📋关于），红线零动 */ /* v0.12.0 新书学习大纲化 2026-10-12（洪老师拍板"做完为止"，照《小涛学习笔记》交接文档理念：书=学习项目）：
+/* v0.16.0 章问答文献引文 2026-10-12（洪老师拍板「接受你的意见，开工」）：提示词加引文死规矩（句末[n]角标+===参考文献===段GB/T 7714+宁可不列严禁编造）+xtParseRefs/xtRefQuery两新函数+renderChapChat气泡角标上标化+文献折叠区带🔍查原文跳PubMed+chat台账加refs+收工convo带文献；申报动处=chapChatSys/renderChapChat/btnChapAsk then/btnChapDone convo四函数+两新函数+版本三处；红线renderMd/xtParseSuggest/parseToc/callAI/callAI_ds/chapChatSave/chapChatUserBlurb/renderChapGrowNodes IDENTICAL */ /* v0.15.0 接入AI总台 2026-10-12（洪老师拍板「同意开工」）：写章认DS选择+开笔前探路+callAI/callAI_ds头部问总台（标死补测/活模型自动换/成败上报）+开门HX.air.boot()巡检；申报动处=callAI/callAI_ds头部与收尾各插行、btnChapWrite写书链一段、hxReady加一行、版本三处；红线callAIonce/aiModelsFetch/parseToc/saveBooks/loadBooks/idbGet/idbPut/glowRender/glowSend/glowHide/xt_studySet/xtChapLit/xtChapUnlit/xtChapBindLongpress/makeNote/showMsg/esc/billAiUse/aiBookCtx IDENTICAL */ /* v0.14.0 章行瘦身+老书一视同仁+长按点亮 2026-10-12（洪老师拍板按你意思开工+问浮窗对齐）：拆kind门槛4处老书新书都有新功能；删除改名收进长按公共条；长按章行点亮亮黄底+公共条+浮窗glowSel同步点亮这章（已写章异步补正文1500字）；章行防选中；顺手补班③漏的关于页；版本0.13.0→0.14.0三处留痕（本注释链/顶部修改记录/📋关于），红线零动 */ /* v0.13.0 2026-10-12 班③（洪老师拍板"做彻底一点，按你的意思开工"）：刀A说实话（铁律25：HUD亮AI身份+读秒，aiErrText删"网络太慢"谎话拼真实原文）；刀B章问答改对话式（气泡+记本章最近10轮+每答限200字内+可选Kimi/DS，🌱点名=自动追问）；刀C收工彻底版（🏁AI总结整段对话→预览→收进本章正文/存笔记/不要了）；版本0.12.1→0.13.0三处留痕，红线除申报点外零动 */ /* v0.12.1 抢修+DS拟目录 2026-10-12（洪老师真机报3226行null报错+派活AI成书加DS）：刀A补刀3章问答区HTML六id（chapLearnBox等，上班漏落HTML致绑监听器撞null、其后JS全死）；刀B加🐳DS拟目录（xt_dskey+callAI_ds走deepseek-chat+btnTocDS+价目表进2出3，模式选择生效）；版本0.12.0→0.12.1三处留痕（本注释链/顶部修改记录/📋关于），红线零动 */ /* v0.12.0 新书学习大纲化 2026-10-12（洪老师拍板"做完为止"，照《小涛学习笔记》交接文档理念：书=学习项目）：
    ①建书加模式选择（🎓学习大纲默认/📖写书目录），新书带kind字段，学习大纲提示词由浅入深一行一知识点；
    ②学习书章带⭐想学/❓不懂/✅已掌握状态钮（再点取消）；③章页「🎓学这章」问答区（问AI+存成笔记）；
    ④书页🎯复习卡汇集⭐❓章+AI出题批改，答对可标已掌握，批改留痕revLog（50条封顶）；
    ⑤生长雏形：AI回答带===建议新节点===可一键长进目录末尾，growLog留痕书页亮最近5条。
    总回退开关localStorage hx_xt_learn_off=1=全新功能不出现回老样子；红线（saveBooks三岔/callAI/aiBookCtx/chaptersFlush链/HX.step/点灯/导出/parseToc）逐字节IDENTICAL。
-   版本0.11.0→0.12.0三处留痕（本注释链/顶部修改记录/📋关于），其余一行未动 */ var SW_VERSION = '0.15.0' /* 安心条HX.step接入 v0.11.0 2026-09-14（洪老师2026-09-14拍板：开门/重活两行小字定格可拍照定位）：开门启动begin+sync对账upd/done（XT.open.*）、splitParasAsync切段begin/upd/done（XT.slice.paras）、sliceLibItem切片begin/逐批upd/done/拒绝fail（XT.slice.ai）、自动巡逻逐本upd/单本done/fail/全完done（XT.patrol）；全护栏if(window.HX&&HX.step)try/catch，HX缺席=上版原样；版本0.10.2→0.11.0三处留痕（本注释链/顶部修改记录/📋关于），其余一行未动 */ /* 资料库一拉开就卡住根治 v0.10.2 2026-09-13（挂号#87，洪老师真机报案+拍板方案C：洪老师v0.10.1实测"点资料库/我的笔记没反应要等很久"；病根=拉开资料库巡逻兵patrolKick立刻开跑，splitParas整本几MB原文同步切分+云端代办ghPutFile/ghGetFile大件b64编解码全堵主线程；治=①拉开后延迟3秒+亮条给选择权（3秒后自动开切/▶马上开切/✋本次不跑）②splitParasAsync细嚼慢咽每20ms让界面喘气（刀法与splitParas一字不差，续切/取回拼装不受影响）③云端代办自动送/取回走b64encAsync/b64decAsync异步通道（TextEncoder/Decoder分块让气，报文格式不变，老机器无TextEncoder自动回落老同步函数）；手动按钮等老调用点一行未动） */ /* 开门愣住根治 v0.10.1 2026-09-13（洪老师真机报案：点小涛笔记能进但愣住十几秒不能滑不能点；病根=开门sync把章正文大件xt_chapters_v1也算进对账名单，主线程同步读壳文件+b64解码+解析几MB，加上chaptersRestore每次开门都chaptersDump整库导出再判空白干重活；治=①开门sync名单摘掉LS_CHAPS只对4个小件，章正文备份照chaptersFlush debounce30秒落账不变 ②chaptersRestore判空改idbCount轻查询，空库才读大件灌回；只动这2处+留痕，其余一行未动） */ /* 地基二期·剩余家底接仓管员+邮路 v0.10.0 2026-09-12（只加不破坏，全守卫全try，HX缺席=上版原样）：①书台账xt_books_v1/资料台账xt_lib_v1注册仓管员，saveBooks/saveLib照v0.9.0主笔记键同款三岔（有壳HX.store.set+闲时dav.mirror；无壳localStorage老路+relay.add） ②IndexedDB章正文接邮路：章正文变更debounce 30秒整库导出成一个JSON走HX.store.set('xt_chapters_v1')+dav.mirror('hxdata_xt_chapters_v1.json')；无壳UTF-8字节>900000跳过relay只落本地（GitHub一兆限制留余量）否则relay.add；开门sync后IndexedDB空而仓管员有值→灌回IndexedDB，非空以IndexedDB为准 ③寄习题xitixuexi_inbox改走仓管员（有壳落真源文件夹，无壳localStorage老路效果相同） ④xt_inbox_v1注册进rescue/sync键数组，收信从对齐后的缓存读（sync后重跑gjInboxCheck） ⑤版本0.9.0→0.10.0三处留痕（本注释链/顶部修改记录/📋关于） */ /* SPEC2单体备份邮路+仓管员+坚果云镜像+中转拉回（地基补强）v0.9.0 2026-09-12（只加不破坏，全守卫全try，HX缺席=上版原样）：主数据键=xt_notes_v1（LS_NOTES，笔记正文所在的最大数据键，saveNotes是全家唯一保存口；xt_books_v1/xt_lib_v1台账体小、章正文在IndexedDB，本班只接这一个键不贪多）。①保存点saveNotes改三岔：有壳（HX.store.has()）走HX.store.set一本账+闲时HX.dav.mirror镜像hxdata_xt_notes_v1.json到坚果云，绝不走relay；无壳走原有localStorage老路+HX.relay.add中转邮路 ②开门hxCommonLoad成功回调加HX.relay.init('小涛笔记')；闲时2秒HX.dav.rescue([xt_notes_v1])（只补缺失不盖已有）→HX.store.sync对账后补renderList→HX.relay.pull拉回中转件 ③版本0.8.1→0.9.0三处留痕（本注释链/顶部修改记录/📋关于） */ /* 收信断根修+details溢出修 v0.8.1 2026-09-11（tester实证两案，只动2处其余一行未动）：①D9b收信从页底独立script挪进主闭包启动流程（原块调不到主IIFE的loadNotes/saveNotes/uid/strHash/vaultQueue，ReferenceError被try/catch吞掉→toast不亮、笔记没存、inbox却被清成[]，数据丢失级）；并立军规=全部存成功才清空xt_inbox_v1，任何一步失败inbox原样保留下回再收 ②首页「📚我的笔记」details收起时noteList仍渲染溢出盖住下方设置卡挡点击（hit-test实证），修=CSS一行details.card:not([open])>:not(summary)真隐藏 */ /* 信息流通普查断点三连 v0.8.0 2026-09-11（只动3处其余一行未动）：①D5点亮→出题结果页加第4钮「📮寄到习题学习」——题目文本按software-xiti.html收信端格式（单个对象{title,text}）写localStorage xitixuexi_inbox，打开习题自动收；②D6c大管家回程票（照抄血气v0.12.0现成写法）：?from=guanjia亮顶条「← 返回大管家」（文件名自适应software-前缀规矩），?pt=顺手写hx_gj_curpt（全家统一记号，血气v0.16.0先例）；③D9b开门收大管家的信：读xt_inbox_v1（数组[{title,text,pt,ts}]，大管家v0.27.0寄来）逐条存成笔记（照xt_notes_v1现有结构，标题加[病人名]前缀），收完清空写回[]，空则静默；无壳全try/catch不报错 */ /* 收编公共件+AI面板 v0.7.0 2026-09-11（照大管家v0.23.0/0.24.0已验证先例）：内嵌速记snippet整块退役改HX.sj一行接入（「补充上一条」extraBtn照留不退役，自动上行HX.sj自带）+AI_MANIFEST 7条接HX.ai统一面板（AI帮我学/问资料/重切/重写总结/送云端代办/AI改笔记/点亮菜单，run全指现有按钮本体未动）；hx-common不在时主功能照常、速记/AI静默降级 */ /* 切片断根修 v0.6.2 2026-09-11（洪老师拍板"一项一项完成"，挂号#63/#64/#65/#66）：
+   版本0.11.0→0.12.0三处留痕（本注释链/顶部修改记录/📋关于），其余一行未动 */ var SW_VERSION = '0.16.0' /* 安心条HX.step接入 v0.11.0 2026-09-14（洪老师2026-09-14拍板：开门/重活两行小字定格可拍照定位）：开门启动begin+sync对账upd/done（XT.open.*）、splitParasAsync切段begin/upd/done（XT.slice.paras）、sliceLibItem切片begin/逐批upd/done/拒绝fail（XT.slice.ai）、自动巡逻逐本upd/单本done/fail/全完done（XT.patrol）；全护栏if(window.HX&&HX.step)try/catch，HX缺席=上版原样；版本0.10.2→0.11.0三处留痕（本注释链/顶部修改记录/📋关于），其余一行未动 */ /* 资料库一拉开就卡住根治 v0.10.2 2026-09-13（挂号#87，洪老师真机报案+拍板方案C：洪老师v0.10.1实测"点资料库/我的笔记没反应要等很久"；病根=拉开资料库巡逻兵patrolKick立刻开跑，splitParas整本几MB原文同步切分+云端代办ghPutFile/ghGetFile大件b64编解码全堵主线程；治=①拉开后延迟3秒+亮条给选择权（3秒后自动开切/▶马上开切/✋本次不跑）②splitParasAsync细嚼慢咽每20ms让界面喘气（刀法与splitParas一字不差，续切/取回拼装不受影响）③云端代办自动送/取回走b64encAsync/b64decAsync异步通道（TextEncoder/Decoder分块让气，报文格式不变，老机器无TextEncoder自动回落老同步函数）；手动按钮等老调用点一行未动） */ /* 开门愣住根治 v0.10.1 2026-09-13（洪老师真机报案：点小涛笔记能进但愣住十几秒不能滑不能点；病根=开门sync把章正文大件xt_chapters_v1也算进对账名单，主线程同步读壳文件+b64解码+解析几MB，加上chaptersRestore每次开门都chaptersDump整库导出再判空白干重活；治=①开门sync名单摘掉LS_CHAPS只对4个小件，章正文备份照chaptersFlush debounce30秒落账不变 ②chaptersRestore判空改idbCount轻查询，空库才读大件灌回；只动这2处+留痕，其余一行未动） */ /* 地基二期·剩余家底接仓管员+邮路 v0.10.0 2026-09-12（只加不破坏，全守卫全try，HX缺席=上版原样）：①书台账xt_books_v1/资料台账xt_lib_v1注册仓管员，saveBooks/saveLib照v0.9.0主笔记键同款三岔（有壳HX.store.set+闲时dav.mirror；无壳localStorage老路+relay.add） ②IndexedDB章正文接邮路：章正文变更debounce 30秒整库导出成一个JSON走HX.store.set('xt_chapters_v1')+dav.mirror('hxdata_xt_chapters_v1.json')；无壳UTF-8字节>900000跳过relay只落本地（GitHub一兆限制留余量）否则relay.add；开门sync后IndexedDB空而仓管员有值→灌回IndexedDB，非空以IndexedDB为准 ③寄习题xitixuexi_inbox改走仓管员（有壳落真源文件夹，无壳localStorage老路效果相同） ④xt_inbox_v1注册进rescue/sync键数组，收信从对齐后的缓存读（sync后重跑gjInboxCheck） ⑤版本0.9.0→0.10.0三处留痕（本注释链/顶部修改记录/📋关于） */ /* SPEC2单体备份邮路+仓管员+坚果云镜像+中转拉回（地基补强）v0.9.0 2026-09-12（只加不破坏，全守卫全try，HX缺席=上版原样）：主数据键=xt_notes_v1（LS_NOTES，笔记正文所在的最大数据键，saveNotes是全家唯一保存口；xt_books_v1/xt_lib_v1台账体小、章正文在IndexedDB，本班只接这一个键不贪多）。①保存点saveNotes改三岔：有壳（HX.store.has()）走HX.store.set一本账+闲时HX.dav.mirror镜像hxdata_xt_notes_v1.json到坚果云，绝不走relay；无壳走原有localStorage老路+HX.relay.add中转邮路 ②开门hxCommonLoad成功回调加HX.relay.init('小涛笔记')；闲时2秒HX.dav.rescue([xt_notes_v1])（只补缺失不盖已有）→HX.store.sync对账后补renderList→HX.relay.pull拉回中转件 ③版本0.8.1→0.9.0三处留痕（本注释链/顶部修改记录/📋关于） */ /* 收信断根修+details溢出修 v0.8.1 2026-09-11（tester实证两案，只动2处其余一行未动）：①D9b收信从页底独立script挪进主闭包启动流程（原块调不到主IIFE的loadNotes/saveNotes/uid/strHash/vaultQueue，ReferenceError被try/catch吞掉→toast不亮、笔记没存、inbox却被清成[]，数据丢失级）；并立军规=全部存成功才清空xt_inbox_v1，任何一步失败inbox原样保留下回再收 ②首页「📚我的笔记」details收起时noteList仍渲染溢出盖住下方设置卡挡点击（hit-test实证），修=CSS一行details.card:not([open])>:not(summary)真隐藏 */ /* 信息流通普查断点三连 v0.8.0 2026-09-11（只动3处其余一行未动）：①D5点亮→出题结果页加第4钮「📮寄到习题学习」——题目文本按software-xiti.html收信端格式（单个对象{title,text}）写localStorage xitixuexi_inbox，打开习题自动收；②D6c大管家回程票（照抄血气v0.12.0现成写法）：?from=guanjia亮顶条「← 返回大管家」（文件名自适应software-前缀规矩），?pt=顺手写hx_gj_curpt（全家统一记号，血气v0.16.0先例）；③D9b开门收大管家的信：读xt_inbox_v1（数组[{title,text,pt,ts}]，大管家v0.27.0寄来）逐条存成笔记（照xt_notes_v1现有结构，标题加[病人名]前缀），收完清空写回[]，空则静默；无壳全try/catch不报错 */ /* 收编公共件+AI面板 v0.7.0 2026-09-11（照大管家v0.23.0/0.24.0已验证先例）：内嵌速记snippet整块退役改HX.sj一行接入（「补充上一条」extraBtn照留不退役，自动上行HX.sj自带）+AI_MANIFEST 7条接HX.ai统一面板（AI帮我学/问资料/重切/重写总结/送云端代办/AI改笔记/点亮菜单，run全指现有按钮本体未动）；hx-common不在时主功能照常、速记/AI静默降级 */ /* 切片断根修 v0.6.2 2026-09-11（洪老师拍板"一项一项完成"，挂号#63/#64/#65/#66）：
    ①#66断点续切：AI切到一半的书记着批次进度（sliceBatch），中断后续切不从头——病根=此前任何中断都整本重切、钱全白花，几本书一个月切不完就是它；
      粗切完成的书换AI重切仍整本重来（旧块全换），手动「重新AI切片」照旧全量；
    ②#63自动化：巡逻失败"当天不再碰"改退避2小时再试（网络抖一下不再废一天）；本地连败2次的书自动送云端代办（GitHub Actions机器人切，关掉软件它也切）；
@@ -3446,6 +3452,29 @@ function xtParseSuggest(full){
   var nodes = parseToc(rest);
   return { body: body, nodes: nodes };
 }
+/* v0.16.0：拆 ===参考文献=== 段（body=正文，refs=文献行数组）；没这段时refs=[] */
+function xtParseRefs(body){
+  var idx = String(body || '').indexOf('===参考文献===');
+  if(idx < 0) return { body: String(body || ''), refs: [] };
+  var main = String(body).slice(0, idx);
+  var rest = String(body).slice(idx + '===参考文献==='.length);
+  /* v0.16.0终审修：AI顺序错乱（建议新节点在参考文献后）时，把建议新节点段接回正文，refs不受污染 */
+  var sIdx = rest.indexOf('===建议新节点===');
+  if(sIdx >= 0){ main = main + rest.slice(sIdx); rest = rest.slice(0, sIdx); }
+  var refs = [];
+  rest.split('\n').forEach(function(l){
+    var t = String(l || '').trim();
+    if(t) refs.push(t);
+  });
+  return { body: main, refs: refs };
+}
+/* v0.16.0：从GB/T 7714文献行提题名做PubMed搜索词；提不到用去序号后前60字 */
+function xtRefQuery(ref){
+  var s = String(ref || '').replace(/^\s*\[\d+\]\s*/, '');
+  var m = s.match(/\.\s*([^.]+)\[(J|M|D|R|C|N)\]/);
+  var t = m ? String(m[1] || '').trim() : s.slice(0, 60).trim();
+  return t || s.slice(0, 60).trim();
+}
 /* 把改过的chat写回台账（getBook是新鲜解析，必须重载→写入→saveBooks，直接saveBooks(loadBooks())会丢） */
 function chapChatSave(bid, cid, chat){
   try{
@@ -3472,8 +3501,34 @@ function renderChapChat(c){
     var ad = document.createElement('div');
     ad.className = 'md-body';
     ad.style.cssText = 'background:#fff;border-radius:8px;padding:6px 10px;margin-top:4px;';
-    ad.innerHTML = renderMd(String(turn.a || ''));
+    /* v0.16.0：句末[n]角标化（renderMd已esc，[1]是纯文本，后处理安全） */
+    ad.innerHTML = renderMd(String(turn.a || '')).replace(/\[(\d{1,2})\]/g, '<sup style="color:#8a7a5a;font-size:11px;">[$1]</sup>');
     box.appendChild(ad);
+    /* v0.16.0：参考文献折叠区（鱼骨头：默认收起一行） */
+    var refs = turn.refs || [];
+    if(refs.length){
+      var rd = document.createElement('div');
+      rd.style.cssText = 'margin-top:2px;margin-left:12px;';
+      var tg = document.createElement('button');
+      tg.className = 'cb';
+      tg.textContent = '📚 参考文献（' + refs.length + '条）▸';
+      var rl = document.createElement('div');
+      rl.style.cssText = 'display:none;background:#faf7ef;border-radius:6px;padding:4px 8px;margin-top:2px;font-size:12px;color:#5a4f3a;';
+      refs.forEach(function(ref){
+        var line = document.createElement('div');
+        line.style.marginTop = '3px';
+        var url = 'https://pubmed.ncbi.nlm.nih.gov/?term=' + encodeURIComponent(xtRefQuery(ref));
+        line.innerHTML = esc(ref) + ' <a href="' + url + '" target="_blank" style="color:#7a6a4a;">🔍查原文</a>';
+        rl.appendChild(line);
+      });
+      tg.addEventListener('click', function(){
+        var open = rl.style.display !== 'none';
+        rl.style.display = open ? 'none' : 'block';
+        tg.textContent = '📚 参考文献（' + refs.length + '条）' + (open ? '▸' : '▾');
+      });
+      rd.appendChild(tg); rd.appendChild(rl);
+      box.appendChild(rd);
+    }
   });
 }
 function chapChatUserBlurb(c){
@@ -3487,7 +3542,7 @@ function chapChatUserBlurb(c){
   return s;
 }
 function chapChatSys(b, c){
-  return '你是医学学习助教，用中文大白话回答ICU医生学习中的问题。背景：他在学《' + b.title + '》的「' + c.t + '」这一章。先参考章正文（若有）再回答，正文没有就用你自己的知识。死规矩：回答严格控制在200字以内，中文大白话，不许长篇大论。回答末尾：若你认为有值得深入的新方向，另起一行写 ===建议新节点=== ，然后每行一个新知识点名（1到3个）；没有就不写这段。';
+  return '你是医学学习助教，用中文大白话回答ICU医生学习中的问题。背景：他在学《' + b.title + '》的「' + c.t + '」这一章。先参考章正文（若有）再回答，正文没有就用你自己的知识。死规矩：回答严格控制在200字以内，中文大白话，不许长篇大论。引文规矩：回答涉及具体数据、指南推荐、研究结论时，在句子末尾标角标如[1][2]；然后在 ===建议新节点=== 之前另起一行写 ===参考文献=== ，每行一条，严格按GB/T 7714-2015格式：[序号] 作者. 题名[J]. 刊名, 年, 卷(期): 起页-止页. 图书用[M]格式。铁规矩：记不清细节的文献宁可不列，严禁编造不存在的文献；没有可靠出处就整个 ===参考文献=== 段都不写。回答末尾：若你认为有值得深入的新方向，另起一行写 ===建议新节点=== ，然后每行一个新知识点名（1到3个）；没有就不写这段。';
 }
 function chapChatLogErr(msg){
   var box = $('chapChatLog'); if(!box) return;
@@ -3537,9 +3592,10 @@ $('btnChapAsk').addEventListener('click', function(){
     if(chapAiCur() === 'ds') return callAI_ds(sys, user, 600, 60000, '章节问答');
     return callAI(sys, user, 600, 60000, '章节问答');
   }).then(function(txt){
-    var sp = xtParseSuggest(String(txt || ''));
+    var rp = xtParseRefs(String(txt || ''));
+    var sp = xtParseSuggest(rp.body);
     if(!c.chat) c.chat = [];
-    c.chat.push({ q: q, a: sp.body, ts: Date.now() });
+    c.chat.push({ q: q, a: rp.body, refs: rp.refs, ts: Date.now() });
     chapChatSave(b.id, c.id, c.chat);
     renderChapChat(c);
     renderChapGrowNodes(sp.nodes);
@@ -3574,7 +3630,10 @@ $('btnChapDone').addEventListener('click', function(){
   chapDoneBoxClear();
   var convo = '';
   c.chat.forEach(function(turn, i){
-    convo += '【第' + (i + 1) + '轮】\n问：' + String(turn.q || '') + '\n答：' + String(turn.a || '') + '\n\n';
+    convo += '【第' + (i + 1) + '轮】\n问：' + String(turn.q || '') + '\n答：' + String(turn.a || '') + '\n';
+    var refs = turn.refs || [];
+    if(refs.length) convo += '参考文献：\n' + refs.join('\n') + '\n';
+    convo += '\n';
   });
   var sys = '你是医学学习整理助手。把下面这段师生问答整理成本章学习笔记草稿，标准Markdown（##小节+条目+重点加粗，表格用|格式），中文大白话，只整理聊过的内容不许编造。';
   var user = '【书名】' + b.title + '\n【章名】' + c.t + '\n\n' + convo;
