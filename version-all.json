@@ -1,6 +1,6 @@
 {
  "v": 1,
- "t": 1791787699400,
+ "t": 1791793007022,
  "items": [
   {
    "key": "index",
@@ -28,9 +28,9 @@
   },
   {
    "key": "xiaotao",
-   "version": "0.16.0",
+   "version": "0.17.0",
    "dl": "software-xiaotao.html",
-   "sig": "cb8de956c82b3918"
+   "sig": "faa53b34c27b6ef1"
   }
  ],
  "note": "AI总台：hx-common0.18.0+小涛0.15.0+大管家0.57.3；其余不动"
