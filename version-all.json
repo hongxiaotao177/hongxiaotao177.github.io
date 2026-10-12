@@ -1,6 +1,6 @@
 {
  "v": 1,
- "t": 1791774460865,
+ "t": 1791781511082,
  "items": [
   {
    "key": "index",
@@ -10,15 +10,15 @@
   },
   {
    "key": "guanjia",
-   "version": "0.57.2",
+   "version": "0.57.3",
    "dl": "software-guanjia.html",
-   "sig": "984cb637bf26fcd7"
+   "sig": "5e274d11819d64c2"
   },
   {
    "key": "hx-common",
-   "version": "0.17.0",
+   "version": "0.18.0",
    "dl": "hx-common.js",
-   "sig": "a314100ea152f05a"
+   "sig": "49db89d2583c7c7f"
   },
   {
    "key": "tuomin",
@@ -28,10 +28,10 @@
   },
   {
    "key": "xiaotao",
-   "version": "0.14.0",
+   "version": "0.15.0",
    "dl": "software-xiaotao.html",
-   "sig": "a5c79159afc5754c"
+   "sig": "2509ea64974ea3f6"
   }
  ],
- "note": "小涛v0.14.0：章行瘦身+老书一视同仁+长按点亮浮窗对齐；其余不动"
+ "note": "AI总台：hx-common0.18.0+小涛0.15.0+大管家0.57.3；其余不动"
 }
