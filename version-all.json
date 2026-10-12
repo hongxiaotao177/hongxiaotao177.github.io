@@ -1,6 +1,6 @@
 {
  "v": 1,
- "t": 1791793007022,
+ "t": 1791796704921,
  "items": [
   {
    "key": "index",
@@ -16,9 +16,9 @@
   },
   {
    "key": "hx-common",
-   "version": "0.18.0",
+   "version": "0.18.1",
    "dl": "hx-common.js",
-   "sig": "49db89d2583c7c7f"
+   "sig": "ae1b0947d28cc477"
   },
   {
    "key": "tuomin",
@@ -33,6 +33,5 @@
    "sig": "faa53b34c27b6ef1"
   }
  ],
- "note": "AI总台：hx-common0.18.0+小涛0.15.0+大管家0.57.3；其余不动",
- "hx-common": "0.18.1"
+ "note": "hx-common v0.18.1（想法流水改名+gh钥匙真源+上行失败明白话+toast不自动消失）；其余不动"
 }
