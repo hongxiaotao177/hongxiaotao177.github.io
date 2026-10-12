@@ -1,6 +1,6 @@
 {
- "version": "0.57.2",
+ "version": "0.57.3",
  "dl": "software-guanjia.html",
- "note": "第②步乙类：脱敏回执（小账+自动点亮+名册绿小字）+storage监听即时收件",
- "sig": "984cb637bf26fcd7"
+ "note": "接入AI总台：aiChat问路（千问标死直叫Kimi/Kimi认总台活模型）+双死上报+开门巡检",
+ "sig": "5e274d11819d64c2"
 }
