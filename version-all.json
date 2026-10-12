@@ -1,6 +1,6 @@
 {
  "v": 1,
- "t": 1791725859346,
+ "t": 1791763788829,
  "items": [
   {
    "key": "index",
@@ -25,7 +25,13 @@
    "version": "1.2.0",
    "dl": "software-tuomin.html",
    "sig": "21cd119132be9318"
+  },
+  {
+   "key": "xiaotao",
+   "version": "0.12.0",
+   "dl": "software-xiaotao.html",
+   "sig": "d24a3592c6a906e7"
   }
  ],
- "note": "脱敏单体v1.2.0：点亮随行发AI+免同意自动改规则+版本库倒回；其余不动"
+ "note": "小涛v0.12.0：新书学习大纲化；其余不动"
 }
