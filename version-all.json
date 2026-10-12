@@ -1,6 +1,6 @@
 {
  "v": 1,
- "t": 1791767177270,
+ "t": 1791772009252,
  "items": [
   {
    "key": "index",
@@ -28,10 +28,10 @@
   },
   {
    "key": "xiaotao",
-   "version": "0.12.1",
+   "version": "0.13.0",
    "dl": "software-xiaotao.html",
-   "sig": "f0295a7ee40f1d8d"
+   "sig": "13bf103913e3b79e"
   }
  ],
- "note": "小涛v0.12.1：抢修问答区null报错+DS拟目录；其余不动"
+ "note": "小涛v0.13.0：说实话HUD+对话式问答+收工沉淀；其余不动"
 }
