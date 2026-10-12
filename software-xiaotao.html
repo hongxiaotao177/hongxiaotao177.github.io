@@ -42,6 +42,14 @@ window.addEventListener('load', function(){
   小涛笔记（学习笔记2代）· 单文件版
 ==========================================================
   修改记录：
+   v0.13.0 2026-10-12 班③ 说实话+对话式问答+收工沉淀（洪老师拍板"做彻底一点，按你的意思开工"）：
+        ①刀A说实话（铁律25）：AI调用亮HUD（哪个AI哪个模型+读秒+上限），
+          aiErrText删掉"网络太慢"谎话、所有报错末尾拼真实原文；
+        ②刀B章问答改对话式：一问一答气泡、记本章最近10轮、每答限200字内、
+          可选🤖Kimi/🐳DS（xt_chapai），🌱新节点点名=自动追问、➕=长进目录；
+        ③刀C收工彻底版：🏁收工AI把整段对话总结成草稿→预览→✅收进本章正文/
+          📝存成笔记/❌不要了；
+        版本三处留痕（本记录/SW_VERSION注释链/📋关于），红线除申报点外零动。
    v0.12.1 2026-10-12 抢修+DS拟目录（洪老师真机报3226行null报错+派活"AI成书加DS"）：
         ①刀A抢修：补刀3章问答区HTML（chapLearnBox/chapAskIn/btnChapAsk/chapAskAns/
           btnChapAskSave/chapGrowBox六id，上班只落JS漏落HTML，页面加载绑监听器撞null，
@@ -730,15 +738,23 @@ window.addEventListener('load', function(){
     </div>
   </div>
   <!-- v0.12.1 刀A抢修：补刀3章问答区HTML（上班只落JS漏落HTML，$按钮撞null第3226行炸、其后JS全死） -->
+  <!-- v0.13.0 刀B：整组换成对话式（一问一答有记忆，200字内，从点扩张知识地图） -->
   <div class="card hidden" id="chapLearnBox">
     <h2>🎓 学这章——问AI</h2>
-    <div class="hint" style="margin-top:0;">带着这章正文问，回答可存成笔记；AI建议的新知识点一键长进目录。</div>
+    <div class="hint" style="margin-top:0;">像聊天一样问，AI记得这章聊过什么；每次回答限200字内。</div>
+    <div style="margin-top:6px;">
+      <select id="chapAiSel">
+        <option value="kimi">🤖 Kimi</option>
+        <option value="ds">🐳 DS</option>
+      </select>
+    </div>
+    <div id="chapChatLog" style="margin-top:8px;"></div>
     <input type="text" id="chapAskIn" placeholder="这章哪里不懂，直接问">
     <div style="margin-top:8px;">
-      <button class="btn" id="btnChapAsk">🎓 问 AI</button>
-      <button class="btn secondary hidden" id="btnChapAskSave">📝 存成笔记</button>
+      <button class="btn" id="btnChapAsk">🎓 问</button>
+      <button class="btn secondary" id="btnChapDone">🏁 收工：总结收进本章</button>
+      <button class="btn secondary" id="btnChapClear">🧹 清空对话</button>
     </div>
-    <div class="md-body" id="chapAskAns" style="margin-top:8px;"></div>
     <div id="chapGrowBox"></div>
   </div>
 </div>
@@ -749,6 +765,7 @@ window.addEventListener('load', function(){
   <div id="glowBody"></div>
 </div>
 
+<div id="aiHud" class="hidden" style="position:fixed;left:8px;right:8px;bottom:56px;z-index:9999;background:#333;color:#fff;padding:8px 10px;border-radius:8px;font-size:14px;"></div>
 <div id="toast"></div>
 
 <script>__bc('C主脚本前');</script>
@@ -757,13 +774,13 @@ window.addEventListener('load', function(){
 (function(){
 __bc('D脚本启动');
 var $ = function(id){ return document.getElementById(id); };
-/* v0.12.1 抢修+DS拟目录 2026-10-12（洪老师真机报3226行null报错+派活AI成书加DS）：刀A补刀3章问答区HTML六id（chapLearnBox等，上班漏落HTML致绑监听器撞null、其后JS全死）；刀B加🐳DS拟目录（xt_dskey+callAI_ds走deepseek-chat+btnTocDS+价目表进2出3，模式选择生效）；版本0.12.0→0.12.1三处留痕（本注释链/顶部修改记录/📋关于），红线零动 */ /* v0.12.0 新书学习大纲化 2026-10-12（洪老师拍板"做完为止"，照《小涛学习笔记》交接文档理念：书=学习项目）：
+/* v0.13.0 2026-10-12 班③（洪老师拍板"做彻底一点，按你的意思开工"）：刀A说实话（铁律25：HUD亮AI身份+读秒，aiErrText删"网络太慢"谎话拼真实原文）；刀B章问答改对话式（气泡+记本章最近10轮+每答限200字内+可选Kimi/DS，🌱点名=自动追问）；刀C收工彻底版（🏁AI总结整段对话→预览→收进本章正文/存笔记/不要了）；版本0.12.1→0.13.0三处留痕，红线除申报点外零动 */ /* v0.12.1 抢修+DS拟目录 2026-10-12（洪老师真机报3226行null报错+派活AI成书加DS）：刀A补刀3章问答区HTML六id（chapLearnBox等，上班漏落HTML致绑监听器撞null、其后JS全死）；刀B加🐳DS拟目录（xt_dskey+callAI_ds走deepseek-chat+btnTocDS+价目表进2出3，模式选择生效）；版本0.12.0→0.12.1三处留痕（本注释链/顶部修改记录/📋关于），红线零动 */ /* v0.12.0 新书学习大纲化 2026-10-12（洪老师拍板"做完为止"，照《小涛学习笔记》交接文档理念：书=学习项目）：
    ①建书加模式选择（🎓学习大纲默认/📖写书目录），新书带kind字段，学习大纲提示词由浅入深一行一知识点；
    ②学习书章带⭐想学/❓不懂/✅已掌握状态钮（再点取消）；③章页「🎓学这章」问答区（问AI+存成笔记）；
    ④书页🎯复习卡汇集⭐❓章+AI出题批改，答对可标已掌握，批改留痕revLog（50条封顶）；
    ⑤生长雏形：AI回答带===建议新节点===可一键长进目录末尾，growLog留痕书页亮最近5条。
    总回退开关localStorage hx_xt_learn_off=1=全新功能不出现回老样子；红线（saveBooks三岔/callAI/aiBookCtx/chaptersFlush链/HX.step/点灯/导出/parseToc）逐字节IDENTICAL。
-   版本0.11.0→0.12.0三处留痕（本注释链/顶部修改记录/📋关于），其余一行未动 */ var SW_VERSION = '0.12.1' /* 安心条HX.step接入 v0.11.0 2026-09-14（洪老师2026-09-14拍板：开门/重活两行小字定格可拍照定位）：开门启动begin+sync对账upd/done（XT.open.*）、splitParasAsync切段begin/upd/done（XT.slice.paras）、sliceLibItem切片begin/逐批upd/done/拒绝fail（XT.slice.ai）、自动巡逻逐本upd/单本done/fail/全完done（XT.patrol）；全护栏if(window.HX&&HX.step)try/catch，HX缺席=上版原样；版本0.10.2→0.11.0三处留痕（本注释链/顶部修改记录/📋关于），其余一行未动 */ /* 资料库一拉开就卡住根治 v0.10.2 2026-09-13（挂号#87，洪老师真机报案+拍板方案C：洪老师v0.10.1实测"点资料库/我的笔记没反应要等很久"；病根=拉开资料库巡逻兵patrolKick立刻开跑，splitParas整本几MB原文同步切分+云端代办ghPutFile/ghGetFile大件b64编解码全堵主线程；治=①拉开后延迟3秒+亮条给选择权（3秒后自动开切/▶马上开切/✋本次不跑）②splitParasAsync细嚼慢咽每20ms让界面喘气（刀法与splitParas一字不差，续切/取回拼装不受影响）③云端代办自动送/取回走b64encAsync/b64decAsync异步通道（TextEncoder/Decoder分块让气，报文格式不变，老机器无TextEncoder自动回落老同步函数）；手动按钮等老调用点一行未动） */ /* 开门愣住根治 v0.10.1 2026-09-13（洪老师真机报案：点小涛笔记能进但愣住十几秒不能滑不能点；病根=开门sync把章正文大件xt_chapters_v1也算进对账名单，主线程同步读壳文件+b64解码+解析几MB，加上chaptersRestore每次开门都chaptersDump整库导出再判空白干重活；治=①开门sync名单摘掉LS_CHAPS只对4个小件，章正文备份照chaptersFlush debounce30秒落账不变 ②chaptersRestore判空改idbCount轻查询，空库才读大件灌回；只动这2处+留痕，其余一行未动） */ /* 地基二期·剩余家底接仓管员+邮路 v0.10.0 2026-09-12（只加不破坏，全守卫全try，HX缺席=上版原样）：①书台账xt_books_v1/资料台账xt_lib_v1注册仓管员，saveBooks/saveLib照v0.9.0主笔记键同款三岔（有壳HX.store.set+闲时dav.mirror；无壳localStorage老路+relay.add） ②IndexedDB章正文接邮路：章正文变更debounce 30秒整库导出成一个JSON走HX.store.set('xt_chapters_v1')+dav.mirror('hxdata_xt_chapters_v1.json')；无壳UTF-8字节>900000跳过relay只落本地（GitHub一兆限制留余量）否则relay.add；开门sync后IndexedDB空而仓管员有值→灌回IndexedDB，非空以IndexedDB为准 ③寄习题xitixuexi_inbox改走仓管员（有壳落真源文件夹，无壳localStorage老路效果相同） ④xt_inbox_v1注册进rescue/sync键数组，收信从对齐后的缓存读（sync后重跑gjInboxCheck） ⑤版本0.9.0→0.10.0三处留痕（本注释链/顶部修改记录/📋关于） */ /* SPEC2单体备份邮路+仓管员+坚果云镜像+中转拉回（地基补强）v0.9.0 2026-09-12（只加不破坏，全守卫全try，HX缺席=上版原样）：主数据键=xt_notes_v1（LS_NOTES，笔记正文所在的最大数据键，saveNotes是全家唯一保存口；xt_books_v1/xt_lib_v1台账体小、章正文在IndexedDB，本班只接这一个键不贪多）。①保存点saveNotes改三岔：有壳（HX.store.has()）走HX.store.set一本账+闲时HX.dav.mirror镜像hxdata_xt_notes_v1.json到坚果云，绝不走relay；无壳走原有localStorage老路+HX.relay.add中转邮路 ②开门hxCommonLoad成功回调加HX.relay.init('小涛笔记')；闲时2秒HX.dav.rescue([xt_notes_v1])（只补缺失不盖已有）→HX.store.sync对账后补renderList→HX.relay.pull拉回中转件 ③版本0.8.1→0.9.0三处留痕（本注释链/顶部修改记录/📋关于） */ /* 收信断根修+details溢出修 v0.8.1 2026-09-11（tester实证两案，只动2处其余一行未动）：①D9b收信从页底独立script挪进主闭包启动流程（原块调不到主IIFE的loadNotes/saveNotes/uid/strHash/vaultQueue，ReferenceError被try/catch吞掉→toast不亮、笔记没存、inbox却被清成[]，数据丢失级）；并立军规=全部存成功才清空xt_inbox_v1，任何一步失败inbox原样保留下回再收 ②首页「📚我的笔记」details收起时noteList仍渲染溢出盖住下方设置卡挡点击（hit-test实证），修=CSS一行details.card:not([open])>:not(summary)真隐藏 */ /* 信息流通普查断点三连 v0.8.0 2026-09-11（只动3处其余一行未动）：①D5点亮→出题结果页加第4钮「📮寄到习题学习」——题目文本按software-xiti.html收信端格式（单个对象{title,text}）写localStorage xitixuexi_inbox，打开习题自动收；②D6c大管家回程票（照抄血气v0.12.0现成写法）：?from=guanjia亮顶条「← 返回大管家」（文件名自适应software-前缀规矩），?pt=顺手写hx_gj_curpt（全家统一记号，血气v0.16.0先例）；③D9b开门收大管家的信：读xt_inbox_v1（数组[{title,text,pt,ts}]，大管家v0.27.0寄来）逐条存成笔记（照xt_notes_v1现有结构，标题加[病人名]前缀），收完清空写回[]，空则静默；无壳全try/catch不报错 */ /* 收编公共件+AI面板 v0.7.0 2026-09-11（照大管家v0.23.0/0.24.0已验证先例）：内嵌速记snippet整块退役改HX.sj一行接入（「补充上一条」extraBtn照留不退役，自动上行HX.sj自带）+AI_MANIFEST 7条接HX.ai统一面板（AI帮我学/问资料/重切/重写总结/送云端代办/AI改笔记/点亮菜单，run全指现有按钮本体未动）；hx-common不在时主功能照常、速记/AI静默降级 */ /* 切片断根修 v0.6.2 2026-09-11（洪老师拍板"一项一项完成"，挂号#63/#64/#65/#66）：
+   版本0.11.0→0.12.0三处留痕（本注释链/顶部修改记录/📋关于），其余一行未动 */ var SW_VERSION = '0.13.0' /* 安心条HX.step接入 v0.11.0 2026-09-14（洪老师2026-09-14拍板：开门/重活两行小字定格可拍照定位）：开门启动begin+sync对账upd/done（XT.open.*）、splitParasAsync切段begin/upd/done（XT.slice.paras）、sliceLibItem切片begin/逐批upd/done/拒绝fail（XT.slice.ai）、自动巡逻逐本upd/单本done/fail/全完done（XT.patrol）；全护栏if(window.HX&&HX.step)try/catch，HX缺席=上版原样；版本0.10.2→0.11.0三处留痕（本注释链/顶部修改记录/📋关于），其余一行未动 */ /* 资料库一拉开就卡住根治 v0.10.2 2026-09-13（挂号#87，洪老师真机报案+拍板方案C：洪老师v0.10.1实测"点资料库/我的笔记没反应要等很久"；病根=拉开资料库巡逻兵patrolKick立刻开跑，splitParas整本几MB原文同步切分+云端代办ghPutFile/ghGetFile大件b64编解码全堵主线程；治=①拉开后延迟3秒+亮条给选择权（3秒后自动开切/▶马上开切/✋本次不跑）②splitParasAsync细嚼慢咽每20ms让界面喘气（刀法与splitParas一字不差，续切/取回拼装不受影响）③云端代办自动送/取回走b64encAsync/b64decAsync异步通道（TextEncoder/Decoder分块让气，报文格式不变，老机器无TextEncoder自动回落老同步函数）；手动按钮等老调用点一行未动） */ /* 开门愣住根治 v0.10.1 2026-09-13（洪老师真机报案：点小涛笔记能进但愣住十几秒不能滑不能点；病根=开门sync把章正文大件xt_chapters_v1也算进对账名单，主线程同步读壳文件+b64解码+解析几MB，加上chaptersRestore每次开门都chaptersDump整库导出再判空白干重活；治=①开门sync名单摘掉LS_CHAPS只对4个小件，章正文备份照chaptersFlush debounce30秒落账不变 ②chaptersRestore判空改idbCount轻查询，空库才读大件灌回；只动这2处+留痕，其余一行未动） */ /* 地基二期·剩余家底接仓管员+邮路 v0.10.0 2026-09-12（只加不破坏，全守卫全try，HX缺席=上版原样）：①书台账xt_books_v1/资料台账xt_lib_v1注册仓管员，saveBooks/saveLib照v0.9.0主笔记键同款三岔（有壳HX.store.set+闲时dav.mirror；无壳localStorage老路+relay.add） ②IndexedDB章正文接邮路：章正文变更debounce 30秒整库导出成一个JSON走HX.store.set('xt_chapters_v1')+dav.mirror('hxdata_xt_chapters_v1.json')；无壳UTF-8字节>900000跳过relay只落本地（GitHub一兆限制留余量）否则relay.add；开门sync后IndexedDB空而仓管员有值→灌回IndexedDB，非空以IndexedDB为准 ③寄习题xitixuexi_inbox改走仓管员（有壳落真源文件夹，无壳localStorage老路效果相同） ④xt_inbox_v1注册进rescue/sync键数组，收信从对齐后的缓存读（sync后重跑gjInboxCheck） ⑤版本0.9.0→0.10.0三处留痕（本注释链/顶部修改记录/📋关于） */ /* SPEC2单体备份邮路+仓管员+坚果云镜像+中转拉回（地基补强）v0.9.0 2026-09-12（只加不破坏，全守卫全try，HX缺席=上版原样）：主数据键=xt_notes_v1（LS_NOTES，笔记正文所在的最大数据键，saveNotes是全家唯一保存口；xt_books_v1/xt_lib_v1台账体小、章正文在IndexedDB，本班只接这一个键不贪多）。①保存点saveNotes改三岔：有壳（HX.store.has()）走HX.store.set一本账+闲时HX.dav.mirror镜像hxdata_xt_notes_v1.json到坚果云，绝不走relay；无壳走原有localStorage老路+HX.relay.add中转邮路 ②开门hxCommonLoad成功回调加HX.relay.init('小涛笔记')；闲时2秒HX.dav.rescue([xt_notes_v1])（只补缺失不盖已有）→HX.store.sync对账后补renderList→HX.relay.pull拉回中转件 ③版本0.8.1→0.9.0三处留痕（本注释链/顶部修改记录/📋关于） */ /* 收信断根修+details溢出修 v0.8.1 2026-09-11（tester实证两案，只动2处其余一行未动）：①D9b收信从页底独立script挪进主闭包启动流程（原块调不到主IIFE的loadNotes/saveNotes/uid/strHash/vaultQueue，ReferenceError被try/catch吞掉→toast不亮、笔记没存、inbox却被清成[]，数据丢失级）；并立军规=全部存成功才清空xt_inbox_v1，任何一步失败inbox原样保留下回再收 ②首页「📚我的笔记」details收起时noteList仍渲染溢出盖住下方设置卡挡点击（hit-test实证），修=CSS一行details.card:not([open])>:not(summary)真隐藏 */ /* 信息流通普查断点三连 v0.8.0 2026-09-11（只动3处其余一行未动）：①D5点亮→出题结果页加第4钮「📮寄到习题学习」——题目文本按software-xiti.html收信端格式（单个对象{title,text}）写localStorage xitixuexi_inbox，打开习题自动收；②D6c大管家回程票（照抄血气v0.12.0现成写法）：?from=guanjia亮顶条「← 返回大管家」（文件名自适应software-前缀规矩），?pt=顺手写hx_gj_curpt（全家统一记号，血气v0.16.0先例）；③D9b开门收大管家的信：读xt_inbox_v1（数组[{title,text,pt,ts}]，大管家v0.27.0寄来）逐条存成笔记（照xt_notes_v1现有结构，标题加[病人名]前缀），收完清空写回[]，空则静默；无壳全try/catch不报错 */ /* 收编公共件+AI面板 v0.7.0 2026-09-11（照大管家v0.23.0/0.24.0已验证先例）：内嵌速记snippet整块退役改HX.sj一行接入（「补充上一条」extraBtn照留不退役，自动上行HX.sj自带）+AI_MANIFEST 7条接HX.ai统一面板（AI帮我学/问资料/重切/重写总结/送云端代办/AI改笔记/点亮菜单，run全指现有按钮本体未动）；hx-common不在时主功能照常、速记/AI静默降级 */ /* 切片断根修 v0.6.2 2026-09-11（洪老师拍板"一项一项完成"，挂号#63/#64/#65/#66）：
    ①#66断点续切：AI切到一半的书记着批次进度（sliceBatch），中断后续切不从头——病根=此前任何中断都整本重切、钱全白花，几本书一个月切不完就是它；
      粗切完成的书换AI重切仍整本重来（旧块全换），手动「重新AI切片」照旧全量；
    ②#63自动化：巡逻失败"当天不再碰"改退避2小时再试（网络抖一下不再废一天）；本地连败2次的书自动送云端代办（GitHub Actions机器人切，关掉软件它也切）；
@@ -970,6 +987,30 @@ function callAIonce(key, model, sys, user, maxTok, timeoutMs){
     return resp.json();
   }).then(function(d){ callAIonce._usage = d.usage || null; return d.choices[0].message.content; });
 }
+/* v0.13.0 刀A：AI调用亮明身份+读秒（铁律25说实话） */
+var _hudT = null;
+function aiHudStart(label, timeoutMs){
+  try{
+    var el = $('aiHud'); if(!el) return;
+    var lim = Math.round((timeoutMs || 25000) / 1000);
+    var t0 = Date.now();
+    el.classList.remove('hidden');
+    el.textContent = '📡 正在调用：' + label + ' · 已等 0 秒 / 上限 ' + lim + ' 秒';
+    if(_hudT){ clearInterval(_hudT); _hudT = null; }
+    _hudT = setInterval(function(){
+      try{
+        var sec = Math.floor((Date.now() - t0) / 1000);
+        el.textContent = '📡 正在调用：' + label + ' · 已等 ' + sec + ' 秒 / 上限 ' + lim + ' 秒';
+      }catch(_){}
+    }, 1000);
+  }catch(_){}
+}
+function aiHudStop(){
+  try{
+    if(_hudT){ clearInterval(_hudT); _hudT = null; }
+    var el = $('aiHud'); if(el) el.classList.add('hidden');
+  }catch(_){}
+}
 /* v0.3.28：第5参 what 记账用（'切片'/'总结'/'定级'/'文献整理'/'认书'/'问资料'…，默认'其他'） */
 function callAI(sys, user, maxTok, timeoutMs, what){
   if(window.__mockCallAI){   /* 测试挂钩（playwright mock用，平时为null不影响） */
@@ -983,6 +1024,7 @@ function callAI(sys, user, maxTok, timeoutMs, what){
   var key = (localStorage.getItem('xt_apikey') || '').trim();
   if(!key) return Promise.reject(new Error('还没填 API Key（⚙️设置里保存）'));
   var cur = aiModelCur();
+  aiHudStart('Kimi ' + cur, timeoutMs || 25000);
   var cands = [cur];
   var i = 0, roster = null;
   function attempt(){
@@ -1010,7 +1052,8 @@ function callAI(sys, user, maxTok, timeoutMs, what){
       });
     });
   }
-  return attempt();
+  var _p = attempt();
+  return _p.then(function(r){ aiHudStop(); return r; }, function(e){ aiHudStop(); throw e; });
 }
 
 /* ==================== Markdown 渲染 + 双链 ==================== */
@@ -1918,13 +1961,15 @@ function libProg(t){
 }
 /* v0.2.5：AI 失败原因翻译成人话，记下来给用户看 */
 function aiErrText(e){
+  /* v0.13.0 刀A：说实话——删掉"网络太慢"谎话，所有分支末尾拼真实原文（铁律25） */
   var m = String((e && e.message) || e || '');
-  if(m.indexOf('超时') >= 0) return 'AI 太久没回话（网络太慢）';
-  if(m.indexOf('401') >= 0) return 'API Key 不对（⚙️设置里检查）';
-  if(m.indexOf('404') >= 0) return '模型名不对或没权限（v0.2.6起会自动换模型重试）';
-  if(m.indexOf('429') >= 0) return 'AI 太忙被限流，稍后再试';
-  if(m.indexOf('402') >= 0 || m.indexOf('余额') >= 0) return 'API 余额不足';
-  if(m.indexOf('Failed to fetch') >= 0 || m.indexOf('NetworkError') >= 0) return '网络断开';
+  var tail = '｜原文：' + m.slice(0, 120);
+  if(m.indexOf('超时') >= 0) return 'AI 超过时限没回话（可能AI忙/要写的字太多/也可能网慢）' + tail;
+  if(m.indexOf('401') >= 0) return 'API Key 不对（⚙️设置里检查）' + tail;
+  if(m.indexOf('404') >= 0) return '模型名不对或没权限（v0.2.6起会自动换模型重试）' + tail;
+  if(m.indexOf('429') >= 0) return 'AI 太忙被限流，稍后再试' + tail;
+  if(m.indexOf('402') >= 0 || m.indexOf('余额') >= 0) return 'API 余额不足' + tail;
+  if(m.indexOf('Failed to fetch') >= 0 || m.indexOf('NetworkError') >= 0) return '网络断开' + tail;
   return m.slice(0, 60) || '原因不明';
 }
 /* v0.3.2：长驻回话——挂在详情页不走（无秒表），用户看完自己翻页才消失 */
@@ -2961,7 +3006,8 @@ function ollamaCall(prompt){
 function callAI_ds(sys, user, maxTok, timeoutMs, what){
   var key = (localStorage.getItem('xt_dskey') || '').trim();
   if(!key) return Promise.reject(new Error('还没填 DeepSeek Key（⚙️设置里保存）'));
-  return fetchWithTimeout('https://api.deepseek.com/v1/chat/completions', {
+  aiHudStart('DS deepseek-chat', timeoutMs || 25000);
+  var _p = fetchWithTimeout('https://api.deepseek.com/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
     body: JSON.stringify({ model: 'deepseek-chat',
@@ -2974,6 +3020,7 @@ function callAI_ds(sys, user, maxTok, timeoutMs, what){
     billAiUse('deepseek-chat', d.usage || null, (sys || '').length + (user || '').length, String(d.choices[0].message.content || '').length, what);
     return d.choices[0].message.content;
   });
+  return _p.then(function(r){ aiHudStop(); return r; }, function(e){ aiHudStop(); throw e; });
 }
 var TOC_SYS = '你是医学出书目录助手。给ICU医生要写的书拟目录，一行一章，只回章节清单（每行只写章名，不要编号、不要客套话）。';
 /* v0.12.0 刀1：学习大纲提示词 + 总回退开关 + 建书模式读取 */
@@ -3235,10 +3282,10 @@ function openChap(bid, cid){
   if(b.kind === 'learn' && !xtLearnOff()){
     $('chapLearnBox').classList.remove('hidden');
     $('chapAskIn').value = '';
-    $('chapAskAns').innerHTML = '';
     $('chapGrowBox').innerHTML = '';
-    $('btnChapAskSave').classList.add('hidden');
-    _chapAskLast = '';
+    try{ $('chapAiSel').value = localStorage.getItem('xt_chapai') || 'kimi'; }catch(_){}
+    chapDoneBoxClear();
+    renderChapChat(c);
   } else {
     $('chapLearnBox').classList.add('hidden');
   }
@@ -3275,7 +3322,7 @@ $('ckPaste').addEventListener('change', function(){
 });
 $('btnChapBack').addEventListener('click', function(){ openBook(curBookId); });
 /* ==================== v0.12.0 刀3/刀4/刀5：章问答 + 复习考我 + 生长（DS实现单，Kimi终审落地） ==================== */
-var _chapAskLast = '';
+/* v0.13.0 刀B：章问答改对话式——一问一答有记忆（本章最近10轮），每答≤200字，从点扩张知识地图 */
 /* 拆AI回答里的 ===建议新节点=== 段（body=正文，nodes=新知识点清单） */
 function xtParseSuggest(full){
   var idx = String(full || '').indexOf('===建议新节点===');
@@ -3285,55 +3332,207 @@ function xtParseSuggest(full){
   var nodes = parseToc(rest);
   return { body: body, nodes: nodes };
 }
+/* 把改过的chat写回台账（getBook是新鲜解析，必须重载→写入→saveBooks，直接saveBooks(loadBooks())会丢） */
+function chapChatSave(bid, cid, chat){
+  try{
+    var bs = loadBooks();
+    var bb = bs.filter(function(x){ return x.id === bid; })[0]; if(!bb) return;
+    var cc = (bb.chapters || []).filter(function(x){ return x.id === cid; })[0]; if(!cc) return;
+    cc.chat = chat;
+    saveBooks(bs);
+  }catch(_){}
+}
+function renderChapChat(c){
+  var box = $('chapChatLog'); if(!box) return;
+  box.innerHTML = '';
+  var arr = (c && c.chat) ? c.chat : [];
+  if(!arr.length){
+    box.innerHTML = '<div class="hint" style="margin-top:0;">还没聊过。问一句试试。</div>';
+    return;
+  }
+  arr.forEach(function(turn){
+    var qd = document.createElement('div');
+    qd.style.cssText = 'background:#f5efe1;border-radius:8px;padding:6px 10px;margin-top:6px;text-align:right;';
+    qd.innerHTML = '🙋 ' + esc(String(turn.q || ''));
+    box.appendChild(qd);
+    var ad = document.createElement('div');
+    ad.className = 'md-body';
+    ad.style.cssText = 'background:#fff;border-radius:8px;padding:6px 10px;margin-top:4px;';
+    ad.innerHTML = renderMd(String(turn.a || ''));
+    box.appendChild(ad);
+  });
+}
+function chapChatUserBlurb(c){
+  var arr = (c && c.chat) ? c.chat : [];
+  var recent = arr.slice(-10);
+  if(!recent.length) return '';
+  var s = '【之前聊过】\n';
+  recent.forEach(function(turn){
+    s += '问：' + String(turn.q || '') + '\n答：' + String(turn.a || '') + '\n';
+  });
+  return s;
+}
+function chapChatSys(b, c){
+  return '你是医学学习助教，用中文大白话回答ICU医生学习中的问题。背景：他在学《' + b.title + '》的「' + c.t + '」这一章。先参考章正文（若有）再回答，正文没有就用你自己的知识。死规矩：回答严格控制在200字以内，中文大白话，不许长篇大论。回答末尾：若你认为有值得深入的新方向，另起一行写 ===建议新节点=== ，然后每行一个新知识点名（1到3个）；没有就不写这段。';
+}
+function chapChatLogErr(msg){
+  var box = $('chapChatLog'); if(!box) return;
+  var d = document.createElement('div');
+  d.style.cssText = 'color:#c0392b;margin-top:6px;';
+  d.innerHTML = '❌ ' + esc(msg);
+  box.appendChild(d);
+}
+function renderChapGrowNodes(nodes){
+  var gbox = $('chapGrowBox'); if(!gbox) return;
+  gbox.innerHTML = '';
+  (nodes || []).forEach(function(name){
+    var d = document.createElement('div');
+    d.className = 'hint'; d.style.marginTop = '4px';
+    d.innerHTML = '🌱 <button class="cb xt-grow-nm">' + esc(name) + '</button> <button class="cb xt-grow">➕ 加入目录</button>';
+    d.querySelector('.xt-grow-nm').addEventListener('click', function(){
+      var inp = $('chapAskIn'); if(!inp) return;
+      inp.value = '请讲讲：' + name;
+      var ask = $('btnChapAsk'); if(ask) ask.click();
+    });
+    d.querySelector('.xt-grow').addEventListener('click', function(){
+      xt_grow(curBookId, curChapId, name);
+    });
+    gbox.appendChild(d);
+  });
+}
+function chapAiCur(){
+  var selEl = $('chapAiSel');
+  return (selEl && selEl.value) ? selEl.value : 'kimi';
+}
+$('chapAiSel').addEventListener('change', function(){
+  try{ localStorage.setItem('xt_chapai', $('chapAiSel').value || 'kimi'); }catch(_){}
+});
 $('btnChapAsk').addEventListener('click', function(){
   var b = getBook(curBookId); if(!b) return;
   var c = (b.chapters || []).filter(function(x){ return x.id === curChapId; })[0]; if(!c) return;
   var q = $('chapAskIn').value.trim();
   if(!q){ showMsg($('chapMsg'), '先写个问题吧。', 'err'); return; }
   $('btnChapAsk').disabled = true;
-  $('btnChapAskSave').classList.add('hidden');
-  $('chapAskAns').innerHTML = '🤖 AI 正在回答…';
   $('chapGrowBox').innerHTML = '';
+  chapDoneBoxClear();
   aiBookCtx(b.id);
   idbGet('chunks', bookChapKey(b.id, c.id)).then(function(d){
-    var body = (d && d.text) ? String(d.text).slice(0, 2000) : '（本章还没写）';
-    var sys = '你是医学学习助教，用中文大白话回答ICU医生学习中的问题。背景：他在学《' + b.title + '》的「' + c.t + '」这一章。先参考章正文（若有）再回答，正文没有就用你自己的知识。回答末尾：若你认为有值得深入的新方向，另起一行写 ===建议新节点=== ，然后每行一个新知识点名（1到3个）；没有就不写这段。';
-    var user = '【章正文】\n' + body + '\n\n【我的问题】\n' + q;
-    return callAI(sys, user, 4000, 90000, '章节问答');
+    var body = (d && d.text) ? String(d.text).slice(0, 1500) : '（本章还没写）';
+    var sys = chapChatSys(b, c) + '\n\n【章正文】\n' + body;
+    var user = chapChatUserBlurb(c) + '【我的新问题】\n' + q;
+    if(chapAiCur() === 'ds') return callAI_ds(sys, user, 600, 60000, '章节问答');
+    return callAI(sys, user, 600, 60000, '章节问答');
   }).then(function(txt){
-    _chapAskLast = String(txt || '');
-    var sp = xtParseSuggest(_chapAskLast);
-    $('chapAskAns').innerHTML = renderMd(sp.body);
-    $('btnChapAskSave').classList.remove('hidden');
-    if(sp.nodes.length){
-      var gbox = $('chapGrowBox'); gbox.innerHTML = '';
-      sp.nodes.forEach(function(name){
-        var d = document.createElement('div');
-        d.className = 'hint'; d.style.marginTop = '4px';
-        d.innerHTML = '🌱 ' + esc(name) + ' <button class="cb xt-grow">➕ 加入目录</button>';
-        d.querySelector('.xt-grow').addEventListener('click', function(){
-          xt_grow(curBookId, curChapId, name);
-        });
-        gbox.appendChild(d);
-      });
-    }
+    var sp = xtParseSuggest(String(txt || ''));
+    if(!c.chat) c.chat = [];
+    c.chat.push({ q: q, a: sp.body, ts: Date.now() });
+    chapChatSave(b.id, c.id, c.chat);
+    renderChapChat(c);
+    renderChapGrowNodes(sp.nodes);
+    $('chapAskIn').value = '';
   }).catch(function(e){
-    $('chapAskAns').innerHTML = '<span style="color:#c0392b;">❌ ' + esc(aiErrText(e)) + '</span>';
+    chapChatLogErr(aiErrText(e));
   }).then(function(){
     $('btnChapAsk').disabled = false;
     aiBookCtx(null);
   });
 });
-$('btnChapAskSave').addEventListener('click', function(){
+$('btnChapClear').addEventListener('click', function(){
   var b = getBook(curBookId); if(!b) return;
   var c = (b.chapters || []).filter(function(x){ return x.id === curChapId; })[0]; if(!c) return;
-  var q = $('chapAskIn').value.trim();
-  if(!_chapAskLast) return;
-  var sp = xtParseSuggest(_chapAskLast);
-  var t = '《' + b.title + '》' + c.t + '：' + q.slice(0, 20);
-  var r = makeNote(t, '## 问\n' + q + '\n\n## 答\n' + sp.body);
-  if(r) toast('📝 已存成笔记', 1500);
+  if(!c.chat || !c.chat.length){ toast('对话本来就是空的', 1200); return; }
+  if(!confirm('清空这章的全部聊天记录？')) return;
+  c.chat = [];
+  chapChatSave(b.id, c.id, c.chat);
+  renderChapChat(c);
+  $('chapGrowBox').innerHTML = '';
+  chapDoneBoxClear();
 });
+/* v0.13.0 刀C：🏁收工——AI总结整段对话→预览→收进本章正文/存笔记/不要了 */
+function chapDoneBoxClear(){
+  var d = document.getElementById('chapDoneBox');
+  if(d && d.parentNode) d.parentNode.removeChild(d);
+}
+$('btnChapDone').addEventListener('click', function(){
+  var b = getBook(curBookId); if(!b) return;
+  var c = (b.chapters || []).filter(function(x){ return x.id === curChapId; })[0]; if(!c) return;
+  if(!c.chat || !c.chat.length){ toast('还没聊过，先问几句', 1500); return; }
+  chapDoneBoxClear();
+  var convo = '';
+  c.chat.forEach(function(turn, i){
+    convo += '【第' + (i + 1) + '轮】\n问：' + String(turn.q || '') + '\n答：' + String(turn.a || '') + '\n\n';
+  });
+  var sys = '你是医学学习整理助手。把下面这段师生问答整理成本章学习笔记草稿，标准Markdown（##小节+条目+重点加粗，表格用|格式），中文大白话，只整理聊过的内容不许编造。';
+  var user = '【书名】' + b.title + '\n【章名】' + c.t + '\n\n' + convo;
+  $('btnChapDone').disabled = true;
+  var p;
+  if(chapAiCur() === 'ds') p = callAI_ds(sys, user, 3000, 90000, '问答沉淀');
+  else p = callAI(sys, user, 3000, 90000, '问答沉淀');
+  p.then(function(txt){
+    var summary = String(txt || '');
+    chapDoneBoxClear();
+    var box = document.createElement('div');
+    box.id = 'chapDoneBox';
+    box.style.cssText = 'margin-top:8px;border:1px solid #c9b998;border-radius:8px;padding:8px;background:#fffdf6;';
+    var head = document.createElement('div');
+    head.className = 'hint'; head.style.marginTop = '0';
+    head.textContent = '📄 收工总结预览（看顺眼再收）';
+    box.appendChild(head);
+    var bd = document.createElement('div');
+    bd.className = 'md-body';
+    bd.innerHTML = renderMd(summary);
+    box.appendChild(bd);
+    var row = document.createElement('div');
+    row.style.marginTop = '8px';
+    var b1 = document.createElement('button');
+    b1.className = 'btn'; b1.textContent = '✅ 收进本章正文';
+    var b2 = document.createElement('button');
+    b2.className = 'btn secondary'; b2.textContent = '📝 存成笔记';
+    b2.style.marginLeft = '6px';
+    var b3 = document.createElement('button');
+    b3.className = 'btn secondary'; b3.textContent = '❌ 不要了';
+    b3.style.marginLeft = '6px';
+    row.appendChild(b1); row.appendChild(b2); row.appendChild(b3);
+    box.appendChild(row);
+    var host = $('chapLearnBox'); if(host) host.appendChild(box);
+    b3.addEventListener('click', function(){ chapDoneBoxClear(); });
+    b2.addEventListener('click', function(){
+      var r = makeNote('《' + b.title + '》' + c.t + '：问答沉淀', summary);
+      if(r) toast('📝 已存成笔记', 1500);
+    });
+    b1.addEventListener('click', function(){
+      idbGet('chunks', bookChapKey(b.id, c.id)).then(function(d){
+        var old = (d && d.text) ? String(d.text) : '';
+        var dt = new Date();
+        var ymd = dt.getFullYear() + '-' + ('0' + (dt.getMonth() + 1)).slice(-2) + '-' + ('0' + dt.getDate()).slice(-2);
+        var next = old + '\n\n---\n\n## 💬 问答沉淀（' + ymd + '）\n\n' + summary;
+        return idbPut('chunks', { id: bookChapKey(b.id, c.id), text: next });
+      }).then(function(){
+        try{ chaptersChanged(); }catch(_){}
+        var bs = loadBooks();
+        var bb = bs.filter(function(x){ return x.id === b.id; })[0];
+        if(bb){
+          var cc = (bb.chapters || []).filter(function(x){ return x.id === c.id; })[0];
+          if(cc){ cc.state = '已写'; saveBooks(bs); }
+        }
+        return idbGet('chunks', bookChapKey(b.id, c.id));
+      }).then(function(d2){
+        var bodyEl = $('chapBody');
+        if(bodyEl && d2 && d2.text) bodyEl.innerHTML = renderMd(String(d2.text));
+        var th = $('chapTitleH');
+        if(th) th.textContent = '✍️ ' + c.t + '（已写）';
+        chapDoneBoxClear();
+        toast('✅ 已收进本章正文', 1800);
+      }).catch(function(e){
+        toast('❌ 收进失败：' + aiErrText(e), 2500);
+      });
+    });
+  }).catch(function(e){
+    toast('❌ ' + aiErrText(e), 2500);
+  }).then(function(){
+    $('btnChapDone').disabled = false;
+  });
+})
 /* 生长：AI建议的新知识点长进目录末尾+growLog留痕 */
 function xt_grow(bid, fromCid, name){
   try{
