@@ -1,6 +1,6 @@
 {
- "version": "0.15.0",
+ "version": "0.16.0",
  "dl": "software-xiaotao.html",
- "note": "接入AI总台：写章认DS选择+开笔前探路不白等+死模型自动换活+面板亮谁活谁死（回退hx_air_off=1）",
- "sig": "2509ea64974ea3f6"
+ "note": "问文献带引文：句末[1][2]角标+末尾GB/T 7714参考文献折叠区+每条🔍查原文跳PubMed验真，AI记不清宁可不列严禁编造",
+ "sig": "cb8de956c82b3918"
 }
