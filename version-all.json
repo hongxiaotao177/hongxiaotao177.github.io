@@ -1,6 +1,6 @@
 {
  "v": 1,
- "t": 1791796704921,
+ "t": 1791807907041,
  "items": [
   {
    "key": "index",
@@ -16,9 +16,9 @@
   },
   {
    "key": "hx-common",
-   "version": "0.18.1",
+   "version": "0.19.0",
    "dl": "hx-common.js",
-   "sig": "ae1b0947d28cc477"
+   "sig": "cf51b674515a6901"
   },
   {
    "key": "tuomin",
