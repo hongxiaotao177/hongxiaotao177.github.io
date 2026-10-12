@@ -83,7 +83,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 (function(){
   'use strict';
-  var HX_COMMON_VERSION = '0.19.0'; /* v0.19.0（2026-10-12 班②，千问试工第1单·多线程串行试工，洪老师拍板「快发过去吧以后自动化」）：HX.sj加📜翻看第一刀——面板加📜翻看钮→整屏页列全部想法（最新在上全文不截断）+每条✕盖章不真删（行首加🗑[YYYY-MM-DD HH:MM]前缀原文一字不动，平时不显示）；回收站救回/30天真删留后续刀；千问出活2处致命（闭包外inline onclick）1处漏交（容器CSS），Kimi终审亲手落地返工：全部改textContent+addEventListener防注入；其余红线一行未动 */ /* v0.18.1（2026-10-12 班⑦，洪老师拍板「其他的方法同意你的选择开工」+toast新任务，SPEC_v0.18.1，DS实现+Kimi终审亲手落地翻案3处）：刀1速记GitHub钥匙不断（_saveFile/_loadFile真源加gh三件套、gh()空时读真源回填hx_gh_tok/user/repo、sjGhKeys改调HX.keys.gh()删重复轮子、warm触发加gh缺失） 刀2流水文件名「速记流水.txt」→「想法流水.txt」（SJ_FILE常量+sjReadFlow新名优先旧名兜底、写只写新名、旧名不删不迁移、HX.fm过滤名单双名） 刀3记下上行失败弹明白话（sjUpload(fromUser)，闲时补推静默照旧） 刀4toast不自动消失（新顶层hxToastHold：✕钮+点页面别处才消失、350ms后挂监听防同击吞掉、hide自摘监听【终审修】、总开关hx_toast_sticky_off=1回老样；bill.toast/warm toast/sjToast/pkToast四处同改，sjToast改innerHTML重建保复用元素）；终审另修save里sjUpload重复调用一处、版本号留痕DS漏了亲手补 */ /* v0.18.0（2026-10-12 班⑤，洪老师拍板「同意开工」，SPEC_AI总台，DS实现+Kimi终审亲手落地）：新增HX.air总台（三家点名册Kimi花名册免费探活/DS/千问小包探活、账本hxdata_hx_air.json壳真源+localStorage缓存、开门闲时巡检过_autoNetOk闸门、gate/pick/ok/report问路口、军规例外可直发可读钥匙不碰宿主账本、回退hx_air_off=1）+AI面板状态条renderAirBar（亮牌行下三家✅/❌+时间+📡重测）；红线HX.keys/HX.sj/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm IDENTICAL，HX.ai除本刀申报点外IDENTICAL */ /* v0.17.0 2026-09-24 班②一期（洪老师拍板「开工」，配套大管家v0.56.8，两刀）：刀H1面板第一层平铺化（缺省开：想干什么点一个就发，每套提示词一个大钮+钮右小字带料标签matLabel，自建末尾「我自建的」分组暖色底+升舱徽章；回退开关localStorage hx_ai_flat_off=1走老两层，renderL1老本体/renderL2全保留；openEdit平铺下直调renderPEdit，editHooks容器#hxAiHostBtns契约不动） 刀H2自建模板升舱字段（hx_aiext_v1条目扩baseId关联出厂套/wantShibu申请收编，renderExtEdit加出厂套下拉+📮申请收编钮，老条目undefined兜底，账本键与JSON格式不动，老localStorage账本不迁移不清洗）；其余一行未动 */ /* v0.16.4 2026-09-23 班·批改病历③：刀1 HX.pick点亮长效（洪老师2026-09-23班③拍板：30秒太短，点亮翻菜单翻半分钟就灭）——撤30秒有效期判定+30秒自动灭定时器，点亮后一直有效直到点亮别的件或手动取消；亮牌行点亮文字旁加小「✕」=清账本+亮牌消失+toast「已取消点亮」；点亮随行发AI老行为不变；账本格式不动，其余一行未动 */ /* v0.16.3 2026-09-23 班·批改病历：刀A新增HX.ai.openEdit(id,idx)（open进第2层后模拟该套按钮现有点击链进编辑页）刀B编辑页加div#hxAiHostBtns容器+宿主钩子opt.editHooks(itemId,idx,api={getText,setText,saveNow同hxAiSaveP存储链,itemId,idx})，不传钩子容器留空版面同老版；纯加法其余一行未动 */ /* v0.16.2 2026-09-19：刀D云端取回（只下不上，一次性救援腿）——HX.keys新增warm()：本地没key时开门自动从坚果云/私有仓读回hxdata_hx_keys.json落真源再灌回localStorage，永不主动上传；其余一行未动 */ /* v0.16.1 2026-09-19：AI钥匙反复丢两刀（刀A Key落壳文件真源hxdata_hx_keys.json换端口不丢+get/getQwen空时回填；刀C AI面板4处守卫改当场填钥匙浮层aiAskKey），其余一行未动 */ /* v0.16.0 2026-09-19 班⑦（洪老师拍板"开工"，AI面板四刀）：刀A自建条目带点亮病历（init新钩子litText由宿主供脱敏后文本，HX.pick有效则usr附【点亮文件：fname】，没点亮toast提醒照发不带材料；宿主没接钩子自动回落老useSel选中文字/（无资料）） 刀B「＋加AI功能」改AI代写流（①名字②人话要求→宿主send请AI写提示词→过目页可改/🔄重写/✅才存/❌弃；AI通道或Key不在回落手填提示词老路）+自建条目第2层补✏️改/🗑删两钮（删前人话confirm） 刀C固定套编辑页加「🤖让AI帮我改这套」（现话+人话要求→AI新稿只进编辑框过目，💾存为默认才算数，AI不直接落账） 刀D换心两钮「📥自建的灌进来」「🤖照自建的让AI改」（小浮层挑自建不盖编辑框，结果同样只进框，恢复出厂兜底，出厂原文一字不动）；账本键hx_aiext_v1/hx_aiprompt_v1与合并规矩、其他零件一行未动 */ /* v0.15.2 2026-09-19 班⑥（挂号#128，洪老师17:01/17:02真机截图报"浮窗选图后输入框被隐藏在顶端"，拍板"开工"）：病根=面板fixed钉在屏下150px，而开面板自动focus+选图回来焦点还在框上→键盘自弹→X5把页面上推→钉住的面板被顶出可视区只剩顶边。治=①开面板不再自动focus（点输入框才弹键盘）②挂图成功主动blur放下焦点；面板结构/挂图/上行/其余零件一行未动 */ /* v0.15.1 2026-09-18 班③（挂号E，洪老师拍板）：AI面板第2级提示词套行改明显大钮（.hxAiPromptBtn：▶图标+边框+圆角+绿系底色，照.hxAiGo绿色系），只改renderL2渲染HTML+CSS字符串，逻辑不动 */ /* v0.15.0 2026-09-18（洪老师08:10速记拍板）：HX.sj面板加「↩ 补充上一条」钮——点钮弹最近3条速记列表（相对序+时间+前两行预览，壳文件「速记流水.txt」为主、localStorage现行镜像键hx_sj_uplocal兜底，不新建平行账本），点条=原文整行回填进输入框接着加字，「记下」走原save=新增一条（铁律17原条不动）；✕/点面板空白关列表无副作用；空=toast「还没有速记可补」；附图/上行/extraBtn等其他零件一行未动 */ /* v0.13.2 2026-09-16 班④：洪老师拍板"把这个多余的命令取消掉"——开门闲时8秒速记上行认 hx_sj_skip_once 标记（主界面v1.19.1「检查新版本」按钮所立）跳过本次，查版本刷新不再带出速记流水.txt上行；「记下后上行」等其他入口一行未动 */ /* v0.13.1 2026-09-16 班③：查版本归管家一家——有管家的壳里HX.selfUp开门自查退休（管家每日闲时统一查装+验暗号），没管家的老壳/浏览器照旧；其余一行未动 */ /* v0.13.0 2026-09-16 班① 第5条：新增长按点亮零件 HX.pick（hx_pick_v1账本+30秒自动灭+触摸鼠标两路长按）+ HX.ai面板顶部亮牌行；其余一行未动 */ /* v0.12.2 2026-09-15（挂号#95，洪老师真机报"速记取图后点输入框又跳图库、不显示取图成功"）：病根=X5壳侧fileChooser回调悬挂在常驻隐藏input上无法自愈，下个手势重放弹图库+saveImg重活链断无回执——①📷取图改每次临时造input用完即弃 ②选图在途闸防重弹（focus+30秒超时兜底复位） ③saveImg改createObjectURL优先+15秒看门狗超时报明白话；其余一行未动 */ /* v0.12.1 2026-09-15（挂号#104，洪老师真机报"U盘病历一个没显示+进到深层回不到上一层"）：HX.fm专修——①文件排序改按修改时间新→旧（实锤：壳侧按名排，中文名病历全沉到套装hxdata_*等英文名件后面，翻不到就当没有；新拷的病历时间最新，直接浮顶），文件夹仍在前；②空名/乱码名件不再哑巴，标「（名字读不出）」照列；③列表顶部加小字「本层共N项」（搜索时「搜到N项」）让他知道看没看全；④面包屑行🏠旁加显眼「⬅返回上一层」钮，有上级即亮，点=回父目录；面包屑回跳改走浏览足迹栈（旧法按"/"拼路径，SAF的safdoc://URI里全是斜杠，点中段必坏——实锤修掉）；⑤pick加opt.hideKit=true时过滤套装自有件（hxdata_*.json、hx-common*.js、guanjia-pdf-engine.js、version-*.json、速记流水.txt、mg_开头、mgver_开头、sjimg_开头、原文库_开头、dsm_开头，文件夹照列），默认false不动其他场景；⑥folder模式底部加「＋在此新建文件夹」钮（壳v1.8.4新fmMkdir桥，X5里prompt不稳，用行内小浮层输名字）；其余一行未动 */ /* v0.12.0 2026-09-15：新增HX.fm手机文件夹逛一逛（壳全盘文件桥六桥+ensure权限引导浮层+pick全屏仿资源管理器+read封装Promise）；其余一行未动 */ /* v0.11.1 2026-09-14：速记📷附图改两步走（挂号#94，洪老师真机验收报「选完图浮窗被关掉没法输说明、图跑哪去不知道」，拍板A+B都做）——①选图不再立刻记行/关面板：压图存壳后面板挂一行「🖼已挂图 sjimg_xxx.jpg（✕可撤销）」，可继续打字补说明，点「记下」图和话一起进流水（save原逻辑未动，只认sjPendImg）；②回执明白话：记下提示图存手机壳文件名+联网传坚果云/学习套装数据/速记图/，上传成功流水行图名后补☁（sjImgUpload出队时回写）；✕撤销=清挂图+出队+删壳文件；其余一行未动 */ /* v0.11.0 2026-09-14：AI面板第2级提示词可改可存（挂号#79，洪老师拍板"不搞三级菜单，就两级，点进去就是几套预设提示词，可改可储存"）——条目带prompts时，第2级点某套进编辑页（全文可改+▶用这套发送+💾存为默认+↩恢复出厂）；改过的存覆盖账本hx_aiprompt_v1.<app>（出厂原文一个字不动，恢复出厂=删覆盖）；宿主函数发送前一句HX.ai.pget(id,idx)查覆盖（乙路，不改送不进去）；条目可带pget/pset/preset钩子接管存储（如大管家问AI接管它自己的hx_gj_askai_v1老账本）；新增HX.ai.pget公开口；其余一行未动 /* v0.10.0 2026-09-14：安心条HX.step（顶部细进度条+两行小字，愣住定格定位，洪老师拍板全家统一）+速记📷附图（压图存壳文件夹sjimg_*+行尾挂图+坚果云/学习套装数据/速记图/上传排队）；其余一行未动 /* v0.9.1 2026-09-14：HX.store.sync批量抱回（壳v1.7.3 readFiles桥）——多件对账一次JNI全读回，免逐件SAF往返卡主线程（洪老师真机报"点大管家变蓝后定住"，病根=5本账本连环读各约2秒）；旧壳无readFiles自动回落逐件读，逻辑一字未改 /* v0.9.0 2026-09-13：常驻通信管家双通道（洪老师拍板一次做完）——新增HX.mg投信层（壳v1.7.0管家在则GitHub联网写信mg_out_给后台服务代发+回信mg_in_轮询取，网页线程不碰网络；管家不在自动走老fetch，全家零改动）+HX.big大件异步编解码（TextEncoder/Decoder分块让气，无则回落老同步）；改道点=gh.fetch一个收口；_autoNetOk闸门规矩不变 /* v0.8.0 2026-09-13：开门静默令（洪老师拍板：开门不许自动同步/不许自动查版本，点了才做）——全家自动联网（dav rescue/mirror、relay闲时送与pull、selfUp、selfCheck、速记开门补推）统一过HX._autoNetOk闸门：默认全关，3秒内真有点击（=点了按钮）或localStorage hx_auto_net=1才放行；新增HX.syncNow()一件全手动补做；本地存取（HX.store/localStorage/壳文件）不联网不受影响；其余一行未动 /* v0.7.0 2026-09-12：HX.dav全异步化（根治#75/#77同步联网卡死主线程）——走壳v1.6.0新davAsync后台桥+HX._davCb回调，ts对账逻辑一行未改；旧壳没davAsync一律静默跳过绝不回退同步老路，壳升级后自动恢复 */ /* v0.6.0 2026-09-12 地基二期：HX.dav的rescue升级为ts对账（云端新超5秒留档_冲突_后盖回/本地新或相等顺手davUp追平/云端缺顺手davUp补齐） */ /* v0.5.0 2026-09-12：新增中转邮路HX.relay+坚果云腿HX.dav */ /* v0.4.0 2026-09-12：新增仓管员HX.store，地基工程一期规矩A/B落地 */ /* v0.3.0 2026-09-11：部件自升级HX.selfUp（病根：壳里旧版公共件永远不升级→AI面板等新功能装了也白装；开门闲时20秒比对云端version-hx-common.json，旧了静默下载写回授权文件夹，下次开门用新的，全程不弹窗） */ /* v0.2.0 2026-09-11：新增HX.ai统一AI面板（两层结构+定位置顶+AI功能生成器，洪老师2026-09-11拍板方法论落地试点）；HX.sj面板加「🤖AI」入口钮；其余一行未动 */ /* v0.1.1 2026-09-10：HX.sj.init 加可选 extraBtn（大管家#43「补充上一条」补回，洪老师点名功能）；不传仍是2钮版，默认行为不变 */
+  var HX_COMMON_VERSION = '0.20.0'; /* v0.20.0（2026-10-12 班⑤ Kimi定稿SPEC，洪老师拍板「做窄条面板，其他的按你的意思，开工」，SPEC_v0.20.0_验收牌，DS实现）：新增HX.chk验收牌——sj面板加✅验收钮→点出屏幕底窄条面板（圆点串+当前步骤一行字+▲，不挡底下操作）→点窄条/验收钮展开整屏清单（任务→步骤两级，一行一步大白话，做成一行绿一行，无auto步骤右端「✓这步好了」钮标绿）；清单真源=仓根「验收清单.json」（HX.gh.fetch raw拉取+hx_chk_list缓存，ver变了旧taskId进度整个作废），进度本机记账（hx_chk_prog+壳真源hxdata_hx_chk.json双写）+闲时PUT仓根「验收进度.json」（hx_chk_uplocal镜像对账不重复推）；内置三种auto侦测器（sj_uploaded/file_exists/key_set，窄条显示期间每5秒跑未绿步）；总回退hx_chk_off=1模块全退休；文本一律textContent防注入；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/hxToastHold IDENTICAL，HX.sj除申报两处（按钮HTML串+bind一行）IDENTICAL */ /* v0.19.0（2026-10-12 班②，千问试工第1单·多线程串行试工，洪老师拍板「快发过去吧以后自动化」）：HX.sj加📜翻看第一刀——面板加📜翻看钮→整屏页列全部想法（最新在上全文不截断）+每条✕盖章不真删（行首加🗑[YYYY-MM-DD HH:MM]前缀原文一字不动，平时不显示）；回收站救回/30天真删留后续刀；千问出活2处致命（闭包外inline onclick）1处漏交（容器CSS），Kimi终审亲手落地返工：全部改textContent+addEventListener防注入；其余红线一行未动 */ /* v0.18.1（2026-10-12 班⑦，洪老师拍板「其他的方法同意你的选择开工」+toast新任务，SPEC_v0.18.1，DS实现+Kimi终审亲手落地翻案3处）：刀1速记GitHub钥匙不断（_saveFile/_loadFile真源加gh三件套、gh()空时读真源回填hx_gh_tok/user/repo、sjGhKeys改调HX.keys.gh()删重复轮子、warm触发加gh缺失） 刀2流水文件名「速记流水.txt」→「想法流水.txt」（SJ_FILE常量+sjReadFlow新名优先旧名兜底、写只写新名、旧名不删不迁移、HX.fm过滤名单双名） 刀3记下上行失败弹明白话（sjUpload(fromUser)，闲时补推静默照旧） 刀4toast不自动消失（新顶层hxToastHold：✕钮+点页面别处才消失、350ms后挂监听防同击吞掉、hide自摘监听【终审修】、总开关hx_toast_sticky_off=1回老样；bill.toast/warm toast/sjToast/pkToast四处同改，sjToast改innerHTML重建保复用元素）；终审另修save里sjUpload重复调用一处、版本号留痕DS漏了亲手补 */ /* v0.18.0（2026-10-12 班⑤，洪老师拍板「同意开工」，SPEC_AI总台，DS实现+Kimi终审亲手落地）：新增HX.air总台（三家点名册Kimi花名册免费探活/DS/千问小包探活、账本hxdata_hx_air.json壳真源+localStorage缓存、开门闲时巡检过_autoNetOk闸门、gate/pick/ok/report问路口、军规例外可直发可读钥匙不碰宿主账本、回退hx_air_off=1）+AI面板状态条renderAirBar（亮牌行下三家✅/❌+时间+📡重测）；红线HX.keys/HX.sj/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm IDENTICAL，HX.ai除本刀申报点外IDENTICAL */ /* v0.17.0 2026-09-24 班②一期（洪老师拍板「开工」，配套大管家v0.56.8，两刀）：刀H1面板第一层平铺化（缺省开：想干什么点一个就发，每套提示词一个大钮+钮右小字带料标签matLabel，自建末尾「我自建的」分组暖色底+升舱徽章；回退开关localStorage hx_ai_flat_off=1走老两层，renderL1老本体/renderL2全保留；openEdit平铺下直调renderPEdit，editHooks容器#hxAiHostBtns契约不动） 刀H2自建模板升舱字段（hx_aiext_v1条目扩baseId关联出厂套/wantShibu申请收编，renderExtEdit加出厂套下拉+📮申请收编钮，老条目undefined兜底，账本键与JSON格式不动，老localStorage账本不迁移不清洗）；其余一行未动 */ /* v0.16.4 2026-09-23 班·批改病历③：刀1 HX.pick点亮长效（洪老师2026-09-23班③拍板：30秒太短，点亮翻菜单翻半分钟就灭）——撤30秒有效期判定+30秒自动灭定时器，点亮后一直有效直到点亮别的件或手动取消；亮牌行点亮文字旁加小「✕」=清账本+亮牌消失+toast「已取消点亮」；点亮随行发AI老行为不变；账本格式不动，其余一行未动 */ /* v0.16.3 2026-09-23 班·批改病历：刀A新增HX.ai.openEdit(id,idx)（open进第2层后模拟该套按钮现有点击链进编辑页）刀B编辑页加div#hxAiHostBtns容器+宿主钩子opt.editHooks(itemId,idx,api={getText,setText,saveNow同hxAiSaveP存储链,itemId,idx})，不传钩子容器留空版面同老版；纯加法其余一行未动 */ /* v0.16.2 2026-09-19：刀D云端取回（只下不上，一次性救援腿）——HX.keys新增warm()：本地没key时开门自动从坚果云/私有仓读回hxdata_hx_keys.json落真源再灌回localStorage，永不主动上传；其余一行未动 */ /* v0.16.1 2026-09-19：AI钥匙反复丢两刀（刀A Key落壳文件真源hxdata_hx_keys.json换端口不丢+get/getQwen空时回填；刀C AI面板4处守卫改当场填钥匙浮层aiAskKey），其余一行未动 */ /* v0.16.0 2026-09-19 班⑦（洪老师拍板"开工"，AI面板四刀）：刀A自建条目带点亮病历（init新钩子litText由宿主供脱敏后文本，HX.pick有效则usr附【点亮文件：fname】，没点亮toast提醒照发不带材料；宿主没接钩子自动回落老useSel选中文字/（无资料）） 刀B「＋加AI功能」改AI代写流（①名字②人话要求→宿主send请AI写提示词→过目页可改/🔄重写/✅才存/❌弃；AI通道或Key不在回落手填提示词老路）+自建条目第2层补✏️改/🗑删两钮（删前人话confirm） 刀C固定套编辑页加「🤖让AI帮我改这套」（现话+人话要求→AI新稿只进编辑框过目，💾存为默认才算数，AI不直接落账） 刀D换心两钮「📥自建的灌进来」「🤖照自建的让AI改」（小浮层挑自建不盖编辑框，结果同样只进框，恢复出厂兜底，出厂原文一字不动）；账本键hx_aiext_v1/hx_aiprompt_v1与合并规矩、其他零件一行未动 */ /* v0.15.2 2026-09-19 班⑥（挂号#128，洪老师17:01/17:02真机截图报"浮窗选图后输入框被隐藏在顶端"，拍板"开工"）：病根=面板fixed钉在屏下150px，而开面板自动focus+选图回来焦点还在框上→键盘自弹→X5把页面上推→钉住的面板被顶出可视区只剩顶边。治=①开面板不再自动focus（点输入框才弹键盘）②挂图成功主动blur放下焦点；面板结构/挂图/上行/其余零件一行未动 */ /* v0.15.1 2026-09-18 班③（挂号E，洪老师拍板）：AI面板第2级提示词套行改明显大钮（.hxAiPromptBtn：▶图标+边框+圆角+绿系底色，照.hxAiGo绿色系），只改renderL2渲染HTML+CSS字符串，逻辑不动 */ /* v0.15.0 2026-09-18（洪老师08:10速记拍板）：HX.sj面板加「↩ 补充上一条」钮——点钮弹最近3条速记列表（相对序+时间+前两行预览，壳文件「速记流水.txt」为主、localStorage现行镜像键hx_sj_uplocal兜底，不新建平行账本），点条=原文整行回填进输入框接着加字，「记下」走原save=新增一条（铁律17原条不动）；✕/点面板空白关列表无副作用；空=toast「还没有速记可补」；附图/上行/extraBtn等其他零件一行未动 */ /* v0.13.2 2026-09-16 班④：洪老师拍板"把这个多余的命令取消掉"——开门闲时8秒速记上行认 hx_sj_skip_once 标记（主界面v1.19.1「检查新版本」按钮所立）跳过本次，查版本刷新不再带出速记流水.txt上行；「记下后上行」等其他入口一行未动 */ /* v0.13.1 2026-09-16 班③：查版本归管家一家——有管家的壳里HX.selfUp开门自查退休（管家每日闲时统一查装+验暗号），没管家的老壳/浏览器照旧；其余一行未动 */ /* v0.13.0 2026-09-16 班① 第5条：新增长按点亮零件 HX.pick（hx_pick_v1账本+30秒自动灭+触摸鼠标两路长按）+ HX.ai面板顶部亮牌行；其余一行未动 */ /* v0.12.2 2026-09-15（挂号#95，洪老师真机报"速记取图后点输入框又跳图库、不显示取图成功"）：病根=X5壳侧fileChooser回调悬挂在常驻隐藏input上无法自愈，下个手势重放弹图库+saveImg重活链断无回执——①📷取图改每次临时造input用完即弃 ②选图在途闸防重弹（focus+30秒超时兜底复位） ③saveImg改createObjectURL优先+15秒看门狗超时报明白话；其余一行未动 */ /* v0.12.1 2026-09-15（挂号#104，洪老师真机报"U盘病历一个没显示+进到深层回不到上一层"）：HX.fm专修——①文件排序改按修改时间新→旧（实锤：壳侧按名排，中文名病历全沉到套装hxdata_*等英文名件后面，翻不到就当没有；新拷的病历时间最新，直接浮顶），文件夹仍在前；②空名/乱码名件不再哑巴，标「（名字读不出）」照列；③列表顶部加小字「本层共N项」（搜索时「搜到N项」）让他知道看没看全；④面包屑行🏠旁加显眼「⬅返回上一层」钮，有上级即亮，点=回父目录；面包屑回跳改走浏览足迹栈（旧法按"/"拼路径，SAF的safdoc://URI里全是斜杠，点中段必坏——实锤修掉）；⑤pick加opt.hideKit=true时过滤套装自有件（hxdata_*.json、hx-common*.js、guanjia-pdf-engine.js、version-*.json、速记流水.txt、mg_开头、mgver_开头、sjimg_开头、原文库_开头、dsm_开头，文件夹照列），默认false不动其他场景；⑥folder模式底部加「＋在此新建文件夹」钮（壳v1.8.4新fmMkdir桥，X5里prompt不稳，用行内小浮层输名字）；其余一行未动 */ /* v0.12.0 2026-09-15：新增HX.fm手机文件夹逛一逛（壳全盘文件桥六桥+ensure权限引导浮层+pick全屏仿资源管理器+read封装Promise）；其余一行未动 */ /* v0.11.1 2026-09-14：速记📷附图改两步走（挂号#94，洪老师真机验收报「选完图浮窗被关掉没法输说明、图跑哪去不知道」，拍板A+B都做）——①选图不再立刻记行/关面板：压图存壳后面板挂一行「🖼已挂图 sjimg_xxx.jpg（✕可撤销）」，可继续打字补说明，点「记下」图和话一起进流水（save原逻辑未动，只认sjPendImg）；②回执明白话：记下提示图存手机壳文件名+联网传坚果云/学习套装数据/速记图/，上传成功流水行图名后补☁（sjImgUpload出队时回写）；✕撤销=清挂图+出队+删壳文件；其余一行未动 */ /* v0.11.0 2026-09-14：AI面板第2级提示词可改可存（挂号#79，洪老师拍板"不搞三级菜单，就两级，点进去就是几套预设提示词，可改可储存"）——条目带prompts时，第2级点某套进编辑页（全文可改+▶用这套发送+💾存为默认+↩恢复出厂）；改过的存覆盖账本hx_aiprompt_v1.<app>（出厂原文一个字不动，恢复出厂=删覆盖）；宿主函数发送前一句HX.ai.pget(id,idx)查覆盖（乙路，不改送不进去）；条目可带pget/pset/preset钩子接管存储（如大管家问AI接管它自己的hx_gj_askai_v1老账本）；新增HX.ai.pget公开口；其余一行未动 /* v0.10.0 2026-09-14：安心条HX.step（顶部细进度条+两行小字，愣住定格定位，洪老师拍板全家统一）+速记📷附图（压图存壳文件夹sjimg_*+行尾挂图+坚果云/学习套装数据/速记图/上传排队）；其余一行未动 /* v0.9.1 2026-09-14：HX.store.sync批量抱回（壳v1.7.3 readFiles桥）——多件对账一次JNI全读回，免逐件SAF往返卡主线程（洪老师真机报"点大管家变蓝后定住"，病根=5本账本连环读各约2秒）；旧壳无readFiles自动回落逐件读，逻辑一字未改 /* v0.9.0 2026-09-13：常驻通信管家双通道（洪老师拍板一次做完）——新增HX.mg投信层（壳v1.7.0管家在则GitHub联网写信mg_out_给后台服务代发+回信mg_in_轮询取，网页线程不碰网络；管家不在自动走老fetch，全家零改动）+HX.big大件异步编解码（TextEncoder/Decoder分块让气，无则回落老同步）；改道点=gh.fetch一个收口；_autoNetOk闸门规矩不变 /* v0.8.0 2026-09-13：开门静默令（洪老师拍板：开门不许自动同步/不许自动查版本，点了才做）——全家自动联网（dav rescue/mirror、relay闲时送与pull、selfUp、selfCheck、速记开门补推）统一过HX._autoNetOk闸门：默认全关，3秒内真有点击（=点了按钮）或localStorage hx_auto_net=1才放行；新增HX.syncNow()一件全手动补做；本地存取（HX.store/localStorage/壳文件）不联网不受影响；其余一行未动 /* v0.7.0 2026-09-12：HX.dav全异步化（根治#75/#77同步联网卡死主线程）——走壳v1.6.0新davAsync后台桥+HX._davCb回调，ts对账逻辑一行未改；旧壳没davAsync一律静默跳过绝不回退同步老路，壳升级后自动恢复 */ /* v0.6.0 2026-09-12 地基二期：HX.dav的rescue升级为ts对账（云端新超5秒留档_冲突_后盖回/本地新或相等顺手davUp追平/云端缺顺手davUp补齐） */ /* v0.5.0 2026-09-12：新增中转邮路HX.relay+坚果云腿HX.dav */ /* v0.4.0 2026-09-12：新增仓管员HX.store，地基工程一期规矩A/B落地 */ /* v0.3.0 2026-09-11：部件自升级HX.selfUp（病根：壳里旧版公共件永远不升级→AI面板等新功能装了也白装；开门闲时20秒比对云端version-hx-common.json，旧了静默下载写回授权文件夹，下次开门用新的，全程不弹窗） */ /* v0.2.0 2026-09-11：新增HX.ai统一AI面板（两层结构+定位置顶+AI功能生成器，洪老师2026-09-11拍板方法论落地试点）；HX.sj面板加「🤖AI」入口钮；其余一行未动 */ /* v0.1.1 2026-09-10：HX.sj.init 加可选 extraBtn（大管家#43「补充上一条」补回，洪老师点名功能）；不传仍是2钮版，默认行为不变 */
   if(window.HX && window.HX.HX_COMMON_VERSION){ return; } /* 已装过不重复装 */
   var HX = { HX_COMMON_VERSION: HX_COMMON_VERSION, ok: true };
   function warn(m){ try{ if(window.console && console.warn) console.warn('[hx-common] '+m); }catch(e){} }
@@ -921,6 +921,414 @@
     };
   })();
 
+  /* ════ 4.95 验收牌 HX.chk（v0.20.0 新增｜2026-10-12 班⑤ Kimi定稿SPEC，洪老师拍板「做窄条面板，其他的按你的意思，开工」，SPEC_v0.20.0_验收牌）
+     sj面板✅验收钮→屏幕底窄条（圆点串+当前步骤一行字+▲，只占一条缝不挡底下操作）→点窄条展开整屏清单（任务→步骤两级，一行一步大白话，做成一行绿一行）。
+     清单真源=仓根「验收清单.json」（hx_chk_list缓存兜底）；进度本机记账 hx_chk_prog + 壳真源 hxdata_hx_chk.json（b64，照HX.air _readFile/_writeFile双写模式）；
+     标绿后闲时（过_autoNetOk）整份进度PUT仓根「验收进度.json」（hx_chk_uplocal镜像对账，内容没变不重复推，照sjUpload先例）；
+     总回退：localStorage hx_chk_off==='1' → 模块全退休（钮照常点但toast「验收牌已关（hx_chk_off）」，窄条/整屏页绝不出现，不联网）。
+     全模块所有公开口与内部步全 try 护栏，任何异常不许外抛炸宿主；文本一律textContent填入防注入（照sjShowBrowse先例）。 */
+  HX.chk = (function(){
+    var LS_LIST = 'hx_chk_list';   /* 清单缓存键 */
+    var LS_PROG = 'hx_chk_prog';   /* 进度账键：{"t1":{"s1":1}}，只有绿的才记值为1 */
+    var LS_UP   = 'hx_chk_uplocal';/* 上行镜像：内容没变不重复推 */
+    var FILE_NAME = 'hxdata_hx_chk.json'; /* 进度壳真源 */
+    var LIST_URL = 'https://raw.githubusercontent.com/hongxiaotao177/xuexi-backup/main/验收清单.json'; /* 照HX.keys warm腿②先例 */
+    var PROG_FILE = '验收进度.json'; /* 仓根进度文件 */
+    var _list = null;   /* 当前清单对象 {ver,tasks:[...]} */
+    var _openT = {};    /* 整屏页里展开的任务id */
+    var _timer = null;  /* 窄条显示期间5秒侦测定时器 */
+    var _booted = false;
+
+    function _off(){ try{ return localStorage.getItem('hx_chk_off')==='1'; }catch(e){ return false; } }
+    function $(id){ return document.getElementById(id); }
+
+    /* b64 编解码——照 HX.air 同款 */
+    var _enc = (HX.gh && HX.gh.b64enc) ? HX.gh.b64enc : function(s){ return btoa(unescape(encodeURIComponent(String(s)))); };
+    var _dec = (HX.gh && HX.gh.b64dec) ? HX.gh.b64dec : function(s){ try{ return decodeURIComponent(escape(atob(String(s).replace(/\s+/g,'')))); }catch(e2){ return ''; } };
+
+    /* ---- 读壳文件（进度真源，照HX.air _readFile同款） ---- */
+    function _readFile(){
+      try{
+        if(typeof LearnShell==='undefined' || !LearnShell || !LearnShell.readFile) return null;
+        var b = LearnShell.readFile(FILE_NAME);
+        if(!b) return null;
+        var txt = _dec(b);
+        if(!txt) return null;
+        var obj = JSON.parse(txt);
+        return (obj && typeof obj==='object') ? obj : null;
+      }catch(e){ return null; }
+    }
+    /* ---- 写壳文件（静默，照HX.air _writeFile同款） ---- */
+    function _writeFile(obj){
+      try{
+        if(typeof LearnShell==='undefined' || !LearnShell || !LearnShell.writeFile) return;
+        LearnShell.writeFile(FILE_NAME, _enc(JSON.stringify(obj)));
+      }catch(e){}
+    }
+
+    /* ---- 读进度账：localStorage 空 → 读壳真源回填（照HX.air _load同款） ---- */
+    function loadProg(){
+      try{
+        var s = '';
+        try{ s = localStorage.getItem(LS_PROG)||''; }catch(e){}
+        if(s){
+          try{ var o = JSON.parse(s); if(o && typeof o==='object') return o; }catch(e2){}
+        }
+        var fo = _readFile();
+        if(fo){ try{ localStorage.setItem(LS_PROG, JSON.stringify(fo)); }catch(e3){} return fo; }
+        return {};
+      }catch(e){ return {}; }
+    }
+    /* ---- 写进度账：双写 ---- */
+    function saveProg(p){
+      try{ try{ localStorage.setItem(LS_PROG, JSON.stringify(p)); }catch(e){} _writeFile(p); }catch(e){}
+    }
+
+    /* ---- toast：照sjToast同款实现（textContent填入+hxToastHold不自动消失） ---- */
+    function chkToast(m, ms){
+      try{
+        if(!document.body) return;
+        var t = $('hxChkToast');
+        if(!t){ t = document.createElement('div'); t.id='hxChkToast'; document.body.appendChild(t); }
+        t.style.cssText = 'position:fixed;left:50%;bottom:160px;transform:translateX(-50%);background:rgba(74,64,48,.92);color:#fff;padding:10px 20px;border-radius:20px;font-size:16px;z-index:99996;display:none';
+        t.innerHTML=''; t.appendChild(document.createTextNode(String(m==null?'':m))); t.style.display='block'; clearTimeout(t._t);
+        var off=false; try{ off=(localStorage.getItem('hx_toast_sticky_off')==='1'); }catch(e){ off=false; }
+        if(off){ t._t=setTimeout(function(){ t.style.display='none'; },(ms||2200)); return; }
+        hxToastHold(t, function(){ t.style.display='none'; });
+      }catch(e){}
+    }
+
+    /* ---- 清单读写 ---- */
+    function cacheList(obj){ try{ localStorage.setItem(LS_LIST, JSON.stringify(obj)); }catch(e){} }
+    function readCacheList(){
+      try{
+        var s=''; try{ s=localStorage.getItem(LS_LIST)||''; }catch(e){}
+        if(!s) return null;
+        var o=JSON.parse(s);
+        return (o && o.tasks && o.tasks.length!==undefined) ? o : null;
+      }catch(e){ return null; }
+    }
+    /* ver对账清旧进度：进度账里不在新清单的taskId整个删掉（旧版验收点自动作废，不缠人） */
+    function reconcile(){
+      try{
+        if(!_list || !_list.tasks) return;
+        var keep={}, i;
+        for(i=0;i<_list.tasks.length;i++){ keep[String(_list.tasks[i].id)]=1; }
+        var p=loadProg(), np={}, hit=false;
+        for(var tid in p){ if(keep[tid]) np[tid]=p[tid]; else hit=true; }
+        if(hit) saveProg(np);
+      }catch(e){}
+    }
+
+    /* ---- 进度判断 ---- */
+    function stepGreen(prog, tid, sid){ try{ return !!(prog && prog[tid] && prog[tid][sid]===1); }catch(e){ return false; } }
+    function taskDone(prog, task){
+      try{
+        if(!task.steps || !task.steps.length) return false;
+        for(var i=0;i<task.steps.length;i++){ if(!stepGreen(prog, task.id, task.steps[i].id)) return false; }
+        return true;
+      }catch(e){ return false; }
+    }
+    function allDone(prog){
+      try{
+        if(!_list || !_list.tasks || !_list.tasks.length) return false;
+        for(var i=0;i<_list.tasks.length;i++){ if(!taskDone(prog, _list.tasks[i])) return false; }
+        return true;
+      }catch(e){ return false; }
+    }
+    /* 当前步骤=第一个未绿任务的第一个未绿步 */
+    function curStep(prog){
+      try{
+        if(!_list || !_list.tasks) return null;
+        for(var i=0;i<_list.tasks.length;i++){
+          var t=_list.tasks[i];
+          if(taskDone(prog,t)) continue;
+          for(var j=0;j<(t.steps||[]).length;j++){
+            if(!stepGreen(prog, t.id, t.steps[j].id)) return { task:t, step:t.steps[j] };
+          }
+        }
+        return null;
+      }catch(e){ return null; }
+    }
+
+    /* ---- 模块内自写readFlow（照sjReadFlow逻辑：先读「想法流水.txt」再兜底「速记流水.txt」，b64解码；不许调HX.sj内部函数，照抄） ---- */
+    function chkReadFlow(){
+      try{
+        if(typeof LearnShell==='undefined' || !LearnShell || !LearnShell.readFile) return '';
+        var b=LearnShell.readFile('想法流水.txt');
+        if(b){ var t1=_dec(b); if(t1) return t1; }
+        var b2=LearnShell.readFile('速记流水.txt');
+        if(b2){ var t2=_dec(b2); if(t2) return t2; }
+        return '';
+      }catch(e){ return ''; }
+    }
+    /* ---- 自动侦测器（v1内置三种，清单auto字段引用；冒号后为参数） ---- */
+    var CHK_AUTO = {
+      'sj_uploaded': function(){ /* 想法流水非空且 hx_sj_uplocal 镜像与流水一致=上行完成 */
+        try{
+          var txt=chkReadFlow(); if(!txt) return false;
+          var up=''; try{ up=localStorage.getItem('hx_sj_uplocal')||''; }catch(e){ up=''; }
+          return !!up && up===txt;
+        }catch(e){ return false; }
+      },
+      'file_exists': function(arg){ /* LearnShell.readFile(arg) 读得到内容 */
+        try{
+          if(!arg) return false;
+          if(typeof LearnShell==='undefined' || !LearnShell || !LearnShell.readFile) return false;
+          return !!LearnShell.readFile(String(arg));
+        }catch(e){ return false; }
+      },
+      'key_set': function(arg){ /* localStorage[arg] 非空 */
+        try{
+          if(!arg) return false;
+          return !!(localStorage.getItem(String(arg))||'');
+        }catch(e){ return false; }
+      }
+    };
+    function autoHit(autoStr){
+      try{
+        if(!autoStr) return false;
+        var s=String(autoStr), ci=s.indexOf(':');
+        var name=(ci>=0)?s.slice(0,ci):s, arg=(ci>=0)?s.slice(ci+1):'';
+        var fn=CHK_AUTO[name];
+        return fn ? !!fn(arg) : false;
+      }catch(e){ return false; }
+    }
+    /* 跑一遍当前未绿步的侦测器；侦中=标绿 */
+    function detect(){
+      try{
+        if(_off()) return;
+        if(!_list || !_list.tasks) return;
+        var prog=loadProg(), changed=false;
+        for(var i=0;i<_list.tasks.length;i++){
+          var t=_list.tasks[i];
+          for(var j=0;j<(t.steps||[]).length;j++){
+            var st=t.steps[j];
+            if(stepGreen(prog,t.id,st.id)) continue;
+            if(st.auto && autoHit(st.auto)){ markGreen(t.id, st.id); changed=true; }
+          }
+        }
+        if(changed){ refreshUI(); }
+      }catch(e){}
+    }
+
+    /* ---- 标绿：写进度账（localStorage+壳真源）→刷UI→顺手推云仓 ---- */
+    function markGreen(tid, sid){
+      try{
+        var p=loadProg();
+        if(!p[tid]) p[tid]={};
+        p[tid][sid]=1;
+        saveProg(p);
+        try{ pushProg(); }catch(e){}
+      }catch(e){}
+    }
+
+    /* ---- 进度推云仓（照sjUpload PUT模式：GET取sha→PUT；没钥匙/没网静默跳过下回补） ---- */
+    function pushProg(){
+      try{
+        if(_off()) return;
+        if(!window.fetch) return;
+        if(typeof HX._autoNetOk==='function'){ if(!HX._autoNetOk()) return; } /* 闲时闸门 */
+        var g=null; try{ g=HX.keys.gh(); }catch(e){ g=null; }
+        if(!g) return;
+        var body=JSON.stringify(loadProg());
+        var prev=''; try{ prev=localStorage.getItem(LS_UP)||''; }catch(e){ prev=''; }
+        if(body===prev) return; /* 内容没变不重复推 */
+        var api='https://api.github.com/repos/'+encodeURIComponent(g.u)+'/'+encodeURIComponent(g.r)+'/contents/'+encodeURIComponent(PROG_FILE);
+        var H={'Authorization':'token '+g.t,'Accept':'application/vnd.github+json'};
+        fetch(api,{headers:H}).then(function(resp){ if(resp.status===404) return {sha:null}; if(!resp.ok) throw 0; return resp.json(); }).then(function(j){
+          var put={message:'验收进度上行', content:_enc(body)};
+          if(j&&j.sha) put.sha=j.sha;
+          return fetch(api,{method:'PUT',headers:H,body:JSON.stringify(put)});
+        }).then(function(resp){ if(!resp.ok) throw 0; return resp.json(); }).then(function(){
+          try{ localStorage.setItem(LS_UP, body); }catch(e){}
+        }).catch(function(){}); /* 验收不是急活，失败静默下回补 */
+      }catch(e){}
+    }
+
+    /* ---- 清单拉取（照HX.keys warm腿②先例：HX.gh.fetch raw+Bearer）；取到→存缓存+ver对账+刷UI；取不到→用缓存 ---- */
+    function fetchList(manual){
+      try{
+        if(_off()) return;
+        if(typeof HX._autoNetOk==='function'){ if(!HX._autoNetOk(manual)) return; }
+        var g=null; try{ g=HX.keys.gh(); }catch(e){ g=null; }
+        if(!g || !HX.gh || !HX.gh.fetch){ if(manual){ try{ chkToast('⚠️ 没钥匙，清单拉不下来'); }catch(e){} } return; }
+        HX.gh.fetch(LIST_URL, {headers:{'Authorization':'Bearer '+g.t}}).then(function(resp){
+          if(!resp || !resp.ok) return null;
+          return resp.text();
+        }).then(function(txt){
+          try{
+            if(!txt){ if(manual){ try{ chkToast('⚠️ 清单没拉下来，下回再试'); }catch(e){} } return; }
+            var o=JSON.parse(txt);
+            if(!o || !o.tasks){ if(manual){ try{ chkToast('⚠️ 清单格式不对'); }catch(e){} } return; }
+            _list=o; cacheList(o); reconcile(); refreshUI();
+            if(manual){ try{ chkToast('清单已刷新'); }catch(e){} }
+          }catch(e){ if(manual){ try{ chkToast('⚠️ 清单没拉下来，下回再试'); }catch(e2){} } }
+        }, function(){ if(manual){ try{ chkToast('⚠️ 清单没拉下来，下回再试'); }catch(e){} } });
+      }catch(e){}
+    }
+
+    /* ---- UI：注入样式+DOM（窄条+整屏页容器，默认都藏） ---- */
+    function ensureUI(){
+      try{
+        if($('hxChkBar')) return true;
+        if(!document.body) return false;
+        var bar=document.createElement('div'); bar.id='hxChkBar';
+        bar.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:99994;height:46px;background:#fffdf8;border-top:1px solid #e5ddd0;display:none;align-items:center;padding:0 10px;box-sizing:border-box;cursor:pointer';
+        var pg=document.createElement('div'); pg.id='hxChkPg';
+        pg.style.cssText='position:fixed;left:0;top:0;right:0;bottom:0;z-index:99995;background:#fffdf8;overflow-y:auto;display:none;padding:14px;box-sizing:border-box'; /* 照sjShowBrowse整屏覆盖先例 */
+        document.body.appendChild(bar); document.body.appendChild(pg);
+        bar.addEventListener('click', function(){ try{ openPage(); }catch(e){} }); /* 点窄条本体=展开整屏页 */
+        return true;
+      }catch(e){ return false; }
+    }
+
+    /* ---- 画窄条：圆点串（每任务一点）+当前步骤一行字+右端▲ ---- */
+    function renderBar(){
+      try{
+        var bar=$('hxChkBar'); if(!bar) return;
+        var prog=loadProg();
+        if(_off() || !_list || !_list.tasks || !_list.tasks.length || allDone(prog)){ bar.style.display='none'; stopTimer(); return; } /* 全部任务绿或清单空→窄条自动隐藏 */
+        bar.innerHTML='';
+        var dots=document.createElement('span'); dots.style.cssText='flex:none;letter-spacing:3px;font-size:12px';
+        for(var i=0;i<_list.tasks.length;i++){
+          var d=document.createElement('span');
+          d.textContent='●';
+          d.style.color = taskDone(prog,_list.tasks[i]) ? '#7a9e7e' : '#cfc6b8'; /* 绿/灰 */
+          dots.appendChild(d);
+        }
+        var cur=curStep(prog);
+        var txt=document.createElement('span');
+        txt.style.cssText='flex:1;margin:0 10px;font-size:15px;color:#4a4238;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'; /* 超一行省略 */
+        txt.textContent = cur ? String(cur.step.text||'') : '';
+        var up=document.createElement('span'); up.textContent='▲'; up.style.cssText='flex:none;font-size:14px;color:#6b6257;padding:0 4px';
+        bar.appendChild(dots); bar.appendChild(txt); bar.appendChild(up);
+        bar.style.display='flex';
+        startTimer();
+      }catch(e){}
+    }
+    function barVisible(){ try{ var bar=$('hxChkBar'); return !!(bar && bar.style.display!=='none'); }catch(e){ return false; } }
+    function startTimer(){
+      try{
+        if(_timer) return;
+        _timer=setInterval(function(){ try{ if(!barVisible()){ stopTimer(); return; } detect(); }catch(e){} }, 5000); /* 窄条显示期间每5秒跑一遍当前未绿步的侦测器 */
+      }catch(e){}
+    }
+    function stopTimer(){ try{ if(_timer){ clearInterval(_timer); _timer=null; } }catch(e){} }
+
+    /* ---- 画整屏页：标题+🔄刷新清单+大✕；任务行=圆点+标题+n/m；步骤行=圆点+大白话全文+「✓这步好了」钮 ---- */
+    function renderPg(){
+      try{
+        var pg=$('hxChkPg'); if(!pg) return;
+        pg.innerHTML='';
+        var bar=document.createElement('div'); /* 顶行：标题+刷新钮+大✕ */
+        bar.style.cssText='display:flex;justify-content:space-between;align-items:center;padding:4px 2px 10px;border-bottom:1px solid #e5ddd0;margin-bottom:6px';
+        var ttl=document.createElement('span'); ttl.style.cssText='font-size:18px;color:#4a4238;font-weight:bold'; ttl.textContent='✅验收清单';
+        var rgt=document.createElement('span'); rgt.style.cssText='flex:none;display:flex;gap:8px;align-items:center';
+        var rf=document.createElement('button'); rf.type='button'; rf.textContent='🔄刷新清单'; rf.style.cssText='background:#7a8ea0;color:#fff;font-size:14px;padding:6px 12px;border:none;border-radius:10px;cursor:pointer';
+        rf.addEventListener('click', function(){ try{ reload(); }catch(e){} });
+        var bx=document.createElement('button'); bx.type='button'; bx.textContent='✕'; bx.style.cssText='background:#efe9df;color:#6b6257;font-size:20px;padding:6px 16px;border:none;border-radius:10px;cursor:pointer';
+        bx.addEventListener('click', function(){ pg.style.display='none'; }); /* ✕=关页（窄条还在） */
+        rgt.appendChild(rf); rgt.appendChild(bx);
+        bar.appendChild(ttl); bar.appendChild(rgt); pg.appendChild(bar);
+
+        var prog=loadProg();
+        if(!_list || !_list.tasks || !_list.tasks.length){
+          var emp=document.createElement('div'); emp.style.cssText='color:#a05848;text-align:center;padding-top:60px'; emp.textContent='清单还没取到，点🔄刷新试试';
+          pg.appendChild(emp);
+          return;
+        }
+        for(var i=0;i<_list.tasks.length;i++){ (function(task){
+          var done=taskDone(prog, task);
+          var g=0; for(var gi=0;gi<(task.steps||[]).length;gi++){ if(stepGreen(prog, task.id, task.steps[gi].id)) g++; }
+          var trow=document.createElement('div');
+          trow.style.cssText='display:flex;align-items:center;gap:8px;padding:12px 2px;border-bottom:1px solid #e5ddd0;cursor:pointer';
+          var td=document.createElement('span'); td.textContent='●'; td.style.cssText='flex:none;font-size:12px;color:'+(done?'#7a9e7e':'#cfc6b8');
+          var tt=document.createElement('span'); tt.style.cssText='flex:1;font-size:17px;color:#4a4238'; tt.textContent=String(task.title||'');
+          var nm=document.createElement('span'); nm.style.cssText='flex:none;font-size:14px;color:#a05848'; nm.textContent=g+'/'+(task.steps||[]).length;
+          trow.appendChild(td); trow.appendChild(tt); trow.appendChild(nm);
+          trow.addEventListener('click', function(){ try{ if(_openT[task.id]) delete _openT[task.id]; else _openT[task.id]=1; renderPg(); }catch(e){} }); /* 点任务行展开/收起它的步骤行 */
+          pg.appendChild(trow);
+          if(_openT[task.id]){
+            for(var j=0;j<(task.steps||[]).length;j++){ (function(st){
+              var ok=stepGreen(prog, task.id, st.id);
+              var srow=document.createElement('div');
+              srow.style.cssText='display:flex;align-items:flex-start;gap:8px;padding:10px 2px 10px 22px;border-bottom:1px solid #efe9df';
+              var sd=document.createElement('span'); sd.textContent='●'; sd.style.cssText='flex:none;font-size:12px;margin-top:4px;color:'+(ok?'#7a9e7e':'#cfc6b8');
+              var sb=document.createElement('div'); sb.style.cssText='flex:1';
+              var stx=document.createElement('div'); stx.style.cssText='font-size:16px;line-height:1.6;color:#4a4238;white-space:pre-wrap;word-break:break-all'; stx.textContent=String(st.text||''); /* 大白话全文不截断，textContent防注入 */
+              sb.appendChild(stx);
+              if(st.auto){ var ah=document.createElement('div'); ah.style.cssText='font-size:13px;color:#8a7f70;margin-top:2px'; ah.textContent='做好了它自己变绿'; sb.appendChild(ah); }
+              srow.appendChild(sd); srow.appendChild(sb);
+              if(!st.auto && !ok){
+                var gb=document.createElement('button'); gb.type='button'; gb.textContent='✓这步好了'; gb.style.cssText='flex:none;background:#7a9e7e;color:#fff;font-size:14px;padding:6px 12px;border:none;border-radius:8px;cursor:pointer';
+                gb.addEventListener('click', function(){ try{ markGreen(task.id, st.id); renderPg(); renderBar(); }catch(e){} }); /* 点=标绿 */
+                srow.appendChild(gb);
+              }
+              pg.appendChild(srow);
+            })(task.steps[j]); }
+          }
+        })(_list.tasks[i]); } /* v0.20.0 终审修：循环变量是_tasks_下标，传_list[i]必undefined */
+      }catch(e){}
+    }
+
+    /* ---- 整屏页打开时也跑一遍侦测 ---- */
+    function openPage(){
+      try{
+        if(_off()) return;
+        if(!ensureUI()) return;
+        detect();
+        renderPg();
+        var pg=$('hxChkPg'); if(pg) pg.style.display='block';
+      }catch(e){}
+    }
+    function refreshUI(){
+      try{
+        renderBar();
+        var pg=$('hxChkPg'); if(pg && pg.style.display==='block') renderPg();
+      }catch(e){}
+    }
+
+    /* ---- 公开口 ---- */
+    function init(){
+      try{
+        if(_booted) return; _booted=true;
+        if(_off()) return; /* 总退休：不注入不联网（open时toast告知） */
+        var boot=function(){
+          try{
+            if(!ensureUI()) return;
+            _list=readCacheList(); /* init先用缓存画 */
+            reconcile();
+            renderBar(); /* 缺省窄条不显示（没清单/全绿时藏） */
+            if(typeof HX._autoNetOk==='function' && HX._autoNetOk()) fetchList(false); /* 闲时自动拉一次 */
+          }catch(e){}
+        };
+        if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', boot); } else { boot(); } /* 照sj ensureUI自注先例，挂HX即活，不要求宿主调用 */
+      }catch(e){}
+    }
+    function open(){
+      try{
+        if(_off()){ chkToast('验收牌已关（hx_chk_off）'); return; }
+        if(!ensureUI()){ chkToast('页面还没备好，稍候再点'); return; }
+        if(!_list || !_list.tasks || !_list.tasks.length){ openPage(); return; } /* 没清单→开整屏页显示刷新提示 */
+        if(allDone(loadProg())){ chkToast('这期验收全绿了🎉'); return; }
+        renderBar();
+        openPage(); /* 有未绿任务→亮窄条+开整屏页 */
+      }catch(e){}
+    }
+    function reload(){ /* 手动拉清单（🔄钮调用，manual放行闸门） */
+      try{
+        if(_off()){ chkToast('验收牌已关（hx_chk_off）'); return; }
+        fetchList(true);
+      }catch(e){}
+    }
+
+    /* 自带boot：挂HX即活 */
+    try{ init(); }catch(e){}
+
+    return { init:init, open:open, reload:reload };
+  })();
+
   /* ════ 5. 浮标速记 HX.sj（从 software-notes.html 原文提取，8份MD5一致版；行为一字不差） ════
      右下角半透明圆点🏥→弹小输入框→「记下」追加授权文件夹「速记流水.txt」（带时间+软件名+hx_gj_curpt当前病人+页面标题）
      →自动PUT仓根目录；闲时8秒补一次对账（hx_sj_uplocal，内容没变不重复推）；无壳降级提示；没钥匙/没网静默跳过。
@@ -1253,6 +1661,7 @@
           '  <div class="hxSjBtns"><button id="hxSjSave" type="button">记下</button>'+
           '<button id="hxSjPrev" type="button" style="background:#7a8ea0;color:#fff;">↩ 补充上一条</button>'+ /* v0.15.0 选条回填钮：点=弹最近3条列表选一条回填，洪老师2026-09-18拍板 */
           '<button id="hxSjBrowse" type="button" style="background:#7a8ea0;color:#fff;">📜翻看</button>'+ /* v0.19.0 翻看钮：点=整屏列全部想法，洪老师2026-10-12拍板 */
+          '<button id="hxSjChk" type="button" style="background:#b8925a;color:#fff;">✅验收</button>'+ /* v0.20.0 验收钮：点=HX.chk.open()窄条/整屏验收清单，SPEC批准申报加法① */
           '<button id="hxSjImg" type="button" style="background:#efe9df;color:#6b6257;">📷图</button>'+ /* v0.10.0 附图钮：始终在「记下」旁，样式同关闭钮 */
           (sjExtraBtn ? '<button id="hxSjAppend" type="button" style="background:#b8925a;color:#fff;">'+String(sjExtraBtn.label||'补充上一条')+'</button>' : '')+ /* v0.1.1 extraBtn：不传不出这钮，默认2钮版 */
           '<button id="hxSjClose" type="button">关上</button>'+
@@ -1274,6 +1683,7 @@
       if(sjExtraBtn && $('hxSjAppend')) $('hxSjAppend').addEventListener('click', appendLast); /* v0.1.1 extraBtn */
       var sjPrevBtn=$('hxSjPrev'); if(sjPrevBtn) sjPrevBtn.addEventListener('click', function(){ try{ var box=$('hxSjPrevList'); if(box && box.style.display==='block'){ box.style.display='none'; return; } showPrevList(); }catch(e){} }); /* v0.15.0 ↩补充上一条：列表开着再点=收起（无副作用），否则弹最近3条 */
       var sjBrowseBtn=$('hxSjBrowse'); if(sjBrowseBtn) sjBrowseBtn.addEventListener('click', function(){ try{ sjShowBrowse(); }catch(e){} }); /* v0.19.0 📜翻看 */
+      var sjChkBtn=$('hxSjChk'); if(sjChkBtn) sjChkBtn.addEventListener('click', function(){ try{ HX.chk.open(); }catch(e){} }); /* v0.20.0 ✅验收，SPEC批准申报加法② */
       var sjPanelBk=$('hxSjPanel'); if(sjPanelBk) sjPanelBk.addEventListener('click', function(ev){ try{ var box=$('hxSjPrevList'); if(box && box.style.display==='block' && ev.target===sjPanelBk) box.style.display='none'; }catch(e){} }); /* v0.15.0 点面板空白处关列表（点在条目/按钮上不动），无副作用 */
       $('hxSjClose').addEventListener('click', function(){ $('hxSjPanel').style.display='none'; });
       var sjImgBtn=$('hxSjImg'); if(sjImgBtn) sjImgBtn.addEventListener('click', function(){ try{
