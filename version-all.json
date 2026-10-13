@@ -1,6 +1,6 @@
 {
  "v": 1,
- "t": 1791862667647,
+ "t": 1791866114468,
  "items": [
   {
    "key": "index",
@@ -16,9 +16,9 @@
   },
   {
    "key": "hx-common",
-   "version": "0.21.0",
+   "version": "0.22.0",
    "dl": "hx-common.js",
-   "sig": "0c16e2c0380f940a"
+   "sig": "6dc4cc839ed34901"
   },
   {
    "key": "tuomin",
@@ -28,9 +28,9 @@
   },
   {
    "key": "xiaotao",
-   "version": "0.17.0",
+   "version": "0.18.0",
    "dl": "software-xiaotao.html",
-   "sig": "faa53b34c27b6ef1"
+   "sig": "c594a0d1fa1a3ee4"
   }
  ],
  "note": "hx-common v0.21.0（验收清单双腿三兜底，治「还没取到」，洪老师2026-10-13拍板）；其余不动"
