@@ -42,6 +42,9 @@ window.addEventListener('load', function(){
   小涛笔记（学习笔记2代）· 单文件版
 ==========================================================
   修改记录：
+   v0.18.0 2026-10-13 万能点字前半B1（洪老师拍板「三个并行开工」，SPEC小涛块，DS实现+Kimi终审翻案HUNK1锚点不唯一亲手换锚）：
+       学习笔记正文(.md-body)抹≥3字→点亮浮条第一层多「✍️ 改字」钮→第二层问「改这句/改整篇」→范围+原文存localStorage xt_dianzi_pend+toast，AI改稿链路是B2的活本块不接。
+       加法4处：glowFrom全局声明/selectionchange记来源/glowRender level1插钮/level2 dianzi分支；其余glow逻辑与全部函数IDENTICAL。
    v0.17.0 2026-10-12 文献真假自动核查（洪老师拍板六条「开工」，SPEC_v0.17.0，DS实现+Kimi终审亲手落地，终审翻案3处：qwen-plus单价SPEC笔误0.0008改0.8/2、callAI_qwenNet改走现成fetchWithTimeout+aiHud亮身份读秒、xtRefCheckRun外壳补全try+重核时refAck清零）：
         ①chapChatSys铁规矩加固：不许「佚名」充数、任何一项拿不准整条不列、明示系统将联网核查编造必被抓；
         ②取消人工核查项：文献行🔍查原文链接整个删除；
@@ -4695,6 +4698,7 @@ function glowSaveCfg(c){
   }catch(e){}
 }
 var glowSel = '', glowOpt = null, glowSetIdx = -1, glowLevel = 0;
+var glowFrom = ''; /* v0.18.0 B1（洪老师2026-10-13拍板三并行开工，SPEC小涛块，DS实现+Kimi终审翻案锚点）：点亮来源记录——chunk-body='chunk'/md-body='md'/cs-open='cs'，万能点字前半用 */
 function glowEl(tag, cls, txt){ var d = document.createElement(tag); if(cls) d.className = cls; if(txt != null) d.textContent = txt; return d; }
 function glowHide(){ glowLevel = 0; $('glowBar').style.display = 'none'; }
 function glowRender(){
@@ -4709,11 +4713,39 @@ function glowRender(){
       b.addEventListener('click', function(){ glowOpt = o; glowLevel = 2; glowRender(); });
       row.appendChild(b);
     });
+    if(glowFrom === 'md' && glowSel.length >= 3){ /* v0.18.0 B1 万能点字前半：学习笔记正文抹≥3字才出「✍️ 改字」 */
+      var dz = glowEl('button', 'gl-btn', '✍️ 改字');
+      dz.addEventListener('click', function(){ glowOpt = {id:'dianzi',icon:'✍️',name:'改字'}; glowLevel = 2; glowRender(); });
+      row.appendChild(dz);
+    }
     var x = glowEl('button', 'gl-btn', '✕ 收起');
     x.addEventListener('click', glowHide);
     row.appendChild(x);
     body.appendChild(row);
   }else if(glowLevel === 2){
+    if(glowOpt.id === 'dianzi'){ /* v0.18.0 B1：改字第二层=问范围，AI改稿链路是B2的活本块不接 */
+      title.textContent = '✍️ 改字 —— 改哪个范围？';
+      var rowD = glowEl('div', 'gl-opts');
+      var bSent = glowEl('button', 'gl-btn', '改这句');
+      bSent.addEventListener('click', function(){
+        try{ localStorage.setItem('xt_dianzi_pend', JSON.stringify({scope:'sent', text:glowSel, ts:Date.now()})); }catch(e){}
+        toast('范围已记下，AI改稿链路下块接上', 2500);
+        glowHide();
+      });
+      rowD.appendChild(bSent);
+      var bWhole = glowEl('button', 'gl-btn', '改整篇');
+      bWhole.addEventListener('click', function(){
+        try{ localStorage.setItem('xt_dianzi_pend', JSON.stringify({scope:'whole', text:glowSel, ts:Date.now()})); }catch(e){}
+        toast('范围已记下，AI改稿链路下块接上', 2500);
+        glowHide();
+      });
+      rowD.appendChild(bWhole);
+      var bkD = glowEl('button', 'gl-btn', '← 返回');
+      bkD.addEventListener('click', function(){ glowLevel = 1; glowRender(); });
+      rowD.appendChild(bkD);
+      body.appendChild(rowD);
+      return;
+    }
     title.textContent = glowOpt.icon + ' ' + glowOpt.name + ' —— 选一套提示词：';
     var row2 = glowEl('div', 'gl-opts');
     glowOpt.prompts.forEach(function(p, i){
@@ -4857,7 +4889,7 @@ document.addEventListener('selectionchange', function(){
   var el = node && node.nodeType === 1 ? node : (node ? node.parentNode : null);
   var inText = false;
   while(el && el !== document.body){
-    if(el.classList && (el.classList.contains('chunk-body') || el.classList.contains('md-body') || el.classList.contains('cs-open'))){ inText = true; break; }
+    if(el.classList && (el.classList.contains('chunk-body') || el.classList.contains('md-body') || el.classList.contains('cs-open'))){ inText = true; if(el.classList.contains('chunk-body')){ glowFrom = 'chunk'; } else if(el.classList.contains('md-body')){ glowFrom = 'md'; } else if(el.classList.contains('cs-open')){ glowFrom = 'cs'; } break; } /* v0.18.0 B1：顺手记点亮来源 */
     el = el.parentNode;
   }
   if(!inText) return;
