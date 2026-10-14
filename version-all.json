@@ -16,9 +16,9 @@
   },
   {
    "key": "hx-common",
-   "version": "0.23.0",
+   "version": "0.24.0",
    "dl": "hx-common.js",
-   "sig": "dcaa407dddb6ac03"
+   "sig": "074bdcf3af429463"
   },
   {
    "key": "tuomin",
@@ -33,5 +33,5 @@
    "sig": "c594a0d1fa1a3ee4"
   }
  ],
- "note": "hx-common v0.23.0（验收牌两档制+窄条显字）＋index v1.19.12（📦一键导出），洪老师2026-10-14拍板；其余不动"
+ "note": "hx-common v0.24.0（黑匣子+弹窗销号+取消静默令），洪老师2026-10-14拍板；其余不动"
 }
