@@ -536,6 +536,7 @@ CUR.index="1.19.9"; /* v1.19.9（2026-10-11班①）：脱敏间上户口，见�
 CUR.index="1.19.10"; /* v1.19.10：修脱敏间404（CUR.tuomin 1.0.0→0） */
 CUR.index="1.19.11"; /* v1.19.11：账本覆盖让路硬编码"0"，清tuomin假记忆 */
 CUR.index="1.19.12"; /* v1.19.12：自立导出钮，见顶部修改记录 */
+CUR.index="1.20.0"; /* v1.20.0（2026-10-14 班⑧，洪老师拍板任务单式查新+开门自动查+管家灯，SPEC_index_v1.20.0，DS实现+Kimi终审翻案4处亲手落地） */
 CUR.tuomin="0"; /* v1.19.10修404：CUR=壳内已装版本，单体手机还没装必须填"0"才会下载（CUR.ppt同款老坑，见230行） */ /* v1.19.8（2026-09-20班⑮，洪老师真机报"升级说装成功主界面还是19.6，几次都这样，没重启应该直接变19.7"）病根=班⑮发v1.19.7时新赋值插在同一行旧赋值前面，CUR.index="1.19.7"刚赋上就被同行的CUR.index="1.19.6"盖回→页脚活字永远亮1.19.6（文件真身早是新版，升级链/壳全无辜，大管家0.54.5上机为证）；还连带v1.19.5刀2开门自校对误把账本1.19.7当谎回滚→每次都提示重装。治=删同行可执行旧赋值（注释留档）+升号v1.19.8让真机重新下载。其余一行未动 */
 try{document.getElementById("ftVer").textContent=CUR.index;}catch(eF){} /* v1.19.6 页脚死字改活字：ftVer亮CUR.index真身 */
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
@@ -671,7 +672,7 @@ try{
   }
 }catch(e){}
 
-function updMsg(t){ var el=document.getElementById("updLine"); el.style.display="block"; el.textContent=t; }
+function updMsg(t){ try{ if(window.__tfQuiet){ window.__tfLastMsg=t; return; } }catch(eQ){} var el=document.getElementById("updLine"); el.style.display="block"; el.textContent=t; } /* v1.20.0 终审加：任务单模式静默闸——老链直播不盖任务行版面，吞下的末句存__tfLastMsg供收尾显示；闸关时行为一字不变 */
 /* v1.19.12 接管保险工程件②：一键导出一个大txt（===== 文件名 =====分隔），全程不联网 */
 function exportAllBackup(){
   try{
@@ -786,12 +787,43 @@ function hxRawGet(name){
      手动点「🔍 检查新版本」按钮不受此限（按钮先清标记再刷新重查）。只拦下面查版本，不拦上面藏卡片。 */
   /* v1.8.0 对账①：刚装完更新刷新回来时（hx_postaudit），清掉自检标记让下面流程重跑一遍=对账 */
   try{ if(sessionStorage.getItem("hx_postaudit")==="1"){ sessionStorage.removeItem("hx_postaudit"); sessionStorage.removeItem("hx_ver_checked"); } }catch(e){}
+  /* v1.20.0 翻案D：老链补装完reload回来（hx_tf_done）→开门不再重查，直接拉任务单渲染结果版（全绿/红灯一眼看见），看完无碍；
+     拉不到任务单静默不亮。此段只渲染不跑链，联网只读任务单一件。 */
+  try{
+    if(sessionStorage.getItem("hx_tf_done")==="1" && typeof __taskFeed!=="undefined" && __taskFeed){
+      sessionStorage.removeItem("hx_tf_done");
+      __taskFeed.bindLamp();
+      __taskFeed.fetchFeed().then(function(txt){
+        try{
+          var feed=txt?JSON.parse(txt):null;
+          if(feed && feed.items && feed.items.length){
+            __taskFeed.feed=feed; __taskFeed.buildLamp(); __taskFeed.render();
+          }
+        }catch(e){}
+      }).catch(function(){});
+    }
+  }catch(e){}
   /* v1.9.0 洪老师拍板：开门三停——开门/闲时不再自动查版本、不再自动下载换新、不再自动备份，只认手动按钮。
      手动点「🔍 检查新版本」时会先立 hx_ver_manual 标记再刷新，这里认到标记才跑全流程；
      平时开门到这里直接退出（上面藏壳卡片照常）。下面 step/dl/finish 等函数本体全保留，手动流程照用。 */
+  /* v1.20.0（2026-10-14 班⑧，SPEC_index_v1.20.0，洪老师拍板「套装打开马上就查新」，DS实现+Kimi终审翻案落地）刀2 开门自动查新：
+     推翻v1.9.0开门三停中的"查版本停"——hx_ver_manual 手动标记 或 开门自动 都放行。
+     保留 sessionStorage hx_ver_checked 每次开门只查一次的闸；保留 localStorage hx_auto_check_off=1 回「只认手动」老样子。
+     开门自动与手动点按钮走同一条链（管家VERCHECK优先，回落legacyRun），装件/复核/对账逻辑一行不动。
+     闲时45秒后才起跑（不挡开门首屏，由IIFE末尾起跑块执行），起跑前updLine不亮。 */
   var _manualGo=false;
   try{ if(sessionStorage.getItem("hx_ver_manual")==="1"){ sessionStorage.removeItem("hx_ver_manual"); _manualGo=true; } }catch(e){}
-  if(!_manualGo) return;
+  var _autoGo=false; /* v1.20.0 开门自动查：仅"非手动"分支使用；45秒闲时后起跑 */
+  if(!_manualGo){
+    try{
+      var _autoOff=localStorage.getItem("hx_auto_check_off")==="1";
+      if(!_autoOff){
+        if(sessionStorage.getItem("hx_ver_checked")==="1") return; /* 同会话已查过：不重跑不重复 */
+        _autoGo=true;
+      }
+    }catch(e){}
+    if(!_autoGo) return; /* 回退开启 或 本会话已查过：维持v1.9.0老样子，等手动按钮 */
+  }
   try{ if(sessionStorage.getItem("hx_ver_checked")==="1") return; sessionStorage.setItem("hx_ver_checked","1"); }catch(e){}
   var c=ghCfg();
   /* v1.3.7：没填Token也要更新（走公开直链），不再静默跳过 */
@@ -1016,6 +1048,253 @@ function hxRawGet(name){
       PARTS.forEach(function(p, pi){ checkPart(pi); });
     });
   }
+  /* ═══════════════════════════════════════════════════════════════════════
+     v1.20.0（2026-10-14 班⑧，SPEC_index_v1.20.0，洪老师拍板任务单式查新，DS实现+Kimi终审翻案落地）
+     刀3 任务单式版面 + 刀4 管家灯。
+     拉取链：GitHub API有Token→坚果云「/学习套装备份/发版任务单.json」兜底，8秒死心。
+     拉到了=按任务单逐件渲染+判定+缺件走老链静默补装（__tfQuiet闸）+装完绿勾；
+     拉不到=明说「任务单没拿到」回落老版面（legacyRun原样，老逻辑不删）。
+     任务单外的单体/部件：不显示（照查照装，装上了浮一句"顺手装上了XX"）。
+     终审翻案：①黑匣子真名hxdata_hx_blackbox.json主账（JSON数组，m含「开门 vX」），侧车hxdata_hx_blackbox_shell.json兜底，DS写的hx_blackbox.json名不对 ②撤硬编码兜底任务单（拉不到就明说，不拿旧账冒充，洪老师要的是"先告诉拿到没有"） ③updMsg加__tfQuiet闸防老链直播盖任务行 ④灯心跳只认管家写的件（mg_ver.json.t/mg_progress末条），黑匣子act是用户活动不算管家心跳。
+     总回退：localStorage hx_taskfeed_off=1 → 刀3/刀4整段退休，老版面老话术全回来。
+     ═══════════════════════════════════════════════════════════════════════ */
+  var __taskFeed = (function(){
+    try{
+      if(localStorage.getItem("hx_taskfeed_off")==="1") return null; /* 刀3/刀4总回退 */
+    }catch(e){}
+    var TF = {};
+    TF.feed = null;   /* 拉到的任务单 */
+    TF.installed = [];/* 顺手装上（任务单外）自报表 */
+    TF.isShell = function(k){ return k==="shell"; };
+    TF.isPart  = function(k){ return k==="hx-common"||k==="guanjia-pdf-engine.js"; };
+    TF.isSuite = function(k){ return !!SUITE[k]; };
+
+    /* 拉任务单：GitHub API优先，超时/无Token→坚果云兜底，8秒死心；拉到文本回调，拉不到回null */
+    TF.fetchFeed = function(){
+      return new Promise(function(resolve){
+        var done=false;
+        function ok(txt){ if(done) return; done=true; resolve(txt); }
+        function tryDav(){
+          try{
+            var dk=null; try{ if(window.HX&&HX.keys&&HX.keys.dav) dk=HX.keys.dav(); }catch(e){}
+            if(!dk||!dk.user||!dk.pass){ ok(null); return; }
+            var url='https://dav.jianguoyun.com/dav/'+encodeURIComponent('学习套装备份')+'/'+encodeURIComponent('发版任务单.json');
+            var hdr={"Authorization":"Basic "+btoa(dk.user+":"+dk.pass)};
+            ghFetch(url,{headers:hdr,cache:"no-store"},8000).then(function(r){ if(!r.ok) throw 0; return r.text(); }).then(ok).catch(function(){ ok(null); });
+          }catch(e){ ok(null); }
+        }
+        var timer=setTimeout(function(){ ok(null); },8000);
+        try{
+          if(hasApi){
+            ghFetch(base+encodeURIComponent("发版任务单.json"), {headers:H}, 8000).then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(j){
+              clearTimeout(timer);
+              if(j&&j.content){ try{ ok(u8dec(j.content)); return; }catch(e){} }
+              if(j&&j.download_url){ return ghFetch(j.download_url,{headers:H},8000).then(function(r2){ if(!r2.ok) throw 0; return r2.text(); }).then(ok).catch(tryDav); }
+              tryDav();
+            }).catch(tryDav);
+          }else{ tryDav(); }
+        }catch(e){ clearTimeout(timer); tryDav(); }
+      });
+    };
+
+    /* 读壳开门版本：主账hxdata_hx_blackbox.json（JSON数组，m含「开门 v2.0.9 vc56」）从尾找，侧车hxdata_hx_blackbox_shell.json兜底；返回版本号串或"" */
+    TF.shellOpenVer = function(){
+      try{
+        if(!window.LearnShell || typeof LearnShell.readFile!=='function') return "";
+        var files=['hxdata_hx_blackbox.json','hxdata_hx_blackbox_shell.json'];
+        for(var fi=0;fi<files.length;fi++){
+          var raw=null; try{ raw=LearnShell.readFile(files[fi]); }catch(e){}
+          if(!raw) continue;
+          var txt=""; try{ txt=decodeURIComponent(escape(atob(String(raw).replace(/\s+/g,'')))); }catch(e){ continue; }
+          var arr=null; try{ arr=JSON.parse(txt); }catch(e){}
+          if(arr && arr.length){
+            for(var i=arr.length-1;i>=0;i--){
+              var m=String((arr[i]&&arr[i].m)||"");
+              var mm=m.match(/开门\s*v?([\d.]+)/);
+              if(mm) return mm[1];
+            }
+          }else{
+            var all=txt.match(/开门\s*v?([\d.]+)/g);
+            if(all && all.length){ var mm2=String(all[all.length-1]).match(/([\d.]+)/); if(mm2) return mm2[1]; }
+          }
+        }
+      }catch(e){}
+      return "";
+    };
+
+    /* 单键判定：返回 {ok:bool, txt:显示尾句} */
+    TF.judge = function(it){
+      try{
+        var k=it.key;
+        if(TF.isShell(k)){
+          var sv=TF.shellOpenVer();
+          if(sv){ if(cmpVer(sv, it.version)>=0) return {ok:true, txt:" ✅ 已装好（壳 v"+sv+"）"}; return {ok:false, txt:" ❌ 还没装上（本机壳 v"+sv+"，目标 v"+it.version+"）· 关门重开试试"}; }
+          try{ if(window.LearnShell && typeof LearnShell.shellVer==='function'){ var sv2=LearnShell.shellVer(); if(sv2){ if(cmpVer(sv2, it.version)>=0) return {ok:true, txt:" ✅ 已装好（壳 v"+sv2+"）"}; return {ok:false, txt:" ❌ 还没装上（壳 v"+sv2+"）· 关门重开试试"}; } } }catch(e){}
+          return {ok:false, txt:" ❓ 打开一次软件再看（壳版本读不到，目标 v"+it.version+"）"};
+        }
+        if(TF.isPart(k)){
+          var pn=k; if(k==='hx-common') pn='hx-common.js'; /* 终审修：任务单key照version-all用hx-common，PARTS名单全名hx-common.js，对不上会永远判没装上（仿真逮住） */
+          var pRe=null; for(var pi=0;pi<PARTS.length;pi++){ if(PARTS[pi][0]===pn){ pRe=PARTS[pi][2]; break; } }
+          var lv=pRe?partLocalVer(pn, pRe):"";
+          if(lv && cmpVer(lv, it.version)>=0) return {ok:true, txt:" ✅ 已装好（本机 v"+lv+"）"};
+          return {ok:false, txt:" ❌ 还没装上"+(lv?("（本机 v"+lv+"）"):"")+"· 正在补装…"};
+        }
+        if(TF.isSuite(k)){
+          var cur=CUR[k]||"0";
+          if(cur!=="0" && cmpVer(cur, it.version)>=0) return {ok:true, txt:" ✅ 已装好（本机 v"+cur+"）"};
+          return {ok:false, txt:" ❌ 还没装上（本机 "+(cur==="0"?"没装":"v"+cur)+"）· 正在补装…"};
+        }
+        return {ok:false, txt:" ❓ 不认识这个件"};
+      }catch(e){ return {ok:false, txt:" ❓ 判定出错，跳过"}; }
+    };
+
+    /* 全绿判定 */
+    TF.allGreen = function(){
+      try{
+        if(!TF.feed || !TF.feed.items || !TF.feed.items.length) return false;
+        for(var i=0;i<TF.feed.items.length;i++){ if(!TF.judge(TF.feed.items[i]).ok) return false; }
+        return true;
+      }catch(e){ return false; }
+    };
+
+    /* 渲染：任务单行 → updLine；末行跟管家灯（刀4） */
+    TF.render = function(){
+      try{
+        var el=document.getElementById("updLine"); if(!el) return;
+        el.style.display="block";
+        var h=[];
+        if(TF.feed && TF.feed.items && TF.feed.items.length){
+          h.push("✅ 拿到任务单了：上回干了"+TF.feed.items.length+"件活");
+          for(var i=0;i<TF.feed.items.length;i++){
+            var it=TF.feed.items[i], j=TF.judge(it);
+            var nm=TF.isShell(it.key)?"壳":(TF.isPart(it.key)?"公共件":(SUITE[it.key]?SUITE[it.key][1].replace(".html",""):it.key));
+            h.push((i+1)+". "+String(it.task||it.key)+" → "+nm+" v"+String(it.version||"?")+"　"+j.txt);
+          }
+          if(TF.installed.length){ for(var ii=0;ii<TF.installed.length;ii++){ h.push("顺手装上了"+TF.installed[ii]); } }
+          if(TF.allGreen()) h.push("全部装齐，没别的事。");
+        }else{
+          h.push("⚠️ 任务单没拿到，用老法子全查一遍");
+        }
+        h.push(TF.lampLine || "🔴 大管家：从没见过心跳");
+        el.textContent=h.join("\n");
+      }catch(e){}
+    };
+
+    /* 刀4 管家灯：绿=15分钟内，红=超15分钟/从没见过；心跳只认管家写的件（mg_ver.json.t→mg_progress.json末条） */
+    TF.buildLamp = function(){
+      try{
+        var lastT=0, recent=[];
+        try{
+          if(window.LearnShell && typeof LearnShell.readFile==='function'){
+            var vb=null; try{ vb=LearnShell.readFile('mg_ver.json'); }catch(e){}
+            if(vb){ try{ var vo=JSON.parse(decodeURIComponent(escape(atob(String(vb).replace(/\s+/g,''))))); if(vo && +vo.t) lastT=+vo.t; }catch(e){} }
+            var pb=null; try{ pb=LearnShell.readFile('mg_progress.json'); }catch(e){}
+            if(pb){ try{ var pa=JSON.parse(decodeURIComponent(escape(atob(String(pb).replace(/\s+/g,''))))); if(pa && pa.length){ recent=pa.slice(-3).map(function(x){ return String((x.t||'')+' '+(x.m||'')); }); } }catch(e){} }
+          }
+        }catch(e){}
+        if(!lastT){ TF.lampLine="🔴 大管家：从没见过心跳"; TF.lampMsg="还没见过大管家心跳——可能它还没跑起来过。"; return; }
+        var ageMin=Math.floor((Date.now()-lastT)/60000);
+        var ts=new Date(lastT);
+        var tsStr=('0'+(ts.getMonth()+1)).slice(-2)+'-'+('0'+ts.getDate()).slice(-2)+' '+('0'+ts.getHours()).slice(-2)+':'+('0'+ts.getMinutes()).slice(-2);
+        if(ageMin<=15){ TF.lampLine="🟢 大管家：刚刚还在干活（最后心跳 "+tsStr+"）"; }
+        else{ TF.lampLine="🔴 大管家：超过15分钟没心跳了（最后 "+tsStr+"）"; }
+        TF.lampMsg="大管家最后心跳："+tsStr+"（约"+ageMin+"分钟前）\n最近在干嘛：\n"+(recent.length?recent.join("\n"):"（没有进度记录）");
+      }catch(e){ TF.lampLine="🔴 大管家：从没见过心跳"; }
+    };
+
+    /* 灯点击浮层：大白话，点别处/再点关 */
+    TF.lampClick = function(){
+      try{
+        var msg=TF.lampMsg || "还没有管家心跳记录。";
+        msg += "\n\n（点页面别处或再点这行关闭）";
+        var box=document.getElementById('hxMgLampPop');
+        if(box && box.style.display==='block'){ box.style.display='none'; return; }
+        if(!box){ box=document.createElement('div'); box.id='hxMgLampPop';
+          box.style.cssText='position:fixed;left:50%;top:30%;transform:translate(-50%,0);z-index:100003;background:#fff;border:1px solid #d8e6dc;border-radius:12px;padding:14px 16px;max-width:90%;max-height:60%;overflow:auto;font-size:15px;line-height:1.8;color:#3a4a3e;box-shadow:0 6px 24px rgba(0,0,0,.15);white-space:pre-wrap;';
+          document.body.appendChild(box);
+        }
+        box.textContent=msg; box.style.display='block';
+        setTimeout(function(){ document.addEventListener('click', TF.lampClose, {once:true, capture:true}); },0);
+      }catch(e){ try{ updMsg(msg); }catch(e2){} }
+    };
+    TF.lampClose = function(){ try{ var box=document.getElementById('hxMgLampPop'); if(box) box.style.display='none'; }catch(e){} };
+
+    /* 挂灯点击：updLine末行（灯行）命中判定，只绑一次 */
+    TF.bindLamp = function(){
+      try{
+        var el=document.getElementById("updLine"); if(!el || el.__hxLampBound) return;
+        el.__hxLampBound=true;
+        el.addEventListener("click", function(ev){
+          try{
+            var rect=el.getBoundingClientRect();
+            if(ev.clientY - rect.top >= el.clientHeight - 28){ TF.lampClick(); }
+            else { TF.lampClose(); }
+          }catch(e){}
+        }, {passive:true});
+      }catch(e){}
+    };
+
+    return TF;
+  })();
+
+  /* 刀3/刀4 总入口：手动/自动共用；回退开启→false→老链legacyRun原样接管。
+     终审版流程：拉任务单→拉到=渲染+缺件时立__tfQuiet闸静默跑老链补装（4秒重渲染，老链跑完清闸，
+     全绿立hx_tf_done标记等老链复核reload后开门直显；不全绿把闸吞下的末句红字显示）；
+     拉不到=明说没拿到→走老链。 */
+  function __taskFeedStart(){
+    if(!__taskFeed) return false;
+    try{
+      __taskFeed.bindLamp();
+      __taskFeed.fetchFeed().then(function(txt){
+        var feed=null;
+        try{ feed=txt?JSON.parse(txt):null; }catch(e){ feed=null; }
+        if(!feed || !feed.items || !feed.items.length){
+          /* 真拉不到：明说+老链接管（不拿硬编码旧账冒充——洪老师要的是"先告诉拿到没有"） */
+          try{ __taskFeed.feed=null; __taskFeed.buildLamp(); __taskFeed.render(); }catch(e){}
+          try{ legacyRun(); }catch(e){}
+          return false;
+        }
+        __taskFeed.feed=feed;
+        __taskFeed.buildLamp();
+        __taskFeed.render();
+        var needFix=false;
+        for(var i=0;i<feed.items.length;i++){ if(!__taskFeed.judge(feed.items[i]).ok){ needFix=true; break; } }
+        if(needFix){
+          /* 缺件：立静默闸跑老链补装（老链直播不盖任务行），4秒重渲染任务行+灯 */
+          try{ window.__tfQuiet=true; }catch(e){}
+          try{ legacyRun(); }catch(e){}
+          var _t=setInterval(function(){
+            try{
+              __taskFeed.buildLamp();
+              __taskFeed.render();
+              /* 老链跑完（全部槽位落定）：清闸，全绿立hx_tf_done等reload后直显；不全绿把吞下的末句显示出来 */
+              if(slotDone>=slotTotal()){
+                try{ window.__tfQuiet=false; }catch(e){}
+                try{ clearInterval(_t); }catch(e){}
+                if(__taskFeed.allGreen()){
+                  try{ sessionStorage.setItem("hx_tf_done","1"); }catch(e){}
+                  __taskFeed.render();
+                }else if(window.__tfLastMsg){
+                  try{ var el=document.getElementById("updLine"); if(el){ el.style.display="block"; el.textContent=window.__tfLastMsg; } }catch(e){}
+                }
+              }
+            }catch(e){}
+          }, 4000);
+          setTimeout(function(){ try{ clearInterval(_t); try{ window.__tfQuiet=false; }catch(e2){} }catch(e){} }, 10*60*1000); /* 顶多刷10分钟防常驻 */
+        }else{
+          /* 全齐：只挂慢刷新给灯（30秒），30分钟后停 */
+          var _t2=setInterval(function(){ try{ __taskFeed.buildLamp(); __taskFeed.render(); }catch(e){} }, 30000);
+          setTimeout(function(){ try{ clearInterval(_t2); }catch(e){} }, 30*60*1000);
+        }
+        return true;
+      }).catch(function(e){
+        try{ __taskFeed.feed=null; __taskFeed.buildLamp(); __taskFeed.render(); }catch(e2){}
+        try{ legacyRun(); }catch(e3){}
+        return false;
+      });
+    }catch(e){ try{ legacyRun(); }catch(e2){} return false; }
+    return true;
+  }
   /* ═══ v1.16.0 版本检查归管家（洪老师2026-09-13拍板"版本号全归管家做，软件别擅自上网"） ═══
      壳v1.7.1+管家会VERCHECK手艺 → 主界面不自己上网：投信（全家清单+本机版本+三通道地址+坚果云钥匙）；
      管家后台慢慢查（GitHub API→公开站→坚果云），新版下载到管家专区 mgver_<文件名>，回信 vercheck 明细；
@@ -1188,7 +1467,20 @@ function hxRawGet(name){
     })();
     return;
   }
-  legacyRun();
+  /* v1.20.0（2026-10-14 班⑧，SPEC_index_v1.20.0）起跑块：手动=老链即刻跑（原样）；
+     开门自动=闲时45秒后起跑，起跑前updLine不亮（有结果才亮，没事不打扰），优先走任务单入口，入口没接（回退/拉不到已自己回落）不重复跑。 */
+  if(typeof _autoGo!=="undefined" && _autoGo){
+    try{
+      setTimeout(function(){
+        try{ sessionStorage.setItem("hx_ver_checked","1"); }catch(e){}
+        var _handled=false;
+        try{ _handled = (typeof __taskFeedStart==="function") ? !!__taskFeedStart() : false; }catch(e){ _handled=false; }
+        if(!_handled){ try{ legacyRun(); }catch(e){} }
+      }, 45000);
+    }catch(e){ try{ legacyRun(); }catch(e2){} }
+  }else{
+    legacyRun();
+  }
 })();
 
 /* ═══ v1.19.0 洪老师拍板：12小时闲时自动对账整段取消——查版本归管家一家（每天闲时静默查一次+
