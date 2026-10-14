@@ -1,12 +1,12 @@
 {
  "v": 1,
- "t": 1791998914937,
+ "t": 1791999256036,
  "items": [
   {
    "key": "index",
-   "version": "1.20.1",
+   "version": "1.20.4",
    "dl": "index.html",
-   "sig": "adb0c2c9840b5ce4"
+   "sig": "c53ee53ba25dbde6"
   },
   {
    "key": "guanjia",
@@ -33,5 +33,5 @@
    "sig": "c594a0d1fa1a3ee4"
   }
  ],
- "note": "紧急回滚index至v1.20.1（v1.20.3真机白屏闪退）；hx-common v0.24.4不动"
+ "note": "主界面v1.20.4救火回稳（=1.20.1本体+升号）；hx-common v0.24.4不动"
 }
