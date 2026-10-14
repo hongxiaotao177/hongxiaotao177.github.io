@@ -536,12 +536,13 @@ CUR.index="1.19.9"; /* v1.19.9（2026-10-11班①）：脱敏间上户口，见�
 CUR.index="1.19.10"; /* v1.19.10：修脱敏间404（CUR.tuomin 1.0.0→0） */
 CUR.index="1.19.11"; /* v1.19.11：账本覆盖让路硬编码"0"，清tuomin假记忆 */
 CUR.index="1.19.12"; /* v1.19.12：自立导出钮，见顶部修改记录 */
-CUR.index="1.20.0"; /* v1.20.0（2026-10-14 班⑧，洪老师拍板任务单式查新+开门自动查+管家灯，SPEC_index_v1.20.0，DS实现+Kimi终审翻案4处亲手落地） */
+CUR.index="1.20.0";
+CUR.index="1.20.1"; /* v1.20.1（2026-10-14 班⑨救火，装循环根治，SPEC_index_v1.20.1，DS实现+Kimi终审亲手落地）：装循环根治+toast节流） */ /* v1.20.0（2026-10-14 班⑧，洪老师拍板任务单式查新+开门自动查+管家灯，SPEC_index_v1.20.0，DS实现+Kimi终审翻案4处亲手落地） */
 CUR.tuomin="0"; /* v1.19.10修404：CUR=壳内已装版本，单体手机还没装必须填"0"才会下载（CUR.ppt同款老坑，见230行） */ /* v1.19.8（2026-09-20班⑮，洪老师真机报"升级说装成功主界面还是19.6，几次都这样，没重启应该直接变19.7"）病根=班⑮发v1.19.7时新赋值插在同一行旧赋值前面，CUR.index="1.19.7"刚赋上就被同行的CUR.index="1.19.6"盖回→页脚活字永远亮1.19.6（文件真身早是新版，升级链/壳全无辜，大管家0.54.5上机为证）；还连带v1.19.5刀2开门自校对误把账本1.19.7当谎回滚→每次都提示重装。治=删同行可执行旧赋值（注释留档）+升号v1.19.8让真机重新下载。其余一行未动 */
 try{document.getElementById("ftVer").textContent=CUR.index;}catch(eF){} /* v1.19.6 页脚死字改活字：ftVer亮CUR.index真身 */
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
 /* v1.19.5（2026-09-19 班①，减桥工程治连环谎）刀1账本校准：账本只许比硬编码新——cmpVer(_sv[k],CUR[k])>0才采纳，比硬编码低的旧账不再覆盖（cmpVer为629行现有函数，同<script>块内声明提升，此处可用，已grep确认签名cmpVer(a,b)）；校正后的CUR顺手写回hx_suite_ver账本，治班⑥病根"账本谎→已装跳过→永远卡旧版"。index键由刀2单独处理（本文件自身就是index真身，账本index比硬编码新=上次没装成的谎，不采纳） */
-try{ var _sv=JSON.parse(localStorage.getItem("hx_suite_ver")||"{}"); Object.keys(_sv).forEach(function(k){ if(_sv[k] && k!=="index" && CUR[k]!=="0" && cmpVer(_sv[k], CUR[k])>0) CUR[k]=_sv[k]; }); /* v1.19.11：硬编码"0"=壳里没这文件=实物铁证，账本不许盖过（治tuomin假记忆：v1.19.9误写CUR=1.0.0被账本回填，硬编码改0也被账本盖回=永不下载） */ if(_sv.index && cmpVer(_sv.index, CUR.index)>0){ /* v1.19.5 刀2前置：账本index吹牛（>硬编码真身）不采纳，留着由紧接的刀2段回滚+提示 */ }else{ try{ localStorage.setItem("hx_suite_ver", JSON.stringify(CUR)); }catch(e2){} } }catch(e){}
+try{ var _sv=JSON.parse(localStorage.getItem("hx_suite_ver")||"{}"); var _fxC=null; try{ _fxC=JSON.parse(localStorage.getItem("hx_cur_fix")||"{}"); }catch(eF){ _fxC={}; } /* v1.20.1（2026-10-14 班⑨救火，装循环根治，SPEC_index_v1.20.1，DS实现+Kimi终审亲手落地）：CUR=0但有hx_cur_fix装成记录→视为已装允许账本采纳，治"装完被洗回0→每开门重装+toast循环"；无记录维持v1.19.11让路老规矩一行不动 */ Object.keys(_sv).forEach(function(k){ if(_sv[k] && k!=="index" && (CUR[k]!=="0" || (_fxC&&_fxC[k])) && cmpVer(_sv[k], CUR[k])>0) CUR[k]=_sv[k]; }); /* v1.19.11：硬编码"0"=壳里没这文件=实物铁证，账本不许盖过（治tuomin假记忆：v1.19.9误写CUR=1.0.0被账本回填，硬编码改0也被账本盖回=永不下载） */ if(_sv.index && cmpVer(_sv.index, CUR.index)>0){ /* v1.19.5 刀2前置：账本index吹牛（>硬编码真身）不采纳，留着由紧接的刀2段回滚+提示 */ }else{ try{ localStorage.setItem("hx_suite_ver", JSON.stringify(CUR)); }catch(e2){} } }catch(e){}
 /* v1.19.5（2026-09-19 班①，减桥工程治连环谎）刀2开门自校对堵谎（主界面自己）：hx_suite_ver账本里index版本>CUR.index硬编码（刀1校正后的值）=上次装主界面没生效（X5缓存旧版/没写进，真身是旧的）→账本index回滚为CUR.index硬编码真身+写回hx_suite_ver+红字提示；其他软件（guanjia等）真身主界面够不着，不做回滚，只index自己。
    实现报备：直接复用刀1读出的_sv（同<script>块顶层var，此处可见）——账本须拿原始谎账对比硬编码，刀1写回后账本index已被压成真身，重读就再也测不出谎了；
    时机报备：updMsg定义在627行但与本段同处一个<script>块（492起），函数声明提升此处可调用，且updLine节点（311行）早已就绪，故选直接调updMsg（try护栏兜底）——不选DOM就绪后追加，因本段执行时DOM已具备 */
@@ -561,6 +562,7 @@ var SUITE = {
 };
 /* 标签按 CUR 显示（永不落伍）；v1.9.0 版本校对明示：角标写明"本机"，查新版靠手动按钮 */
 Object.keys(SUITE).forEach(function(k){
+  try{ if(CUR[k]==="0"){ var _fx0=null; try{ _fx0=JSON.parse(localStorage.getItem("hx_cur_fix")||"{}"); }catch(e2){ _fx0={}; } if(_fx0&&_fx0[k]) CUR[k]=_fx0[k]; } }catch(e){} /* v1.20.1（2026-10-14 班⑨救火，装循环根治，SPEC_index_v1.20.1，DS实现+Kimi终审亲手落地）*/ /* 装成记账补丁：CUR=0但有装成记录→采用记录，治"装完被洗回0再装"死循环；无记录维持让路老规矩 */
   if(CUR[k]==="0") return;  /* 0=本机还没装（如老壳没带PPT工坊），保留静态文案 */
   var el = document.getElementById(SUITE[k][3]);
   if(el) el.textContent = "本机 v" + CUR[k];
@@ -910,7 +912,7 @@ function hxRawGet(name){
       var b64=u8enc(html);
       var ok=shellWrite(localName, b64);
       try{ if(window.LearnShell.folderSet()) window.LearnShell.writeFile(localName.replace(".html","")+"_v"+info.version+".html", b64); }catch(e){}
-      if(ok){ CUR[k]=info.version; try{ localStorage.setItem("hx_suite_ver", JSON.stringify(CUR)); }catch(e){} updated.push(localName.replace(".html","")+"→v"+info.version);
+      if(ok){ CUR[k]=info.version; try{ localStorage.setItem("hx_suite_ver", JSON.stringify(CUR)); }catch(e){} try{ var _fx=JSON.parse(localStorage.getItem("hx_cur_fix")||"{}"); _fx[k]=info.version; localStorage.setItem("hx_cur_fix", JSON.stringify(_fx)); }catch(e){} /* v1.20.1（2026-10-14 班⑨救火，装循环根治，SPEC_index_v1.20.1，DS实现+Kimi终审亲手落地）*/ updated.push(localName.replace(".html","")+"→v"+info.version);
         progLog[progLog.length-1]="✅ "+localName.replace(".html","")+"：已装上 v"+info.version; updMsg("🔍 检查新版本\n"+progLog.join("\n")); }
       else{ failed.push(localName);
         progLog[progLog.length-1]="❌ "+localName.replace(".html","")+"：写入没成功，下次再试"; updMsg("🔍 检查新版本\n"+progLog.join("\n")); }
@@ -1021,7 +1023,7 @@ function hxRawGet(name){
     if(updated.length){
       try{ sessionStorage.setItem("hx_postaudit","1"); }catch(e){}  /* v1.8.0 刷新回来后自动对账① */
       updMsg(progLog.join("\n")+"\n\n✅ 已自动更新："+updated.join("、")+"\n旧版不用管，新版备份已存进您的文件夹。\n正在复核版本…");
-      try{ window.LearnShell.toast("✅ 套装已自动更新"); }catch(e){}
+      try{ if(sessionStorage.getItem("hx_upd_toasted")!=="1"){ sessionStorage.setItem("hx_upd_toasted","1"); window.LearnShell.toast("✅ 套装已自动更新"); } }catch(e){} /* v1.20.1（2026-10-14 班⑨救火，装循环根治，SPEC_index_v1.20.1，DS实现+Kimi终审亲手落地）*/
       /* v1.9.0 升级后复核：重读本机记录+探实际文件，跟云端版本对账；
          全对上→3秒后自动刷新（原"升级成功"提示保留，补上复核结果）；有对不上→红字定格，不自动刷新，让您看清 */
       verifyAfter(function(vlines, allOk){
@@ -1398,7 +1400,7 @@ function hxRawGet(name){
               /* 收尾三句人话（照finish风格） */
               if(updated.length){
                 try{ sessionStorage.setItem("hx_postaudit","1"); }catch(e){} /* v1.19.0 D刀：与老流程对齐，刷新回来后自动对账① */
-                try{ window.LearnShell.toast("✅ 套装已自动更新"); }catch(e){}
+                try{ if(sessionStorage.getItem("hx_upd_toasted")!=="1"){ sessionStorage.setItem("hx_upd_toasted","1"); window.LearnShell.toast("✅ 套装已自动更新"); } }catch(e){} /* v1.20.1（2026-10-14 班⑨救火，装循环根治，SPEC_index_v1.20.1，DS实现+Kimi终审亲手落地）*/
                 /* v1.19.0 D刀对齐：管家路收尾也跑升级后复核（verifyAfter，只读不下载）——
                    全对上3秒自动刷新；对不上红字定格不刷新（老路finish一直如此，管家路此前直接刷新漏了复核） */
                 updMsg(progLog.join("\n")+"\n\n✅ 已自动更新："+updated.join("、")+"\n旧版不用管，新版备份已存进您的文件夹。\n正在复核版本…");
@@ -1434,7 +1436,7 @@ function hxRawGet(name){
               }
               if(okw){
                 try{ LearnShell.deleteFile('mgver_'+it.localName); }catch(e){}
-                if(!it.part){ CUR[rk]=cloudVer[rk]||CUR[rk]; try{ localStorage.setItem("hx_suite_ver", JSON.stringify(CUR)); }catch(e){}
+                if(!it.part){ CUR[rk]=cloudVer[rk]||CUR[rk]; try{ localStorage.setItem("hx_suite_ver", JSON.stringify(CUR)); }catch(e){} try{ var _fx3=JSON.parse(localStorage.getItem("hx_cur_fix")||"{}"); _fx3[rk]=CUR[rk]; localStorage.setItem("hx_cur_fix", JSON.stringify(_fx3)); }catch(e){} /* v1.20.1（2026-10-14 班⑨救火，装循环根治，SPEC_index_v1.20.1，DS实现+Kimi终审亲手落地）*/
                   /* v1.19.0 D刀对齐：管家路装软件也留档新版备份（老路dlWrite一直有，管家路此前漏了） */
                   try{ LearnShell.writeFile(it.localName.replace(".html","")+"_v"+(cloudVer[rk]||"?")+".html", fb); }catch(e){} }
                 updated.push(it.localName.replace(".html","")+"→v"+(cloudVer[rk]||"?"));
@@ -1537,7 +1539,7 @@ try{ mgSuiteWrite(); }catch(e){}
     function _installOne(idx){
       if(idx>=ready.length){
         if(_done.length){
-          try{ window.LearnShell.toast("✅ 套装已自动更新"); }catch(e){}
+          try{ if(sessionStorage.getItem("hx_upd_toasted")!=="1"){ sessionStorage.setItem("hx_upd_toasted","1"); window.LearnShell.toast("✅ 套装已自动更新"); } }catch(e){} /* v1.20.1（2026-10-14 班⑨救火，装循环根治，SPEC_index_v1.20.1，DS实现+Kimi终审亲手落地）*/
           updMsg("✅ 已装好新版："+_done.join("、")+(_fail.length?"。有"+_fail.length+"件没装成（"+_fail.join("、")+"），下次开门再试":"")+"。3秒后自动刷新生效…（版本号以打开软件关于页看到的为准）"); /* v1.19.5（2026-09-19 班①，减桥工程治连环谎）刀3装完说真话：开门直装段装成功提示末尾补实话一句，记账/判定/updMsg调用结构一行未动 */
           setTimeout(function(){ location.reload(); }, 3000);
         }else if(_fail.length){
@@ -1565,7 +1567,7 @@ try{ mgSuiteWrite(); }catch(e){}
         }
         if(_okw){
           try{ LearnShell.deleteFile('mgver_'+_ln); }catch(e){}
-          if(!_isPart && _k && _cv!=="?"){ CUR[_k]=_cv; try{ localStorage.setItem("hx_suite_ver", JSON.stringify(CUR)); }catch(e){} }
+          if(!_isPart && _k && _cv!=="?"){ CUR[_k]=_cv; try{ localStorage.setItem("hx_suite_ver", JSON.stringify(CUR)); }catch(e){} try{ var _fx4=JSON.parse(localStorage.getItem("hx_cur_fix")||"{}"); _fx4[_k]=_cv; localStorage.setItem("hx_cur_fix", JSON.stringify(_fx4)); }catch(e){} /* v1.20.1（2026-10-14 班⑨救火，装循环根治，SPEC_index_v1.20.1，DS实现+Kimi终审亲手落地）*/ }
           _done.push(_ln.replace(".html","").replace(".js","")+"→v"+_cv);
         }else{ _fail.push(_ln); }
         setTimeout(function(){ _installOne(idx+1); }, 50);
