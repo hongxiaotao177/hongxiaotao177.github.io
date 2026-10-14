@@ -1,12 +1,12 @@
 {
  "v": 1,
- "t": 1791866114468,
+ "t": 1791942649476,
  "items": [
   {
    "key": "index",
-   "version": "1.19.11",
+   "version": "1.19.12",
    "dl": "index.html",
-   "sig": "e982a0fa36c60780"
+   "sig": "baffdab8757ec6e3"
   },
   {
    "key": "guanjia",
@@ -16,9 +16,9 @@
   },
   {
    "key": "hx-common",
-   "version": "0.22.0",
+   "version": "0.23.0",
    "dl": "hx-common.js",
-   "sig": "6dc4cc839ed34901"
+   "sig": "dcaa407dddb6ac03"
   },
   {
    "key": "tuomin",
@@ -33,5 +33,5 @@
    "sig": "c594a0d1fa1a3ee4"
   }
  ],
- "note": "hx-common v0.21.0（验收清单双腿三兜底，治「还没取到」，洪老师2026-10-13拍板）；其余不动"
+ "note": "hx-common v0.23.0（验收牌两档制+窄条显字）＋index v1.19.12（📦一键导出），洪老师2026-10-14拍板；其余不动"
 }
