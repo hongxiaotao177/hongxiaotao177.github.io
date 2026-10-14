@@ -2,6 +2,7 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.19.12 2026-10-14（班①，接管保险工程件②，洪老师拍板开工）：第一行加「📦 一键导出」钮——全localStorage+壳文件清单打成一个大txt下载，纯本地断网可导；其余一行未动。
     v1.19.11 2026-10-11（班①再续，洪老师真机三图取证：检查直播"脱敏单体已是最新v1.0.0"+复核照红）：
       病根=v1.19.9假记忆已写进手机账本hx_suite_ver.tuomin="1.0.0"，开门账本校准_sv>CUR就采纳→硬编码改"0"也被账本盖回=永不下载。
       治=账本校准让路：CUR[k]==="0"（壳里没这文件=实物铁证）时不许账本覆盖。一处判断，其余零动。
@@ -346,6 +347,7 @@
     <button class="tag" id="btnSyncTop" style="padding:12px 10px;border:none;cursor:pointer;"><!-- v1.11.0 padding微调=行高满44px -->🔄 同步</button>
     <!-- v1.10.0 洪老师拍板：「🔍 检查新版本」上第一行与🔄同步并列；功能=管理工具里同款（清标记+立hx_ver_manual+刷新重查），直播与复核结论在下方updLine；管理工具原按钮保留不动 -->
     <button class="tag" id="btnVerTop" style="padding:12px 10px;border:none;cursor:pointer;" onclick="try{sessionStorage.removeItem('hx_ver_checked');sessionStorage.setItem('hx_ver_manual','1');sessionStorage.setItem('hx_sj_skip_once','1');}catch(e){};var _st=document.getElementById('syncTopMsg');if(_st)_st.textContent='🔍 正在查新版本，请稍等…';updMsg('🔍 正在查新版本，请稍等…');setTimeout(function(){location.reload();},120);">🔍 检查新版本</button>
+    <button class="tag" id="btnExportAll" style="padding:12px 10px;border:none;cursor:pointer;" onclick="exportAllBackup()">📦 一键导出</button>
     <span id="syncTopMsg" style="font-size:13px;color:#8a8178;">不按它，绝不同步</span>
   </div>
 
@@ -533,6 +535,7 @@ CUR.index="1.19.8";
 CUR.index="1.19.9"; /* v1.19.9（2026-10-11班①）：脱敏间上户口，见顶部修改记录 */
 CUR.index="1.19.10"; /* v1.19.10：修脱敏间404（CUR.tuomin 1.0.0→0） */
 CUR.index="1.19.11"; /* v1.19.11：账本覆盖让路硬编码"0"，清tuomin假记忆 */
+CUR.index="1.19.12"; /* v1.19.12：自立导出钮，见顶部修改记录 */
 CUR.tuomin="0"; /* v1.19.10修404：CUR=壳内已装版本，单体手机还没装必须填"0"才会下载（CUR.ppt同款老坑，见230行） */ /* v1.19.8（2026-09-20班⑮，洪老师真机报"升级说装成功主界面还是19.6，几次都这样，没重启应该直接变19.7"）病根=班⑮发v1.19.7时新赋值插在同一行旧赋值前面，CUR.index="1.19.7"刚赋上就被同行的CUR.index="1.19.6"盖回→页脚活字永远亮1.19.6（文件真身早是新版，升级链/壳全无辜，大管家0.54.5上机为证）；还连带v1.19.5刀2开门自校对误把账本1.19.7当谎回滚→每次都提示重装。治=删同行可执行旧赋值（注释留档）+升号v1.19.8让真机重新下载。其余一行未动 */
 try{document.getElementById("ftVer").textContent=CUR.index;}catch(eF){} /* v1.19.6 页脚死字改活字：ftVer亮CUR.index真身 */
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
@@ -669,6 +672,44 @@ try{
 }catch(e){}
 
 function updMsg(t){ var el=document.getElementById("updLine"); el.style.display="block"; el.textContent=t; }
+/* v1.19.12 接管保险工程件②：一键导出一个大txt（===== 文件名 =====分隔），全程不联网 */
+function exportAllBackup(){
+  try{
+    var parts=[];
+    parts.push('学习套装一键导出\n导出时间：'+new Date().toLocaleString()+'\n说明：本文件=全家账本救命粮草，AI接班/换机/壳崩时用。每段以 ===== 文件名 ===== 分隔。\n');
+    /* ①全localStorage */
+    try{
+      for(var i=0;i<localStorage.length;i++){
+        var k=localStorage.key(i);
+        var v=''; try{ v=localStorage.getItem(k)||''; }catch(e){}
+        parts.push('===== localStorage: '+k+' =====\n'+v+'\n');
+      }
+    }catch(e){ parts.push('===== localStorage读取失败 =====\n'+e+'\n'); }
+    /* ②壳文件清单（已知真源件，读不到的跳过不报错） */
+    var files=['想法流水.txt','速记流水.txt','hxdata_hx_keys.json','hxdata_hx_chk.json','hxdata_hx_air.json','hxdata_hx_cards_v1.json','hxdata_hx_inbox_v1.json','hxdata_hx_patients.json','hxdata_hx_ppt_tasks.json','hxdata_xitixuexi_v01.json','hxdata_ppt_gongfang_v01.json'];
+    if(typeof LearnShell!=='undefined' && LearnShell && LearnShell.readFile){
+      for(var j=0;j<files.length;j++){
+        try{
+          var b=LearnShell.readFile(files[j]);
+          if(b){
+            var txt='';
+            try{ txt=decodeURIComponent(escape(atob(String(b).replace(/\s+/g,'')))); }catch(e2){ txt='（b64解码失败，原文附上）\n'+b; }
+            parts.push('===== 壳文件: '+files[j]+' =====\n'+txt+'\n');
+          }
+        }catch(e3){}
+      }
+    }else{
+      parts.push('===== 说明 =====\n本环境无壳文件桥（浏览器里导出），只有localStorage部分。\n');
+    }
+    var blob=new Blob([parts.join('\n')],{type:'text/plain;charset=utf-8'});
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='学习套装导出_'+new Date().toISOString().slice(0,10)+'.txt';
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ try{ URL.revokeObjectURL(a.href); a.remove(); }catch(e){} },2000);
+    try{ if(typeof updMsg==='function') updMsg('📦 导出完成，文件在下载里找'); }catch(e){}
+  }catch(e){ try{ if(typeof updMsg==='function') updMsg('⚠️ 导出没成：'+e); }catch(e2){} }
+}
 /* v1.12.0 公共件收编：cmpVer 改调 HX.cmpVer（HX不在时回落原实现，不崩） */
 function cmpVer(a,b){
   if(window.HX && HX.cmpVer){ try{ return HX.cmpVer(a,b); }catch(e){} }
