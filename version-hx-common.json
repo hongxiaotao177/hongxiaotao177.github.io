@@ -1,6 +1,6 @@
 {
- "version": "0.24.0",
+ "version": "0.24.1",
  "dl": "hx-common.js",
- "note": "黑匣子HX.bb（动作/报错记账+🔴当场传⚪闲时传+🆘强推钮）+验收牌弹窗销号防打扰闸+取消开门静默令（hx_auto_net='0'回退），洪老师2026-10-14拍板，DS实现+Kimi终审（翻案1处：sjToast作用域）",
- "sig": "074bdcf3af429463"
+ "note": "HX.bb开门收编壳侧车hxdata_hx_blackbox_shell.json（配壳vc56黑匣子三样：开门/崩溃/网页报错），洪老师2026-10-14拍板，DS实现+Kimi终审（翻案2处：DS漏bbInstallCrash本体+Kimi设计笔误MessageType翻MessageLevel）",
+ "sig": "85116f48ebec50fa"
 }
