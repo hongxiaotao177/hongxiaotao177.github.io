@@ -83,7 +83,57 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 (function(){
   'use strict';
-  var HX_COMMON_VERSION = '0.24.5';/* v0.24.5（2026-10-15 洪老师真机报「点保存弹没钥匙想法没上传」，拍板方案A+B一次做掉，SPEC_钥匙不断_v0.24.5_vc58；DS API繁忙/超时照班⑩先例Kimi工兵代跑如实报备）：钥匙不断四刀——刀1 _saveFile合并式写真源（写前先读旧真源，kimi/qwen/gh/dav缺字段从旧继承防盖没，deepseek纯继承）刀2 _loadFile认dav/deepseek 刀3 dav() localStorage空时读真源回填hx_dav_user/hx_dav_pass（照gh()样式）刀4 warm()触发条件加dav缺失、refill()加gh()/dav()触发回填；配套壳vc58埋钥胚hx_keys_seed.txt；红线HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold/HX.chk IDENTICAL，HX.keys除本四刀申报点外IDENTICAL */ /* v0.24.4（2026-10-15 班⑩，洪老师真机报「窄条盖住页脚+一直在那里不变化」，DS钥匙不在手边照10-12班⑤先例Kimi工兵代跑如实报备）：刀A窄条显示期间body底部垫54px页脚让路（藏起即复原）；刀B窄条右端加「—」收小钮→收成右下角小圆牌（验收+未绿任务数，点圆牌叫回，hx_chk_mini=1跨开门记住），收小照跑侦测数字照变；「不变化」查明=下一小步是手动验收步在等人点✓非死机；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold IDENTICAL，HX.chk除本版申报四处外IDENTICAL */ /* v0.24.3/* v0.24.3（2026-10-14 班⑥下半场，洪老师两连拍板「圆点改数字」「黑框关不掉治」，SPEC_v0.24.3，DS实现+Kimi终审翻案1处亲手落地：DS刀B的cssText误写驼峰fontSize翻font-size）：刀A窄条圆点串改未绿任务数（省版面留给句子）；刀B黑框关不掉根治——X5/老WebView不认pointerdown，hxToastHold监听一路变三路（pointerdown/touchstart/mousedown，capture，off里三路全摘），✕钮加挂touchstart+点击面加大padding4px10px字号16px；红线其余全模块IDENTICAL，hxToastHold除刀B申报点外IDENTICAL */ /* v0.24.2（2026-10-14 班⑥，洪老师拍板「先干这个」，SPEC_v0.24.2_F1F3F4，DS实现+Kimi终审翻案1处亲手落地：DS刀6误用不存在的stepDone翻stepGreen；另修刀3旧注释留痕）：F1面板钮排两行（flex-wrap+flex:1 1 28%）；F3c刀2撤销（洪老师拍板：黑框要常驻点✕才关看得清，他报的毛病是「✕完全关不掉」要治关不掉——列入下班F3g）；F3d记下成功自动关面板（照appendLast先例，失败不关）；F3a回收站入口sticky固定下缘；F3e确认条加第三钮「✕先别问」=冷却30分钟不累计封口；F4窄条说人话「还有N步没验·下一小步：××」+圆点串前加「验收」小字；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.bb/hxToastHold IDENTICAL，HX.sj除刀1~4申报点外IDENTICAL，HX.chk除刀5刀6外IDENTICAL */ /* v0.24.1（2026-10-14 班④，洪老师拍板批2壳侧黑匣子，SPEC_壳侧黑匣子_vc56，DS实现+Kimi终审）：HX.bb开门收编壳侧车hxdata_hx_blackbox_shell.json——非空数组并入主账按t升序裁300、双写、侧车清成[]；hx_bb_off=1不收编；红线=除HX.bb本版申报一处加法外全模块IDENTICAL *//* v0.24.0（2026-10-14 班③，洪老师拍板，SPEC_v0.24.0_黑匣子+弹窗销号+取消静默令，DS实现+Kimi终审）：①新增HX.bb黑匣子（环形300条{时间,app,k,m}，localStorage hx_bb_log+壳真源hxdata_hx_blackbox.json双写，自动钩window.onerror/unhandledrejection/click按钮，k=err立刻整份PUT仓根「黑匣子.txt」，⚪条60秒对账有变才推，总开关hx_bb_off=1全退休）②弹窗销号：HX.chk侦中不再直接变绿，弹底部确认条「这步看着是做好了：××」两钮「✓是好了」「还没」，点✓才markGreen；防打扰=点「还没」冷却30分钟、同一步问满3次本期清单不再问、一次只问一条、ver变问账清 ③sj面板加🆘传黑匣子钮=HX.bb.flush(true)强推 ④取消开门静默令：HX._autoNetOk默认放行，hx_auto_net='0'回老样子（3秒内真点击才放行），manual===true照放行，HX.setAutoNet不动；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/hxToastHold IDENTICAL，HX.sj除本版申报两处加法外IDENTICAL，HX.chk除本版申报三处外IDENTICAL */ /* v0.23.0（2026-10-14 班①，洪老师拍板开工，SPEC_v0.23.0_验收牌两档制+窄条显字，DS实现+Kimi终审）：①清单任务认lane:"sim"仿真档——圆点串/curStep/allDone/detect四处跳过，整屏页灰行「🤖仿真已验」不展开无点绿钮；缺省=日常档照旧 ②窄条字=任务标题·步骤文字，15px→13px；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/hxToastHold IDENTICAL，HX.chk除本版申报7块外IDENTICAL */
+  var HX_COMMON_VERSION = '0.25.0';/* ═══════════════════════════════════════════════════════════════════════════
+   v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减负——壳领着洪老师一步一步验，
+   点亮弹窗问「行吗」，他只管点行/不行；能自己判的绝不问人；结果写成验收单自动传上网，
+   Kimi接班云侧销号。
+   启动规矩（洪老师2026-10-15拍板对齐）：
+     ①装完新版开门自动来问一次「现在验？」
+     ②主界面+管家各放「🧪真机验收」手动入口=整屏清单页加「🧪向导验」钮
+     ③中途退出下次开门再问，连问3次没验完就不再烦，留清单
+     ④全绿后永不再弹。
+   ── 本版只动 HX.chk 模块 + 版本行，其余模块红线 IDENTICAL 一行未碰 ──
+   刀A 向导模式 wiz（HX.chk内新增，复用现有骨架）：
+     · 整屏清单页顶部加「🧪 向导验（我来领着你验）」大钮，点它进向导。
+     · 向导=按清单顺序逐条走未绿步：
+         - 步骤带 auto → 照跑现有 autoHit 侦测，中=复用现有 askConfirm 确认条（点✓才markGreen）。
+         - 步骤带新字段 spot:"CSS选择器" → 点亮目标：亮黄#FFD600 4px描边+圆角+1秒两闪（动画停后描边常亮），
+           同时弹大黑框问「看得见【步骤大白话】吗？」三钮「✓行」「✗不行」「🔄再亮一次」
+           （✓/✗大至少20px字、padding 14px+，照洪老师看得清规矩）。黑框常驻点钮才关（hxToastHold样式，绝不自动消失）。
+           ✓行=markGreen进下一步；✗不行=HX.bb记一条{k:'wiz',m:'挂号:'+taskId+'/'+stepId+':'+步骤标题}
+           ＋该步标灰「已挂号」不算绿不算卡，进下一步；🔄再亮一次=重播点亮。
+         - 无spot无auto的手动步 → 维持现状「✓这步好了」钮，向导里直接弹同一步骤文字+「✓这步好了/跳过」两钮。
+         - 点亮overlay=fixed全屏透明层（pointer-events:none）+目标getBoundingClientRect描边盒；
+           目标不在本页/找不到→不亮，直接弹问句（洪老师在哪个软件验都行）。
+     · 向导走完弹总结黑框「验收完了：过X项，挂号Y项，已传上网」点✕关。
+     · 中途退出：黑框随时有「✕先验到这」；进度照走现有 hx_chk_prog，下次开门/点🧪接着走。
+     · 开门自动问：HX.chk闲时侦测发现「有未绿步 且 本地无wiz问过3次记录（hx_chk_wiz_n）」
+       →弹一次大黑框「这版有X步要您过眼，现在验？」两钮「开始验／待会儿」；
+       每弹一次hx_chk_wiz_n+1，满3次或全绿后永不再弹；ver变（清单换版）hx_chk_wiz_n清零重新计。
+     · 总开关 hx_chk_wiz_off=1 向导全退休，老验收牌行为一字不动。
+   刀B 自报验收单（HX.chk内新增函数 pushReport）：
+     · 进度有变化（markGreen/挂号）后闲时（过HX._autoNetOk闸门）把验收单PUT出去，
+       走现有pushProg同款双腿（云仓api/contents→坚果云兜底），失败静默下回补，绝不打扰。
+     · 仓根+坚果云「验收单.json」内容={ver:清单ver, t:时间戳, dev:'真机',
+       rows:[{id:'t21', st:{s1:1|2|0}}...]}（1=绿过 2=挂号 0=未验），
+       顺带带壳版本localStorage hx_shell_vc（没有就不带）。
+     · Kimi接班时读验收单+黑匣子+牌子，A档云侧销号——这条是Kimi交班规矩，不写码。
+   刀C 清单格式扩（验收清单.json，Kimi发版时同步改仓根，不动码）：
+     · step新增可选字段：spot（选择器，点亮用）、lane:'eye'（必须人眼）/'auto'（机判）。
+       老格式全兼容，无新字段照老行为。
+     · 分档定案（本SPEC附件，发版时照此改清单）：
+         t21三条/t17s1/t16s1s3/t15s1/t14s1s3s5=eye+spot；
+         t20s2/t19s1/t17s2/t15s2/t14s2s4/t10/t5s2/t4/t6/t3/t7/t2=auto配侦测器；
+         t13/t19s2/t20s1/t8s2/t16s2=A档云侧（清单里标lane:'cloud'，向导跳过不问，Kimi核）；
+         t11/t12改标lane:'watch'长期观察哨不占未验数。
+   红线清单（IDENTICAL，一行未碰）：
+     HX.keys / HX.air / HX.pick / HX.mg / HX.store / HX.dav / HX.gh / HX.bill /
+     HX.step / HX.selfUp / HX.fm / HX.ai / HX.sj / HX.bb / hxToastHold。
+   本版自己的验收单（t22置顶）：
+     ①开门弹「现在验？」②点🧪进向导，点亮黄描边看得见③✓行变绿✗不行挂号
+     ④验收单.json仓根+坚果云回读一致⑤连问3次后不再弹。
+   ═══════════════════════════════════════════════════════════════════════════ */
+/* v0.24.5（2026-10-15 洪老师真机报「点保存弹没钥匙想法没上传」，拍板方案A+B一次做掉，SPEC_钥匙不断_v0.24.5_vc58；DS API繁忙/超时照班⑩先例Kimi工兵代跑如实报备）：钥匙不断四刀——刀1 _saveFile合并式写真源（写前先读旧真源，kimi/qwen/gh/dav缺字段从旧继承防盖没，deepseek纯继承）刀2 _loadFile认dav/deepseek 刀3 dav() localStorage空时读真源回填hx_dav_user/hx_dav_pass（照gh()样式）刀4 warm()触发条件加dav缺失、refill()加gh()/dav()触发回填；配套壳vc58埋钥胚hx_keys_seed.txt；红线HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold/HX.chk IDENTICAL，HX.keys除本四刀申报点外IDENTICAL */ /* v0.24.4（2026-10-15 班⑩，洪老师真机报「窄条盖住页脚+一直在那里不变化」，DS钥匙不在手边照10-12班⑤先例Kimi工兵代跑如实报备）：刀A窄条显示期间body底部垫54px页脚让路（藏起即复原）；刀B窄条右端加「—」收小钮→收成右下角小圆牌（验收+未绿任务数，点圆牌叫回，hx_chk_mini=1跨开门记住），收小照跑侦测数字照变；「不变化」查明=下一小步是手动验收步在等人点✓非死机；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold IDENTICAL，HX.chk除本版申报四处外IDENTICAL */ /* v0.24.3/* v0.24.3（2026-10-14 班⑥下半场，洪老师两连拍板「圆点改数字」「黑框关不掉治」，SPEC_v0.24.3，DS实现+Kimi终审翻案1处亲手落地：DS刀B的cssText误写驼峰fontSize翻font-size）：刀A窄条圆点串改未绿任务数（省版面留给句子）；刀B黑框关不掉根治——X5/老WebView不认pointerdown，hxToastHold监听一路变三路（pointerdown/touchstart/mousedown，capture，off里三路全摘），✕钮加挂touchstart+点击面加大padding4px10px字号16px；红线其余全模块IDENTICAL，hxToastHold除刀B申报点外IDENTICAL */ /* v0.24.2（2026-10-14 班⑥，洪老师拍板「先干这个」，SPEC_v0.24.2_F1F3F4，DS实现+Kimi终审翻案1处亲手落地：DS刀6误用不存在的stepDone翻stepGreen；另修刀3旧注释留痕）：F1面板钮排两行（flex-wrap+flex:1 1 28%）；F3c刀2撤销（洪老师拍板：黑框要常驻点✕才关看得清，他报的毛病是「✕完全关不掉」要治关不掉——列入下班F3g）；F3d记下成功自动关面板（照appendLast先例，失败不关）；F3a回收站入口sticky固定下缘；F3e确认条加第三钮「✕先别问」=冷却30分钟不累计封口；F4窄条说人话「还有N步没验·下一小步：××」+圆点串前加「验收」小字；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.bb/hxToastHold IDENTICAL，HX.sj除刀1~4申报点外IDENTICAL，HX.chk除刀5刀6外IDENTICAL */ /* v0.24.1（2026-10-14 班④，洪老师拍板批2壳侧黑匣子，SPEC_壳侧黑匣子_vc56，DS实现+Kimi终审）：HX.bb开门收编壳侧车hxdata_hx_blackbox_shell.json——非空数组并入主账按t升序裁300、双写、侧车清成[]；hx_bb_off=1不收编；红线=除HX.bb本版申报一处加法外全模块IDENTICAL *//* v0.24.0（2026-10-14 班③，洪老师拍板，SPEC_v0.24.0_黑匣子+弹窗销号+取消静默令，DS实现+Kimi终审）：①新增HX.bb黑匣子（环形300条{时间,app,k,m}，localStorage hx_bb_log+壳真源hxdata_hx_blackbox.json双写，自动钩window.onerror/unhandledrejection/click按钮，k=err立刻整份PUT仓根「黑匣子.txt」，⚪条60秒对账有变才推，总开关hx_bb_off=1全退休）②弹窗销号：HX.chk侦中不再直接变绿，弹底部确认条「这步看着是做好了：××」两钮「✓是好了」「还没」，点✓才markGreen；防打扰=点「还没」冷却30分钟、同一步问满3次本期清单不再问、一次只问一条、ver变问账清 ③sj面板加🆘传黑匣子钮=HX.bb.flush(true)强推 ④取消开门静默令：HX._autoNetOk默认放行，hx_auto_net='0'回老样子（3秒内真点击才放行），manual===true照放行，HX.setAutoNet不动；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/hxToastHold IDENTICAL，HX.sj除本版申报两处加法外IDENTICAL，HX.chk除本版申报三处外IDENTICAL */ /* v0.23.0（2026-10-14 班①，洪老师拍板开工，SPEC_v0.23.0_验收牌两档制+窄条显字，DS实现+Kimi终审）：①清单任务认lane:"sim"仿真档——圆点串/curStep/allDone/detect四处跳过，整屏页灰行「🤖仿真已验」不展开无点绿钮；缺省=日常档照旧 ②窄条字=任务标题·步骤文字，15px→13px；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/hxToastHold IDENTICAL，HX.chk除本版申报7块外IDENTICAL */
  /* v0.22.0（2026-10-13 班③，洪老师拍板「三个并行开工」，SPEC_hx-common块=挂B+A1，千问实现+Kimi终审补漏亲手落地）：挂B=save()记下成功后清空输入框ta.value=''（治真机「旧话躺框里消不了」）；A1=📜翻看整屏页加🗑回收站（有盖章条才出，展开列盖章时间+去章原文，「↩救回」=新函数sjRescueLine去行首🗑章回原位，清uplocal逼重推+顺手上行，照sjStampLine先例）；终审逮千问漏交sjRescueLine+漏显示盖章时间两处亲手补。红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/hxToastHold/HX.chk IDENTICAL，HX.sj除save一行+sjShowBrowse回收站段+新增sjRescueLine外IDENTICAL */ /* v0.21.0（2026-10-13 班②，洪老师真机报「清单还没取到」，Kimi定稿SPEC_v0.21.0_验收清单双腿，DS实现+Kimi终审亲手落地翻案2处）：病根=清单只走raw裸域名国内时断时续；改=HX.dav纯加dv.downFile（davCall('down')+readFile+b64dec）腿①坚果云 + HX.chk fetchList双腿三兜底（①坚果云②云仓api/contents③老raw垫底，全败有缓存用缓存，manual toast带腿名）；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/hxToastHold/HX.sj IDENTICAL，HX.dav除新增downFile纯加法外IDENTICAL，HX.chk除fetchList与版本行外IDENTICAL */ /* v0.20.0（2026-10-12 班⑤ Kimi定稿SPEC，洪老师拍板「做窄条面板，其他的按你的意思，开工」，SPEC_v0.20.0_验收牌，DS实现）：新增HX.chk验收牌——sj面板加✅验收钮→点出屏幕底窄条面板（圆点串+当前步骤一行字+▲，不挡底下操作）→点窄条/验收钮展开整屏清单（任务→步骤两级，一行一步大白话，做成一行绿一行，无auto步骤右端「✓这步好了」钮标绿）；清单真源=仓根「验收清单.json」（HX.gh.fetch raw拉取+hx_chk_list缓存，ver变了旧taskId进度整个作废），进度本机记账（hx_chk_prog+壳真源hxdata_hx_chk.json双写）+闲时PUT仓根「验收进度.json」（hx_chk_uplocal镜像对账不重复推）；内置三种auto侦测器（sj_uploaded/file_exists/key_set，窄条显示期间每5秒跑未绿步）；总回退hx_chk_off=1模块全退休；文本一律textContent防注入；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/hxToastHold IDENTICAL，HX.sj除申报两处（按钮HTML串+bind一行）IDENTICAL */ /* v0.19.0（2026-10-12 班②，千问试工第1单·多线程串行试工，洪老师拍板「快发过去吧以后自动化」）：HX.sj加📜翻看第一刀——面板加📜翻看钮→整屏页列全部想法（最新在上全文不截断）+每条✕盖章不真删（行首加🗑[YYYY-MM-DD HH:MM]前缀原文一字不动，平时不显示）；回收站救回/30天真删留后续刀；千问出活2处致命（闭包外inline onclick）1处漏交（容器CSS），Kimi终审亲手落地返工：全部改textContent+addEventListener防注入；其余红线一行未动 */ /* v0.18.1（2026-10-12 班⑦，洪老师拍板「其他的方法同意你的选择开工」+toast新任务，SPEC_v0.18.1，DS实现+Kimi终审亲手落地翻案3处）：刀1速记GitHub钥匙不断（_saveFile/_loadFile真源加gh三件套、gh()空时读真源回填hx_gh_tok/user/repo、sjGhKeys改调HX.keys.gh()删重复轮子、warm触发加gh缺失） 刀2流水文件名「速记流水.txt」→「想法流水.txt」（SJ_FILE常量+sjReadFlow新名优先旧名兜底、写只写新名、旧名不删不迁移、HX.fm过滤名单双名） 刀3记下上行失败弹明白话（sjUpload(fromUser)，闲时补推静默照旧） 刀4toast不自动消失（新顶层hxToastHold：✕钮+点页面别处才消失、350ms后挂监听防同击吞掉、hide自摘监听【终审修】、总开关hx_toast_sticky_off=1回老样；bill.toast/warm toast/sjToast/pkToast四处同改，sjToast改innerHTML重建保复用元素）；终审另修save里sjUpload重复调用一处、版本号留痕DS漏了亲手补 */ /* v0.18.0（2026-10-12 班⑤，洪老师拍板「同意开工」，SPEC_AI总台，DS实现+Kimi终审亲手落地）：新增HX.air总台（三家点名册Kimi花名册免费探活/DS/千问小包探活、账本hxdata_hx_air.json壳真源+localStorage缓存、开门闲时巡检过_autoNetOk闸门、gate/pick/ok/report问路口、军规例外可直发可读钥匙不碰宿主账本、回退hx_air_off=1）+AI面板状态条renderAirBar（亮牌行下三家✅/❌+时间+📡重测）；红线HX.keys/HX.sj/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm IDENTICAL，HX.ai除本刀申报点外IDENTICAL */ /* v0.17.0 2026-09-24 班②一期（洪老师拍板「开工」，配套大管家v0.56.8，两刀）：刀H1面板第一层平铺化（缺省开：想干什么点一个就发，每套提示词一个大钮+钮右小字带料标签matLabel，自建末尾「我自建的」分组暖色底+升舱徽章；回退开关localStorage hx_ai_flat_off=1走老两层，renderL1老本体/renderL2全保留；openEdit平铺下直调renderPEdit，editHooks容器#hxAiHostBtns契约不动） 刀H2自建模板升舱字段（hx_aiext_v1条目扩baseId关联出厂套/wantShibu申请收编，renderExtEdit加出厂套下拉+📮申请收编钮，老条目undefined兜底，账本键与JSON格式不动，老localStorage账本不迁移不清洗）；其余一行未动 */ /* v0.16.4 2026-09-23 班·批改病历③：刀1 HX.pick点亮长效（洪老师2026-09-23班③拍板：30秒太短，点亮翻菜单翻半分钟就灭）——撤30秒有效期判定+30秒自动灭定时器，点亮后一直有效直到点亮别的件或手动取消；亮牌行点亮文字旁加小「✕」=清账本+亮牌消失+toast「已取消点亮」；点亮随行发AI老行为不变；账本格式不动，其余一行未动 */ /* v0.16.3 2026-09-23 班·批改病历：刀A新增HX.ai.openEdit(id,idx)（open进第2层后模拟该套按钮现有点击链进编辑页）刀B编辑页加div#hxAiHostBtns容器+宿主钩子opt.editHooks(itemId,idx,api={getText,setText,saveNow同hxAiSaveP存储链,itemId,idx})，不传钩子容器留空版面同老版；纯加法其余一行未动 */ /* v0.16.2 2026-09-19：刀D云端取回（只下不上，一次性救援腿）——HX.keys新增warm()：本地没key时开门自动从坚果云/私有仓读回hxdata_hx_keys.json落真源再灌回localStorage，永不主动上传；其余一行未动 */ /* v0.16.1 2026-09-19：AI钥匙反复丢两刀（刀A Key落壳文件真源hxdata_hx_keys.json换端口不丢+get/getQwen空时回填；刀C AI面板4处守卫改当场填钥匙浮层aiAskKey），其余一行未动 */ /* v0.16.0 2026-09-19 班⑦（洪老师拍板"开工"，AI面板四刀）：刀A自建条目带点亮病历（init新钩子litText由宿主供脱敏后文本，HX.pick有效则usr附【点亮文件：fname】，没点亮toast提醒照发不带材料；宿主没接钩子自动回落老useSel选中文字/（无资料）） 刀B「＋加AI功能」改AI代写流（①名字②人话要求→宿主send请AI写提示词→过目页可改/🔄重写/✅才存/❌弃；AI通道或Key不在回落手填提示词老路）+自建条目第2层补✏️改/🗑删两钮（删前人话confirm） 刀C固定套编辑页加「🤖让AI帮我改这套」（现话+人话要求→AI新稿只进编辑框过目，💾存为默认才算数，AI不直接落账） 刀D换心两钮「📥自建的灌进来」「🤖照自建的让AI改」（小浮层挑自建不盖编辑框，结果同样只进框，恢复出厂兜底，出厂原文一字不动）；账本键hx_aiext_v1/hx_aiprompt_v1与合并规矩、其他零件一行未动 */ /* v0.15.2 2026-09-19 班⑥（挂号#128，洪老师17:01/17:02真机截图报"浮窗选图后输入框被隐藏在顶端"，拍板"开工"）：病根=面板fixed钉在屏下150px，而开面板自动focus+选图回来焦点还在框上→键盘自弹→X5把页面上推→钉住的面板被顶出可视区只剩顶边。治=①开面板不再自动focus（点输入框才弹键盘）②挂图成功主动blur放下焦点；面板结构/挂图/上行/其余零件一行未动 */ /* v0.15.1 2026-09-18 班③（挂号E，洪老师拍板）：AI面板第2级提示词套行改明显大钮（.hxAiPromptBtn：▶图标+边框+圆角+绿系底色，照.hxAiGo绿色系），只改renderL2渲染HTML+CSS字符串，逻辑不动 */ /* v0.15.0 2026-09-18（洪老师08:10速记拍板）：HX.sj面板加「↩ 补充上一条」钮——点钮弹最近3条速记列表（相对序+时间+前两行预览，壳文件「速记流水.txt」为主、localStorage现行镜像键hx_sj_uplocal兜底，不新建平行账本），点条=原文整行回填进输入框接着加字，「记下」走原save=新增一条（铁律17原条不动）；✕/点面板空白关列表无副作用；空=toast「还没有速记可补」；附图/上行/extraBtn等其他零件一行未动 */ /* v0.13.2 2026-09-16 班④：洪老师拍板"把这个多余的命令取消掉"——开门闲时8秒速记上行认 hx_sj_skip_once 标记（主界面v1.19.1「检查新版本」按钮所立）跳过本次，查版本刷新不再带出速记流水.txt上行；「记下后上行」等其他入口一行未动 */ /* v0.13.1 2026-09-16 班③：查版本归管家一家——有管家的壳里HX.selfUp开门自查退休（管家每日闲时统一查装+验暗号），没管家的老壳/浏览器照旧；其余一行未动 */ /* v0.13.0 2026-09-16 班① 第5条：新增长按点亮零件 HX.pick（hx_pick_v1账本+30秒自动灭+触摸鼠标两路长按）+ HX.ai面板顶部亮牌行；其余一行未动 */ /* v0.12.2 2026-09-15（挂号#95，洪老师真机报"速记取图后点输入框又跳图库、不显示取图成功"）：病根=X5壳侧fileChooser回调悬挂在常驻隐藏input上无法自愈，下个手势重放弹图库+saveImg重活链断无回执——①📷取图改每次临时造input用完即弃 ②选图在途闸防重弹（focus+30秒超时兜底复位） ③saveImg改createObjectURL优先+15秒看门狗超时报明白话；其余一行未动 */ /* v0.12.1 2026-09-15（挂号#104，洪老师真机报"U盘病历一个没显示+进到深层回不到上一层"）：HX.fm专修——①文件排序改按修改时间新→旧（实锤：壳侧按名排，中文名病历全沉到套装hxdata_*等英文名件后面，翻不到就当没有；新拷的病历时间最新，直接浮顶），文件夹仍在前；②空名/乱码名件不再哑巴，标「（名字读不出）」照列；③列表顶部加小字「本层共N项」（搜索时「搜到N项」）让他知道看没看全；④面包屑行🏠旁加显眼「⬅返回上一层」钮，有上级即亮，点=回父目录；面包屑回跳改走浏览足迹栈（旧法按"/"拼路径，SAF的safdoc://URI里全是斜杠，点中段必坏——实锤修掉）；⑤pick加opt.hideKit=true时过滤套装自有件（hxdata_*.json、hx-common*.js、guanjia-pdf-engine.js、version-*.json、速记流水.txt、mg_开头、mgver_开头、sjimg_开头、原文库_开头、dsm_开头，文件夹照列），默认false不动其他场景；⑥folder模式底部加「＋在此新建文件夹」钮（壳v1.8.4新fmMkdir桥，X5里prompt不稳，用行内小浮层输名字）；其余一行未动 */ /* v0.12.0 2026-09-15：新增HX.fm手机文件夹逛一逛（壳全盘文件桥六桥+ensure权限引导浮层+pick全屏仿资源管理器+read封装Promise）；其余一行未动 */ /* v0.11.1 2026-09-14：速记📷附图改两步走（挂号#94，洪老师真机验收报「选完图浮窗被关掉没法输说明、图跑哪去不知道」，拍板A+B都做）——①选图不再立刻记行/关面板：压图存壳后面板挂一行「🖼已挂图 sjimg_xxx.jpg（✕可撤销）」，可继续打字补说明，点「记下」图和话一起进流水（save原逻辑未动，只认sjPendImg）；②回执明白话：记下提示图存手机壳文件名+联网传坚果云/学习套装数据/速记图/，上传成功流水行图名后补☁（sjImgUpload出队时回写）；✕撤销=清挂图+出队+删壳文件；其余一行未动 */ /* v0.11.0 2026-09-14：AI面板第2级提示词可改可存（挂号#79，洪老师拍板"不搞三级菜单，就两级，点进去就是几套预设提示词，可改可储存"）——条目带prompts时，第2级点某套进编辑页（全文可改+▶用这套发送+💾存为默认+↩恢复出厂）；改过的存覆盖账本hx_aiprompt_v1.<app>（出厂原文一个字不动，恢复出厂=删覆盖）；宿主函数发送前一句HX.ai.pget(id,idx)查覆盖（乙路，不改送不进去）；条目可带pget/pset/preset钩子接管存储（如大管家问AI接管它自己的hx_gj_askai_v1老账本）；新增HX.ai.pget公开口；其余一行未动 /* v0.10.0 2026-09-14：安心条HX.step（顶部细进度条+两行小字，愣住定格定位，洪老师拍板全家统一）+速记📷附图（压图存壳文件夹sjimg_*+行尾挂图+坚果云/学习套装数据/速记图/上传排队）；其余一行未动 /* v0.9.1 2026-09-14：HX.store.sync批量抱回（壳v1.7.3 readFiles桥）——多件对账一次JNI全读回，免逐件SAF往返卡主线程（洪老师真机报"点大管家变蓝后定住"，病根=5本账本连环读各约2秒）；旧壳无readFiles自动回落逐件读，逻辑一字未改 /* v0.9.0 2026-09-13：常驻通信管家双通道（洪老师拍板一次做完）——新增HX.mg投信层（壳v1.7.0管家在则GitHub联网写信mg_out_给后台服务代发+回信mg_in_轮询取，网页线程不碰网络；管家不在自动走老fetch，全家零改动）+HX.big大件异步编解码（TextEncoder/Decoder分块让气，无则回落老同步）；改道点=gh.fetch一个收口；_autoNetOk闸门规矩不变 /* v0.8.0 2026-09-13：开门静默令（洪老师拍板：开门不许自动同步/不许自动查版本，点了才做）——全家自动联网（dav rescue/mirror、relay闲时送与pull、selfUp、selfCheck、速记开门补推）统一过HX._autoNetOk闸门：默认全关，3秒内真有点击（=点了按钮）或localStorage hx_auto_net=1才放行；新增HX.syncNow()一件全手动补做；本地存取（HX.store/localStorage/壳文件）不联网不受影响；其余一行未动 /* v0.7.0 2026-09-12：HX.dav全异步化（根治#75/#77同步联网卡死主线程）——走壳v1.6.0新davAsync后台桥+HX._davCb回调，ts对账逻辑一行未改；旧壳没davAsync一律静默跳过绝不回退同步老路，壳升级后自动恢复 */ /* v0.6.0 2026-09-12 地基二期：HX.dav的rescue升级为ts对账（云端新超5秒留档_冲突_后盖回/本地新或相等顺手davUp追平/云端缺顺手davUp补齐） */ /* v0.5.0 2026-09-12：新增中转邮路HX.relay+坚果云腿HX.dav */ /* v0.4.0 2026-09-12：新增仓管员HX.store，地基工程一期规矩A/B落地 */ /* v0.3.0 2026-09-11：部件自升级HX.selfUp（病根：壳里旧版公共件永远不升级→AI面板等新功能装了也白装；开门闲时20秒比对云端version-hx-common.json，旧了静默下载写回授权文件夹，下次开门用新的，全程不弹窗） */ /* v0.2.0 2026-09-11：新增HX.ai统一AI面板（两层结构+定位置顶+AI功能生成器，洪老师2026-09-11拍板方法论落地试点）；HX.sj面板加「🤖AI」入口钮；其余一行未动 */ /* v0.1.1 2026-09-10：HX.sj.init 加可选 extraBtn（大管家#43「补充上一条」补回，洪老师点名功能）；不传仍是2钮版，默认行为不变 */
   if(window.HX && window.HX.HX_COMMON_VERSION){ return; } /* 已装过不重复装 */
   var HX = { HX_COMMON_VERSION: HX_COMMON_VERSION, ok: true };
@@ -1203,12 +1253,15 @@
     var FILE_NAME = 'hxdata_hx_chk.json'; /* 进度壳真源 */
     var LIST_URL = 'https://raw.githubusercontent.com/hongxiaotao177/xuexi-backup/main/验收清单.json'; /* 照HX.keys warm腿②先例 */
     var PROG_FILE = '验收进度.json'; /* 仓根进度文件 */
+    var REPORT_FILE = '验收单.json'; /* v0.25.0 刀B：自报验收单仓根文件 */
+    var LS_REPORT_UP = 'hx_chk_report_up'; /* v0.25.0 刀B：验收单上行镜像 */
     var _list = null;   /* 当前清单对象 {ver,tasks:[...]} */
     var _openT = {};    /* 整屏页里展开的任务id */
     var _timer = null;  /* 窄条显示期间5秒侦测定时器 */
     var _booted = false;
 
     function _off(){ try{ return localStorage.getItem('hx_chk_off')==='1'; }catch(e){ return false; } }
+    function _wizOff(){ try{ return localStorage.getItem('hx_chk_wiz_off')==='1'; }catch(e){ return false; } } /* v0.25.0 刀A：向导总开关 */
     function $(id){ return document.getElementById(id); }
 
     /* b64 编解码——照 HX.air 同款 */
@@ -1287,12 +1340,25 @@
         for(var tid in p){ if(keep[tid]) np[tid]=p[tid]; else hit=true; }
         if(hit) saveProg(np);
         try{ localStorage.removeItem('hx_chk_ask'); }catch(e){} /* v0.24.0 ver变问账清：旧问账作废 */
+        /* v0.25.0 刀A：ver变（清单换版）hx_chk_wiz_n清零重新计 */
+        try{
+          var vNow = String((_list && _list.ver)||'');
+          var vOld = '';
+          try{ vOld = localStorage.getItem('hx_chk_wiz_ver')||''; }catch(e){}
+          if(vNow !== vOld){
+            try{ localStorage.removeItem('hx_chk_wiz_n'); }catch(e){}
+            try{ localStorage.setItem('hx_chk_wiz_ver', vNow); }catch(e){}
+          }
+        }catch(e){}
       }catch(e){}
     }
 
     /* ---- 进度判断 ---- */
     function isSim(t){ try{ return !!(t && String(t.lane||'')==='sim'); }catch(e){ return false; } } /* v0.23.0：仿真档判定 */
+    function isCloud(t){ try{ return !!(t && String(t.lane||'')==='cloud'); }catch(e){ return false; } } /* v0.25.0 刀C：A档云侧，向导跳过不问 */
+    function isWatch(t){ try{ return !!(t && String(t.lane||'')==='watch'); }catch(e){ return false; } } /* v0.25.0 刀C：长期观察哨，不占未验数 */
     function stepGreen(prog, tid, sid){ try{ return !!(prog && prog[tid] && prog[tid][sid]===1); }catch(e){ return false; } }
+    function stepHeld(prog, tid, sid){ try{ return !!(prog && prog[tid] && prog[tid][sid]===2); }catch(e){ return false; } } /* v0.25.0 刀A：挂号=2，不算绿不算卡 */
     function taskDone(prog, task){
       try{
         if(!task.steps || !task.steps.length) return false;
@@ -1303,7 +1369,7 @@
     function allDone(prog){
       try{
         if(!_list || !_list.tasks || !_list.tasks.length) return false;
-        for(var i=0;i<_list.tasks.length;i++){ if(isSim(_list.tasks[i])) continue; if(!taskDone(prog, _list.tasks[i])) return false; } /* v0.23.0：仿真档不参与 */
+        for(var i=0;i<_list.tasks.length;i++){ if(isSim(_list.tasks[i])) continue; if(isCloud(_list.tasks[i])) continue; if(isWatch(_list.tasks[i])) continue; if(!taskDone(prog, _list.tasks[i])) return false; } /* v0.23.0：仿真档不参与；v0.25.0 刀C：云侧/观察哨不参与 */
         return true;
       }catch(e){ return false; }
     }
@@ -1313,7 +1379,7 @@
         if(!_list || !_list.tasks) return null;
         for(var i=0;i<_list.tasks.length;i++){
           var t=_list.tasks[i];
-          if(isSim(t)||taskDone(prog,t)) continue; /* v0.23.0：仿真档跳过 */
+          if(isSim(t)||isCloud(t)||isWatch(t)||taskDone(prog,t)) continue; /* v0.23.0：仿真档跳过；v0.25.0 刀C：云侧/观察哨跳过 */
           for(var j=0;j<(t.steps||[]).length;j++){
             if(!stepGreen(prog, t.id, t.steps[j].id)) return { task:t, step:t.steps[j] };
           }
@@ -1374,6 +1440,7 @@
         for(var i=0;i<_list.tasks.length;i++){
           var t=_list.tasks[i];
           if(isSim(t)) continue; /* v0.23.0：仿真档不侦测 */
+          if(isCloud(t)||isWatch(t)) continue; /* v0.25.0 刀C：云侧/观察哨不侦测 */
           for(var j=0;j<(t.steps||[]).length;j++){
             var st=t.steps[j];
             if(stepGreen(prog,t.id,st.id)) continue;
@@ -1479,6 +1546,17 @@
         p[tid][sid]=1;
         saveProg(p);
         try{ pushProg(); }catch(e){}
+        try{ pushReport(); }catch(e){} /* v0.25.0 刀B：进度有变化→闲时推验收单 */
+      }catch(e){}
+    }
+    /* ---- v0.25.0 刀A：挂号（✗不行）——写进度账值=2，不算绿不算卡，进下一步 ---- */
+    function markHeld(tid, sid){
+      try{
+        var p=loadProg();
+        if(!p[tid]) p[tid]={};
+        p[tid][sid]=2;
+        saveProg(p);
+        try{ pushReport(); }catch(e){} /* v0.25.0 刀B：挂号也推验收单；Kimi终审翻案：DS误写catch(e{})语法错已修 */
       }catch(e){}
     }
 
@@ -1502,6 +1580,62 @@
         }).then(function(resp){ if(!resp.ok) throw 0; return resp.json(); }).then(function(){
           try{ localStorage.setItem(LS_UP, body); }catch(e){}
         }).catch(function(){}); /* 验收不是急活，失败静默下回补 */
+      }catch(e){}
+    }
+
+    /* ---- v0.25.0 刀B：自报验收单——进度有变化后闲时PUT出去，走pushProg同款双腿（云仓api/contents→坚果云兜底），失败静默下回补 ---- */
+    function _reportBody(){
+      try{
+        var prog=loadProg();
+        var rows=[];
+        if(_list && _list.tasks){
+          for(var i=0;i<_list.tasks.length;i++){
+            var t=_list.tasks[i];
+            var st={};
+            for(var j=0;j<(t.steps||[]).length;j++){
+              var sid=String(t.steps[j].id);
+              if(stepGreen(prog, t.id, t.steps[j].id)) st[sid]=1;
+              else if(stepHeld(prog, t.id, t.steps[j].id)) st[sid]=2;
+              else st[sid]=0;
+            }
+            rows.push({id:String(t.id), st:st});
+          }
+        }
+        var obj={ver:String((_list && _list.ver)||''), t:Date.now(), dev:'真机', rows:rows};
+        try{ var vc=localStorage.getItem('hx_shell_vc'); if(vc) obj.vc=vc; }catch(e){}
+        return JSON.stringify(obj);
+      }catch(e){ return ''; }
+    }
+    function pushReport(){
+      try{
+        if(_off()) return;
+        if(!window.fetch) return;
+        if(typeof HX._autoNetOk==='function'){ if(!HX._autoNetOk()) return; } /* 闲时闸门 */
+        var body=_reportBody();
+        if(!body) return;
+        var prev=''; try{ prev=localStorage.getItem(LS_REPORT_UP)||''; }catch(e){ prev=''; }
+        if(body===prev) return; /* 内容没变不重复推 */
+        var g=null; try{ g=HX.keys.gh(); }catch(e){ g=null; }
+        var dk=null; try{ dk=HX.keys.dav(); }catch(e){ dk=null; }
+        if(!g && !dk) return;
+        function legDav(){
+          try{
+            if(!dk || !HX.dav || typeof HX.dav.upFile!=='function'){ return; }
+            HX.dav.upFile('/学习套装备份/'+REPORT_FILE, body).then(function(){
+              try{ localStorage.setItem(LS_REPORT_UP, body); }catch(e){}
+            }, function(){});
+          }catch(e){}
+        }
+        if(!g){ legDav(); return; }
+        var api='https://api.github.com/repos/'+encodeURIComponent(g.u)+'/'+encodeURIComponent(g.r)+'/contents/'+encodeURIComponent(REPORT_FILE);
+        var H={'Authorization':'token '+g.t,'Accept':'application/vnd.github+json'};
+        fetch(api,{headers:H}).then(function(resp){ if(resp.status===404) return {sha:null}; if(!resp.ok) throw 0; return resp.json(); }).then(function(j){
+          var put={message:'验收单上行', content:_enc(body)};
+          if(j&&j.sha) put.sha=j.sha;
+          return fetch(api,{method:'PUT',headers:H,body:JSON.stringify(put)});
+        }).then(function(resp){ if(!resp.ok) throw 0; return resp.json(); }).then(function(){
+          try{ localStorage.setItem(LS_REPORT_UP, body); }catch(e){}
+        }).catch(function(){ legDav(); }); /* 云仓失败→坚果云兜底；都失败静默下回补 */
       }catch(e){}
     }
 
@@ -1596,7 +1730,7 @@
           if(mini){
             mini.innerHTML='';
             var mt1=document.createElement('span'); mt1.textContent='验收'; mt1.style.cssText='font-size:11px;color:#6b6257';
-            var mn=0; for(var mi2=0;mi2<_list.tasks.length;mi2++){ if(isSim(_list.tasks[mi2])) continue; if(taskDone(prog,_list.tasks[mi2])===false) mn++; }
+            var mn=0; for(var mi2=0;mi2<_list.tasks.length;mi2++){ if(isSim(_list.tasks[mi2])) continue; if(isCloud(_list.tasks[mi2])) continue; if(isWatch(_list.tasks[mi2])) continue; if(taskDone(prog,_list.tasks[mi2])===false) mn++; }
             var mt2=document.createElement('span'); mt2.textContent=String(mn); mt2.style.cssText='font-size:17px;font-weight:bold;color:#a05848';
             mini.appendChild(mt1); mini.appendChild(mt2);
             mini.style.display='flex';
@@ -1608,14 +1742,14 @@
         bar.innerHTML='';
         var dots=document.createElement('span'); dots.style.cssText='flex:none;letter-spacing:3px;font-size:12px';
         dots.appendChild(document.createTextNode('验收')); /* v0.24.2 刀6：小字「验收」 */
-        var nDot=0; for(var di=0;di<_list.tasks.length;di++){ if(isSim(_list.tasks[di])) continue; if(taskDone(prog,_list.tasks[di])===false) nDot++; } /* v0.24.3 刀A：未绿日常档任务数 */
+        var nDot=0; for(var di=0;di<_list.tasks.length;di++){ if(isSim(_list.tasks[di])) continue; if(isCloud(_list.tasks[di])) continue; if(isWatch(_list.tasks[di])) continue; if(taskDone(prog,_list.tasks[di])===false) nDot++; } /* v0.24.3 刀A：未绿日常档任务数；v0.25.0 刀C：云侧/观察哨不占 */
         var num=document.createElement('span'); num.textContent=String(nDot);
         num.style.cssText='font-size:15px;font-weight:bold;color:#a05848;margin-left:4px';
         dots.appendChild(num); /* v0.24.3 刀A（洪老师10-14拍板「圆点改数字，不占版面」）：圆点串退休改数字 */
         var cur=curStep(prog);
         var txt=document.createElement('span');
         txt.style.cssText='flex:1;margin:0 10px;font-size:13px;color:#4a4238;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'; /* 超一行省略；v0.23.0字号13 */
-        var nLeft=0; for(var ti=0;ti<_list.tasks.length;ti++){ var tk=_list.tasks[ti]; if(isSim(tk)) continue; var sts=tk.steps||[]; for(var si=0;si<sts.length;si++){ if(!stepGreen(prog,tk.id,sts[si].id)) nLeft++; } } /* v0.24.2 刀6：日常档未绿步总数（DS误写stepDone，Kimi终审翻stepGreen） */
+        var nLeft=0; for(var ti=0;ti<_list.tasks.length;ti++){ var tk=_list.tasks[ti]; if(isSim(tk)) continue; if(isCloud(tk)) continue; if(isWatch(tk)) continue; var sts=tk.steps||[]; for(var si=0;si<sts.length;si++){ if(!stepGreen(prog,tk.id,sts[si].id)) nLeft++; } } /* v0.24.2 刀6：日常档未绿步总数（DS误写stepDone，Kimi终审翻stepGreen）；v0.25.0 刀C：云侧/观察哨不占 */
         txt.textContent = cur ? ('还有'+nLeft+'步没验 · 下一小步：'+String(cur.task.title||'')+' · '+String(cur.step.text||'')) : ''; /* v0.24.2 刀6（洪老师10-14真机报「窄条内容永远一样」）：窄条说人话 */
         var dn=document.createElement('span'); dn.textContent='—'; dn.style.cssText='flex:none;font-size:15px;font-weight:bold;color:#6b6257;padding:4px 8px;margin-right:2px'; /* v0.24.4 刀B：收小钮 */
         dn.addEventListener('click', function(ev){ try{ ev.stopPropagation(); setMini(true); renderBar(); chkToast('验收牌收成右下角小圆牌了，点圆牌随时叫回'); }catch(e){} });
@@ -1665,6 +1799,16 @@
         rgt.appendChild(rf); rgt.appendChild(bx);
         bar.appendChild(ttl); bar.appendChild(rgt); pg.appendChild(bar);
 
+        /* v0.25.0 刀A：整屏清单页顶部加「🧪 向导验（我来领着你验）」大钮 */
+        if(!_wizOff()){
+          var wrow=document.createElement('div');
+          wrow.style.cssText='padding:6px 2px 12px';
+          var wb=document.createElement('button'); wb.type='button'; wb.textContent='🧪 向导验（我来领着你验）';
+          wb.style.cssText='width:100%;background:#a05848;color:#fff;font-size:20px;font-weight:bold;padding:14px 16px;border:none;border-radius:12px;cursor:pointer';
+          wb.addEventListener('click', function(){ try{ startWiz(); }catch(e){} });
+          wrow.appendChild(wb); pg.appendChild(wrow);
+        }
+
         var prog=loadProg();
         if(!_list || !_list.tasks || !_list.tasks.length){
           var emp=document.createElement('div'); emp.style.cssText='color:#a05848;text-align:center;padding-top:60px'; emp.textContent='清单还没取到，点🔄刷新试试';
@@ -1682,6 +1826,26 @@
             pg.appendChild(srow0);
             return;
           }
+          if(isCloud(task)){ /* v0.25.0 刀C：A档云侧灰行，向导跳过不问，Kimi核 */
+            var crow=document.createElement('div');
+            crow.style.cssText='display:flex;align-items:center;gap:8px;padding:12px 2px;border-bottom:1px solid #e5ddd0';
+            var cd=document.createElement('span'); cd.textContent='●'; cd.style.cssText='flex:none;font-size:12px;color:#cfc6b8';
+            var ct=document.createElement('span'); ct.style.cssText='flex:1;font-size:15px;color:#b5aca0'; ct.textContent=String(task.title||'');
+            var cb=document.createElement('span'); cb.style.cssText='flex:none;font-size:13px;color:#b5aca0'; cb.textContent='☁️云侧核';
+            crow.appendChild(cd); crow.appendChild(ct); crow.appendChild(cb);
+            pg.appendChild(crow);
+            return;
+          }
+          if(isWatch(task)){ /* v0.25.0 刀C：长期观察哨灰行，不占未验数 */
+            var wrow2=document.createElement('div');
+            wrow2.style.cssText='display:flex;align-items:center;gap:8px;padding:12px 2px;border-bottom:1px solid #e5ddd0';
+            var wd=document.createElement('span'); wd.textContent='●'; wd.style.cssText='flex:none;font-size:12px;color:#cfc6b8';
+            var wt=document.createElement('span'); wt.style.cssText='flex:1;font-size:15px;color:#b5aca0'; wt.textContent=String(task.title||'');
+            var wb2=document.createElement('span'); wb2.style.cssText='flex:none;font-size:13px;color:#b5aca0'; wb2.textContent='👀长期观察';
+            wrow2.appendChild(wd); wrow2.appendChild(wt); wrow2.appendChild(wb2);
+            pg.appendChild(wrow2);
+            return;
+          }
           var done=taskDone(prog, task);
           var g=0; for(var gi=0;gi<(task.steps||[]).length;gi++){ if(stepGreen(prog, task.id, task.steps[gi].id)) g++; }
           var trow=document.createElement('div');
@@ -1695,15 +1859,17 @@
           if(_openT[task.id]){
             for(var j=0;j<(task.steps||[]).length;j++){ (function(st){
               var ok=stepGreen(prog, task.id, st.id);
+              var held=stepHeld(prog, task.id, st.id); /* v0.25.0 刀A：挂号=2，标灰「已挂号」 */
               var srow=document.createElement('div');
               srow.style.cssText='display:flex;align-items:flex-start;gap:8px;padding:10px 2px 10px 22px;border-bottom:1px solid #efe9df';
-              var sd=document.createElement('span'); sd.textContent='●'; sd.style.cssText='flex:none;font-size:12px;margin-top:4px;color:'+(ok?'#7a9e7e':'#cfc6b8');
+              var sd=document.createElement('span'); sd.textContent='●'; sd.style.cssText='flex:none;font-size:12px;margin-top:4px;color:'+(ok?'#7a9e7e':(held?'#b5aca0':'#cfc6b8'));
               var sb=document.createElement('div'); sb.style.cssText='flex:1';
-              var stx=document.createElement('div'); stx.style.cssText='font-size:16px;line-height:1.6;color:#4a4238;white-space:pre-wrap;word-break:break-all'; stx.textContent=String(st.text||''); /* 大白话全文不截断，textContent防注入 */
+              var stx=document.createElement('div'); stx.style.cssText='font-size:16px;line-height:1.6;color:'+(held?'#b5aca0':'#4a4238')+';white-space:pre-wrap;word-break:break-all'; stx.textContent=String(st.text||''); /* 大白话全文不截断，textContent防注入 */
               sb.appendChild(stx);
-              if(st.auto){ var ah=document.createElement('div'); ah.style.cssText='font-size:13px;color:#8a7f70;margin-top:2px'; ah.textContent='做好了它自己变绿'; sb.appendChild(ah); }
+              if(held){ var hh=document.createElement('div'); hh.style.cssText='font-size:13px;color:#b5aca0;margin-top:2px'; hh.textContent='已挂号'; sb.appendChild(hh); }
+              else if(st.auto){ var ah=document.createElement('div'); ah.style.cssText='font-size:13px;color:#8a7f70;margin-top:2px'; ah.textContent='做好了它自己变绿'; sb.appendChild(ah); }
               srow.appendChild(sd); srow.appendChild(sb);
-              if(!st.auto && !ok){
+              if(!st.auto && !ok && !held){
                 var gb=document.createElement('button'); gb.type='button'; gb.textContent='✓这步好了'; gb.style.cssText='flex:none;background:#7a9e7e;color:#fff;font-size:14px;padding:6px 12px;border:none;border-radius:8px;cursor:pointer';
                 gb.addEventListener('click', function(){ try{ markGreen(task.id, st.id); renderPg(); renderBar(); }catch(e){} }); /* 点=标绿 */
                 srow.appendChild(gb);
@@ -1732,7 +1898,215 @@
       }catch(e){}
     }
 
-    /* ---- 公开口 ---- */
+    /* ═══ v0.25.0 刀A：向导模式 wiz（复用现有骨架；DS二稿=点亮+三钮大黑框，Kimi终审拼接） ═══ */
+    var _wiz = null; /* 当前向导状态 {task, step} */
+
+    /* 找下一个未绿步（跳过 sim/cloud/watch，跳过已挂号=2） */
+    function _wizNext(){
+      try{
+        if(!_list || !_list.tasks) return null;
+        var prog=loadProg();
+        for(var i=0;i<_list.tasks.length;i++){
+          var t=_list.tasks[i];
+          if(isSim(t)||isCloud(t)||isWatch(t)) continue;
+          for(var j=0;j<(t.steps||[]).length;j++){
+            var st=t.steps[j];
+            if(stepGreen(prog, t.id, st.id)) continue;
+            if(stepHeld(prog, t.id, st.id)) continue; /* 已挂号跳过 */
+            return { task:t, step:st };
+          }
+        }
+        return null;
+      }catch(e){ return null; }
+    }
+
+    function _wizStep(){
+      try{
+        if(!_wiz || !_wiz.task || !_wiz.step){ _wizFinish(); return; }
+        var task=_wiz.task, step=_wiz.step;
+        var title=String(task.title||'')+' · '+String(step.text||'');
+        if(step.auto){
+          if(autoHit(step.auto)){
+            askConfirm(task, step); /* 中=复用确认条，点✓才绿；向导照往前走不等人 */
+            _wizAdvance();
+            return;
+          }
+          _wizBox('这步机器没侦到，您亲眼看看：\n'+title, [ /* Kimi终审修：auto没侦中不许静默跳过，落手动问 */
+            { t:'✓这步好了', big:true, bg:'#7a9e7e', fn:function(){ try{ markGreen(task.id, step.id); _wizBoxClose(); _wizAdvance(); }catch(e){} } },
+            { t:'✗不行', big:true, bg:'#a05848', fn:function(){ try{ _wizHold(task, step); _wizBoxClose(); _wizAdvance(); }catch(e){} } },
+            { t:'跳过', big:true, bg:'#7a8ea0', fn:function(){ try{ _wizBoxClose(); _wizAdvance(); }catch(e){} } },
+            { t:'✕先验到这', bg:'#6b6257', fn:function(){ try{ _wizBoxClose(); _wizExit(); }catch(e){} } }
+          ]);
+          return;
+        }
+        if(step.spot){
+          var lit=_wizSpot(step.spot);
+          var q='看得见【'+String(step.text||'')+'】吗？';
+          if(!lit){ q='（目标不在本页，请到对应软件里看）\n'+q; }
+          _wizBox(q, [
+            { t:'✓行', big:true, bg:'#7a9e7e', fn:function(){ try{ _wizSpotClear(); markGreen(task.id, step.id); _wizBoxClose(); _wizAdvance(); }catch(e){} } },
+            { t:'✗不行', big:true, bg:'#a05848', fn:function(){ try{ _wizSpotClear(); _wizHold(task, step); _wizBoxClose(); _wizAdvance(); }catch(e){} } },
+            { t:'🔄再亮一次', big:true, bg:'#7a8ea0', fn:function(){ try{ _wizSpot(step.spot); }catch(e){} } },
+            { t:'✕先验到这', bg:'#6b6257', fn:function(){ try{ _wizSpotClear(); _wizBoxClose(); _wizExit(); }catch(e){} } }
+          ]);
+          return;
+        }
+        _wizBox(title, [
+          { t:'✓这步好了', big:true, bg:'#7a9e7e', fn:function(){ try{ markGreen(task.id, step.id); _wizBoxClose(); _wizAdvance(); }catch(e){} } },
+          { t:'跳过', big:true, bg:'#7a8ea0', fn:function(){ try{ _wizBoxClose(); _wizAdvance(); }catch(e){} } },
+          { t:'✕先验到这', bg:'#6b6257', fn:function(){ try{ _wizBoxClose(); _wizExit(); }catch(e){} } }
+        ]);
+      }catch(e){}
+    }
+
+    function _wizBox(title, btns){
+      try{
+        if(!document.body) return null;
+        var old=$('hxChkWizBox'); if(old && old.parentNode) old.parentNode.removeChild(old);
+        var box=document.createElement('div'); box.id='hxChkWizBox';
+        box.style.cssText='position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:99999;background:rgba(20,18,14,.97);color:#fff;border-radius:16px;padding:26px 28px;max-width:92%;min-width:280px;box-sizing:border-box;box-shadow:0 12px 40px rgba(0,0,0,.55);border:2px solid #3a342a';
+        var tt=document.createElement('div');
+        tt.style.cssText='font-size:20px;line-height:1.7;margin-bottom:20px;white-space:pre-wrap;word-break:break-all';
+        tt.textContent=String(title||'');
+        box.appendChild(tt);
+        var row=document.createElement('div'); row.style.cssText='display:flex;gap:12px;justify-content:flex-end;flex-wrap:wrap';
+        for(var i=0;i<btns.length;i++){ (function(b){
+          var btn=document.createElement('button'); btn.type='button'; btn.textContent=String(b.t||'');
+          var fs=b.big?'22px':'16px';
+          var pd=b.big?'14px 22px':'10px 18px';
+          btn.style.cssText='background:'+(b.bg||'#7a9e7e')+';color:#fff;font-size:'+fs+';font-weight:bold;padding:'+pd+';border:none;border-radius:10px;cursor:pointer;line-height:1.2';
+          btn.addEventListener('click', function(){ try{ if(b.fn) b.fn(); }catch(e){} });
+          row.appendChild(btn);
+        })(btns[i]); }
+        box.appendChild(row);
+        document.body.appendChild(box);
+        return box;
+      }catch(e){ return null; }
+    }
+
+    function _wizBoxClose(){
+      try{ var b=$('hxChkWizBox'); if(b && b.parentNode) b.parentNode.removeChild(b); }catch(e){}
+    }
+
+    function _wizSpot(sel){
+      try{
+        _wizSpotClear();
+        if(!sel || !document.body) return false;
+        var el=null;
+        try{ el=document.querySelector(String(sel)); }catch(e){ el=null; }
+        if(!el) return false;
+        var r=el.getBoundingClientRect();
+        if(!r || (r.width===0 && r.height===0)) return false;
+        var ov=document.createElement('div'); ov.id='hxChkWizSpot';
+        ov.style.cssText='position:fixed;left:0;top:0;right:0;bottom:0;z-index:99998;pointer-events:none';
+        var box=document.createElement('div');
+        box.style.cssText='position:fixed;left:'+(r.left-4)+'px;top:'+(r.top-4)+'px;width:'+(r.width+8)+'px;height:'+(r.height+8)+'px;border:4px solid #FFD600;border-radius:8px;box-sizing:border-box;pointer-events:none;animation:hxChkWizBlink 0.5s ease-in-out 2';
+        ov.appendChild(box);
+        document.body.appendChild(ov);
+        return true;
+      }catch(e){ return false; }
+    }
+
+    function _wizSpotClear(){
+      try{ var o=$('hxChkWizSpot'); if(o && o.parentNode) o.parentNode.removeChild(o); }catch(e){}
+    }
+
+    function _wizHold(task, step){
+      try{
+        var msg='挂号:'+String(task.id)+'/'+String(step.id)+':'+String(step.text||'');
+        try{ if(HX.bb && typeof HX.bb.log==='function'){ HX.bb.log('wiz', msg); } }catch(e){} /* Kimi终审翻案：DS误传单对象，bb.log签名是(k,m)两参 */
+        markHeld(task.id, step.id);
+      }catch(e){}
+    }
+
+    function _wizAdvance(){
+      try{
+        var nx=_wizNext();
+        if(!nx){ _wizFinish(); return; }
+        _wiz={ task:nx.task, step:nx.step };
+        _wizStep();
+      }catch(e){ _wizFinish(); }
+    }
+
+    function _wizClose(){
+      try{ _wizSpotClear(); _wizBoxClose(); }catch(e){}
+    }
+
+    function _wizExit(){
+      try{
+        _wizSpotClear();
+        _wizBoxClose();
+        _wiz=null;
+        refreshUI();
+      }catch(e){}
+    }
+
+    function _wizFinish(){
+      try{
+        _wizSpotClear();
+        var prog=loadProg();
+        var pass=0, held=0;
+        if(_list && _list.tasks){
+          for(var i=0;i<_list.tasks.length;i++){
+            var t=_list.tasks[i];
+            if(isSim(t)||isCloud(t)||isWatch(t)) continue;
+            for(var j=0;j<(t.steps||[]).length;j++){
+              var st=t.steps[j];
+              if(stepGreen(prog, t.id, st.id)) pass++;
+              else if(stepHeld(prog, t.id, st.id)) held++;
+            }
+          }
+        }
+        _wiz=null;
+        _wizBox('验收完了：过'+pass+'项，挂号'+held+'项，已传上网', [
+          { t:'✕', big:true, bg:'#6b6257', fn:function(){ try{ _wizBoxClose(); refreshUI(); }catch(e){} } }
+        ]);
+        try{ pushReport(); }catch(e){}
+      }catch(e){}
+    }
+
+    function _wizAsk(){
+      try{
+        if(_off() || _wizOff()) return;
+        if(!_list || !_list.tasks || !_list.tasks.length) return;
+        var prog=loadProg();
+        if(allDone(prog)) return;
+        var n=0; try{ n=parseInt(localStorage.getItem('hx_chk_wiz_n')||'0',10)||0; }catch(e){ n=0; }
+        if(n>=3) return;
+        var nx=_wizNext();
+        if(!nx) return;
+        var un=0;
+        for(var i=0;i<_list.tasks.length;i++){
+          var t=_list.tasks[i];
+          if(!t || !t.steps) continue;
+          for(var j=0;j<t.steps.length;j++){
+            var s=t.steps[j];
+            if(!s) continue;
+            var k=String(t.id)+':'+String(s.id);
+            if(!prog[k]) un++;
+          }
+        }
+        if(un<=0) return;
+        try{ localStorage.setItem('hx_chk_wiz_n', String(n+1)); }catch(e){}
+        _wiz={ task:nx.task, step:nx.step };
+        _wizStep();
+      }catch(e){}
+    }
+
+    /* 进向导（🧪钮调用） */
+    function startWiz(){
+      try{
+        if(_off()){ chkToast('验收牌已关（hx_chk_off）'); return; }
+        if(_wizOff()){ chkToast('向导已关（hx_chk_wiz_off）'); return; }
+        if(!_list || !_list.tasks || !_list.tasks.length){ chkToast('清单还没取到，点🔄刷新试试'); return; }
+        var nx=_wizNext();
+        if(!nx){ chkToast('这期验收全绿了🎉'); return; }
+        _wiz={ task:nx.task, step:nx.step };
+        _wizStep();
+      }catch(e){}
+    }
+
+        /* 初始化 */
     function init(){
       try{
         if(_booted) return; _booted=true;
@@ -1743,39 +2117,40 @@
             _list=readCacheList(); /* init先用缓存画 */
             reconcile();
             renderBar(); /* 缺省窄条不显示（没清单/全绿时藏） */
+            setTimeout(function(){ try{ _wizAsk(); }catch(e){} }, 8000); /* v0.25.0 刀A：开门8秒闲时自动问「现在验？」（满3次/全绿不弹） */
             if(typeof HX._autoNetOk==='function' && HX._autoNetOk()) fetchList(false); /* 闲时自动拉一次 */
           }catch(e){}
         };
         if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', boot); } else { boot(); } /* 照sj ensureUI自注先例，挂HX即活，不要求宿主调用 */
       }catch(e){}
     }
-    function open(){
+
+    if(document.readyState==='loading'){
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+
+    function open(){ /* Kimi终审翻案：DS漏交open()，照v0.24.5原文补回 */
       try{
         if(_off()){ chkToast('验收牌已关（hx_chk_off）'); return; }
         if(!ensureUI()){ chkToast('页面还没备好，稍候再点'); return; }
-        if(!_list || !_list.tasks || !_list.tasks.length){ openPage(); return; } /* 没清单→开整屏页显示刷新提示 */
+        if(!_list || !_list.tasks || !_list.tasks.length){ openPage(); return; }
         if(allDone(loadProg())){ chkToast('这期验收全绿了🎉'); return; }
         renderBar();
-        openPage(); /* 有未绿任务→亮窄条+开整屏页 */
+        openPage();
       }catch(e){}
     }
-    function reload(){ /* 手动拉清单（🔄钮调用，manual放行闸门） */
+    function reload(){ /* Kimi终审翻案：DS漏交reload()，照v0.24.5原文补回 */
       try{
         if(_off()){ chkToast('验收牌已关（hx_chk_off）'); return; }
         fetchList(true);
       }catch(e){}
     }
 
-    /* 自带boot：挂HX即活 */
-    try{ init(); }catch(e){}
-
-    return { init:init, open:open, reload:reload };
+    return { init:init, open:open, reload:reload }; /* Kimi终审翻案：DS漏交模块出口，照v0.24.5原样补回 */
   })();
 
-  /* ════ 5. 浮标速记 HX.sj（从 software-notes.html 原文提取，8份MD5一致版；行为一字不差） ════
-     右下角半透明圆点🏥→弹小输入框→「记下」追加授权文件夹「速记流水.txt」（带时间+软件名+hx_gj_curpt当前病人+页面标题）
-     →自动PUT仓根目录；闲时8秒补一次对账（hx_sj_uplocal，内容没变不重复推）；无壳降级提示；没钥匙/没网静默跳过。
-     各软件一行接入：HX.sj.init({app:'软件名', getCtx:function(){return '　上下文';} /* 可选 *\/}) */
   HX.sj = (function(){
     var sj = {};
     var HX_SJ_APP = '';       /* 速记：本软件名，init 时各软件传自己的名 */
