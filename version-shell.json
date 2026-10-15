@@ -1,7 +1,7 @@
 {
- "vc": 48,
- "vn": "2.0.1",
+ "vc": 57,
+ "vn": "2.1.0",
  "dl": "hxshell.apk",
- "sig": "974fa6a6f529258a",
- "note": "管家布告栏勤看：每10分钟瞄version-all.json，见新版自动查装，不用点按钮"
+ "sig": "8c4e9531d55e3ca8",
+ "note": "桥门岗：新增fileWriteBegin/Chunk/End/Abort+fileReadChunk五桥，治部件大件writeFile假成功（hx-common 290KB拉磨）；捆index v1.20.5+hx-common v0.24.4；补vc56漏刷versionCode账"
 }
