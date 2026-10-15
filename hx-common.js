@@ -83,7 +83,8 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 (function(){
   'use strict';
-  var HX_COMMON_VERSION = '0.26.0';/* ═══════════════════════════════════════════════════════════════════════════
+  var HX_COMMON_VERSION = '0.27.0';/* ═══════════════════════════════════════════════════════════════════════════
+   v0.27.0（2026-10-15 晚班③，洪老师真机报「黑框文字显示不全犯糊涂/跨页没说去哪页」+拍板「现在就搞」，SPEC_hx-common_v0.27.0_黑框字看不全+跨页报名字，DS实现15.9秒完整回件+Kimi终审翻案1处亲手落地：_wizBox开头补摘旧hxChkWizFull防换步残留）：刀1黑框文字区看得全（去两行截断→字号14px+最多约3行可上下滑+点文字区弹大框看全文再点收起，_wizBoxClose同步收大框）刀2跨页步骤报页面名（step.page，默认「主界面（首页）」，配验收清单t21.s1加page字段）；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold IDENTICAL，HX.chk除_wizBox/_wizStep/_wizBoxClose三函数外IDENTICAL
    v0.26.0（2026-10-15 晚班②，洪老师真机三连报「黑框不是人话/跳过没反应/挡住版面看不见黄圈」+拍板六条浮窗化，SPEC_hx-common_v0.26.0_向导浮条+跳过根治，DS实现+Kimi终审翻案3处亲手落地：①document拖动监听泄漏→留引用_wizBoxClose全摘 ②touchmove改挂document防拖快断拖+preventDefault防页面跟滚 ③wizSkipped三入口清零核讫）：刀A跳过根治（_wizSkipped会话记账，跳过不再原地踏步）刀B大黑框→顶部可拖动窄浮条（⠿把手三路拖动+hx_chk_wiz_top记位置）刀C文案全人话刀D黄圈自动scrollIntoView屏中间+浮条遮挡自动让位；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold IDENTICAL，HX.chk除向导段（刀A~D）外IDENTICAL
 v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减负——壳领着洪老师一步一步验，
    点亮弹窗问「行吗」，他只管点行/不行；能自己判的绝不问人；结果写成验收单自动传上网，
@@ -1945,7 +1946,7 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
         if(step.spot){
           var lit=_wizSpot(step.spot);
           var q='请点屏幕上发黄光的那个（'+String(step.text||'')+'），好使吗？'; /* v0.26.0 刀C：spot文案人话 */
-          if(!lit){ q='（这个在别的页面，请过去看）\n'+q; } /* v0.26.0 刀C：目标不在本页提示人话 */
+          if(!lit){ q='（这步要去「'+String(step.page||'主界面（首页）')+'」办：请过去之后，点上面的🔄再亮一次）\n'+q; } /* v0.27.0 刀2：跨页报页面名，默认主界面 */
           _wizBox(q, [
             { t:'✓好使', big:true, bg:'#7a9e7e', fn:function(){ try{ _wizSpotClear(); markGreen(task.id, step.id); _wizBoxClose(); _wizAdvance(); }catch(e){} } }, /* v0.26.0 刀C：钮文字人话 */
             { t:'✗不行', big:true, bg:'#a05848', fn:function(){ try{ _wizSpotClear(); _wizHold(task, step); _wizBoxClose(); _wizAdvance(); }catch(e){} } },
@@ -1966,6 +1967,7 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
       try{
         if(!document.body) return null;
         var old=$('hxChkWizBox'); if(old && old.parentNode) old.parentNode.removeChild(old);
+        try{ var _of=document.getElementById('hxChkWizFull'); if(_of && _of.parentNode) _of.parentNode.removeChild(_of); }catch(e00){} /* v0.27.0 Kimi终审补：新建盒前摘旧大框，防换步时残留盖新步 */
         var box=document.createElement('div'); box.id='hxChkWizBox';
         box.style.cssText='position:fixed;left:0;right:0;top:0;z-index:99999;background:rgba(20,18,14,.97);color:#fff;padding:10px 14px;box-sizing:border-box;box-shadow:0 4px 16px rgba(0,0,0,.4);border-bottom:2px solid #3a342a'; /* v0.26.0 刀B：大黑框改顶部窄浮条 */
         try{ var _sv=localStorage.getItem('hx_chk_wiz_top'); if(_sv!==null){ var _tv=parseFloat(_sv); if(!isNaN(_tv)){ var _mh=(window.innerHeight||600)-120; if(_tv<0)_tv=0; if(_tv>_mh)_tv=_mh; box.style.top=_tv+'px'; } } }catch(e0){} /* v0.26.0 刀B：新建时读hx_chk_wiz_top恢复位置 */
@@ -1974,8 +1976,9 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
         hd.textContent='⠿ 按住拖我';
         box.appendChild(hd);
         var tt=document.createElement('div');
-        tt.style.cssText='font-size:16px;line-height:1.5;margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-all'; /* v0.26.0 刀B：文字区最多两行超出省略 */
+        tt.style.cssText='font-size:14px;line-height:1.5;margin-bottom:8px;max-height:4.5em;overflow-y:auto;-webkit-overflow-scrolling:touch;word-break:break-all;white-space:pre-wrap;cursor:pointer'; /* v0.27.0 刀1：字号调小+最多约3行可上下滑+可点看全文（去两行截断） */
         tt.textContent=String(title||'');
+        tt.title='点我看全文'; /* v0.27.0 刀1：提示可点 */
         box.appendChild(tt);
         var row=document.createElement('div'); row.style.cssText='display:flex;gap:12px;justify-content:flex-start;flex-wrap:wrap'; /* v0.26.0 刀B：按钮行靠左 */
         for(var i=0;i<btns.length;i++){ (function(b){
@@ -1987,6 +1990,16 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
           row.appendChild(btn);
         })(btns[i]); }
         box.appendChild(row);
+        /* v0.27.0 刀1：点文字区展开大框看全文，再点/点大框自身收起 */
+        tt.addEventListener('click', function(){ try{
+          var full=document.getElementById('hxChkWizFull');
+          if(full){ if(full.parentNode) full.parentNode.removeChild(full); return; }
+          var f=document.createElement('div'); f.id='hxChkWizFull';
+          f.style.cssText='position:fixed;left:5%;right:5%;top:12%;max-height:66%;z-index:100000;background:rgba(20,18,14,.98);color:#fff;font-size:17px;line-height:1.7;padding:16px;border-radius:12px;overflow-y:auto;-webkit-overflow-scrolling:touch;word-break:break-all;white-space:pre-wrap;box-shadow:0 8px 30px rgba(0,0,0,.5)';
+          f.textContent=String(title||'');
+          f.addEventListener('click', function(){ try{ if(f.parentNode) f.parentNode.removeChild(f); }catch(e2){} });
+          document.body.appendChild(f);
+        }catch(e1){} });
         document.body.appendChild(box);
         /* v0.26.0 刀B：拖动三路监听（touchstart/touchmove/touchend + mousedown/mousemove/mouseup） */
         try{
@@ -2014,6 +2027,7 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
 
     function _wizBoxClose(){
       try{ var b=$('hxChkWizBox'); if(b){ try{ if(b._hxDragOff) b._hxDragOff(); }catch(e1){} if(b.parentNode) b.parentNode.removeChild(b); } }catch(e){} /* v0.26.0 终审修：关盒先摘拖动监听 */
+      try{ var f=document.getElementById('hxChkWizFull'); if(f && f.parentNode) f.parentNode.removeChild(f); }catch(e2){} /* v0.27.0 刀1：关盒同时收掉展开大框，防换步/退出残留 */
     }
 
     function _wizSpot(sel){
