@@ -538,7 +538,7 @@ CUR.index="1.19.11"; /* v1.19.11：账本覆盖让路硬编码"0"，清tuomin假
 CUR.index="1.19.12"; /* v1.19.12：自立导出钮，见顶部修改记录 */
 CUR.index="1.20.0";
 CUR.index="1.20.1";
-CUR.index="1.20.4"; /* v1.20.4（2026-10-15 班⑩深夜救火，洪老师真机报「白屏5秒闪退+点更新没反应」，黑匣子实锤01:24四连开门=装件reload循环+无一条err）：本体=v1.20.1真机稳定版原样，只升号盖过机子上的残次1.20.3（v1.20.2两路并行互盖/v1.20.3手动链空开关——__taskFeedStart在1063行__taskFeed赋值前被调=undefined空转return，手动查新全瘫）。号跳2/3是为了>残次版让机子肯装。任务单手动接入重做留待下一对话（洪老师拍板先讨论验收减负两任务） */ /* v1.20.1（2026-10-14 班⑨救火，装循环根治，SPEC_index_v1.20.1，DS实现+Kimi终审亲手落地）：装循环根治+toast节流） */ /* v1.20.0（2026-10-14 班⑧，洪老师拍板任务单式查新+开门自动查+管家灯，SPEC_index_v1.20.0，DS实现+Kimi终审翻案4处亲手落地） */
+CUR.index="1.20.5"; /* v1.20.5（2026-10-15早班①，洪老师拍板「桥加门岗，大块头过来自动切碎」，SPEC_桥门岗_vc57，Kimi工兵代跑报备）：部件写入三处调用点过新门岗hxWriteSmart（大件自动切碎走壳新分块桥+End回读字节对账，假成功当场现形；小件/老壳/hx_gate_off=1走老单发桥一行未动）+partLocalVer读门岗（整读瞎→fileReadChunk头4KB认版本号+黑匣子留账）；配壳vc57/v2.1.0，其余一行未动 */ /* v1.20.4（2026-10-15 班⑩深夜救火，洪老师真机报「白屏5秒闪退+点更新没反应」，黑匣子实锤01:24四连开门=装件reload循环+无一条err）：本体=v1.20.1真机稳定版原样，只升号盖过机子上的残次1.20.3（v1.20.2两路并行互盖/v1.20.3手动链空开关——__taskFeedStart在1063行__taskFeed赋值前被调=undefined空转return，手动查新全瘫）。号跳2/3是为了>残次版让机子肯装。任务单手动接入重做留待下一对话（洪老师拍板先讨论验收减负两任务） */ /* v1.20.1（2026-10-14 班⑨救火，装循环根治，SPEC_index_v1.20.1，DS实现+Kimi终审亲手落地）：装循环根治+toast节流） */ /* v1.20.0（2026-10-14 班⑧，洪老师拍板任务单式查新+开门自动查+管家灯，SPEC_index_v1.20.0，DS实现+Kimi终审翻案4处亲手落地） */
 CUR.tuomin="0"; /* v1.19.10修404：CUR=壳内已装版本，单体手机还没装必须填"0"才会下载（CUR.ppt同款老坑，见230行） */ /* v1.19.8（2026-09-20班⑮，洪老师真机报"升级说装成功主界面还是19.6，几次都这样，没重启应该直接变19.7"）病根=班⑮发v1.19.7时新赋值插在同一行旧赋值前面，CUR.index="1.19.7"刚赋上就被同行的CUR.index="1.19.6"盖回→页脚活字永远亮1.19.6（文件真身早是新版，升级链/壳全无辜，大管家0.54.5上机为证）；还连带v1.19.5刀2开门自校对误把账本1.19.7当谎回滚→每次都提示重装。治=删同行可执行旧赋值（注释留档）+升号v1.19.8让真机重新下载。其余一行未动 */
 try{document.getElementById("ftVer").textContent=CUR.index;}catch(eF){} /* v1.19.6 页脚死字改活字：ftVer亮CUR.index真身 */
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
@@ -581,11 +581,51 @@ function partLocalVer(name, re){
   try{
     if(!window.LearnShell) return "";
     var f=null; try{ f=LearnShell.readFile(name); }catch(e){}
-    if(!f) return "";
-    var t=decodeURIComponent(escape(atob(String(f).replace(/\s+/g,''))));
-    var m=t.slice(0,2000).match(re);
-    return m? m[1] : "";
+    if(f){ try{
+      var t=decodeURIComponent(escape(atob(String(f).replace(/\s+/g,''))));
+      var m=t.slice(0,2000).match(re);
+      if(m) return m[1];
+    }catch(e){} }
+    /* v1.20.5 桥门岗（洪老师拍板「桥加门岗，大块头过来自动切碎」，SPEC_桥门岗_vc57）：整读瞎（大件过桥截断/坏件）且壳有读分片→只读头4KB认版本号（版本号在文件头），认到留黑匣子账供追 */
+    try{
+      if(typeof LearnShell.fileReadChunk==='function'){
+        var c=LearnShell.fileReadChunk(name, 0, 4096);
+        if(c){
+          var t2=decodeURIComponent(escape(atob(String(c).replace(/\s+/g,''))));
+          var m2=t2.slice(0,2000).match(re);
+          if(m2){ try{ if(window.HX&&HX.bb&&HX.bb.act) HX.bb.act('partLocalVer走分片认到'+name+' v'+m2[1]); }catch(e){} return m2[1]; }
+        }
+      }
+    }catch(e){}
+    return "";
   }catch(e){ return ""; }
+}
+/* v1.20.5 桥门岗·写门岗（同上SPEC）：凡部件写入一律过本岗——hx_gate_off=1或老壳无新桥或件小（<200000字符b64）走老单发；大件自动按60000字符（4的倍数，base64不断quantum）切碎走fileWriteBegin/Chunk/End，End回读字节对账（假成功当场现形），任一环节fail→Abort→回落老单发一次；cb(ok:bool) */
+function hxWriteSmart(name, b64, cb){
+  try{ if(localStorage.getItem("hx_gate_off")==="1"){ var ok0=false; try{ ok0=!!LearnShell.writeFile(name,b64); }catch(e){} cb(ok0); return; } }catch(e){ cb(false); return; }
+  var hasGate=false; try{ hasGate=!!(window.LearnShell && typeof LearnShell.fileWriteBegin==='function'); }catch(e){}
+  if(!hasGate || !b64 || b64.length<200000){ var ok1=false; try{ ok1=!!LearnShell.writeFile(name,b64); }catch(e){} cb(ok1); return; }
+  var r0=null; try{ r0=LearnShell.fileWriteBegin(name); }catch(e){}
+  if(r0!=="ok"){ var ok2=false; try{ ok2=!!LearnShell.writeFile(name,b64); }catch(e){} cb(ok2); return; }
+  var pad=b64.slice(-2)==='=='?2:(b64.slice(-1)==='='?1:0);
+  var expect=Math.floor(b64.length*3/4)-pad;
+  var CH=60000, off=0;
+  (function step(){
+    if(off>=b64.length){
+      var re=null; try{ re=LearnShell.fileWriteEnd(name, expect); }catch(e){}
+      if(typeof re==='string' && re.indexOf('ok:')===0){ cb(true); return; }
+      try{ LearnShell.fileWriteAbort(name); }catch(e){}
+      var ok3=false; try{ ok3=!!LearnShell.writeFile(name,b64); }catch(e){}
+      cb(ok3); return;
+    }
+    var r=null; try{ r=LearnShell.fileWriteChunk(name, b64.substr(off,CH)); }catch(e){}
+    if(typeof r!=='string' || r.indexOf('ok:')!==0){
+      try{ LearnShell.fileWriteAbort(name); }catch(e){}
+      var ok4=false; try{ ok4=!!LearnShell.writeFile(name,b64); }catch(e){}
+      cb(ok4); return;
+    }
+    off+=CH; step();
+  })();
 }
 /* ═══ v1.19.0 管家每日静默查装配套（洪老师2026-09-16拍板）：开门顺手把"全家清单+本机版本+三通道+钥匙"
    存一份 mg_suite.json 到家目录。管家（壳v2.0.0+）每天闲时读它自动查版本：验「学习有用」暗号指纹→
@@ -977,7 +1017,15 @@ function hxRawGet(name){
         try{
           if(window.LearnShell && LearnShell.folderSet && LearnShell.folderSet()){
             if(lv){ try{ LearnShell.writeFile(pName.replace(".js","")+"_v"+lv+".js", LearnShell.readFile(pName)); }catch(e){} } /* v1.13.0备份规矩：盖新部件前旧版留档文件夹（铁律3延伸） */
-            wrote=!!LearnShell.writeFile(pName, u8enc(txt2));
+            /* v1.20.5 桥门岗：写件过门岗（大件自动切碎+字节对账），异步接cb，周边记账结构一行未动 */
+            hxWriteSmart(pName, u8enc(txt2), function(wrote2){
+              if(wrote2){ updated.push(pName+"→v"+info.version);
+                setSlot(slot, "✅ "+cn+"：已下载 v"+info.version+" 写进文件夹，下次开门生效"); }
+              else{ failed.push(pName);
+                setSlot(slot, "❌ "+cn+"：写入没成功（没壳或文件夹没授权），下次再试"); }
+              doneOne();
+            });
+            return;
           }
         }catch(e){}
         if(wrote){ updated.push(pName+"→v"+info.version);
@@ -1428,13 +1476,7 @@ function hxRawGet(name){
             progLog[fi]="📥 "+nm2+"：正在取件装进壳…"; renderProg();
             var _go=function(fb){
               if(!fb){ failed.push(it.localName); progLog[fi]="❌ "+nm2+"：件没取到（网络不通），下次再试"; renderProg(); applyOne(); return; }
-              var okw=false;
-              if(it.part){
-                try{ if(it.cur && it.cur!=="0"){ try{ var _ob=LearnShell.readFile(it.localName); if(_ob) LearnShell.writeFile(it.localName.replace(".js","")+"_v"+it.cur+".js", _ob); }catch(e){} } }catch(e){}
-                try{ okw=!!LearnShell.writeFile(it.localName, fb); }catch(e){}
-              }else{
-                okw=shellWrite(it.localName, fb);
-              }
+              var _afterW=function(okw){ /* v1.20.5 桥门岗：部件写入改异步过门岗，原if(okw)后续整块挪本回调，一行未动 */
               if(okw){
                 try{ LearnShell.deleteFile('mgver_'+it.localName); }catch(e){}
                 if(!it.part){ CUR[rk]=cloudVer[rk]||CUR[rk]; try{ localStorage.setItem("hx_suite_ver", JSON.stringify(CUR)); }catch(e){} try{ var _fx3=JSON.parse(localStorage.getItem("hx_cur_fix")||"{}"); _fx3[rk]=CUR[rk]; localStorage.setItem("hx_cur_fix", JSON.stringify(_fx3)); }catch(e){} /* v1.20.1（2026-10-14 班⑨救火，装循环根治，SPEC_index_v1.20.1，DS实现+Kimi终审亲手落地）*/
@@ -1448,6 +1490,13 @@ function hxRawGet(name){
               }
               renderProg();
               setTimeout(applyOne, 50);
+              }; /* _afterW 收尾（v1.20.5） */
+              if(it.part){
+                try{ if(it.cur && it.cur!=="0"){ try{ var _ob=LearnShell.readFile(it.localName); if(_ob) LearnShell.writeFile(it.localName.replace(".js","")+"_v"+it.cur+".js", _ob); }catch(e){} } }catch(e){}
+                hxWriteSmart(it.localName, fb, _afterW); /* v1.20.5 桥门岗：大件自动切碎+字节对账 */
+              }else{
+                _afterW(shellWrite(it.localName, fb));
+              }
             };
             /* 先公开站现取（不过桥），失败回落专区老路 */
             try{
@@ -1557,21 +1606,23 @@ try{ mgSuiteWrite(); }catch(e){}
       /* 现取下载名：软件=SUITE[k][0]云端名，部件=文件名本体 */
       var _dlName=_isPart?_ln:((_k&&SUITE[_k])?SUITE[_k][0]:_ln);
       function _withBody(fb){
-        var _okw=false;
-        if(_isPart){
-          try{ var _re=/[\d.]+/; for(var _pi=0;_pi<PARTS.length;_pi++){ if(PARTS[_pi][0]===_ln){ _re=PARTS[_pi][2]; break; } }
-            var _oldV=partLocalVer(_ln, _re); if(_oldV){ try{ var _ob=LearnShell.readFile(_ln); if(_ob) LearnShell.writeFile(_ln.replace(".js","")+"_v"+_oldV+".js", _ob); }catch(e){} } }catch(e){}
-          try{ _okw=!!LearnShell.writeFile(_ln, fb); }catch(e){}
-        }else{
-          _okw=_mgShellWrite(_ln, fb);
-          if(_okw && _cv!=="?"){ try{ LearnShell.writeFile(_ln.replace(".html","")+"_v"+_cv+".html", fb); }catch(e){} }
-        }
+        var _afterW2=function(_okw){ /* v1.20.5 桥门岗：部件写入改异步过门岗，原if(_okw)后续整块挪本回调，一行未动 */
         if(_okw){
           try{ LearnShell.deleteFile('mgver_'+_ln); }catch(e){}
           if(!_isPart && _k && _cv!=="?"){ CUR[_k]=_cv; try{ localStorage.setItem("hx_suite_ver", JSON.stringify(CUR)); }catch(e){} try{ var _fx4=JSON.parse(localStorage.getItem("hx_cur_fix")||"{}"); _fx4[_k]=_cv; localStorage.setItem("hx_cur_fix", JSON.stringify(_fx4)); }catch(e){} /* v1.20.1（2026-10-14 班⑨救火，装循环根治，SPEC_index_v1.20.1，DS实现+Kimi终审亲手落地）*/ }
           _done.push(_ln.replace(".html","").replace(".js","")+"→v"+_cv);
         }else{ _fail.push(_ln); }
         setTimeout(function(){ _installOne(idx+1); }, 50);
+        }; /* _afterW2 收尾（v1.20.5） */
+        if(_isPart){
+          try{ var _re=/[\d.]+/; for(var _pi=0;_pi<PARTS.length;_pi++){ if(PARTS[_pi][0]===_ln){ _re=PARTS[_pi][2]; break; } }
+            var _oldV=partLocalVer(_ln, _re); if(_oldV){ try{ var _ob=LearnShell.readFile(_ln); if(_ob) LearnShell.writeFile(_ln.replace(".js","")+"_v"+_oldV+".js", _ob); }catch(e){} } }catch(e){}
+          hxWriteSmart(_ln, fb, _afterW2); /* v1.20.5 桥门岗：大件自动切碎+字节对账 */
+        }else{
+          var _okw2=_mgShellWrite(_ln, fb);
+          if(_okw2 && _cv!=="?"){ try{ LearnShell.writeFile(_ln.replace(".html","")+"_v"+_cv+".html", fb); }catch(e){} }
+          _afterW2(_okw2);
+        }
       }
       try{
         hxRawGet(_dlName).then(function(_txt){ _withBody(u8enc(_txt)); }).catch(function(e){
