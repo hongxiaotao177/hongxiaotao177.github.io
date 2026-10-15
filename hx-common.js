@@ -83,7 +83,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 (function(){
   'use strict';
-  var HX_COMMON_VERSION = '0.29.0';/* v0.29.0（2026-10-15 夜班④，洪老师拍板「三个任务一起做」，SPEC_hx-common_v0.29.0_被动观察法+黑匣子心跳，DS实现+Kimi终审）：①bb开门心跳hb（云侧对时知在线）②collectSide哑火对照（壳有开门主账没动→哨兵err）③被动观察法：清单步骤带watch关键词，bb记账通报HX.chk.bbHit命中→24小时（hx_chk_watch_hours可配）没err自动markGreen销号全程不弹窗，err命中删账不销 ④撤开门8秒自动问（hx_chk_wiz_ask=1才问，🧪手动链不动）；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/hxToastHold IDENTICAL，HX.bb除块2~3申报点外IDENTICAL，HX.chk除块4~6申报点外IDENTICAL */ /* v0.28.0（2026-10-15 夜班，洪老师拍板「开工」，SPEC_hx-common_v0.28.0_黑匣子五案，DS实现+Kimi终审）：黑匣子五案——①HX.bb.job办完报账（成记job/败记err立刻上行）②重点钮12秒看门狗「点了没反应」③哨兵_silentLog（flush失败/没钥匙直写账防递归）④hxToastHold黑框留账note（hxBbToast自家除外）⑤err截断120→300字；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.chk IDENTICAL，HX.bb除块2~5申报点外IDENTICAL，hxToastHold除块4一处加法外IDENTICAL */ /* ═══════════════════════════════════════════════════════════════════════════
+  var HX_COMMON_VERSION = '0.30.0';/* v0.30.0（2026-10-15 夜班⑦，洪老师拍板「做」，SPEC_index_v1.22.0+hx-common_v0.30.0_预下载+双击回环，DS实现+Kimi终审翻案3处亲手落地：①腿D的upFile/downFile回调式签名翻Promise式（DS编了不存在的第三参回调）②腿G写断/读断拆两条链各自catch精确判 ③腿D删wrote判返回照_writeFile同款try调用）：刀A1 HX.bb新增公开口loopback()双击🆘回环体检（腿G GitHub仓根「黑匣子回环.txt」+腿D坚果云/学习套装备份/黑匣子回环.txt，写上去读回来码对=通，写不成/读不回/码不对=哪腿哪环断一句话说清，双腿独立全settle后bbToast常驻汇总+job报账）刀A2 sj🆘钮双击判定（hx_lb_off=1单击照旧flush(true)整刀退休，否则单击600ms后flush、600ms内第二击loopback()）；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.chk/hxToastHold IDENTICAL，HX.sj除刀A2一处bind外IDENTICAL，HX.bb除刀A1新增函数+return一处外IDENTICAL */ /* v0.29.0（2026-10-15 夜班④，洪老师拍板「三个任务一起做」，SPEC_hx-common_v0.29.0_被动观察法+黑匣子心跳，DS实现+Kimi终审）：①bb开门心跳hb（云侧对时知在线）②collectSide哑火对照（壳有开门主账没动→哨兵err）③被动观察法：清单步骤带watch关键词，bb记账通报HX.chk.bbHit命中→24小时（hx_chk_watch_hours可配）没err自动markGreen销号全程不弹窗，err命中删账不销 ④撤开门8秒自动问（hx_chk_wiz_ask=1才问，🧪手动链不动）；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/hxToastHold IDENTICAL，HX.bb除块2~3申报点外IDENTICAL，HX.chk除块4~6申报点外IDENTICAL */ /* v0.28.0（2026-10-15 夜班，洪老师拍板「开工」，SPEC_hx-common_v0.28.0_黑匣子五案，DS实现+Kimi终审）：黑匣子五案——①HX.bb.job办完报账（成记job/败记err立刻上行）②重点钮12秒看门狗「点了没反应」③哨兵_silentLog（flush失败/没钥匙直写账防递归）④hxToastHold黑框留账note（hxBbToast自家除外）⑤err截断120→300字；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.chk IDENTICAL，HX.bb除块2~5申报点外IDENTICAL，hxToastHold除块4一处加法外IDENTICAL */ /* ═══════════════════════════════════════════════════════════════════════════
    v0.27.0（2026-10-15 晚班③，洪老师真机报「黑框文字显示不全犯糊涂/跨页没说去哪页」+拍板「现在就搞」，SPEC_hx-common_v0.27.0_黑框字看不全+跨页报名字，DS实现15.9秒完整回件+Kimi终审翻案1处亲手落地：_wizBox开头补摘旧hxChkWizFull防换步残留）：刀1黑框文字区看得全（去两行截断→字号14px+最多约3行可上下滑+点文字区弹大框看全文再点收起，_wizBoxClose同步收大框）刀2跨页步骤报页面名（step.page，默认「主界面（首页）」，配验收清单t21.s1加page字段）；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold IDENTICAL，HX.chk除_wizBox/_wizStep/_wizBoxClose三函数外IDENTICAL
    v0.26.0（2026-10-15 晚班②，洪老师真机三连报「黑框不是人话/跳过没反应/挡住版面看不见黄圈」+拍板六条浮窗化，SPEC_hx-common_v0.26.0_向导浮条+跳过根治，DS实现+Kimi终审翻案3处亲手落地：①document拖动监听泄漏→留引用_wizBoxClose全摘 ②touchmove改挂document防拖快断拖+preventDefault防页面跟滚 ③wizSkipped三入口清零核讫）：刀A跳过根治（_wizSkipped会话记账，跳过不再原地踏步）刀B大黑框→顶部可拖动窄浮条（⠿把手三路拖动+hx_chk_wiz_top记位置）刀C文案全人话刀D黄圈自动scrollIntoView屏中间+浮条遮挡自动让位；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold IDENTICAL，HX.chk除向导段（刀A~D）外IDENTICAL
 v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减负——壳领着洪老师一步一步验，
@@ -1152,6 +1152,48 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
         else{ log('err', '败:'+String(name||'')+(why?(':'+String(why)):'')); }
       }catch(e){}
     }
+    /* v0.30.0 刀A1 双击🆘回环体检：写上去读回来码对=通；写不成/读不回/码不对=哪腿哪环断一句话说清。双腿各自独立跑，全settle后汇总。全程try护栏绝不外抛 */
+    function loopback(){
+      try{
+        if(_off()){ bbToast('黑匣子已关（hx_bb_off），回环不跑'); return; }
+        var payload = '回环#'+_ts(Date.now())+'#'+Math.floor(Math.random()*900000+100000);
+        var G='', D='';
+        var pG = new Promise(function(res){
+          try{
+            if(!(HX.gh && HX.gh.ready && HX.gh.ready())){ G='没钥匙'; res(); return; }
+            HX.gh.putFile(null,'黑匣子回环.txt',payload,'回环体检').then(function(){
+              HX.gh.getFile(null,'黑匣子回环.txt').then(function(txt){
+                try{ G = (String(txt)===payload) ? '通' : '码不对'; }catch(e){ G='码不对'; }
+                res();
+              }, function(e){ G='读断:'+((e&&e.message)||e); res(); });
+            }, function(e){ G='写断:'+((e&&e.message)||e); res(); });
+          }catch(e){ G='断:'+((e&&e.message)||e); res(); }
+        });
+        var pD = new Promise(function(res){
+          var _clean=function(){ try{ if(typeof LearnShell!=='undefined' && LearnShell && LearnShell.deleteFile){ try{ LearnShell.deleteFile('黑匣子回环.txt'); }catch(e){} try{ LearnShell.deleteFile('hx_lb_read.tmp'); }catch(e){} } }catch(e){} };
+          try{
+            if(!(HX.dav && HX.dav.ok && HX.dav.ok() && HX.dav.asyncOk && HX.dav.asyncOk())){ D='没钥匙或老壳'; res(); return; }
+            try{ LearnShell.writeFile('黑匣子回环.txt', _enc(payload)); }catch(e){}
+            HX.dav.upFile('黑匣子回环.txt','/学习套装备份/').then(function(r){
+              if(r===null || (typeof r==='string' && r.indexOf('err:')===0)){ D='写断'+(r?(':'+r):''); _clean(); res(); return; }
+              HX.dav.downFile('/学习套装备份/黑匣子回环.txt','hx_lb_read.tmp').then(function(txt){
+                try{
+                  if(txt===null || txt===undefined){ D='读断'; }
+                  else if(String(txt)===payload){ D='通'; }
+                  else{ D='码不对'; }
+                }catch(e){ D='读断'; }
+                _clean(); res();
+              });
+            });
+          }catch(e){ D='断:'+((e&&e.message)||e); _clean(); res(); }
+        });
+        Promise.all([pG, pD]).then(function(){
+          try{ bbToast('回环体检：GitHub '+G+' ｜ 坚果云 '+D); }catch(e){}
+          try{ job('回环体检', (G==='通'&&D==='通'), 'G:'+G+' D:'+D); }catch(e){}
+        });
+      }catch(e){}
+    }
+
     /* v0.28.0 案3哨兵：只进账本不触发上行（防flush递归），随下次上行自然出账 */
     function _silentLog(k, m){
       try{
@@ -1280,7 +1322,7 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
     /* 自带boot：挂HX即活 */
     try{ init(); }catch(e){}
 
-    return { init:init, log:log, flush:flush, job:job, /* v0.28.0 */ collectSide:collectSide, tail:function(n){ try{ var a=loadLog(); return a.slice(Math.max(0,a.length-(n||10))); }catch(e){ return []; } } };
+    return { init:init, log:log, flush:flush, job:job, /* v0.28.0 */ loopback:loopback, /* v0.30.0 刀A1 */ collectSide:collectSide, tail:function(n){ try{ var a=loadLog(); return a.slice(Math.max(0,a.length-(n||10))); }catch(e){ return []; } } };
   })();
 
   /* ════ 4.95 验收牌 HX.chk（v0.20.0 新增｜2026-10-12 班⑤ Kimi定稿SPEC，洪老师拍板「做窄条面板，其他的按你的意思，开工」，SPEC_v0.20.0_验收牌）
@@ -2690,6 +2732,7 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
       }catch(e){ warn('sj UI注入失败: '+((e&&e.message)||e)); return false; }
     }
     function bind(){
+      var _sosT=null, _sosTimer=null; /* v0.30.0 刀A2 双击🆘回环：单击600ms后flush(true)，600ms内第二击loopback() */
       var dot=$('hxSjDot'); if(!dot) return;
       dot.addEventListener('click', openPanel);
       $('hxSjSave').addEventListener('click', save);
@@ -2697,7 +2740,7 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
       var sjPrevBtn=$('hxSjPrev'); if(sjPrevBtn) sjPrevBtn.addEventListener('click', function(){ try{ var box=$('hxSjPrevList'); if(box && box.style.display==='block'){ box.style.display='none'; return; } showPrevList(); }catch(e){} }); /* v0.15.0 ↩补充上一条：列表开着再点=收起（无副作用），否则弹最近3条 */
       var sjBrowseBtn=$('hxSjBrowse'); if(sjBrowseBtn) sjBrowseBtn.addEventListener('click', function(){ try{ sjShowBrowse(); }catch(e){} }); /* v0.19.0 📜翻看 */
       var sjChkBtn=$('hxSjChk'); if(sjChkBtn) sjChkBtn.addEventListener('click', function(){ try{ HX.chk.open(); }catch(e){} }); /* v0.20.0 ✅验收，SPEC批准申报加法② */
-      var sjSosBtn=$('hxSjSos'); if(sjSosBtn) sjSosBtn.addEventListener('click', function(){ try{ HX.bb.flush(true); }catch(e){ try{ sjToast('黑匣子没传上去'); }catch(e2){} } }); /* v0.24.0 🆘传黑匣子：点=强推一次 */
+      var sjSosBtn=$('hxSjSos'); if(sjSosBtn) sjSosBtn.addEventListener('click', function(){ try{ if(localStorage.getItem('hx_lb_off')==='1'){ HX.bb.flush(true); return; } var now=Date.now(); if(_sosT && (now-_sosT)<600){ clearTimeout(_sosTimer); _sosTimer=null; _sosT=null; if(typeof HX.bb.loopback==='function') HX.bb.loopback(); return; } _sosT=now; _sosTimer=setTimeout(function(){ _sosTimer=null; _sosT=null; try{ HX.bb.flush(true); }catch(e){ try{ sjToast('黑匣子没传上去'); }catch(e2){} } }, 600); }catch(e){ try{ sjToast('黑匣子没传上去'); }catch(e2){} } }); /* v0.30.0 刀A2 双击🆘回环：hx_lb_off=1单击照旧flush(true)整刀退休；否则单击600ms后flush(true)、600ms内第二击loopback() */ /* v0.24.0 🆘传黑匣子：点=强推一次 */
       var sjPanelBk=$('hxSjPanel'); if(sjPanelBk) sjPanelBk.addEventListener('click', function(ev){ try{ var box=$('hxSjPrevList'); if(box && box.style.display==='block' && ev.target===sjPanelBk) box.style.display='none'; }catch(e){} }); /* v0.15.0 点面板空白处关列表（点在条目/按钮上不动），无副作用 */
       $('hxSjClose').addEventListener('click', function(){ $('hxSjPanel').style.display='none'; });
       var sjImgBtn=$('hxSjImg'); if(sjImgBtn) sjImgBtn.addEventListener('click', function(){ try{
