@@ -83,7 +83,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 (function(){
   'use strict';
-  var HX_COMMON_VERSION = '0.27.0';/* ═══════════════════════════════════════════════════════════════════════════
+  var HX_COMMON_VERSION = '0.28.0';/* v0.28.0（2026-10-15 夜班，洪老师拍板「开工」，SPEC_hx-common_v0.28.0_黑匣子五案，DS实现+Kimi终审）：黑匣子五案——①HX.bb.job办完报账（成记job/败记err立刻上行）②重点钮12秒看门狗「点了没反应」③哨兵_silentLog（flush失败/没钥匙直写账防递归）④hxToastHold黑框留账note（hxBbToast自家除外）⑤err截断120→300字；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.chk IDENTICAL，HX.bb除块2~5申报点外IDENTICAL，hxToastHold除块4一处加法外IDENTICAL */ /* ═══════════════════════════════════════════════════════════════════════════
    v0.27.0（2026-10-15 晚班③，洪老师真机报「黑框文字显示不全犯糊涂/跨页没说去哪页」+拍板「现在就搞」，SPEC_hx-common_v0.27.0_黑框字看不全+跨页报名字，DS实现15.9秒完整回件+Kimi终审翻案1处亲手落地：_wizBox开头补摘旧hxChkWizFull防换步残留）：刀1黑框文字区看得全（去两行截断→字号14px+最多约3行可上下滑+点文字区弹大框看全文再点收起，_wizBoxClose同步收大框）刀2跨页步骤报页面名（step.page，默认「主界面（首页）」，配验收清单t21.s1加page字段）；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold IDENTICAL，HX.chk除_wizBox/_wizStep/_wizBoxClose三函数外IDENTICAL
    v0.26.0（2026-10-15 晚班②，洪老师真机三连报「黑框不是人话/跳过没反应/挡住版面看不见黄圈」+拍板六条浮窗化，SPEC_hx-common_v0.26.0_向导浮条+跳过根治，DS实现+Kimi终审翻案3处亲手落地：①document拖动监听泄漏→留引用_wizBoxClose全摘 ②touchmove改挂document防拖快断拖+preventDefault防页面跟滚 ③wizSkipped三入口清零核讫）：刀A跳过根治（_wizSkipped会话记账，跳过不再原地踏步）刀B大黑框→顶部可拖动窄浮条（⠿把手三路拖动+hx_chk_wiz_top记位置）刀C文案全人话刀D黄圈自动scrollIntoView屏中间+浮条遮挡自动让位；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold IDENTICAL，HX.chk除向导段（刀A~D）外IDENTICAL
 v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减负——壳领着洪老师一步一步验，
@@ -678,6 +678,7 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
   function hxToastHold(el, hide){
     try{
       if(!el || !hide) return;
+      try{ if(window.HX && HX.bb && typeof HX.bb.log==='function' && String(el.id||'')!=='hxBbToast'){ HX.bb.log('note','黑框:'+String(el.textContent||'').slice(0,100)); } }catch(e){} /* v0.28.0 案4：黑框内容留账，bb自家toast除外防噪音 */
       try{ if(el._hxToastOff){ document.removeEventListener('pointerdown', el._hxToastOff, true); document.removeEventListener('touchstart', el._hxToastOff, true); document.removeEventListener('mousedown', el._hxToastOff, true); el._hxToastOff=null; } }catch(e0){} /* v0.24.3 刀B：三路全摘 */
       try{ if(el._hxToastX && el._hxToastX.parentNode) el._hxToastX.parentNode.removeChild(el._hxToastX); }catch(e1){}
       var x=document.createElement('span');
@@ -1018,6 +1019,7 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
     var _lastBtn = '';             /* 同钮去重：上次按钮文字 */
     var _lastBtnT = 0;             /* 同钮去重：上次时间 */
     var _timer = null;             /* ⚪条60秒对账定时器 */
+    var _wd = null;                /* v0.28.0 案2看门狗：{txt,timer}同一时刻最多一条 */
 
     function _off(){ try{ return localStorage.getItem('hx_bb_off')==='1'; }catch(e){ return false; } }
 
@@ -1124,14 +1126,35 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
         if(_off()) return;
         var arr = loadLog();
         var app = ''; try{ app = String(document.title||''); }catch(e){ app=''; }
-        var mm = String(m==null?'':m); if(mm.length>120) mm = mm.slice(0,120);
+        var mm = String(m==null?'':m); if(mm.length>300) mm = mm.slice(0,300); /* v0.28.0 案5：截断放宽300 */
         arr.push({ t: Date.now(), app: app, k: String(k||''), m: mm });
         while(arr.length > MAX){ arr.shift(); } /* 环形：超300条切头 */
         saveLog(arr);
+        /* v0.28.0 案2：任何非本钮act的新记录=有动静，看门狗解除 */
+        try{ if(_wd && !(String(k)==='act' && String(mm).indexOf(_wd.txt)===0)){ clearTimeout(_wd.timer); _wd=null; } }catch(e){}
         if(String(k)==='err'){ try{ flush(false); }catch(e){} } /* 🔴条立刻整份推 */
       }catch(e){}
     }
 
+    /* v0.28.0 案1办完报账：ok===true记job，败记err（err自动立刻上行照老例） */
+    function job(name, ok, why){
+      try{
+        if(ok===true){ log('job', '成:'+String(name||'')); }
+        else{ log('err', '败:'+String(name||'')+(why?(':'+String(why)):'')); }
+      }catch(e){}
+    }
+    /* v0.28.0 案3哨兵：只进账本不触发上行（防flush递归），随下次上行自然出账 */
+    function _silentLog(k, m){
+      try{
+        if(_off()) return;
+        var arr = loadLog();
+        var app = ''; try{ app = String(document.title||''); }catch(e){ app=''; }
+        var mm = String(m==null?'':m); if(mm.length>300) mm = mm.slice(0,300);
+        arr.push({ t: Date.now(), app: app, k: String(k||''), m: mm });
+        while(arr.length > MAX){ arr.shift(); }
+        saveLog(arr);
+      }catch(e){}
+    }
     /* ---- 整份上行（照pushProg先例：GET取sha→PUT；hx_bb_uplocal镜像对账不重复推） ---- */
     function flush(manual){
       try{
@@ -1139,7 +1162,7 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
         if(!window.fetch) return;
         if(manual !== true){ if(typeof HX._autoNetOk==='function'){ if(!HX._autoNetOk()) return; } } /* 闲时闸门；manual强推放行 */
         var g=null; try{ g=HX.keys.gh(); }catch(e){ g=null; }
-        if(!g){ if(manual===true){ try{ if(typeof sjToast==='function') bbToast('没传上去：没钥匙/没网，下回开门自动补'); }catch(e){} } return; }
+        if(!g){ try{ _silentLog('err','黑匣子没传上去：没钥匙'); }catch(e){} /* v0.28.0 案3 */ if(manual===true){ try{ if(typeof sjToast==='function') bbToast('没传上去：没钥匙/没网，下回开门自动补'); }catch(e){} } return; }
         var arr = loadLog();
         var lines = [];
         for(var i=0;i<arr.length;i++){
@@ -1159,6 +1182,7 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
           try{ localStorage.setItem(LS_UP, body); }catch(e){}
           if(manual===true){ try{ if(typeof sjToast==='function') bbToast('黑匣子已传上去，接班AI会看到'); }catch(e){} }
         }).catch(function(){
+          try{ _silentLog('err','黑匣子上行失败：下回开门补'); }catch(e){} /* v0.28.0 案3 */
           if(manual===true){ try{ if(typeof sjToast==='function') bbToast('没传上去：没钥匙/没网，下回开门自动补'); }catch(e){} }
         }); /* 断网补传：失败静默，下次记账/开门闲时再推 */
       }catch(e){
@@ -1199,6 +1223,13 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
             if(txt === _lastBtn && (now - _lastBtnT) < 500) return; /* 同钮500ms内去重 */
             _lastBtn = txt; _lastBtnT = now;
             log('act', txt);
+            /* v0.28.0 案2看门狗：白名单三钮点后12秒没动静记err */
+            try{
+              if(/检查新版本|记下|传黑匣子/.test(txt)){
+                if(_wd){ clearTimeout(_wd.timer); _wd=null; }
+                _wd = { txt: txt, timer: setTimeout(function(){ try{ var t=_wd; _wd=null; if(t) log('err','点了「'+t.txt+'」12秒没动静'); }catch(e){} }, 12000) };
+              }
+            }catch(e){}
           }catch(e){}
         }, true); /* 捕获阶段 */
       }catch(e){}
@@ -1239,7 +1270,7 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
     /* 自带boot：挂HX即活 */
     try{ init(); }catch(e){}
 
-    return { init:init, log:log, flush:flush, collectSide:collectSide, tail:function(n){ try{ var a=loadLog(); return a.slice(Math.max(0,a.length-(n||10))); }catch(e){ return []; } } };
+    return { init:init, log:log, flush:flush, job:job, /* v0.28.0 */ collectSide:collectSide, tail:function(n){ try{ var a=loadLog(); return a.slice(Math.max(0,a.length-(n||10))); }catch(e){ return []; } } };
   })();
 
   /* ════ 4.95 验收牌 HX.chk（v0.20.0 新增｜2026-10-12 班⑤ Kimi定稿SPEC，洪老师拍板「做窄条面板，其他的按你的意思，开工」，SPEC_v0.20.0_验收牌）
