@@ -1,6 +1,6 @@
 {
- "version": "0.24.5",
+ "version": "0.25.0",
  "dl": "hx-common.js",
- "note": "钥匙不断四刀（洪老师报没钥匙想法没上传，拍板A+B）：_saveFile合并写真源防盖没dav/deepseek+_loadFile认dav+dav()真源回填+warm触发含dav；配套壳vc58埋钥胚。DS API繁忙照先例Kimi工兵代跑报备+仿真14/14",
- "sig": "3143ec22b11a0eab"
+ "note": "验收向导+自报验收单（洪老师拍板减负：壳领着验点亮弹窗问行吗，能自判不问人，验收单自动传上网；开门自动问满3次不烦）：HX.chk加wiz向导+pushReport双腿+清单认lane(cloud/watch)；DS二稿+Kimi终审翻案5处亲手落地+仿真16/16",
+ "sig": "158c5de50bb12924"
 }
