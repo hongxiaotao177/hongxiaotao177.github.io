@@ -83,8 +83,9 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 (function(){
   'use strict';
-  var HX_COMMON_VERSION = '0.25.0';/* ═══════════════════════════════════════════════════════════════════════════
-   v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减负——壳领着洪老师一步一步验，
+  var HX_COMMON_VERSION = '0.26.0';/* ═══════════════════════════════════════════════════════════════════════════
+   v0.26.0（2026-10-15 晚班②，洪老师真机三连报「黑框不是人话/跳过没反应/挡住版面看不见黄圈」+拍板六条浮窗化，SPEC_hx-common_v0.26.0_向导浮条+跳过根治，DS实现+Kimi终审翻案3处亲手落地：①document拖动监听泄漏→留引用_wizBoxClose全摘 ②touchmove改挂document防拖快断拖+preventDefault防页面跟滚 ③wizSkipped三入口清零核讫）：刀A跳过根治（_wizSkipped会话记账，跳过不再原地踏步）刀B大黑框→顶部可拖动窄浮条（⠿把手三路拖动+hx_chk_wiz_top记位置）刀C文案全人话刀D黄圈自动scrollIntoView屏中间+浮条遮挡自动让位；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold IDENTICAL，HX.chk除向导段（刀A~D）外IDENTICAL
+v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减负——壳领着洪老师一步一步验，
    点亮弹窗问「行吗」，他只管点行/不行；能自己判的绝不问人；结果写成验收单自动传上网，
    Kimi接班云侧销号。
    启动规矩（洪老师2026-10-15拍板对齐）：
@@ -1900,6 +1901,7 @@
 
     /* ═══ v0.25.0 刀A：向导模式 wiz（复用现有骨架；DS二稿=点亮+三钮大黑框，Kimi终审拼接） ═══ */
     var _wiz = null; /* 当前向导状态 {task, step} */
+    var _wizSkipped = {}; /* v0.26.0 刀A：本次向导会话内跳过集合，key=tid+':'+sid */
 
     /* 找下一个未绿步（跳过 sim/cloud/watch，跳过已挂号=2） */
     function _wizNext(){
@@ -1913,6 +1915,7 @@
             var st=t.steps[j];
             if(stepGreen(prog, t.id, st.id)) continue;
             if(stepHeld(prog, t.id, st.id)) continue; /* 已挂号跳过 */
+            if(_wizSkipped[String(t.id)+':'+String(st.id)]) continue; /* v0.26.0 刀A：本次会话已跳过，不再回头 */
             return { task:t, step:st };
           }
         }
@@ -1931,29 +1934,29 @@
             _wizAdvance();
             return;
           }
-          _wizBox('这步机器没侦到，您亲眼看看：\n'+title, [ /* Kimi终审修：auto没侦中不许静默跳过，落手动问 */
-            { t:'✓这步好了', big:true, bg:'#7a9e7e', fn:function(){ try{ markGreen(task.id, step.id); _wizBoxClose(); _wizAdvance(); }catch(e){} } },
+          _wizBox('这步机器看不出来，您亲眼看看：'+String(task.title||'')+' · '+String(step.text||''), [ /* v0.26.0 刀C：auto未侦中文案人话 */
+            { t:'✓好了', big:true, bg:'#7a9e7e', fn:function(){ try{ markGreen(task.id, step.id); _wizBoxClose(); _wizAdvance(); }catch(e){} } },
             { t:'✗不行', big:true, bg:'#a05848', fn:function(){ try{ _wizHold(task, step); _wizBoxClose(); _wizAdvance(); }catch(e){} } },
-            { t:'跳过', big:true, bg:'#7a8ea0', fn:function(){ try{ _wizBoxClose(); _wizAdvance(); }catch(e){} } },
+            { t:'跳过', big:true, bg:'#7a8ea0', fn:function(){ try{ _wizSkipped[String(task.id)+':'+String(step.id)]=1; _wizBoxClose(); _wizAdvance(); }catch(e){} } }, /* v0.26.0 刀A：跳过先记账再前进 */
             { t:'✕先验到这', bg:'#6b6257', fn:function(){ try{ _wizBoxClose(); _wizExit(); }catch(e){} } }
           ]);
           return;
         }
         if(step.spot){
           var lit=_wizSpot(step.spot);
-          var q='看得见【'+String(step.text||'')+'】吗？';
-          if(!lit){ q='（目标不在本页，请到对应软件里看）\n'+q; }
+          var q='请点屏幕上发黄光的那个（'+String(step.text||'')+'），好使吗？'; /* v0.26.0 刀C：spot文案人话 */
+          if(!lit){ q='（这个在别的页面，请过去看）\n'+q; } /* v0.26.0 刀C：目标不在本页提示人话 */
           _wizBox(q, [
-            { t:'✓行', big:true, bg:'#7a9e7e', fn:function(){ try{ _wizSpotClear(); markGreen(task.id, step.id); _wizBoxClose(); _wizAdvance(); }catch(e){} } },
+            { t:'✓好使', big:true, bg:'#7a9e7e', fn:function(){ try{ _wizSpotClear(); markGreen(task.id, step.id); _wizBoxClose(); _wizAdvance(); }catch(e){} } }, /* v0.26.0 刀C：钮文字人话 */
             { t:'✗不行', big:true, bg:'#a05848', fn:function(){ try{ _wizSpotClear(); _wizHold(task, step); _wizBoxClose(); _wizAdvance(); }catch(e){} } },
             { t:'🔄再亮一次', big:true, bg:'#7a8ea0', fn:function(){ try{ _wizSpot(step.spot); }catch(e){} } },
             { t:'✕先验到这', bg:'#6b6257', fn:function(){ try{ _wizSpotClear(); _wizBoxClose(); _wizExit(); }catch(e){} } }
           ]);
           return;
         }
-        _wizBox(title, [
-          { t:'✓这步好了', big:true, bg:'#7a9e7e', fn:function(){ try{ markGreen(task.id, step.id); _wizBoxClose(); _wizAdvance(); }catch(e){} } },
-          { t:'跳过', big:true, bg:'#7a8ea0', fn:function(){ try{ _wizBoxClose(); _wizAdvance(); }catch(e){} } },
+        _wizBox('请确认：'+String(task.title||'')+' · '+String(step.text||''), [ /* v0.26.0 刀C：纯手动步文案人话 */
+          { t:'✓好了', big:true, bg:'#7a9e7e', fn:function(){ try{ markGreen(task.id, step.id); _wizBoxClose(); _wizAdvance(); }catch(e){} } }, /* v0.26.0 刀C：钮文字人话 */
+          { t:'跳过', big:true, bg:'#7a8ea0', fn:function(){ try{ _wizSkipped[String(task.id)+':'+String(step.id)]=1; _wizBoxClose(); _wizAdvance(); }catch(e){} } }, /* v0.26.0 刀A：跳过先记账再前进 */
           { t:'✕先验到这', bg:'#6b6257', fn:function(){ try{ _wizBoxClose(); _wizExit(); }catch(e){} } }
         ]);
       }catch(e){}
@@ -1964,28 +1967,53 @@
         if(!document.body) return null;
         var old=$('hxChkWizBox'); if(old && old.parentNode) old.parentNode.removeChild(old);
         var box=document.createElement('div'); box.id='hxChkWizBox';
-        box.style.cssText='position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:99999;background:rgba(20,18,14,.97);color:#fff;border-radius:16px;padding:26px 28px;max-width:92%;min-width:280px;box-sizing:border-box;box-shadow:0 12px 40px rgba(0,0,0,.55);border:2px solid #3a342a';
+        box.style.cssText='position:fixed;left:0;right:0;top:0;z-index:99999;background:rgba(20,18,14,.97);color:#fff;padding:10px 14px;box-sizing:border-box;box-shadow:0 4px 16px rgba(0,0,0,.4);border-bottom:2px solid #3a342a'; /* v0.26.0 刀B：大黑框改顶部窄浮条 */
+        try{ var _sv=localStorage.getItem('hx_chk_wiz_top'); if(_sv!==null){ var _tv=parseFloat(_sv); if(!isNaN(_tv)){ var _mh=(window.innerHeight||600)-120; if(_tv<0)_tv=0; if(_tv>_mh)_tv=_mh; box.style.top=_tv+'px'; } } }catch(e0){} /* v0.26.0 刀B：新建时读hx_chk_wiz_top恢复位置 */
+        var hd=document.createElement('div'); /* v0.26.0 刀B：拖动把手区 */
+        hd.style.cssText='height:16px;line-height:16px;font-size:11px;color:#8a8175;cursor:move;user-select:none;-webkit-user-select:none;margin-bottom:4px';
+        hd.textContent='⠿ 按住拖我';
+        box.appendChild(hd);
         var tt=document.createElement('div');
-        tt.style.cssText='font-size:20px;line-height:1.7;margin-bottom:20px;white-space:pre-wrap;word-break:break-all';
+        tt.style.cssText='font-size:16px;line-height:1.5;margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-all'; /* v0.26.0 刀B：文字区最多两行超出省略 */
         tt.textContent=String(title||'');
         box.appendChild(tt);
-        var row=document.createElement('div'); row.style.cssText='display:flex;gap:12px;justify-content:flex-end;flex-wrap:wrap';
+        var row=document.createElement('div'); row.style.cssText='display:flex;gap:12px;justify-content:flex-start;flex-wrap:wrap'; /* v0.26.0 刀B：按钮行靠左 */
         for(var i=0;i<btns.length;i++){ (function(b){
           var btn=document.createElement('button'); btn.type='button'; btn.textContent=String(b.t||'');
-          var fs=b.big?'22px':'16px';
-          var pd=b.big?'14px 22px':'10px 18px';
+          var fs=b.big?'18px':'16px'; /* v0.26.0 刀B：big钮字号18 */
+          var pd=b.big?'10px 16px':'10px 18px'; /* v0.26.0 刀B：big钮padding */
           btn.style.cssText='background:'+(b.bg||'#7a9e7e')+';color:#fff;font-size:'+fs+';font-weight:bold;padding:'+pd+';border:none;border-radius:10px;cursor:pointer;line-height:1.2';
           btn.addEventListener('click', function(){ try{ if(b.fn) b.fn(); }catch(e){} });
           row.appendChild(btn);
         })(btns[i]); }
         box.appendChild(row);
         document.body.appendChild(box);
+        /* v0.26.0 刀B：拖动三路监听（touchstart/touchmove/touchend + mousedown/mousemove/mouseup） */
+        try{
+          var _drag=false, _sy=0, _st=0, _moved=false;
+          var _getTop=function(){ var v=parseFloat(box.style.top); if(isNaN(v)) v=0; return v; };
+          var _clamp=function(v){ var mh=(window.innerHeight||600)-120; if(v<0)v=0; if(v>mh)v=mh; return v; };
+          var _start=function(y){ _drag=true; _moved=false; _sy=y; _st=_getTop(); };
+          var _move=function(y){ if(!_drag) return; var dy=y-_sy; if(Math.abs(dy)>=8) _moved=true; if(_moved){ box.style.top=_clamp(_st+dy)+'px'; } };
+          var _end=function(){ if(!_drag) return; _drag=false; if(_moved){ try{ localStorage.setItem('hx_chk_wiz_top', String(_getTop())); }catch(e1){} } };
+          var _tm=function(ev){ try{ var t=ev.touches&&ev.touches[0]; if(t) _move(t.clientY); if(_moved && ev.cancelable) ev.preventDefault(); }catch(e3){} }; /* v0.26.0 终审修：拖动中preventDefault防页面跟滚 */
+          var _te=function(ev){ try{ _end(); }catch(e4){} };
+          var _mm=function(ev){ try{ _move(ev.clientY); }catch(e6){} };
+          var _mu=function(ev){ try{ _end(); }catch(e7){} };
+          box._hxDragOff=function(){ try{ document.removeEventListener('touchmove', _tm, false); document.removeEventListener('touchend', _te, false); document.removeEventListener('mousemove', _mm, false); document.removeEventListener('mouseup', _mu, false); }catch(e9){} }; /* v0.26.0 终审修：四路监听留引用，_wizBoxClose全摘防泄漏 */
+          hd.addEventListener('touchstart', function(ev){ try{ var t=ev.touches&&ev.touches[0]; if(t) _start(t.clientY); }catch(e2){} }, false);
+          document.addEventListener('touchmove', _tm, false); /* v0.26.0 终审修：move/end改挂document，拖快滑出把手不断拖 */
+          document.addEventListener('touchend', _te, false);
+          hd.addEventListener('mousedown', function(ev){ try{ _start(ev.clientY); }catch(e5){} }, false);
+          document.addEventListener('mousemove', _mm, false);
+          document.addEventListener('mouseup', _mu, false);
+        }catch(e8){}
         return box;
       }catch(e){ return null; }
     }
 
     function _wizBoxClose(){
-      try{ var b=$('hxChkWizBox'); if(b && b.parentNode) b.parentNode.removeChild(b); }catch(e){}
+      try{ var b=$('hxChkWizBox'); if(b){ try{ if(b._hxDragOff) b._hxDragOff(); }catch(e1){} if(b.parentNode) b.parentNode.removeChild(b); } }catch(e){} /* v0.26.0 终审修：关盒先摘拖动监听 */
     }
 
     function _wizSpot(sel){
@@ -1995,8 +2023,27 @@
         var el=null;
         try{ el=document.querySelector(String(sel)); }catch(e){ el=null; }
         if(!el) return false;
+        try{ el.scrollIntoView({block:'center',behavior:'auto'}); }catch(e0){} /* v0.26.0 刀D：命中先滚到屏中间 */
         var r=el.getBoundingClientRect();
         if(!r || (r.width===0 && r.height===0)) return false;
+        /* v0.26.0 刀D：查遮挡，浮条与黄圈相交则让位 */
+        try{
+          var wb=$('hxChkWizBox');
+          if(wb){
+            var wr=wb.getBoundingClientRect();
+            var interTop=Math.max(r.top, wr.top);
+            var interBot=Math.min(r.bottom, wr.bottom);
+            var interLeft=Math.max(r.left, wr.left);
+            var interRight=Math.min(r.right, wr.right);
+            if(interBot>interTop && interRight>interLeft){
+              var dy=0;
+              if(wr.top < (window.innerHeight||600)/2){ dy=(interBot-interTop)+20; } else { dy=-((interBot-interTop)+20); }
+              try{ window.scrollBy(0, dy); }catch(e1){}
+              r=el.getBoundingClientRect();
+              if(!r || (r.width===0 && r.height===0)) return false;
+            }
+          }
+        }catch(e2){}
         var ov=document.createElement('div'); ov.id='hxChkWizSpot';
         ov.style.cssText='position:fixed;left:0;top:0;right:0;bottom:0;z-index:99998;pointer-events:none';
         var box=document.createElement('div');
@@ -2037,6 +2084,7 @@
         _wizSpotClear();
         _wizBoxClose();
         _wiz=null;
+        _wizSkipped={}; /* v0.26.0 刀A：退出清零，新一轮重新给机会 */
         refreshUI();
       }catch(e){}
     }
@@ -2058,7 +2106,8 @@
           }
         }
         _wiz=null;
-        _wizBox('验收完了：过'+pass+'项，挂号'+held+'项，已传上网', [
+        _wizSkipped={}; /* v0.26.0 刀A：完成清零 */
+        _wizBox('这期验收走完啦：过了'+pass+'项，挂号'+held+'项（已传上网，Kimi接班会看到）', [ /* v0.26.0 刀C：总结文案人话 */
           { t:'✕', big:true, bg:'#6b6257', fn:function(){ try{ _wizBoxClose(); refreshUI(); }catch(e){} } }
         ]);
         try{ pushReport(); }catch(e){}
@@ -2088,6 +2137,7 @@
         }
         if(un<=0) return;
         try{ localStorage.setItem('hx_chk_wiz_n', String(n+1)); }catch(e){}
+        _wizSkipped={}; /* v0.26.0 刀A：进入向导清零 */
         _wiz={ task:nx.task, step:nx.step };
         _wizStep();
       }catch(e){}
@@ -2101,10 +2151,12 @@
         if(!_list || !_list.tasks || !_list.tasks.length){ chkToast('清单还没取到，点🔄刷新试试'); return; }
         var nx=_wizNext();
         if(!nx){ chkToast('这期验收全绿了🎉'); return; }
+        _wizSkipped={}; /* v0.26.0 刀A：进入向导清零 */
         _wiz={ task:nx.task, step:nx.step };
         _wizStep();
       }catch(e){}
     }
+
 
         /* 初始化 */
     function init(){
