@@ -1,6 +1,6 @@
 {
- "version": "1.20.6",
+ "version": "1.20.7",
  "dl": "index.html",
- "sig": "6dfbe5b0dc03e689",
- "note": "v1.20.6门岗带记录仪：hxWriteSmart各节点记黑匣子act，擒vc57真机卡点位；功能与v1.20.5一致"
+ "sig": "93bad1db4a91d015",
+ "note": "v1.20.7：门岗记录仪叫对门（HX.bb.log真名），擒反复更新卡点位"
 }

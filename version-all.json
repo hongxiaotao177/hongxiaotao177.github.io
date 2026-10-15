@@ -4,9 +4,9 @@
  "items": [
   {
    "key": "index",
-   "version": "1.20.6",
+   "version": "1.20.7",
    "dl": "index.html",
-   "sig": "6dfbe5b0dc03e689"
+   "sig": "93bad1db4a91d015"
   },
   {
    "key": "guanjia",
@@ -33,5 +33,5 @@
    "sig": "c594a0d1fa1a3ee4"
   }
  ],
- "note": "主界面v1.20.6门岗记录仪（擒反复更新卡点位）"
+ "note": "主界面v1.20.7记录仪修名"
 }

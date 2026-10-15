@@ -538,7 +538,7 @@ CUR.index="1.19.11"; /* v1.19.11：账本覆盖让路硬编码"0"，清tuomin假
 CUR.index="1.19.12"; /* v1.19.12：自立导出钮，见顶部修改记录 */
 CUR.index="1.20.0";
 CUR.index="1.20.1";
-CUR.index="1.20.6"; /* v1.20.6（2026-10-15早班①续，洪老师真机报vc57+v1.20.5双上岗仍反复更新）：门岗带记录仪——hxWriteSmart各节点记黑匣子act（其余一行未动，擒卡点位用） */ /* v1.20.5（2026-10-15早班①，洪老师拍板「桥加门岗，大块头过来自动切碎」，SPEC_桥门岗_vc57，Kimi工兵代跑报备）：部件写入三处调用点过新门岗hxWriteSmart（大件自动切碎走壳新分块桥+End回读字节对账，假成功当场现形；小件/老壳/hx_gate_off=1走老单发桥一行未动）+partLocalVer读门岗（整读瞎→fileReadChunk头4KB认版本号+黑匣子留账）；配壳vc57/v2.1.0，其余一行未动 */ /* v1.20.4（2026-10-15 班⑩深夜救火，洪老师真机报「白屏5秒闪退+点更新没反应」，黑匣子实锤01:24四连开门=装件reload循环+无一条err）：本体=v1.20.1真机稳定版原样，只升号盖过机子上的残次1.20.3（v1.20.2两路并行互盖/v1.20.3手动链空开关——__taskFeedStart在1063行__taskFeed赋值前被调=undefined空转return，手动查新全瘫）。号跳2/3是为了>残次版让机子肯装。任务单手动接入重做留待下一对话（洪老师拍板先讨论验收减负两任务） */ /* v1.20.1（2026-10-14 班⑨救火，装循环根治，SPEC_index_v1.20.1，DS实现+Kimi终审亲手落地）：装循环根治+toast节流） */ /* v1.20.0（2026-10-14 班⑧，洪老师拍板任务单式查新+开门自动查+管家灯，SPEC_index_v1.20.0，DS实现+Kimi终审翻案4处亲手落地） */
+CUR.index="1.20.7"; /* v1.20.7（2026-10-15早班①续2）：门岗记录仪叫对门——HX.bb.act误名改HX.bb.log真名（两处，终审查母本逮住），其余一行未动 */ /* v1.20.6（2026-10-15早班①续，洪老师真机报vc57+v1.20.5双上岗仍反复更新）：门岗带记录仪——hxWriteSmart各节点记黑匣子act（其余一行未动，擒卡点位用） */ /* v1.20.5（2026-10-15早班①，洪老师拍板「桥加门岗，大块头过来自动切碎」，SPEC_桥门岗_vc57，Kimi工兵代跑报备）：部件写入三处调用点过新门岗hxWriteSmart（大件自动切碎走壳新分块桥+End回读字节对账，假成功当场现形；小件/老壳/hx_gate_off=1走老单发桥一行未动）+partLocalVer读门岗（整读瞎→fileReadChunk头4KB认版本号+黑匣子留账）；配壳vc57/v2.1.0，其余一行未动 */ /* v1.20.4（2026-10-15 班⑩深夜救火，洪老师真机报「白屏5秒闪退+点更新没反应」，黑匣子实锤01:24四连开门=装件reload循环+无一条err）：本体=v1.20.1真机稳定版原样，只升号盖过机子上的残次1.20.3（v1.20.2两路并行互盖/v1.20.3手动链空开关——__taskFeedStart在1063行__taskFeed赋值前被调=undefined空转return，手动查新全瘫）。号跳2/3是为了>残次版让机子肯装。任务单手动接入重做留待下一对话（洪老师拍板先讨论验收减负两任务） */ /* v1.20.1（2026-10-14 班⑨救火，装循环根治，SPEC_index_v1.20.1，DS实现+Kimi终审亲手落地）：装循环根治+toast节流） */ /* v1.20.0（2026-10-14 班⑧，洪老师拍板任务单式查新+开门自动查+管家灯，SPEC_index_v1.20.0，DS实现+Kimi终审翻案4处亲手落地） */
 CUR.tuomin="0"; /* v1.19.10修404：CUR=壳内已装版本，单体手机还没装必须填"0"才会下载（CUR.ppt同款老坑，见230行） */ /* v1.19.8（2026-09-20班⑮，洪老师真机报"升级说装成功主界面还是19.6，几次都这样，没重启应该直接变19.7"）病根=班⑮发v1.19.7时新赋值插在同一行旧赋值前面，CUR.index="1.19.7"刚赋上就被同行的CUR.index="1.19.6"盖回→页脚活字永远亮1.19.6（文件真身早是新版，升级链/壳全无辜，大管家0.54.5上机为证）；还连带v1.19.5刀2开门自校对误把账本1.19.7当谎回滚→每次都提示重装。治=删同行可执行旧赋值（注释留档）+升号v1.19.8让真机重新下载。其余一行未动 */
 try{document.getElementById("ftVer").textContent=CUR.index;}catch(eF){} /* v1.19.6 页脚死字改活字：ftVer亮CUR.index真身 */
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
@@ -593,7 +593,7 @@ function partLocalVer(name, re){
         if(c){
           var t2=decodeURIComponent(escape(atob(String(c).replace(/\s+/g,''))));
           var m2=t2.slice(0,2000).match(re);
-          if(m2){ try{ if(window.HX&&HX.bb&&HX.bb.act) HX.bb.act('partLocalVer走分片认到'+name+' v'+m2[1]); }catch(e){} return m2[1]; }
+          if(m2){ try{ if(window.HX&&HX.bb&&HX.bb.log) HX.bb.log('act','partLocalVer走分片认到'+name+' v'+m2[1]); }catch(e){} /* v1.20.7同款修 */ return m2[1]; }
         }
       }
     }catch(e){}
@@ -602,7 +602,7 @@ function partLocalVer(name, re){
 }
 /* v1.20.5 桥门岗·写门岗（同上SPEC）：凡部件写入一律过本岗——hx_gate_off=1或老壳无新桥或件小（<200000字符b64）走老单发；大件自动按60000字符（4的倍数，base64不断quantum）切碎走fileWriteBegin/Chunk/End，End回读字节对账（假成功当场现形），任一环节fail→Abort→回落老单发一次；cb(ok:bool) */
 /* v1.20.6 门岗带记录仪：每步成败记黑匣子act（洪老师真机vc57+v1.20.5双上岗仍反复更新，要看见卡在哪一步；其余一行未动） */
-function _gateLog(m){ try{ if(window.HX&&HX.bb&&HX.bb.act) HX.bb.act('门岗:'+m); }catch(e){} }
+function _gateLog(m){ try{ if(window.HX&&HX.bb&&HX.bb.log) HX.bb.log('act','门岗:'+m); }catch(e){} } /* v1.20.7终审修：黑匣子接口真名HX.bb.log(k,m)，v1.20.6误写HX.bb.act（查母本逮住） */
 function hxWriteSmart(name, b64, cb){
   try{ if(localStorage.getItem("hx_gate_off")==="1"){ _gateLog(name+' 走老桥(回退开关)'); var ok0=false; try{ ok0=!!LearnShell.writeFile(name,b64); }catch(e){} _gateLog(name+' 老桥回报'+ok0); cb(ok0); return; } }catch(e){ _gateLog(name+' 回退开关读取异常'); cb(false); return; }
   var hasGate=false; try{ hasGate=!!(window.LearnShell && typeof LearnShell.fileWriteBegin==='function'); }catch(e){}
