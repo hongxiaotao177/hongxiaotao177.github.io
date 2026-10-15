@@ -1,6 +1,6 @@
 {
- "version": "1.20.5",
+ "version": "1.20.6",
  "dl": "index.html",
- "sig": "2d02e3acc2454383",
- "note": "v1.20.5桥门岗页侧：部件写过hxWriteSmart自动切碎+字节对账（配壳vc57），partLocalVer读门岗；小件/老壳走老桥一行未动"
+ "sig": "6dfbe5b0dc03e689",
+ "note": "v1.20.6门岗带记录仪：hxWriteSmart各节点记黑匣子act，擒vc57真机卡点位；功能与v1.20.5一致"
 }

@@ -4,9 +4,9 @@
  "items": [
   {
    "key": "index",
-   "version": "1.20.5",
+   "version": "1.20.6",
    "dl": "index.html",
-   "sig": "2d02e3acc2454383"
+   "sig": "6dfbe5b0dc03e689"
   },
   {
    "key": "guanjia",
@@ -33,5 +33,5 @@
    "sig": "c594a0d1fa1a3ee4"
   }
  ],
- "note": "主界面v1.20.5桥门岗（配壳vc57/v2.1.0）；hx-common v0.24.4不动"
+ "note": "主界面v1.20.6门岗记录仪（擒反复更新卡点位）"
 }
