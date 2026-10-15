@@ -546,6 +546,7 @@ CUR.index="1.19.12"; /* v1.19.12：自立导出钮，见顶部修改记录 */
 CUR.index="1.20.0";
 CUR.index="1.20.1";
 CUR.index="1.21.0"; /* v1.20.9（2026-10-15早班①续4，洪老师拍板三件）：首页管家灯（绿活红断）+更新鱼骨头化（updLine只露一行点开看全文）+上一版追踪（任务单最近一件上传/下载/安装三段对账），详注见__home1209头顶，只加版面其余一行未动 */ /* v1.20.6（2026-10-15早班①续，洪老师真机报vc57+v1.20.5双上岗仍反复更新）：门岗带记录仪——hxWriteSmart各节点记黑匣子act（其余一行未动，擒卡点位用） */ /* v1.20.5（2026-10-15早班①，洪老师拍板「桥加门岗，大块头过来自动切碎」，SPEC_桥门岗_vc57，Kimi工兵代跑报备）：部件写入三处调用点过新门岗hxWriteSmart（大件自动切碎走壳新分块桥+End回读字节对账，假成功当场现形；小件/老壳/hx_gate_off=1走老单发桥一行未动）+partLocalVer读门岗（整读瞎→fileReadChunk头4KB认版本号+黑匣子留账）；配壳vc57/v2.1.0，其余一行未动 */ /* v1.20.4（2026-10-15 班⑩深夜救火，洪老师真机报「白屏5秒闪退+点更新没反应」，黑匣子实锤01:24四连开门=装件reload循环+无一条err）：本体=v1.20.1真机稳定版原样，只升号盖过机子上的残次1.20.3（v1.20.2两路并行互盖/v1.20.3手动链空开关——__taskFeedStart在1063行__taskFeed赋值前被调=undefined空转return，手动查新全瘫）。号跳2/3是为了>残次版让机子肯装。任务单手动接入重做留待下一对话（洪老师拍板先讨论验收减负两任务） */ /* v1.20.1（2026-10-14 班⑨救火，装循环根治，SPEC_index_v1.20.1，DS实现+Kimi终审亲手落地）：装循环根治+toast节流） */ /* v1.20.0（2026-10-14 班⑧，洪老师拍板任务单式查新+开门自动查+管家灯，SPEC_index_v1.20.0，DS实现+Kimi终审翻案4处亲手落地） */ /* v1.21.0（2026-10-15午后班②，洪老师原话「检查更新只要上一版干的活+装好没有+管家灯，其他都不要」）：通信管家方框+对账三句话默认藏，回退hx_home1210_off=1，功能逻辑零动 */
+CUR.index="1.22.0"; /* v1.22.0（2026-10-15 夜班⑦，洪老师拍板「做」，SPEC_index_v1.22.0+hx-common_v0.30.0_预下载+双击回环，DS实现+Kimi终审翻案1处亲手落地：preloadSave改先写本体、门岗回调ok后才写.ver防假命中）：闲时预下载开门秒装——dl()开头先查存货hxdata_preload_*版本对上直接用跳过下载，对不上/读不到走老下载链零风险降级，下载成功顺手存壳，装成清存货，装失败留着下次开门救命；回退hx_preload_off=1。红线：管家VERCHECK路/投信/取信/复核verifyAfter/任务单__taskFeed/对账/版面一行不动；除刀B1新增四函数+刀B2两处+刀B3一处+版本行外全文件IDENTICAL */
 CUR.tuomin="0"; /* v1.19.10修404：CUR=壳内已装版本，单体手机还没装必须填"0"才会下载（CUR.ppt同款老坑，见230行） */ /* v1.19.8（2026-09-20班⑮，洪老师真机报"升级说装成功主界面还是19.6，几次都这样，没重启应该直接变19.7"）病根=班⑮发v1.19.7时新赋值插在同一行旧赋值前面，CUR.index="1.19.7"刚赋上就被同行的CUR.index="1.19.6"盖回→页脚活字永远亮1.19.6（文件真身早是新版，升级链/壳全无辜，大管家0.54.5上机为证）；还连带v1.19.5刀2开门自校对误把账本1.19.7当谎回滚→每次都提示重装。治=删同行可执行旧赋值（注释留档）+升号v1.19.8让真机重新下载。其余一行未动 */
 try{document.getElementById("ftVer").textContent=CUR.index;}catch(eF){} /* v1.19.6 页脚死字改活字：ftVer亮CUR.index真身 */
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
@@ -584,6 +585,35 @@ var PARTS = [
   ["hx-common.js",          "version-hx-common.json",          /HX_COMMON_VERSION\s*=\s*'([\d.]+)'/],
   ["guanjia-pdf-engine.js", "version-guanjia-pdf-engine.json", /PDF引擎包[^\n]*?v([\d.]+)/]
 ];
+/* v1.22.0 刀B1 闲时预下载：查新链下载成功后顺手存壳 hxdata_preload_*，装件dl()开头先查存货，版本对得上直接用（跳过下载=秒装），对不上/读不到自动走老下载链（零风险降级）。全程不弹窗、不新增联网。先写本体、门岗回调ok后才写.ver——.ver在=本体必完整，防"牌在件残"假命中 */
+function preloadName(localName){ return 'hxdata_preload_'+String(localName||''); }
+function preloadSave(localName, version, text){
+  try{
+    if(localStorage.getItem('hx_preload_off')==='1') return;
+    if(!window.LearnShell || typeof LearnShell.writeFile!=='function') return;
+    hxWriteSmart(preloadName(localName), u8enc(text), function(ok){
+      try{ if(ok) LearnShell.writeFile(preloadName(localName)+'.ver', u8enc(String(version))); }catch(e){}
+    });
+  }catch(e){}
+}
+function preloadRead(localName, version){
+  try{
+    if(localStorage.getItem('hx_preload_off')==='1') return null;
+    if(!window.LearnShell || typeof LearnShell.readFile!=='function') return null;
+    var verTxt=''; try{ verTxt=u8dec(LearnShell.readFile(preloadName(localName)+'.ver')); }catch(e){ return null; }
+    if(String(verTxt)!==String(version)) return null;
+    var body=''; try{ body=u8dec(LearnShell.readFile(preloadName(localName))); }catch(e){ return null; }
+    if(!body) return null;
+    return body;
+  }catch(e){ return null; }
+}
+function preloadClear(localName){
+  try{
+    if(!window.LearnShell || typeof LearnShell.deleteFile!=='function') return;
+    try{ LearnShell.deleteFile(preloadName(localName)); }catch(e){}
+    try{ LearnShell.deleteFile(preloadName(localName)+'.ver'); }catch(e){}
+  }catch(e){}
+}
 /* v1.20.8（2026-10-15早班①续3，洪老师真机报"装v1.20.7仍反复更新"，黑匣子取证：门岗写件次次End对账过ok:290312、一分钟后又重装）：
    病根=partLocalVer只在文件头2000字里找版本号——hx-common.js v0.24.4头2000字无任何版本标记，第一处HX_COMMON_VERSION在4345字（注释引旧版'0.6.0'），真赋值在6791字→认不到→cur="0"→云端0.24.4>0→无限重装（门岗写得越成功，循环越稳）。
    治=①认版本窗口2000→16384（整读路slice、分片路fileReadChunk同步加宽）②取窗口内最后一个匹配——注释提旧版在前、真赋值在后，「认最后」=认生效赋值（PDF引擎包单行牌只一个匹配，不受影响）。只动认版本这一处，其余一行未动 */
@@ -962,11 +992,13 @@ function hxRawGet(name){
     try{ return !!window.LearnShell.applyUpdate(name, b64); }catch(e){ return false; }
   }
   function dl(k, info, remote, localName, next){
+    var _pre=preloadRead(localName, info.version); if(_pre){ progLog[progLog.length-1]='📦 '+localName.replace('.html','')+'：用上次闲时预下载的存货，直接装'; updMsg('🔍 检查新版本\n'+progLog.join('\n')); setTimeout(function(){ dlWrite(k, info, localName, _pre, next); }, 80); return; } /* v1.22.0 刀B2 预下载：先查存货，版本对得上直接用（跳过下载=秒装） */
     fetchJson(info.dl||remote).then(function(html){
       /* v1.7.1 写入提示：编码+写壳会占线几秒（点卡片没反应是正常的），先亮话再动手，
          setTimeout让黄条先画出来再阻塞 */
       progLog[progLog.length-1]="💾 "+localName.replace(".html","")+"：下载完，正在写进壳里…（这几秒点卡片没反应是正常的，别点）";
       updMsg("🔍 检查新版本\n"+progLog.join("\n"));
+      try{ preloadSave(localName, info.version, html); }catch(e){} /* v1.22.0 预下载：顺手存壳，写壳失败下回开门秒装救命 */
       setTimeout(function(){ dlWrite(k, info, localName, html, next); }, 80);
     }).catch(function(e){ failed.push(localName);
       progLog[progLog.length-1]="❌ "+localName.replace(".html","")+"：下载没成功（"+((e&&e.message)||"网络不通")+"），下次再试"; updMsg("🔍 检查新版本\n"+progLog.join("\n"));
@@ -976,7 +1008,7 @@ function hxRawGet(name){
       var b64=u8enc(html);
       var ok=shellWrite(localName, b64);
       try{ if(window.LearnShell.folderSet()) window.LearnShell.writeFile(localName.replace(".html","")+"_v"+info.version+".html", b64); }catch(e){}
-      if(ok){ CUR[k]=info.version; try{ localStorage.setItem("hx_suite_ver", JSON.stringify(CUR)); }catch(e){} try{ var _fx=JSON.parse(localStorage.getItem("hx_cur_fix")||"{}"); _fx[k]=info.version; localStorage.setItem("hx_cur_fix", JSON.stringify(_fx)); }catch(e){} /* v1.20.1（2026-10-14 班⑨救火，装循环根治，SPEC_index_v1.20.1，DS实现+Kimi终审亲手落地）*/ updated.push(localName.replace(".html","")+"→v"+info.version);
+      if(ok){ CUR[k]=info.version; try{ localStorage.setItem("hx_suite_ver", JSON.stringify(CUR)); }catch(e){} try{ var _fx=JSON.parse(localStorage.getItem("hx_cur_fix")||"{}"); _fx[k]=info.version; localStorage.setItem("hx_cur_fix", JSON.stringify(_fx)); }catch(e){} /* v1.20.1（2026-10-14 班⑨救火，装循环根治，SPEC_index_v1.20.1，DS实现+Kimi终审亲手落地）*/ try{ preloadClear(localName); }catch(e){} /* v1.22.0 装成清存货（装失败不清，留着下次救命） */ updated.push(localName.replace(".html","")+"→v"+info.version);
         progLog[progLog.length-1]="✅ "+localName.replace(".html","")+"：已装上 v"+info.version; updMsg("🔍 检查新版本\n"+progLog.join("\n")); }
       else{ failed.push(localName);
         progLog[progLog.length-1]="❌ "+localName.replace(".html","")+"：写入没成功，下次再试"; updMsg("🔍 检查新版本\n"+progLog.join("\n")); }
