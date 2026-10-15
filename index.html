@@ -287,6 +287,8 @@
     border-radius:12px; padding:12px 16px; font-size:13px; line-height:1.7;
     margin-bottom:8px; white-space:pre-wrap;
   }
+  /* v1.20.9 件①更新鱼骨头化：updLine默认只露一行，点一下展开看全文、再点收起（回退hx_home1209_off=1时JS不绑点按，此条无害留着） */
+  #updLine:not(.hxOpen){ max-height:1.7em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; }
 
   /* v1.6.0 鱼骨头化第二刀：介绍收起(ⓘ说明按钮) + 一二级菜单视觉区分 */
   .infoBtn { font-size:12px; color:#8a7a63; border:1px solid #e0d6c4; border-radius:8px;
@@ -335,6 +337,9 @@
 
 <main>
 
+  <!-- v1.20.9（洪老师拍板三件：更新鱼骨头化+管家灯上首页+上一版追踪）首页常显区：灯第一行，追踪第二行 -->
+  <div id="homeLamp" style="display:none;margin:0 0 8px;padding:10px 14px;border:1px solid #e3dccf;border-radius:12px;background:#fdfbf6;font-size:13px;line-height:1.7;color:#5a5346;white-space:pre-wrap;cursor:pointer;"></div>
+  <div id="lastRel" style="display:none;margin:0 0 8px;padding:10px 14px;border:1px solid #e3dccf;border-radius:12px;background:#fdfbf6;font-size:13px;line-height:1.7;color:#5a5346;white-space:pre-wrap;cursor:pointer;"></div>
   <div id="updLine"></div>
   <!-- v1.17.0（挂号#89）通信管家干活面板：投信查版本后亮，每4秒读管家进度账本mg_progress.json逐条列出；老壳没账本不亮 -->
   <div id="mgProgBox" style="display:none;margin:0 0 10px;padding:10px 12px;border:1px solid #d8e6dc;border-radius:12px;background:#f4faf5;font-size:13px;line-height:1.8;color:#4a5a4e;"></div>
@@ -538,7 +543,7 @@ CUR.index="1.19.11"; /* v1.19.11：账本覆盖让路硬编码"0"，清tuomin假
 CUR.index="1.19.12"; /* v1.19.12：自立导出钮，见顶部修改记录 */
 CUR.index="1.20.0";
 CUR.index="1.20.1";
-CUR.index="1.20.8"; /* v1.20.8（2026-10-15早班①续3）：partLocalVer认版本根治反复更新——窗口2000→16384+认最后一个匹配，详注见partLocalVer头顶，其余一行未动 */ /* v1.20.6（2026-10-15早班①续，洪老师真机报vc57+v1.20.5双上岗仍反复更新）：门岗带记录仪——hxWriteSmart各节点记黑匣子act（其余一行未动，擒卡点位用） */ /* v1.20.5（2026-10-15早班①，洪老师拍板「桥加门岗，大块头过来自动切碎」，SPEC_桥门岗_vc57，Kimi工兵代跑报备）：部件写入三处调用点过新门岗hxWriteSmart（大件自动切碎走壳新分块桥+End回读字节对账，假成功当场现形；小件/老壳/hx_gate_off=1走老单发桥一行未动）+partLocalVer读门岗（整读瞎→fileReadChunk头4KB认版本号+黑匣子留账）；配壳vc57/v2.1.0，其余一行未动 */ /* v1.20.4（2026-10-15 班⑩深夜救火，洪老师真机报「白屏5秒闪退+点更新没反应」，黑匣子实锤01:24四连开门=装件reload循环+无一条err）：本体=v1.20.1真机稳定版原样，只升号盖过机子上的残次1.20.3（v1.20.2两路并行互盖/v1.20.3手动链空开关——__taskFeedStart在1063行__taskFeed赋值前被调=undefined空转return，手动查新全瘫）。号跳2/3是为了>残次版让机子肯装。任务单手动接入重做留待下一对话（洪老师拍板先讨论验收减负两任务） */ /* v1.20.1（2026-10-14 班⑨救火，装循环根治，SPEC_index_v1.20.1，DS实现+Kimi终审亲手落地）：装循环根治+toast节流） */ /* v1.20.0（2026-10-14 班⑧，洪老师拍板任务单式查新+开门自动查+管家灯，SPEC_index_v1.20.0，DS实现+Kimi终审翻案4处亲手落地） */
+CUR.index="1.20.9"; /* v1.20.9（2026-10-15早班①续4，洪老师拍板三件）：首页管家灯（绿活红断）+更新鱼骨头化（updLine只露一行点开看全文）+上一版追踪（任务单最近一件上传/下载/安装三段对账），详注见__home1209头顶，只加版面其余一行未动 */ /* v1.20.6（2026-10-15早班①续，洪老师真机报vc57+v1.20.5双上岗仍反复更新）：门岗带记录仪——hxWriteSmart各节点记黑匣子act（其余一行未动，擒卡点位用） */ /* v1.20.5（2026-10-15早班①，洪老师拍板「桥加门岗，大块头过来自动切碎」，SPEC_桥门岗_vc57，Kimi工兵代跑报备）：部件写入三处调用点过新门岗hxWriteSmart（大件自动切碎走壳新分块桥+End回读字节对账，假成功当场现形；小件/老壳/hx_gate_off=1走老单发桥一行未动）+partLocalVer读门岗（整读瞎→fileReadChunk头4KB认版本号+黑匣子留账）；配壳vc57/v2.1.0，其余一行未动 */ /* v1.20.4（2026-10-15 班⑩深夜救火，洪老师真机报「白屏5秒闪退+点更新没反应」，黑匣子实锤01:24四连开门=装件reload循环+无一条err）：本体=v1.20.1真机稳定版原样，只升号盖过机子上的残次1.20.3（v1.20.2两路并行互盖/v1.20.3手动链空开关——__taskFeedStart在1063行__taskFeed赋值前被调=undefined空转return，手动查新全瘫）。号跳2/3是为了>残次版让机子肯装。任务单手动接入重做留待下一对话（洪老师拍板先讨论验收减负两任务） */ /* v1.20.1（2026-10-14 班⑨救火，装循环根治，SPEC_index_v1.20.1，DS实现+Kimi终审亲手落地）：装循环根治+toast节流） */ /* v1.20.0（2026-10-14 班⑧，洪老师拍板任务单式查新+开门自动查+管家灯，SPEC_index_v1.20.0，DS实现+Kimi终审翻案4处亲手落地） */
 CUR.tuomin="0"; /* v1.19.10修404：CUR=壳内已装版本，单体手机还没装必须填"0"才会下载（CUR.ppt同款老坑，见230行） */ /* v1.19.8（2026-09-20班⑮，洪老师真机报"升级说装成功主界面还是19.6，几次都这样，没重启应该直接变19.7"）病根=班⑮发v1.19.7时新赋值插在同一行旧赋值前面，CUR.index="1.19.7"刚赋上就被同行的CUR.index="1.19.6"盖回→页脚活字永远亮1.19.6（文件真身早是新版，升级链/壳全无辜，大管家0.54.5上机为证）；还连带v1.19.5刀2开门自校对误把账本1.19.7当谎回滚→每次都提示重装。治=删同行可执行旧赋值（注释留档）+升号v1.19.8让真机重新下载。其余一行未动 */
 try{document.getElementById("ftVer").textContent=CUR.index;}catch(eF){} /* v1.19.6 页脚死字改活字：ftVer亮CUR.index真身 */
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
@@ -2084,6 +2089,142 @@ document.getElementById('bkDavBtn').addEventListener('click', function(){ try{ b
   if(window.HX&&HX.step){ try{ HX.step.fail('备份没跑成，拍照发给AI看看'); }catch(e2){} } /* v1.18.0 安心条fail */
   var line=document.getElementById('bkDavLine'); if(line) line.textContent='⚠️ 备份没跑成：'+String((e&&e.message)||e);
 } });
+
+/* ═══ v1.20.9（2026-10-15早班①续4，洪老师拍板三件：①更新鱼骨头化——updLine只露一行、点开看全文 ②管家灯上首页常显（绿活红断）③上一版追踪——任务单最近一件三段对账：上传了没有/下载好了没有/安装成功了没有。
+   只加版面：updMsg/TF/装件链路一行未动；总回退 localStorage hx_home1209_off=1 → 三件整段退休，老版面全回来。═══ */
+var __home1209 = (function(){
+  try{ if(localStorage.getItem("hx_home1209_off")==="1") return null; }catch(e){}
+  var M={};
+  function b64dec(raw){ return decodeURIComponent(escape(atob(String(raw).replace(/\s+/g,'')))); }
+  /* 件①：updLine点一下展开/收起（CSS管只露一行） */
+  M.bindFish=function(){ try{ var el=document.getElementById("updLine"); if(el&&!el.__hxFish){ el.__hxFish=1; el.title="点一下展开/收起"; el.addEventListener("click",function(){ try{ el.classList.toggle("hxOpen"); }catch(e){} }); } }catch(e){} };
+  /* 件②：管家灯（规则同v1.20.0刀4：心跳只认管家亲笔件 mg_ver.json.t / mg_progress.json末条.t；绿=15分钟内，红=超15分钟/从没见过） */
+  M.lamp=function(){
+    try{
+      var el=document.getElementById("homeLamp"); if(!el) return;
+      var lastT=0, recent=[];
+      if(window.LearnShell && typeof LearnShell.readFile==='function'){
+        var vb=null; try{ vb=LearnShell.readFile('mg_ver.json'); }catch(e){}
+        if(vb){ try{ var vo=JSON.parse(b64dec(vb)); if(vo&&+vo.t) lastT=Math.max(lastT,+vo.t); }catch(e){} }
+        var pb=null; try{ pb=LearnShell.readFile('mg_progress.json'); }catch(e){}
+        if(pb){ try{ var pa=JSON.parse(b64dec(pb)); if(pa&&pa.length){ var last=pa[pa.length-1]; if(last&&+last.t) lastT=Math.max(lastT,+last.t); recent=pa.slice(-3).map(function(x){ return String((x.t||'')+' '+(x.m||'')); }); } }catch(e){} }
+      }
+      var line, detail;
+      if(!lastT){
+        line="🔴 大管家：断了（从没见过心跳）";
+        detail="还没见过大管家的心跳——它管闲时自动查新版、自动下载。\n治法：彻底关掉套件再开一次，它会被重新叫醒；还红就点🆘把黑匣子传给AI。";
+      }else{
+        var ageMin=Math.floor((Date.now()-lastT)/60000);
+        var ts=new Date(lastT);
+        var tsStr=('0'+(ts.getMonth()+1)).slice(-2)+'-'+('0'+ts.getDate()).slice(-2)+' '+('0'+ts.getHours()).slice(-2)+':'+('0'+ts.getMinutes()).slice(-2);
+        line=(ageMin<=15)?("🟢 大管家：活着（最后心跳 "+tsStr+"）"):("🔴 大管家：断了（"+ageMin+"分钟没心跳，最后 "+tsStr+"）");
+        detail="大管家最后心跳："+tsStr+"\n最近在干嘛：\n"+(recent.length?recent.join("\n"):"（没有进度记录）")+(ageMin>15?"\n\n治法：彻底关掉套件再开一次；还红就点🆘。":"");
+      }
+      el.textContent=line+(el.classList.contains("hxOpen")?"\n\n"+detail:"");
+      el.onclick=function(){ try{ el.classList.toggle("hxOpen"); M.lamp(); }catch(e){} };
+      el.style.display="block";
+    }catch(e){}
+  };
+  /* 拉云端JSON：GitHub API优先→坚果云兜底，8秒死心；拉到回obj，拉不到回null */
+  M.fetchJson=function(name){
+    return new Promise(function(resolve){
+      var done=false;
+      function ok(o){ if(done) return; done=true; resolve(o); }
+      function tryDav(){
+        try{
+          var dk=null; try{ if(window.HX&&HX.keys&&HX.keys.dav) dk=HX.keys.dav(); }catch(e){}
+          if(!dk||!dk.user||!dk.pass){ ok(null); return; }
+          var url='https://dav.jianguoyun.com/dav/'+encodeURIComponent('学习套装备份')+'/'+encodeURIComponent(name);
+          ghFetch(url,{headers:{"Authorization":"Basic "+btoa(dk.user+":"+dk.pass)},cache:"no-store"},8000).then(function(r){ if(!r.ok) throw 0; return r.text(); }).then(function(t){ try{ ok(JSON.parse(t)); }catch(e){ ok(null); } }).catch(function(){ ok(null); });
+        }catch(e){ ok(null); }
+      }
+      try{
+        var c=ghCfg(); var hasApi=!!(c.user&&c.tok&&c.repo);
+        if(!hasApi){ tryDav(); return; }
+        var base="https://api.github.com/repos/"+encodeURIComponent(c.user)+"/"+encodeURIComponent(c.repo)+"/contents/";
+        ghFetch(base+encodeURIComponent(name),{headers:ghHeaders()},8000).then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(j){
+          if(j&&j.content){ try{ ok(JSON.parse(u8dec(j.content))); return; }catch(e){} }
+          tryDav();
+        }).catch(tryDav);
+      }catch(e){ tryDav(); }
+    });
+  };
+  /* 本机版本：index=CUR.index；部件=partLocalVer（v1.20.8窗口16384认最后）；软件=hx_suite_ver账本（回落CUR） */
+  M.localVer=function(key){
+    try{
+      if(key==="index") return String(CUR.index||"");
+      if(key==="hx-common"||key==="guanjia-pdf-engine.js"){
+        var fname=(key==="hx-common")?"hx-common.js":key, re=null;
+        for(var i=0;i<PARTS.length;i++){ if(PARTS[i][0]===fname){ re=PARTS[i][2]; break; } }
+        return re?String(partLocalVer(fname,re)||""):"";
+      }
+      if(SUITE[key]){
+        try{ var sv=JSON.parse(localStorage.getItem("hx_suite_ver")||"{}"); if(sv&&sv[key]) return String(sv[key]); }catch(e){}
+        return String(CUR[key]||"0");
+      }
+    }catch(e){}
+    return "";
+  };
+  M.fileOf=function(key){
+    if(key==="index") return "index.html";
+    if(key==="hx-common") return "hx-common.js";
+    if(SUITE[key]) return SUITE[key][1];
+    return key;
+  };
+  M.nmOf=function(key){
+    if(key==="index") return "主界面";
+    if(key==="shell") return "壳";
+    if(key==="hx-common") return "公共件";
+    if(SUITE[key]) return SUITE[key][1].replace(".html","");
+    return key;
+  };
+  /* 件③：上一版追踪——任务单第1件（最近发的活）三段对账：上传/下载/安装 */
+  M.track=function(){
+    try{
+      var el=document.getElementById("lastRel"); if(!el) return;
+      M.fetchJson("发版任务单.json").then(function(feed){
+        if(!feed||!feed.items||!feed.items.length){ el.style.display="none"; return; }
+        var it=feed.items[0], key=String(it.key||""), ver=String(it.version||"");
+        M.fetchJson("version-all.json").then(function(va){
+          var cloudVer="";
+          try{ var arr=(va&&va.items)||[]; for(var i=0;i<arr.length;i++){ if(arr[i]&&String(arr[i].key)===key){ cloudVer=String(arr[i].version||""); break; } } }catch(e){}
+          var up = cloudVer ? (cloudVer===ver?"✅":"🔴") : "❓";
+          var dl="❓", inst="❓", local=M.localVer(key);
+          if(key==="shell"){ dl="➖"; inst="➖"; /* 壳走系统安装器，人手点的那下灯管不着 */ }
+          else{
+            var exists=false;
+            try{ if(window.LearnShell&&typeof LearnShell.readFile==='function'){ exists=!!LearnShell.readFile(M.fileOf(key)); } }catch(e){}
+            if(key==="index") exists=true;
+            dl = exists?"✅":"🔴";
+            inst = (local&&local===ver)?"✅":"🔴";
+          }
+          var allOk=(up==="✅"&&inst==="✅");
+          var nm=M.nmOf(key);
+          var line="上一版："+nm+" v"+ver+"　上传"+up+" 下载"+dl+" 安装"+inst+(allOk?"":"　🔴有段卡住");
+          var detail="上一版发的活："+String(it.task||nm)+"（"+nm+" v"+ver+"）\n\n三段对账：\n①上传"+up+" 云端牌挂的是 v"+(cloudVer||"没查到")+(up==="🔴"?"——AI发版没发出去，催它":"")+"\n②下载"+dl+" 件"+(dl==="✅"?"已到手机":"还没到手机")+"\n③安装"+inst+" 本机真身 v"+(local||"没认到")+(inst==="🔴"?"——版本对不上，点「🔍 检查新版本」让它再装一次；装完还红就点🆘":"")+(allOk?"\n\n三段全绿=这一版真落地了。":"");
+          el.textContent=line+(el.classList.contains("hxOpen")?"\n\n"+detail:"");
+          el.onclick=function(){ try{ el.classList.toggle("hxOpen"); el.textContent=line+(el.classList.contains("hxOpen")?"\n\n"+detail:""); }catch(e){} };
+          el.__line=line; el.__detail=detail;
+          el.style.display="block";
+        });
+      });
+    }catch(e){}
+  };
+  M.start=function(){
+    try{
+      M.bindFish(); M.lamp(); M.track();
+      setInterval(function(){ try{ M.lamp(); }catch(e){} },60000);
+      setInterval(function(){ try{ M.track(); }catch(e){} },300000);
+    }catch(e){}
+  };
+  return M;
+})();
+try{
+  if(window.__home1209){
+    if(document.readyState==="complete"||document.readyState==="interactive"){ window.__home1209.start(); }
+    else{ document.addEventListener("DOMContentLoaded", function(){ try{ window.__home1209.start(); }catch(e){} }); }
+  }
+}catch(e){}
 </script>
 
 
