@@ -83,7 +83,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 (function(){
   'use strict';
-  var HX_COMMON_VERSION = '0.28.0';/* v0.28.0（2026-10-15 夜班，洪老师拍板「开工」，SPEC_hx-common_v0.28.0_黑匣子五案，DS实现+Kimi终审）：黑匣子五案——①HX.bb.job办完报账（成记job/败记err立刻上行）②重点钮12秒看门狗「点了没反应」③哨兵_silentLog（flush失败/没钥匙直写账防递归）④hxToastHold黑框留账note（hxBbToast自家除外）⑤err截断120→300字；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.chk IDENTICAL，HX.bb除块2~5申报点外IDENTICAL，hxToastHold除块4一处加法外IDENTICAL */ /* ═══════════════════════════════════════════════════════════════════════════
+  var HX_COMMON_VERSION = '0.29.0';/* v0.29.0（2026-10-15 夜班④，洪老师拍板「三个任务一起做」，SPEC_hx-common_v0.29.0_被动观察法+黑匣子心跳，DS实现+Kimi终审）：①bb开门心跳hb（云侧对时知在线）②collectSide哑火对照（壳有开门主账没动→哨兵err）③被动观察法：清单步骤带watch关键词，bb记账通报HX.chk.bbHit命中→24小时（hx_chk_watch_hours可配）没err自动markGreen销号全程不弹窗，err命中删账不销 ④撤开门8秒自动问（hx_chk_wiz_ask=1才问，🧪手动链不动）；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/hxToastHold IDENTICAL，HX.bb除块2~3申报点外IDENTICAL，HX.chk除块4~6申报点外IDENTICAL */ /* v0.28.0（2026-10-15 夜班，洪老师拍板「开工」，SPEC_hx-common_v0.28.0_黑匣子五案，DS实现+Kimi终审）：黑匣子五案——①HX.bb.job办完报账（成记job/败记err立刻上行）②重点钮12秒看门狗「点了没反应」③哨兵_silentLog（flush失败/没钥匙直写账防递归）④hxToastHold黑框留账note（hxBbToast自家除外）⑤err截断120→300字；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.chk IDENTICAL，HX.bb除块2~5申报点外IDENTICAL，hxToastHold除块4一处加法外IDENTICAL */ /* ═══════════════════════════════════════════════════════════════════════════
    v0.27.0（2026-10-15 晚班③，洪老师真机报「黑框文字显示不全犯糊涂/跨页没说去哪页」+拍板「现在就搞」，SPEC_hx-common_v0.27.0_黑框字看不全+跨页报名字，DS实现15.9秒完整回件+Kimi终审翻案1处亲手落地：_wizBox开头补摘旧hxChkWizFull防换步残留）：刀1黑框文字区看得全（去两行截断→字号14px+最多约3行可上下滑+点文字区弹大框看全文再点收起，_wizBoxClose同步收大框）刀2跨页步骤报页面名（step.page，默认「主界面（首页）」，配验收清单t21.s1加page字段）；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold IDENTICAL，HX.chk除_wizBox/_wizStep/_wizBoxClose三函数外IDENTICAL
    v0.26.0（2026-10-15 晚班②，洪老师真机三连报「黑框不是人话/跳过没反应/挡住版面看不见黄圈」+拍板六条浮窗化，SPEC_hx-common_v0.26.0_向导浮条+跳过根治，DS实现+Kimi终审翻案3处亲手落地：①document拖动监听泄漏→留引用_wizBoxClose全摘 ②touchmove改挂document防拖快断拖+preventDefault防页面跟滚 ③wizSkipped三入口清零核讫）：刀A跳过根治（_wizSkipped会话记账，跳过不再原地踏步）刀B大黑框→顶部可拖动窄浮条（⠿把手三路拖动+hx_chk_wiz_top记位置）刀C文案全人话刀D黄圈自动scrollIntoView屏中间+浮条遮挡自动让位；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold IDENTICAL，HX.chk除向导段（刀A~D）外IDENTICAL
 v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减负——壳领着洪老师一步一步验，
@@ -1071,6 +1071,14 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
         if(_off()) return;
         var side=_readSide();
         if(!side || !side.length) return;
+        /* v0.29.0 ②哑火对照：壳侧车有开门而主账最新记录老于10分钟前=黑匣子疑似没跑 */
+        try{
+          var tSide=0;
+          for(var si=0;si<side.length;si++){ var sm=String((side[si]||{}).m||''); if(sm.indexOf('开门')===0){ var st_=Number((side[si]||{}).t)||0; if(st_>tSide) tSide=st_; } }
+          var main0=loadLog(); var tMain=0;
+          for(var mi=0;mi<main0.length;mi++){ var mt=Number((main0[mi]||{}).t)||0; if(mt>tMain) tMain=mt; }
+          if(tSide>0 && (tSide-tMain)>10*60000){ _silentLog('err','黑匣子疑似哑火：壳有开门主账没动'); }
+        }catch(e){}
         var arr=loadLog().concat(side);
         arr.sort(function(a,b){return (a.t||0)-(b.t||0);});
         while(arr.length>300) arr.shift();
@@ -1132,6 +1140,7 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
         saveLog(arr);
         /* v0.28.0 案2：任何非本钮act的新记录=有动静，看门狗解除 */
         try{ if(_wd && !(String(k)==='act' && String(mm).indexOf(_wd.txt)===0)){ clearTimeout(_wd.timer); _wd=null; } }catch(e){}
+        try{ if(HX.chk && typeof HX.chk.bbHit==='function'){ HX.chk.bbHit(String(k), mm); } }catch(e){} /* v0.29.0 ③被动观察法：每记一条账通报chk命中watch */
         if(String(k)==='err'){ try{ flush(false); }catch(e){} } /* 🔴条立刻整份推 */
       }catch(e){}
     }
@@ -1253,6 +1262,7 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
           try{
             hook();
             startTimer();
+            try{ log('hb','黑匣子在线 v'+String(HX_COMMON_VERSION||'')); }catch(e){} /* v0.29.0 ①开门心跳：云侧看最后hb时间知黑匣子在线 */
             try{ collectSide(); }catch(e){} /* v0.24.1 收编壳侧车 */
             /* 开门补推：hx_bb_uplocal≠当前内容且闸门放行则补推一次 */
             var arr = loadLog();
@@ -1477,6 +1487,7 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
           for(var j=0;j<(t.steps||[]).length;j++){
             var st=t.steps[j];
             if(stepGreen(prog,t.id,st.id)) continue;
+            if(st.watch){ _watchTick(t, st); continue; } /* v0.29.0 ③：watch步走被动观察，不进askConfirm不弹窗；watch优先于auto */
             if(st.auto && autoHit(st.auto)){ askConfirm(t, st); } /* v0.24.0 弹窗销号：侦中不再直接变绿，弹确认条，点✓才markGreen */
           }
         }
@@ -1590,6 +1601,56 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
         p[tid][sid]=2;
         saveProg(p);
         try{ pushReport(); }catch(e){} /* v0.25.0 刀B：挂号也推验收单；Kimi终审翻案：DS误写catch(e{})语法错已修 */
+      }catch(e){}
+    }
+
+    /* ---- v0.29.0 ③被动观察法：命中账+bbHit+_watchTick（洪老师拍板：用了没意见=自动销，不弹窗不问人） ---- */
+    function _watchLoad(){
+      try{
+        var s=''; try{ s=localStorage.getItem('hx_chk_watch')||''; }catch(e){}
+        if(!s) return {};
+        var o=JSON.parse(s);
+        return (o && typeof o==='object') ? o : {};
+      }catch(e){ return {}; }
+    }
+    function _watchSave(o){ try{ localStorage.setItem('hx_chk_watch', JSON.stringify(o)); }catch(e){} }
+    function _watchHours(){ try{ var h=parseInt(localStorage.getItem('hx_chk_watch_hours')||'',10); return (h>0)?h:24; }catch(e){ return 24; } }
+    /* bb每记一条账通报过来：命中watch关键词→记账；err命中→删账（用了出毛病不销） */
+    function bbHit(k, m){
+      try{
+        if(_off()) return;
+        if(!_list || !_list.tasks) return;
+        var mm=String(m||''); if(!mm) return;
+        var prog=loadProg();
+        var wl=_watchLoad(); var changed=false;
+        for(var i=0;i<_list.tasks.length;i++){
+          var t=_list.tasks[i];
+          if(!t || !t.steps) continue;
+          for(var j=0;j<t.steps.length;j++){
+            var st=t.steps[j];
+            if(!st || !st.watch) continue;
+            if(stepGreen(prog,t.id,st.id)) continue;
+            if(mm.indexOf(String(st.watch))<0) continue;
+            var key=String(t.id)+'_'+String(st.id);
+            if(String(k)==='err'){ if(wl[key]){ delete wl[key]; changed=true; } } /* 用了出毛病：撤命中不销 */
+            else if(String(k)==='act'||String(k)==='note'||String(k)==='job'||String(k)==='hb'||String(k)==='wiz'){ if(!wl[key]){ wl[key]=Date.now(); changed=true; } } /* 首次命中记账不刷新 */
+          }
+        }
+        if(changed) _watchSave(wl);
+      }catch(e){}
+    }
+    /* detect里对watch步调用：满观察窗没err→自动销号（不弹窗）；未满/未中→不催 */
+    function _watchTick(t, st){
+      try{
+        var key=String(t.id)+'_'+String(st.id);
+        var wl=_watchLoad();
+        var ts=Number(wl[key])||0;
+        if(!ts) return; /* 还没用到：不催 */
+        if((Date.now()-ts) < _watchHours()*3600000) return; /* 观察窗未满：不催 */
+        delete wl[key]; _watchSave(wl);
+        markGreen(t.id, st.id); /* 用了+观察窗内没err没挂号=没意见=销 */
+        try{ if(HX.bb && typeof HX.bb.job==='function'){ HX.bb.job('验收自动销:'+String(t.id)+'/'+String(st.id), true); } }catch(e){}
+        try{ refreshUI(); }catch(e){}
       }catch(e){}
     }
 
@@ -2213,8 +2274,9 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
             if(!ensureUI()) return;
             _list=readCacheList(); /* init先用缓存画 */
             reconcile();
+            try{ if(HX.bb && typeof HX.bb.tail==='function'){ var _t50=HX.bb.tail(50); /* Kimi终审翻案2：全卷是大闭包window.HX卷尾才挂，卷内boot期window.HX还没影，必须直认本地HX */ for(var _bi=0;_bi<_t50.length;_bi++){ bbHit(String((_t50[_bi]||{}).k||''), String((_t50[_bi]||{}).m||'')); } } }catch(e){} /* v0.29.0 ③终审翻案：开门心跳先于chk清单就绪会漏命中，_list就绪后补扫bb最近50条账 */
             renderBar(); /* 缺省窄条不显示（没清单/全绿时藏） */
-            setTimeout(function(){ try{ _wizAsk(); }catch(e){} }, 8000); /* v0.25.0 刀A：开门8秒闲时自动问「现在验？」（满3次/全绿不弹） */
+            if(lsGet('hx_chk_wiz_ask')==='1'){ setTimeout(function(){ try{ _wizAsk(); }catch(e){} }, 8000); } /* v0.29.0 ④洪老师拍板撤自动问：默认不弹，hx_chk_wiz_ask='1'才恢复（🧪手动钮不动） */
             if(typeof HX._autoNetOk==='function' && HX._autoNetOk()) fetchList(false); /* 闲时自动拉一次 */
           }catch(e){}
         };
@@ -2245,7 +2307,7 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
       }catch(e){}
     }
 
-    return { init:init, open:open, reload:reload }; /* Kimi终审翻案：DS漏交模块出口，照v0.24.5原样补回 */
+    return { init:init, open:open, reload:reload, bbHit:bbHit }; /* v0.29.0 */
   })();
 
   HX.sj = (function(){
