@@ -6,6 +6,7 @@
 <title>AI对话框</title>
 <script src="hx-common.js"></script>
 <!-- v0.1.0 2026-10-16 AI对话框一期上线（SPEC_AI对话框一期） -->
+<!-- v0.1.1 2026-10-16 洪老师真机报：只有DS钥匙也弹没钥匙黑框；病根门脸钥匙检查漏DeepSeek一路；治法hasKeys加查xt_dskey及壳真源deepseek字段；终审补：顶栏显示版本号同步0.1.1（DS漏改） -->
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body {
@@ -341,7 +342,7 @@ body {
 
 <!-- 顶行 -->
 <div class="top-bar">
-  <div class="top-title">💬 AI对话框<span class="top-version">v0.1.0</span></div>
+  <div class="top-title">💬 AI对话框<span class="top-version">v0.1.1</span></div>
   <div>
     <button id="menuBtn" class="top-btn">☰对话</button>
     <button id="newBtn" class="top-btn">✚新聊</button>
@@ -386,7 +387,7 @@ body {
 
 <script>
 // SW_VERSION 全局变量
-var SW_VERSION = "0.1.0";
+var SW_VERSION = "0.1.1";
 
 // 全局状态
 var curChatId = null;
@@ -611,7 +612,13 @@ function initPage() {
     if (HX.keys.get && HX.keys.getQwen) {
       var k1 = HX.keys.get();
       var k2 = HX.keys.getQwen();
-      if (k1 && k1.trim() !== '' || k2 && k2.trim() !== '') {
+      var k3 = '';
+      try { k3 = localStorage.getItem('xt_dskey') || ''; } catch (e) {}
+      if (!k3 && HX.keys._loadFile) {
+        var f = HX.keys._loadFile();
+        if (f && f.deepseek) k3 = f.deepseek;
+      }
+      if (k1 && k1.trim() !== '' || k2 && k2.trim() !== '' || k3 && k3.trim() !== '') {
         hasKeys = true;
       }
     }
