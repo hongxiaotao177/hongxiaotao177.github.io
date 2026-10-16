@@ -1,6 +1,1 @@
-{
- "version": "0.31.0",
- "dl": "hx-common.js",
- "note": "F3b输入框顶头根治：键盘起面板加限高内部滑，输入框不再被顶出屏；DS实现+Kimi终审零翻案+仿真21/21",
- "sig": "c673fb762c1ae415"
-}
+{"version": "0.32.0", "dl": "hx-common.js", "note": "AI对话框一期心脏HX.chat：三层记忆（原文永存+摘要+事实卡）+DS/千问/Kimi三棒换棒+坚果云存档；DS实现+千问门脸+Kimi终审翻案6处+仿真15/15", "sig": "fcbd5cea29ff0371"}
