@@ -7,6 +7,7 @@
 <script src="hx-common.js"></script>
 <!-- v0.1.0 2026-10-16 AI对话框一期上线（SPEC_AI对话框一期） -->
 <!-- v0.1.1 2026-10-16 洪老师真机报：只有DS钥匙也弹没钥匙黑框；病根门脸钥匙检查漏DeepSeek一路；治法hasKeys加查xt_dskey及壳真源deepseek字段；终审补：顶栏显示版本号同步0.1.1（DS漏改） -->
+<!-- v0.1.2 2026-10-16 t32黄条误报根治（首查不到每2秒复查30秒死心，查到收条+补载对话）+t33发送钮左让64px避壳回家钮（bottom-bar右padding）+t34补挂HX.sj速记浮标+HX.pick点亮（sjDot/Panel上提避让右下热区） -->
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body {
@@ -121,7 +122,7 @@ body {
 
 /* 底部输入区 */
 .bottom-bar {
-  padding: 12px 16px;
+  padding: 12px 80px 12px 16px;
   background-color: #fff;
   border-top: 1px solid #eae4d9;
   position: sticky;
@@ -326,11 +327,13 @@ body {
   .top-btn { padding: 5px 10px; font-size: 16px; min-width: 64px; }
   .mem-line { padding: 6px 14px; font-size: 13px; }
   .main-area { padding: 10px 14px; height: calc(100vh - 190px); }
-  .bottom-bar { padding: 10px 14px; }
+  .bottom-bar { padding: 10px 78px 10px 14px; }
   .textarea-input { padding: 10px 14px; font-size: 15px; }
   .send-btn { padding: 10px 20px; font-size: 16px; min-width: 72px; }
   .drawer { width: 90%; }
 }
+#hxSjDot{bottom:176px !important;}
+#hxSjPanel{bottom:238px !important;}
 </style>
 </head>
 <body>
@@ -342,7 +345,7 @@ body {
 
 <!-- 顶行 -->
 <div class="top-bar">
-  <div class="top-title">💬 AI对话框<span class="top-version">v0.1.1</span></div>
+  <div class="top-title">💬 AI对话框<span class="top-version">v0.1.2</span></div>
   <div>
     <button id="menuBtn" class="top-btn">☰对话</button>
     <button id="newBtn" class="top-btn">✚新聊</button>
@@ -387,7 +390,7 @@ body {
 
 <script>
 // SW_VERSION 全局变量
-var SW_VERSION = "0.1.1";
+var SW_VERSION = "0.1.2";
 
 // 全局状态
 var curChatId = null;
@@ -600,15 +603,32 @@ function renderDrawerList() {
 
 function initPage() {
   // 初始化警告条
-  if (!window.HX || typeof HX.chat === 'undefined') {
+  function hxReady() {
+    return !!(window.HX && typeof HX.chat !== 'undefined');
+  }
+  if (!hxReady()) {
     $warnBar.style.display = 'block';
+    var _hxRetry = 0;
+    var _hxT = setInterval(function() {
+      _hxRetry++;
+      if (hxReady()) {
+        clearInterval(_hxT);
+        $warnBar.style.display = 'none';
+        loadCurrentChat();
+        renderDrawerList();
+        try{ if(HX.sj && HX.sj.init) HX.sj.init({app:'AI对话框'}); }catch(e){} /* Kimi终审翻案②：公共件晚到场景，复查命中时补挂浮标+点亮（sj.init有inited防重、pick.bind有防重，重复调用无害） */
+        try{ if(HX.pick && HX.pick.bind) HX.pick.bind(); }catch(e){}
+      } else if (_hxRetry >= 15) {
+        clearInterval(_hxT);
+      }
+    }, 2000);
   } else {
     $warnBar.style.display = 'none';
   }
   
   // 检查钥匙
   var hasKeys = false;
-  if (typeof HX.keys !== 'undefined') {
+  if (typeof HX !== 'undefined' && typeof HX.keys !== 'undefined') { /* Kimi终审翻案①：HX整个不在时typeof HX.keys会炸死initPage（t32真机场景），加HX总判 */
     if (HX.keys.get && HX.keys.getQwen) {
       var k1 = HX.keys.get();
       var k2 = HX.keys.getQwen();
@@ -790,6 +810,8 @@ function initPage() {
   // 初始化
   loadCurrentChat();
   renderDrawerList();
+  try{ if(window.HX && HX.sj && HX.sj.init) HX.sj.init({app:'AI对话框'}); }catch(e){}
+  try{ if(window.HX && HX.pick && HX.pick.bind) HX.pick.bind(); }catch(e){}
 }
 
 // 页面加载完成
