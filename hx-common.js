@@ -83,7 +83,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 (function(){
   'use strict';
-  var HX_COMMON_VERSION = '0.31.0';/* v0.31.0（2026-10-16，洪老师真机报F3b输入框顶头拍板「干」，DS实现+Kimi终审零翻案）：#hxSjPanel加max-height:calc(100vh-170px)+overflow-y:auto，键盘起面板内部滑，输入框不再被顶出屏；红线除本刀CSS与版本行外IDENTICAL *//* v0.30.0（2026-10-15 夜班⑦，洪老师拍板「做」，SPEC_index_v1.22.0+hx-common_v0.30.0_预下载+双击回环，DS实现+Kimi终审翻案3处亲手落地：①腿D的upFile/downFile回调式签名翻Promise式（DS编了不存在的第三参回调）②腿G写断/读断拆两条链各自catch精确判 ③腿D删wrote判返回照_writeFile同款try调用）：刀A1 HX.bb新增公开口loopback()双击🆘回环体检（腿G GitHub仓根「黑匣子回环.txt」+腿D坚果云/学习套装备份/黑匣子回环.txt，写上去读回来码对=通，写不成/读不回/码不对=哪腿哪环断一句话说清，双腿独立全settle后bbToast常驻汇总+job报账）刀A2 sj🆘钮双击判定（hx_lb_off=1单击照旧flush(true)整刀退休，否则单击600ms后flush、600ms内第二击loopback()）；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.chk/hxToastHold IDENTICAL，HX.sj除刀A2一处bind外IDENTICAL，HX.bb除刀A1新增函数+return一处外IDENTICAL */ /* v0.29.0（2026-10-15 夜班④，洪老师拍板「三个任务一起做」，SPEC_hx-common_v0.29.0_被动观察法+黑匣子心跳，DS实现+Kimi终审）：①bb开门心跳hb（云侧对时知在线）②collectSide哑火对照（壳有开门主账没动→哨兵err）③被动观察法：清单步骤带watch关键词，bb记账通报HX.chk.bbHit命中→24小时（hx_chk_watch_hours可配）没err自动markGreen销号全程不弹窗，err命中删账不销 ④撤开门8秒自动问（hx_chk_wiz_ask=1才问，🧪手动链不动）；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/hxToastHold IDENTICAL，HX.bb除块2~3申报点外IDENTICAL，HX.chk除块4~6申报点外IDENTICAL */ /* v0.28.0（2026-10-15 夜班，洪老师拍板「开工」，SPEC_hx-common_v0.28.0_黑匣子五案，DS实现+Kimi终审）：黑匣子五案——①HX.bb.job办完报账（成记job/败记err立刻上行）②重点钮12秒看门狗「点了没反应」③哨兵_silentLog（flush失败/没钥匙直写账防递归）④hxToastHold黑框留账note（hxBbToast自家除外）⑤err截断120→300字；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.chk IDENTICAL，HX.bb除块2~5申报点外IDENTICAL，hxToastHold除块4一处加法外IDENTICAL */ /* ═══════════════════════════════════════════════════════════════════════════
+  var HX_COMMON_VERSION = '0.32.0';/* v0.32.0（2026-10-16，洪老师拍板「把AI对话框从空白一直完成到最后」，SPEC_AI对话框一期，DS实现+Kimi终审翻案2处亲手落地：①toast改调闭包内真接口hxToastHold（DS又编不存在的window.hxToastHold/hxToast/HX.toast，记账）②callKimi兜底模型名改真机现行kimi-k2.7-code-highspeed删修正贴纸）：纯加法新增HX.chat对话心脏——索引hx_chat_v1+对话壳真源hxdata_hx_chat_<id>.json三层写（真源/localStorage兜底/坚果云mirror），通道链DS→千问→Kimi各60秒死心换棒，三层记忆（原文永存+超10轮DS压缩摘要+事实卡），pullCloud云端捞回，总开关hx_chat_off=1全退休；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold/HX.chk IDENTICAL */ /* v0.31.0/* v0.31.0（2026-10-16，洪老师真机报F3b输入框顶头拍板「干」，DS实现+Kimi终审零翻案）：#hxSjPanel加max-height:calc(100vh-170px)+overflow-y:auto，键盘起面板内部滑，输入框不再被顶出屏；红线除本刀CSS与版本行外IDENTICAL *//* v0.30.0（2026-10-15 夜班⑦，洪老师拍板「做」，SPEC_index_v1.22.0+hx-common_v0.30.0_预下载+双击回环，DS实现+Kimi终审翻案3处亲手落地：①腿D的upFile/downFile回调式签名翻Promise式（DS编了不存在的第三参回调）②腿G写断/读断拆两条链各自catch精确判 ③腿D删wrote判返回照_writeFile同款try调用）：刀A1 HX.bb新增公开口loopback()双击🆘回环体检（腿G GitHub仓根「黑匣子回环.txt」+腿D坚果云/学习套装备份/黑匣子回环.txt，写上去读回来码对=通，写不成/读不回/码不对=哪腿哪环断一句话说清，双腿独立全settle后bbToast常驻汇总+job报账）刀A2 sj🆘钮双击判定（hx_lb_off=1单击照旧flush(true)整刀退休，否则单击600ms后flush、600ms内第二击loopback()）；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.chk/hxToastHold IDENTICAL，HX.sj除刀A2一处bind外IDENTICAL，HX.bb除刀A1新增函数+return一处外IDENTICAL */ /* v0.29.0（2026-10-15 夜班④，洪老师拍板「三个任务一起做」，SPEC_hx-common_v0.29.0_被动观察法+黑匣子心跳，DS实现+Kimi终审）：①bb开门心跳hb（云侧对时知在线）②collectSide哑火对照（壳有开门主账没动→哨兵err）③被动观察法：清单步骤带watch关键词，bb记账通报HX.chk.bbHit命中→24小时（hx_chk_watch_hours可配）没err自动markGreen销号全程不弹窗，err命中删账不销 ④撤开门8秒自动问（hx_chk_wiz_ask=1才问，🧪手动链不动）；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/hxToastHold IDENTICAL，HX.bb除块2~3申报点外IDENTICAL，HX.chk除块4~6申报点外IDENTICAL */ /* v0.28.0（2026-10-15 夜班，洪老师拍板「开工」，SPEC_hx-common_v0.28.0_黑匣子五案，DS实现+Kimi终审）：黑匣子五案——①HX.bb.job办完报账（成记job/败记err立刻上行）②重点钮12秒看门狗「点了没反应」③哨兵_silentLog（flush失败/没钥匙直写账防递归）④hxToastHold黑框留账note（hxBbToast自家除外）⑤err截断120→300字；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.chk IDENTICAL，HX.bb除块2~5申报点外IDENTICAL，hxToastHold除块4一处加法外IDENTICAL */ /* ═══════════════════════════════════════════════════════════════════════════
    v0.27.0（2026-10-15 晚班③，洪老师真机报「黑框文字显示不全犯糊涂/跨页没说去哪页」+拍板「现在就搞」，SPEC_hx-common_v0.27.0_黑框字看不全+跨页报名字，DS实现15.9秒完整回件+Kimi终审翻案1处亲手落地：_wizBox开头补摘旧hxChkWizFull防换步残留）：刀1黑框文字区看得全（去两行截断→字号14px+最多约3行可上下滑+点文字区弹大框看全文再点收起，_wizBoxClose同步收大框）刀2跨页步骤报页面名（step.page，默认「主界面（首页）」，配验收清单t21.s1加page字段）；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold IDENTICAL，HX.chk除_wizBox/_wizStep/_wizBoxClose三函数外IDENTICAL
    v0.26.0（2026-10-15 晚班②，洪老师真机三连报「黑框不是人话/跳过没反应/挡住版面看不见黄圈」+拍板六条浮窗化，SPEC_hx-common_v0.26.0_向导浮条+跳过根治，DS实现+Kimi终审翻案3处亲手落地：①document拖动监听泄漏→留引用_wizBoxClose全摘 ②touchmove改挂document防拖快断拖+preventDefault防页面跟滚 ③wizSkipped三入口清零核讫）：刀A跳过根治（_wizSkipped会话记账，跳过不再原地踏步）刀B大黑框→顶部可拖动窄浮条（⠿把手三路拖动+hx_chk_wiz_top记位置）刀C文案全人话刀D黄圈自动scrollIntoView屏中间+浮条遮挡自动让位；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold IDENTICAL，HX.chk除向导段（刀A~D）外IDENTICAL
 v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减负——壳领着洪老师一步一步验，
@@ -4610,6 +4610,764 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
   })();
 
   /* ════ 6. 三级加载器现成代码（接入方照抄；军规1：加载失败主功能照常，只静默降级） ════ */
+/* =========================================================================
+ * HX.chat — AI对话框心脏 v0.32.0（纯加法新模块，不改任何既有模块）
+ * 数据账：
+ *   索引 localStorage hx_chat_v1 = {"list":[{"id","title","updated","turns"}],"cur":id|null}
+ *   真源 壳授权文件夹 hxdata_hx_chat_<id>.json（HX.big.enc 打包 b64 → LearnShell.writeFile）
+ *        结构 {"id","title","msgs":[{"r":"u"|"a","c","t"}],"sum","facts":[],"compTurns","turns"}
+ *   桥不在（网页版）回落 localStorage hx_chat_d_<id>（JSON原文，不 b64）
+ *   云存档：回复落账后 HX.dav.mirror('hxdata_hx_chat_<id>.json')（闲时镜像，失败静默）
+ * 公开接口：
+ *   HX.chat.list() -> 数组（坏/无 -> []）
+ *   HX.chat.newChat() -> 新 id 'c'+Date.now()（建空存档 + 索引登记 + cur 指向它）
+ *   HX.chat.load(id) -> 对话对象或 null（先壳真源 → HX.big.dec；败回落 localStorage）
+ *   HX.chat.save(d) -> 写三层（真源 + localStorage 兜底 + 索引更新），全程 try
+ *   HX.chat.del(id) -> 索引除名（真源文件留着无害）
+ *   HX.chat.setCur(id) / HX.chat.getCur()
+ *   HX.chat.send(id,text,cb) cb={onOk(reply),onErr(msg),onTick(秒)}
+ *   HX.chat.pullCloud(onDone) onDone(捞回个数) / onDone(-1) 云端没通
+ * 总开关：localStorage hx_chat_off==='1' 全模块退休（各公开函数首行判，返回空值/静默）
+ * 通道链：棒1 DeepSeek → 棒2 千问 → 棒3 Kimi；每棒 60 秒 AbortController 死心，无则降级
+ * ========================================================================= */
+HX.chat = (function () {
+  'use strict';
+  var OFF_KEY = 'hx_chat_off';
+  var IDX_KEY = 'hx_chat_v1';
+  var D_PREFIX = 'hx_chat_d_';
+  var FILE_PREFIX = 'hxdata_hx_chat_';
+  var CLOUD_DIR = '/学习套装数据/';
+  var PERSONA = '你是洪晓涛医生的医学学习助手。用大白话回答，医学内容给依据（指南/教科书出处），拿不准直说不猜。';
+
+  function isOff() {
+    try { return lsGet(OFF_KEY) === '1'; } catch (e) { return false; }
+  }
+  function nowMs() { return Date.now(); }
+  function dName(id) { return D_PREFIX + id; }
+  function fName(id) { return FILE_PREFIX + id + '.json'; }
+  function safeStr(s) { try { return (s === null || s === undefined) ? '' : String(s); } catch (e) { return ''; } }
+  function toast(msg) {
+    /* Kimi终审翻案1：DS编了不存在的window.hxToastHold/hxToast/HX.toast——真接口是闭包内hxToastHold(el,hide)，直认本地（老经验：卷内引用自家模块直认） */
+    try {
+      if (!document.body) return;
+      var d = document.createElement('div');
+      d.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#4a6b4f;color:#fff;padding:10px 18px;border-radius:20px;font-size:14px;z-index:99999;box-shadow:0 2px 8px rgba(0,0,0,.25)';
+      d.textContent = String(msg);
+      document.body.appendChild(d);
+      if (typeof hxToastHold === 'function') { hxToastHold(d, function(){ try{ if(d.parentNode) d.parentNode.removeChild(d); }catch(e){} }); }
+      else { setTimeout(function(){ try{ if(d.parentNode) d.parentNode.removeChild(d); }catch(e){} }, 4000); }
+    } catch (e) {}
+  }
+
+  /* ---------- 索引读写 ---------- */
+  function readIndex() {
+    try {
+      var raw = lsGet(IDX_KEY);
+      if (!raw) return { list: [], cur: null };
+      var o = JSON.parse(raw);
+      if (!o || typeof o !== 'object') return { list: [], cur: null };
+      if (!(o.list instanceof Array)) o.list = [];
+      if (o.cur === undefined) o.cur = null;
+      return o;
+    } catch (e) { return { list: [], cur: null }; }
+  }
+  function writeIndex(o) {
+    try { lsSet(IDX_KEY, JSON.stringify(o)); return true; } catch (e) { return false; }
+  }
+  function idxUpsert(d) {
+    try {
+      var o = readIndex();
+      var i, hit = -1;
+      for (i = 0; i < o.list.length; i++) {
+        if (o.list[i] && o.list[i].id === d.id) { hit = i; break; }
+      }
+      var rec = {
+        id: d.id,
+        title: safeStr(d.title) || '未命名',
+        updated: nowMs(),
+        turns: (d.msgs && d.msgs.length) ? Math.floor(d.msgs.length / 2) : 0
+      };
+      if (hit >= 0) o.list[hit] = rec; else o.list.push(rec);
+      writeIndex(o);
+    } catch (e) {}
+  }
+  function idxRemove(id) {
+    try {
+      var o = readIndex();
+      var out = [], i;
+      for (i = 0; i < o.list.length; i++) {
+        if (o.list[i] && o.list[i].id === id) continue;
+        out.push(o.list[i]);
+      }
+      o.list = out;
+      if (o.cur === id) o.cur = null;
+      writeIndex(o);
+    } catch (e) {}
+  }
+  function idxHas(id) {
+    try {
+      var o = readIndex();
+      for (var i = 0; i < o.list.length; i++) {
+        if (o.list[i] && o.list[i].id === id) return true;
+      }
+    } catch (e) {}
+    return false;
+  }
+
+  /* ---------- 真源读写（壳优先，回落 localStorage） ---------- */
+  function shellRead(name) {
+    try {
+      if (window.LearnShell && typeof window.LearnShell.readFile === 'function') {
+        return window.LearnShell.readFile(name);
+      }
+    } catch (e) {}
+    return null;
+  }
+  function shellWrite(name, b64) {
+    try {
+      if (window.LearnShell && typeof window.LearnShell.writeFile === 'function') {
+        window.LearnShell.writeFile(name, b64);
+        return true;
+      }
+    } catch (e) {}
+    return false;
+  }
+
+  function loadRaw(d) {
+    /* 返回对话对象或 null */
+    var id = safeStr(d);
+    if (!id) return null;
+    var file = fName(id);
+    /* 1) 壳真源 */
+    try {
+      var b64 = shellRead(file);
+      if (b64) {
+        if (HX && HX.big && typeof HX.big.dec === 'function') {
+          /* HX.big.dec 是 Promise；同步路径不行，走缓存 localStorage 优先 */
+        }
+      }
+    } catch (e) {}
+    /* 优先 localStorage 里存的明文（同步、快、稳） */
+    try {
+      var raw = lsGet(dName(id));
+      if (raw) {
+        var o = JSON.parse(raw);
+        if (o && typeof o === 'object') return o;
+      }
+    } catch (e) {}
+    /* 回落：从壳真源读 + HX.gh.b64dec 同步解 b64→文本（若有） */
+    try {
+      var b642 = shellRead(file);
+      if (b642 && HX && HX.gh && typeof HX.gh.b64dec === 'function') {
+        var txt = HX.gh.b64dec(b642);
+        if (txt) {
+          var o2 = JSON.parse(txt);
+          if (o2 && typeof o2 === 'object') return o2;
+        }
+      }
+    } catch (e) {}
+    return null;
+  }
+
+  function persist(d) {
+    /* 写三层：真源 + localStorage 兜底 + 索引更新 */
+    if (!d || !d.id) return false;
+    var txt = '';
+    try { txt = JSON.stringify(d); } catch (e) { return false; }
+    /* localStorage 兜底先写（同步、最稳） */
+    try { lsSet(dName(d.id), txt); } catch (e) {}
+    /* 壳真源：b64 打包后写 */
+    try {
+      if (window.LearnShell && typeof window.LearnShell.writeFile === 'function') {
+        if (HX && HX.big && typeof HX.big.enc === 'function') {
+          try {
+            var p = HX.big.enc(txt);
+            if (p && typeof p.then === 'function') {
+              p.then(function (b64) {
+                try { shellWrite(fName(d.id), b64); } catch (e) {}
+              }, function () {
+                try { shellWrite(fName(d.id), txt); } catch (e) {}
+              });
+            } else {
+              /* 非 Promise 兜底：直接明写 */
+              shellWrite(fName(d.id), txt);
+            }
+          } catch (e) {
+            try { shellWrite(fName(d.id), txt); } catch (e2) {}
+          }
+        } else {
+          try { shellWrite(fName(d.id), txt); } catch (e) {}
+        }
+      }
+    } catch (e) {}
+    idxUpsert(d);
+    return true;
+  }
+
+  /* ---------- 键（钥匙）读取 ---------- */
+  function readKeysFromShell() {
+    try {
+      if (!window.LearnShell || typeof window.LearnShell.readFile !== 'function') return null;
+      var b64 = shellRead('hxdata_hx_keys.json');
+      if (!b64) return null;
+      var txt = null;
+      if (HX && HX.gh && typeof HX.gh.b64dec === 'function') {
+        try { txt = HX.gh.b64dec(b64); } catch (e) { txt = null; }
+      }
+      if (!txt) return null;
+      try { return JSON.parse(txt); } catch (e) { return null; }
+    } catch (e) { return null; }
+  }
+
+  function getDsKey() {
+    try {
+      var k = lsGet('xt_dskey');
+      if (k) return k;
+    } catch (e) {}
+    var obj = readKeysFromShell();
+    try {
+      if (obj) {
+        if (obj.deepseek) return obj.deepseek;
+        if (obj.ds) return obj.ds;
+      }
+    } catch (e) {}
+    return '';
+  }
+
+  /* ---------- 联网：60 秒死心 fetch ---------- */
+  function fetchJson(url, headers, body, onOk, onErr) {
+    var ac = null, aborted = false;
+    try {
+      if (typeof AbortController !== 'undefined') {
+        ac = new AbortController();
+      }
+    } catch (e) { ac = null; }
+    var tid = null;
+    try {
+      if (ac) {
+        tid = setTimeout(function () {
+          try { aborted = true; ac.abort(); } catch (e) {}
+        }, 60000);
+      }
+    } catch (e) {}
+    var opt = {
+      method: 'POST',
+      headers: headers,
+      body: body
+    };
+    if (ac) opt.signal = ac.signal;
+    var done = false;
+    function fin(fn, arg) {
+      if (done) return; done = true;
+      try { if (tid) clearTimeout(tid); } catch (e) {}
+      try { fn(arg); } catch (e) {}
+    }
+    try {
+      fetch(url, opt).then(function (resp) {
+        if (!resp || !resp.ok) {
+          fin(onErr, 'HTTP ' + (resp && resp.status));
+          return;
+        }
+        return resp.json().then(function (j) {
+          fin(onOk, j);
+        }, function (e2) {
+          fin(onErr, '读JSON失败');
+        });
+      }, function (err) {
+        if (aborted) fin(onErr, '60秒没回信');
+        else fin(onErr, '网络没通');
+      });
+    } catch (e) {
+      fin(onErr, '请求发不出');
+    }
+  }
+
+  /* ---------- 通道调用（单棒） ---------- */
+  /* spec: name='DeepSeek'|'千问'|'Kimi'; 返回 reply 字符串（空串视为失败） */
+  function callDS(messages, cb) {
+    var key = getDsKey();
+    if (!key) { cb('no_key', 'DeepSeek没钥匙'); return; }
+    var url = 'https://api.deepseek.com/v1/chat/completions';
+    var headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + key
+    };
+    var body = JSON.stringify({
+      model: 'deepseek-chat',
+      messages: messages,
+      max_tokens: 2048
+    });
+    fetchJson(url, headers, body, function (j) {
+      try {
+        var r = j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content;
+        if (r) { cb('ok', r); return; }
+      } catch (e) {}
+      cb('fail', 'DeepSeek没给正文');
+    }, function (msg) {
+      cb('fail', 'DeepSeek不通：' + msg);
+    });
+  }
+
+  function callQwen(messages, cb) {
+    var key = '';
+    try { if (HX && HX.keys && typeof HX.keys.getQwen === 'function') key = HX.keys.getQwen() || ''; } catch (e) { key = ''; }
+    if (!key) { cb('no_key', '千问没钥匙'); return; }
+    var url = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
+    var headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + key
+    };
+    var maxt = 2048;
+    try { maxt = Math.min(2048, 8192); } catch (e) { maxt = 2048; }
+    var body = JSON.stringify({
+      model: 'qwen-plus',
+      messages: messages,
+      max_tokens: maxt
+    });
+    fetchJson(url, headers, body, function (j) {
+      try {
+        var r = j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content;
+        if (r) { cb('ok', r); return; }
+      } catch (e) {}
+      cb('fail', '千问没给正文');
+    }, function (msg) {
+      cb('fail', '千问不通：' + msg);
+    });
+  }
+
+  function callKimi(messages, cb) {
+    var key = '';
+    try { if (HX && HX.keys && typeof HX.keys.get === 'function') key = HX.keys.get() || ''; } catch (e) { key = ''; }
+    if (!key) { cb('no_key', 'Kimi没钥匙'); return; }
+    /* Kimi终审翻案2：兜底名改真机现行'kimi-k2.7-code-highspeed'（DS写旧名0905），删多余修正贴纸；读hx_aimodel与大管家kimiModel()同口径 */
+    var model = 'kimi-k2.7-code-highspeed';
+    try {
+      var m = lsGet('hx_aimodel');
+      if (m) model = m;
+    } catch (e) { model = 'kimi-k2.7-code-highspeed'; }
+    var url = 'https://api.moonshot.cn/v1/chat/completions';
+    var headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + key
+    };
+    function fire(secondTry) {
+      var body = JSON.stringify({
+        model: model,
+        messages: messages,
+        max_tokens: 8192
+      });
+      fetchJson(url, headers, body, function (j) {
+        try {
+          var r = j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content;
+          if (r) { cb('ok', r); return; }
+          if (!secondTry) { fire(true); return; }
+        } catch (e) {}
+        cb('fail', 'Kimi没给正文');
+      }, function (msg) {
+        cb('fail', 'Kimi不通：' + msg);
+      });
+    }
+    fire(false);
+  }
+
+  /* 组 messages */
+  function buildMessages(d) {
+    var arr = [];
+    arr.push({ role: 'system', content: PERSONA });
+    var sum = '';
+    var facts = [];
+    try { sum = safeStr(d.sum); } catch (e) { sum = ''; }
+    try { if (d.facts instanceof Array) facts = d.facts; } catch (e) { facts = []; }
+    if (sum || facts.length) {
+      var extra = '';
+      if (sum) extra += '【前情摘要】' + sum + '\n';
+      extra += '【事实卡】\n' + facts.join('\n');
+      arr.push({ role: 'system', content: extra });
+    }
+    var msgs = (d.msgs instanceof Array) ? d.msgs : [];
+    /* 最近 6 轮 = 最近 12 条 */
+    var start = Math.max(0, msgs.length - 12);
+    var i;
+    for (i = start; i < msgs.length; i++) {
+      var m = msgs[i];
+      if (!m) continue;
+      var role = (m.r === 'a') ? 'assistant' : 'user';
+      arr.push({ role: role, content: safeStr(m.c) });
+    }
+    return arr;
+  }
+
+  /* ---------- 云存档镜像 ---------- */
+  function mirror(id) {
+    try {
+      if (HX && HX.dav && typeof HX.dav.mirror === 'function') {
+        HX.dav.mirror(fName(id));
+      }
+    } catch (e) {}
+  }
+
+  /* ---------- 记账 ---------- */
+  function billChat(model, inC, outC) {
+    try {
+      if (HX && HX.bill && typeof HX.bill === 'function') {
+        HX.bill('AI对话框', '对话(' + model + ')', inC, outC, model);
+      }
+    } catch (e) {}
+    try {
+      if (HX && HX.bb && typeof HX.bb.log === 'function') {
+        /* 由调用处再记字数；这里只补空情况 */
+      }
+    } catch (e) {}
+  }
+
+  /* ---------- 压缩 ---------- */
+  function tryCompress(id) {
+    try {
+      var off = lsGet('hx_chat_compress_off');
+      if (off === '1') return;
+    } catch (e) {}
+    var d = loadRaw(id);
+    if (!d) return;
+    var turns = (d.msgs instanceof Array) ? Math.floor(d.msgs.length / 2) : 0;
+    var comp = d.compTurns || 0;
+    if (!(turns > 10 && (turns - comp) >= 6)) return;
+
+    /* 造压缩输入：sum + 除最近 6 轮外的老 msgs */
+    var oldMsgs = [];
+    try {
+      var msgs = d.msgs || [];
+      var keepFrom = Math.max(0, msgs.length - 12);
+      for (var i = 0; i < keepFrom; i++) oldMsgs.push(msgs[i]);
+    } catch (e) { return; }
+
+    var payload = '';
+    try { payload = (d.sum ? ('【已有摘要】' + d.sum + '\n') : ''); } catch (e) {}
+    try {
+      for (var j = 0; j < oldMsgs.length; j++) {
+        var m = oldMsgs[j];
+        if (!m) continue;
+        payload += ((m.r === 'a' ? 'AI：' : '我：') + safeStr(m.c) + '\n');
+      }
+    } catch (e) {}
+
+    var sys = '把以下医患学习对话压缩。输出严格JSON：{"sum":"200字内摘要","facts":["药名/剂量/结论/出处等结构化事实，逐条，没有就空数组"]}';
+    var msgs2 = [
+      { role: 'system', content: sys },
+      { role: 'user', content: payload }
+    ];
+
+    var key = getDsKey();
+    if (!key) return;
+
+    var headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + key
+    };
+    var body = JSON.stringify({
+      model: 'deepseek-chat',
+      messages: msgs2,
+      max_tokens: 1024
+    });
+
+    fetchJson('https://api.deepseek.com/v1/chat/completions', headers, body, function (j) {
+      try {
+        var txt = j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content;
+        if (!txt) return;
+        /* 剥 JSON */
+        var s = safeStr(txt);
+        var a = s.indexOf('{'), b = s.lastIndexOf('}');
+        if (a < 0 || b <= a) return;
+        var obj = JSON.parse(s.substring(a, b + 1));
+        if (!obj || typeof obj !== 'object') return;
+        var dx = loadRaw(id);
+        if (!dx) return;
+        if (typeof obj.sum === 'string') dx.sum = obj.sum;
+        if (obj.facts instanceof Array) dx.facts = obj.facts;
+        dx.compTurns = turns;
+        persist(dx);
+      } catch (e) {}
+    }, function () {
+      /* 失败静默，下次再压 */
+    });
+  }
+
+  /* ---------- davCall 包装（照 HX.dav 里的样式自写一份，120 秒死心） ---------- */
+  function davCall(action, user, pass, p3, p4, onDone) {
+    try {
+      if (!window.LearnShell || typeof window.LearnShell.davAsync !== 'function') {
+        onDone(null); return;
+      }
+      if (!HX._davCbs) HX._davCbs = {};
+      var cbId = 'chat_' + nowMs() + '_' + Math.floor(Math.random() * 100000);
+      var done = false;
+      var tid = setTimeout(function () {
+        if (done) return; done = true;
+        try { delete HX._davCbs[cbId]; } catch (e) {}
+        onDone(null);
+      }, 120000);
+      HX._davCbs[cbId] = function (result) {
+        if (done) return; done = true;
+        try { clearTimeout(tid); } catch (e) {}
+        try { delete HX._davCbs[cbId]; } catch (e) {}
+        onDone(result);
+      };
+      window.LearnShell.davAsync(action, user, pass, p3, p4, cbId);
+    } catch (e) {
+      try { onDone(null); } catch (e2) {}
+    }
+  }
+
+  /* ---------- 公开接口 ---------- */
+  var api = {};
+
+  api.list = function () {
+    if (isOff()) return [];
+    try { return readIndex().list || []; } catch (e) { return []; }
+  };
+
+  api.newChat = function () {
+    if (isOff()) return null;
+    var id = 'c' + nowMs();
+    var d = { id: id, title: '', msgs: [], sum: '', facts: [], compTurns: 0, turns: 0 };
+    persist(d);
+    try {
+      var o = readIndex();
+      o.cur = id;
+      writeIndex(o);
+    } catch (e) {}
+    return id;
+  };
+
+  api.load = function (id) {
+    if (isOff()) return null;
+    try { return loadRaw(id); } catch (e) { return null; }
+  };
+
+  api.save = function (d) {
+    if (isOff()) return false;
+    try { return persist(d); } catch (e) { return false; }
+  };
+
+  api.del = function (id) {
+    if (isOff()) return;
+    try {
+      idxRemove(id);
+      toast('记录从列表撤了（云端文件留着无害）');
+    } catch (e) {}
+  };
+
+  api.setCur = function (id) {
+    if (isOff()) return;
+    try {
+      var o = readIndex();
+      o.cur = id;
+      writeIndex(o);
+    } catch (e) {}
+  };
+
+  api.getCur = function () {
+    if (isOff()) return null;
+    try { return readIndex().cur; } catch (e) { return null; }
+  };
+
+  /* 主发送：cb = {onOk(reply), onErr(msg), onTick(sec)} */
+  api.send = function (id, text, cb) {
+    if (isOff()) { try { cb && cb.onErr && cb.onErr('对话功能已退休'); } catch (e) {} return; }
+    cb = cb || {};
+    text = safeStr(text);
+    if (!text) { try { cb.onErr && cb.onErr('没输入内容'); } catch (e) {} return; }
+    var d = api.load(id);
+    if (!d) { try { cb.onErr && cb.onErr('对话没找着'); } catch (e) {} return; }
+
+    if (!(d.msgs instanceof Array)) d.msgs = [];
+    d.msgs.push({ r: 'u', c: text, t: nowMs() });
+    if (!safeStr(d.title)) d.title = text.substring(0, 20);
+    api.save(d);
+
+    var messages = buildMessages(d);
+
+    /* 秒表 */
+    var tickStart = nowMs();
+    var tickTimer = null;
+    var stopped = false;
+    try {
+      if (cb.onTick) {
+        tickTimer = setInterval(function () {
+          if (stopped) return;
+          var sec = Math.floor((nowMs() - tickStart) / 1000);
+          try { cb.onTick(sec); } catch (e) {}
+        }, 1000);
+      }
+    } catch (e) { tickTimer = null; }
+    function stopTick() {
+      stopped = true;
+      try { if (tickTimer) clearInterval(tickTimer); } catch (e) {}
+    }
+
+    /* 通道链 */
+    var inChars = text.length;
+    var lastMsg = '';
+
+    function tryDS() {
+      callDS(messages, function (st, payload) {
+        if (st === 'ok') { done(payload, 'DeepSeek'); return; }
+        lastMsg = payload || 'DeepSeek不通';
+        if (st === 'no_key') {
+          /* 静默换棒不打扰 */
+          tryQwen(false);
+        } else {
+          toast('DeepSeek这条路不通，自动换千问');
+          tryQwen(true);
+        }
+      });
+    }
+    function tryQwen(bumped) {
+      callQwen(messages, function (st, payload) {
+        if (st === 'ok') { done(payload, '千问'); return; }
+        lastMsg = payload || '千问不通';
+        if (st === 'no_key') {
+          tryKimi(false);
+        } else {
+          toast('千问这条路不通，自动换Kimi');
+          tryKimi(true);
+        }
+      });
+    }
+    function tryKimi(bumped) {
+      callKimi(messages, function (st, payload) {
+        if (st === 'ok') { done(payload, 'Kimi'); return; }
+        lastMsg = payload || 'Kimi不通';
+        /* 全灭 */
+        stopTick();
+        try { cb.onErr && cb.onErr('三家都没通：' + lastMsg); } catch (e) {}
+      });
+    }
+
+    function done(reply, model) {
+      stopTick();
+      reply = safeStr(reply);
+      if (!reply) {
+        try { cb.onErr && cb.onErr('回信是空的'); } catch (e) {}
+        return;
+      }
+      var dx = api.load(id);
+      if (!dx) dx = d;
+      if (!(dx.msgs instanceof Array)) dx.msgs = d.msgs;
+      dx.msgs.push({ r: 'a', c: reply, t: nowMs() });
+      /* 更新 turns（后续压缩判用） */
+      try { dx.turns = Math.floor(dx.msgs.length / 2); } catch (e) {}
+      api.save(dx);
+      mirror(id);
+      billChat(model, inChars, reply.length);
+      try {
+        if (HX && HX.bb && typeof HX.bb.log === 'function') {
+          HX.bb.log('note', 'chat 回信 ' + reply.length + '字');
+        }
+      } catch (e) {}
+      try { cb.onOk && cb.onOk(reply); } catch (e) {}
+      /* 异步触发压缩（不占回信链） */
+      try { setTimeout(function () { tryCompress(id); }, 200); } catch (e) {}
+    }
+
+    tryDS();
+  };
+
+  /* 云端捞回：onDone(n) 或 onDone(-1) */
+  api.pullCloud = function (onDone) {
+    if (isOff()) { try { onDone && onDone(-1); } catch (e) {} return; }
+    onDone = onDone || function () {};
+    var ok = false;
+    try { ok = (HX && HX.dav && typeof HX.dav.asyncOk === 'function' && HX.dav.asyncOk()); } catch (e) { ok = false; }
+    var cred = null;
+    try { if (HX && HX.keys && typeof HX.keys.dav === 'function') cred = HX.keys.dav(); } catch (e) { cred = null; }
+    if (!ok || !cred || !cred.user || !cred.pass || !window.LearnShell || typeof window.LearnShell.davAsync !== 'function') {
+      try { onDone(-1); } catch (e) {}
+      return;
+    }
+    davCall('list', cred.user, cred.pass, CLOUD_DIR, '', function (result) {
+      var arr = null;
+      try {
+        if (typeof result === 'string') arr = JSON.parse(result);
+        else if (result && typeof result === 'object') {
+          if (result.data) arr = result.data;
+          else arr = result;
+        }
+      } catch (e) { arr = null; }
+      if (!(arr instanceof Array)) {
+        try { onDone(-1); } catch (e) {}
+        return;
+      }
+      var cands = [];
+      try {
+        for (var i = 0; i < arr.length; i++) {
+          var it = arr[i];
+          if (!it) continue;
+          var nm = it.name || it.filename || it.path || '';
+          if (typeof nm !== 'string') continue;
+          var base = nm.split('/').pop();
+          if (!base) continue;
+          if (base.indexOf(FILE_PREFIX) !== 0) continue;
+          if (base.slice(-5) !== '.json') continue;
+          var cid = base.substring(FILE_PREFIX.length, base.length - 5);
+          if (!cid) continue;
+          if (idxHas(cid)) continue;
+          cands.push({ id: cid, name: base });
+        }
+      } catch (e) { cands = []; }
+
+      if (!cands.length) { try { onDone(0); } catch (e) {} return; }
+
+      var got = 0;
+      var idx = 0;
+      function nextOne() {
+        if (idx >= cands.length) {
+          try { onDone(got); } catch (e) {}
+          return;
+        }
+        var c = cands[idx++];
+        try {
+          var p = HX.dav.downFile(CLOUD_DIR + c.name, c.name);
+          if (p && typeof p.then === 'function') {
+            p.then(function (txt) {
+              try {
+                if (txt) {
+                  var o = JSON.parse(txt);
+                  if (o && typeof o === 'object') {
+                    if (!o.id) o.id = c.id;
+                    if (!(o.msgs instanceof Array)) o.msgs = [];
+                    persist(o);
+                    got++;
+                  }
+                }
+              } catch (e) {}
+              nextOne();
+            }, function () { nextOne(); });
+          } else {
+            /* 同步返回字符串 */
+            try {
+              if (p) {
+                var o2 = JSON.parse(p);
+                if (o2 && typeof o2 === 'object') {
+                  if (!o2.id) o2.id = c.id;
+                  if (!(o2.msgs instanceof Array)) o2.msgs = [];
+                  persist(o2);
+                  got++;
+                }
+              }
+            } catch (e) {}
+            nextOne();
+          }
+        } catch (e) {
+          nextOne();
+        }
+      }
+      nextOne();
+    });
+  };
+
+  return api;
+})();
+
   HX.loadLoaderSnippet = [
     "/* hx-common.js 三级加载（照 guanjia-pdf-engine.js 已验证先例）：",
     "   ①壳readFile授权文件夹 → ②同目录fetch(8秒超时) → ③公开仓raw下载后写壳安装；",
