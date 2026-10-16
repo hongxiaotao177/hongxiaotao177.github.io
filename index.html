@@ -2,6 +2,7 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.22.1 2026-10-16（洪老师拍板，口令忘失救命链·套件侧）：📦旁加🆘备忘钮，点开=固定话术全屏层（textarea只读可全选复制），AI问人要《套装钥匙总账.txt》时明说路径手机存储→Download→分享保存；回退hx_beiwang_off=1按钮隐藏；其余一行未动。
     v1.21.0 2026-10-15（午后班②，洪老师原话「我检查更新，需要得到的就是上一版干的活、这一版有没有装好，其他的我都不要知道。为了知道有没有网，大管家那个灯还是需要的，其他我都不要。」）：
       查新首页只留三样（管家灯/上一版追踪/任务单·鱼骨头）；刀1通信管家方框默认不亮、刀2对账三句话默认藏，回退开关hx_home1210_off=1恢复原样；查新/装件/对账功能逻辑零改动。
     v1.19.12 2026-10-14（班①，接管保险工程件②，洪老师拍板开工）：第一行加「📦 一键导出」钮——全localStorage+壳文件清单打成一个大txt下载，纯本地断网可导；其余一行未动。
@@ -355,6 +356,8 @@
     <!-- v1.10.0 洪老师拍板：「🔍 检查新版本」上第一行与🔄同步并列；功能=管理工具里同款（清标记+立hx_ver_manual+刷新重查），直播与复核结论在下方updLine；管理工具原按钮保留不动 -->
     <button class="tag" id="btnVerTop" style="padding:12px 10px;border:none;cursor:pointer;" onclick="try{sessionStorage.removeItem('hx_ver_checked');sessionStorage.setItem('hx_ver_manual','1');sessionStorage.setItem('hx_sj_skip_once','1');}catch(e){};var _st=document.getElementById('syncTopMsg');if(_st)_st.textContent='🔍 正在查新版本，请稍等…';updMsg('🔍 正在查新版本，请稍等…');setTimeout(function(){location.reload();},120);">🔍 检查新版本</button>
     <button class="tag" id="btnExportAll" style="padding:12px 10px;border:none;cursor:pointer;" onclick="exportAllBackup()">📦 一键导出</button>
+    <!-- v1.22.1 口令忘失救命链：🆘备忘钮；回退 hx_beiwang_off=1 时 showBeiwang 直接return -->
+    <button class="tag" id="btnBeiwang" style="padding:12px 10px;border:none;cursor:pointer;" onclick="showBeiwang()">🆘 备忘</button>
     <span id="syncTopMsg" style="font-size:13px;color:#8a8178;">不按它，绝不同步</span>
   </div>
 
@@ -545,7 +548,7 @@ CUR.index="1.19.11"; /* v1.19.11：账本覆盖让路硬编码"0"，清tuomin假
 CUR.index="1.19.12"; /* v1.19.12：自立导出钮，见顶部修改记录 */
 CUR.index="1.20.0";
 CUR.index="1.20.1";
-CUR.index="1.21.0"; /* v1.20.9（2026-10-15早班①续4，洪老师拍板三件）：首页管家灯（绿活红断）+更新鱼骨头化（updLine只露一行点开看全文）+上一版追踪（任务单最近一件上传/下载/安装三段对账），详注见__home1209头顶，只加版面其余一行未动 */ /* v1.20.6（2026-10-15早班①续，洪老师真机报vc57+v1.20.5双上岗仍反复更新）：门岗带记录仪——hxWriteSmart各节点记黑匣子act（其余一行未动，擒卡点位用） */ /* v1.20.5（2026-10-15早班①，洪老师拍板「桥加门岗，大块头过来自动切碎」，SPEC_桥门岗_vc57，Kimi工兵代跑报备）：部件写入三处调用点过新门岗hxWriteSmart（大件自动切碎走壳新分块桥+End回读字节对账，假成功当场现形；小件/老壳/hx_gate_off=1走老单发桥一行未动）+partLocalVer读门岗（整读瞎→fileReadChunk头4KB认版本号+黑匣子留账）；配壳vc57/v2.1.0，其余一行未动 */ /* v1.20.4（2026-10-15 班⑩深夜救火，洪老师真机报「白屏5秒闪退+点更新没反应」，黑匣子实锤01:24四连开门=装件reload循环+无一条err）：本体=v1.20.1真机稳定版原样，只升号盖过机子上的残次1.20.3（v1.20.2两路并行互盖/v1.20.3手动链空开关——__taskFeedStart在1063行__taskFeed赋值前被调=undefined空转return，手动查新全瘫）。号跳2/3是为了>残次版让机子肯装。任务单手动接入重做留待下一对话（洪老师拍板先讨论验收减负两任务） */ /* v1.20.1（2026-10-14 班⑨救火，装循环根治，SPEC_index_v1.20.1，DS实现+Kimi终审亲手落地）：装循环根治+toast节流） */ /* v1.20.0（2026-10-14 班⑧，洪老师拍板任务单式查新+开门自动查+管家灯，SPEC_index_v1.20.0，DS实现+Kimi终审翻案4处亲手落地） */ /* v1.21.0（2026-10-15午后班②，洪老师原话「检查更新只要上一版干的活+装好没有+管家灯，其他都不要」）：通信管家方框+对账三句话默认藏，回退hx_home1210_off=1，功能逻辑零动 */
+CUR.index="1.22.1"; /* v1.20.9（2026-10-15早班①续4，洪老师拍板三件）：首页管家灯（绿活红断）+更新鱼骨头化（updLine只露一行点开看全文）+上一版追踪（任务单最近一件上传/下载/安装三段对账），详注见__home1209头顶，只加版面其余一行未动 */ /* v1.20.6（2026-10-15早班①续，洪老师真机报vc57+v1.20.5双上岗仍反复更新）：门岗带记录仪——hxWriteSmart各节点记黑匣子act（其余一行未动，擒卡点位用） */ /* v1.20.5（2026-10-15早班①，洪老师拍板「桥加门岗，大块头过来自动切碎」，SPEC_桥门岗_vc57，Kimi工兵代跑报备）：部件写入三处调用点过新门岗hxWriteSmart（大件自动切碎走壳新分块桥+End回读字节对账，假成功当场现形；小件/老壳/hx_gate_off=1走老单发桥一行未动）+partLocalVer读门岗（整读瞎→fileReadChunk头4KB认版本号+黑匣子留账）；配壳vc57/v2.1.0，其余一行未动 */ /* v1.20.4（2026-10-15 班⑩深夜救火，洪老师真机报「白屏5秒闪退+点更新没反应」，黑匣子实锤01:24四连开门=装件reload循环+无一条err）：本体=v1.20.1真机稳定版原样，只升号盖过机子上的残次1.20.3（v1.20.2两路并行互盖/v1.20.3手动链空开关——__taskFeedStart在1063行__taskFeed赋值前被调=undefined空转return，手动查新全瘫）。号跳2/3是为了>残次版让机子肯装。任务单手动接入重做留待下一对话（洪老师拍板先讨论验收减负两任务） */ /* v1.20.1（2026-10-14 班⑨救火，装循环根治，SPEC_index_v1.20.1，DS实现+Kimi终审亲手落地）：装循环根治+toast节流） */ /* v1.20.0（2026-10-14 班⑧，洪老师拍板任务单式查新+开门自动查+管家灯，SPEC_index_v1.20.0，DS实现+Kimi终审翻案4处亲手落地） */ /* v1.21.0（2026-10-15午后班②，洪老师原话「检查更新只要上一版干的活+装好没有+管家灯，其他都不要」）：通信管家方框+对账三句话默认藏，回退hx_home1210_off=1，功能逻辑零动 */
 CUR.index="1.22.0"; /* v1.22.0（2026-10-15 夜班⑦，洪老师拍板「做」，SPEC_index_v1.22.0+hx-common_v0.30.0_预下载+双击回环，DS实现+Kimi终审翻案1处亲手落地：preloadSave改先写本体、门岗回调ok后才写.ver防假命中）：闲时预下载开门秒装——dl()开头先查存货hxdata_preload_*版本对上直接用跳过下载，对不上/读不到走老下载链零风险降级，下载成功顺手存壳，装成清存货，装失败留着下次开门救命；回退hx_preload_off=1。红线：管家VERCHECK路/投信/取信/复核verifyAfter/任务单__taskFeed/对账/版面一行不动；除刀B1新增四函数+刀B2两处+刀B3一处+版本行外全文件IDENTICAL */
 CUR.tuomin="0"; /* v1.19.10修404：CUR=壳内已装版本，单体手机还没装必须填"0"才会下载（CUR.ppt同款老坑，见230行） */ /* v1.19.8（2026-09-20班⑮，洪老师真机报"升级说装成功主界面还是19.6，几次都这样，没重启应该直接变19.7"）病根=班⑮发v1.19.7时新赋值插在同一行旧赋值前面，CUR.index="1.19.7"刚赋上就被同行的CUR.index="1.19.6"盖回→页脚活字永远亮1.19.6（文件真身早是新版，升级链/壳全无辜，大管家0.54.5上机为证）；还连带v1.19.5刀2开门自校对误把账本1.19.7当谎回滚→每次都提示重装。治=删同行可执行旧赋值（注释留档）+升号v1.19.8让真机重新下载。其余一行未动 */
 try{document.getElementById("ftVer").textContent=CUR.index;}catch(eF){} /* v1.19.6 页脚死字改活字：ftVer亮CUR.index真身 */
@@ -806,6 +809,67 @@ function exportAllBackup(){
     setTimeout(function(){ try{ URL.revokeObjectURL(a.href); a.remove(); }catch(e){} },2000);
     try{ if(typeof updMsg==='function') updMsg('📦 导出完成，文件在下载里找'); }catch(e){}
   }catch(e){ try{ if(typeof updMsg==='function') updMsg('⚠️ 导出没成：'+e); }catch(e2){} }
+}
+
+/* v1.22.1 口令忘失救命链·套件侧：🆘备忘弹出固定话术（textarea只读可全选复制），其余一行未动 */
+function showBeiwang(){
+  if(localStorage.getItem('hx_beiwang_off')==='1'){console.log('hx_beiwang_off=1，备忘按钮已回退隐藏');return;}
+  var mask=document.createElement('div');
+  mask.style.position='fixed';
+  mask.style.left='0';
+  mask.style.top='0';
+  mask.style.width='100%';
+  mask.style.height='100%';
+  mask.style.background='rgba(0,0,0,0.75)';
+  mask.style.zIndex='99999';
+  mask.style.display='flex';
+  mask.style.flexDirection='column';
+  mask.style.alignItems='center';
+  mask.style.justifyContent='center';
+  mask.style.padding='16px';
+  mask.style.boxSizing='border-box';
+  var title=document.createElement('div');
+  title.textContent='🆘 交接备忘';
+  title.style.color='#fff';
+  title.style.fontSize='20px';
+  title.style.fontWeight='bold';
+  title.style.marginBottom='10px';
+  var ta=document.createElement('textarea');
+  ta.readOnly=true;
+  ta.style.width='100%';
+  ta.style.maxWidth='560px';
+  ta.style.height='55vh';
+  ta.style.fontSize='14px';
+  ta.style.lineHeight='1.5';
+  ta.style.padding='10px';
+  ta.style.boxSizing='border-box';
+  ta.style.borderRadius='8px';
+  ta.style.border='1px solid #888';
+  ta.value='【学习套装·交接备忘】\n\n把下面这段话，原样复制发给任何一个新AI（比如新开的Kimi）：\n\n——— 复制从这里开始 ———\n你好，我是洪老师。原来的AI把「接班」忘了，请你接管我的「学习套装」。\n第一步：请回复我：「请把《套装钥匙总账.txt》发给我」。这份文件在我手机的：手机存储 → Download → 分享保存，文件名叫 套装钥匙总账.txt（如果找不到，我会去坚果云App的「学习套装备份」文件夹找同名文件）。\n第二步：拿到文件后，里面有五把钥匙。请用GitHub钥匙读私有仓 hongxiaotao177/xuexi-backup 根目录的《AI接管说明书.md》，照它说的接班。\n我不懂技术，你照做就行，别问我技术问题。\n——— 复制到这里为止 ———';
+  var btnSel=document.createElement('button');
+  btnSel.textContent='📋 点我全选';
+  btnSel.style.marginTop='10px';
+  btnSel.style.padding='10px 16px';
+  btnSel.style.fontSize='15px';
+  btnSel.style.border='none';
+  btnSel.style.borderRadius='8px';
+  btnSel.style.cursor='pointer';
+  btnSel.onclick=function(){ta.focus();ta.select();};
+  var btnClose=document.createElement('button');
+  btnClose.textContent='关闭';
+  btnClose.style.marginTop='10px';
+  btnClose.style.padding='10px 16px';
+  btnClose.style.fontSize='15px';
+  btnClose.style.border='none';
+  btnClose.style.borderRadius='8px';
+  btnClose.style.cursor='pointer';
+  btnClose.onclick=function(){document.body.removeChild(mask);};
+  mask.onclick=function(e){if(e.target===mask){/* 点遮罩背景不关闭 */}};
+  mask.appendChild(title);
+  mask.appendChild(ta);
+  mask.appendChild(btnSel);
+  mask.appendChild(btnClose);
+  document.body.appendChild(mask);
 }
 /* v1.12.0 公共件收编：cmpVer 改调 HX.cmpVer（HX不在时回落原实现，不崩） */
 function cmpVer(a,b){
