@@ -2,6 +2,7 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.22.2 2026-10-16（洪老师拍板「把AI对话框从空白一直完成到最后」，SPEC_AI对话框一期）：SUITE上chat户口+💬AI对话框卡片（插临床工具区前）+CUR加chat:"0"；配套hx-common v0.32.0对话心脏+新单体software-chat.html v0.1.0；其余一行未动。
     v1.22.1 2026-10-16（洪老师拍板，口令忘失救命链·套件侧）：📦旁加🆘备忘钮，点开=固定话术全屏层（textarea只读可全选复制），AI问人要《套装钥匙总账.txt》时明说路径手机存储→Download→分享保存；回退hx_beiwang_off=1按钮隐藏；其余一行未动。
     v1.21.0 2026-10-15（午后班②，洪老师原话「我检查更新，需要得到的就是上一版干的活、这一版有没有装好，其他的我都不要知道。为了知道有没有网，大管家那个灯还是需要的，其他我都不要。」）：
       查新首页只留三样（管家灯/上一版追踪/任务单·鱼骨头）；刀1通信管家方框默认不亮、刀2对账三句话默认藏，回退开关hx_home1210_off=1恢复原样；查新/装件/对账功能逻辑零改动。
@@ -373,6 +374,12 @@
     <div class="meta"><span class="tag">网页工具</span><span class="tag" id="tagTuomin">v1.0.0</span></div>
   </a>
 
+  <a class="card" href="AI对话框.html" id="cardChat"> <!-- v1.22.2 AI对话框一期 -->
+    <h2>💬 AI对话框<span class="infoBtn">ⓘ 说明</span></h2>
+    <div class="desc intro">跟AI一句一句聊医学问题：旧对话能捞回来接着聊，它记得你们之前聊过的事；聊出来的好东西以后能塞进书和病历（二期）。</div>
+    <div class="meta"><span class="tag">网页工具</span><span class="tag" id="tagChat">v0.1.0</span></div>
+  </a>
+
   <div class="section-title">临床工具</div>
 
   <a class="card" href="血气分析.html">
@@ -536,7 +543,7 @@ hxCommonLoad(function(){
 <script>
 /* ==================== 套装主界面自检器官（v1.1.0） ==================== */
 /* 本界面对应的四个软件当前内装版本（每次发版跟着改） */
-var CUR = { notes:"2.18.1", xiti:"1.16.0", bridge:"1.7.0", xueqi:"0.21.0", ppt:"0.20.0", xiaotao:"0.11.0", guanjia:"0.33.1", pai:"0.11.0", index:"1.18.4" /* v1.18.1 纯CUR同步：大管家v0.31.1（#83 AI面板清单恒空根治）；顺手把班②全家8件CUR落伍补齐（xiti1.16.0/bridge1.7.0/xueqi0.21.0/ppt0.20.0/xiaotao0.11.0/pai0.11.0，CUR落伍老毛病再抓一回） */ };
+var CUR = { notes:"2.18.1", xiti:"1.16.0", bridge:"1.7.0", xueqi:"0.21.0", ppt:"0.20.0", xiaotao:"0.11.0", guanjia:"0.33.1", pai:"0.11.0", chat:"0" /* v1.22.2新户口，装后由装成记账写实际版本 */, index:"1.18.4" /* v1.18.1 纯CUR同步：大管家v0.31.1（#83 AI面板清单恒空根治）；顺手把班②全家8件CUR落伍补齐（xiti1.16.0/bridge1.7.0/xueqi0.21.0/ppt0.20.0/xiaotao0.11.0/pai0.11.0，CUR落伍老毛病再抓一回） */ };
 CUR.guanjia="0.47.0"; /* v1.19.5（2026-09-19 班①，减桥工程治连环谎）刀1硬编码校准：壳v2.0.2捆真身大管家0.47.0，CUR落伍老毛病再抓（原v1.18.5 纯CUR同步：大管家v0.35.1，#108 删过的病人手动收得回+移出黑名单/防重跳过不播报） */
 CUR.index="1.18.7"; /* v1.18.7 顺手补CUR：主界面自己1.18.6→1.18.7 */
 CUR.index="1.19.0"; /* v1.19.0 通信链路大扫除：闲时对账取消归管家+开门存清单+专区自动装+管家路补留档复核 */
@@ -570,6 +577,7 @@ var SUITE = {
   guanjia:["software-guanjia.html","病人大管家.html","version-guanjia.json","tagGuanjia"],
   pai:    ["software-pai.html",    "拍病历.html",   "version-pai.json",    ""], /* v1.13.0补上：CUR有名名单漏行，拍病历此前永远不随检查新版本更新 */
   tuomin: ["software-tuomin.html","脱敏单体.html", "version-tuomin.json", "tagTuomin"], /* v1.19.9：脱敏单体上户口 */
+  chat:   ["software-chat.html", "AI对话框.html",  "version-chat.json",  "tagChat"], /* v1.22.2：AI对话框一期上户口 */
   index:  ["index.html",          "index.html",     "version-index.json", ""]
 };
 /* 标签按 CUR 显示（永不落伍）；v1.9.0 版本校对明示：角标写明"本机"，查新版靠手动按钮 */
