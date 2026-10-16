@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>AI对话框</title>
+<script src="hx-common.js"></script>
+<!-- v0.1.0 2026-10-16 AI对话框一期上线（SPEC_AI对话框一期） -->
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: -apple-system, "SF Pro Text", "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background-color: #fffdf8;
+  color: #4a4238;
+  font-size: 16px;
+  line-height: 1.5;
+  padding: 0;
+  margin: 0;
+  overflow-x: hidden;
+}
+/* 全局圆角 */
+.round { border-radius: 14px; }
+/* 顶行 */
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  background-color: #fff;
+  border-bottom: 1px solid #eae4d9;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.top-title {
+  font-weight: 600;
+  font-size: 18px;
+}
+.top-version {
+  font-size: 12px;
+  color: #9a8f7c;
+  margin-left: 4px;
+}
+.top-btn {
+  background: none;
+  border: none;
+  font-size: 18px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  color: #4a4238;
+  cursor: pointer;
+  font-weight: 500;
+  min-width: 72px;
+  text-align: center;
+}
+.top-btn:hover { background-color: #f5f2e9; }
+.top-btn:active { background-color: #eae4d9; }
+
+/* 记忆状态行 */
+.mem-line {
+  padding: 8px 16px;
+  font-size: 14px;
+  color: #7a7260;
+  background-color: #fff;
+  border-bottom: 1px solid #eae4d9;
+}
+
+/* 主内容区 */
+.main-area {
+  padding: 12px 16px;
+  overflow-y: auto;
+  height: calc(100vh - 200px);
+  margin-bottom: 12px;
+}
+.bubble {
+  max-width: 85%;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  word-break: break-word;
+  position: relative;
+}
+.bubble-user {
+  margin-left: auto;
+  background-color: #7a9e7e;
+  color: white;
+  border-radius: 14px 14px 0 14px;
+}
+.bubble-ai {
+  margin-right: auto;
+  background-color: #ffffff;
+  color: #4a4238;
+  border-radius: 14px 14px 14px 0;
+  border: 1px solid #eae4d9;
+}
+.bubble-time {
+  font-size: 12px;
+  color: #9a8f7c;
+  margin-top: 6px;
+  text-align: right;
+}
+.bubble-ai .bubble-time { text-align: left; }
+.bubble-copy {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  font-size: 14px;
+  color: #7a7260;
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+.bubble-copy:hover { background-color: #f5f2e9; }
+.bubble-copy:active { background-color: #eae4d9; }
+
+/* 底部输入区 */
+.bottom-bar {
+  padding: 12px 16px;
+  background-color: #fff;
+  border-top: 1px solid #eae4d9;
+  position: sticky;
+  bottom: 0;
+  z-index: 100;
+}
+.textarea-wrap {
+  display: flex;
+  gap: 8px;
+}
+.textarea-input {
+  flex: 1;
+  min-height: 48px;
+  max-height: 160px;
+  padding: 12px 16px;
+  font-size: 16px;
+  border: 1px solid #d9d2c7;
+  border-radius: 14px;
+  resize: none;
+  outline: none;
+  background-color: #fffdf8;
+  color: #4a4238;
+  line-height: 1.5;
+}
+.textarea-input:focus {
+  border-color: #7a9e7e;
+  box-shadow: 0 0 0 2px rgba(122, 158, 126, 0.2);
+}
+.send-btn {
+  background-color: #7a9e7e;
+  color: white;
+  border: none;
+  border-radius: 14px;
+  font-size: 18px;
+  font-weight: 600;
+  padding: 12px 24px;
+  min-width: 80px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.send-btn:active { background-color: #6a8e6e; }
+.send-btn[disabled] { opacity: 0.6; cursor: not-allowed; }
+
+/* 抽屉层 */
+.drawer {
+  position: fixed;
+  top: 0;
+  right: -100%;
+  width: 80%;
+  max-width: 400px;
+  height: 100vh;
+  background-color: #fff;
+  box-shadow: -4px 0 12px rgba(0,0,0,0.08);
+  z-index: 1000;
+  transition: right 0.3s ease;
+  overflow-y: auto;
+  border-left: 1px solid #eae4d9;
+}
+.drawer.open {
+  right: 0;
+}
+.drawer-header {
+  padding: 16px;
+  font-size: 18px;
+  font-weight: 600;
+  border-bottom: 1px solid #eae4d9;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.drawer-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #7a7260;
+}
+.drawer-list {
+  padding: 0;
+}
+.drawer-item {
+  padding: 14px 16px;
+  border-bottom: 1px solid #f5f2e9;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.drawer-item:hover { background-color: #f9f7f2; }
+.drawer-item:last-child { border-bottom: none; }
+.drawer-item-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+  word-break: break-word;
+}
+.drawer-item-meta {
+  font-size: 13px;
+  color: #9a8f7c;
+}
+.drawer-item-del {
+  background: none;
+  border: none;
+  color: #cc6666;
+  font-size: 16px;
+  cursor: pointer;
+  margin-left: 8px;
+}
+.drawer-footer {
+  padding: 16px;
+  border-top: 1px solid #eae4d9;
+}
+.drawer-footer-btn {
+  width: 100%;
+  padding: 12px;
+  background-color: #7a9e7e;
+  color: white;
+  border: none;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.drawer-footer-btn:active { background-color: #6a8e6e; }
+
+/* 黄条提示 */
+.warn-bar {
+  background-color: #fff9d9;
+  color: #8a6d3b;
+  padding: 10px 16px;
+  text-align: center;
+  font-size: 14px;
+  border-bottom: 1px solid #f1e8c9;
+}
+.warn-bar a {
+  color: #8a6d3b;
+  text-decoration: underline;
+}
+
+/* 黑框Toast */
+.toast-container {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  max-width: 80%;
+  z-index: 9999;
+  transform: translateX(120%);
+  transition: transform 0.3s ease;
+}
+.toast-container.show {
+  transform: translateX(0);
+}
+.toast {
+  background-color: #000;
+  color: #fff;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+.toast-close {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 20px;
+  margin-left: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.toast-close:hover { background-color: rgba(255,255,255,0.1); }
+
+/* 禁用态 */
+.disabled { opacity: 0.6; pointer-events: none; }
+
+/* 滚动条美化 */
+.main-area::-webkit-scrollbar {
+  width: 8px;
+}
+.main-area::-webkit-scrollbar-track {
+  background: #f5f2e9;
+  border-radius: 4px;
+}
+.main-area::-webkit-scrollbar-thumb {
+  background: #d9d2c7;
+  border-radius: 4px;
+}
+.main-area::-webkit-scrollbar-thumb:hover {
+  background: #c9c2b7;
+}
+
+/* 响应式 */
+@media (max-width: 480px) {
+  .top-bar { padding: 12px 14px; }
+  .top-title { font-size: 17px; }
+  .top-btn { padding: 5px 10px; font-size: 16px; min-width: 64px; }
+  .mem-line { padding: 6px 14px; font-size: 13px; }
+  .main-area { padding: 10px 14px; height: calc(100vh - 190px); }
+  .bottom-bar { padding: 10px 14px; }
+  .textarea-input { padding: 10px 14px; font-size: 15px; }
+  .send-btn { padding: 10px 20px; font-size: 16px; min-width: 72px; }
+  .drawer { width: 90%; }
+}
+</style>
+</head>
+<body>
+
+<!-- 黄条提示 -->
+<div id="warnBar" class="warn-bar" style="display:none;">
+  公共件没装上，回主界面点一次检查新版本
+</div>
+
+<!-- 顶行 -->
+<div class="top-bar">
+  <div class="top-title">💬 AI对话框<span class="top-version">v0.1.0</span></div>
+  <div>
+    <button id="menuBtn" class="top-btn">☰对话</button>
+    <button id="newBtn" class="top-btn">✚新聊</button>
+  </div>
+</div>
+
+<!-- 记忆状态行 -->
+<div id="memLine" class="mem-line" style="display:none;">
+  本对话0轮 · 摘要：未压 · 事实卡0条
+</div>
+
+<!-- 主内容区 -->
+<div id="mainArea" class="main-area"></div>
+
+<!-- 底部输入区 -->
+<div class="bottom-bar">
+  <div class="textarea-wrap">
+    <textarea id="inputArea" class="textarea-input" placeholder="说一句…" rows="1"></textarea>
+    <button id="sendBtn" class="send-btn">🚀</button>
+  </div>
+</div>
+
+<!-- 抽屉层 -->
+<div id="drawer" class="drawer">
+  <div class="drawer-header">
+    <div>历史对话</div>
+    <button id="drawerClose" class="drawer-close">×</button>
+  </div>
+  <div id="drawerList" class="drawer-list"></div>
+  <div class="drawer-footer">
+    <button id="pullCloudBtn" class="drawer-footer-btn">☁️从云端捞回旧对话</button>
+  </div>
+</div>
+
+<!-- 黑框Toast -->
+<div id="toastContainer" class="toast-container">
+  <div id="toast" class="toast">
+    <span id="toastText">已复制</span>
+    <button id="toastClose" class="toast-close">×</button>
+  </div>
+</div>
+
+<script>
+// SW_VERSION 全局变量
+var SW_VERSION = "0.1.0";
+
+// 全局状态
+var curChatId = null;
+var isSending = false;
+var sendAbortTimer = null;
+var toastTimeout = null;
+
+// DOM缓存
+var $warnBar = document.getElementById('warnBar');
+var $memLine = document.getElementById('memLine');
+var $mainArea = document.getElementById('mainArea');
+var $inputArea = document.getElementById('inputArea');
+var $sendBtn = document.getElementById('sendBtn');
+var $menuBtn = document.getElementById('menuBtn');
+var $newBtn = document.getElementById('newBtn');
+var $drawer = document.getElementById('drawer');
+var $drawerClose = document.getElementById('drawerClose');
+var $drawerList = document.getElementById('drawerList');
+var $pullCloudBtn = document.getElementById('pullCloudBtn');
+var $toastContainer = document.getElementById('toastContainer');
+var $toastText = document.getElementById('toastText');
+var $toastClose = document.getElementById('toastClose');
+
+// 工具函数
+function escHtml(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); } /* Kimi终审翻案A：AI回信/用户输入先转义再换行，防「血钾<3.5」被当标签吃掉、防注入 */
+function pad2(n){ return (n<10?'0':'')+n; } /* Kimi终审翻案B：padStart是ES2017老WebView可能没有，改手动补零 */
+function formatDate(date) {
+  return pad2(date.getHours()) + ':' + pad2(date.getMinutes());
+}
+
+function formatTime(timeMs) {
+  var d = new Date(timeMs);
+  return formatDate(d);
+}
+
+function showToast(msg) {
+  $toastText.textContent = msg;
+  $toastContainer.className = 'toast-container show';
+  if (toastTimeout) clearTimeout(toastTimeout);
+  // 不自动消失，需手动关闭
+}
+
+function hideToast() {
+  $toastContainer.className = 'toast-container';
+}
+
+function scrollBottom() {
+  try {
+    $mainArea.scrollTop = $mainArea.scrollHeight;
+  } catch (e) {}
+}
+
+function adjustTextareaHeight() {
+  $inputArea.style.height = 'auto';
+  var newHeight = Math.min($inputArea.scrollHeight, 160);
+  $inputArea.style.height = newHeight + 'px';
+}
+
+function createBubble(type, content, timeMs, hasCopy) {
+  var bubble = document.createElement('div');
+  bubble.className = 'bubble ' + (type === 'user' ? 'bubble-user' : 'bubble-ai') + ' round';
+  
+  var timeDiv = document.createElement('div');
+  timeDiv.className = 'bubble-time';
+  timeDiv.textContent = formatTime(timeMs);
+  
+  var contentDiv = document.createElement('div');
+  contentDiv.innerHTML = escHtml(content).replace(/\n/g, '<br>');
+  
+  bubble.appendChild(contentDiv);
+  bubble.appendChild(timeDiv);
+  
+  if (type === 'ai' && hasCopy) {
+    var copyBtn = document.createElement('button');
+    copyBtn.className = 'bubble-copy';
+    copyBtn.innerHTML = '📋';
+    copyBtn.onclick = function() {
+      try {
+        var textarea = document.createElement('textarea');
+        textarea.value = content;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        showToast('已复制');
+      } catch (e) {
+        showToast('复制失败');
+      }
+    };
+    bubble.appendChild(copyBtn);
+  }
+  
+  return bubble;
+}
+
+function renderChat(chatObj) {
+  if (!chatObj) return;
+  
+  $mainArea.innerHTML = '';
+  
+  // 渲染消息流
+  var msgs = chatObj.msgs || [];
+  if (!msgs.length) { /* 翻案E配套：空对话=欢迎泡 */ var wb = createBubble('ai', '我是您的医学学习AI，问吧', Date.now(), true); $mainArea.appendChild(wb); scrollBottom(); $memLine.style.display='block'; $memLine.textContent='本对话0轮 · 摘要：未压 · 事实卡0条'; return; }
+  for (var i = 0; i < msgs.length; i++) {
+    var msg = msgs[i];
+    var bubble = createBubble(
+      msg.r === 'u' ? 'user' : 'ai',
+      msg.c,
+      msg.t,
+      msg.r === 'a'
+    );
+    $mainArea.appendChild(bubble);
+  }
+  
+  // 更新记忆状态行
+  var turns = chatObj.turns || 0;
+  var sumStatus = chatObj.sum ? '已压' : '未压';
+  var factsLen = (chatObj.facts && Array.isArray(chatObj.facts)) ? chatObj.facts.length : 0;
+  $memLine.textContent = '本对话' + turns + '轮 · 摘要：' + sumStatus + ' · 事实卡' + factsLen + '条';
+  $memLine.style.display = 'block';
+  
+  scrollBottom();
+}
+
+function loadCurrentChat() {
+  if (!window.HX || !HX.chat) {
+    $warnBar.style.display = 'block';
+    return;
+  }
+  
+  var id = HX.chat.getCur();
+  if (!id) {
+    id = HX.chat.newChat();
+    HX.chat.setCur(id);
+  }
+  
+  curChatId = id;
+  var chatObj = HX.chat.load(id);
+  if (!chatObj || !(chatObj.msgs && chatObj.msgs.length)) { /* Kimi终审翻案E：新对话有存档但msgs空，也要出欢迎泡（原判null欢迎泡永不出） */
+    // 新建欢迎泡
+    $mainArea.innerHTML = '';
+    var welcomeBubble = createBubble('ai', '我是您的医学学习AI，问吧', Date.now(), true);
+    $mainArea.appendChild(welcomeBubble);
+    $memLine.style.display = 'none';
+  } else {
+    renderChat(chatObj);
+  }
+}
+
+function showDrawer() {
+  $drawer.className = 'drawer open';
+}
+
+function hideDrawer() {
+  $drawer.className = 'drawer';
+}
+
+function renderDrawerList() {
+  if (!window.HX || !HX.chat) {
+    $drawerList.innerHTML = '<div class="drawer-item"><div class="drawer-item-title">加载失败</div></div>';
+    return;
+  }
+  
+  var list = HX.chat.list() || [];
+  $drawerList.innerHTML = '';
+  
+  if (list.length === 0) {
+    var emptyItem = document.createElement('div');
+    emptyItem.className = 'drawer-item';
+    emptyItem.innerHTML = '<div class="drawer-item-title">暂无历史对话</div>';
+    $drawerList.appendChild(emptyItem);
+    return;
+  }
+  
+  for (var i = 0; i < list.length; i++) {
+    var item = list[i];
+    var el = document.createElement('div');
+    el.className = 'drawer-item';
+    
+    var updatedDate = new Date(item.updated);
+    var timeStr = (updatedDate.getMonth() + 1) + '/' + updatedDate.getDate() + ' ' +
+                  pad2(updatedDate.getHours()) + ':' + pad2(updatedDate.getMinutes());
+    
+    el.innerHTML = 
+      '<div class="drawer-item-title">' + (item.title || '无标题') + '</div>' +
+      '<div class="drawer-item-meta">' + timeStr + ' · ' + (item.turns || 0) + '轮</div>' +
+      '<button class="drawer-item-del" data-id="' + item.id + '">🗑</button>';
+    
+    el.onclick = (function(id) {
+      return function() {
+        HX.chat.setCur(id);
+        hideDrawer();
+        loadCurrentChat();
+      };
+    })(item.id);
+    
+    var delBtn = el.querySelector('.drawer-item-del');
+    delBtn.onclick = (function(id, e) {
+      e.stopPropagation();
+      if (confirm('确定删除该对话？')) {
+        HX.chat.del(id);
+        if (id === curChatId) { curChatId = null; loadCurrentChat(); } /* Kimi终审翻案D：删的是正聊的这条，主区跟着刷新 */
+        renderDrawerList();
+      }
+    }).bind(null, item.id);
+    
+    $drawerList.appendChild(el);
+  }
+}
+
+function initPage() {
+  // 初始化警告条
+  if (!window.HX || typeof HX.chat === 'undefined') {
+    $warnBar.style.display = 'block';
+  } else {
+    $warnBar.style.display = 'none';
+  }
+  
+  // 检查钥匙
+  var hasKeys = false;
+  if (typeof HX.keys !== 'undefined') {
+    if (HX.keys.get && HX.keys.getQwen) {
+      var k1 = HX.keys.get();
+      var k2 = HX.keys.getQwen();
+      if (k1 && k1.trim() !== '' || k2 && k2.trim() !== '') {
+        hasKeys = true;
+      }
+    }
+  }
+  
+  if (!hasKeys) {
+    var noKeyToast = document.createElement('div');
+    noKeyToast.className = 'toast-container show';
+    noKeyToast.innerHTML = 
+      '<div class="toast" style="background:#000;color:#fff;">' +
+      '<span>还没有AI钥匙：去病人大管家→AI面板存一把再来</span>' +
+      '<button class="toast-close">×</button>' +
+      '</div>';
+    document.body.appendChild(noKeyToast);
+    
+    var closeBtn = noKeyToast.querySelector('.toast-close');
+    closeBtn.onclick = function() {
+      noKeyToast.remove();
+    };
+  }
+  
+  // 绑定事件
+  $menuBtn.onclick = function() {
+    renderDrawerList(); /* Kimi终审翻案F：开抽屉先重渲（原只在开门渲一次，新对话不上榜） */
+    showDrawer();
+  };
+  
+  $newBtn.onclick = function() {
+    if (!window.HX || !HX.chat) return;
+    var newId = HX.chat.newChat();
+    HX.chat.setCur(newId);
+    curChatId = newId;
+    $mainArea.innerHTML = '';
+    var welcomeBubble = createBubble('ai', '我是您的医学学习AI，问吧', Date.now(), true);
+    $mainArea.appendChild(welcomeBubble);
+    $memLine.style.display = 'none';
+    scrollBottom();
+  };
+  
+  $drawerClose.onclick = hideDrawer;
+  
+  $pullCloudBtn.onclick = function() {
+    if (!window.HX || !HX.chat) return;
+    $pullCloudBtn.disabled = true;
+    HX.chat.pullCloud(function(n) {
+      $pullCloudBtn.disabled = false;
+      if (n === -1) {
+        showToast('云端这条路没通');
+      } else {
+        showToast('捞回' + n + '条');
+        renderDrawerList();
+      }
+    });
+  };
+  
+  $sendBtn.onclick = function() {
+    if (!window.HX || !HX.chat) return;
+    if (!curChatId) return;
+    if (isSending) {
+      // 停止逻辑：仅标记，不真abort
+      showToast('已打住，回信还在路上，到了自动贴出');
+      return;
+    }
+    
+    var text = $inputArea.value.trim();
+    if (!text) return;
+    
+    // 发送前清理
+    $inputArea.value = '';
+    adjustTextareaHeight();
+    
+    // 添加用户气泡
+    var now = Date.now();
+    var userBubble = createBubble('user', text, now, false);
+    $mainArea.appendChild(userBubble);
+    scrollBottom();
+    
+    // 占位AI气泡
+    var placeholderBubble = createBubble('ai', '正在写回信…0秒', now, false);
+    $mainArea.appendChild(placeholderBubble);
+    scrollBottom();
+    
+    isSending = true;
+    $sendBtn.textContent = '✋停止';
+    $sendBtn.disabled = false;
+    
+    // 开始计时器
+    var tickSec = 0;
+    sendAbortTimer = setInterval(function() {
+      tickSec++;
+      placeholderBubble.innerHTML = '<div>正在写回信…' + tickSec + '秒</div><div class="bubble-time">' + formatTime(now) + '</div>';
+      scrollBottom();
+    }, 1000);
+    
+    // 发送
+    HX.chat.send(curChatId, text, {
+      onOk: function(reply) {
+        if (sendAbortTimer) {
+          clearInterval(sendAbortTimer);
+          sendAbortTimer = null;
+        }
+        isSending = false;
+        $sendBtn.textContent = '🚀';
+        $sendBtn.disabled = false;
+        
+        // 替换占位气泡
+        placeholderBubble.innerHTML = escHtml(reply).replace(/\n/g, '<br>');
+        placeholderBubble.className = 'bubble bubble-ai round';
+        var timeDiv = document.createElement('div');
+        timeDiv.className = 'bubble-time';
+        timeDiv.textContent = formatTime(Date.now());
+        placeholderBubble.appendChild(timeDiv);
+        
+        var copyBtn = document.createElement('button');
+        copyBtn.className = 'bubble-copy';
+        copyBtn.innerHTML = '📋';
+        copyBtn.onclick = function() {
+          try {
+            var textarea = document.createElement('textarea');
+            textarea.value = reply;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            showToast('已复制');
+          } catch (e) {
+            showToast('复制失败');
+          }
+        };
+        placeholderBubble.appendChild(copyBtn);
+        
+        // 刷新当前对话显示
+        var chatObj = HX.chat.load(curChatId);
+        if (chatObj) {
+          renderChat(chatObj);
+        }
+      },
+      onErr: function(msg) {
+        if (sendAbortTimer) {
+          clearInterval(sendAbortTimer);
+          sendAbortTimer = null;
+        }
+        isSending = false;
+        $sendBtn.textContent = '🚀';
+        $sendBtn.disabled = false;
+        
+        // 替换占位为错误信息
+        placeholderBubble.innerHTML = '<div style="color:#cc6666;">没通：' + escHtml(msg) + '（点🚀可重发）</div><div class="bubble-time">' + formatTime(now) + '</div>';
+        placeholderBubble.className = 'bubble bubble-ai round';
+        scrollBottom();
+      },
+      onTick: function(sec) {
+        // 已由定时器处理
+      }
+    });
+  };
+  
+  $inputArea.oninput = adjustTextareaHeight;
+  $inputArea.onkeydown = function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      $sendBtn.click();
+    }
+  };
+  
+  // Toast关闭
+  $toastClose.onclick = hideToast;
+  
+  // 初始化
+  loadCurrentChat();
+  renderDrawerList();
+}
+
+// 页面加载完成
+document.addEventListener('DOMContentLoaded', function() {
+  initPage();
+});
+</script>
+
+</body>
+</html>
