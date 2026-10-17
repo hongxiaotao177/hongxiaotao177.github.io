@@ -1,6 +1,1 @@
-{
- "version": "0.18.0",
- "dl": "software-xiaotao.html",
- "note": "万能点字前半B1：学习笔记正文抹≥3字→✍️改字→改这句/改整篇记账xt_dianzi_pend，AI改稿链路B2下块接，DS实现+Kimi终审翻案锚点",
- "sig": "c594a0d1fa1a3ee4"
-}
+{"version": "0.19.0", "dl": "software-xiaotao.html", "sig": "d0cc4bff187c93b6", "note": "收💬对话框书件：认to:'book'塞章正文带时间戳，书没了降级存笔记不丢；总开关hx_xt_recvbook_off=1；回退=牌指回0.18.0"}
