@@ -1,1 +1,1 @@
-{"version": "0.32.0", "dl": "hx-common.js", "note": "AI对话框一期心脏HX.chat：三层记忆（原文永存+摘要+事实卡）+DS/千问/Kimi三棒换棒+坚果云存档；DS实现+千问门脸+Kimi终审翻案6处+仿真15/15", "sig": "fcbd5cea29ff0371"}
+{"version": "0.33.0", "dl": "hx-common.js", "note": "千问四治法（SPEC_千问四治法，DS实现+Kimi终审翻案1处）：callQwen回信上限2048→8192治腰斩+finish_reason截断自动续写一回拼接+钥匙trim；仿真9场景全过", "sig": "6b89401a8e67e0af", "fix": "t-qwen-fix"}
