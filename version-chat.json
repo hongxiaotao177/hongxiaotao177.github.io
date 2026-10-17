@@ -1,1 +1,7 @@
-{"version": "0.3.0", "dl": "software-chat.html", "sig": "ab36146cabf9642e", "note": "PDF问答：📎选PDF→三段式懒加载guanjia-pdf-engine.js抽字→随下一句拼【PDF全文】前缀发AI（只拼一次）；总开关hx_chat_pdf_off=1藏📎；DS回件截断+续写编造界外码作废，Kimi亲手落地；仿真12/12；回退=牌指回0.2.0", "fix": "T-B"}
+{
+  "version": "0.4.0",
+  "dl": "software-chat.html",
+  "sig": "c42ff59c4de4e1b2",
+  "note": "提示词预设系统A1~A8（定案十条1503班）：常驻「提示词」钮+预设浮层（新建/改/删/AI代写+自动归类+带上文ctxN）+选中窄条+空打字拦截+发送后自动灭+文献双岗（千问查Kimi审+回执+参考文献夹原消息）+出厂三条+汇成一篇滚着汇📄+云同步走HX.store.sync+总开关hx_chat_preset_off=1；DS补丁Kimi终审翻案3处亲手落地，仿真7/7；回退=牌指回0.3.0",
+  "fix": "t-chat-preset"
+}
