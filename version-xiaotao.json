@@ -1,1 +1,1 @@
-{"version": "0.19.0", "dl": "software-xiaotao.html", "sig": "d0cc4bff187c93b6", "note": "收💬对话框书件：认to:'book'塞章正文带时间戳，书没了降级存笔记不丢；总开关hx_xt_recvbook_off=1；回退=牌指回0.18.0"}
+{"version": "0.20.0", "dl": "software-xiaotao.html", "sig": "c6696c9ff6f278c1", "note": "书目录重整：🔀重整目录钮+章数>30或同义章名AI建议条；重整走Kimi出前后对照表点落地才执行，落地前自动快照整书+全章正文可回滚；正文一字不丢（终审补漏章/陌生id双拒动闸）；总开关hx_xt_tocreorg_off=1；回退=牌指回0.19.0"}
