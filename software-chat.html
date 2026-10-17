@@ -9,6 +9,7 @@
 <!-- v0.1.2 2026-10-16 t32黄条误报根治（首查不到每2秒复查30秒死心，查到收条+补载对话）+t33发送钮左让64px避壳回家钮（bottom-bar右padding）+t34补挂HX.sj速记浮标+HX.pick点亮（sjDot/Panel上提避让右下热区） -->
 <!-- v0.1.3 2026-10-17 三级加载器治「公共件没装上」黄条+发送没反应（SPEC_chat_v0.1.3_三级加载器治「公共件没装上」黄条+发送没反应） -->
 <!-- v0.2.0 2026-10-17 成书塞章节（SPEC_chat二期_成书塞章节）：AI气泡加📥送入书钮→选书选章浮层→写信xt_inbox_v1（to:'book'），只读小涛书台账不写；总开关hx_chat_sendbook_off=1藏钮；DS实现+千问截断参考+Kimi终审翻案2处（hxToastHold签名错改showToast/curChatTitle不存在改HX.chat.load取title） -->
+<!-- v0.3.0 2026-10-17 PDF问答（SPEC_chat_v0.3.0_PDF问答）：📎选PDF→三段式懒加载guanjia-pdf-engine.js抽字→随下一句拼【PDF全文】前缀发AI（只拼一次）；总开关hx_chat_pdf_off=1藏📎；DS回件截断+续写编造界外码作废，Kimi亲手落地 -->
 <script>
 function hxCommonLoad(onHxReady, onHxMissing){
   function runTxt(txt){ try{ var s=document.createElement('script'); s.textContent=txt; document.head.appendChild(s); }catch(e){} }
@@ -389,7 +390,7 @@ body {
 
 <!-- 顶行 -->
 <div class="top-bar">
-  <div class="top-title">💬 AI对话框<span class="top-version">v0.2.0</span></div>
+  <div class="top-title">💬 AI对话框<span class="top-version">v0.3.0</span></div>
   <div>
     <button id="menuBtn" class="top-btn">☰对话</button>
     <button id="newBtn" class="top-btn">✚新聊</button>
@@ -408,6 +409,8 @@ body {
 <div class="bottom-bar">
   <div class="textarea-wrap">
     <textarea id="inputArea" class="textarea-input" placeholder="说一句…" rows="1"></textarea>
+    <button id="pdfBtn" class="send-btn" style="margin-right:6px;">📎</button>
+    <input type="file" id="pdfFileInput" accept=".pdf,application/pdf" style="display:none;">
     <button id="sendBtn" class="send-btn">🚀</button>
   </div>
 </div>
@@ -434,11 +437,13 @@ body {
 
 <script>
 // SW_VERSION 全局变量
-var SW_VERSION = "0.2.0";
+var SW_VERSION = "0.3.0";
 
 // 全局状态
 var curChatId = null;
 var isSending = false;
+var curPdfCtx = null; /* v0.3.0 PDF问答：抽出的PDF全文暂存，随下一句拼前缀发AI，拼完即清 */
+var curPdfName = '';
 var sendAbortTimer = null;
 var toastTimeout = null;
 
@@ -720,6 +725,133 @@ function chatConfirmSend(mask, bk, chapId, newChap, letterText) {
   }
 }
 
+/* ===== v0.3.0 PDF问答：📎选PDF→懒加载引擎抽字→暂存随下句发（SPEC_chat_v0.3.0；Kimi亲手落地） ===== */
+function chatB64ToBlobUrl(b64, mime) { /* 照大管家 dsm_b64ToBlobUrl 真签名仿写 */
+  var bin = atob(b64);
+  var arr = new Uint8Array(bin.length);
+  for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return URL.createObjectURL(new Blob([arr], { type: mime }));
+}
+
+function chatLoadPdfEngine(cb) {
+  /* 三段式取 guanjia-pdf-engine.js（壳readFile→同目录fetch→GitHub Pages），就绪标记 window.chat_pdfWorkerReady */
+  try {
+    if (typeof pdfjsLib !== 'undefined' && window.chat_pdfWorkerReady) { cb(true); return; }
+    function afterGot() {
+      try {
+        if (typeof PDFJS_B64 === 'undefined' || typeof PDFWORKER_B64 === 'undefined') { cb(false); return; }
+        if (typeof pdfjsLib !== 'undefined' && window.chat_pdfWorkerReady) { cb(true); return; }
+        var s = document.createElement('script');
+        s.src = chatB64ToBlobUrl(PDFJS_B64, 'application/javascript');
+        s.onload = function() {
+          try {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = chatB64ToBlobUrl(PDFWORKER_B64, 'application/javascript');
+            window.chat_pdfWorkerReady = true;
+            cb(true);
+          } catch (e1) { cb(false); }
+        };
+        s.onerror = function() { cb(false); };
+        document.head.appendChild(s);
+      } catch (e0) { cb(false); }
+    }
+    function runTxt2(txt) { try { var s = document.createElement('script'); s.textContent = txt; document.head.appendChild(s); } catch (e) {} }
+    function got(){ return typeof PDFJS_B64 !== 'undefined' && typeof PDFWORKER_B64 !== 'undefined'; }
+    if (got()) { afterGot(); return; }
+    if (window.LearnShell) {
+      var f = null; try { f = LearnShell.readFile('guanjia-pdf-engine.js'); } catch (e1) {}
+      if (f) { try { runTxt2(decodeURIComponent(escape(atob(String(f).replace(/\s+/g,''))))); if (got()) { afterGot(); return; } } catch (e2) {} }
+    }
+    var _c1 = new AbortController(); var _t1 = setTimeout(function(){ _c1.abort(); }, 15000);
+    fetch('guanjia-pdf-engine.js?t=' + Date.now(), { cache: 'no-store', signal: _c1.signal }).then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status); return r.text();
+    }).then(function(txt) {
+      clearTimeout(_t1); runTxt2(txt);
+      if (got()) { afterGot(); } else { fromPages(); }
+    }).catch(function() { clearTimeout(_t1); fromPages(); });
+    function fromPages() {
+      var _c2 = new AbortController(); var _t2 = setTimeout(function(){ _c2.abort(); }, 60000);
+      fetch('https://hongxiaotao177.github.io/guanjia-pdf-engine.js?t=' + Date.now(), { cache: 'no-store', signal: _c2.signal }).then(function(r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status); return r.text();
+      }).then(function(txt) {
+        clearTimeout(_t2);
+        try { if (window.LearnShell && LearnShell.folderSet && LearnShell.folderSet()) LearnShell.writeFile('guanjia-pdf-engine.js', btoa(unescape(encodeURIComponent(txt)))); } catch (e3) {}
+        runTxt2(txt);
+        if (got()) { afterGot(); } else { cb(false); }
+      }).catch(function() { clearTimeout(_t2); cb(false); });
+    }
+  } catch (e) { cb(false); }
+}
+
+function chatParsePdf(arrayBuffer, fileName, cb) {
+  /* 照大管家 dsm_parsePDFWithEngine 真用法仿写：逐页getTextContent抽字join；空=扫描件 */
+  try {
+    if (typeof pdfjsLib === 'undefined' || !window.chat_pdfWorkerReady) { cb(false, 'PDF引擎加载失败'); return; }
+    pdfjsLib.getDocument({ data: arrayBuffer }).promise.then(function(pdf) {
+      var totalPages = pdf.numPages;
+      var promises = [];
+      for (var i = 1; i <= totalPages; i++) {
+        promises.push(pdf.getPage(i).then(function(page) {
+          return page.getTextContent().then(function(data) {
+            return data.items.map(function(item) { return item.str; }).join(' ');
+          });
+        }));
+      }
+      Promise.all(promises).then(function(pagesText) {
+        var textContent = pagesText.join('\n\n');
+        if (textContent.replace(/^\s+|\s+$/g, '') === '') {
+          cb(false, '这份PDF读不出字，可能是扫描件');
+        } else {
+          cb(true, textContent, totalPages);
+        }
+      }).catch(function(err) { cb(false, 'PDF没读成: ' + err.message); });
+    }).catch(function(err) { cb(false, 'PDF没读成: ' + err.message); });
+  } catch (e) { cb(false, 'PDF没读成: ' + e.message); }
+}
+
+function chatPickPdf() { /* 📎点击入口 */
+  try {
+    if (isSending) { showToast('回信路上，等它到再发PDF'); return; }
+    var fi = document.getElementById('pdfFileInput');
+    if (fi) fi.click();
+  } catch (e) { showToast('选PDF失败'); }
+}
+
+function chatOnPdfChosen() {
+  try {
+    var fi = document.getElementById('pdfFileInput');
+    var file = (fi && fi.files && fi.files.length) ? fi.files[0] : null;
+    if (!file) return;
+    var nm = String(file.name || '');
+    if (nm.toLowerCase().lastIndexOf('.pdf') !== nm.length - 4) { showToast('只收PDF'); try { fi.value=''; } catch (e0) {} return; }
+    showToast('正在拆PDF：《' + nm + '》…');
+    var reader = new FileReader();
+    reader.onload = function() {
+      try {
+        var ab = reader.result;
+        chatLoadPdfEngine(function(okE) {
+          if (!okE) { showToast('PDF引擎没装上，回主界面点一次检查新版本'); try { fi.value=''; } catch (e1) {} return; }
+          chatParsePdf(ab, nm, function(okP, txt, pages) {
+            try { fi.value=''; } catch (e2) {}
+            if (!okP) { showToast(String(txt)); return; }
+            var cut = false;
+            if (txt.length > 40000) { txt = txt.substring(0, 40000); cut = true; }
+            curPdfCtx = txt;
+            curPdfName = nm;
+            showToast('《' + nm + '》读完了，' + pages + '页' + (cut ? '（太长只取前4万字）' : ''));
+            try {
+              var b = createBubble('user', '📄 已收到《' + nm + '》（' + pages + '页），下一句发问就照着它答', Date.now(), false);
+              $mainArea.appendChild(b);
+              scrollBottom();
+            } catch (e3) {}
+          });
+        });
+      } catch (e4) { showToast('PDF没读成'); }
+    };
+    reader.onerror = function() { showToast('PDF没读成'); };
+    reader.readAsArrayBuffer(file);
+  } catch (e) { showToast('选PDF失败'); }
+}
+
 function scrollBottom() {
   try {
     $mainArea.scrollTop = $mainArea.scrollHeight;
@@ -990,6 +1122,19 @@ function initPage() {
     });
   };
   
+  /* v0.3.0 PDF问答：📎绑定+总开关（hx_chat_pdf_off=1藏钮） */
+  try {
+    var _pdfOff = false;
+    try { _pdfOff = (localStorage.getItem('hx_chat_pdf_off') === '1'); } catch (ePdfSw) {}
+    var $pdfBtn = document.getElementById('pdfBtn');
+    var $pdfFileInput = document.getElementById('pdfFileInput');
+    if (_pdfOff) { if ($pdfBtn) $pdfBtn.style.display = 'none'; }
+    else {
+      if ($pdfBtn) $pdfBtn.style.display = '';
+      if ($pdfBtn) $pdfBtn.onclick = function() { try { chatPickPdf(); } catch (ePdfB) {} };
+      if ($pdfFileInput) $pdfFileInput.onchange = function() { try { chatOnPdfChosen(); } catch (ePdfF) {} };
+    }
+  } catch (ePdfAll) {}
   $sendBtn.onclick = function() {
     if (!window.HX || !HX.chat) return;
     if (!curChatId) return;
@@ -1001,6 +1146,13 @@ function initPage() {
     
     var text = $inputArea.value.trim();
     if (!text) return;
+    try { /* v0.3.0 PDF问答：有暂存PDF全文则拼前缀随本句发出，只拼一次；气泡仍显示原文 */
+      if (curPdfCtx) {
+        text = '【附件《' + curPdfName + '》全文】\n' + curPdfCtx + '\n【我的问题】\n' + text;
+        curPdfCtx = null;
+        curPdfName = '';
+      }
+    } catch (ePdfJoin) {}
     
     // 发送前清理
     $inputArea.value = '';
