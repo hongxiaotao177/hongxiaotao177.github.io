@@ -1,6 +1,1 @@
-{
- "version": "0.57.3",
- "dl": "software-guanjia.html",
- "note": "接入AI总台：aiChat问路（千问标死直叫Kimi/Kimi认总台活模型）+双死上报+开门巡检",
- "sig": "5e274d11819d64c2"
-}
+{"version": "0.57.4", "dl": "software-guanjia.html", "note": "千问四治法（DS实现+Kimi终审翻案3处）：doQwen截断自动续写一回拼接+料太大400砍中段留头尾重发一回；doKimi/dsm引擎等红线IDENTICAL", "sig": "f109d1fbb08872f1", "fix": "t-qwen-fix"}
