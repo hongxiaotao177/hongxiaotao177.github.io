@@ -10,6 +10,7 @@
 <!-- v0.1.3 2026-10-17 三级加载器治「公共件没装上」黄条+发送没反应（SPEC_chat_v0.1.3_三级加载器治「公共件没装上」黄条+发送没反应） -->
 <!-- v0.2.0 2026-10-17 成书塞章节（SPEC_chat二期_成书塞章节）：AI气泡加📥送入书钮→选书选章浮层→写信xt_inbox_v1（to:'book'），只读小涛书台账不写；总开关hx_chat_sendbook_off=1藏钮；DS实现+千问截断参考+Kimi终审翻案2处（hxToastHold签名错改showToast/curChatTitle不存在改HX.chat.load取title） -->
 <!-- v0.3.0 2026-10-17 PDF问答（SPEC_chat_v0.3.0_PDF问答）：📎选PDF→三段式懒加载guanjia-pdf-engine.js抽字→随下一句拼【PDF全文】前缀发AI（只拼一次）；总开关hx_chat_pdf_off=1藏📎；DS回件截断+续写编造界外码作废，Kimi亲手落地 -->
+<!-- v0.4.0 2026-10-17 提示词预设系统（SPEC_chat_v0.4.0 A1~A8，定案十条1503班）：常驻「提示词」钮+预设浮层（新建/改/删/AI代写规矩+自动归类/带上文ctxN可改）+选中窄条联动发送+发送后自动灭+空打字拦截+文献双岗（千问查Kimi审+回执+参考文献夹原消息）+出厂三条+汇成一篇滚着汇📄+云同步走HX.store.sync现成通道+总开关hx_chat_preset_off=1藏钮；DS出补丁，千问大提示词三次空响应记考察账，Kimi终审翻案3处（HX.ai.call不存在改直调/HX.chat.save签名错改单参/云通道改store.sync） -->
 <script>
 function hxCommonLoad(onHxReady, onHxMissing){
   function runTxt(txt){ try{ var s=document.createElement('script'); s.textContent=txt; document.head.appendChild(s); }catch(e){} }
@@ -379,6 +380,28 @@ body {
 }
 #hxSjDot{bottom:176px !important;}
 #hxSjPanel{bottom:238px !important;}
+/* ===== v0.4.0 提示词预设系统 A1~A8：preset浮层/表单/窄条（照chat-book-*/warn-bar样式仿写，集中追加） ===== */
+.preset-mask { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.45); z-index: 9999; display: flex; align-items: flex-end; justify-content: center; }
+.preset-card { position: relative; background: #fffdf7; border-radius: 12px 12px 0 0; width: 100%; max-width: 480px; max-height: 72vh; overflow-y: auto; padding: 16px 14px 12px; box-shadow: 0 -8px 28px rgba(0,0,0,0.25); }
+.preset-close { position: absolute; top: 6px; right: 8px; background: none; border: none; font-size: 18px; color: #7a7260; cursor: pointer; width: 28px; height: 28px; }
+.preset-title { font-size: 15px; font-weight: bold; color: #4a4436; margin-bottom: 10px; padding-right: 28px; }
+.preset-list { display: flex; flex-direction: column; }
+.preset-row { padding: 10px 8px; border-bottom: 1px solid #efe9db; font-size: 14px; color: #4a4436; border-radius: 6px; display: flex; align-items: center; gap: 6px; }
+.preset-row-main { flex: 1; min-width: 0; cursor: pointer; }
+.preset-row-name { font-weight: 600; color: #4a4436; }
+.preset-row-gist { font-size: 12px; color: #9a8f7c; margin-top: 2px; word-break: break-word; }
+.preset-row-btn { background: none; border: 1px solid #eae4d9; border-radius: 8px; font-size: 12px; padding: 4px 8px; color: #7a7260; cursor: pointer; }
+.preset-newrow { padding: 12px 8px; font-size: 14px; color: #8a7a4a; cursor: pointer; border-radius: 6px; text-align: center; }
+.preset-form-label { font-size: 13px; color: #7a7260; margin: 10px 0 4px; }
+.preset-form-input { width: 100%; padding: 8px 10px; border: 1px solid #d8cfb8; border-radius: 8px; font-size: 14px; background: #fff; color: #4a4238; }
+.preset-form-textarea { width: 100%; min-height: 110px; padding: 8px 10px; border: 1px solid #d8cfb8; border-radius: 8px; font-size: 14px; background: #fff; color: #4a4238; resize: vertical; }
+.preset-form-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.preset-form-btn { padding: 6px 12px; border: none; border-radius: 8px; background: #c9b98a; color: #fff; font-size: 13px; cursor: pointer; }
+.preset-form-btn-main { padding: 10px 16px; border: none; border-radius: 10px; background: #7a9e7e; color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; }
+.preset-form-ctx { font-size: 13px; color: #4a4238; }
+/* A2 选中窄条（照warn-bar窄条） */
+.preset-chip { background-color: #fff9d9; color: #8a6d3b; padding: 8px 16px; font-size: 13px; border-bottom: 1px solid #f1e8c9; display: flex; align-items: center; justify-content: space-between; }
+.preset-chip-x { background: none; border: none; color: #8a6d3b; font-size: 16px; cursor: pointer; width: 28px; height: 28px; }
 </style>
 </head>
 <body>
@@ -390,7 +413,7 @@ body {
 
 <!-- 顶行 -->
 <div class="top-bar">
-  <div class="top-title">💬 AI对话框<span class="top-version">v0.3.0</span></div>
+  <div class="top-title">💬 AI对话框<span class="top-version">v0.4.0</span></div>
   <div>
     <button id="menuBtn" class="top-btn">☰对话</button>
     <button id="newBtn" class="top-btn">✚新聊</button>
@@ -407,9 +430,11 @@ body {
 
 <!-- 底部输入区 -->
 <div class="bottom-bar">
+  <div id="presetChip" class="preset-chip" style="display:none;"><span id="presetChipName"></span><button id="presetChipX" class="preset-chip-x">✕</button></div>
   <div class="textarea-wrap">
     <textarea id="inputArea" class="textarea-input" placeholder="说一句…" rows="1"></textarea>
     <button id="pdfBtn" class="send-btn" style="margin-right:6px;">📎</button>
+    <button id="presetBtn" class="send-btn" style="margin-right:6px;font-size:14px;">提示词</button>
     <input type="file" id="pdfFileInput" accept=".pdf,application/pdf" style="display:none;">
     <button id="sendBtn" class="send-btn">🚀</button>
   </div>
@@ -437,7 +462,7 @@ body {
 
 <script>
 // SW_VERSION 全局变量
-var SW_VERSION = "0.3.0";
+var SW_VERSION = "0.4.0";
 
 // 全局状态
 var curChatId = null;
@@ -462,6 +487,12 @@ var $pullCloudBtn = document.getElementById('pullCloudBtn');
 var $toastContainer = document.getElementById('toastContainer');
 var $toastText = document.getElementById('toastText');
 var $toastClose = document.getElementById('toastClose');
+/* ===== v0.4.0 提示词预设系统 A1~A8 追加状态（不改原变量） ===== */
+var curPreset = null;
+var $presetBtn = document.getElementById('presetBtn');
+var $presetChip = document.getElementById('presetChip');
+var $presetChipName = document.getElementById('presetChipName');
+var $presetChipX = document.getElementById('presetChipX');
 
 // 工具函数
 function escHtml(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); } /* Kimi终审翻案A：AI回信/用户输入先转义再换行，防「血钾<3.5」被当标签吃掉、防注入 */
@@ -864,6 +895,450 @@ function adjustTextareaHeight() {
   $inputArea.style.height = newHeight + 'px';
 }
 
+/* =====================================================================
+ * v0.4.0 提示词预设系统 A1~A8（SPEC_chat_v0.4.0_提示词预设系统）
+ * 终审翻案记录（Kimi 2026-10-17）：
+ *  ①DS编的 HX.ai.call/HX.ai.chat 不存在 → presetCallAI 改直调 kimi/qwen 端点（端点/模型名照HX.chat内部口径）
+ *  ②DS编的 HX.keys.getWebdav 不存在、自造WebDAV云通道违军规 → 云同步改走 HX.store.sync 现成通道
+ *  ③presetEnsureFactory 里 DS 写了 f+''?f:f 昏招 → 改正
+ * ===================================================================== */
+
+/* ---------- A6/A8 存储与总开关 ---------- */
+function presetLoadAll() {
+  try {
+    var raw = null;
+    try { raw = HX.store.get('chat_presets', null); } catch (e0) { raw = null; }
+    if (raw === null || raw === undefined) { try { raw = localStorage.getItem('chat_presets'); } catch (e1) { raw = null; } }
+    if (!raw) return [];
+    var arr = null;
+    try { arr = (typeof raw === 'string') ? JSON.parse(raw) : raw; } catch (e2) { arr = null; }
+    if (!arr || !(arr instanceof Array)) return [];
+    return arr;
+  } catch (e) { return []; }
+}
+
+function presetSaveAll(arr) {
+  var wroteLocal = false;
+  var jsonStr = JSON.stringify(arr);
+  try { HX.store.set('chat_presets', jsonStr); wroteLocal = true; } catch (e0) {}
+  try { localStorage.setItem('chat_presets', jsonStr); wroteLocal = true; } catch (e1) {}
+  if (!wroteLocal) { try { showToast('预设没存上：写入失败'); } catch (e2) {} return false; }
+  /* 云同步走HX.store.sync现成通道（换机不丢）；失败不阻塞本地 */
+  try {
+    if (window.HX && HX.store && typeof HX.store.sync === 'function') {
+      HX.store.sync(['chat_presets'], function(){});
+    }
+  } catch (e3) {}
+  return true;
+}
+
+function presetSyncFromCloud() {
+  /* 开门补一次对账：本地空而云端有=拉回（换机不丢），走现成sync通道 */
+  try {
+    if (window.HX && HX.store && typeof HX.store.sync === 'function') {
+      HX.store.sync(['chat_presets'], function(){});
+    }
+  } catch (e) {}
+}
+
+function presetFactoryPresets() {
+  /* A6 出厂三条（首次运行chat_presets空时写入） */
+  var nowTs = Date.now();
+  return [
+    { id: 'preset_factory_merge', name: '汇成一篇', gist: '把上面几轮讨论汇成一篇连贯文章，保留要点不缩水。', rule: '把上面几轮讨论汇成一篇连贯文章，保留要点不缩水。', withCtx: true, ctxN: 5, created: nowTs },
+    { id: 'preset_factory_check', name: '查内容', gist: '就书/对话里的内容查出处、查解释。', rule: '就书/对话里的内容查出处、查解释，给出可核对的依据，不得编造。', withCtx: true, ctxN: 5, created: nowTs },
+    { id: 'preset_factory_lit', name: '查文献', gist: '查真实文献支持本句（双岗：千问查、Kimi审）。', rule: '查真实文献支持用户句子：千问查JSON[{title,authors,journal,year,quote}]，查无此文不许编；Kimi审真假与是否真支持该句，审不过打回千问重查（最多2轮）。正文句子标[1][2]，条末按参考文献格式列出。', withCtx: false, ctxN: 5, created: nowTs }
+  ];
+}
+
+function presetEnsureFactory() {
+  var arr = presetLoadAll();
+  if (arr && arr.length) return arr;
+  var f = presetFactoryPresets();
+  presetSaveAll(f); /* 终审翻案③：DS原写 presetSaveAll(f+''?f:f) 昏招，改正 */
+  return f;
+}
+
+function presetGenId() { return 'p_' + Date.now() + '_' + Math.floor(Math.random() * 100000); }
+
+/* ---------- 终审翻案①：AI直调（端点/模型名照HX.chat内部口径；which='kimi'|'qwen'|'auto'） ---------- */
+function presetCallAI(sys, userText, which, cb) {
+  try {
+    var tries = [];
+    if (which === 'kimi') tries = ['kimi'];
+    else if (which === 'qwen') tries = ['qwen'];
+    else tries = ['kimi', 'qwen', 'deepseek'];
+    function keyOf(w) {
+      try {
+        if (w === 'kimi') return (HX.keys.get && HX.keys.get()) || '';
+        if (w === 'qwen') return (HX.keys.getQwen && HX.keys.getQwen()) || '';
+        if (w === 'deepseek') { var o = HX.keys._loadFile ? HX.keys._loadFile() : null; return (o && o.deepseek) ? o.deepseek : ''; }
+      } catch (e) {}
+      return '';
+    }
+    var conf = {
+      kimi: { url: 'https://api.moonshot.cn/v1/chat/completions', model: (function(){ try { return localStorage.getItem('hx_aimodel') || 'kimi-k2.7-code-highspeed'; } catch (e) { return 'kimi-k2.7-code-highspeed'; } })() },
+      qwen: { url: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', model: 'qwen-plus' },
+      deepseek: { url: 'https://api.deepseek.com/v1/chat/completions', model: 'deepseek-chat' }
+    };
+    function attempt(idx) {
+      if (idx >= tries.length) { cb(false, '没通：钥匙都没有或AI都没回'); return; }
+      var w = tries[idx];
+      var key = keyOf(w);
+      if (!key) { attempt(idx + 1); return; }
+      var c = conf[w];
+      fetch(c.url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+        body: JSON.stringify({ model: c.model, messages: [{ role: 'system', content: sys }, { role: 'user', content: userText }], max_tokens: 2048 })
+      }).then(function (r) { return r.json(); }).then(function (j) {
+        try {
+          var txt = j && j.choices && j.choices[0] && j.choices[0].message ? j.choices[0].message.content : '';
+          if (txt) { cb(true, txt); return; }
+        } catch (e) {}
+        attempt(idx + 1);
+      }).catch(function () { attempt(idx + 1); });
+    }
+    attempt(0);
+  } catch (e) { cb(false, e && e.message ? e.message : 'AI调用失败'); }
+}
+
+/* ---------- A1/A3 浮层（列表+表单） ---------- */
+function presetOpenLayer() {
+  try {
+    var old = document.getElementById('presetMask');
+    if (old && old.parentNode) old.parentNode.removeChild(old);
+    var mask = document.createElement('div');
+    mask.id = 'presetMask';
+    mask.className = 'preset-mask';
+    var card = document.createElement('div');
+    card.className = 'preset-card';
+    presetRenderList(card, mask);
+    mask.appendChild(card);
+    mask.onclick = function (ev) { try { if (ev && ev.target === mask) { if (mask.parentNode) mask.parentNode.removeChild(mask); } } catch (e) {} };
+    document.body.appendChild(mask);
+  } catch (e) { try { showToast('预设列表打开失败'); } catch (e2) {} }
+}
+
+function presetRenderList(card, mask) {
+  try {
+    while (card.firstChild) card.removeChild(card.firstChild);
+    var closeBtn = document.createElement('button');
+    closeBtn.className = 'preset-close';
+    closeBtn.innerHTML = '✕';
+    closeBtn.onclick = function () { try { if (mask.parentNode) mask.parentNode.removeChild(mask); } catch (e) {} };
+    card.appendChild(closeBtn);
+    var titleEl = document.createElement('div');
+    titleEl.className = 'preset-title';
+    titleEl.textContent = '提示词预设';
+    card.appendChild(titleEl);
+    var listEl = document.createElement('div');
+    listEl.className = 'preset-list';
+    var arr = presetLoadAll();
+    for (var i = 0; i < arr.length; i++) {
+      (function (p) {
+        try {
+          if (!p) return;
+          var row = document.createElement('div');
+          row.className = 'preset-row';
+          var main = document.createElement('div');
+          main.className = 'preset-row-main';
+          var nm = document.createElement('div');
+          nm.className = 'preset-row-name';
+          nm.textContent = p.name || '未命名';
+          var gs = document.createElement('div');
+          gs.className = 'preset-row-gist';
+          gs.textContent = (p.gist || '') + (p.withCtx ? '（带上文' + (p.ctxN || 5) + '轮）' : '（单发）');
+          main.appendChild(nm);
+          main.appendChild(gs);
+          main.onclick = function () {
+            try {
+              curPreset = p;
+              presetUpdateChip();
+              try { if (window.HX && HX.pick && HX.pick.bind) HX.pick.bind(); } catch (eP) {}
+              if (mask.parentNode) mask.parentNode.removeChild(mask);
+            } catch (e) {}
+          };
+          var editBtn = document.createElement('button');
+          editBtn.className = 'preset-row-btn';
+          editBtn.textContent = '改';
+          editBtn.onclick = function (ev) { try { if (ev && ev.stopPropagation) ev.stopPropagation(); presetShowForm(card, mask, p); } catch (e) {} };
+          var delBtn = document.createElement('button');
+          delBtn.className = 'preset-row-btn';
+          delBtn.textContent = '删';
+          delBtn.onclick = function (ev) {
+            try {
+              if (ev && ev.stopPropagation) ev.stopPropagation();
+              if (!window.confirm('删掉预设「' + (p.name || '未命名') + '」？')) return;
+              var arr2 = presetLoadAll();
+              var out = [];
+              for (var j = 0; j < arr2.length; j++) { if (arr2[j] && arr2[j].id !== p.id) out.push(arr2[j]); }
+              presetSaveAll(out);
+              if (curPreset && curPreset.id === p.id) { curPreset = null; presetUpdateChip(); }
+              presetRenderList(card, mask);
+            } catch (e) {}
+          };
+          row.appendChild(main);
+          row.appendChild(editBtn);
+          row.appendChild(delBtn);
+          listEl.appendChild(row);
+        } catch (e1) {}
+      })(arr[i]);
+    }
+    card.appendChild(listEl);
+    var newRow = document.createElement('div');
+    newRow.className = 'preset-newrow';
+    newRow.textContent = '＋新建';
+    newRow.onclick = function () { try { presetShowForm(card, mask, null); } catch (e) {} };
+    card.appendChild(newRow);
+  } catch (e) { try { showToast('预设列表打开失败'); } catch (e2) {} }
+}
+
+function presetShowForm(card, mask, preset) {
+  /* A3 新建/改同一表单；A4 withCtx可手改，ctxN可改 */
+  try {
+    while (card.firstChild) card.removeChild(card.firstChild);
+    var closeBtn = document.createElement('button');
+    closeBtn.className = 'preset-close';
+    closeBtn.innerHTML = '✕';
+    closeBtn.onclick = function () { try { if (mask.parentNode) mask.parentNode.removeChild(mask); } catch (e) {} };
+    card.appendChild(closeBtn);
+    var titleEl = document.createElement('div');
+    titleEl.className = 'preset-title';
+    titleEl.textContent = preset ? '改预设' : '新建预设';
+    card.appendChild(titleEl);
+    var isEdit = !!preset;
+    var l1 = document.createElement('div'); l1.className = 'preset-form-label'; l1.textContent = '名字';
+    var inName = document.createElement('input'); inName.type = 'text'; inName.className = 'preset-form-input'; inName.value = preset ? (preset.name || '') : '';
+    card.appendChild(l1); card.appendChild(inName);
+    var l2 = document.createElement('div'); l2.className = 'preset-form-label'; l2.textContent = '大白话意思';
+    var inGist = document.createElement('textarea'); inGist.className = 'preset-form-textarea'; inGist.style.minHeight = '64px'; inGist.value = preset ? (preset.gist || '') : '';
+    card.appendChild(l2); card.appendChild(inGist);
+    var rowA = document.createElement('div'); rowA.className = 'preset-form-row'; rowA.style.marginTop = '8px';
+    var btnAI = document.createElement('button'); btnAI.className = 'preset-form-btn'; btnAI.textContent = 'AI写规矩';
+    rowA.appendChild(btnAI);
+    var selCtx = document.createElement('select'); selCtx.className = 'preset-form-input'; selCtx.style.width = 'auto';
+    var optC1 = document.createElement('option'); optC1.value = '1'; optC1.textContent = '带上文';
+    var optC2 = document.createElement('option'); optC2.value = '0'; optC2.textContent = '单发';
+    selCtx.appendChild(optC1); selCtx.appendChild(optC2);
+    selCtx.value = preset ? (preset.withCtx ? '1' : '0') : '1';
+    rowA.appendChild(selCtx);
+    var labN = document.createElement('span'); labN.className = 'preset-form-ctx'; labN.textContent = '带上文轮数';
+    var inN = document.createElement('input'); inN.type = 'number'; inN.className = 'preset-form-input'; inN.style.width = '72px'; inN.min = '1'; inN.max = '20';
+    inN.value = preset && preset.ctxN ? String(preset.ctxN) : '5';
+    rowA.appendChild(labN); rowA.appendChild(inN);
+    card.appendChild(rowA);
+    var l3 = document.createElement('div'); l3.className = 'preset-form-label'; l3.textContent = '规矩全文（可手改）';
+    var inRule = document.createElement('textarea'); inRule.className = 'preset-form-textarea'; inRule.value = preset ? (preset.rule || '') : '';
+    card.appendChild(l3); card.appendChild(inRule);
+    var rowB = document.createElement('div'); rowB.className = 'preset-form-row'; rowB.style.marginTop = '12px';
+    var btnSave = document.createElement('button'); btnSave.className = 'preset-form-btn-main'; btnSave.textContent = '存';
+    rowB.appendChild(btnSave);
+    card.appendChild(rowB);
+    /* A3 AI写规矩：顺手自动归类（定案5新建时AI自动归类） */
+    btnAI.onclick = function () {
+      try {
+        var gist = (inGist.value || '').replace(/^\s+|\s+$/g, '');
+        if (!gist) { try { showToast('先写一句大白话意思'); } catch (e0) {} return; }
+        btnAI.disabled = true; btnAI.textContent = 'AI在写…';
+        var sys = '你是提示词撰写助手，把用户的大白话意思改写成一段给AI看的正式工作规矩，200字内，只输出规矩正文。另外在正文最后单独起一行，输出一行「归类:带」或「归类:单」（带=需要结合上下文，单=单发即可）。';
+        presetCallAI(sys, '意思：' + gist, 'auto', function (ok, out) {
+          btnAI.disabled = false; btnAI.textContent = 'AI写规矩';
+          if (!ok) { try { showToast('AI没回成：' + (out || '未知')); } catch (e1) {} return; }
+          try {
+            var txt = String(out || '');
+            var m = txt.match(/归类[:：]\s*(带|单)/);
+            var rule = txt;
+            if (m) { rule = txt.replace(/归类[:：]\s*(带|单)[^\n]*\n?/g, '').replace(/^\s+|\s+$/g, ''); selCtx.value = (m[1] === '带') ? '1' : '0'; }
+            inRule.value = rule;
+          } catch (e2) {}
+        });
+      } catch (e) { btnAI.disabled = false; btnAI.textContent = 'AI写规矩'; }
+    };
+    btnSave.onclick = function () {
+      try {
+        var nm = (inName.value || '').replace(/^\s+|\s+$/g, '');
+        var gist = (inGist.value || '').replace(/^\s+|\s+$/g, '');
+        var rule = (inRule.value || '').replace(/^\s+|\s+$/g, '');
+        if (!nm) { try { showToast('名字不能空'); } catch (e0) {} return; }
+        if (!rule) { try { showToast('规矩全文不能空'); } catch (e1) {} return; }
+        var arr = presetLoadAll();
+        var ctxN = parseInt(inN.value, 10); if (!(ctxN > 0)) ctxN = 5;
+        var withCtx = (selCtx.value === '1');
+        if (isEdit && preset && preset.id) {
+          for (var i = 0; i < arr.length; i++) {
+            if (arr[i] && arr[i].id === preset.id) {
+              arr[i].name = nm; arr[i].gist = gist; arr[i].rule = rule; arr[i].withCtx = withCtx; arr[i].ctxN = ctxN;
+              break;
+            }
+          }
+        } else {
+          arr.push({ id: presetGenId(), name: nm, gist: gist, rule: rule, withCtx: withCtx, ctxN: ctxN, created: Date.now() });
+        }
+        presetSaveAll(arr);
+        presetRenderList(card, mask);
+      } catch (e3) { try { showToast('存预设失败'); } catch (e4) {} }
+    };
+  } catch (e) { try { showToast('预设表单打开失败'); } catch (e2) {} }
+}
+
+/* ---------- A2 选中窄条联动 ---------- */
+function presetUpdateChip() {
+  try {
+    if (curPreset) {
+      $presetChipName.textContent = '预设：' + (curPreset.name || '未命名');
+      $presetChip.style.display = 'flex';
+    } else {
+      $presetChip.style.display = 'none';
+      $presetChipName.textContent = '';
+    }
+  } catch (e) {}
+}
+
+/* ---------- A7 汇成一篇：取轮工具 ---------- */
+function presetRecentTurns(chatObj, n) {
+  try {
+    if (!chatObj || !chatObj.msgs || !chatObj.msgs.length) return [];
+    var take = n || 5;
+    var msgs = chatObj.msgs;
+    var start = Math.max(0, msgs.length - take * 2);
+    var out = [];
+    for (var j = start; j < msgs.length; j++) { if (msgs[j]) out.push({ r: msgs[j].r, c: msgs[j].c }); }
+    return out;
+  } catch (e) { return []; }
+}
+
+/* A5 文献双岗：千问查→Kimi审→回执+参考文献夹原消息 */
+function presetIsLitPreset(p) {
+  try {
+    if (!p) return false;
+    if (p.id === 'preset_factory_lit') return true;
+    if ((p.name || '').indexOf('查文献') >= 0) return true;
+    return false;
+  } catch (e) { return false; }
+}
+
+function presetLitQuery(userText, cb) {
+  /* 千问查 */
+  try {
+    var sys = '你是文献检索助手。查真实文献支持用户句子，返回JSON数组[{title,authors,journal,year,quote}]，查无此文不许编。只输出JSON。';
+    presetCallAI(sys, userText, 'qwen', function (ok, out) {
+      if (!ok) { cb(false, null); return; }
+      var arr = null;
+      try {
+        var s = String(out || '');
+        var i1 = s.indexOf('['); var i2 = s.lastIndexOf(']');
+        arr = JSON.parse((i1 >= 0 && i2 > i1) ? s.substring(i1, i2 + 1) : s);
+        if (!(arr instanceof Array)) arr = [];
+      } catch (e) { arr = []; }
+      cb(true, arr);
+    });
+  } catch (e) { cb(false, null); }
+}
+
+function presetLitReview(userText, list, cb) {
+  /* Kimi审 */
+  try {
+    var sys = '你是文献审核助手。审JSON文献条目是否真实、是否真支持用户句子。只返回JSON：{"pass":[通过的条目下标数组],"fail":[不通过的下标数组]}。不许编造。';
+    presetCallAI(sys, '原句：' + userText + '\n\n文献JSON：' + JSON.stringify(list || []), 'kimi', function (ok, out) {
+      if (!ok) { cb(false, null); return; }
+      var res = null;
+      try {
+        var s = String(out || '');
+        var o1 = s.indexOf('{'); var o2 = s.lastIndexOf('}');
+        res = JSON.parse((o1 >= 0 && o2 > o1) ? s.substring(o1, o2 + 1) : s);
+      } catch (e) { res = null; }
+      cb(true, res);
+    });
+  } catch (e) { cb(false, null); }
+}
+
+function presetLitRun(userText, cb) {
+  /* A5 双岗主流程：审不过打回重查最多2轮 */
+  try {
+    var round = 0;
+    var maxRound = 2;
+    function oneRound() {
+      round++;
+      presetLitQuery(userText, function (okQ, list) {
+        if (!okQ) { cb(false, '查文献没查到（千问没回）'); return; }
+        var lastList = (list && list instanceof Array) ? list : [];
+        if (!lastList.length) { cb(true, { list: [], receipt: '0篇已核/0篇查无此文被毙' }); return; }
+        presetLitReview(userText, lastList, function (okR, res) {
+          if (!okR || !res) { cb(true, { list: lastList, receipt: lastList.length + '篇已核/0篇查无此文被毙（审岗没回，先按全过）' }); return; }
+          var passIdx = (res.pass && res.pass instanceof Array) ? res.pass : [];
+          var failIdx = (res.fail && res.fail instanceof Array) ? res.fail : [];
+          var passList = [];
+          for (var i = 0; i < passIdx.length; i++) { var pi = passIdx[i]; if (lastList[pi]) passList.push(lastList[pi]); }
+          if (passList.length) {
+            cb(true, { list: passList, receipt: passList.length + '篇已核/' + failIdx.length + '篇查无此文被毙' });
+          } else if (round < maxRound) {
+            oneRound();
+          } else {
+            cb(true, { list: [], receipt: '0篇已核/' + lastList.length + '篇查无此文被毙' });
+          }
+        });
+      });
+    }
+    oneRound();
+  } catch (e) { cb(false, e && e.message ? e.message : '查文献失败'); }
+}
+
+/* ---------- A2/A4/A7 发送前拼装提示词 ---------- */
+function presetBuildPrompt(userText, preset, chatObj) {
+  try {
+    if (!preset) return userText;
+    var head = '【预设:' + (preset.name || '') + '】\n' + (preset.rule || '') + '\n\n';
+    var ctxTxt = '';
+    if (preset.withCtx && chatObj) {
+      var isMerge = (preset.name || '').indexOf('汇成一篇') >= 0 || preset.id === 'preset_factory_merge';
+      if (isMerge) {
+        /* A7 滚着汇：上一篇📄汇总+其后新几轮一起喂；原文永存不删 */
+        var msgs = chatObj.msgs || [];
+        var lastMergeIdx = -1;
+        for (var i = msgs.length - 1; i >= 0; i--) {
+          if (msgs[i] && msgs[i].merged && msgs[i].r === 'a') { lastMergeIdx = i; break; }
+        }
+        var feedFrom = (lastMergeIdx >= 0) ? lastMergeIdx : 0; /* 含上一篇汇总本轮 */
+        for (var j = feedFrom; j < msgs.length; j++) {
+          if (msgs[j]) ctxTxt += ((msgs[j].r === 'u') ? '用户：' : 'AI：') + (msgs[j].c || '') + '\n';
+        }
+      } else {
+        var recent = presetRecentTurns(chatObj, preset.ctxN || 5);
+        for (var t = 0; t < recent.length; t++) {
+          ctxTxt += ((recent[t].r === 'u') ? '用户：' : 'AI：') + (recent[t].c || '') + '\n';
+        }
+      }
+    }
+    if (ctxTxt) return head + '【上文】\n' + ctxTxt + '【我的问题】\n' + userText;
+    return head + userText;
+  } catch (e) { return userText; }
+}
+
+/* ---------- A1/A2/A8 事件绑定 ---------- */
+function presetBindUI() {
+  try {
+    var _off = false;
+    try { _off = (localStorage.getItem('hx_chat_preset_off') === '1'); } catch (eSw) {}
+    if (_off) {
+      if ($presetBtn) $presetBtn.style.display = 'none';
+      return;
+    }
+    if ($presetBtn) {
+      $presetBtn.style.display = '';
+      $presetBtn.onclick = function () { try { presetOpenLayer(); } catch (e) {} };
+    }
+    if ($presetChipX) {
+      $presetChipX.onclick = function () { try { curPreset = null; presetUpdateChip(); } catch (e) {} };
+    }
+    /* A6 首次运行写出厂三条 */
+    try { presetEnsureFactory(); } catch (eF) {}
+    /* 开门云补拉（换机不丢） */
+    try { presetSyncFromCloud(); } catch (eP) {}
+  } catch (e) { try { showToast('预设初始化失败'); } catch (e2) {} }
+}
+
+
 function createBubble(type, content, timeMs, hasCopy) {
   var bubble = document.createElement('div');
   bubble.className = 'bubble ' + (type === 'user' ? 'bubble-user' : 'bubble-ai') + ' round';
@@ -930,6 +1405,17 @@ function renderChat(chatObj) {
       msg.t,
       msg.r === 'a'
     );
+    /* v0.4.0 A7 📄汇总标记（显示层，不改物理记录） */
+    try {
+      if (msg && msg.merged && msg.r === 'a') {
+        var _mk = document.createElement('div');
+        _mk.style.fontSize = '12px';
+        _mk.style.color = '#8a7a4a';
+        _mk.style.marginTop = '6px';
+        _mk.textContent = '📄 汇总';
+        bubble.appendChild(_mk);
+      }
+    } catch (eMk) {}
     $mainArea.appendChild(bubble);
   }
   
@@ -1145,7 +1631,75 @@ function initPage() {
     }
     
     var text = $inputArea.value.trim();
-    if (!text) return;
+    if (!text) {
+      try { if (curPreset) { showToast('先写一句或先选预设配字'); return; } } catch (eEmptyPre) {}
+      return;
+    }
+    var _presetRawText = text; /* v0.4.0终审加：气泡显示用原文 */
+    var _presetUsed = curPreset;
+    var _presetIsLit = false;
+    try { _presetIsLit = presetIsLitPreset(_presetUsed); } catch (ePl) {}
+    try { /* v0.4.0 A2/A4/A7：选中预设则拼提示词（预设文拼最前，带上文类拼最近N轮） */
+      if (_presetUsed) {
+        var _chatObjForCtx = null;
+        try { _chatObjForCtx = (window.HX && HX.chat && HX.chat.load) ? HX.chat.load(curChatId) : null; } catch (eCtxL) { _chatObjForCtx = null; }
+        text = presetBuildPrompt(text, _presetUsed, _chatObjForCtx);
+      }
+    } catch (ePreJoin) {}
+    /* v0.4.0 A5 文献双岗：命中「查文献」预设则先走千问查+Kimi审，再带回执发 */
+    if (_presetIsLit && _presetUsed) {
+      try {
+        var _origText = _presetRawText;
+        var _nowLit = Date.now();
+        $inputArea.value = '';
+        adjustTextareaHeight();
+        var _userBubbleLit = createBubble('user', _origText, _nowLit, false);
+        $mainArea.appendChild(_userBubbleLit);
+        scrollBottom();
+        var _phLit = createBubble('ai', '正在查文献（千问查/Kimi审）…', _nowLit, false);
+        $mainArea.appendChild(_phLit);
+        scrollBottom();
+        isSending = true;
+        $sendBtn.textContent = '✋停止';
+        $sendBtn.disabled = false;
+        try { curPreset = null; presetUpdateChip(); } catch (eClr) {}
+        presetLitRun(_origText, function(okLit, resLit) {
+          try {
+            if (!okLit) {
+              _phLit.innerHTML = '<div style="color:#cc6666;">没通：' + escHtml(String(resLit || '查文献失败')) + '（点🚀可重发）</div><div class="bubble-time">' + formatTime(Date.now()) + '</div>';
+              isSending = false; $sendBtn.textContent = '🚀'; $sendBtn.disabled = false;
+              return;
+            }
+            var _listLit = (resLit && resLit.list) ? resLit.list : [];
+            var _receiptLit = (resLit && resLit.receipt) ? resLit.receipt : '0篇已核/0篇查无此文被毙';
+            var _refTxt = '';
+            for (var _ri = 0; _ri < _listLit.length; _ri++) {
+              var _r = _listLit[_ri] || {};
+              _refTxt += '[' + (_ri + 1) + '] ' + (_r.authors || '') + '. ' + (_r.title || '') + '. ' + (_r.journal || '') + ', ' + (_r.year || '') + '. ' + (_r.quote || '') + '\n';
+            }
+            var _finalPrompt = text;
+            if (_refTxt) { _finalPrompt = text + '\n\n【参考文献】\n' + _refTxt; }
+            HX.chat.send(curChatId, _finalPrompt, {
+              onOk: function(reply) {
+                try {
+                  _phLit.innerHTML = escHtml(reply).replace(/\n/g, '<br>') + '<div class="bubble-time" style="margin-top:6px;font-size:12px;color:#9a8f7c;">' + escHtml(_receiptLit) + '</div>';
+                  isSending = false; $sendBtn.textContent = '🚀'; $sendBtn.disabled = false;
+                  try { showToast(_receiptLit); } catch (eT) {}
+                } catch (eOk) {}
+              },
+              onErr: function(msg) {
+                try {
+                  _phLit.innerHTML = '<div style="color:#cc6666;">没通：' + escHtml(String(msg)) + '（点🚀可重发）</div><div class="bubble-time">' + formatTime(Date.now()) + '</div>';
+                  isSending = false; $sendBtn.textContent = '🚀'; $sendBtn.disabled = false;
+                } catch (eEr) {}
+              },
+              onTick: function(sec) {}
+            });
+          } catch (eAfter) {}
+        });
+        return;
+      } catch (eLitHook) {}
+    }
     try { /* v0.3.0 PDF问答：有暂存PDF全文则拼前缀随本句发出，只拼一次；气泡仍显示原文 */
       if (curPdfCtx) {
         text = '【附件《' + curPdfName + '》全文】\n' + curPdfCtx + '\n【我的问题】\n' + text;
@@ -1231,6 +1785,20 @@ function initPage() {
           }
         } catch (e3b) {}
         
+        /* v0.4.0 A2 预设用完自动灭 */
+        try { curPreset = null; presetUpdateChip(); } catch (eClrP) {}
+        /* v0.4.0 A7 汇成一篇产物打📄标记（merged:true，终审翻案：HX.chat.save是单参save(d)） */
+        try {
+          if (_presetUsed && ((_presetUsed.name || '').indexOf('汇成一篇') >= 0 || _presetUsed.id === 'preset_factory_merge')) {
+            var _coMark = (window.HX && HX.chat && HX.chat.load) ? HX.chat.load(curChatId) : null;
+            if (_coMark && _coMark.msgs && _coMark.msgs.length) {
+              for (var _mi = _coMark.msgs.length - 1; _mi >= 0; _mi--) {
+                if (_coMark.msgs[_mi] && _coMark.msgs[_mi].r === 'a') { _coMark.msgs[_mi].merged = true; break; }
+              }
+              try { if (window.HX && HX.chat && HX.chat.save) HX.chat.save(_coMark); } catch (eSaveM) {}
+            }
+          }
+        } catch (eMergeA) {}
         // 刷新当前对话显示
         var chatObj = HX.chat.load(curChatId);
         if (chatObj) {
@@ -1273,6 +1841,8 @@ function initPage() {
   renderDrawerList();
   try{ if(window.HX && HX.sj && HX.sj.init) HX.sj.init({app:'AI对话框'}); }catch(e){}
   try{ if(window.HX && HX.pick && HX.pick.bind) HX.pick.bind(); }catch(e){}
+  /* v0.4.0 提示词预设系统：绑定入口、出厂三条、总开关、云补拉 */
+  try { presetBindUI(); } catch (ePresetBind) {}
 }
 
 // 页面加载完成
