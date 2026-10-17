@@ -1,1 +1,1 @@
-{"version": "0.2.0", "dl": "software-chat.html", "sig": "0d3c87191a3b0135", "note": "成书塞章节：AI回话气泡加📥送入书→选书选章→寄小涛收信口（to:book），只读小涛书台账不写；总开关hx_chat_sendbook_off=1；回退=牌指回0.1.3", "fix": "t39"}
+{"version": "0.3.0", "dl": "software-chat.html", "sig": "ab36146cabf9642e", "note": "PDF问答：📎选PDF→三段式懒加载guanjia-pdf-engine.js抽字→随下一句拼【PDF全文】前缀发AI（只拼一次）；总开关hx_chat_pdf_off=1藏📎；DS回件截断+续写编造界外码作废，Kimi亲手落地；仿真12/12；回退=牌指回0.2.0", "fix": "T-B"}
