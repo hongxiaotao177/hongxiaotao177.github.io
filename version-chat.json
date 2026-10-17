@@ -1,7 +1,1 @@
-{
-  "version": "0.4.0",
-  "dl": "software-chat.html",
-  "sig": "c42ff59c4de4e1b2",
-  "note": "提示词预设系统A1~A8（定案十条1503班）：常驻「提示词」钮+预设浮层（新建/改/删/AI代写+自动归类+带上文ctxN）+选中窄条+空打字拦截+发送后自动灭+文献双岗（千问查Kimi审+回执+参考文献夹原消息）+出厂三条+汇成一篇滚着汇📄+云同步走HX.store.sync+总开关hx_chat_preset_off=1；DS补丁Kimi终审翻案3处亲手落地，仿真7/7；回退=牌指回0.3.0",
-  "fix": "t-chat-preset"
-}
+{"version": "0.4.1", "dl": "software-chat.html", "sig": "fe16ce53724e116c", "note": "千问四治法（千问实现+Kimi终审翻案2处：续写闸挪闭包+400哨兵防双跳）：presetCallAI钥匙trim/8192/截断续写拼接/400不再静默误跳；预设系统其余IDENTICAL", "fix": "t-qwen-fix"}
