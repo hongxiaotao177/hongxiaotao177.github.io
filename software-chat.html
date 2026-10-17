@@ -8,6 +8,7 @@
 <!-- v0.1.1 2026-10-16 洪老师真机报：只有DS钥匙也弹没钥匙黑框；病根门脸钥匙检查漏DeepSeek一路；治法hasKeys加查xt_dskey及壳真源deepseek字段；终审补：顶栏显示版本号同步0.1.1（DS漏改） -->
 <!-- v0.1.2 2026-10-16 t32黄条误报根治（首查不到每2秒复查30秒死心，查到收条+补载对话）+t33发送钮左让64px避壳回家钮（bottom-bar右padding）+t34补挂HX.sj速记浮标+HX.pick点亮（sjDot/Panel上提避让右下热区） -->
 <!-- v0.1.3 2026-10-17 三级加载器治「公共件没装上」黄条+发送没反应（SPEC_chat_v0.1.3_三级加载器治「公共件没装上」黄条+发送没反应） -->
+<!-- v0.2.0 2026-10-17 成书塞章节（SPEC_chat二期_成书塞章节）：AI气泡加📥送入书钮→选书选章浮层→写信xt_inbox_v1（to:'book'），只读小涛书台账不写；总开关hx_chat_sendbook_off=1藏钮；DS实现+千问截断参考+Kimi终审翻案2处（hxToastHold签名错改showToast/curChatTitle不存在改HX.chat.load取title） -->
 <script>
 function hxCommonLoad(onHxReady, onHxMissing){
   function runTxt(txt){ try{ var s=document.createElement('script'); s.textContent=txt; document.head.appendChild(s); }catch(e){} }
@@ -149,6 +150,18 @@ body {
   border-radius: 50%;
 }
 .bubble-copy:hover { background-color: #f5f2e9; }
+.bubble-sendbook { right: 32px; }
+.chat-book-mask { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.45); z-index: 9999; display: flex; align-items: center; justify-content: center; }
+.chat-book-card { position: relative; background: #fffdf7; border-radius: 12px; width: 86%; max-width: 420px; max-height: 76vh; overflow-y: auto; padding: 16px 14px 12px; box-shadow: 0 8px 28px rgba(0,0,0,0.25); }
+.chat-book-close { position: absolute; top: 6px; right: 8px; background: none; border: none; font-size: 18px; color: #7a7260; cursor: pointer; width: 28px; height: 28px; }
+.chat-book-title { font-size: 15px; font-weight: bold; color: #4a4436; margin-bottom: 10px; padding-right: 28px; }
+.chat-book-list { display: flex; flex-direction: column; }
+.chat-book-row { padding: 10px 8px; border-bottom: 1px solid #efe9db; font-size: 14px; color: #4a4436; cursor: pointer; border-radius: 6px; }
+.chat-book-row:hover { background: #f5f2e9; }
+.chat-book-newrow { color: #8a7a4a; }
+.chat-book-newwrap { margin-top: 8px; display: flex; gap: 6px; }
+.chat-book-newinput { flex: 1; padding: 6px 8px; border: 1px solid #d8cfb8; border-radius: 6px; font-size: 14px; background: #fff; }
+.chat-book-newok { padding: 6px 12px; border: none; border-radius: 6px; background: #c9b98a; color: #fff; font-size: 14px; cursor: pointer; }
 .bubble-copy:active { background-color: #eae4d9; }
 
 /* 底部输入区 */
@@ -376,7 +389,7 @@ body {
 
 <!-- 顶行 -->
 <div class="top-bar">
-  <div class="top-title">💬 AI对话框<span class="top-version">v0.1.3</span></div>
+  <div class="top-title">💬 AI对话框<span class="top-version">v0.2.0</span></div>
   <div>
     <button id="menuBtn" class="top-btn">☰对话</button>
     <button id="newBtn" class="top-btn">✚新聊</button>
@@ -421,7 +434,7 @@ body {
 
 <script>
 // SW_VERSION 全局变量
-var SW_VERSION = "0.1.3";
+var SW_VERSION = "0.2.0";
 
 // 全局状态
 var curChatId = null;
@@ -468,6 +481,245 @@ function hideToast() {
   $toastContainer.className = 'toast-container';
 }
 
+/* ===== v0.2.0 成书塞章节：📥送入书（DS实现+Kimi终审翻案2处：①hxToastHold(msg)签名错改showToast（本页黑框常驻带✕）；②curChatTitle不存在改HX.chat.load(curChatId)取title） ===== */
+function chatLoadXtBooks() {
+  try {
+    var raw = null;
+    try {
+      if (window.HX && HX.store && HX.store.has && HX.store.has()) {
+        raw = HX.store.get('xt_books_v1', null);
+      }
+    } catch (e0) { raw = null; }
+    if (raw === null || raw === undefined) {
+      try { raw = localStorage.getItem('xt_books_v1'); } catch (e1) { raw = null; }
+    }
+    if (!raw) return [];
+    var arr = null;
+    try { arr = JSON.parse(raw); } catch (e2) { arr = null; }
+    if (!arr || !(arr instanceof Array)) return [];
+    return arr;
+  } catch (e) { return []; }
+}
+
+function chatSendBook(letterText) {
+  try {
+    var books = chatLoadXtBooks();
+    if (!books || !books.length) {
+      try { showToast('小涛笔记里还没有书，先去✍️小涛笔记建一本'); } catch (e0) {}
+      return;
+    }
+    chatShowBookLayer(books, letterText);
+  } catch (e) {
+    try { showToast('送入书失败'); } catch (e2) {}
+  }
+}
+
+function chatShowBookLayer(books, letterText) {
+  try {
+    var old = document.getElementById('chatBookMask');
+    if (old && old.parentNode) old.parentNode.removeChild(old);
+
+    var mask = document.createElement('div');
+    mask.id = 'chatBookMask';
+    mask.className = 'chat-book-mask';
+
+    var card = document.createElement('div');
+    card.className = 'chat-book-card';
+
+    var closeBtn = document.createElement('button');
+    closeBtn.className = 'chat-book-close';
+    closeBtn.innerHTML = '✕';
+    closeBtn.onclick = function() {
+      try { if (mask.parentNode) mask.parentNode.removeChild(mask); } catch (e) {}
+    };
+    card.appendChild(closeBtn);
+
+    var titleEl = document.createElement('div');
+    titleEl.className = 'chat-book-title';
+    titleEl.textContent = '选一本书';
+    card.appendChild(titleEl);
+
+    var listEl = document.createElement('div');
+    listEl.className = 'chat-book-list';
+
+    for (var i = 0; i < books.length; i++) {
+      (function(bk) {
+        try {
+          if (!bk) return;
+          var row = document.createElement('div');
+          row.className = 'chat-book-row';
+          var chs = (bk.chapters && bk.chapters.length) ? bk.chapters.length : 0;
+          row.textContent = '📖 ' + (bk.title || bk.name || '未命名') + '（' + chs + '章）';
+          row.onclick = function() {
+            try { chatShowChapLayer(mask, card, bk, letterText); } catch (e) {}
+          };
+          listEl.appendChild(row);
+        } catch (e1) {}
+      })(books[i]);
+    }
+    card.appendChild(listEl);
+
+    mask.appendChild(card);
+    mask.onclick = function(ev) {
+      try { if (ev && ev.target === mask) { if (mask.parentNode) mask.parentNode.removeChild(mask); } } catch (e) {}
+    };
+    document.body.appendChild(mask);
+  } catch (e) {
+    try { showToast('送入书失败'); } catch (e2) {}
+  }
+}
+
+function chatShowChapLayer(mask, card, bk, letterText) {
+  try {
+    while (card.firstChild) card.removeChild(card.firstChild);
+
+    var closeBtn = document.createElement('button');
+    closeBtn.className = 'chat-book-close';
+    closeBtn.innerHTML = '✕';
+    closeBtn.onclick = function() {
+      try { if (mask.parentNode) mask.parentNode.removeChild(mask); } catch (e) {}
+    };
+    card.appendChild(closeBtn);
+
+    var titleEl = document.createElement('div');
+    titleEl.className = 'chat-book-title';
+    titleEl.textContent = '《' + (bk.title || bk.name || '未命名') + '》选章';
+    card.appendChild(titleEl);
+
+    var listEl = document.createElement('div');
+    listEl.className = 'chat-book-list';
+
+    var newRow = document.createElement('div');
+    newRow.className = 'chat-book-row chat-book-newrow';
+    newRow.textContent = '➕ 新章…';
+    newRow.onclick = function() {
+      try {
+        if (newRow.getAttribute('data-open') === '1') return;
+        newRow.setAttribute('data-open', '1');
+        var wrap = document.createElement('div');
+        wrap.className = 'chat-book-newwrap';
+        var inp = document.createElement('input');
+        inp.type = 'text';
+        inp.className = 'chat-book-newinput';
+        inp.placeholder = '章名';
+        var okBtn = document.createElement('button');
+        okBtn.className = 'chat-book-newok';
+        okBtn.textContent = '确定';
+        okBtn.onclick = function() {
+          try {
+            var nm = (inp.value || '').replace(/^\s+|\s+$/g, '');
+            if (!nm) { try { showToast('章名不能为空'); } catch (e0) {} return; }
+            chatConfirmSend(mask, bk, '', nm, letterText);
+          } catch (e1) {}
+        };
+        wrap.appendChild(inp);
+        wrap.appendChild(okBtn);
+        newRow.appendChild(wrap);
+        try { inp.focus(); } catch (e2) {}
+      } catch (e3) {}
+    };
+    listEl.appendChild(newRow);
+
+    var chs = (bk.chapters && bk.chapters.length) ? bk.chapters : [];
+    for (var i = 0; i < chs.length; i++) {
+      (function(ch) {
+        try {
+          if (!ch) return;
+          var row = document.createElement('div');
+          row.className = 'chat-book-row';
+          row.textContent = ch.t || ch.title || '未命名章';
+          row.onclick = function() {
+            try { chatConfirmSend(mask, bk, ch.id || '', '', letterText); } catch (e) {}
+          };
+          listEl.appendChild(row);
+        } catch (e1) {}
+      })(chs[i]);
+    }
+    card.appendChild(listEl);
+  } catch (e) {
+    try { showToast('送入书失败'); } catch (e2) {}
+  }
+}
+
+function chatConfirmSend(mask, bk, chapId, newChap, letterText) {
+  try {
+    var bkTitle = bk.title || bk.name || '未命名';
+    var chapName = newChap;
+    if (!chapName && chapId) {
+      var chs0 = (bk.chapters && bk.chapters.length) ? bk.chapters : [];
+      for (var i = 0; i < chs0.length; i++) {
+        if (chs0[i] && chs0[i].id === chapId) { chapName = chs0[i].t || chs0[i].title || '未命名章'; break; }
+      }
+    }
+    if (!chapName) chapName = '（最后一章）';
+    var ok = false;
+    try { ok = window.confirm('把这条AI回话塞进《' + bkTitle + '》/「' + chapName + '」？'); } catch (e0) { ok = false; }
+    if (!ok) return;
+
+    var arr = [];
+    try {
+      var raw = null;
+      try {
+        if (window.HX && HX.store && HX.store.has && HX.store.has()) {
+          raw = HX.store.get('xt_inbox_v1', null);
+        }
+      } catch (e1) { raw = null; }
+      if (raw === null || raw === undefined) {
+        try { raw = localStorage.getItem('xt_inbox_v1'); } catch (e2) { raw = null; }
+      }
+      if (raw) {
+        var parsed = null;
+        try { parsed = JSON.parse(raw); } catch (e3) { parsed = null; }
+        if (parsed && parsed instanceof Array) arr = parsed;
+      }
+    } catch (e4) { arr = []; }
+
+    var curTitle = '';
+    try {
+      var curObj = (window.HX && HX.chat && HX.chat.load) ? HX.chat.load(curChatId) : null;
+      if (curObj && curObj.title) curTitle = curObj.title;
+    } catch (e5) { curTitle = ''; }
+    var titleStr = '💬 ' + (curTitle || (letterText ? letterText.slice(0, 20) : ''));
+
+    arr.push({
+      title: titleStr,
+      text: letterText,
+      pt: '',
+      ts: Date.now(),
+      to: 'book',
+      bookId: bk.id || '',
+      chapId: chapId || '',
+      newChap: newChap || ''
+    });
+
+    var jsonStr = JSON.stringify(arr);
+    var wrote = false;
+    try {
+      if (window.HX && HX.store && HX.store.has && HX.store.has()) {
+        HX.store.set('xt_inbox_v1', jsonStr);
+        wrote = true;
+      }
+    } catch (e6) { wrote = false; }
+    try { localStorage.setItem('xt_inbox_v1', jsonStr); wrote = true; } catch (e7) {}
+    if (!wrote) {
+      try { showToast('没寄出去：写入失败'); } catch (e8) {}
+      return;
+    }
+
+    try { if (mask && mask.parentNode) mask.parentNode.removeChild(mask); } catch (e9) {}
+
+    try { showToast('已寄出📮 打开✍️小涛笔记自动收进《' + bkTitle + '》/' + chapName); } catch (e10) {}
+
+    try {
+      if (window.HX && HX.bb && HX.bb.log) {
+        HX.bb.log('note', 'chat 寄书 《' + bkTitle + '》/' + chapName + ' ' + (letterText ? letterText.length : 0) + '字');
+      }
+    } catch (e12) {}
+  } catch (e) {
+    try { showToast('没寄出去：' + (e && e.message ? e.message : '未知错误')); } catch (e2) {}
+  }
+}
+
 function scrollBottom() {
   try {
     $mainArea.scrollTop = $mainArea.scrollHeight;
@@ -512,6 +764,19 @@ function createBubble(type, content, timeMs, hasCopy) {
       }
     };
     bubble.appendChild(copyBtn);
+    try { /* v0.2.0 📥送入书 */
+      var _sbOff = false;
+      try { _sbOff = (localStorage.getItem('hx_chat_sendbook_off') === '1'); } catch (e0) {}
+      if (!_sbOff) {
+        var sendBookBtn = document.createElement('button');
+        sendBookBtn.className = 'bubble-copy bubble-sendbook';
+        sendBookBtn.innerHTML = '📥';
+        sendBookBtn.onclick = function() {
+          try { chatSendBook(content); } catch (e1) { try { showToast('送入书失败'); } catch (e2) {} }
+        };
+        bubble.appendChild(sendBookBtn);
+      }
+    } catch (e3) {}
   }
   
   return bubble;
@@ -800,6 +1065,19 @@ function initPage() {
           }
         };
         placeholderBubble.appendChild(copyBtn);
+        try { /* v0.2.0 📥送入书 */
+          var _sbOff2 = false;
+          try { _sbOff2 = (localStorage.getItem('hx_chat_sendbook_off') === '1'); } catch (e0b) {}
+          if (!_sbOff2) {
+            var sendBookBtn2 = document.createElement('button');
+            sendBookBtn2.className = 'bubble-copy bubble-sendbook';
+            sendBookBtn2.innerHTML = '📥';
+            sendBookBtn2.onclick = function() {
+              try { chatSendBook(reply); } catch (e1b) { try { showToast('送入书失败'); } catch (e2b) {} }
+            };
+            placeholderBubble.appendChild(sendBookBtn2);
+          }
+        } catch (e3b) {}
         
         // 刷新当前对话显示
         var chatObj = HX.chat.load(curChatId);
