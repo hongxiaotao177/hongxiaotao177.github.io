@@ -1,0 +1,1910 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<!--
+============================================================
+software-shu.html  「生长树」v0.1.0
+版本: 0.1.0
+日期: 2026-10-18
+拍板人: 洪晓涛
+一句话: 种子文章→观点座→异形标装异见→文献身份证永不动号。
+终审: DS实现+Kimi终审翻案2处亲手落地（①toast翻自家常驻黑框hx-common未导出hxToastHold②软删补摘rootIds/父children）；
+      千问同题回件偏瘦（预览勾选/导出两选没做全）未采用，考察账记一笔。
+说明: 单文件 / ES5 / 无依赖 / IIFE / 全程try/catch
+      hx-common.js 三级加载失败时本地功能照常，云功能静默降级。
+军规: 不崩溃压倒一切。
+============================================================
+-->
+<title>生长树</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;background:#f5f6f8;color:#222;
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue",Arial,sans-serif;
+  font-size:16px;line-height:1.5;-webkit-text-size-adjust:100%}
+body{padding-bottom:80px}
+.hx-btn{display:inline-block;padding:8px 14px;margin:4px 4px 4px 0;border-radius:8px;
+  background:#eef1f5;color:#333;border:1px solid #d8dde4;font-size:15px;cursor:pointer;
+  user-select:none;-webkit-user-select:none;text-align:center;vertical-align:middle}
+.hx-btn:active{background:#dfe4ea}
+.hx-btn.primary{background:#3a7afe;color:#fff;border-color:#3a7afe}
+.hx-btn.danger{background:#fff0f0;color:#d63b3b;border-color:#f0c0c0}
+.hx-btn.mini{padding:4px 9px;font-size:13px;margin:2px 3px 2px 0}
+.hx-top{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid #e3e6eb;
+  padding:10px 12px;display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+.hx-top .hx-title{flex:1 1 160px;font-weight:600;font-size:17px;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.hx-wrap{padding:10px 12px}
+.hx-card{background:#fff;border:1px solid #e6e9ee;border-radius:10px;padding:12px;margin-bottom:10px}
+.hx-row{display:flex;align-items:flex-start;gap:8px}
+.hx-row .hx-left{flex:0 0 auto}
+.hx-row .hx-right{flex:1 1 auto;min-width:0}
+.hx-k{font-size:12px;color:#9aa4b2;font-family:monospace}
+.hx-text{white-space:pre-wrap;word-break:break-word}
+.hx-meta{font-size:12px;color:#8a94a3;margin-top:4px}
+.hx-badge{display:inline-block;font-size:12px;padding:1px 7px;border-radius:10px;
+  border:1px solid #b7c8e8;background:#eef4ff;color:#3a7afe;margin-left:6px;cursor:pointer}
+.hx-badge.alert{border-color:#f0a4a4;background:#fff0f0;color:#d63b3b}
+.hx-indent-hint{color:#c7ced8;font-family:monospace;font-size:13px;letter-spacing:1px}
+.hx-empty{color:#98a2b0;text-align:center;padding:40px 10px;font-size:15px}
+.hx-mask{position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,.35);z-index:100}
+.hx-modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:101;
+  width:92%;max-width:560px;max-height:82vh;overflow:auto;background:#fff;border-radius:14px;
+  padding:14px}
+.hx-modal h3{margin:0 0 10px;font-size:17px;font-weight:600}
+.hx-modal .hx-close{position:sticky;top:0;float:right;font-size:20px;color:#999;cursor:pointer;
+  padding:0 4px;line-height:1}
+.hx-ta{width:100%;min-height:110px;border:1px solid #d8dde4;border-radius:8px;padding:8px;
+  font-size:15px;font-family:inherit;resize:vertical;background:#fafbfc;color:#222}
+.hx-in{width:100%;border:1px solid #d8dde4;border-radius:8px;padding:7px 8px;font-size:15px;
+  font-family:inherit;background:#fafbfc;color:#222;margin-bottom:8px}
+.hx-pick{display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px dashed #eef0f3}
+.hx-pick:last-child{border-bottom:none}
+.hx-pick input[type=checkbox]{flex:0 0 auto;width:20px;height:20px;margin-top:2px}
+.hx-pick .hx-pickbody{flex:1 1 auto;min-width:0}
+.hx-tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:9px;margin-right:6px;
+  border:1px solid #ccc;background:#f4f5f7;color:#666;vertical-align:1px}
+.hx-tag.red{background:#fff0f0;border-color:#f0a4a4;color:#d63b3b}
+.hx-tag.blue{background:#eef4ff;border-color:#b7c8e8;color:#3a7afe}
+.hx-tag.gray{background:#f4f5f7;border-color:#d8dde4;color:#8a94a3}
+.hx-alts{border:1px solid #f0c0c0;border-radius:8px;padding:9px;margin-bottom:9px;background:#fffcfc}
+.hx-alts .hx-alttext{font-size:15px;white-space:pre-wrap;word-break:break-word}
+.hx-note{font-size:12px;color:#a06a00;background:#fffbe6;border-radius:6px;padding:5px 7px;margin-top:5px}
+.hx-btnbar{margin-top:12px;text-align:right}
+.hx-footer-hint{font-size:12px;color:#a3abb7;text-align:center;padding:16px 8px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* ============================================================
+   hx-common.js 三级加载器（等价 HX.loadLoaderSnippet）
+   ① LearnShell.readFile ② 同目录 fetch(8s超时) ③ 公开仓 raw
+   全 try/catch，全败 → 本地功能照常，云功能静默降级
+   ============================================================ */
+(function () {
+  'use strict';
+  window.HX = window.HX || {};
+  HX._commonLoaded = false;
+  HX._loaderFail = false;
+
+  function _evalCommon(txt) {
+    try {
+      if (!txt || typeof txt !== 'string') { return false; }
+      /* 在全局作用域执行 hx-common.js（它会挂 HX.xxx） */
+      var f = new Function(txt);
+      f();
+      HX._commonLoaded = true;
+      return true;
+    } catch (e) {
+      try { if (window.console) { console.warn('hx-common eval fail', e); } } catch (e2) {}
+      return false;
+    }
+  }
+
+  function _loadFromShell(cb) {
+    try {
+      if (window.LearnShell && typeof LearnShell.readFile === 'function') {
+        try {
+          var txt = LearnShell.readFile('hx-common.js');
+          if (txt && typeof txt === 'string' && txt.length > 10) {
+            if (_evalCommon(txt)) { cb(true); return; }
+          }
+        } catch (e) {}
+      }
+    } catch (e) {}
+    cb(false);
+  }
+
+  function _fetchWithTimeout(url, timeoutMs, cb) {
+    try {
+      var done = false;
+      var timer = setTimeout(function () {
+        if (done) { return; }
+        done = true;
+        cb(false, 'timeout');
+      }, timeoutMs);
+      var finish = function (ok, txt) {
+        if (done) { return; }
+        done = true;
+        try { clearTimeout(timer); } catch (e) {}
+        cb(ok, txt);
+      };
+      if (typeof fetch !== 'function') { finish(false, 'no-fetch'); return; }
+      fetch(url, { cache: 'no-store' }).then(function (res) {
+        if (!res || !res.ok) { finish(false, 'bad-status'); return; }
+        return res.text();
+      }).then(function (txt) {
+        finish(true, txt || '');
+      }).catch(function (err) {
+        finish(false, err && err.message ? err.message : 'fetch-err');
+      });
+    } catch (e) {
+      cb(false, 'exception');
+    }
+  }
+
+  function _loadCommon() {
+    /* ① 壳内文件 */
+    _loadFromShell(function (ok) {
+      if (ok) { _afterCommon(); return; }
+      /* ② 同目录 */
+      try {
+        var u2 = 'hx-common.js?t=' + Date.now();
+        _fetchWithTimeout(u2, 8000, function (ok2, txt2) {
+          if (ok2 && txt2 && _evalCommon(txt2)) { _afterCommon(); return; }
+          /* ③ 公开仓 raw */
+          try {
+            var u3 = 'https://hongxiaotao177.github.io/hx-common.js?t=' + Date.now();
+            _fetchWithTimeout(u3, 8000, function (ok3, txt3) {
+              if (ok3 && txt3 && _evalCommon(txt3)) {
+                try {
+                  if (window.LearnShell && typeof LearnShell.writeFile === 'function') {
+                    LearnShell.writeFile('hx-common.js', txt3);
+                  }
+                } catch (eW) {}
+                _afterCommon();
+                return;
+              }
+              HX._loaderFail = true;
+              _afterCommon();
+            });
+          } catch (e3) {
+            HX._loaderFail = true;
+            _afterCommon();
+          }
+        });
+      } catch (e2) {
+        HX._loaderFail = true;
+        _afterCommon();
+      }
+    });
+  }
+
+  function _afterCommon() {
+    try {
+      if (typeof window.hxOnCommonReady === 'function') {
+        window.hxOnCommonReady();
+      }
+    } catch (e) {}
+  }
+
+  try { _loadCommon(); } catch (e) { HX._loaderFail = true; }
+})();
+</script>
+
+<script>
+/* ============================================================
+   生长树 主程序 v0.1.0 —— IIFE / ES5 / 全程 try/catch
+   ============================================================ */
+(function () {
+  'use strict';
+
+  /* ---------- 常量 ---------- */
+  var VER = '0.1.0';
+  var IDX_KEY = 'hx_shu_idx_v1';
+  var DOC_PREFIX = 'hx_shu_';
+  var MAX_LOG = 500;
+  var KINDS = ['冲突', '补充'];
+  var GRADES = ['指南', '综述', '单篇', '自媒体', '未知'];
+
+  /* ---------- 全局兜底 ---------- */
+  function safe(fn, dft) {
+    try { return fn(); } catch (e) {
+      try { if (window.console) { console.warn('[shu]', e && e.message ? e.message : e); } } catch (e2) {}
+      return dft;
+    }
+  }
+  function toast(msg) {
+    /* Kimi终审翻案（2026-10-18）：DS调未导出的window.hxToastHold（hx-common闭包内部件，前科重演记账），翻为自家常驻黑框：常驻点✕才关绝不自动消失，✕三路监听pointerdown/touchstart/mousedown（照hx-common v0.24.3老WebView教训） */
+    try {
+      if (typeof window.hxToastHold === 'function') { window.hxToastHold(String(msg)); return; }
+    } catch (e) {}
+    try {
+      var oldB = document.getElementById('shuToastHold');
+      if (oldB && oldB.parentNode) { oldB.parentNode.removeChild(oldB); }
+      var box = document.createElement('div');
+      box.id = 'shuToastHold';
+      box.style.cssText = 'position:fixed;left:12px;right:12px;bottom:60px;z-index:99999;background:#222;color:#fff;border-radius:10px;padding:14px 46px 14px 14px;font-size:15px;line-height:1.5;box-shadow:0 4px 16px rgba(0,0,0,.4);max-height:40vh;overflow-y:auto;';
+      box.textContent = String(msg);
+      var x = document.createElement('span');
+      x.textContent = '✕';
+      x.style.cssText = 'position:absolute;right:8px;top:8px;font-size:18px;color:#fff;padding:4px 10px;cursor:pointer;';
+      var closeFn = function (ev) {
+        try { if (ev && ev.preventDefault) { ev.preventDefault(); } } catch (e1) {}
+        try { if (ev && ev.stopPropagation) { ev.stopPropagation(); } } catch (e2) {}
+        try { if (box.parentNode) { box.parentNode.removeChild(box); } } catch (e3) {}
+      };
+      try { x.addEventListener('pointerdown', closeFn, true); } catch (e4) {}
+      try { x.addEventListener('touchstart', closeFn, true); } catch (e5) {}
+      try { x.addEventListener('mousedown', closeFn, true); } catch (e6) {}
+      box.appendChild(x);
+      document.body.appendChild(box);
+    } catch (e7) { try { if (window.console) { console.warn('[toast]', msg); } } catch (e8) {} }
+  }
+
+  /* ---------- 总开关 ---------- */
+  function isOff() {
+    try {
+      var v = null;
+      try { v = window.localStorage.getItem('hx_shu_off'); } catch (e) {}
+      if (v === '1') { return true; }
+      if (HX && HX.store && typeof HX.store.get === 'function') {
+        var v2 = HX.store.get('hx_shu_off');
+        if (v2 === '1') { return true; }
+      }
+    } catch (e) {}
+    return false;
+  }
+
+  /* ---------- 存储层 ---------- */
+  function lsGet(k) {
+    try { return window.localStorage.getItem(k); } catch (e) { return null; }
+  }
+  function lsSet(k, v) {
+    try { window.localStorage.setItem(k, v); return true; } catch (e) { return false; }
+  }
+  function lsRemove(k) {
+    try { window.localStorage.removeItem(k); return true; } catch (e) { return false; }
+  }
+
+  function emptyIdx() {
+    return { list: [], cur: null };
+  }
+  function loadIdx() {
+    var raw = lsGet(IDX_KEY);
+    if (!raw) { return emptyIdx(); }
+    try {
+      var o = JSON.parse(raw);
+      if (!o || typeof o !== 'object') { return emptyIdx(); }
+      if (!o.list || !(o.list instanceof Array)) { o.list = []; }
+      return o;
+    } catch (e) { return emptyIdx(); }
+  }
+  function saveIdx(idx) {
+    var s = safe(function () { return JSON.stringify(idx); }, '');
+    if (s) { lsSet(IDX_KEY, s); }
+  }
+
+  function storeGet(key) {
+    var v = null;
+    try {
+      if (HX && HX.store && typeof HX.store.get === 'function') {
+        v = HX.store.get(key);
+        if (v !== null && v !== undefined) { return v; }
+      }
+    } catch (e) {}
+    return lsGet(key);
+  }
+  function storeSet(key, val) {
+    var ok = false;
+    try {
+      if (HX && HX.store && typeof HX.store.set === 'function') {
+        HX.store.set(key, val);
+        ok = true;
+      }
+    } catch (e) {}
+    try {
+      var s = (typeof val === 'string') ? val : JSON.stringify(val);
+      if (lsSet(key, s)) { ok = true; }
+    } catch (e2) {}
+    try { if (HX && HX.store && typeof HX.store.sync === 'function') { HX.store.sync(); } } catch (e3) {}
+    return ok;
+  }
+
+  /* ---------- 文档读写 ---------- */
+  function emptyDoc() {
+    return {
+      id: '',
+      title: '',
+      created: Date.now(),
+      updated: Date.now(),
+      rootIds: [],
+      seats: {},
+      refs: {},
+      counters: { K: 1, W: 1, A: 1 },
+      log: [],
+      chatId: ''
+    };
+  }
+  function loadDoc(id) {
+    if (!id) { return null; }
+    var raw = storeGet(DOC_PREFIX + id);
+    if (!raw) { return null; }
+    try {
+      var o = (typeof raw === 'string') ? JSON.parse(raw) : raw;
+      if (!o || typeof o !== 'object') { return null; }
+      if (!o.rootIds || !(o.rootIds instanceof Array)) { o.rootIds = []; }
+      if (!o.seats || typeof o.seats !== 'object') { o.seats = {}; }
+      if (!o.refs || typeof o.refs !== 'object') { o.refs = {}; }
+      if (!o.counters || typeof o.counters !== 'object') { o.counters = { K: 1, W: 1, A: 1 }; }
+      if (!o.log || !(o.log instanceof Array)) { o.log = []; }
+      return o;
+    } catch (e) { return null; }
+  }
+  function saveDoc(doc) {
+    if (!doc || !doc.id) { return false; }
+    try { doc.updated = Date.now(); } catch (e) {}
+    var ok = false;
+    try {
+      ok = storeSet(DOC_PREFIX + doc.id, JSON.stringify(doc));
+    } catch (e) {}
+    /* 同步索引 */
+    try {
+      var idx = loadIdx();
+      var found = false;
+      var seats = 0;
+      try {
+        for (var k in doc.seats) {
+          if (doc.seats.hasOwnProperty(k)) {
+            if (!doc.seats[k].del) { seats++; }
+          }
+        }
+      } catch (eS) {}
+      for (var i = 0; i < idx.list.length; i++) {
+        if (idx.list[i].id === doc.id) {
+          idx.list[i].title = doc.title;
+          idx.list[i].updated = doc.updated;
+          idx.list[i].seats = seats;
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        idx.list.unshift({
+          id: doc.id, title: doc.title, updated: doc.updated, seats: seats
+        });
+      }
+      try { idx.list.sort(function (a, b) { return (b.updated || 0) - (a.updated || 0); }); } catch (eSo) {}
+      saveIdx(idx);
+    } catch (e2) {}
+    return ok;
+  }
+  function delDocEntry(id) {
+    try {
+      lsRemove(DOC_PREFIX + id);
+      try { if (HX && HX.store && typeof HX.store.remove === 'function') { HX.store.remove(DOC_PREFIX + id); } } catch (e) {}
+      var idx = loadIdx();
+      var nl = [];
+      for (var i = 0; i < idx.list.length; i++) {
+        if (idx.list[i].id !== id) { nl.push(idx.list[i]); }
+      }
+      idx.list = nl;
+      if (idx.cur === id) { idx.cur = null; }
+      saveIdx(idx);
+    } catch (e) {}
+  }
+
+  /* ---------- 编号 ---------- */
+  function nextK(doc) {
+    var n = doc.counters.K || 1;
+    doc.counters.K = n + 1;
+    return 'K' + pad(n, 3);
+  }
+  function nextW(doc) {
+    var n = doc.counters.W || 1;
+    doc.counters.W = n + 1;
+    return 'W' + pad(n, 3);
+  }
+  function nextA(doc) {
+    var n = doc.counters.A || 1;
+    doc.counters.A = n + 1;
+    return 'A' + pad(n, 3);
+  }
+  function pad(n, w) {
+    var s = '' + n;
+    while (s.length < w) { s = '0' + s; }
+    return s;
+  }
+
+  /* ---------- 日志 ---------- */
+  function addLog(doc, act, detail) {
+    try {
+      if (!doc.log) { doc.log = []; }
+      doc.log.push({ t: Date.now(), act: act, detail: detail || '' });
+      while (doc.log.length > MAX_LOG) { doc.log.shift(); }
+    } catch (e) {}
+  }
+
+  /* ---------- 文献登记 ---------- */
+  function ensureRef(doc, title, src, grade) {
+    if (!doc.refs) { doc.refs = {}; }
+    /* 简单查重：标题+出处相同视为同一条 */
+    for (var w in doc.refs) {
+      if (doc.refs.hasOwnProperty(w)) {
+        var r = doc.refs[w];
+        if (r && r.title === (title || '') && r.src === (src || '')) { return w; }
+      }
+    }
+    var wid = nextW(doc);
+    doc.refs[wid] = {
+      id: wid,
+      title: title || '（无题）',
+      src: src || '',
+      grade: grade && GRADES.indexOf(grade) >= 0 ? grade : '未知',
+      added: Date.now()
+    };
+    return wid;
+  }
+
+  /* ---------- 渲染工具 ---------- */
+  function esc(s) {
+    if (s === null || s === undefined) { return ''; }
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+  function fmtTime(t) {
+    try {
+      var d = new Date(t);
+      var y = d.getFullYear();
+      var m = d.getMonth() + 1;
+      var dd = d.getDate();
+      var hh = d.getHours();
+      var mm = d.getMinutes();
+      return y + '-' + (m < 10 ? '0' + m : m) + '-' + (dd < 10 ? '0' + dd : dd) +
+        ' ' + (hh < 10 ? '0' + hh : hh) + ':' + (mm < 10 ? '0' + mm : mm);
+    } catch (e) { return ''; }
+  }
+  function el(id) { try { return document.getElementById(id); } catch (e) { return null; } }
+  function on(node, evt, fn) {
+    try {
+      if (!node) { return; }
+      if (node.addEventListener) { node.addEventListener(evt, fn, false); }
+      else if (node.attachEvent) { node.attachEvent('on' + evt, fn); }
+    } catch (e) {}
+  }
+
+  /* ---------- 模态框 ---------- */
+  var _modalStack = [];
+  function openModal(titleHtml, bodyHtml, onMount) {
+    try {
+      var mask = document.createElement('div');
+      mask.className = 'hx-mask';
+      var modal = document.createElement('div');
+      modal.className = 'hx-modal';
+      modal.innerHTML = '<span class="hx-close" data-close="1">✕</span><div class="hx-close-spacer"></div>' +
+        (titleHtml ? '<h3>' + titleHtml + '</h3>' : '') + bodyHtml;
+      document.body.appendChild(mask);
+      document.body.appendChild(modal);
+      var close = function () {
+        try { if (mask.parentNode) { mask.parentNode.removeChild(mask); } } catch (e) {}
+        try { if (modal.parentNode) { modal.parentNode.removeChild(modal); } } catch (e) {}
+        try { _modalStack.pop(); } catch (e) {}
+      };
+      _modalStack.push(close);
+      on(mask, 'click', function () { close(); });
+      var cbtn = modal.querySelector('.hx-close');
+      on(cbtn, 'click', function () { close(); });
+      if (typeof onMount === 'function') { onMount(modal, close); }
+      return { modal: modal, close: close };
+    } catch (e) { return null; }
+  }
+  function closeAllModals() {
+    try { while (_modalStack.length) { var f = _modalStack.pop(); if (typeof f === 'function') { f(); } } } catch (e) {}
+  }
+
+  /* ---------- 当前视图状态 ---------- */
+  var VIEW = { page: 'home', docId: null };
+
+  function render() {
+    safe(function () {
+      if (isOff()) { renderOff(); return; }
+      var app = el('app');
+      if (!app) { return; }
+      if (VIEW.page === 'home') { renderHome(app); }
+      else if (VIEW.page === 'tree') { renderTree(app); }
+      else { renderHome(app); }
+    });
+  }
+
+  function renderOff() {
+    var app = el('app');
+    if (!app) { return; }
+    app.innerHTML = '<div class="hx-top"><div class="hx-title">🌳生长树</div></div>' +
+      '<div class="hx-wrap"><div class="hx-empty">生长树已按要求退休（hx_shu_off=1）。</div></div>';
+  }
+
+  /* ============================================================
+     首页：树列表
+     ============================================================ */
+  function renderHome(app) {
+    var idx = loadIdx();
+    var h = '';
+    h += '<div class="hx-top"><div class="hx-title">🌳生长树</div>' +
+      '<button class="hx-btn primary" id="btnNewTree">＋新建树</button></div>';
+    h += '<div class="hx-wrap">';
+    if (!idx.list || idx.list.length === 0) {
+      h += '<div class="hx-empty">还没有树。<br>点「＋新建树」，粘一篇种子文章开始长。</div>';
+    } else {
+      for (var i = 0; i < idx.list.length; i++) {
+        var it = idx.list[i];
+        h += '<div class="hx-card" data-open="' + esc(it.id) + '">';
+        h += '<div class="hx-row"><div class="hx-right">';
+        h += '<div style="font-weight:600;font-size:16px">' + esc(it.title || '（无题）') + '</div>';
+        h += '<div class="hx-meta">' + (it.seats || 0) + ' 座 · 更新 ' + esc(fmtTime(it.updated)) + '</div>';
+        h += '</div></div></div>';
+      }
+    }
+    h += '<div class="hx-footer-hint">版本 ' + VER + '</div>';
+    h += '</div>';
+    app.innerHTML = h;
+
+    on(el('btnNewTree'), 'click', function () { safe(onNewTree); });
+    var cards = app.querySelectorAll('[data-open]');
+    for (var j = 0; j < cards.length; j++) {
+      on(cards[j], 'click', function () {
+        var id = this.getAttribute('data-open');
+        safe(function () { openTree(id); });
+      });
+    }
+  }
+
+  /* ============================================================
+     新建树（切座）
+     ============================================================ */
+  function onNewTree() {
+    var body = '';
+    body += '<div style="font-size:14px;color:#667;margin-bottom:8px">粘一篇种子文章（或一句核心观点）：</div>';
+    body += '<textarea class="hx-ta" id="seedText" placeholder="把种子文章粘到这里…"></textarea>';
+    body += '<div style="font-size:14px;color:#667;margin:10px 0 6px">树标题（可不填，自动取首句）：</div>';
+    body += '<input class="hx-in" id="seedTitle" placeholder="例如：高血压基础科普">';
+    body += '<div class="hx-btnbar">' +
+      '<button class="hx-btn" id="btnManualOnly">手动逐句建树</button>' +
+      '<button class="hx-btn primary" id="btnAiSplit">AI切座</button>' +
+      '</div>';
+    openModal('🌱 新建树', body, function (modal, close) {
+      on(el('btnManualOnly'), 'click', function () {
+        safe(function () {
+          var txt = (el('seedText').value || '').trim();
+          var title = (el('seedTitle').value || '').trim();
+          close();
+          doManualNewTree(txt, title);
+        });
+      });
+      on(el('btnAiSplit'), 'click', function () {
+        safe(function () {
+          var txt = (el('seedText').value || '').trim();
+          var title = (el('seedTitle').value || '').trim();
+          if (!txt) { toast('请先粘文章'); return; }
+          close();
+          doAiSplit(txt, title);
+        });
+      });
+    });
+  }
+
+  function makeDoc(title) {
+    var d = emptyDoc();
+    d.id = 't' + Date.now();
+    d.title = title || '未命名树';
+    d.created = Date.now();
+    d.updated = Date.now();
+    return d;
+  }
+
+  function autoTitleFromText(txt) {
+    try {
+      var s = (txt || '').replace(/\s+/g, ' ').trim();
+      if (!s) { return '未命名树'; }
+      return s.substring(0, 24);
+    } catch (e) { return '未命名树'; }
+  }
+
+  /* 手动逐句建树：按换行/句号拆句 */
+  function splitSentences(txt) {
+    var out = [];
+    try {
+      var t = (txt || '').replace(/\r/g, '');
+      var paras = t.split(/\n+/);
+      for (var i = 0; i < paras.length; i++) {
+        var p = paras[i].trim();
+        if (!p) { continue; }
+        var parts = p.split(/[。！？!?；;]/);
+        for (var j = 0; j < parts.length; j++) {
+          var s = parts[j].trim();
+          if (s.length >= 2) { out.push(s); }
+        }
+      }
+    } catch (e) {}
+    return out;
+  }
+
+  function doManualNewTree(txt, title) {
+    try {
+      if (!txt) { toast('空文章，没法建树'); return; }
+      var doc = makeDoc(title || autoTitleFromText(txt));
+      var sents = splitSentences(txt);
+      if (sents.length === 0) { sents = [txt.trim().substring(0, 200)]; }
+      for (var i = 0; i < sents.length; i++) {
+        var kid = nextK(doc);
+        doc.seats[kid] = {
+          id: kid, pid: null, text: sents[i], refs: [], alts: [], revs: [],
+          collapsed: false, children: [], created: Date.now(), updated: Date.now()
+        };
+        doc.rootIds.push(kid);
+      }
+      addLog(doc, '新建树', '手动逐句，共' + sents.length + '座');
+      saveDoc(doc);
+      openTree(doc.id);
+      toast('建好了，共 ' + sents.length + ' 座');
+    } catch (e) { toast('建树出错：' + (e && e.message ? e.message : e)); }
+  }
+
+  /* AI切座 */
+  function getAiChatId(doc, cb) {
+    try {
+      if (!HX || !HX.chat) { cb(null, '无AI通道'); return; }
+      /* 若有 chatId 且能 load 回来则直接用 */
+      var tryUse = function (cid) {
+        if (!cid) { createChat(); return; }
+        try {
+          var c = HX.chat.load(cid);
+          if (c) { cb(cid, null); return; }
+        } catch (e) {}
+        createChat();
+      };
+      var createChat = function () {
+        try {
+          var nid = HX.chat.newChat();
+          if (nid) {
+            try { doc.chatId = nid; saveDoc(doc); } catch (eS) {}
+            try { HX.chat.setCur(nid); } catch (eC) {}
+            cb(nid, null);
+          } else {
+            cb(null, '建对话失败');
+          }
+        } catch (e2) { cb(null, '建对话失败'); }
+      };
+      if (doc.chatId) { tryUse(doc.chatId); return; }
+      var cur = null;
+      try {
+        if (typeof HX.chat.getCur === 'function') { cur = HX.chat.getCur(); }
+      } catch (e3) {}
+      if (cur) {
+        try {
+          var cc = HX.chat.load(cur);
+          if (cc) {
+            doc.chatId = cur; saveDoc(doc); cb(cur, null); return;
+          }
+        } catch (e4) {}
+      }
+      createChat();
+    } catch (e) { cb(null, 'AI通道异常'); }
+  }
+
+  function stripFence(s) {
+    try {
+      var t = String(s || '').trim();
+      /* 去掉 ```json ... ``` 或 ``` ... ``` */
+      t = t.replace(/^[\s\S]*?```(?:json|JSON)?\s*/g, function (m) {
+        return m;
+      });
+      var m1 = t.match(/```(?:json|JSON)?\s*([\s\S]*?)```/);
+      if (m1 && m1[1]) { return m1[1].trim(); }
+      return t;
+    } catch (e) { return String(s || ''); }
+  }
+  function parseAIJson(s) {
+    try {
+      var t = stripFence(s);
+      /* 尝试直接解析 */
+      try { return JSON.parse(t); } catch (e1) {}
+      /* 尝试找第一个 [ 或 { 到最后一个 ] 或 } */
+      var a = t.indexOf('['), b = t.lastIndexOf(']');
+      if (a >= 0 && b > a) {
+        try { return JSON.parse(t.substring(a, b + 1)); } catch (e2) {}
+      }
+      var c = t.indexOf('{'), d = t.lastIndexOf('}');
+      if (c >= 0 && d > c) {
+        try { return JSON.parse(t.substring(c, d + 1)); } catch (e3) {}
+      }
+      return null;
+    } catch (e) { return null; }
+  }
+
+  function doAiSplit(txt, title) {
+    try {
+      var doc = makeDoc(title || autoTitleFromText(txt));
+      if (!HX || !HX.chat) { toast('没网或没AI钥匙，请用手动逐句建树'); return; }
+      getAiChatId(doc, function (cid, err) {
+        if (!cid) { toast('没网或没AI钥匙，请用手动逐句建树'); return; }
+        var prompt = '你是一个科普拆解助手。请把下面这篇科普文章拆成独立论断，每条一句能独立成立的话，5~30条；给每条建议出处线索。\n' +
+          '只输出JSON，不要别的。格式严格为：[{"text":"论断内容","src":"出处线索或空字符串"}]\n\n文章如下：\n' + txt;
+        var waitModal = openModal('AI切座中…', '<div style="font-size:15px;color:#667">正在切座，最长可能等约 3 分钟，请稍候…</div>' +
+          '<div id="aiTick" style="margin-top:8px;color:#8a94a3;font-size:13px"></div>', null);
+        try {
+          HX.chat.send(cid, prompt, {
+            onTick: function (sec) {
+              safe(function () {
+                var t = el('aiTick');
+                if (t) { t.innerHTML = '已等 ' + sec + ' 秒'; }
+              });
+            },
+            onOk: function (reply) {
+              safe(function () {
+                try { if (waitModal) { waitModal.close(); } } catch (e) {}
+                var arr = parseAIJson(reply);
+                if (!arr || !(arr instanceof Array)) {
+                  try { addLog(doc, 'AI回件没看懂', String(reply).substring(0, 500)); saveDoc(doc); } catch (eL) {}
+                  toast('AI回件没看懂，可重试或手动');
+                  return;
+                }
+                showSplitPreview(doc, arr);
+              });
+            },
+            onErr: function (msg) {
+              safe(function () {
+                try { if (waitModal) { waitModal.close(); } } catch (e) {}
+                toast('AI出错：' + (msg || '未知') + '（可改手动）');
+              });
+            }
+          });
+        } catch (eS) {
+          try { if (waitModal) { waitModal.close(); } } catch (e2) {}
+          toast('AI发送异常，请用手动逐句建树');
+        }
+      });
+    } catch (e) { toast('切座出错：' + (e && e.message ? e.message : e)); }
+  }
+
+  /* 切座预览 */
+  function showSplitPreview(doc, arr) {
+    try {
+      var items = [];
+      for (var i = 0; i < arr.length; i++) {
+        var o = arr[i];
+        if (!o || typeof o !== 'object') { continue; }
+        var text = (o.text === null || o.text === undefined) ? '' : String(o.text).trim();
+        if (!text) { continue; }
+        items.push({ text: text, src: (o.src === null || o.src === undefined) ? '' : String(o.src).trim(), checked: true });
+      }
+      if (items.length === 0) { toast('AI没给出可用论断，可改手动'); return; }
+      var body = '<div style="font-size:14px;color:#667;margin-bottom:8px">勾选要入树的论断：</div>';
+      body += '<div id="pickList">';
+      for (var j = 0; j < items.length; j++) {
+        body += '<label class="hx-pick"><input type="checkbox" data-pick="' + j + '" ' + (items[j].checked ? 'checked' : '') + '>' +
+          '<div class="hx-pickbody"><div class="hx-text">' + esc(items[j].text) + '</div>' +
+          (items[j].src ? '<div class="hx-meta">出处线索：' + esc(items[j].src) + '</div>' : '') +
+          '</div></label>';
+      }
+      body += '</div>';
+      body += '<div class="hx-btnbar"><button class="hx-btn primary" id="btnConfirmSplit">确认入树</button></div>';
+      openModal('🌱 切座预览（共 ' + items.length + ' 条）', body, function (modal, close) {
+        on(el('btnConfirmSplit'), 'click', function () {
+          safe(function () {
+            var boxes = modal.querySelectorAll('[data-pick]');
+            var chosen = [];
+            for (var k = 0; k < boxes.length; k++) {
+              if (boxes[k].checked) {
+                var idxp = parseInt(boxes[k].getAttribute('data-pick'), 10);
+                if (!isNaN(idxp) && items[idxp]) { chosen.push(items[idxp]); }
+              }
+            }
+            if (chosen.length === 0) { toast('至少选一条'); return; }
+            close();
+            /* 入树 */
+            for (var m = 0; m < chosen.length; m++) {
+              var it = chosen[m];
+              var kid = nextK(doc);
+              var refs = [];
+              if (it.src) {
+                var wid = ensureRef(doc, it.src, it.src, '未知');
+                refs.push(wid);
+              }
+              doc.seats[kid] = {
+                id: kid, pid: null, text: it.text, refs: refs, alts: [], revs: [],
+                collapsed: false, children: [], created: Date.now(), updated: Date.now()
+              };
+              doc.rootIds.push(kid);
+            }
+            addLog(doc, 'AI切座入树', '共' + chosen.length + '座');
+            saveDoc(doc);
+            openTree(doc.id);
+            toast('入树完成，共 ' + chosen.length + ' 座');
+          });
+        });
+      });
+    } catch (e) { toast('预览出错：' + (e && e.message ? e.message : e)); }
+  }
+
+  /* ============================================================
+     打开树
+     ============================================================ */
+  function openTree(docId) {
+    try {
+      var doc = loadDoc(docId);
+      if (!doc) { toast('这棵树读不出来'); renderHome(el('app')); return; }
+      VIEW.page = 'tree';
+      VIEW.docId = docId;
+      render();
+    } catch (e) { toast('打开出错'); }
+  }
+
+  /* ============================================================
+     树页渲染
+     ============================================================ */
+  function renderTree(app) {
+    var doc = loadDoc(VIEW.docId);
+    if (!doc) { toast('这棵树读不出来'); VIEW.page = 'home'; render(); return; }
+    var h = '';
+    h += '<div class="hx-top">' +
+      '<button class="hx-btn mini" id="btnBack">←返回</button>' +
+      '<div class="hx-title">' + esc(doc.title) + '</div>' +
+      '<button class="hx-btn mini" id="btnFeed">📥喂新文</button>' +
+      '<button class="hx-btn mini" id="btnRefs">📖文献库</button>' +
+      '<button class="hx-btn mini" id="btnExport">📤导出成稿</button>' +
+      '</div>';
+    h += '<div class="hx-wrap">';
+    var hasAny = false;
+    try {
+      for (var r = 0; r < doc.rootIds.length; r++) {
+        var kid = doc.rootIds[r];
+        var kb = renderSeatBlock(doc, kid, 0);
+        if (kb) { hasAny = true; h += kb; }
+      }
+    } catch (e) {}
+    if (!hasAny) {
+      h += '<div class="hx-empty">这棵树还没座。<br>用「📥喂新文」或回首页新建树。</div>';
+    }
+    h += '<div class="hx-footer-hint">版本 ' + VER + ' · 共 ' +
+      countSeats(doc) + ' 座 · ' + countRefs(doc) + ' 条文献</div>';
+    h += '</div>';
+    app.innerHTML = h;
+
+    /* 顶部按钮 */
+    on(el('btnBack'), 'click', function () {
+      safe(function () { VIEW.page = 'home'; VIEW.docId = null; render(); });
+    });
+    on(el('btnFeed'), 'click', function () { safe(function () { openFeed(doc); }); });
+    on(el('btnRefs'), 'click', function () { safe(function () { openRefs(doc); }); });
+    on(el('btnExport'), 'click', function () { safe(function () { openExport(doc); }); });
+
+    /* 座块点击 */
+    var blocks = app.querySelectorAll('[data-seat]');
+    for (var b = 0; b < blocks.length; b++) {
+      on(blocks[b], 'click', function (ev) {
+        try {
+          var tg = ev.target;
+          if (tg && tg.getAttribute && tg.getAttribute('data-badge') === '1') {
+            var sid = tg.getAttribute('data-sid');
+            safe(function () { openAltsPanel(doc.id, sid); });
+            return;
+          }
+        } catch (e0) {}
+        var sid2 = this.getAttribute('data-seat');
+        safe(function () { openSeatActions(doc.id, sid2); });
+      });
+    }
+  }
+
+  function countSeats(doc) {
+    var n = 0;
+    try {
+      for (var k in doc.seats) {
+        if (doc.seats.hasOwnProperty(k)) {
+          if (!doc.seats[k].del) { n++; }
+        }
+      }
+    } catch (e) {}
+    return n;
+  }
+  function countRefs(doc) {
+    var n = 0;
+    try {
+      for (var k in doc.refs) { if (doc.refs.hasOwnProperty(k)) { n++; } }
+    } catch (e) {}
+    return n;
+  }
+
+  /* 递归渲染一座 + 其子孙 */
+  function renderSeatBlock(doc, seatId, depth) {
+    try {
+      if (depth > 40) { return ''; }
+      var s = doc.seats[seatId];
+      if (!s || s.del) { return ''; }
+      var h = '';
+      var indent = '';
+      for (var i = 0; i < depth; i++) { indent += '　'; }
+      var altCount = (s.alts && s.alts.length) ? s.alts.length : 0;
+      var hasPendingConflict = false;
+      if (altCount > 0) {
+        for (var a = 0; a < s.alts.length; a++) {
+          var al = s.alts[a];
+          if (al && al.kind === '冲突' && al.status === '待拍板') { hasPendingConflict = true; break; }
+        }
+      }
+      h += '<div class="hx-card" data-seat="' + esc(s.id) + '">';
+      h += '<div class="hx-row"><div class="hx-left"><span class="hx-k">' + esc(s.id) + '</span></div>';
+      h += '<div class="hx-right">';
+      h += '<div class="hx-text">' + (depth > 0 ? '<span class="hx-indent-hint">' + indent + '└ </span>' : '') + esc(s.text) + '</div>';
+      var metaLine = '';
+      if (s.refs && s.refs.length > 0) {
+        metaLine += '出处：';
+        for (var rf = 0; rf < s.refs.length; rf++) {
+          var wid = s.refs[rf];
+          var refObj = doc.refs[wid];
+          metaLine += '[' + esc(wid) + ']' + (refObj ? esc(refObj.title) : '') + ' ';
+        }
+      }
+      if (metaLine) { h += '<div class="hx-meta">' + metaLine + '</div>'; }
+      if (s.revs && s.revs.length > 0) {
+        h += '<div class="hx-meta">有 ' + s.revs.length + ' 个旧版</div>';
+      }
+      h += '</div>';
+      if (altCount > 0) {
+        var badgeCls = hasPendingConflict ? 'hx-badge alert' : 'hx-badge';
+        h += '<div class="hx-left" style="flex:0 0 auto"><span class="' + badgeCls + '" data-badge="1" data-sid="' + esc(s.id) + '">◇' + altCount + '</span></div>';
+      }
+      h += '</div></div>';
+
+      /* 子座 */
+      if (!s.collapsed && s.children && s.children.length > 0) {
+        for (var c = 0; c < s.children.length; c++) {
+          h += renderSeatBlock(doc, s.children[c], depth + 1);
+        }
+      }
+      /* 折叠提示 */
+      if (s.collapsed && s.children && s.children.length > 0) {
+        h += '<div class="hx-meta">（已收起 ' + s.children.length + ' 个子座）</div>';
+      }
+      return h;
+    } catch (e) { return ''; }
+  }
+
+  /* ============================================================
+     座操作条
+     ============================================================ */
+  function openSeatActions(docId, seatId) {
+    try {
+      var doc = loadDoc(docId);
+      if (!doc || !doc.seats[seatId]) { return; }
+      var s = doc.seats[seatId];
+      var hasChildren = (s.children && s.children.length > 0);
+      var body = '<div style="font-size:14px;color:#445;margin-bottom:10px;white-space:pre-wrap;word-break:break-word">' + esc(s.text) + '</div>';
+      body += '<div>';
+      body += '<button class="hx-btn" id="btnExpand">🌱展开</button>';
+      body += '<button class="hx-btn" id="btnAddAlt">✚异见</button>';
+      body += '<button class="hx-btn" id="btnEdit">✏️小修</button>';
+      body += '<button class="hx-btn danger" id="btnDel">🗑删除</button>';
+      if (hasChildren) {
+        body += '<button class="hx-btn" id="btnCollapse">' + (s.collapsed ? '▲展开子座' : '▼收起子座') + '</button>';
+      }
+      body += '</div>';
+      openModal(esc(seatId), body, function (modal, close) {
+        on(el('btnExpand'), 'click', function () { safe(function () { close(); doExpand(docId, seatId); }); });
+        on(el('btnAddAlt'), 'click', function () { safe(function () { close(); openAddAltManual(docId, seatId); }); });
+        on(el('btnEdit'), 'click', function () { safe(function () { close(); openEditSeat(docId, seatId); }); });
+        on(el('btnDel'), 'click', function () { safe(function () { close(); doDeleteSeat(docId, seatId); }); });
+        var cbtn = el('btnCollapse');
+        if (cbtn) {
+          on(cbtn, 'click', function () {
+            safe(function () {
+              s.collapsed = !s.collapsed;
+              s.updated = Date.now();
+              saveDoc(doc);
+              close(); render();
+            });
+          });
+        }
+      });
+    } catch (e) { toast('操作出错：' + (e && e.message ? e.message : e)); }
+  }
+
+  /* 小修 */
+  function openEditSeat(docId, seatId) {
+    try {
+      var doc = loadDoc(docId);
+      var s = doc && doc.seats[seatId];
+      if (!s) { return; }
+      var body = '<div style="font-size:14px;color:#667;margin-bottom:8px">改写座面（旧版自动留档）：</div>' +
+        '<textarea class="hx-ta" id="editText">' + esc(s.text) + '</textarea>' +
+        '<div class="hx-btnbar"><button class="hx-btn primary" id="btnSaveEdit">保存小修</button></div>';
+      openModal('✏️ 小修 ' + esc(seatId), body, function (modal, close) {
+        on(el('btnSaveEdit'), 'click', function () {
+          safe(function () {
+            var nt = (el('editText').value || '').trim();
+            if (!nt) { toast('内容空，不保存'); return; }
+            if (nt === s.text) { close(); return; }
+            if (!s.revs) { s.revs = []; }
+            s.revs.push({ t: Date.now(), text: s.text });
+            s.text = nt;
+            s.updated = Date.now();
+            addLog(doc, '小修', seatId);
+            saveDoc(doc);
+            close(); render();
+            toast('小修已留旧版');
+          });
+        });
+      });
+    } catch (e) { toast('小修出错'); }
+  }
+
+  /* 删除（软删） */
+  function doDeleteSeat(docId, seatId) {
+    try {
+      var doc = loadDoc(docId);
+      var s = doc && doc.seats[seatId];
+      if (!s) { return; }
+      s.del = 1;
+      s.updated = Date.now();
+      /* Kimi终审翻案（2026-10-18）：DS软删只打del标没从rootIds/父children摘走，树序账本留死号，补上摘除 */
+      try {
+        var pl = (s.pid && doc.seats[s.pid]) ? doc.seats[s.pid].children : doc.rootIds;
+        if (pl instanceof Array) { var ni = pl.indexOf(seatId); if (ni >= 0) { pl.splice(ni, 1); } }
+      } catch (eR) {}
+      addLog(doc, '删除座', seatId);
+      saveDoc(doc);
+      render();
+      toast('已从树中摘走（数据仍留档）');
+    } catch (e) { toast('删除出错'); }
+  }
+
+  /* ============================================================
+     展开（AI）
+     ============================================================ */
+  function doExpand(docId, seatId) {
+    try {
+      var doc = loadDoc(docId);
+      if (!doc) { return; }
+      var s = doc.seats[seatId];
+      if (!s) { return; }
+      if (!HX || !HX.chat) { toast('没网，AI歇班'); return; }
+      getAiChatId(doc, function (cid, err) {
+        if (!cid) { toast('没网，AI歇班'); return; }
+        var prompt = '你是一个科普拆解助手。针对下面这个论断，给出3~6个该展开的子知识点（如定义/最新指南/药物及特性），每条一句+建议出处。\n' +
+          '只输出JSON，不要别的。格式严格为：[{"text":"子知识点一句话","src":"建议出处或空字符串"}]\n\n论断：\n' + s.text;
+        var waitModal = openModal('🌱 展开中…', '<div style="font-size:15px;color:#667">正在展开子座，最长可能等约 3 分钟…</div>' +
+          '<div id="aiTick" style="margin-top:8px;color:#8a94a3;font-size:13px"></div>', null);
+        try {
+          HX.chat.send(cid, prompt, {
+            onTick: function (sec) {
+              safe(function () { var t = el('aiTick'); if (t) { t.innerHTML = '已等 ' + sec + ' 秒'; } });
+            },
+            onOk: function (reply) {
+              safe(function () {
+                try { if (waitModal) { waitModal.close(); } } catch (e) {}
+                var arr = parseAIJson(reply);
+                if (!arr || !(arr instanceof Array)) {
+                  try { addLog(doc, 'AI回件没看懂', String(reply).substring(0, 500)); saveDoc(doc); } catch (eL) {}
+                  toast('AI回件没看懂，可重试或手动');
+                  return;
+                }
+                showExpandPreview(docId, seatId, arr);
+              });
+            },
+            onErr: function (msg) {
+              safe(function () {
+                try { if (waitModal) { waitModal.close(); } } catch (e) {}
+                toast('AI出错：' + (msg || '未知') + '（可改手动）');
+              });
+            }
+          });
+        } catch (eS) {
+          try { if (waitModal) { waitModal.close(); } } catch (e2) {}
+          toast('AI发送异常');
+        }
+      });
+    } catch (e) { toast('展开出错：' + (e && e.message ? e.message : e)); }
+  }
+
+  function showExpandPreview(docId, seatId, arr) {
+    try {
+      var doc = loadDoc(docId);
+      if (!doc) { return; }
+      var items = [];
+      for (var i = 0; i < arr.length; i++) {
+        var o = arr[i];
+        if (!o || typeof o !== 'object') { continue; }
+        var text = (o.text === null || o.text === undefined) ? '' : String(o.text).trim();
+        if (!text) { continue; }
+        items.push({ text: text, src: (o.src === null || o.src === undefined) ? '' : String(o.src).trim() });
+      }
+      if (items.length === 0) { toast('没给出可用子知识点'); return; }
+      var body = '<div style="font-size:14px;color:#667;margin-bottom:8px">勾选要展开的子座：</div>';
+      for (var j = 0; j < items.length; j++) {
+        body += '<label class="hx-pick"><input type="checkbox" data-pick="' + j + '" checked>' +
+          '<div class="hx-pickbody"><div class="hx-text">' + esc(items[j].text) + '</div>' +
+          (items[j].src ? '<div class="hx-meta">出处线索：' + esc(items[j].src) + '</div>' : '') +
+          '</div></label>';
+      }
+      body += '<div class="hx-btnbar"><button class="hx-btn primary" id="btnConfirmExpand">确认挂入</button></div>';
+      openModal('🌱 展开预览（共 ' + items.length + ' 条）', body, function (modal, close) {
+        on(el('btnConfirmExpand'), 'click', function () {
+          safe(function () {
+            var boxes = modal.querySelectorAll('[data-pick]');
+            var chosen = [];
+            for (var k = 0; k < boxes.length; k++) {
+              if (boxes[k].checked) {
+                var idxp = parseInt(boxes[k].getAttribute('data-pick'), 10);
+                if (!isNaN(idxp) && items[idxp]) { chosen.push(items[idxp]); }
+              }
+            }
+            if (chosen.length === 0) { toast('至少选一条'); return; }
+            var parent = doc.seats[seatId];
+            if (!parent) { toast('父座丢了'); return; }
+            if (!parent.children) { parent.children = []; }
+            for (var m = 0; m < chosen.length; m++) {
+              var it = chosen[m];
+              var kid = nextK(doc);
+              var refs = [];
+              if (it.src) {
+                var wid = ensureRef(doc, it.src, it.src, '未知');
+                refs.push(wid);
+              }
+              doc.seats[kid] = {
+                id: kid, pid: seatId, text: it.text, refs: refs, alts: [], revs: [],
+                collapsed: false, children: [], created: Date.now(), updated: Date.now()
+              };
+              parent.children.push(kid);
+            }
+            parent.updated = Date.now();
+            addLog(doc, 'AI展开子座', seatId + ' 挂' + chosen.length + '子座');
+            saveDoc(doc);
+            close(); render();
+            toast('展开完成，挂入 ' + chosen.length + ' 子座');
+          });
+        });
+      });
+    } catch (e) { toast('预览出错'); }
+  }
+
+  /* ============================================================
+     异见面板
+     ============================================================ */
+  function openAltsPanel(docId, seatId) {
+    try {
+      var doc = loadDoc(docId);
+      if (!doc || !doc.seats[seatId]) { return; }
+      var s = doc.seats[seatId];
+      var body = '<div style="font-size:14px;color:#667;margin-bottom:8px">座面：' + esc(String(s.text).substring(0, 80)) + '</div>';
+      if (!s.alts || s.alts.length === 0) {
+        body += '<div class="hx-empty" style="padding:20px">还没有异见。</div>';
+      } else {
+        for (var i = 0; i < s.alts.length; i++) {
+          var al = s.alts[i];
+          if (!al) { continue; }
+          var kindCls = (al.kind === '冲突') ? 'hx-tag red' : 'hx-tag blue';
+          var kindIcon = (al.kind === '冲突') ? '🔴' : '🔵';
+          body += '<div class="hx-alts">';
+          body += '<span class="' + kindCls + '">' + kindIcon + esc(al.kind || '') + '</span>';
+          body += '<span class="hx-tag gray">' + esc(al.status || '') + '</span>';
+          body += '<div class="hx-alttext">' + esc(al.text || '') + '</div>';
+          if (al.refs && al.refs.length > 0) {
+            var rr = '出处：';
+            for (var r = 0; r < al.refs.length; r++) {
+              var wobj = doc.refs[al.refs[r]];
+              if (wobj) { rr += '[' + esc(wobj.id) + ']' + esc(wobj.title) + '（' + esc(wobj.grade) + '） '; }
+            }
+            body += '<div class="hx-meta">' + rr + '</div>';
+          }
+          if (al.note) {
+            body += '<div class="hx-note">AI初判：' + esc(al.note) + '</div>';
+          }
+          body += '<div style="margin-top:7px">';
+          body += '<button class="hx-btn mini primary" data-flip="' + esc(al.aid) + '">⇅翻转</button>';
+          if (al.kind === '补充') {
+            body += '<button class="hx-btn mini" data-merge="' + esc(al.aid) + '">✔并进座面</button>';
+          }
+          if (al.status !== '留档') {
+            body += '<button class="hx-btn mini" data-archive="' + esc(al.aid) + '">留档</button>';
+          }
+          body += '</div>';
+          body += '</div>';
+        }
+      }
+      body += '<div class="hx-btnbar"><button class="hx-btn" id="btnAddAlt2">✚手动加异见</button></div>';
+      openModal('◇ 异见面板 ' + esc(seatId), body, function (modal, close) {
+        var fbtns = modal.querySelectorAll('[data-flip]');
+        for (var f = 0; f < fbtns.length; f++) {
+          on(fbtns[f], 'click', function () {
+            var aid = this.getAttribute('data-flip');
+            safe(function () { close(); doFlip(docId, seatId, aid); });
+          });
+        }
+        var mbtns = modal.querySelectorAll('[data-merge]');
+        for (var m = 0; m < mbtns.length; m++) {
+          on(mbtns[m], 'click', function () {
+            var aid = this.getAttribute('data-merge');
+            safe(function () { close(); doMergeAlt(docId, seatId, aid); });
+          });
+        }
+        var abtns = modal.querySelectorAll('[data-archive]');
+        for (var a = 0; a < abtns.length; a++) {
+          on(abtns[a], 'click', function () {
+            var aid = this.getAttribute('data-archive');
+            safe(function () { doArchiveAlt(docId, seatId, aid); close(); });
+          });
+        }
+        on(el('btnAddAlt2'), 'click', function () { safe(function () { close(); openAddAltManual(docId, seatId); }); });
+      });
+    } catch (e) { toast('异见面板出错'); }
+  }
+
+  function findAlt(doc, seatId, aid) {
+    try {
+      var s = doc.seats[seatId];
+      if (!s || !s.alts) { return null; }
+      for (var i = 0; i < s.alts.length; i++) {
+        if (s.alts[i] && s.alts[i].aid === aid) { return s.alts[i]; }
+      }
+    } catch (e) {}
+    return null;
+  }
+
+  /* 翻转 */
+  function doFlip(docId, seatId, aid) {
+    try {
+      var doc = loadDoc(docId);
+      var s = doc && doc.seats[seatId];
+      if (!s) { return; }
+      var al = findAlt(doc, seatId, aid);
+      if (!al) { toast('找不到这条异见'); return; }
+      var oldSeatText = s.text;
+      var oldSeatRefs = s.refs || [];
+      /* 座面换成异见 */
+      s.text = al.text;
+      s.refs = al.refs || [];
+      s.updated = Date.now();
+      /* 原座面降为留档异见 */
+      al.text = oldSeatText;
+      al.refs = oldSeatRefs;
+      al.status = '留档';
+      al.kind = '补充';
+      s.updated = Date.now();
+      addLog(doc, '翻转', seatId + ' aid=' + aid + ' 旧座面=' + String(oldSeatText).substring(0, 40) +
+        ' 新座面=' + String(s.text).substring(0, 40));
+      saveDoc(doc);
+      render();
+      toast('已翻转，原座面降为留档');
+    } catch (e) { toast('翻转出错：' + (e && e.message ? e.message : e)); }
+  }
+
+  /* 补充并进座面 */
+  function doMergeAlt(docId, seatId, aid) {
+    try {
+      var doc = loadDoc(docId);
+      var s = doc && doc.seats[seatId];
+      if (!s) { return; }
+      var al = findAlt(doc, seatId, aid);
+      if (!al) { toast('找不到这条异见'); return; }
+      if (al.kind !== '补充') { toast('只有补充条能并进座面'); return; }
+      if (!s.revs) { s.revs = []; }
+      s.revs.push({ t: Date.now(), text: s.text });
+      s.text = s.text + '\n（补充：' + al.text + '）';
+      if (al.refs && al.refs.length > 0) {
+        if (!s.refs) { s.refs = []; }
+        for (var i = 0; i < al.refs.length; i++) {
+          var exists = false;
+          for (var j = 0; j < s.refs.length; j++) {
+            if (s.refs[j] === al.refs[i]) { exists = true; break; }
+          }
+          if (!exists) { s.refs.push(al.refs[i]); }
+        }
+      }
+      s.updated = Date.now();
+      al.status = '留档';
+      addLog(doc, '补充并进座面', seatId + ' aid=' + aid);
+      saveDoc(doc);
+      render();
+      toast('已并进座面（旧版留档）');
+    } catch (e) { toast('并进出错'); }
+  }
+
+  /* 留档 */
+  function doArchiveAlt(docId, seatId, aid) {
+    try {
+      var doc = loadDoc(docId);
+      var al = findAlt(doc, seatId, aid);
+      if (!al) { return; }
+      al.status = '留档';
+      addLog(doc, '异见留档', seatId + ' aid=' + aid);
+      saveDoc(doc);
+      render();
+      toast('已留档');
+    } catch (e) { toast('留档出错'); }
+  }
+
+  /* 手动加异见 */
+  function openAddAltManual(docId, seatId) {
+    try {
+      var doc = loadDoc(docId);
+      if (!doc) { return; }
+      var body = '<div style="font-size:14px;color:#667;margin-bottom:8px">异见内容：</div>' +
+        '<textarea class="hx-ta" id="altText" placeholder="粘一条不同观点…"></textarea>' +
+        '<div style="font-size:14px;color:#667;margin:10px 0 6px">出处（可不填）：</div>' +
+        '<input class="hx-in" id="altSrc" placeholder="文献标题/来源">' +
+        '<div style="font-size:14px;color:#667;margin:6px 0">类型：</div>' +
+        '<button class="hx-btn mini" id="altKindConflict">🔴冲突</button>' +
+        '<button class="hx-btn mini" id="altKindSupplement">🔵补充</button>' +
+        '<div id="altKindTip" style="font-size:13px;color:#8a94a3;margin-top:6px"></div>' +
+        '<div class="hx-btnbar"><button class="hx-btn primary" id="btnSaveAlt">保存异见</button></div>';
+      var chosenKind = '冲突';
+      openModal('✚ 手动加异见', body, function (modal, close) {
+        var tip = el('altKindTip');
+        if (tip) { tip.innerHTML = '当前：🔴冲突'; }
+        on(el('altKindConflict'), 'click', function () {
+          chosenKind = '冲突';
+          if (tip) { tip.innerHTML = '当前：🔴冲突'; }
+        });
+        on(el('altKindSupplement'), 'click', function () {
+          chosenKind = '补充';
+          if (tip) { tip.innerHTML = '当前：🔵补充'; }
+        });
+        on(el('btnSaveAlt'), 'click', function () {
+          safe(function () {
+            var txt = (el('altText').value || '').trim();
+            var src = (el('altSrc').value || '').trim();
+            if (!txt) { toast('内容空，不保存'); return; }
+            var s = doc.seats[seatId];
+            if (!s) { toast('座丢了'); return; }
+            if (!s.alts) { s.alts = []; }
+            var aid = nextA(doc);
+            var refs = [];
+            if (src) {
+              var wid = ensureRef(doc, src, src, '未知');
+              refs.push(wid);
+            }
+            s.alts.push({
+              aid: aid, text: txt, refs: refs, kind: chosenKind, status: '待拍板',
+              note: '', added: Date.now()
+            });
+            s.updated = Date.now();
+            addLog(doc, '手动加异见', seatId + ' aid=' + aid + ' ' + chosenKind);
+            saveDoc(doc);
+            close(); render();
+            toast('异见已加入');
+          });
+        });
+      });
+    } catch (e) { toast('加异见出错'); }
+  }
+
+  /* ============================================================
+     喂新文
+     ============================================================ */
+  function openFeed(doc) {
+    try {
+      var body = '<div style="font-size:14px;color:#667;margin-bottom:8px">粘贴新文章（AI会逐条比对现有座面）：</div>' +
+        '<textarea class="hx-ta" id="feedText" placeholder="把新文章粘到这里…"></textarea>' +
+        '<div class="hx-btnbar"><button class="hx-btn primary" id="btnFeedGo">AI比对</button></div>';
+      openModal('📥 喂新文', body, function (modal, close) {
+        on(el('btnFeedGo'), 'click', function () {
+          safe(function () {
+            var txt = (el('feedText').value || '').trim();
+            if (!txt) { toast('请先粘文章'); return; }
+            if (!HX || !HX.chat) { toast('没网，AI歇班'); return; }
+            close();
+            doFeed(doc.id, txt);
+          });
+        });
+      });
+    } catch (e) { toast('打开失败'); }
+  }
+
+  function doFeed(docId, txt) {
+    try {
+      var doc = loadDoc(docId);
+      if (!doc) { return; }
+      getAiChatId(doc, function (cid, err) {
+        if (!cid) { toast('没网，AI歇班'); return; }
+        /* 拼座面清单 */
+        var seatList = '';
+        try {
+          for (var sid in doc.seats) {
+            if (doc.seats.hasOwnProperty(sid)) {
+              var s = doc.seats[sid];
+              if (s.del) { continue; }
+              seatList += sid + '：' + s.text + '\n';
+            }
+          }
+        } catch (e0) {}
+        var prompt = '你是一个科普比对助手。下面是现有座面清单，请逐条比对下面这篇新文章，判断每条新内容属于：冲突/补充/新座。\n' +
+          '只输出JSON，不要别的。格式严格为：[{"target":"K003或NEW","kind":"冲突或补充或新座","text":"内容一句话","src":"出处或空字符串"}]\n';
+        var fullPrompt = prompt +
+          '\n\n现有座面清单：\n' + seatList + '\n\n新文章：\n' + txt;
+        var waitModal = openModal('📥 比对中…', '<div style="font-size:15px;color:#667">正在逐条比对，最长可能等约 3 分钟…</div>' +
+          '<div id="aiTick" style="margin-top:8px;color:#8a94a3;font-size:13px"></div>', null);
+        try {
+          HX.chat.send(cid, fullPrompt, {
+            onTick: function (sec) {
+              safe(function () { var t = el('aiTick'); if (t) { t.innerHTML = '已等 ' + sec + ' 秒'; } });
+            },
+            onOk: function (reply) {
+              safe(function () {
+                try { if (waitModal) { waitModal.close(); } } catch (e) {}
+                var arr = parseAIJson(reply);
+                if (!arr || !(arr instanceof Array)) {
+                  try { addLog(doc, 'AI回件没看懂', String(reply).substring(0, 500)); saveDoc(doc); } catch (eL) {}
+                  toast('AI回件没看懂，可重试或手动');
+                  return;
+                }
+                showFeedPreview(docId, arr);
+              });
+            },
+            onErr: function (msg) {
+              safe(function () {
+                try { if (waitModal) { waitModal.close(); } } catch (e) {}
+                toast('AI出错：' + (msg || '未知') + '（可改手动）');
+              });
+            }
+          });
+        } catch (eS) {
+          try { if (waitModal) { waitModal.close(); } } catch (e2) {}
+          toast('AI发送异常');
+        }
+      });
+    } catch (e) { toast('比对出错：' + (e && e.message ? e.message : e)); }
+  }
+
+  function showFeedPreview(docId, arr) {
+    try {
+      var doc = loadDoc(docId);
+      if (!doc) { return; }
+      var items = [];
+      for (var i = 0; i < arr.length; i++) {
+        var o = arr[i];
+        if (!o || typeof o !== 'object') { continue; }
+        var text = (o.text === null || o.text === undefined) ? '' : String(o.text).trim();
+        if (!text) { continue; }
+        var target = (o.target === null || o.target === undefined) ? 'NEW' : String(o.target).trim();
+        var kind = (o.kind === null || o.kind === undefined) ? '补充' : String(o.kind).trim();
+        if (KINDS.indexOf(kind) < 0 && kind !== '新座') { kind = '补充'; }
+        /* 校验 target */
+        if (target !== 'NEW' && !doc.seats[target]) { target = 'NEW'; kind = '新座'; }
+        if (kind === '新座') { target = 'NEW'; }
+        items.push({ target: target, kind: kind, text: text,
+          src: (o.src === null || o.src === undefined) ? '' : String(o.src).trim() });
+      }
+      if (items.length === 0) { toast('没比对出可用条目'); return; }
+      var body = '<div style="font-size:14px;color:#667;margin-bottom:8px">逐条确认（勾选=要入，可改目标/类型）：</div>';
+      for (var j = 0; j < items.length; j++) {
+        var it = items[j];
+        var kCls = (it.kind === '冲突') ? 'hx-tag red' : (it.kind === '补充' ? 'hx-tag blue' : 'hx-tag gray');
+        var kIcon = (it.kind === '冲突') ? '🔴' : (it.kind === '补充' ? '🔵' : '⚪');
+        body += '<div class="hx-pick">' +
+          '<input type="checkbox" data-pick="' + j + '" checked>' +
+          '<div class="hx-pickbody">' +
+          '<div><span class="' + kCls + '">' + kIcon + esc(it.kind) + '</span>' +
+          '<span class="hx-tag gray">目标 ' + esc(it.target === 'NEW' ? '新座' : it.target) + '</span></div>' +
+          '<div class="hx-text" style="margin-top:4px">' + esc(it.text) + '</div>' +
+          (it.src ? '<div class="hx-meta">出处：' + esc(it.src) + '</div>' : '') +
+          '<div style="margin-top:5px">' +
+          '<select data-target="' + j + '" style="font-size:13px;padding:3px;border-radius:6px;border:1px solid #d8dde4;background:#fafbfc">';
+        body += '<option value="NEW"' + (it.target === 'NEW' ? ' selected' : '') + '>→ 当新座</option>';
+        try {
+          for (var sid in doc.seats) {
+            if (doc.seats.hasOwnProperty(sid)) {
+              var s = doc.seats[sid];
+              if (s.del) { continue; }
+              body += '<option value="' + esc(sid) + '"' + (it.target === sid ? ' selected' : '') + '>→ 挂到 ' + esc(sid) + '</option>';
+            }
+          }
+        } catch (e0) {}
+        body += '</select> ';
+        body += '<select data-kind="' + j + '" style="font-size:13px;padding:3px;border-radius:6px;border:1px solid #d8dde4;background:#fafbfc">';
+        body += '<option value="冲突"' + (it.kind === '冲突' ? ' selected' : '') + '>🔴冲突</option>';
+        body += '<option value="补充"' + (it.kind === '补充' ? ' selected' : '') + '>🔵补充</option>';
+        body += '<option value="新座"' + (it.kind === '新座' ? ' selected' : '') + '>⚪新座</option>';
+        body += '</select>';
+        body += '</div></div></div>';
+      }
+      body += '<div class="hx-btnbar"><button class="hx-btn primary" id="btnConfirmFeed">确认入树</button></div>';
+      openModal('📥 比对结果（共 ' + items.length + ' 条）', body, function (modal, close) {
+        on(el('btnConfirmFeed'), 'click', function () {
+          safe(function () {
+            var boxes = modal.querySelectorAll('[data-pick]');
+            var tgtSel = modal.querySelectorAll('[data-target]');
+            var kndSel = modal.querySelectorAll('[data-kind]');
+            var tgtMap = {}, kndMap = {};
+            for (var t = 0; t < tgtSel.length; t++) {
+              tgtMap[tgtSel[t].getAttribute('data-target')] = tgtSel[t].value;
+            }
+            for (var kk = 0; kk < kndSel.length; kk++) {
+              kndMap[kndSel[kk].getAttribute('data-kind')] = kndSel[kk].value;
+            }
+            var chosen = 0;
+            for (var b = 0; b < boxes.length; b++) {
+              if (!boxes[b].checked) { continue; }
+              var idxp = parseInt(boxes[b].getAttribute('data-pick'), 10);
+              if (isNaN(idxp) || !items[idxp]) { continue; }
+              var it = items[idxp];
+              var target = tgtMap[idxp] || 'NEW';
+              var kind = kndMap[idxp] || it.kind;
+              if (kind === '新座' || target === 'NEW') {
+                /* 新座 */
+                var newKid = nextK(doc);
+                var nrefs = [];
+                if (it.src) {
+                  var nwid = ensureRef(doc, it.src, it.src, '未知');
+                  nrefs.push(nwid);
+                }
+                doc.seats[newKid] = {
+                  id: newKid, pid: null, text: it.text, refs: nrefs, alts: [], revs: [],
+                  collapsed: false, children: [], created: Date.now(), updated: Date.now()
+                };
+                doc.rootIds.push(newKid);
+              } else {
+                var seat = doc.seats[target];
+                if (!seat) { continue; }
+                if (!seat.alts) { seat.alts = []; }
+                var aid = nextA(doc);
+                var arefs = [];
+                if (it.src) {
+                  var awid = ensureRef(doc, it.src, it.src, '未知');
+                  arefs.push(awid);
+                }
+                seat.alts.push({
+                  aid: aid, text: it.text, refs: arefs,
+                  kind: (kind === '冲突' ? '冲突' : '补充'),
+                  status: '待拍板', note: '', added: Date.now()
+                });
+                seat.updated = Date.now();
+              }
+              chosen++;
+            }
+            if (chosen === 0) { toast('一条都没选'); return; }
+            addLog(doc, '喂新文', '入树' + chosen + '条');
+            saveDoc(doc);
+            close(); render();
+            toast('已入树 ' + chosen + ' 条');
+          });
+        });
+      });
+    } catch (e) { toast('预览出错：' + (e && e.message ? e.message : e)); }
+  }
+
+  /* ============================================================
+     文献库
+     ============================================================ */
+  function openRefs(doc) {
+    try {
+      /* 计算被引次数 */
+      var citeCount = {};
+      try {
+        for (var sid in doc.seats) {
+          if (!doc.seats.hasOwnProperty(sid)) { continue; }
+          var s = doc.seats[sid];
+          if (s.del) { continue; }
+          if (s.refs) {
+            for (var i = 0; i < s.refs.length; i++) {
+              citeCount[s.refs[i]] = (citeCount[s.refs[i]] || 0) + 1;
+            }
+          }
+          if (s.alts) {
+            for (var a = 0; a < s.alts.length; a++) {
+              var al = s.alts[a];
+              if (al && al.refs) {
+                for (var j = 0; j < al.refs.length; j++) {
+                  citeCount[al.refs[j]] = (citeCount[al.refs[j]] || 0) + 1;
+                }
+              }
+            }
+          }
+        }
+      } catch (e0) {}
+      var wids = [];
+      try { for (var w in doc.refs) { if (doc.refs.hasOwnProperty(w)) { wids.push(w); } } } catch (e1) {}
+      try { wids.sort(); } catch (e2) {}
+      var body = '';
+      if (wids.length === 0) {
+        body = '<div class="hx-empty" style="padding:20px">还没有文献。</div>';
+      } else {
+        for (var k = 0; k < wids.length; k++) {
+          var wid = wids[k];
+          var r = doc.refs[wid];
+          if (!r) { continue; }
+          body += '<div class="hx-pick" style="align-items:flex-start">' +
+            '<div class="hx-pickbody">' +
+            '<div><span class="hx-k">' + esc(r.id) + '</span> <strong>' + esc(r.title) + '</strong></div>' +
+            '<div class="hx-meta">出处：' + esc(r.src || '（空）') + ' · 被引 ' + (citeCount[r.id] || 0) + ' 次</div>' +
+            '<div style="margin-top:5px">等级：' +
+            '<select data-wgrade="' + esc(r.id) + '" style="font-size:13px;padding:3px;border-radius:6px;border:1px solid #d8dde4;background:#fafbfc">';
+          for (var g = 0; g < GRADES.length; g++) {
+            body += '<option value="' + esc(GRADES[g]) + '"' + (r.grade === GRADES[g] ? ' selected' : '') + '>' + esc(GRADES[g]) + '</option>';
+          }
+          body += '</select></div>';
+          body += '</div></div>';
+        }
+        body += '<div class="hx-btnbar"><button class="hx-btn primary" id="btnSaveGrades">保存等级</button></div>';
+      }
+      openModal('📖 文献库（共 ' + wids.length + ' 条）', body, function (modal, close) {
+        var sv = el('btnSaveGrades');
+        if (sv) {
+          on(sv, 'click', function () {
+            safe(function () {
+              var sels = modal.querySelectorAll('[data-wgrade]');
+              for (var i = 0; i < sels.length; i++) {
+                var wid2 = sels[i].getAttribute('data-wgrade');
+                var gv = sels[i].value;
+                if (doc.refs[wid2] && GRADES.indexOf(gv) >= 0) {
+                  doc.refs[wid2].grade = gv;
+                }
+              }
+              addLog(doc, '改文献等级', '');
+              saveDoc(doc);
+              close();
+              toast('等级已保存');
+            });
+          });
+        }
+      });
+    } catch (e) { toast('文献库出错'); }
+  }
+
+  /* ============================================================
+     导出成稿
+     ============================================================ */
+  function openExport(doc) {
+    try {
+      var body = '<div style="font-size:14px;color:#667;margin-bottom:10px">选择导出方式：</div>' +
+        '<div style="margin-bottom:12px">' +
+        '<button class="hx-btn primary" id="btnExportSeat">① 仅座面</button>' +
+        '<button class="hx-btn" id="btnExportAll">② 座面+异见留档附录</button>' +
+        '</div>' +
+        '<div style="font-size:13px;color:#8a94a3">文献顺序号会现场重排。</div>';
+      openModal('📤 导出成稿', body, function (modal, close) {
+        on(el('btnExportSeat'), 'click', function () { safe(function () { close(); doExport(doc.id, false); }); });
+        on(el('btnExportAll'), 'click', function () { safe(function () { close(); doExport(doc.id, true); }); });
+      });
+    } catch (e) { toast('导出面板出错'); }
+  }
+
+  function doExport(docId, withAlts) {
+    try {
+      var doc = loadDoc(docId);
+      if (!doc) { toast('文档读不出来'); return; }
+
+      /* 现场文献顺序号映射 */
+      var refOrder = {};
+      var refList = [];
+      var nextNum = 1;
+
+      var collectRefsFromSeat = function (s) {
+        if (!s) { return; }
+        if (s.refs) {
+          for (var i = 0; i < s.refs.length; i++) {
+            var wid = s.refs[i];
+            if (!refOrder[wid] && doc.refs[wid]) {
+              refOrder[wid] = nextNum++;
+              refList.push(doc.refs[wid]);
+            }
+          }
+        }
+      };
+
+      /* 递归遍历座面 */
+      var lines = [];
+      lines.push(doc.title || '未命名树');
+      lines.push('（生成于 ' + fmtTime(Date.now()) + '）');
+      lines.push('');
+      lines.push('================ 座面 ================');
+      lines.push('');
+
+      var walk = function (seatId, depth) {
+        try {
+          if (depth > 40) { return; }
+          var s = doc.seats[seatId];
+          if (!s || s.del) { return; }
+          collectRefsFromSeat(s);
+          var ind = '';
+          for (var i = 0; i < depth; i++) { ind += '    '; }
+          var mark = depth > 0 ? '· ' : '';
+          var refStr = '';
+          if (s.refs && s.refs.length > 0) {
+            refStr = ' [';
+            for (var r = 0; r < s.refs.length; r++) {
+              if (r > 0) { refStr += ','; }
+              refStr += refOrder[s.refs[r]] || '?';
+            }
+            refStr += ']';
+          }
+          lines.push(ind + mark + s.text + refStr);
+          if (s.children && s.children.length > 0) {
+            for (var c = 0; c < s.children.length; c++) {
+              walk(s.children[c], depth + 1);
+            }
+          }
+        } catch (e) {}
+      };
+
+      for (var ri = 0; ri < doc.rootIds.length; ri++) {
+        walk(doc.rootIds[ri], 0);
+      }
+
+      /* 附录 */
+      if (withAlts) {
+        lines.push('');
+        lines.push('================ 异见留档附录 ================');
+        lines.push('');
+        var anyAlt = false;
+        var walkAlt = function (seatId) {
+          try {
+            var s = doc.seats[seatId];
+            if (!s || s.del) { return; }
+            if (s.alts && s.alts.length > 0) {
+              for (var i = 0; i < s.alts.length; i++) {
+                var al = s.alts[i];
+                if (!al) { continue; }
+                anyAlt = true;
+                /* 收集异见出处（若尚未收集） */
+                if (al.refs) {
+                  for (var rr = 0; rr < al.refs.length; rr++) {
+                    var wid = al.refs[rr];
+                    if (!refOrder[wid] && doc.refs[wid]) {
+                      refOrder[wid] = nextNum++;
+                      refList.push(doc.refs[wid]);
+                    }
+                  }
+                }
+                var kIcon = (al.kind === '冲突') ? '🔴' : '🔵';
+                var alRefStr = '';
+                if (al.refs && al.refs.length > 0) {
+                  alRefStr = ' [';
+                  for (var a2 = 0; a2 < al.refs.length; a2++) {
+                    if (a2 > 0) { alRefStr += ','; }
+                    alRefStr += refOrder[al.refs[a2]] || '?';
+                  }
+                  alRefStr += ']';
+                }
+                lines.push('【' + s.id + '】' + kIcon + al.kind + ' · ' + al.status + ' · ' + al.text + alRefStr);
+                if (al.note) { lines.push('    AI初判：' + al.note); }
+              }
+            }
+            if (s.children) {
+              for (var c = 0; c < s.children.length; c++) { walkAlt(s.children[c]); }
+            }
+          } catch (e) {}
+        };
+        for (var rj = 0; rj < doc.rootIds.length; rj++) {
+          walkAlt(doc.rootIds[rj]);
+        }
+        if (!anyAlt) {
+          lines.push('（无异见留档）');
+        }
+      }
+
+      /* 文献表 */
+      lines.push('');
+      lines.push('================ 文献表 ================');
+      lines.push('');
+      if (refList.length === 0) {
+        lines.push('（无文献）');
+      } else {
+        for (var li = 0; li < refList.length; li++) {
+          var ref = refList[li];
+          if (!ref) { continue; }
+          lines.push('[' + (li + 1) + '] ' + ref.title + ' · ' + (ref.src || '（无出处）') + ' · ' + ref.grade);
+        }
+      }
+
+      var content = lines.join('\n');
+      downloadTxt(content, doc.title || '生长树成稿');
+      toast('已导出（' + refList.length + ' 条文献现场重排）');
+    } catch (e) { toast('导出出错：' + (e && e.message ? e.message : e)); }
+  }
+
+  function downloadTxt(content, name) {
+    try {
+      var fname = (name || '成稿').replace(/[\\/:*?"<>|]/g, '_') + '_' + VER + '.txt';
+      /* 优先 LearnShell 导出 */
+      var done = false;
+      try {
+        if (window.LearnShell && typeof LearnShell.writeFile === 'function') {
+          try {
+            LearnShell.writeFile(fname, content);
+            done = true;
+          } catch (e0) {}
+        }
+      } catch (e1) {}
+      if (!done) {
+        try {
+          var blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url;
+          a.download = fname;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(function () {
+            try { URL.revokeObjectURL(url); } catch (e2) {}
+            try { if (a.parentNode) { a.parentNode.removeChild(a); } } catch (e3) {}
+          }, 1000);
+          done = true;
+        } catch (e4) {}
+      }
+      if (!done) {
+        /* 最后兜底：新窗口展示 */
+        try {
+          var w = window.open('', '_blank');
+          if (w) { w.document.write('<pre>' + esc(content) + '</pre>'); }
+          else { toast('导出通道都没了，请复制下方内容'); }
+        } catch (e5) { toast('导出失败，请手动复制'); }
+      }
+    } catch (e) { toast('下载出错'); }
+  }
+
+  /* ============================================================
+     启动
+     ============================================================ */
+  function boot() {
+    try {
+      if (isOff()) { renderOff(); return; }
+      /* 自检 */
+      try {
+        if (HX && typeof HX.selfCheck === 'function') {
+          HX.selfCheck('shu', VER);
+        }
+      } catch (eSC) {}
+      render();
+    } catch (e) {
+      safe(function () { toast('启动出错，请刷新'); });
+    }
+  }
+
+  /* hx-common 加载完成回调 */
+  window.hxOnCommonReady = function () {
+    safe(function () {
+      /* common 加载后重渲染（若有云存储差异） */
+      if (VIEW.page === 'home') { render(); }
+      else if (VIEW.page === 'tree') { render(); }
+    });
+  };
+
+  /* DOM 就绪 */
+  function ready(fn) {
+    try {
+      if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        setTimeout(fn, 1);
+      } else if (document.addEventListener) {
+        document.addEventListener('DOMContentLoaded', fn, false);
+      } else if (document.attachEvent) {
+        document.attachEvent('onreadystatechange', function () {
+          if (document.readyState === 'complete') { fn(); }
+        });
+      } else {
+        setTimeout(fn, 50);
+      }
+    } catch (e) { try { setTimeout(fn, 50); } catch (e2) {} }
+  }
+
+  ready(function () {
+    safe(boot);
+  });
+
+  /* 兜底：全局未捕获错误不再吓人 */
+  try {
+    window.onerror = function (msg, url, line) {
+      try { if (window.console) { console.warn('[shu-guard]', msg, line); } } catch (e) {}
+      return true;
+    };
+  } catch (e) {}
+
+})();
+</script>
+</body>
+</html>
