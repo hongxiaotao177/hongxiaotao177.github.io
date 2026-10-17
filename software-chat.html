@@ -10,6 +10,7 @@
 <!-- v0.1.3 2026-10-17 三级加载器治「公共件没装上」黄条+发送没反应（SPEC_chat_v0.1.3_三级加载器治「公共件没装上」黄条+发送没反应） -->
 <!-- v0.2.0 2026-10-17 成书塞章节（SPEC_chat二期_成书塞章节）：AI气泡加📥送入书钮→选书选章浮层→写信xt_inbox_v1（to:'book'），只读小涛书台账不写；总开关hx_chat_sendbook_off=1藏钮；DS实现+千问截断参考+Kimi终审翻案2处（hxToastHold签名错改showToast/curChatTitle不存在改HX.chat.load取title） -->
 <!-- v0.3.0 2026-10-17 PDF问答（SPEC_chat_v0.3.0_PDF问答）：📎选PDF→三段式懒加载guanjia-pdf-engine.js抽字→随下一句拼【PDF全文】前缀发AI（只拼一次）；总开关hx_chat_pdf_off=1藏📎；DS回件截断+续写编造界外码作废，Kimi亲手落地 -->
+<!-- v0.4.1 2026-10-17深夜 千问四治法（presetCallAI：trim/8192/截断续写/400哨兵，详SW_VERSION注释） -->
 <!-- v0.4.0 2026-10-17 提示词预设系统（SPEC_chat_v0.4.0 A1~A8，定案十条1503班）：常驻「提示词」钮+预设浮层（新建/改/删/AI代写规矩+自动归类/带上文ctxN可改）+选中窄条联动发送+发送后自动灭+空打字拦截+文献双岗（千问查Kimi审+回执+参考文献夹原消息）+出厂三条+汇成一篇滚着汇📄+云同步走HX.store.sync现成通道+总开关hx_chat_preset_off=1藏钮；DS出补丁，千问大提示词三次空响应记考察账，Kimi终审翻案3处（HX.ai.call不存在改直调/HX.chat.save签名错改单参/云通道改store.sync） -->
 <script>
 function hxCommonLoad(onHxReady, onHxMissing){
@@ -413,7 +414,7 @@ body {
 
 <!-- 顶行 -->
 <div class="top-bar">
-  <div class="top-title">💬 AI对话框<span class="top-version">v0.4.0</span></div>
+  <div class="top-title">💬 AI对话框<span class="top-version">v0.4.1</span></div>
   <div>
     <button id="menuBtn" class="top-btn">☰对话</button>
     <button id="newBtn" class="top-btn">✚新聊</button>
@@ -462,7 +463,7 @@ body {
 
 <script>
 // SW_VERSION 全局变量
-var SW_VERSION = "0.4.0";
+var SW_VERSION = "0.4.1"; /* v0.4.1（2026-10-17深夜班，洪老师拍板「把千问修好修完为止」，SPEC_千问四治法，千问实现+Kimi终审翻案2处亲手落地：①千问把续写闸_continued写进then每次重置=没闸，挪进attempt闭包 ②千问!r.ok直return致下家被连跳两次，补__skip哨兵）：presetCallAI四刀——钥匙trim/max_tokens2048→8192/finish_reason截断自动续写一回拼接（仍截断换下一家）/HTTP400不再当JSON误解析静默跳；预设系统其余全IDENTICAL */
 
 // 全局状态
 var curChatId = null;
@@ -985,19 +986,38 @@ function presetCallAI(sys, userText, which, cb) {
       if (idx >= tries.length) { cb(false, '没通：钥匙都没有或AI都没回'); return; }
       var w = tries[idx];
       var key = keyOf(w);
+      key = String(key || '').replace(/^\s+|\s+$/g, ''); /* v0.4.1刀④（千问实现+Kimi终审）：钥匙trim去首尾空格 */
       if (!key) { attempt(idx + 1); return; }
       var c = conf[w];
-      fetch(c.url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
-        body: JSON.stringify({ model: c.model, messages: [{ role: 'system', content: sys }, { role: 'user', content: userText }], max_tokens: 2048 })
-      }).then(function (r) { return r.json(); }).then(function (j) {
-        try {
-          var txt = j && j.choices && j.choices[0] && j.choices[0].message ? j.choices[0].message.content : '';
-          if (txt) { cb(true, txt); return; }
-        } catch (e) {}
-        attempt(idx + 1);
-      }).catch(function () { attempt(idx + 1); });
+      var _continued = false; /* v0.4.1刀②：截断续写硬上限1次（Kimi终审翻案1：千问把_continued写进then里每次重置=没闸，挪进attempt闭包成真闸） */
+      function _send(msgs, acc) { /* v0.4.1刀②：发信收进函数，acc=已拼半截 */
+        fetch(c.url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+          body: JSON.stringify({ model: c.model, messages: msgs, max_tokens: 8192 }) /* v0.4.1刀①：2048→8192（三家统一，治腰斩） */
+        }).then(function (r) {
+          if (!r.ok) { attempt(idx + 1); return { __skip: 1 }; } /* v0.4.1真bug修（千问实现+Kimi终审翻案2：千问!r.ok直return致下个then拿到undefined又跳一次=一家被跳过两次，补__skip哨兵）：HTTP400等不收→换下一家，不再当JSON误解析 */
+          return r.json();
+        }).then(function (j) {
+          if (j && j.__skip) return; /* v0.4.1：哨兵路收工 */
+          try {
+            var txt = j && j.choices && j.choices[0] && j.choices[0].message ? j.choices[0].message.content : '';
+            var fr = j && j.choices && j.choices[0] ? j.choices[0].finish_reason : ''; /* v0.4.1刀②：读finish_reason判截断 */
+            if (txt && fr === 'length' && !_continued) {
+              _continued = true;
+              var _m2 = msgs.slice(); /* slice拷贝不动原数组 */
+              _m2.push({ role: 'assistant', content: txt });
+              _m2.push({ role: 'user', content: '接着断处写，别重头' });
+              _send(_m2, acc + txt);
+              return;
+            }
+            if (txt && fr !== 'length') { cb(true, acc + txt); return; }
+            /* 续写仍截断：半截信（多半是半截JSON）交了也解析不了，照SPEC换下一家 */
+          } catch (e) {}
+          attempt(idx + 1);
+        }).catch(function () { attempt(idx + 1); });
+      }
+      _send([{ role: 'system', content: sys }, { role: 'user', content: userText }], '');
     }
     attempt(0);
   } catch (e) { cb(false, e && e.message ? e.message : 'AI调用失败'); }
