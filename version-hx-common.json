@@ -1,1 +1,1 @@
-{"version": "0.40.0", "dl": "hx-common.js", "sig": "c7323a6be686d5a7", "t": 1792306957109, "fix": "t59", "note": "AI质检岗：体验步AI先看，正常才自动销，拿不准留给您；监察员盯着台账"}
+{"version": "0.41.0", "dl": "hx-common.js", "sig": "7c90a34030477ffe", "t": 1792323508803, "note": "治v0.38.0起截断雷：恢复HX.chk启动段if头（ntListener→addEventListener），验收牌模块复活（t63）", "fix": "t63"}
