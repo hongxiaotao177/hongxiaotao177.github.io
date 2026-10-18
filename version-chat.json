@@ -1,1 +1,1 @@
-{"version": "0.4.1", "dl": "software-chat.html", "sig": "fe16ce53724e116c", "note": "千问四治法（千问实现+Kimi终审翻案2处：续写闸挪闭包+400哨兵防双跳）：presetCallAI钥匙trim/8192/截断续写拼接/400不再静默误跳；预设系统其余IDENTICAL", "fix": "t-qwen-fix"}
+{"version": "0.4.2", "dl": "software-chat.html", "sig": "db6ead5426eb238c", "note": "输入框消失根治：body改flex列+main-area改flex:1+底栏去sticky（真机10-18报：汇成一篇后输入框不见；DS出补丁Kimi终审全采纳，node语法2块PASS+仿真底栏钉底）", "fix": "t46", "t": 1792288055394}
