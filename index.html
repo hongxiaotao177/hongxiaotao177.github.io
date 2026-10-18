@@ -2,6 +2,7 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.27.0 2026-10-18（SPEC_手机账房落地，刀B，DS实现+Kimi终审翻案2处亲手落地：①DS编HX.bb.job(msg,obj)假签名翻真签名HX.bb.log(k,m) ②DS跨闭包用hasApi/base/H局部变量翻模块内现取ghCfg/ghHeaders）：新增账房消费链独立IIFE（开门查新IIFE之后）——老壳无writeFileRel静默退/hx_zf_checked每开门一次/总回退hx_zfang_off=1/闲时60秒起跑；双腿取bridge-outbox.json→deliveries（done跳过/dest!=="zfang"跳过，老测试件不动）→写「账房/」子目录→回读字节对账→冲突改名留底→receipt→PUT回写（ghFetch先GET取sha，失败投信mg_out_管家代发，没Token存hx_zf_pending下次补投）；全程静默只写黑匣子；开门查新链/装件链/dlWrite/hxWriteSmart/任务单/灯/updHuman/版面一行未动；配壳vc59子目录桥四件套
     v1.26.1 2026-10-18（洪老师真机报「人话回执没钟点、按两次没反应」，t55，SPEC_index_v1.26.1_管家路回执补钟点，DS+千问补丁一致Kimi终审全采纳并翻案自家1处——初稿把✅已装上进度行圈进return后面变死代码，挪前根治；千问版本史编造一串不存在的版本号记帐1笔正文弃用）：管家路装件成功人话回执补真钟点——管家回信行本无t（壳Java不动），装件成功顺手hxRawGet版本牌取t，取到带钟点/取不到退「刚写好的」/9秒硬帽；成功件续链挪进取钟点回调（renderProg+setTimeout(applyOne,50)一字不差），失败分支老续链一行未动；legacyRun刀2b①②/任务单/版面/壳/管家/hx-common全不动。
     v1.26.0 2026-10-18（洪老师拍板「绿字界面彻底取消+升级报几点几分写好的+生长树不另立门户」，SPEC_index_v1.26.0，DS实现+Kimi终审：DS漏交顶部留痕亲手补/刀2c扩及管家路同款两处报备）：刀1全绿定格摘点开展层（回退hx_home126_off=1）/刀2升级人话回执=中文名+fmtT改版时刻不亮版本号（updHuman平行账，复核细账不再亮）/刀3摘生长树卡片+SUITE+CUR三处户口（单体与数据保留，并入小涛笔记后回来）；装件链/dlWrite/verifyAfter机制/任务单/灯/信件链一行未动。
     v1.25.1 2026-10-18（想法流水10-15 10:22真机报「第一次开门自动更新老不成，手动点才成」；病根：开门直装取件只有hxRawGet公开站单腿，刚开门网络没热/国内时断时续→取件失败落专区老路readFile，大件过X5桥读不稳装不成；手动点时网络已热所以总成。刀法：开门直装IIFE内_mgShellWrite前新增_mgGet双腿取件（hxRawGet失败回落GitHub API contents/download_url），唯一调用点hxRawGet(_dlName)换_mgGet(_dlName)，catch回落专区老路原样不动；两腿全败才走老路；DS+千问补丁一致Kimi终审全采纳）
@@ -606,6 +607,7 @@ CUR.index="1.23.0"; /* v1.23.0 t35管家灯三档化，见顶部修改记录 */
 /* v1.26.0 刀3③：CUR.shu摘除（随刀3①②）；手机账本hx_suite_ver残留的shu键无害，keys来自SUITE */
 CUR.index="1.25.1"; /* v1.25.1 开门自动装新版加腿，见顶部修改记录 */
 CUR.index="1.26.1"; /* v1.26.1 t55管家路人话回执补钟点，见顶部修改记录 */
+CUR.index="1.27.0"; /* v1.27.0 手机账房消费链上岗（配壳vc59子目录桥），见顶部修改记录 */
 CUR.tuomin="0"; /* v1.19.10修404：CUR=壳内已装版本，单体手机还没装必须填"0"才会下载（CUR.ppt同款老坑，见230行） */ /* v1.19.8（2026-09-20班⑮，洪老师真机报"升级说装成功主界面还是19.6，几次都这样，没重启应该直接变19.7"）病根=班⑮发v1.19.7时新赋值插在同一行旧赋值前面，CUR.index="1.19.7"刚赋上就被同行的CUR.index="1.19.6"盖回→页脚活字永远亮1.19.6（文件真身早是新版，升级链/壳全无辜，大管家0.54.5上机为证）；还连带v1.19.5刀2开门自校对误把账本1.19.7当谎回滚→每次都提示重装。治=删同行可执行旧赋值（注释留档）+升号v1.19.8让真机重新下载。其余一行未动 */
 try{document.getElementById("ftVer").textContent=CUR.index;}catch(eF){} /* v1.19.6 页脚死字改活字：ftVer亮CUR.index真身 */
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
@@ -1757,6 +1759,162 @@ try{ updHuman.push((typeof cn!=="undefined"&&cn?cn:pName)+"（"+(info&&info.t?fm
     legacyRun();
   }
 })();
+
+/* v1.27.0（2026-10-18，SPEC_手机账房落地，刀B，DS实现+Kimi终审翻案2处亲手落地：①DS编HX.bb.job(msg,obj)假签名翻真签名HX.bb.log(k,m) ②DS跨闭包用hasApi/base/H局部变量作废，翻模块内照查新IIFE同款现取ghCfg/ghHeaders）：账房消费链独立IIFE——
+   老壳无writeFileRel（SAF模式/老壳）整段静默退出；sessionStorage hx_zf_checked每开门只跑一次；
+   总回退 localStorage hx_zfang_off=1 全退休；闲时60秒后起跑（晚于查新45秒不抢网）；
+   双腿取bridge-outbox.json→遍历deliveries（done跳过/dest!=="zfang"跳过，老测试件不动）→双腿取file内容
+   →写「账房/」子目录→readFileRel回读字节对账→冲突改名「原名_冲突_YYYYMMDDHHMM」留底（旧件不删）
+   →receipt记账→PUT回写bridge-outbox.json（有Token走ghFetch先GET取sha；ghFetch失败投信mg_out_管家代发；没Token存hx_zf_pending下次开门先补投）；
+   全程静默不碰版面，只写黑匣子HX.bb.log('zf',…)，没HX.bb就localStorage hx_zf_log兜底；
+   红线：开门查新链/装件链/dlWrite/hxWriteSmart/任务单__taskFeed/灯/updHuman/版面一行未动。 */
+(function(){
+  try{
+    if(!window.LearnShell || typeof LearnShell.writeFileRel !== 'function'){
+      try{ if(window.HX && HX.bb && typeof HX.bb.log === 'function'){ HX.bb.log('zf','账房：老壳无子目录桥，跳过'); } }catch(ee){}
+      return;
+    }
+    try{ if(localStorage.getItem('hx_zfang_off')==='1') return; }catch(e){}
+    try{ if(sessionStorage.getItem('hx_zf_checked')==='1') return; sessionStorage.setItem('hx_zf_checked','1'); }catch(e){}
+    var _c=ghCfg();
+    var _hasApi=!!(_c.user && _c.tok && _c.repo);
+    var _base=_hasApi ? ("https://api.github.com/repos/"+encodeURIComponent(_c.user)+"/"+encodeURIComponent(_c.repo)+"/contents/") : "";
+    var _H=ghHeaders();
+    var _apiDead=false;
+    setTimeout(function(){ try{ zfPendingFlush().then(function(){ zfRun(); }); }catch(e){} }, 60000);
+
+    function zfLog(msg){
+      try{ if(window.HX && HX.bb && typeof HX.bb.log === 'function'){ HX.bb.log('zf', String(msg)); return; } }catch(e){}
+      try{
+        var a=JSON.parse(localStorage.getItem('hx_zf_log')||'[]');
+        a.push({t:Date.now(), m:String(msg)});
+        if(a.length>100) a=a.slice(a.length-100);
+        localStorage.setItem('hx_zf_log', JSON.stringify(a));
+      }catch(e2){}
+    }
+    function zfBytesOf(txt){ try{ return (new TextEncoder()).encode(txt).length; }catch(e){ return 0; } }
+    function zfUnb64(b64){ try{ return u8dec(String(b64).replace(/\s+/g,'')); }catch(e){ return ''; } }
+    function zfStamp(d){ d=d||new Date(); function p(n){ return ('0'+n).slice(-2); } return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+p(d.getHours())+p(d.getMinutes()); }
+
+    /* 双腿取文本：API优先（有Token且本轮没死过），失败落hxRawGet公开直链；照fetchJson老款 */
+    function zfGetText(name){
+      if(_hasApi && !_apiDead){
+        return ghFetch(_base+encodeURIComponent(name), {headers:_H}, 8000).then(function(r){
+          if(!r.ok) throw new Error("HTTP "+r.status);
+          return r.json().then(function(j){
+            if(j.content) return u8dec(j.content);
+            if(j.download_url) return ghFetch(j.download_url,{headers:_H},/\.html$/i.test(name)?60000:8000).then(function(r2){
+              if(!r2.ok) throw new Error("HTTP "+r2.status); return r2.text(); });
+            throw new Error("empty content");
+          });
+        }).catch(function(e){ _apiDead=true; return hxRawGet(name); });
+      }
+      return hxRawGet(name);
+    }
+
+    /* PUT回写bridge-outbox.json：腿①ghFetch直发（先GET取sha）；腿②投信mg_out_管家代发；全败存pending */
+    function zfPutOutbox(txt){
+      var payload={ message:'账房回执 '+new Date().toISOString(), content: u8enc(txt) };
+      function putDirect(){
+        if(!_hasApi) return Promise.resolve(false);
+        return ghFetch(_base+encodeURIComponent('bridge-outbox.json'), {headers:_H}, 8000).then(function(r){
+          if(!r.ok) throw new Error("HTTP "+r.status); return r.json();
+        }).then(function(j){
+          if(j && j.sha) payload.sha=j.sha;
+          return ghFetch(_base+encodeURIComponent('bridge-outbox.json'), {method:'PUT', headers:_H, body:JSON.stringify(payload)}, 20000);
+        }).then(function(r){ return !!r.ok; }).catch(function(e){ return false; });
+      }
+      function putByMail(){
+        try{
+          if(!window.LearnShell || typeof LearnShell.writeFile!=='function') return false;
+          if(!_hasApi) return false; /* 没钥匙管家也发不出，投信无意义 */
+          var letter={ id:'zf_'+Date.now(), method:'PUT',
+            url:"https://api.github.com/repos/"+encodeURIComponent(_c.user)+"/"+encodeURIComponent(_c.repo)+"/contents/bridge-outbox.json",
+            tok:_c.tok, bodyB64: u8enc(JSON.stringify(payload)) };
+          return !!LearnShell.writeFile('mg_out_'+letter.id+'.json', u8enc(JSON.stringify(letter)));
+        }catch(e){ return false; }
+      }
+      return putDirect().then(function(ok){
+        if(ok) return true;
+        if(putByMail()){ zfLog('账房：回执已投信管家代发'); return true; }
+        return false;
+      });
+    }
+
+    function zfPendingFlush(){
+      var raw=null;
+      try{ raw=localStorage.getItem('hx_zf_pending'); }catch(e){ return Promise.resolve(); }
+      if(!raw) return Promise.resolve();
+      return zfPutOutbox(raw).then(function(ok){
+        if(ok){ try{ localStorage.removeItem('hx_zf_pending'); }catch(e){} zfLog('账房：补投pending成功'); }
+        else{ zfLog('账房：补投pending仍失败'); }
+      }).catch(function(){});
+    }
+
+    function zfRun(){
+      var feed=null;
+      zfGetText('bridge-outbox.json').then(function(txt){
+        try{ feed=JSON.parse(txt||'{}'); }catch(e){ feed=null; }
+        if(!feed || !feed.deliveries || !feed.deliveries.length){ zfLog('账房：任务单空或无'); return; }
+        var changed=false;
+        var chain=Promise.resolve();
+        feed.deliveries.forEach(function(d){
+          chain=chain.then(function(){
+            if(!d) return;
+            if(d.done===true) return;
+            if(d.dest!=='zfang') return; /* 老测试件一行不动 */
+            var rel='账房/'+d.saveAs;
+            return zfGetText(String(d.file)).then(function(txt2){
+              /* 冲突留底（铁规3）：写入前已有同名件且内容不同→旧件改名留底，不删 */
+              try{
+                var old=LearnShell.readFileRel(rel);
+                if(old){
+                  var oldTxt=zfUnb64(old);
+                  if(oldTxt!==txt2){
+                    var cn=String(d.saveAs).replace(/(\.[^.]+)$/, '_冲突_'+zfStamp()+'$1');
+                    if(cn===d.saveAs) cn=d.saveAs+'_冲突_'+zfStamp();
+                    LearnShell.writeFileRel('账房/'+cn, old);
+                    zfLog('账房：冲突留底 '+cn);
+                  }
+                }
+              }catch(eC){}
+              var okW=false;
+              try{ okW=!!LearnShell.writeFileRel(rel, u8enc(txt2)); }catch(e){ okW=false; }
+              if(!okW) throw new Error('writeFileRel没写成');
+              var back=null;
+              try{ back=LearnShell.readFileRel(rel); }catch(e){ back=null; }
+              var nBack=back?zfBytesOf(zfUnb64(back)):-1, nExp=zfBytesOf(txt2);
+              if(nBack!==nExp) throw new Error('回读字节不符 该'+nExp+'实'+nBack);
+              d.done=true;
+              d.receipt={ name:d.saveAs, bytes:nExp, t:Date.now() };
+              changed=true;
+              zfLog('账房：落机成功 '+d.saveAs+' '+nExp+'字节');
+            }).catch(function(err){
+              d.done=false;
+              d.receipt={ name:d.saveAs, bytes:0, t:Date.now(), err:String(err&&err.message||err) };
+              changed=true;
+              zfLog('账房：落机失败 '+d.saveAs+' '+String(err&&err.message||err));
+            });
+          });
+        });
+        return chain.then(function(){
+          if(!changed){ zfLog('账房：本批无变化'); return; }
+          var bodyTxt=JSON.stringify(feed);
+          return zfPutOutbox(bodyTxt).then(function(ok){
+            if(ok){ zfLog('账房：回执已回写'); }
+            else{
+              try{ localStorage.setItem('hx_zf_pending', bodyTxt); }catch(e){}
+              zfLog('账房：回执回写失败已存pending');
+            }
+          });
+        });
+      }).catch(function(e){
+        zfLog('账房：本次静默收工 '+String(e&&e.message||e));
+      });
+    }
+  }catch(e){}
+})();
+
 
 /* ═══ v1.19.0 洪老师拍板：12小时闲时自动对账整段取消——查版本归管家一家（每天闲时静默查一次+
    验暗号自动装），主界面不再另起一路对账，免两条路提醒打架。原对账规矩（只提醒不自动装）由管家接棒。 ═══
