@@ -2,6 +2,7 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.25.0 2026-10-18（洪老师早班拍板「首页版面整顿」，SPEC_index_v1.25.0，DS补丁可用7处+Kimi终审翻案3处亲手落地：①刀2弹层toggle改只切display不清DOM——DS原案innerHTML清空会把钮摘出DOM再取不到②刀6灯detail改统一追加全档覆盖——DS只改了红档③顶部版本史DS漏写亲手补；千问补丁全废——删三钮谎称已移入弹层/伪造fmtT原文/裸变量it_t会ReferenceError）：刀1摘「不按它绝不同步」过时注解（管家每日静默查装+开机自启早推翻）/刀2同步·导出·备忘收进⋯弹层，查新版本留大钮/刀3全绿清单默认折起一行/刀4逐件行亮「几号几点改的」（16张版本牌云侧已补t字段）/刀5上一版追踪改时间对/刀6灯detail补自动升级说明；回退hx_home125_off=1；装件链/dlWrite/fetchJson/灯判定/updMsg闸/信件链一行未动。
     v1.24.0 2026-10-18（洪老师拍板「生长树开工」，SPEC_shu_v0.1.0_生长树，DS实现+Kimi终审翻案2处亲手落地：①DS又调未导出的window.hxToastHold翻自家常驻黑框②软删补摘rootIds/父children）：新单体software-shu.html v0.1.0上户口——SUITE加shu行+🌳生长树卡片（插AI对话框卡片后）+CUR加shu:"0"；查新/装件/对账/版面其余一行未动。
     v1.23.0 2026-10-16（SPEC_t35管家灯三档化，治真机截图「断了（57分钟没心跳）」误报，DS实现+Kimi终审翻案1处=TF红档措辞按SPEC与M.lamp完全一致亲手落地）：管家灯两档改三档——①投信查新打标记__hxVerCheckAsk回信清②M.lamp三档：绿≤15分钟照旧/🟡正在叫它干活（投信10分钟内）/🟡歇着呢（24小时内，闲时睡觉正常）/🔴超24小时或从没见过照旧带治法，🟡不附吓人文案③TF任务单灯同款同步；回退hx_home1209_off=1照旧；装件链/updMsg/管家本体/壳/hx-common一行未动。
     v1.22.2 2026-10-16（洪老师拍板「把AI对话框从空白一直完成到最后」，SPEC_AI对话框一期）：SUITE上chat户口+💬AI对话框卡片（插临床工具区前）+CUR加chat:"0"；配套hx-common v0.32.0对话心脏+新单体software-chat.html v0.1.0；其余一行未动。
@@ -361,8 +362,45 @@
     <button class="tag" id="btnExportAll" style="padding:12px 10px;border:none;cursor:pointer;" onclick="exportAllBackup()">📦 一键导出</button>
     <!-- v1.22.1 口令忘失救命链：🆘备忘钮；回退 hx_beiwang_off=1 时 showBeiwang 直接return -->
     <button class="tag" id="btnBeiwang" style="padding:12px 10px;border:none;cursor:pointer;" onclick="showBeiwang()">🆘 备忘</button>
-    <span id="syncTopMsg" style="font-size:13px;color:#8a8178;">不按它，绝不同步</span>
+    <button class="tag" id="btnMoreTop" style="padding:12px 10px;border:none;cursor:pointer;display:none;" onclick="hxMoreToggle(event)">⋯</button>
+    <span id="syncTopMsg" style="font-size:13px;color:#8a8178;"></span>
   </div>
+  <!-- v1.25.0 刀2：⋯弹出层；终审翻案DS：toggle只切display不清DOM（innerHTML清空会把钮摘出DOM再getElementById找不到），init一次性挪钮 -->
+  <div id="hxMoreBox" style="display:none;background:#fff;border:1px solid #e3dccf;border-radius:12px;margin-bottom:10px;padding:4px 0;"></div>
+  <script>
+  /* v1.25.0 刀2：按钮行收拢；hx_home125_off=1整段旁路三钮原地照旧 */
+  function hxMoreToggle(ev){
+    try{
+      if(ev&&ev.stopPropagation) ev.stopPropagation();
+      var box=document.getElementById('hxMoreBox'); if(!box) return;
+      box.style.display=(box.style.display==='none')?'block':'none';
+    }catch(e){}
+  }
+  document.addEventListener('click',function(e){ /* 点框外收起 */
+    try{
+      var box=document.getElementById('hxMoreBox'); if(!box||box.style.display==='none') return;
+      var t=e.target;
+      if(box.contains(t)) return;
+      var mb=document.getElementById('btnMoreTop'); if(mb&&(mb===t||mb.contains(t))) return;
+      box.style.display='none';
+    }catch(e){}
+  });
+  (function(){
+    try{
+      var off=false; try{ off=localStorage.getItem('hx_home125_off')==='1'; }catch(e){}
+      if(off) return;
+      var mb=document.getElementById('btnMoreTop'); if(mb) mb.style.display='';
+      var box=document.getElementById('hxMoreBox'); if(!box) return;
+      ['btnSyncTop','btnExportAll','btnBeiwang'].forEach(function(id){
+        var b=document.getElementById(id); if(!b) return;
+        var row=document.createElement('div');
+        row.style.cssText='min-height:44px;display:flex;align-items:center;padding:0 12px;border-bottom:1px dashed #f3ece0;';
+        row.appendChild(b); /* DOM移动：钮从syncBar挪进弹层，onclick原样跟着走 */
+        box.appendChild(row);
+      });
+    }catch(e){}
+  })();
+  </script>
 
   <a class="card" href="病人大管家.html">
     <h2>🏠 病人大管家<span class="infoBtn">ⓘ 说明</span></h2>
@@ -567,7 +605,7 @@ CUR.index="1.22.1"; /* v1.20.9（2026-10-15早班①续4，洪老师拍板三件
 CUR.index="1.22.0"; /* v1.22.0（2026-10-15 夜班⑦，洪老师拍板「做」，SPEC_index_v1.22.0+hx-common_v0.30.0_预下载+双击回环，DS实现+Kimi终审翻案1处亲手落地：preloadSave改先写本体、门岗回调ok后才写.ver防假命中）：闲时预下载开门秒装——dl()开头先查存货hxdata_preload_*版本对上直接用跳过下载，对不上/读不到走老下载链零风险降级，下载成功顺手存壳，装成清存货，装失败留着下次开门救命；回退hx_preload_off=1。红线：管家VERCHECK路/投信/取信/复核verifyAfter/任务单__taskFeed/对账/版面一行不动；除刀B1新增四函数+刀B2两处+刀B3一处+版本行外全文件IDENTICAL */
 CUR.index="1.23.0"; /* v1.23.0 t35管家灯三档化，见顶部修改记录 */
 CUR.shu="0"; /* v1.24.0新户口：壳没带生长树填"0"才会下载，照chat先例 */
-CUR.index="1.24.0"; /* v1.24.0 生长树上户口，见顶部修改记录 */
+CUR.index="1.25.0"; /* v1.25.0 首页版面整顿，见顶部修改记录 */
 CUR.tuomin="0"; /* v1.19.10修404：CUR=壳内已装版本，单体手机还没装必须填"0"才会下载（CUR.ppt同款老坑，见230行） */ /* v1.19.8（2026-09-20班⑮，洪老师真机报"升级说装成功主界面还是19.6，几次都这样，没重启应该直接变19.7"）病根=班⑮发v1.19.7时新赋值插在同一行旧赋值前面，CUR.index="1.19.7"刚赋上就被同行的CUR.index="1.19.6"盖回→页脚活字永远亮1.19.6（文件真身早是新版，升级链/壳全无辜，大管家0.54.5上机为证）；还连带v1.19.5刀2开门自校对误把账本1.19.7当谎回滚→每次都提示重装。治=删同行可执行旧赋值（注释留档）+升号v1.19.8让真机重新下载。其余一行未动 */
 try{document.getElementById("ftVer").textContent=CUR.index;}catch(eF){} /* v1.19.6 页脚死字改活字：ftVer亮CUR.index真身 */
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
@@ -1148,7 +1186,7 @@ function hxRawGet(name){
       var lv=partLocalVer(pName, pRe);
       cloudVer[pName]=info.version; /* 复核一并列部件 */
       if(lv && cmpVer(info.version, lv)<=0){
-        setSlot(slot, "✅ "+cn+"：已是最新（本机=云端 v"+lv+"）"+devNote(pName, info.version)); doneOne(); return; /* v1.19.7：尾巴亮研发最新号 */
+        setSlot(slot, "✅ "+cn+"：已是最新（本机=云端 v"+lv+"）"+(info.t?" · "+fmtT(info.t):"")+devNote(pName, info.version)); doneOne(); return; /* v1.19.7：尾巴亮研发最新号；v1.25.0刀4：有t才加改版时刻 */
       }
       setSlot(slot, "📥 "+cn+"：本机"+(lv?("v"+lv):"（没装）")+" / 云端v"+info.version+"，有新版，正在下载…"+devNote(pName, info.version)); /* v1.19.7 */
       hardLimit(fetchJson(pName), 80000).then(function(txt2){
@@ -1176,6 +1214,8 @@ function hxRawGet(name){
         setSlot(slot, "❌ "+cn+"：下载没成功（"+((e&&e.message)||"网络不通")+"），下次再试"); doneOne(); });
     }).catch(function(e){ var _em=(e&&e.message)||"网络不通"; if(/abort/i.test(_em)) _em="网络不通或太慢"; setSlot(slot, "⚠️ "+cn+"：版本文件没读到（"+_em+"），跳过"); doneOne(); });
   }
+  /* v1.25.0 刀4：改版时刻格式化（牌已带t字段，云侧已办） */
+  function fmtT(t){ try{ var d=new Date(Number(t)); if(!t||isNaN(d.getTime())) return ""; return (d.getMonth()+1)+"-"+d.getDate()+" "+("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2)+"改的"; }catch(e){ return ""; } }
   function checkKey(k, slot){
     var remote=SUITE[k][0], localName=SUITE[k][1], verFile=SUITE[k][2];
     var cnName=(k==="index"?"主界面自己":localName.replace(".html",""));  /* v1.8.0 主界面入名单后报进度说人话 */
@@ -1190,7 +1230,7 @@ function hxRawGet(name){
           if(failed.indexOf(localName)<0){ failed.push(localName); setSlot(slot, "❌ "+localName.replace(".html","")+"：下载没成功（"+((e&&e.message)||"网络不通")+"），下次再试"); }
           doneOne();
         }); return; }
-      setSlot(slot, "✅ "+cnName+"：已是最新（本机=云端 v"+info.version+"）"+devNote(k, info.version)); /* v1.19.7 */
+      setSlot(slot, "✅ "+cnName+"：已是最新（本机=云端 v"+info.version+"）"+(info.t?" · "+fmtT(info.t):"")+devNote(k, info.version)); /* v1.19.7；v1.25.0刀4：有t才加改版时刻 */
       /* 版本看着不新，再敲一下文件的门（v1.1.5 假记忆防御） */
       reallyMissing(localName, function(missing){
         if(missing){ setSlot(slot, "📥 "+cnName+"：版本记录说最新但文件没装上，正在补装…");
@@ -1223,7 +1263,25 @@ function hxRawGet(name){
     }else if(failed.length){
       updMsg(progLog.join("\n")+"\n\n⚠️ 有新版但下载没成功："+failed.join("、")+"\n不影响使用，下次打开会再试。");
     }else{
-      updMsg(progLog.join("\n")+"\n\n✅ " + keys.length + "个软件全部是最新版，放心用");
+      /* v1.25.0 刀3：全绿定格默认折起一行，点updLine展开全清单再点折回；hx_home125_off=1走老样 */
+      var _off125=false; try{ _off125=localStorage.getItem('hx_home125_off')==='1'; }catch(e){}
+      var _full125=progLog.join("\n")+"\n\n✅ " + keys.length + "个软件全部是最新版，放心用";
+      if(_off125){ updMsg(_full125); }
+      else{
+        var _el125=document.getElementById("updLine");
+        var _nw125=new Date();
+        var _sum125="✅ 全部是最新版（"+("0"+_nw125.getHours()).slice(-2)+":"+("0"+_nw125.getMinutes()).slice(-2)+"查的），点我看明细";
+        if(_el125){
+          _el125.__full=_full125; _el125.__sum=_sum125; _el125.classList.remove("hxOpen");
+          updMsg(_sum125);
+          _el125.onclick=function(){
+            try{
+              if(_el125.classList.contains("hxOpen")){ _el125.classList.remove("hxOpen"); updMsg(_el125.__sum); }
+              else{ _el125.classList.add("hxOpen"); updMsg(_el125.__full); }
+            }catch(e){}
+          };
+        }else updMsg(_sum125);
+      }
     }
   }
   /* v1.9.0 洪老师拍板：开门三停——这行现在只有手动点「🔍 检查新版本」立了 hx_ver_manual 标记才会走到
@@ -1586,7 +1644,7 @@ function hxRawGet(name){
           var dlJobs=[];
           resp.vercheck.forEach(function(r, i){
             var nm=(function(){ var it=null; items.forEach(function(x){ if(x.key===r.key) it=x; }); return it?(it.part?("部件"+it.key):(it.key==="index"?"主界面自己":it.localName.replace(".html",""))):r.key; })();
-            if(r.state==='same'){ progLog[i]="✅ "+nm+"：已是最新（本机=云端 v"+r.cur+"）"; }
+            if(r.state==='same'){ progLog[i]="✅ "+nm+"：已是最新（本机=云端 v"+r.cur+"）"+(r.t?" · "+fmtT(r.t):""); } /* v1.25.0刀4：r有t才加 */
             else if(r.state==='downloaded'){ progLog[i]="📥 "+nm+"：本机v"+(r.cur||"?")+" / 云端v"+r.cloud+"，管家已下载，正在装进壳…"; dlJobs.push(r.key); }
             else if(r.state==='dlfail'){ progLog[i]="❌ "+nm+"：有新版v"+r.cloud+"但下载没成功，下次再试"; failed.push(r.key); }
             else{ progLog[i]="⚠️ "+nm+"：版本没查到（网络不通），跳过"; failed.push(r.key); }
@@ -2268,7 +2326,7 @@ var __home1209 = (function(){
           detail="大管家最后心跳："+tsStr+"\n最近在干嘛：\n"+(recent.length?recent.join("\n"):"（没有进度记录）")+"\n\n治法：彻底关掉套件再开一次；还红就点🆘。";
         }
       }
-      el.textContent=line+(el.classList.contains("hxOpen")?"\n\n"+detail:"");
+      el.textContent=line+(el.classList.contains("hxOpen")?"\n\n"+detail+"\n自动升级：管家每天自己查新版、验过暗号自动装；手机一开机它自动上岗——不用您点。":""); /* v1.25.0刀6：灯detail补自动升级说明，全档统一追加，三档判定一字不动 */
       el.onclick=function(){ try{ el.classList.toggle("hxOpen"); M.lamp(); }catch(e){} };
       el.style.display="block";
     }catch(e){}
@@ -2348,8 +2406,8 @@ var __home1209 = (function(){
           }
           var allOk=(up==="✅"&&inst==="✅");
           var nm=M.nmOf(key);
-          var line="上一版："+nm+" v"+ver+"　上传"+up+" 下载"+dl+" 安装"+inst+(allOk?"":"　🔴有段卡住");
-          var detail="上一版发的活："+String(it.task||nm)+"（"+nm+" v"+ver+"）\n\n三段对账：\n①上传"+up+" 云端牌挂的是 v"+(cloudVer||"没查到")+(up==="🔴"?"——AI发版没发出去，催它":"")+"\n②下载"+dl+" 件"+(dl==="✅"?"已到手机":"还没到手机")+"\n③安装"+inst+" 本机真身 v"+(local||"没认到")+(inst==="🔴"?"——版本对不上，点「🔍 检查新版本」让它再装一次；装完还红就点🆘":"")+(allOk?"\n\n三段全绿=这一版真落地了。":"");
+          var line="上次改版："+fmtT(it.t||feed.t||0)+"，交的活="+nm+" v"+ver+"　上传"+up+" 下载"+dl+" 安装"+inst+(allOk?"":"　🔴有段卡住"); /* v1.25.0刀5：时间对替版本号对 */
+          var detail="改版时刻："+fmtT(it.t||feed.t||0)+"——您凭交活的钟点对，对上了就是真落地\n\n上一版发的活："+String(it.task||nm)+"（"+nm+" v"+ver+"）\n\n三段对账：\n①上传"+up+" 云端牌挂的是 v"+(cloudVer||"没查到")+(up==="🔴"?"——AI发版没发出去，催它":"")+"\n②下载"+dl+" 件"+(dl==="✅"?"已到手机":"还没到手机")+"\n③安装"+inst+" 本机真身 v"+(local||"没认到")+(inst==="🔴"?"——版本对不上，点「🔍 检查新版本」让它再装一次；装完还红就点🆘":"")+(allOk?"\n\n三段全绿=这一版真落地了。":"");
           el.textContent=line+(el.classList.contains("hxOpen")?"\n\n"+detail:"");
           el.onclick=function(){ try{ el.classList.toggle("hxOpen"); el.textContent=line+(el.classList.contains("hxOpen")?"\n\n"+detail:""); }catch(e){} };
           el.__line=line; el.__detail=detail;
