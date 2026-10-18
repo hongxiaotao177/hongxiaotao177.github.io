@@ -2,6 +2,7 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.25.1 2026-10-18（想法流水10-15 10:22真机报「第一次开门自动更新老不成，手动点才成」；病根：开门直装取件只有hxRawGet公开站单腿，刚开门网络没热/国内时断时续→取件失败落专区老路readFile，大件过X5桥读不稳装不成；手动点时网络已热所以总成。刀法：开门直装IIFE内_mgShellWrite前新增_mgGet双腿取件（hxRawGet失败回落GitHub API contents/download_url），唯一调用点hxRawGet(_dlName)换_mgGet(_dlName)，catch回落专区老路原样不动；两腿全败才走老路；DS+千问补丁一致Kimi终审全采纳）
     v1.25.0 2026-10-18（洪老师早班拍板「首页版面整顿」，SPEC_index_v1.25.0，DS补丁可用7处+Kimi终审翻案3处亲手落地：①刀2弹层toggle改只切display不清DOM——DS原案innerHTML清空会把钮摘出DOM再取不到②刀6灯detail改统一追加全档覆盖——DS只改了红档③顶部版本史DS漏写亲手补；千问补丁全废——删三钮谎称已移入弹层/伪造fmtT原文/裸变量it_t会ReferenceError）：刀1摘「不按它绝不同步」过时注解（管家每日静默查装+开机自启早推翻）/刀2同步·导出·备忘收进⋯弹层，查新版本留大钮/刀3全绿清单默认折起一行/刀4逐件行亮「几号几点改的」（16张版本牌云侧已补t字段）/刀5上一版追踪改时间对/刀6灯detail补自动升级说明；回退hx_home125_off=1；装件链/dlWrite/fetchJson/灯判定/updMsg闸/信件链一行未动。
     v1.24.0 2026-10-18（洪老师拍板「生长树开工」，SPEC_shu_v0.1.0_生长树，DS实现+Kimi终审翻案2处亲手落地：①DS又调未导出的window.hxToastHold翻自家常驻黑框②软删补摘rootIds/父children）：新单体software-shu.html v0.1.0上户口——SUITE加shu行+🌳生长树卡片（插AI对话框卡片后）+CUR加shu:"0"；查新/装件/对账/版面其余一行未动。
     v1.23.0 2026-10-16（SPEC_t35管家灯三档化，治真机截图「断了（57分钟没心跳）」误报，DS实现+Kimi终审翻案1处=TF红档措辞按SPEC与M.lamp完全一致亲手落地）：管家灯两档改三档——①投信查新打标记__hxVerCheckAsk回信清②M.lamp三档：绿≤15分钟照旧/🟡正在叫它干活（投信10分钟内）/🟡歇着呢（24小时内，闲时睡觉正常）/🔴超24小时或从没见过照旧带治法，🟡不附吓人文案③TF任务单灯同款同步；回退hx_home1209_off=1照旧；装件链/updMsg/管家本体/壳/hx-common一行未动。
@@ -605,7 +606,7 @@ CUR.index="1.22.1"; /* v1.20.9（2026-10-15早班①续4，洪老师拍板三件
 CUR.index="1.22.0"; /* v1.22.0（2026-10-15 夜班⑦，洪老师拍板「做」，SPEC_index_v1.22.0+hx-common_v0.30.0_预下载+双击回环，DS实现+Kimi终审翻案1处亲手落地：preloadSave改先写本体、门岗回调ok后才写.ver防假命中）：闲时预下载开门秒装——dl()开头先查存货hxdata_preload_*版本对上直接用跳过下载，对不上/读不到走老下载链零风险降级，下载成功顺手存壳，装成清存货，装失败留着下次开门救命；回退hx_preload_off=1。红线：管家VERCHECK路/投信/取信/复核verifyAfter/任务单__taskFeed/对账/版面一行不动；除刀B1新增四函数+刀B2两处+刀B3一处+版本行外全文件IDENTICAL */
 CUR.index="1.23.0"; /* v1.23.0 t35管家灯三档化，见顶部修改记录 */
 CUR.shu="0"; /* v1.24.0新户口：壳没带生长树填"0"才会下载，照chat先例 */
-CUR.index="1.25.0"; /* v1.25.0 首页版面整顿，见顶部修改记录 */
+CUR.index="1.25.1"; /* v1.25.1 开门自动装新版加腿，见顶部修改记录 */
 CUR.tuomin="0"; /* v1.19.10修404：CUR=壳内已装版本，单体手机还没装必须填"0"才会下载（CUR.ppt同款老坑，见230行） */ /* v1.19.8（2026-09-20班⑮，洪老师真机报"升级说装成功主界面还是19.6，几次都这样，没重启应该直接变19.7"）病根=班⑮发v1.19.7时新赋值插在同一行旧赋值前面，CUR.index="1.19.7"刚赋上就被同行的CUR.index="1.19.6"盖回→页脚活字永远亮1.19.6（文件真身早是新版，升级链/壳全无辜，大管家0.54.5上机为证）；还连带v1.19.5刀2开门自校对误把账本1.19.7当谎回滚→每次都提示重装。治=删同行可执行旧赋值（注释留档）+升号v1.19.8让真机重新下载。其余一行未动 */
 try{document.getElementById("ftVer").textContent=CUR.index;}catch(eF){} /* v1.19.6 页脚死字改活字：ftVer亮CUR.index真身 */
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
@@ -1766,6 +1767,21 @@ try{ mgSuiteWrite(); }catch(e){}
     /* 独立验证工兵一审抓虫修正：专区件名=壳内文件名SUITE[k][1]（中文名如"学习笔记.html"），不是云端名[0]；两列都登记防漏 */
     try{ Object.keys(SUITE).forEach(function(k){ _keyOf[SUITE[k][0]]=k; if(SUITE[k][1]&&SUITE[k][1]!==SUITE[k][0]) _keyOf[SUITE[k][1]]=k; }); }catch(e){}
     try{ PARTS.forEach(function(p){ _keyOf[p[0]]=p[0]; }); }catch(e){}
+    /* v1.25.1：开门直装取件加腿②GitHub API——公开站刚开门常常没热/国内时断时续，单腿白败 */
+    function _mgGet(name){
+      return hxRawGet(name).catch(function(){
+        var c=ghCfg();
+        var u='https://api.github.com/repos/'+encodeURIComponent(c.user)+'/'+encodeURIComponent(c.repo)+'/contents/'+encodeURIComponent(name)+'?t='+Date.now();
+        return ghFetch(u,{headers:ghHeaders()},60000).then(function(r){
+          if(!r.ok) throw new Error('HTTP '+r.status);
+          return r.json();
+        }).then(function(j){
+          if(j.content) return u8dec(j.content);
+          if(j.download_url) return ghFetch(j.download_url+'?t='+Date.now(),{},60000).then(function(r2){ if(!r2.ok) throw new Error('HTTP '+r2.status); return r2.text(); });
+          throw new Error('空件');
+        });
+      });
+    }
     /* 直装用的壳写入桥（照抄本文件shellWrite分块写入逻辑，原函数在查版本块内部够不着，此处内联同款，原函数一行未动） */
     function _mgShellWrite(name, b64){
       if(!window.LearnShell) return false;
@@ -1834,7 +1850,7 @@ try{ mgSuiteWrite(); }catch(e){}
         }
       }
       try{
-        hxRawGet(_dlName).then(function(_txt){ _withBody(u8enc(_txt)); }).catch(function(e){
+        _mgGet(_dlName).then(function(_txt){ _withBody(u8enc(_txt)); }).catch(function(e){
           /* 现取失败回落专区老路（小件仍可用） */
           var fb=null; try{ fb=LearnShell.readFile('mgver_'+_ln); }catch(e2){}
           if(!fb){ _fail.push(_ln); setTimeout(function(){ _installOne(idx+1); }, 50); return; }
