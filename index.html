@@ -2,6 +2,7 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.28.0 2026-10-18（洪老师真机问「我要的升级人话版在哪」——回执只在装件那一刻闪3秒被复核后自动刷新冲掉，过后无处可看；治=人话账存localStorage hx_last_upd，全绿界面顶部常驻「📋 上次更新：哪几件（几点几分写的）」随时可查，t61，SPEC_index_v1.28.0，DS实现+Kimi终审亲手落地）：刀1 helper lastUpdNote（终审翻案自家1处：原定在updCheck函数内，管家路刀6跨作用域调用必炸，挪全局）/刀2刀3两处finish存账（老路+管家路）/刀4刀5刀6三处全绿顶部拼账（老路else+125摘要与明细+管家路）；装件链/复核链/dlWrite/任务单/灯/版面一行未动。
     v1.27.2 2026-10-18（洪老师真机报「升级说明页还没改、刚更新完也这样」拍板根治，t60，SPEC_index_v1.27.2，DS实现零编造+Kimi终审亲手落地）：上一版追踪条人话化——一行账与点开明细全去版本号（拍板「不报版本号」补刀），只留名字+交活钟点，三段对账保留说法人话化；云侧补推发版任务单t59（t57/t58/t59三班漏刷，本班补账）；判定逻辑/三段灯/任务单/灯/装件链一行未动。
     v1.27.1 2026-10-18晚（黑匣子真机账逮住反复err「fmtT is not defined @index.html」：t55补丁IIFE跨作用域调fmtT必炸——fmtT住在查新主链IIFE里，管家路回执IIFE够不着；DS出补丁+Kimi终审落地：1705 IIFE内_finH前补本地fmtT照抄行1223同款一字不差；验：锚点唯一+3个script块语法PASS+IIFE内fmtT仅此一处调用；其余一行未动）
     v1.27.0 2026-10-18（SPEC_手机账房落地，刀B，DS实现+Kimi终审翻案2处亲手落地：①DS编HX.bb.job(msg,obj)假签名翻真签名HX.bb.log(k,m) ②DS跨闭包用hasApi/base/H局部变量翻模块内现取ghCfg/ghHeaders）：新增账房消费链独立IIFE（开门查新IIFE之后）——老壳无writeFileRel静默退/hx_zf_checked每开门一次/总回退hx_zfang_off=1/闲时60秒起跑；双腿取bridge-outbox.json→deliveries（done跳过/dest!=="zfang"跳过，老测试件不动）→写「账房/」子目录→回读字节对账→冲突改名留底→receipt→PUT回写（ghFetch先GET取sha，失败投信mg_out_管家代发，没Token存hx_zf_pending下次补投）；全程静默只写黑匣子；开门查新链/装件链/dlWrite/hxWriteSmart/任务单/灯/updHuman/版面一行未动；配壳vc59子目录桥四件套
@@ -611,6 +612,7 @@ CUR.index="1.25.1"; /* v1.25.1 开门自动装新版加腿，见顶部修改记�
 CUR.index="1.26.1"; /* v1.26.1 t55管家路人话回执补钟点，见顶部修改记录 */
 CUR.index="1.27.0"; /* v1.27.0 手机账房消费链上岗（配壳vc59子目录桥），见顶部修改记录 */
 CUR.index="1.27.2"; /* v1.27.2 上一版追踪条人话化（顺手根治v1.27.1班CUR行漏升=开门装循环隐患），见顶部修改记录 */
+CUR.index="1.28.0"; /* v1.28.0 升级人话常驻，见顶部修改记录 */
 CUR.tuomin="0"; /* v1.19.10修404：CUR=壳内已装版本，单体手机还没装必须填"0"才会下载（CUR.ppt同款老坑，见230行） */ /* v1.19.8（2026-09-20班⑮，洪老师真机报"升级说装成功主界面还是19.6，几次都这样，没重启应该直接变19.7"）病根=班⑮发v1.19.7时新赋值插在同一行旧赋值前面，CUR.index="1.19.7"刚赋上就被同行的CUR.index="1.19.6"盖回→页脚活字永远亮1.19.6（文件真身早是新版，升级链/壳全无辜，大管家0.54.5上机为证）；还连带v1.19.5刀2开门自校对误把账本1.19.7当谎回滚→每次都提示重装。治=删同行可执行旧赋值（注释留档）+升号v1.19.8让真机重新下载。其余一行未动 */
 try{document.getElementById("ftVer").textContent=CUR.index;}catch(eF){} /* v1.19.6 页脚死字改活字：ftVer亮CUR.index真身 */
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
@@ -993,6 +995,8 @@ function hxIdle0(){ /* v1.7.0 保底闹钟：闲时优先，但最长等10秒强
 /* v1.3.7 免Token备用路（洪医生手机旧Token作废→更新静默卡死的踩坑）：
    同款文件每次发版都同步推到公开站 hongxiaotao177.github.io，读它不要Token。
    hxGetText=先走API（私有仓库），不通/没填Token就走公开直链。 */
+/* v1.28.0 刀1（终审翻案自家1处：helper原定义在updCheck函数内，管家路刀6跨作用域调用必炸ReferenceError，挪全局；SPEC其余刀口不动） */
+function lastUpdNote(){ try{ var s=localStorage.getItem("hx_last_upd"); if(!s) return ""; var o=JSON.parse(s); if(!o||!o.items||!o.items.length) return ""; return "\ud83d\udccb 上次更新："+o.items.join("、")+"\n\n"; }catch(e){ return ""; } }
 function hxRawGet(name){
   /* v1.7.0 防缓存尾巴：手机WebView/X5常无视no-store把旧响应缓存数天（治"发了版手机还是旧版"频发），
      每次请求URL带时间戳=永远是新地址，缓存存不住 */
@@ -1258,6 +1262,7 @@ try{ updHuman.push((typeof cn!=="undefined"&&cn?cn:pName)+"（"+(info&&info.t?fm
        升级为"升级后复核"（verifyAfter，只读不下载），见下面 updated 分支。 */
     if(updated.length){
       try{ sessionStorage.setItem("hx_postaudit","1"); }catch(e){}  /* v1.8.0 刷新回来后自动对账① */
+      try{ localStorage.setItem("hx_last_upd", JSON.stringify({t:Date.now(), items:updHuman})); }catch(e){} /* v1.28.0 刀2：人话账存底 */
       updMsg("✅ 升级好了，这次新换："+(updHuman.length?updHuman.join("、"):updated.join("、"))+"\n钟点跟您教我的时候对得上，就是真装上了。\n旧版不用管，新版备份已存进您的文件夹。\n正在复核…"); /* v1.26.0 刀2c①：人话回执，不亮版本号 */
       try{ if(sessionStorage.getItem("hx_upd_toasted")!=="1"){ sessionStorage.setItem("hx_upd_toasted","1"); window.LearnShell.toast("✅ 套装已自动更新"); } }catch(e){} /* v1.20.1（2026-10-14 班⑨救火，装循环根治，SPEC_index_v1.20.1，DS实现+Kimi终审亲手落地）*/
       /* v1.9.0 升级后复核：重读本机记录+探实际文件，跟云端版本对账；
@@ -1275,10 +1280,10 @@ try{ updHuman.push((typeof cn!=="undefined"&&cn?cn:pName)+"（"+(info&&info.t?fm
          回退 hx_home126_off=1 → 走v1.25.0老样（可点展开）。hx_home125_off老开关原样认得。 */
       var _off126=false; try{ _off126=(localStorage.getItem('hx_home126_off')==='1'||localStorage.getItem('hx_home125_off')==='1'); }catch(e){}
       if(_off126){
-        var _full125=progLog.join("\n")+"\n\n✅ " + keys.length + "个软件全部是最新版，放心用";
+        var _full125=lastUpdNote()+progLog.join("\n")+"\n\n✅ " + keys.length + "个软件全部是最新版，放心用"; /* v1.28.0 刀5 */
         var _el125=document.getElementById("updLine");
         var _nw125=new Date();
-        var _sum125="✅ 全部是最新版（"+("0"+_nw125.getHours()).slice(-2)+":"+("0"+_nw125.getMinutes()).slice(-2)+"查的），点我看明细";
+        var _sum125=lastUpdNote()+"✅ 全部是最新版（"+("0"+_nw125.getHours()).slice(-2)+":"+("0"+_nw125.getMinutes()).slice(-2)+"查的），点我看明细"; /* v1.28.0 刀5 */
         if(_el125){
           _el125.__full=_full125; _el125.__sum=_sum125; _el125.classList.remove("hxOpen");
           updMsg(_sum125);
@@ -1291,7 +1296,7 @@ try{ updHuman.push((typeof cn!=="undefined"&&cn?cn:pName)+"（"+(info&&info.t?fm
         }else updMsg(_sum125);
       }else{
         var _nw126=new Date();
-        updMsg("✅ 都是最新的（"+("0"+_nw126.getHours()).slice(-2)+":"+("0"+_nw126.getMinutes()).slice(-2)+"查的），放心用");
+        updMsg(lastUpdNote()+"✅ 都是最新的（"+("0"+_nw126.getHours()).slice(-2)+":"+("0"+_nw126.getMinutes()).slice(-2)+"查的），放心用"); /* v1.28.0 刀4：全绿顶部拼人话账 */
       }
     }
   }
@@ -1672,6 +1677,7 @@ try{ updHuman.push((typeof cn!=="undefined"&&cn?cn:pName)+"（"+(info&&info.t?fm
                 try{ if(sessionStorage.getItem("hx_upd_toasted")!=="1"){ sessionStorage.setItem("hx_upd_toasted","1"); window.LearnShell.toast("✅ 套装已自动更新"); } }catch(e){} /* v1.20.1（2026-10-14 班⑨救火，装循环根治，SPEC_index_v1.20.1，DS实现+Kimi终审亲手落地）*/
                 /* v1.19.0 D刀对齐：管家路收尾也跑升级后复核（verifyAfter，只读不下载）——
                    全对上3秒自动刷新；对不上红字定格不刷新（老路finish一直如此，管家路此前直接刷新漏了复核） */
+                try{ localStorage.setItem("hx_last_upd", JSON.stringify({t:Date.now(), items:updHuman})); }catch(e){} /* v1.28.0 刀3：人话账存底（管家路同款） */
                 updMsg("✅ 升级好了，这次新换："+(updHuman.length?updHuman.join("、"):updated.join("、"))+"\n钟点跟您教我的时候对得上，就是真装上了。\n旧版不用管，新版备份已存进您的文件夹。\n正在复核…"); /* v1.26.0 刀2c①：人话回执，不亮版本号 */
                 verifyAfter(function(vlines, allOk){
                   var el=document.getElementById("updLine");
@@ -1682,7 +1688,7 @@ try{ updHuman.push((typeof cn!=="undefined"&&cn?cn:pName)+"（"+(info&&info.t?fm
               }else if(failed.length){
                 updMsg(progLog.join("\n")+"\n\n⚠️ 有没查成/没下成的："+failed.join("、")+"\n不影响使用，下次打开会再试。");
               }else{
-                updMsg(progLog.join("\n")+"\n\n✅ "+keys.length+"个软件全部是最新版，放心用");
+                updMsg(lastUpdNote()+progLog.join("\n")+"\n\n✅ "+keys.length+"个软件全部是最新版，放心用"); /* v1.28.0 刀6 */
               }
               return;
             }
