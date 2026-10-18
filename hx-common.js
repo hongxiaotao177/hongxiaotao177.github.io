@@ -83,7 +83,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 (function(){
   'use strict';
-  var HX_COMMON_VERSION = '0.37.0';/* v0.37.0（2026-10-18，洪老师真机报「传黑匣子12秒没动静/上行失败」云侧查明=虚惊（网慢超12秒看门狗误报，PUT其实传上），拍板治，SPEC_hx-common_v0.37.0，DS+千问同稿、Kimi终审翻案1处=DS版本留痕插位错插v0.23.0前，亲手改插版本行）：刀1黑匣子看门狗12→30秒；刀2补传成功补人话（hx_bb_lastfail标记，败立成消）；红线HX.bb除本版申报三处外IDENTICAL，其他所有模块IDENTICAL *//* v0.36.0（2026-10-18，分家④步「泵归公共件」10-10_2316拍板，SPEC_fenjia4，DS+千问同稿、Kimi终审亲手落地）：HX.chat新增公共泵api.pump(sys,usr,opt,cb)——链默认千问→Kimi→DeepSeek复用闭包私有callQwen/callKimi/callDS（cb(st,txt)签，st==='ok'才成），opt.which='qwen'/'kimi'/'ds'可点名只走一家，cb(ok,text,by)；流式onProg/联网web暂不支持，要用这两样的单体照旧走自带老泵；红线除本加法与版本行外IDENTICAL *//* v0.35.0（2026-10-18，F4a尾刀：窄条「不变化像死机」v0.24.4查明是手动步等人点✓但没说清）：窄条补「在等谁」——手动步说等您点✓点这条展开，watch/auto步说在帮您盯，cloud步说云侧核不用动，watch档说观察哨自己销；红线除本刀文案与版本行外IDENTICAL *//* v0.34.0（2026-10-18，想法流水10-18 09:01真机报「想法输入框顶天看不到打的内容」，F3b没断根）：新增sjKbFit键盘自适应——visualViewport算出键盘吃掉的高度，面板底边抬到键盘上方、最高随可视高收缩；键盘收/没visualViewport接口自动回老样；红线除本两刀与版本行外IDENTICAL *//* v0.33.0（2026-10-17深夜班，洪老师拍板「把千问修好修完为止」，SPEC_千问四治法，DS实现+Kimi终审翻案1处亲手落地：DS续写漏拼半截只回第二回正文，补acc累加）：治千问三刀落callQwen——刀①回信上限2048→8192治腰斩（删Math.min死代码）刀②读finish_reason截断自动续写一回拼接全文（slice拷贝不动原数组，硬上限1次，仍截断报fail换棒）刀④正式调用钥匙trim（探活已修本处补上）；配套chat v0.4.1+大管家v0.57.4同治病根；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold/HX.chk/callDS/callKimi/fetchJson/buildMessages/tryCompress IDENTICAL，callQwen除本三刀申报点外IDENTICAL *//* v0.32.0（2026-10-16，洪老师拍板「把AI对话框从空白一直完成到最后」，SPEC_AI对话框一期，DS实现+Kimi终审翻案2处亲手落地：①toast改调闭包内真接口hxToastHold（DS又编不存在的window.hxToastHold/hxToast/HX.toast，记账）②callKimi兜底模型名改真机现行kimi-k2.7-code-highspeed删修正贴纸）：纯加法新增HX.chat对话心脏——索引hx_chat_v1+对话壳真源hxdata_hx_chat_<id>.json三层写（真源/localStorage兜底/坚果云mirror），通道链DS→千问→Kimi各60秒死心换棒，三层记忆（原文永存+超10轮DS压缩摘要+事实卡），pullCloud云端捞回，总开关hx_chat_off=1全退休；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold/HX.chk IDENTICAL */ /* v0.31.0/* v0.31.0（2026-10-16，洪老师真机报F3b输入框顶头拍板「干」，DS实现+Kimi终审零翻案）：#hxSjPanel加max-height:calc(100vh-170px)+overflow-y:auto，键盘起面板内部滑，输入框不再被顶出屏；红线除本刀CSS与版本行外IDENTICAL *//* v0.30.0（2026-10-15 夜班⑦，洪老师拍板「做」，SPEC_index_v1.22.0+hx-common_v0.30.0_预下载+双击回环，DS实现+Kimi终审翻案3处亲手落地：①腿D的upFile/downFile回调式签名翻Promise式（DS编了不存在的第三参回调）②腿G写断/读断拆两条链各自catch精确判 ③腿D删wrote判返回照_writeFile同款try调用）：刀A1 HX.bb新增公开口loopback()双击🆘回环体检（腿G GitHub仓根「黑匣子回环.txt」+腿D坚果云/学习套装备份/黑匣子回环.txt，写上去读回来码对=通，写不成/读不回/码不对=哪腿哪环断一句话说清，双腿独立全settle后bbToast常驻汇总+job报账）刀A2 sj🆘钮双击判定（hx_lb_off=1单击照旧flush(true)整刀退休，否则单击600ms后flush、600ms内第二击loopback()）；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.chk/hxToastHold IDENTICAL，HX.sj除刀A2一处bind外IDENTICAL，HX.bb除刀A1新增函数+return一处外IDENTICAL */ /* v0.29.0（2026-10-15 夜班④，洪老师拍板「三个任务一起做」，SPEC_hx-common_v0.29.0_被动观察法+黑匣子心跳，DS实现+Kimi终审）：①bb开门心跳hb（云侧对时知在线）②collectSide哑火对照（壳有开门主账没动→哨兵err）③被动观察法：清单步骤带watch关键词，bb记账通报HX.chk.bbHit命中→24小时（hx_chk_watch_hours可配）没err自动markGreen销号全程不弹窗，err命中删账不销 ④撤开门8秒自动问（hx_chk_wiz_ask=1才问，🧪手动链不动）；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/hxToastHold IDENTICAL，HX.bb除块2~3申报点外IDENTICAL，HX.chk除块4~6申报点外IDENTICAL */ /* v0.28.0（2026-10-15 夜班，洪老师拍板「开工」，SPEC_hx-common_v0.28.0_黑匣子五案，DS实现+Kimi终审）：黑匣子五案——①HX.bb.job办完报账（成记job/败记err立刻上行）②重点钮12秒看门狗「点了没反应」③哨兵_silentLog（flush失败/没钥匙直写账防递归）④hxToastHold黑框留账note（hxBbToast自家除外）⑤err截断120→300字；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.chk IDENTICAL，HX.bb除块2~5申报点外IDENTICAL，hxToastHold除块4一处加法外IDENTICAL */ /* ═══════════════════════════════════════════════════════════════════════════
+  var HX_COMMON_VERSION = '0.39.0';  /* ── v0.39.0（2026-10-18晚，机核档·自动真机检验一期：洪老师问「自动真机检验」→Kimi报方案（机器能核的自动销、核不了的攒短清单、开门一次清账）→洪老师拍板「同意你的选择，开工」→SPEC_机核档_自动真机检验一期→DS实现13秒交齐8申报点→Kimi终审翻案1处（DS版本行hunk锚点截断不可用，亲手改定点插段）亲手落地）：六刀=①detect机核分流（watch优先照旧，机核档排第二，hx_chk_auto_off=1落回弹确认条老路）②_autoGreen侦中直接markGreen不弹窗（bb.job+机核台账双留痕）③_autoNoteOnce机核档缺侦测器note会话防重永不销 ④_autoOff总开关 ⑤机核台账_autoLogAdd+_pushAutoLog（hx_chk_autolog只增裁100条，闲时PUT仓根机核台账.json，镜像hx_chk_autolog_up没变不重推）⑥key_eq侦测器（非空且全等才中）+renderPg机核标（机核档步不显✓钮防手滑）；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold/HX.chat/HX.jc IDENTICAL，HX.chk除本版申报8处外IDENTICAL */ /* ── v0.38.0（2026-10-18，监察员上岗：设计稿SPEC_监察员_v0.1.0_设计稿洪老师2026-10-18两次拍板合成→正式SPEC_监察员_v0.1.0 Kimi起草已落仓→DS实现（千问钥匙401没进去本班没上工）→Kimi终审翻案4处亲手落地：①afterStep引用回调局部变量rec必炸ReferenceError改传参 ②calcBacklog编不存在的t.sim/t.cloud/t.watch翻真字段t.lane（照HX.chk）③卡件没跳下一件还走剩余步翻cb(out)收尾 ④saveRes漏ver变清旧结果补上）：纯加法新增HX.jc监察员——走查单.json双腿三兜底（dav/api/raw+缓存）、开门闲时60秒起跑每次最多hx_jc_max件（缺省3）件间歇5秒、五算子全读型（see/seeText/ls/lsKey/file）绝不自动点击输入、卡件记黑匣子+AI病根分析（HX.chat.pump公共泵，判词仅记录）、vision快照参谋（文字快照代真截图，「不正常」只立visionFlag等Kimi终审）、结果账hx_jc_res+壳真源hxdata_hx_jc.json双写、闲时PUT走查记录.json/监察台账.json（镜像防重推）、督查岗台账hist只增+health()/report()供交班；总开关hx_jc_off=1全退休；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold/HX.chk/HX.chat IDENTICAL *//* v0.37.0（2026-10-18，洪老师真机报「传黑匣子12秒没动静/上行失败」云侧查明=虚惊（网慢超12秒看门狗误报，PUT其实传上），拍板治，SPEC_hx-common_v0.37.0，DS+千问同稿、Kimi终审翻案1处=DS版本留痕插位错插v0.23.0前，亲手改插版本行）：刀1黑匣子看门狗12→30秒；刀2补传成功补人话（hx_bb_lastfail标记，败立成消）；红线HX.bb除本版申报三处外IDENTICAL，其他所有模块IDENTICAL *//* v0.36.0（2026-10-18，分家④步「泵归公共件」10-10_2316拍板，SPEC_fenjia4，DS+千问同稿、Kimi终审亲手落地）：HX.chat新增公共泵api.pump(sys,usr,opt,cb)——链默认千问→Kimi→DeepSeek复用闭包私有callQwen/callKimi/callDS（cb(st,txt)签，st==='ok'才成），opt.which='qwen'/'kimi'/'ds'可点名只走一家，cb(ok,text,by)；流式onProg/联网web暂不支持，要用这两样的单体照旧走自带老泵；红线除本加法与版本行外IDENTICAL *//* v0.35.0（2026-10-18，F4a尾刀：窄条「不变化像死机」v0.24.4查明是手动步等人点✓但没说清）：窄条补「在等谁」——手动步说等您点✓点这条展开，watch/auto步说在帮您盯，cloud步说云侧核不用动，watch档说观察哨自己销；红线除本刀文案与版本行外IDENTICAL *//* v0.34.0（2026-10-18，想法流水10-18 09:01真机报「想法输入框顶天看不到打的内容」，F3b没断根）：新增sjKbFit键盘自适应——visualViewport算出键盘吃掉的高度，面板底边抬到键盘上方、最高随可视高收缩；键盘收/没visualViewport接口自动回老样；红线除本两刀与版本行外IDENTICAL *//* v0.33.0（2026-10-17深夜班，洪老师拍板「把千问修好修完为止」，SPEC_千问四治法，DS实现+Kimi终审翻案1处亲手落地：DS续写漏拼半截只回第二回正文，补acc累加）：治千问三刀落callQwen——刀①回信上限2048→8192治腰斩（删Math.min死代码）刀②读finish_reason截断自动续写一回拼接全文（slice拷贝不动原数组，硬上限1次，仍截断报fail换棒）刀④正式调用钥匙trim（探活已修本处补上）；配套chat v0.4.1+大管家v0.57.4同治病根；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold/HX.chk/callDS/callKimi/fetchJson/buildMessages/tryCompress IDENTICAL，callQwen除本三刀申报点外IDENTICAL *//* v0.32.0（2026-10-16，洪老师拍板「把AI对话框从空白一直完成到最后」，SPEC_AI对话框一期，DS实现+Kimi终审翻案2处亲手落地：①toast改调闭包内真接口hxToastHold（DS又编不存在的window.hxToastHold/hxToast/HX.toast，记账）②callKimi兜底模型名改真机现行kimi-k2.7-code-highspeed删修正贴纸）：纯加法新增HX.chat对话心脏——索引hx_chat_v1+对话壳真源hxdata_hx_chat_<id>.json三层写（真源/localStorage兜底/坚果云mirror），通道链DS→千问→Kimi各60秒死心换棒，三层记忆（原文永存+超10轮DS压缩摘要+事实卡），pullCloud云端捞回，总开关hx_chat_off=1全退休；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold/HX.chk IDENTICAL */ /* v0.31.0/* v0.31.0（2026-10-16，洪老师真机报F3b输入框顶头拍板「干」，DS实现+Kimi终审零翻案）：#hxSjPanel加max-height:calc(100vh-170px)+overflow-y:auto，键盘起面板内部滑，输入框不再被顶出屏；红线除本刀CSS与版本行外IDENTICAL *//* v0.30.0（2026-10-15 夜班⑦，洪老师拍板「做」，SPEC_index_v1.22.0+hx-common_v0.30.0_预下载+双击回环，DS实现+Kimi终审翻案3处亲手落地：①腿D的upFile/downFile回调式签名翻Promise式（DS编了不存在的第三参回调）②腿G写断/读断拆两条链各自catch精确判 ③腿D删wrote判返回照_writeFile同款try调用）：刀A1 HX.bb新增公开口loopback()双击🆘回环体检（腿G GitHub仓根「黑匣子回环.txt」+腿D坚果云/学习套装备份/黑匣子回环.txt，写上去读回来码对=通，写不成/读不回/码不对=哪腿哪环断一句话说清，双腿独立全settle后bbToast常驻汇总+job报账）刀A2 sj🆘钮双击判定（hx_lb_off=1单击照旧flush(true)整刀退休，否则单击600ms后flush、600ms内第二击loopback()）；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.chk/hxToastHold IDENTICAL，HX.sj除刀A2一处bind外IDENTICAL，HX.bb除刀A1新增函数+return一处外IDENTICAL */ /* v0.29.0（2026-10-15 夜班④，洪老师拍板「三个任务一起做」，SPEC_hx-common_v0.29.0_被动观察法+黑匣子心跳，DS实现+Kimi终审）：①bb开门心跳hb（云侧对时知在线）②collectSide哑火对照（壳有开门主账没动→哨兵err）③被动观察法：清单步骤带watch关键词，bb记账通报HX.chk.bbHit命中→24小时（hx_chk_watch_hours可配）没err自动markGreen销号全程不弹窗，err命中删账不销 ④撤开门8秒自动问（hx_chk_wiz_ask=1才问，🧪手动链不动）；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/hxToastHold IDENTICAL，HX.bb除块2~3申报点外IDENTICAL，HX.chk除块4~6申报点外IDENTICAL */ /* v0.28.0（2026-10-15 夜班，洪老师拍板「开工」，SPEC_hx-common_v0.28.0_黑匣子五案，DS实现+Kimi终审）：黑匣子五案——①HX.bb.job办完报账（成记job/败记err立刻上行）②重点钮12秒看门狗「点了没反应」③哨兵_silentLog（flush失败/没钥匙直写账防递归）④hxToastHold黑框留账note（hxBbToast自家除外）⑤err截断120→300字；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.chk IDENTICAL，HX.bb除块2~5申报点外IDENTICAL，hxToastHold除块4一处加法外IDENTICAL */ /* ═══════════════════════════════════════════════════════════════════════════
    v0.27.0（2026-10-15 晚班③，洪老师真机报「黑框文字显示不全犯糊涂/跨页没说去哪页」+拍板「现在就搞」，SPEC_hx-common_v0.27.0_黑框字看不全+跨页报名字，DS实现15.9秒完整回件+Kimi终审翻案1处亲手落地：_wizBox开头补摘旧hxChkWizFull防换步残留）：刀1黑框文字区看得全（去两行截断→字号14px+最多约3行可上下滑+点文字区弹大框看全文再点收起，_wizBoxClose同步收大框）刀2跨页步骤报页面名（step.page，默认「主界面（首页）」，配验收清单t21.s1加page字段）；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold IDENTICAL，HX.chk除_wizBox/_wizStep/_wizBoxClose三函数外IDENTICAL
    v0.26.0（2026-10-15 晚班②，洪老师真机三连报「黑框不是人话/跳过没反应/挡住版面看不见黄圈」+拍板六条浮窗化，SPEC_hx-common_v0.26.0_向导浮条+跳过根治，DS实现+Kimi终审翻案3处亲手落地：①document拖动监听泄漏→留引用_wizBoxClose全摘 ②touchmove改挂document防拖快断拖+preventDefault防页面跟滚 ③wizSkipped三入口清零核讫）：刀A跳过根治（_wizSkipped会话记账，跳过不再原地踏步）刀B大黑框→顶部可拖动窄浮条（⠿把手三路拖动+hx_chk_wiz_top记位置）刀C文案全人话刀D黄圈自动scrollIntoView屏中间+浮条遮挡自动让位；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold IDENTICAL，HX.chk除向导段（刀A~D）外IDENTICAL
 v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减负——壳领着洪老师一步一步验，
@@ -1507,6 +1507,15 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
           if(!arg) return false;
           return !!(localStorage.getItem(String(arg))||'');
         }catch(e){ return false; }
+      },
+      'key_eq': function(arg){ /* v0.39.0：localStorage[k]===v 严格相等（版本对账用），参数形「键=值」 */
+        try{
+          if(!arg) return false;
+          var s=String(arg), ci=s.indexOf('=');
+          if(ci<0) return false;
+          var k=s.slice(0,ci), v=s.slice(ci+1);
+          return (localStorage.getItem(k)||'')===v ? !!(localStorage.getItem(k)||'') : false;
+        }catch(e){ return false; }
       }
     };
     function autoHit(autoStr){
@@ -1532,6 +1541,11 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
             var st=t.steps[j];
             if(stepGreen(prog,t.id,st.id)) continue;
             if(st.watch){ _watchTick(t, st); continue; } /* v0.29.0 ③：watch步走被动观察，不进askConfirm不弹窗；watch优先于auto */
+            if(st.lane==='auto' && !_autoOff()){ /* v0.39.0 机核档：侦测命中直接销不弹窗 */
+              if(st.auto && autoHit(st.auto)){ _autoGreen(t, st); }
+              else if(!st.auto){ _autoNoteOnce(t, st); } /* 防呆：机核档没配侦测器=永不销，记note */
+              continue;
+            }
             if(st.auto && autoHit(st.auto)){ askConfirm(t, st); } /* v0.24.0 弹窗销号：侦中不再直接变绿，弹确认条，点✓才markGreen */
           }
         }
@@ -1695,6 +1709,58 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
         markGreen(t.id, st.id); /* 用了+观察窗内没err没挂号=没意见=销 */
         try{ if(HX.bb && typeof HX.bb.job==='function'){ HX.bb.job('验收自动销:'+String(t.id)+'/'+String(st.id), true); } }catch(e){}
         try{ refreshUI(); }catch(e){}
+      }catch(e){}
+    }
+
+    /* v0.39.0 机核档：侦测命中直接销号（不弹窗），黑匣子+机核台账双留痕 */
+    function _autoGreen(t, st){
+      try{
+        markGreen(t.id, st.id);
+        try{ if(HX.bb && typeof HX.bb.job==='function'){ HX.bb.job('机核销号:'+String(t.id)+'/'+String(st.id), true); } }catch(e){}
+        try{ _autoLogAdd(t.id, st.id, st.auto); }catch(e){}
+        try{ refreshUI(); }catch(e){}
+      }catch(e){}
+    }
+    var _autoNoted = {}; /* v0.39.0：机核档缺侦测器note会话防重 */
+    function _autoNoteOnce(t, st){
+      try{
+        var key=String(t.id)+'_'+String(st.id);
+        if(_autoNoted[key]) return;
+        _autoNoted[key]=1;
+        if(HX.bb && typeof HX.bb.log==='function'){ HX.bb.log('note','机核档缺侦测器:'+String(t.id)+'/'+String(st.id)); }
+      }catch(e){}
+    }
+    function _autoOff(){ try{ return localStorage.getItem('hx_chk_auto_off')==='1'; }catch(e){ return false; } } /* v0.39.0：机核档总开关，1=退休机核落回弹确认条老路 */
+    /* ---- v0.39.0 机核台账：谁被机器销的号，一笔一笔留账，只增 ---- */
+    function _autoLogAdd(tid, sid, autoStr){
+      try{
+        var arr=[]; try{ arr=JSON.parse(localStorage.getItem('hx_chk_autolog')||'[]')||[]; }catch(e){ arr=[]; }
+        if(!Array.isArray(arr)) arr=[];
+        arr.push({t:Date.now(), tid:String(tid), sid:String(sid), auto:String(autoStr||'')});
+        if(arr.length>100) arr=arr.slice(arr.length-100);
+        try{ localStorage.setItem('hx_chk_autolog', JSON.stringify(arr)); }catch(e){}
+        _pushAutoLog();
+      }catch(e){}
+    }
+    function _pushAutoLog(){
+      try{
+        if(_off()) return;
+        if(!window.fetch) return;
+        if(typeof HX._autoNetOk==='function'){ if(!HX._autoNetOk()) return; }
+        var g=null; try{ g=HX.keys.gh(); }catch(e){ g=null; }
+        if(!g) return;
+        var body=''; try{ body=localStorage.getItem('hx_chk_autolog')||'[]'; }catch(e){ body='[]'; }
+        var prev=''; try{ prev=localStorage.getItem('hx_chk_autolog_up')||''; }catch(e){ prev=''; }
+        if(body===prev) return; /* 镜像：没变不重推 */
+        var api='https://api.github.com/repos/'+encodeURIComponent(g.u)+'/'+encodeURIComponent(g.r)+'/contents/'+encodeURIComponent('机核台账.json');
+        var H={'Authorization':'token '+g.t,'Accept':'application/vnd.github+json'};
+        fetch(api,{headers:H}).then(function(resp){ if(resp.status===404) return {sha:null}; if(!resp.ok) throw 0; return resp.json(); }).then(function(j){
+          var put={message:'机核台账上行', content:_enc(body)};
+          if(j && j.sha) put.sha=j.sha;
+          fetch(api,{method:'PUT',headers:H,body:JSON.stringify(put)}).then(function(r2){
+            if(r2 && r2.ok){ try{ localStorage.setItem('hx_chk_autolog_up', body); }catch(e){} }
+          }, function(){});
+        }, function(){});
       }catch(e){}
     }
 
@@ -2005,9 +2071,10 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
               var stx=document.createElement('div'); stx.style.cssText='font-size:16px;line-height:1.6;color:'+(held?'#b5aca0':'#4a4238')+';white-space:pre-wrap;word-break:break-all'; stx.textContent=String(st.text||''); /* 大白话全文不截断，textContent防注入 */
               sb.appendChild(stx);
               if(held){ var hh=document.createElement('div'); hh.style.cssText='font-size:13px;color:#b5aca0;margin-top:2px'; hh.textContent='已挂号'; sb.appendChild(hh); }
+              else if(st.lane==='auto'){ var au=document.createElement('div'); au.style.cssText='font-size:13px;color:#8a7f70;margin-top:2px'; au.textContent='🤖机核：它自己核过就变绿，不用您点'; sb.appendChild(au); } /* v0.39.0 */
               else if(st.auto){ var ah=document.createElement('div'); ah.style.cssText='font-size:13px;color:#8a7f70;margin-top:2px'; ah.textContent='做好了它自己变绿'; sb.appendChild(ah); }
               srow.appendChild(sd); srow.appendChild(sb);
-              if(!st.auto && !ok && !held){
+              if(!st.auto && !ok && !held && st.lane!=='auto'){
                 var gb=document.createElement('button'); gb.type='button'; gb.textContent='✓这步好了'; gb.style.cssText='flex:none;background:#7a9e7e;color:#fff;font-size:14px;padding:6px 12px;border:none;border-radius:8px;cursor:pointer';
                 gb.addEventListener('click', function(){ try{ markGreen(task.id, st.id); renderPg(); renderBar(); }catch(e){} }); /* 点=标绿 */
                 srow.appendChild(gb);
@@ -2329,7 +2396,470 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
     }
 
     if(document.readyState==='loading'){
-      document.addEventListener('DOMContentLoaded', init);
+      document.addEv
+
+  /* ════ 监察员 HX.jc v0.38.0 ════════════════════════════════════════════
+   * 权力铁规（写死，不许越）：
+   *   1. HX.jc 只读、只记、只报告；无任何写产品数据的口子。
+   *   2. 监察员/督查岗不许自查、自改、自勾。
+   *   3. 套娃封顶 = 黑匣子 + 三仓对账 + 洪老师看报告；不设第三层督查。
+   *   4. 一期只「看」不「动手」：绝不自动点击、绝不自动输入、绝不改数据。
+   *   5. AI 只当参谋不当法官：AI 判词仅记录，销号权在 Kimi 云侧，点绿权在洪老师。
+   *   6. 总开关 hx_jc_off=1 → 整个 HX.jc 静默全退休，老行为一字不变。
+   *   7. 全程静默：不弹窗、不 toast、不打扰；只写黑匣子 + 云端账。
+   * ════════════════════════════════════════════════════════════════════ */
+  HX.jc = (function () {
+    'use strict';
+  
+    var LS = {
+      list: 'hx_jc_list',
+      res: 'hx_jc_res',
+      up: 'hx_jc_up',
+      ledgerUp: 'hx_jc_ledger_up',
+      max: 'hx_jc_max',
+      off: 'hx_jc_off',
+      report: 'hx_jc_report'
+    };
+    var FILE_LIST = '走查单.json';
+    var FILE_REC = '走查记录.json';
+    var FILE_LEDGER = '监察台账.json';
+    var REPO = 'hongxiaotao177/xuexi-backup';
+    var RAW_BASE = 'https://raw.githubusercontent.com/hongxiaotao177/xuexi-backup/main/';
+    var API_BASE = 'https://api.github.com/repos/hongxiaotao177/xuexi-backup/contents/';
+    var MAX_RUNS = 50;
+    var MAX_HIST = 200;
+    var LEDGER_BASE = 22;
+  
+    /* ---------- 小工具（全 try 护栏） ---------- */
+    function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+    function lsSet(k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } }
+    function lsGetJSON(k) { try { var s = localStorage.getItem(k); return s ? JSON.parse(s) : null; } catch (e) { return null; } }
+    function lsSetJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
+    function bb(k, m) { try { if (HX.bb && typeof HX.bb.log === 'function') HX.bb.log(k, m); } catch (e) {} }
+    function bbJob(n, ok, m) { try { if (HX.bb && typeof HX.bb.job === 'function') HX.bb.job(n, ok, m); } catch (e) {} }
+    function netOk() { try { return !!(HX._autoNetOk && HX._autoNetOk()); } catch (e) { return false; } }
+    function isOff() { return lsGet(LS.off) === '1'; }
+    function nowStr() {
+      try {
+        var d = new Date();
+        function p(n) { return (n < 10 ? '0' : '') + n; }
+        return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' +
+          p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
+      } catch (e) { return '' + Date.now(); }
+    }
+    function clip(s, n) { s = (s == null ? '' : String(s)); return s.length > n ? s.slice(0, n) : s; }
+    function hasShell() {
+      try { return typeof LearnShell !== 'undefined' && LearnShell && typeof LearnShell.readFile === 'function'; } catch (e) { return false; }
+    }
+    function shellRead(name) {
+      try {
+        if (!hasShell()) return null;
+        var r = LearnShell.readFile(name);
+        if (r && typeof r.then === 'function') return r;
+        return r;
+      } catch (e) { return null; }
+    }
+    function shellWrite(name, b64) {
+      try {
+        if (!hasShell() || typeof LearnShell.writeFile !== 'function') return;
+        LearnShell.writeFile(name, b64);
+      } catch (e) {}
+    }
+  
+    /* ---------- 走查单拉取：双腿三兜底 ---------- */
+    function fetchList(cb) {
+      var done = false;
+      function fin(src, text) {
+        if (done) return; done = true;
+        if (!text) { cb(null, null); return; }
+        var obj = null;
+        try { obj = JSON.parse(text); } catch (e) { obj = null; }
+        if (!obj || !obj.items || !obj.items.length) { cb(null, null); return; }
+        lsSetJSON(LS.list, obj);
+        cb(obj, src);
+      }
+      // 腿① 坚果云
+      try {
+        if (HX.dav && typeof HX.dav.downFile === 'function') {
+          var p1 = HX.dav.downFile('/学习套装备份/' + FILE_LIST, 'hx_jc_dl.json');
+          if (p1 && typeof p1.then === 'function') {
+            p1.then(function (t) { if (t) fin('dav', t); else leg2(); }, function () { leg2(); });
+          } else { leg2(); }
+        } else { leg2(); }
+      } catch (e) { leg2(); }
+  
+      function leg2() {
+        if (done) return;
+        try {
+          var tok = '';
+          try { if (HX.keys && HX.keys.gh) tok = (HX.keys.gh() || {}).tok || ''; } catch (e) {}
+          var url = API_BASE + encodeURIComponent(FILE_LIST);
+          var opt = { headers: {} };
+          if (tok) opt.headers.Authorization = 'token ' + tok;
+          fetch(url, opt).then(function (r) { return r.json(); }).then(function (j) {
+            if (done) return;
+            if (j && j.content) {
+              var txt = '';
+              try { txt = HX.gh && HX.gh.b64dec ? HX.gh.b64dec(j.content.replace(/\s/g, '')) : atob(j.content.replace(/\s/g, '')); } catch (e) { txt = ''; }
+              if (txt) { fin('api', txt); return; }
+            }
+            leg3();
+          }).catch(function () { leg3(); });
+        } catch (e) { leg3(); }
+      }
+      function leg3() {
+        if (done) return;
+        try {
+          fetch(RAW_BASE + encodeURIComponent(FILE_LIST)).then(function (r) { return r.text(); }).then(function (t) {
+            if (done) return;
+            if (t) fin('raw', t); else cache();
+          }).catch(function () { cache(); });
+        } catch (e) { cache(); }
+      }
+      function cache() {
+        if (done) return;
+        var c = lsGetJSON(LS.list);
+        if (c && c.items && c.items.length) { done = true; cb(c, 'cache'); }
+        else { done = true; cb(null, null); }
+      }
+    }
+  
+    /* ---------- 步骤算子（全读型） ---------- */
+    function stepSee(sel) {
+      try {
+        var el = document.querySelector(sel);
+        if (!el) return { ok: false, act: '元素缺失' };
+        var vis = false;
+        try {
+          if (el.offsetParent !== null) vis = true;
+          else {
+            var r = el.getBoundingClientRect();
+            if (r && (r.width > 0 || r.height > 0)) vis = true;
+          }
+        } catch (e) {}
+        if (!vis) return { ok: false, act: '元素存在但不可见' };
+        return { ok: true, act: '可见' };
+      } catch (e) { return { ok: false, act: '选择器异常' }; }
+    }
+    function stepSeeText(spec) {
+      try {
+        var i = spec.indexOf('=');
+        if (i < 0) return { ok: false, act: 'seeText格式错' };
+        var sel = spec.slice(0, i), want = spec.slice(i + 1);
+        var el = document.querySelector(sel);
+        if (!el) return { ok: false, act: '元素缺失' };
+        var txt = el.textContent || '';
+        if (txt.indexOf(want) >= 0) return { ok: true, act: clip(txt, 80) };
+        return { ok: false, act: '读到「' + clip(txt, 80) + '」' };
+      } catch (e) { return { ok: false, act: '选择器异常' }; }
+    }
+    function stepLs(spec) {
+      try {
+        var i = spec.indexOf('=');
+        var key = i < 0 ? spec : spec.slice(0, i);
+        var want = i < 0 ? null : spec.slice(i + 1);
+        var v = lsGet(key);
+        if (v == null || v === '') return { ok: false, act: '键「' + key + '」空' };
+        if (want != null && v !== want) return { ok: false, act: '键「' + key + '」=「' + clip(v, 40) + '」' };
+        return { ok: true, act: clip(v, 40) };
+      } catch (e) { return { ok: false, act: 'ls异常' }; }
+    }
+    function stepFile(name, cb) {
+      if (!hasShell()) { cb({ ok: true, skip: true, act: '无壳桥跳过' }); return; }
+      try {
+        var r = shellRead(name);
+        if (r && typeof r.then === 'function') {
+          r.then(function (t) {
+            if (t && String(t).length) cb({ ok: true, act: '读到' + String(t).length + '字' });
+            else cb({ ok: false, act: '读不到内容' });
+          }, function () { cb({ ok: false, act: '读文件异常' }); });
+        } else {
+          if (r && String(r).length) cb({ ok: true, act: '读到' + String(r).length + '字' });
+          else cb({ ok: false, act: '读不到内容' });
+        }
+      } catch (e) { cb({ ok: false, act: '读文件异常' }); }
+    }
+  
+    /* ---------- vision 快照 ---------- */
+    function visionSnap(sel, cb) {
+      var snap = { title: '', html: '', rect: null, vis: false };
+      try { snap.title = document.title || ''; } catch (e) {}
+      try {
+        var el = sel ? document.querySelector(sel) : null;
+        if (el) {
+          snap.html = clip(el.outerHTML || '', 200);
+          try {
+            var r = el.getBoundingClientRect();
+            snap.rect = { x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height) };
+          } catch (e) {}
+          try { snap.vis = (el.offsetParent !== null) || (snap.rect && (snap.rect.w > 0 || snap.rect.h > 0)); } catch (e) {}
+        }
+      } catch (e) {}
+      var usr = '页面标题：' + snap.title + '\n元素HTML前200字：' + snap.html +
+        '\n位置尺寸：' + JSON.stringify(snap.rect) + '\n是否可见：' + (snap.vis ? '是' : '否');
+      try {
+        if (!(HX.chat && typeof HX.chat.pump === 'function')) { cb(null); return; }
+        HX.chat.pump('你是界面验收参谋，只答：正常/不正常+一句30字内理由', usr, {}, function (ok, text) {
+          if (ok && text) cb(String(text)); else cb(null);
+        });
+      } catch (e) { cb(null); }
+    }
+  
+    /* ---------- 病根分析 ---------- */
+    function aiDiagnose(item, step, act, cb) {
+      var usr = '走查件「' + (item.title || item.id) + '」卡在步骤「' + (step.say || step.id) + '」。' +
+        '本该看见：' + (step.say || '') + '；实际见闻：' + act;
+      try {
+        if (!(HX.chat && typeof HX.chat.pump === 'function')) { cb(null); return; }
+        HX.chat.pump('你是代码侦探，一句50字内说最可能的病根', usr, {}, function (ok, text) {
+          if (ok && text) cb(String(text)); else cb(null);
+        });
+      } catch (e) { cb(null); }
+    }
+  
+    /* ---------- 单步执行 ---------- */
+    function runStep(step, cb) {
+      var t = step.see != null ? 'see' : step.seeText != null ? 'seeText' :
+        step.ls != null ? 'ls' : step.file != null ? 'file' : step.lsKey != null ? 'lsKey' : null;
+      if (!t) { cb({ ok: false, act: '未知步骤算子' }); return; }
+      if (t === 'see') { cb(stepSee(step.see)); return; }
+      if (t === 'seeText') { cb(stepSeeText(step.seeText)); return; }
+      if (t === 'ls') { cb(stepLs(step.ls)); return; }
+      if (t === 'lsKey') { cb(stepLs(step.lsKey)); return; }
+      if (t === 'file') { stepFile(step.file, cb); return; }
+    }
+  
+    /* ---------- 单件执行 ---------- */
+    function runItem(item, cb) {
+      var steps = item.steps || [];
+      var out = { id: item.id, ok: true, steps: [], visionFlag: 0, aiSay: '' };
+      var i = 0;
+      function next() {
+        if (i >= steps.length) { cb(out); return; }
+        var st = steps[i++];
+        runStep(st, function (r) {
+          var rec = { id: st.id, ok: !!r.ok, act: r.act || '' };
+          if (r.skip) rec.skip = 1;
+          out.steps.push(rec);
+          if (!r.ok && !r.skip) {
+            out.ok = false;
+            bb('jc', '卡:' + item.id + '/' + st.id + ':本该「' + (st.say || '') + '」实际「' + (r.act || '') + '」');
+            /* 【Kimi终审翻案1+3】卡件跳下一件不纠缠：aiDiagnose后直接cb(out)收尾，不走本件剩余步；rec越界引用一并修（afterStep改传参） */
+            aiDiagnose(item, st, r.act || '', function (say) {
+              if (say) out.aiSay = clip(say, 300);
+              cb(out);
+            });
+            return;
+          }
+          afterStep(st, r, rec);
+        });
+      }
+      function afterStep(st, r, rec) { /* 【Kimi终审翻案1】rec由调用点传入，原稿引用回调局部变量必炸ReferenceError */
+        if (st.vision === 1) {
+          var sel = st.see || (st.seeText ? String(st.seeText).split('=')[0] : '');
+          visionSnap(sel, function (say) {
+            if (say) {
+              try { rec.visionSay = clip(say, 300); } catch (e) {}
+              if (say.indexOf('不正常') >= 0) out.visionFlag = 1;
+            } else {
+              bb('jc', 'vision泵没通');
+            }
+            next();
+          });
+        } else {
+          next();
+        }
+      }
+      next();
+    }
+  
+    /* ---------- 结果账 ---------- */
+    function saveRes(ver, runs) {
+      var old = lsGetJSON(LS.res) || { ver: '', t: '', runs: [] };
+      if (String(old.ver || '') !== String(ver)) old = { ver: ver, t: '', runs: [] }; /* 【Kimi终审翻案4】SPEC定ver变旧结果作废，原稿漏 */
+      var all = (old.runs || []).concat(runs);
+      if (all.length > MAX_RUNS) all = all.slice(all.length - MAX_RUNS);
+      var res = { ver: ver, t: nowStr(), runs: all };
+      lsSetJSON(LS.res, res);
+      try { shellWrite('hxdata_hx_jc.json', HX.gh && HX.gh.b64enc ? HX.gh.b64enc(JSON.stringify(res)) : ''); } catch (e) {}
+      return res;
+    }
+  
+    /* ---------- 上行 ---------- */
+    function pushFile(path, content, mirrorKey, msg) {
+      try {
+        if (!netOk()) return;
+        if (!(HX.gh && typeof HX.gh.putFile === 'function')) return;
+        var prev = lsGet(mirrorKey);
+        if (prev === content) return;
+        var p = HX.gh.putFile(null, path, content, msg);
+        if (p && typeof p.then === 'function') {
+          p.then(function () { lsSet(mirrorKey, content); }, function () { bb('err', 'jc上行失败:' + path); });
+        }
+      } catch (e) { bb('err', 'jc上行异常:' + path); }
+    }
+  
+    function pushRecord(res) {
+      try {
+        var txt = JSON.stringify(res);
+        pushFile(FILE_REC, txt, LS.up, '监察员走查记录');
+      } catch (e) {}
+    }
+  
+    /* ---------- 积压数 ---------- */
+    function calcBacklog() {
+      try {
+        var prog = lsGetJSON('hx_chk_prog');
+        var list = lsGetJSON('hx_chk_list');
+        if (!list || !list.tasks) return -1;
+        var tasks = list.tasks;
+        var n = 0;
+        for (var i = 0; i < tasks.length; i++) {
+          var t = tasks[i];
+          if (!t || !t.id) continue;
+          var _ln = String(t.lane || ''); if (_ln === 'sim' || _ln === 'cloud' || _ln === 'watch') continue; /* 【Kimi终审翻案2】清单真字段是lane（照HX.chk isSim/isCloud/isWatch），原稿编了t.sim/t.cloud/t.watch不存在的字段 */
+          var steps = t.steps || [];
+          var allGreen = steps.length > 0;
+          for (var j = 0; j < steps.length; j++) {
+            var sid = steps[j].id;
+            if (!(prog && prog[t.id] && prog[t.id][sid] === 1)) { allGreen = false; break; }
+          }
+          if (!allGreen) n++;
+        }
+        return n;
+      } catch (e) { return -1; }
+    }
+  
+    /* ---------- 监察台账 ---------- */
+    function appendLedger(zou, guo, ka) {
+      try {
+        var led = lsGetJSON('hx_jc_ledger') || { base: LEDGER_BASE, hist: [] };
+        if (!led.base) led.base = LEDGER_BASE;
+        if (!led.hist) led.hist = [];
+        var jiya = calcBacklog();
+        led.hist.push({ t: nowStr(), zou: zou, guo: guo, ka: ka, jiya: jiya });
+        if (led.hist.length > MAX_HIST) led.hist = led.hist.slice(led.hist.length - MAX_HIST);
+        lsSetJSON('hx_jc_ledger', led);
+        var txt = JSON.stringify(led);
+        pushFile(FILE_LEDGER, txt, LS.ledgerUp, '监察台账');
+        return led;
+      } catch (e) { return null; }
+    }
+  
+    /* ---------- 一轮走查 ---------- */
+    var running = false;
+    function runRound(cb) {
+      if (running) { if (cb) cb({ ok: false, msg: '正在走查' }); return; }
+      if (isOff()) { if (cb) cb({ ok: false, msg: '总开关退休' }); return; }
+      if (!netOk()) { if (cb) cb({ ok: false, msg: '联网闸门未开' }); return; }
+      running = true;
+      fetchList(function (list, src) {
+        if (!list) {
+          bb('jc', '走查单没取到');
+          running = false;
+          if (cb) cb({ ok: false, msg: '走查单没取到' });
+          return;
+        }
+        var maxN = 3;
+        try { var m = parseInt(lsGet(LS.max), 10); if (m > 0) maxN = m; } catch (e) {}
+        var items = (list.items || []).slice(0, maxN);
+        var ver = list.ver || '';
+        var runs = [];
+        var idx = 0;
+        var zou = 0, guo = 0, ka = 0;
+        function nextItem() {
+          if (idx >= items.length) {
+            var res = saveRes(ver, runs);
+            pushRecord(res);
+            appendLedger(zou, guo, ka);
+            running = false;
+            bbJob('jc走查', true, '走' + zou + '过' + guo + '卡' + ka);
+            if (cb) cb({ ok: true, zou: zou, guo: guo, ka: ka, res: res });
+            return;
+          }
+          var it = items[idx++];
+          runItem(it, function (out) {
+            runs.push(out);
+            zou++;
+            if (out.ok) guo++; else ka++;
+            setTimeout(nextItem, 5000);
+          });
+        }
+        nextItem();
+      });
+    }
+  
+    /* ---------- health ---------- */
+    function health() {
+      var res = lsGetJSON(LS.res) || { runs: [] };
+      var runs = res.runs || [];
+      var zou = runs.length, guo = 0, ka = 0;
+      for (var i = 0; i < runs.length; i++) { if (runs[i].ok) guo++; else ka++; }
+      var tongguo = zou > 0 ? Math.round(guo * 100 / zou) : 0;
+      return {
+        zou: zou, guo: guo, ka: ka, tongguo: tongguo,
+        loujian: 0, jiya: calcBacklog()
+      };
+    }
+  
+    /* ---------- report ---------- */
+    function report(cb) {
+      var res = lsGetJSON(LS.res) || { runs: [] };
+      var led = lsGetJSON('hx_jc_ledger') || { base: LEDGER_BASE, hist: [] };
+      var h = health();
+      var material = { health: h, res: res, ledger: led, t: nowStr() };
+      var usr = '监察员走查材料：' + JSON.stringify(material).slice(0, 2000) +
+        '\n请起草一段人话健康度报告草稿，200字内。';
+      try {
+        if (!(HX.chat && typeof HX.chat.pump === 'function')) {
+          lsSetJSON(LS.report, { t: nowStr(), material: material, draft: '' });
+          if (cb) cb({ ok: false, msg: '泵不可用，只留材料' });
+          return;
+        }
+        HX.chat.pump('你是监察报告起草员，写人话健康度报告草稿', usr, {}, function (ok, text) {
+          if (ok && text) {
+            lsSetJSON(LS.report, { t: nowStr(), material: material, draft: String(text) });
+            if (cb) cb({ ok: true, draft: String(text) });
+          } else {
+            lsSetJSON(LS.report, { t: nowStr(), material: material, draft: '' });
+            if (cb) cb({ ok: false, msg: '泵没通，只留材料' });
+          }
+        });
+      } catch (e) {
+        lsSetJSON(LS.report, { t: nowStr(), material: material, draft: '' });
+        if (cb) cb({ ok: false, msg: '异常，只留材料' });
+      }
+    }
+  
+    /* ---------- res 读取 ---------- */
+    function res() { return lsGetJSON(LS.res) || { ver: '', t: '', runs: [] }; }
+  
+    /* ---------- boot：开门闲时 60 秒起跑 ---------- */
+    function boot() {
+      try {
+        if (isOff()) return;
+        setTimeout(function () {
+          try {
+            if (isOff()) return;
+            if (!netOk()) return;
+            runRound(null);
+          } catch (e) { bb('err', 'jc boot异常'); }
+        }, 60000);
+      } catch (e) {}
+    }
+    try {
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', boot);
+      } else {
+        boot();
+      }
+    } catch (e) {}
+  
+    return { run: runRound, health: health, report: report, res: res };
+  })();
+  
+
+  ntListener('DOMContentLoaded', init);
     } else {
       init();
     }
