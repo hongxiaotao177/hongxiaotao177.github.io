@@ -1,1 +1,1 @@
-{"version": "0.35.0", "dl": "hx-common.js", "sig": "ddc0b3f7630a55aa", "note": "窄条补「在等谁」（F4a尾刀）：手动步明说等您点✓，auto/cloud/watch步明说云侧在盯，治「窄条不变化像死机」；DS+千问复核可落地，四态仿真PASS", "fix": "t49", "t": 1792288810227}
+{"version": "0.36.0", "dl": "hx-common.js", "note": "v0.36.0：分家④泵归公共件——HX.chat新增api.pump（千问→Kimi→DS链），单体只管出提示词", "sig": "99c7ecd44c0dd860", "fix": "t51", "t": 1792290059376}
