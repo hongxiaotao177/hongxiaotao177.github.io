@@ -467,7 +467,7 @@ body {
 
 <script>
 // SW_VERSION 全局变量
-var SW_VERSION = "0.4.2"; /* v0.4.1（2026-10-17深夜班，洪老师拍板「把千问修好修完为止」，SPEC_千问四治法，千问实现+Kimi终审翻案2处亲手落地：①千问把续写闸_continued写进then每次重置=没闸，挪进attempt闭包 ②千问!r.ok直return致下家被连跳两次，补__skip哨兵）：presetCallAI四刀——钥匙trim/max_tokens2048→8192/finish_reason截断自动续写一回拼接（仍截断换下一家）/HTTP400不再当JSON误解析静默跳；预设系统其余全IDENTICAL */
+var SW_VERSION = "0.5.0"; /* v0.5.0（2026-10-18，想法流水09:03拍板）：📥层加「🪄让AI找家」——presetCallAI三兄弟链问归哪书哪章confirm过目才塞+chatConfirmSend一字不差重复闸；终审翻案1处（DS/千问回调都当单参实为ok,out双参）；手选老链一行未动 */ /* v0.4.1（2026-10-17深夜班，洪老师拍板「把千问修好修完为止」，SPEC_千问四治法，千问实现+Kimi终审翻案2处亲手落地：①千问把续写闸_continued写进then每次重置=没闸，挪进attempt闭包 ②千问!r.ok直return致下家被连跳两次，补__skip哨兵）：presetCallAI四刀——钥匙trim/max_tokens2048→8192/finish_reason截断自动续写一回拼接（仍截断换下一家）/HTTP400不再当JSON误解析静默跳；预设系统其余全IDENTICAL */
 
 // 全局状态
 var curChatId = null;
@@ -580,6 +580,17 @@ function chatShowBookLayer(books, letterText) {
     titleEl.textContent = '选一本书';
     card.appendChild(titleEl);
 
+    var autoHomeBtn = document.createElement('button');
+    autoHomeBtn.className = 'chat-book-row';
+    autoHomeBtn.style.display = 'block';
+    autoHomeBtn.style.width = '100%';
+    autoHomeBtn.style.margin = '6px 0 8px';
+    autoHomeBtn.textContent = '🪄 让AI找家（自动配书配章）';
+    autoHomeBtn.onclick = function() {
+      try { chatAutoHome(mask, books, letterText, autoHomeBtn); } catch (e) {}
+    };
+    card.appendChild(autoHomeBtn);
+
     var listEl = document.createElement('div');
     listEl.className = 'chat-book-list';
 
@@ -607,6 +618,137 @@ function chatShowBookLayer(books, letterText) {
     document.body.appendChild(mask);
   } catch (e) {
     try { showToast('送入书失败'); } catch (e2) {}
+  }
+}
+
+function chatAutoHome(mask, books, letterText, btn) {
+  var oldText = btn ? btn.textContent : '';
+  var timeoutId = null;
+  var finished = false;
+
+  function restoreBtn() {
+    try { if (btn) btn.textContent = oldText; } catch (e) {}
+    try { if (timeoutId) { clearTimeout(timeoutId); timeoutId = null; } } catch (e) {}
+  }
+  function finish() {
+    if (finished) return true;
+    finished = true;
+    restoreBtn();
+    return false;
+  }
+
+  try {
+    if (btn) btn.textContent = 'AI正在找家…';
+
+    timeoutId = setTimeout(function() {
+      try {
+        if (finish()) return;
+        showToast('AI没找着家，您手选一下');
+      } catch (e) {}
+    }, 60000);
+
+    var sys = '你是归书员。给你书单（编号+书名+各章名）和一段文字，判断这段文字该进哪本书哪一章。只回JSON：{"b":书编号,"c":"章名"}；没有合适的书回{"newbook":"建议书名"}；书合适但没合适的章回{"b":书编号,"newchap":"建议章名"}。不多一个字。';
+
+    var listStr = '';
+    try {
+      for (var i = 0; i < books.length; i++) {
+        var bk = books[i];
+        if (!bk) continue;
+        var bname = bk.title || bk.name || '未命名';
+        var chNames = [];
+        var chs = (bk.chapters && bk.chapters.length) ? bk.chapters : [];
+        for (var j = 0; j < chs.length; j++) {
+          if (!chs[j]) continue;
+          chNames.push(chs[j].t || chs[j].title || '未命名章');
+        }
+        listStr += (i + 1) + '.' + bname + '：' + chNames.join('/') + '\n';
+      }
+    } catch (e1) {}
+
+    var userText = '书单：\n' + listStr + '文字：' + (letterText || '');
+
+    presetCallAI(sys, userText, '', function(ok, out) { /* v0.5.0终审翻案（DS/千问同犯）：presetCallAI回调是(ok,out)双参不是单参，单参拿到的是布尔ok */
+      try {
+        if (!ok) { if (!finish()) { try { showToast('AI没找着家，您手选一下'); } catch (e0) {} } return; }
+        if (finish()) return;
+        var reply = out;
+
+        var obj = null;
+        try {
+          var s = (reply === null || reply === undefined) ? '' : String(reply);
+          var p1 = s.indexOf('{');
+          var p2 = s.lastIndexOf('}');
+          if (p1 >= 0 && p2 > p1) {
+            var jsonStr = s.slice(p1, p2 + 1);
+            obj = JSON.parse(jsonStr);
+          }
+        } catch (e2) { obj = null; }
+
+        if (!obj || typeof obj !== 'object') {
+          try { showToast('AI没找着家，您手选一下'); } catch (e3) {}
+          return;
+        }
+
+        if (obj.newbook) {
+          try { showToast('AI说该另起新书《' + obj.newbook + '》，建新书留二期；请先手选'); } catch (e4) {}
+          return;
+        }
+
+        var bIdx = obj.b;
+        var targetBk = null;
+        try {
+          var n = parseInt(bIdx, 10);
+          if (!isNaN(n) && n >= 1 && n <= books.length) targetBk = books[n - 1];
+        } catch (e5) { targetBk = null; }
+
+        if (!targetBk) {
+          try { showToast('AI没找着家，您手选一下'); } catch (e6) {}
+          return;
+        }
+
+        var bkTitle = targetBk.title || targetBk.name || '未命名';
+
+        if (obj.newchap) {
+          var nc = String(obj.newchap);
+          var ok2 = false;
+          try { ok2 = window.confirm('AI说放进《' + bkTitle + '》新章「' + nc + '」，放吗？'); } catch (e7) { ok2 = false; }
+          if (!ok2) return;
+          chatConfirmSend(mask, targetBk, '', nc, letterText);
+          return;
+        }
+
+        if (obj.c) {
+          var wantChap = String(obj.c);
+          var hitChapId = '';
+          var hitChapName = '';
+          var chs2 = (targetBk.chapters && targetBk.chapters.length) ? targetBk.chapters : [];
+          for (var k = 0; k < chs2.length; k++) {
+            if (!chs2[k]) continue;
+            var nm = chs2[k].t || chs2[k].title || '未命名章';
+            if (nm === wantChap) {
+              hitChapId = chs2[k].id || '';
+              hitChapName = nm;
+              break;
+            }
+          }
+          if (!hitChapName) hitChapName = wantChap;
+
+          var ok3 = false;
+          try { ok3 = window.confirm('AI说放进《' + bkTitle + '》/「' + hitChapName + '」，放吗？'); } catch (e8) { ok3 = false; }
+          if (!ok3) return;
+
+          chatConfirmSend(mask, targetBk, hitChapId, hitChapId ? '' : hitChapName, letterText);
+          return;
+        }
+
+        try { showToast('AI没找着家，您手选一下'); } catch (e9) {}
+      } catch (e10) {
+        try { finish(); showToast('AI没找着家，您手选一下'); } catch (e11) {}
+      }
+    });
+  } catch (e) {
+    try { finish(); } catch (e0) {}
+    try { showToast('AI没找着家，您手选一下'); } catch (e1) {}
   }
 }
 
@@ -721,6 +863,16 @@ function chatConfirmSend(mask, bk, chapId, newChap, letterText) {
       if (curObj && curObj.title) curTitle = curObj.title;
     } catch (e5) { curTitle = ''; }
     var titleStr = '💬 ' + (curTitle || (letterText ? letterText.slice(0, 20) : ''));
+
+    try { /* v0.5.0刀2：一字不差重复闸 */
+      for (var d = 0; d < arr.length; d++) {
+        var it = arr[d];
+        if (it && it.to === 'book' && it.text === letterText) {
+          try { showToast('这段已经送过书了，没重复塞'); } catch (eDup) {}
+          return;
+        }
+      }
+    } catch (eDup2) {}
 
     arr.push({
       title: titleStr,
