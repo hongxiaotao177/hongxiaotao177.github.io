@@ -1,1 +1,1 @@
-{"version": "1.26.1", "dl": "index.html", "sig": "9ff61c7381940976", "t": 1792294725700, "note": "管家路人话回执补钟点：装件成功顺手取版本牌时刻，回执带「几号几点改的」；不再只有「刚写好的」"}
+{"version": "1.27.1", "dl": "index.html", "sig": "6caf30cd0bbaf1ab", "t": 1792305513055, "note": "治真机err：fmtT跨IIFE引用必炸，管家路回执IIFE内补本地fmtT"}
