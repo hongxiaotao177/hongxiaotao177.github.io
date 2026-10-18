@@ -12,6 +12,7 @@
 <!-- v0.3.0 2026-10-17 PDF问答（SPEC_chat_v0.3.0_PDF问答）：📎选PDF→三段式懒加载guanjia-pdf-engine.js抽字→随下一句拼【PDF全文】前缀发AI（只拼一次）；总开关hx_chat_pdf_off=1藏📎；DS回件截断+续写编造界外码作废，Kimi亲手落地 -->
 <!-- v0.4.1 2026-10-17深夜 千问四治法（presetCallAI：trim/8192/截断续写/400哨兵，详SW_VERSION注释） -->
 <!-- v0.4.0 2026-10-17 提示词预设系统（SPEC_chat_v0.4.0 A1~A8，定案十条1503班）：常驻「提示词」钮+预设浮层（新建/改/删/AI代写规矩+自动归类/带上文ctxN可改）+选中窄条联动发送+发送后自动灭+空打字拦截+文献双岗（千问查Kimi审+回执+参考文献夹原消息）+出厂三条+汇成一篇滚着汇📄+云同步走HX.store.sync现成通道+总开关hx_chat_preset_off=1藏钮；DS出补丁，千问大提示词三次空响应记考察账，Kimi终审翻案3处（HX.ai.call不存在改直调/HX.chat.save签名错改单参/云通道改store.sync） -->
+<!-- v0.6.0 2026-10-18深夜（t66，洪老师真机报「汇成一篇后输入框消失」09:00）：底栏看门狗——X5 flex老坑长文撑破body底栏出视口，2秒一拍量底栏塌方即显式钉main-area高度救回（正常零写样式，flex照旧）；纯加法，CSS/JS其余一行未动。 -->
 <script>
 function hxCommonLoad(onHxReady, onHxMissing){
   function runTxt(txt){ try{ var s=document.createElement('script'); s.textContent=txt; document.head.appendChild(s); }catch(e){} }
@@ -2020,6 +2021,35 @@ function initPage() {
   /* v0.4.0 提示词预设系统：绑定入口、出厂三条、总开关、云补拉 */
   try { presetBindUI(); } catch (ePresetBind) {}
 }
+
+/* v0.6.0（t66，洪老师真机报「汇成一篇后输入框消失」）：底栏看门狗——
+   X5老内核flex坑：main-area(flex:1;min-height:0)遇超长文失效撑破body，正常流底栏被推出视口底。
+   治法：每2秒+resize+visualViewport.resize量一次底栏getBoundingClientRect，
+   底边跑出视口（或顶边<0）=塌方→显式钉main-area高度=视口高-顶行-记忆行-底栏-8(px)、flex改none救回底栏；
+   正常时绝不动布局（flex照旧）；全程try静默，量不到元素不动作。 */
+(function(){
+  function _guard(){
+    try{
+      var bb=document.querySelector('.bottom-bar'); var ma=document.getElementById('mainArea');
+      if(!bb||!ma) return;
+      var r=bb.getBoundingClientRect();
+      var vh=window.innerHeight||0;
+      if(!vh) return;
+      if(r.bottom>vh+2 || r.top<0){
+        var tb=document.querySelector('.top-bar');
+        var ml=document.getElementById('memLine');
+        var used=(tb?tb.offsetHeight:0)+((ml&&ml.offsetParent)?ml.offsetHeight:0)+(bb.offsetHeight||0);
+        ma.style.flex='none';
+        ma.style.height=Math.max(120,(vh-used-8))+'px';
+        try{ bb.scrollIntoView(false); }catch(eS){}
+      }
+    }catch(e){}
+  }
+  setInterval(_guard,2000);
+  try{ window.addEventListener('resize',_guard); }catch(e1){}
+  try{ if(window.visualViewport) window.visualViewport.addEventListener('resize',_guard); }catch(e2){}
+  setTimeout(_guard,800); /* 开门先量一拍 */
+})();
 
 // 页面加载完成
 document.addEventListener('DOMContentLoaded', function() {
