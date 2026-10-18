@@ -2,6 +2,7 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.26.1 2026-10-18（洪老师真机报「人话回执没钟点、按两次没反应」，t55，SPEC_index_v1.26.1_管家路回执补钟点，DS+千问补丁一致Kimi终审全采纳并翻案自家1处——初稿把✅已装上进度行圈进return后面变死代码，挪前根治；千问版本史编造一串不存在的版本号记帐1笔正文弃用）：管家路装件成功人话回执补真钟点——管家回信行本无t（壳Java不动），装件成功顺手hxRawGet版本牌取t，取到带钟点/取不到退「刚写好的」/9秒硬帽；成功件续链挪进取钟点回调（renderProg+setTimeout(applyOne,50)一字不差），失败分支老续链一行未动；legacyRun刀2b①②/任务单/版面/壳/管家/hx-common全不动。
     v1.26.0 2026-10-18（洪老师拍板「绿字界面彻底取消+升级报几点几分写好的+生长树不另立门户」，SPEC_index_v1.26.0，DS实现+Kimi终审：DS漏交顶部留痕亲手补/刀2c扩及管家路同款两处报备）：刀1全绿定格摘点开展层（回退hx_home126_off=1）/刀2升级人话回执=中文名+fmtT改版时刻不亮版本号（updHuman平行账，复核细账不再亮）/刀3摘生长树卡片+SUITE+CUR三处户口（单体与数据保留，并入小涛笔记后回来）；装件链/dlWrite/verifyAfter机制/任务单/灯/信件链一行未动。
     v1.25.1 2026-10-18（想法流水10-15 10:22真机报「第一次开门自动更新老不成，手动点才成」；病根：开门直装取件只有hxRawGet公开站单腿，刚开门网络没热/国内时断时续→取件失败落专区老路readFile，大件过X5桥读不稳装不成；手动点时网络已热所以总成。刀法：开门直装IIFE内_mgShellWrite前新增_mgGet双腿取件（hxRawGet失败回落GitHub API contents/download_url），唯一调用点hxRawGet(_dlName)换_mgGet(_dlName)，catch回落专区老路原样不动；两腿全败才走老路；DS+千问补丁一致Kimi终审全采纳）
     v1.25.0 2026-10-18（洪老师早班拍板「首页版面整顿」，SPEC_index_v1.25.0，DS补丁可用7处+Kimi终审翻案3处亲手落地：①刀2弹层toggle改只切display不清DOM——DS原案innerHTML清空会把钮摘出DOM再取不到②刀6灯detail改统一追加全档覆盖——DS只改了红档③顶部版本史DS漏写亲手补；千问补丁全废——删三钮谎称已移入弹层/伪造fmtT原文/裸变量it_t会ReferenceError）：刀1摘「不按它绝不同步」过时注解（管家每日静默查装+开机自启早推翻）/刀2同步·导出·备忘收进⋯弹层，查新版本留大钮/刀3全绿清单默认折起一行/刀4逐件行亮「几号几点改的」（16张版本牌云侧已补t字段）/刀5上一版追踪改时间对/刀6灯detail补自动升级说明；回退hx_home125_off=1；装件链/dlWrite/fetchJson/灯判定/updMsg闸/信件链一行未动。
@@ -604,7 +605,7 @@ CUR.index="1.22.0"; /* v1.22.0（2026-10-15 夜班⑦，洪老师拍板「做」
 CUR.index="1.23.0"; /* v1.23.0 t35管家灯三档化，见顶部修改记录 */
 /* v1.26.0 刀3③：CUR.shu摘除（随刀3①②）；手机账本hx_suite_ver残留的shu键无害，keys来自SUITE */
 CUR.index="1.25.1"; /* v1.25.1 开门自动装新版加腿，见顶部修改记录 */
-CUR.index="1.26.0"; /* v1.26.0 升级人话回执+摘生长树入口，见顶部修改记录 */
+CUR.index="1.26.1"; /* v1.26.1 t55管家路人话回执补钟点，见顶部修改记录 */
 CUR.tuomin="0"; /* v1.19.10修404：CUR=壳内已装版本，单体手机还没装必须填"0"才会下载（CUR.ppt同款老坑，见230行） */ /* v1.19.8（2026-09-20班⑮，洪老师真机报"升级说装成功主界面还是19.6，几次都这样，没重启应该直接变19.7"）病根=班⑮发v1.19.7时新赋值插在同一行旧赋值前面，CUR.index="1.19.7"刚赋上就被同行的CUR.index="1.19.6"盖回→页脚活字永远亮1.19.6（文件真身早是新版，升级链/壳全无辜，大管家0.54.5上机为证）；还连带v1.19.5刀2开门自校对误把账本1.19.7当谎回滚→每次都提示重装。治=删同行可执行旧赋值（注释留档）+升号v1.19.8让真机重新下载。其余一行未动 */
 try{document.getElementById("ftVer").textContent=CUR.index;}catch(eF){} /* v1.19.6 页脚死字改活字：ftVer亮CUR.index真身 */
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
@@ -1697,8 +1698,15 @@ try{ updHuman.push((typeof cn!=="undefined"&&cn?cn:pName)+"（"+(info&&info.t?fm
                   /* v1.19.0 D刀对齐：管家路装软件也留档新版备份（老路dlWrite一直有，管家路此前漏了） */
                   try{ LearnShell.writeFile(it.localName.replace(".html","")+"_v"+(cloudVer[rk]||"?")+".html", fb); }catch(e){} }
                 updated.push(it.localName.replace(".html","")+"→v"+(cloudVer[rk]||"?"));
-                try{ updHuman.push((typeof nm2!=="undefined"&&nm2?nm2:it.localName.replace(".html",""))+"（"+(it&&it.t?fmtT(it.t):"刚写好的")+"）"); }catch(e){} /* v1.26.0 刀2b③ */
                 progLog[fi]="✅ "+nm2+"：已装上 v"+(cloudVer[rk]||"?")+"；版本号以打开软件关于页看到的为准"; /* v1.19.5（2026-09-19 班①，减桥工程治连环谎）刀3装完说真话：回信装件段装成功话术末尾补实话一句，记账/判定/progLog结构一行未动 */
+                /* v1.26.1 t55（洪老师真机报「人话回执没钟点以为没装成」）：管家回信行本无时刻，装件成功顺手hxRawGet版本牌取t补人话账；取到取不到都续链，取不到退「刚写好的」；9秒硬帽防卡死 */
+                (function(){
+                  var _nmH=(typeof nm2!=="undefined"&&nm2?nm2:it.localName.replace(".html",""));
+                  var _doneH=false;
+                  var _finH=function(_t){ if(_doneH) return; _doneH=true; try{ updHuman.push(_nmH+"（"+(_t?fmtT(_t):"刚写好的")+"）"); }catch(e){} renderProg(); setTimeout(applyOne, 50); };
+                  try{ hxRawGet(it.verFile).then(function(_vt){ var _tt=0; try{ var _pj=JSON.parse(_vt); if(_pj&&_pj.t) _tt=_pj.t; }catch(e){} _finH(_tt); }).catch(function(){ _finH(0); }); setTimeout(function(){ _finH(0); }, 9000); }catch(e){ _finH(0); }
+                })();
+                return; /* v1.26.1：成功件续链挪进取钟点回调（_finH里renderProg+setTimeout(applyOne,50)，与老续链同款）；失败分支仍落到下面老续链，一行未动 */
               }else{
                 failed.push(it.localName);
                 progLog[fi]="❌ "+nm2+"：写入没成功，下次再试";
