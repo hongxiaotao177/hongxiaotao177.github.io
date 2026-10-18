@@ -1,1 +1,1 @@
-{"version": "0.4.2", "dl": "software-chat.html", "sig": "db6ead5426eb238c", "note": "输入框消失根治：body改flex列+main-area改flex:1+底栏去sticky（真机10-18报：汇成一篇后输入框不见；DS出补丁Kimi终审全采纳，node语法2块PASS+仿真底栏钉底）", "fix": "t46", "t": 1792288055394}
+{"version": "0.5.0", "dl": "software-chat.html", "sig": "e6891b9b968e626a", "note": "对话一键自动归书：📥层「🪄让AI找家」AI配书配章confirm过目才塞+一字不差重复闸；终审翻案1处回调双参；四态仿真PASS", "fix": "t50", "t": 1792289314209}
