@@ -83,7 +83,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 (function(){
   'use strict';
-  var HX_COMMON_VERSION = '0.39.0';  /* ── v0.39.0（2026-10-18晚，机核档·自动真机检验一期：洪老师问「自动真机检验」→Kimi报方案（机器能核的自动销、核不了的攒短清单、开门一次清账）→洪老师拍板「同意你的选择，开工」→SPEC_机核档_自动真机检验一期→DS实现13秒交齐8申报点→Kimi终审翻案1处（DS版本行hunk锚点截断不可用，亲手改定点插段）亲手落地）：六刀=①detect机核分流（watch优先照旧，机核档排第二，hx_chk_auto_off=1落回弹确认条老路）②_autoGreen侦中直接markGreen不弹窗（bb.job+机核台账双留痕）③_autoNoteOnce机核档缺侦测器note会话防重永不销 ④_autoOff总开关 ⑤机核台账_autoLogAdd+_pushAutoLog（hx_chk_autolog只增裁100条，闲时PUT仓根机核台账.json，镜像hx_chk_autolog_up没变不重推）⑥key_eq侦测器（非空且全等才中）+renderPg机核标（机核档步不显✓钮防手滑）；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold/HX.chat/HX.jc IDENTICAL，HX.chk除本版申报8处外IDENTICAL */ /* ── v0.38.0（2026-10-18，监察员上岗：设计稿SPEC_监察员_v0.1.0_设计稿洪老师2026-10-18两次拍板合成→正式SPEC_监察员_v0.1.0 Kimi起草已落仓→DS实现（千问钥匙401没进去本班没上工）→Kimi终审翻案4处亲手落地：①afterStep引用回调局部变量rec必炸ReferenceError改传参 ②calcBacklog编不存在的t.sim/t.cloud/t.watch翻真字段t.lane（照HX.chk）③卡件没跳下一件还走剩余步翻cb(out)收尾 ④saveRes漏ver变清旧结果补上）：纯加法新增HX.jc监察员——走查单.json双腿三兜底（dav/api/raw+缓存）、开门闲时60秒起跑每次最多hx_jc_max件（缺省3）件间歇5秒、五算子全读型（see/seeText/ls/lsKey/file）绝不自动点击输入、卡件记黑匣子+AI病根分析（HX.chat.pump公共泵，判词仅记录）、vision快照参谋（文字快照代真截图，「不正常」只立visionFlag等Kimi终审）、结果账hx_jc_res+壳真源hxdata_hx_jc.json双写、闲时PUT走查记录.json/监察台账.json（镜像防重推）、督查岗台账hist只增+health()/report()供交班；总开关hx_jc_off=1全退休；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold/HX.chk/HX.chat IDENTICAL *//* v0.37.0（2026-10-18，洪老师真机报「传黑匣子12秒没动静/上行失败」云侧查明=虚惊（网慢超12秒看门狗误报，PUT其实传上），拍板治，SPEC_hx-common_v0.37.0，DS+千问同稿、Kimi终审翻案1处=DS版本留痕插位错插v0.23.0前，亲手改插版本行）：刀1黑匣子看门狗12→30秒；刀2补传成功补人话（hx_bb_lastfail标记，败立成消）；红线HX.bb除本版申报三处外IDENTICAL，其他所有模块IDENTICAL *//* v0.36.0（2026-10-18，分家④步「泵归公共件」10-10_2316拍板，SPEC_fenjia4，DS+千问同稿、Kimi终审亲手落地）：HX.chat新增公共泵api.pump(sys,usr,opt,cb)——链默认千问→Kimi→DeepSeek复用闭包私有callQwen/callKimi/callDS（cb(st,txt)签，st==='ok'才成），opt.which='qwen'/'kimi'/'ds'可点名只走一家，cb(ok,text,by)；流式onProg/联网web暂不支持，要用这两样的单体照旧走自带老泵；红线除本加法与版本行外IDENTICAL *//* v0.35.0（2026-10-18，F4a尾刀：窄条「不变化像死机」v0.24.4查明是手动步等人点✓但没说清）：窄条补「在等谁」——手动步说等您点✓点这条展开，watch/auto步说在帮您盯，cloud步说云侧核不用动，watch档说观察哨自己销；红线除本刀文案与版本行外IDENTICAL *//* v0.34.0（2026-10-18，想法流水10-18 09:01真机报「想法输入框顶天看不到打的内容」，F3b没断根）：新增sjKbFit键盘自适应——visualViewport算出键盘吃掉的高度，面板底边抬到键盘上方、最高随可视高收缩；键盘收/没visualViewport接口自动回老样；红线除本两刀与版本行外IDENTICAL *//* v0.33.0（2026-10-17深夜班，洪老师拍板「把千问修好修完为止」，SPEC_千问四治法，DS实现+Kimi终审翻案1处亲手落地：DS续写漏拼半截只回第二回正文，补acc累加）：治千问三刀落callQwen——刀①回信上限2048→8192治腰斩（删Math.min死代码）刀②读finish_reason截断自动续写一回拼接全文（slice拷贝不动原数组，硬上限1次，仍截断报fail换棒）刀④正式调用钥匙trim（探活已修本处补上）；配套chat v0.4.1+大管家v0.57.4同治病根；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold/HX.chk/callDS/callKimi/fetchJson/buildMessages/tryCompress IDENTICAL，callQwen除本三刀申报点外IDENTICAL *//* v0.32.0（2026-10-16，洪老师拍板「把AI对话框从空白一直完成到最后」，SPEC_AI对话框一期，DS实现+Kimi终审翻案2处亲手落地：①toast改调闭包内真接口hxToastHold（DS又编不存在的window.hxToastHold/hxToast/HX.toast，记账）②callKimi兜底模型名改真机现行kimi-k2.7-code-highspeed删修正贴纸）：纯加法新增HX.chat对话心脏——索引hx_chat_v1+对话壳真源hxdata_hx_chat_<id>.json三层写（真源/localStorage兜底/坚果云mirror），通道链DS→千问→Kimi各60秒死心换棒，三层记忆（原文永存+超10轮DS压缩摘要+事实卡），pullCloud云端捞回，总开关hx_chat_off=1全退休；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold/HX.chk IDENTICAL */ /* v0.31.0/* v0.31.0（2026-10-16，洪老师真机报F3b输入框顶头拍板「干」，DS实现+Kimi终审零翻案）：#hxSjPanel加max-height:calc(100vh-170px)+overflow-y:auto，键盘起面板内部滑，输入框不再被顶出屏；红线除本刀CSS与版本行外IDENTICAL *//* v0.30.0（2026-10-15 夜班⑦，洪老师拍板「做」，SPEC_index_v1.22.0+hx-common_v0.30.0_预下载+双击回环，DS实现+Kimi终审翻案3处亲手落地：①腿D的upFile/downFile回调式签名翻Promise式（DS编了不存在的第三参回调）②腿G写断/读断拆两条链各自catch精确判 ③腿D删wrote判返回照_writeFile同款try调用）：刀A1 HX.bb新增公开口loopback()双击🆘回环体检（腿G GitHub仓根「黑匣子回环.txt」+腿D坚果云/学习套装备份/黑匣子回环.txt，写上去读回来码对=通，写不成/读不回/码不对=哪腿哪环断一句话说清，双腿独立全settle后bbToast常驻汇总+job报账）刀A2 sj🆘钮双击判定（hx_lb_off=1单击照旧flush(true)整刀退休，否则单击600ms后flush、600ms内第二击loopback()）；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.chk/hxToastHold IDENTICAL，HX.sj除刀A2一处bind外IDENTICAL，HX.bb除刀A1新增函数+return一处外IDENTICAL */ /* v0.29.0（2026-10-15 夜班④，洪老师拍板「三个任务一起做」，SPEC_hx-common_v0.29.0_被动观察法+黑匣子心跳，DS实现+Kimi终审）：①bb开门心跳hb（云侧对时知在线）②collectSide哑火对照（壳有开门主账没动→哨兵err）③被动观察法：清单步骤带watch关键词，bb记账通报HX.chk.bbHit命中→24小时（hx_chk_watch_hours可配）没err自动markGreen销号全程不弹窗，err命中删账不销 ④撤开门8秒自动问（hx_chk_wiz_ask=1才问，🧪手动链不动）；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/hxToastHold IDENTICAL，HX.bb除块2~3申报点外IDENTICAL，HX.chk除块4~6申报点外IDENTICAL */ /* v0.28.0（2026-10-15 夜班，洪老师拍板「开工」，SPEC_hx-common_v0.28.0_黑匣子五案，DS实现+Kimi终审）：黑匣子五案——①HX.bb.job办完报账（成记job/败记err立刻上行）②重点钮12秒看门狗「点了没反应」③哨兵_silentLog（flush失败/没钥匙直写账防递归）④hxToastHold黑框留账note（hxBbToast自家除外）⑤err截断120→300字；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.chk IDENTICAL，HX.bb除块2~5申报点外IDENTICAL，hxToastHold除块4一处加法外IDENTICAL */ /* ═══════════════════════════════════════════════════════════════════════════
+  var HX_COMMON_VERSION = '0.40.0';  /* ── v0.40.0（2026-10-18晚，AI质检岗：洪老师拍板「看得顺不顺眼也叫AI帮忙，现在就做；二期真截图排任务监察员监察」→SPEC_AI质检岗_v0.1.0→DS实现16秒交齐8hunk→Kimi终审翻案2处（①自家SPEC废函数_aiAsked删 ②Hunk3/4/5同位锚点落地顺序调5→3→4）亲手落地）：AI档步lane:'ai'——快照（标题+近24h黑匣子err条数+spot现场+正文摘要）发HX.chat.pump真签名cb(ok,txt,by)，AI答「正常」才markGreen，拿不准/泵灭/超时一律留人手动✓（泵灭或拿不准都回删问账下回补，拿不准不封口——终审补）；节流hx_chk_ai_max缺省3+泵在飞闸+60秒死心；AI质检台账.json只增裁100镜像hx_chk_ailog_up；renderPg显「🤖AI拿不准等您看一眼」；reconcile清hx_chk_ai_asked；总开关hx_chk_ai_off=1落回老路；红线除HX.chk申报8处+版本行外全件IDENTICAL，HX.jc/HX.chat/壳/单体一行未动 *//* ── v0.39.0（2026-10-18晚，机核档·自动真机检验一期：洪老师问「自动真机检验」→Kimi报方案（机器能核的自动销、核不了的攒短清单、开门一次清账）→洪老师拍板「同意你的选择，开工」→SPEC_机核档_自动真机检验一期→DS实现13秒交齐8申报点→Kimi终审翻案1处（DS版本行hunk锚点截断不可用，亲手改定点插段）亲手落地）：六刀=①detect机核分流（watch优先照旧，机核档排第二，hx_chk_auto_off=1落回弹确认条老路）②_autoGreen侦中直接markGreen不弹窗（bb.job+机核台账双留痕）③_autoNoteOnce机核档缺侦测器note会话防重永不销 ④_autoOff总开关 ⑤机核台账_autoLogAdd+_pushAutoLog（hx_chk_autolog只增裁100条，闲时PUT仓根机核台账.json，镜像hx_chk_autolog_up没变不重推）⑥key_eq侦测器（非空且全等才中）+renderPg机核标（机核档步不显✓钮防手滑）；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold/HX.chat/HX.jc IDENTICAL，HX.chk除本版申报8处外IDENTICAL */ /* ── v0.38.0（2026-10-18，监察员上岗：设计稿SPEC_监察员_v0.1.0_设计稿洪老师2026-10-18两次拍板合成→正式SPEC_监察员_v0.1.0 Kimi起草已落仓→DS实现（千问钥匙401没进去本班没上工）→Kimi终审翻案4处亲手落地：①afterStep引用回调局部变量rec必炸ReferenceError改传参 ②calcBacklog编不存在的t.sim/t.cloud/t.watch翻真字段t.lane（照HX.chk）③卡件没跳下一件还走剩余步翻cb(out)收尾 ④saveRes漏ver变清旧结果补上）：纯加法新增HX.jc监察员——走查单.json双腿三兜底（dav/api/raw+缓存）、开门闲时60秒起跑每次最多hx_jc_max件（缺省3）件间歇5秒、五算子全读型（see/seeText/ls/lsKey/file）绝不自动点击输入、卡件记黑匣子+AI病根分析（HX.chat.pump公共泵，判词仅记录）、vision快照参谋（文字快照代真截图，「不正常」只立visionFlag等Kimi终审）、结果账hx_jc_res+壳真源hxdata_hx_jc.json双写、闲时PUT走查记录.json/监察台账.json（镜像防重推）、督查岗台账hist只增+health()/report()供交班；总开关hx_jc_off=1全退休；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold/HX.chk/HX.chat IDENTICAL *//* v0.37.0（2026-10-18，洪老师真机报「传黑匣子12秒没动静/上行失败」云侧查明=虚惊（网慢超12秒看门狗误报，PUT其实传上），拍板治，SPEC_hx-common_v0.37.0，DS+千问同稿、Kimi终审翻案1处=DS版本留痕插位错插v0.23.0前，亲手改插版本行）：刀1黑匣子看门狗12→30秒；刀2补传成功补人话（hx_bb_lastfail标记，败立成消）；红线HX.bb除本版申报三处外IDENTICAL，其他所有模块IDENTICAL *//* v0.36.0（2026-10-18，分家④步「泵归公共件」10-10_2316拍板，SPEC_fenjia4，DS+千问同稿、Kimi终审亲手落地）：HX.chat新增公共泵api.pump(sys,usr,opt,cb)——链默认千问→Kimi→DeepSeek复用闭包私有callQwen/callKimi/callDS（cb(st,txt)签，st==='ok'才成），opt.which='qwen'/'kimi'/'ds'可点名只走一家，cb(ok,text,by)；流式onProg/联网web暂不支持，要用这两样的单体照旧走自带老泵；红线除本加法与版本行外IDENTICAL *//* v0.35.0（2026-10-18，F4a尾刀：窄条「不变化像死机」v0.24.4查明是手动步等人点✓但没说清）：窄条补「在等谁」——手动步说等您点✓点这条展开，watch/auto步说在帮您盯，cloud步说云侧核不用动，watch档说观察哨自己销；红线除本刀文案与版本行外IDENTICAL *//* v0.34.0（2026-10-18，想法流水10-18 09:01真机报「想法输入框顶天看不到打的内容」，F3b没断根）：新增sjKbFit键盘自适应——visualViewport算出键盘吃掉的高度，面板底边抬到键盘上方、最高随可视高收缩；键盘收/没visualViewport接口自动回老样；红线除本两刀与版本行外IDENTICAL *//* v0.33.0（2026-10-17深夜班，洪老师拍板「把千问修好修完为止」，SPEC_千问四治法，DS实现+Kimi终审翻案1处亲手落地：DS续写漏拼半截只回第二回正文，补acc累加）：治千问三刀落callQwen——刀①回信上限2048→8192治腰斩（删Math.min死代码）刀②读finish_reason截断自动续写一回拼接全文（slice拷贝不动原数组，硬上限1次，仍截断报fail换棒）刀④正式调用钥匙trim（探活已修本处补上）；配套chat v0.4.1+大管家v0.57.4同治病根；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold/HX.chk/callDS/callKimi/fetchJson/buildMessages/tryCompress IDENTICAL，callQwen除本三刀申报点外IDENTICAL *//* v0.32.0（2026-10-16，洪老师拍板「把AI对话框从空白一直完成到最后」，SPEC_AI对话框一期，DS实现+Kimi终审翻案2处亲手落地：①toast改调闭包内真接口hxToastHold（DS又编不存在的window.hxToastHold/hxToast/HX.toast，记账）②callKimi兜底模型名改真机现行kimi-k2.7-code-highspeed删修正贴纸）：纯加法新增HX.chat对话心脏——索引hx_chat_v1+对话壳真源hxdata_hx_chat_<id>.json三层写（真源/localStorage兜底/坚果云mirror），通道链DS→千问→Kimi各60秒死心换棒，三层记忆（原文永存+超10轮DS压缩摘要+事实卡），pullCloud云端捞回，总开关hx_chat_off=1全退休；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold/HX.chk IDENTICAL */ /* v0.31.0/* v0.31.0（2026-10-16，洪老师真机报F3b输入框顶头拍板「干」，DS实现+Kimi终审零翻案）：#hxSjPanel加max-height:calc(100vh-170px)+overflow-y:auto，键盘起面板内部滑，输入框不再被顶出屏；红线除本刀CSS与版本行外IDENTICAL *//* v0.30.0（2026-10-15 夜班⑦，洪老师拍板「做」，SPEC_index_v1.22.0+hx-common_v0.30.0_预下载+双击回环，DS实现+Kimi终审翻案3处亲手落地：①腿D的upFile/downFile回调式签名翻Promise式（DS编了不存在的第三参回调）②腿G写断/读断拆两条链各自catch精确判 ③腿D删wrote判返回照_writeFile同款try调用）：刀A1 HX.bb新增公开口loopback()双击🆘回环体检（腿G GitHub仓根「黑匣子回环.txt」+腿D坚果云/学习套装备份/黑匣子回环.txt，写上去读回来码对=通，写不成/读不回/码不对=哪腿哪环断一句话说清，双腿独立全settle后bbToast常驻汇总+job报账）刀A2 sj🆘钮双击判定（hx_lb_off=1单击照旧flush(true)整刀退休，否则单击600ms后flush、600ms内第二击loopback()）；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.chk/hxToastHold IDENTICAL，HX.sj除刀A2一处bind外IDENTICAL，HX.bb除刀A1新增函数+return一处外IDENTICAL */ /* v0.29.0（2026-10-15 夜班④，洪老师拍板「三个任务一起做」，SPEC_hx-common_v0.29.0_被动观察法+黑匣子心跳，DS实现+Kimi终审）：①bb开门心跳hb（云侧对时知在线）②collectSide哑火对照（壳有开门主账没动→哨兵err）③被动观察法：清单步骤带watch关键词，bb记账通报HX.chk.bbHit命中→24小时（hx_chk_watch_hours可配）没err自动markGreen销号全程不弹窗，err命中删账不销 ④撤开门8秒自动问（hx_chk_wiz_ask=1才问，🧪手动链不动）；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/hxToastHold IDENTICAL，HX.bb除块2~3申报点外IDENTICAL，HX.chk除块4~6申报点外IDENTICAL */ /* v0.28.0（2026-10-15 夜班，洪老师拍板「开工」，SPEC_hx-common_v0.28.0_黑匣子五案，DS实现+Kimi终审）：黑匣子五案——①HX.bb.job办完报账（成记job/败记err立刻上行）②重点钮12秒看门狗「点了没反应」③哨兵_silentLog（flush失败/没钥匙直写账防递归）④hxToastHold黑框留账note（hxBbToast自家除外）⑤err截断120→300字；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.chk IDENTICAL，HX.bb除块2~5申报点外IDENTICAL，hxToastHold除块4一处加法外IDENTICAL */ /* ═══════════════════════════════════════════════════════════════════════════
    v0.27.0（2026-10-15 晚班③，洪老师真机报「黑框文字显示不全犯糊涂/跨页没说去哪页」+拍板「现在就搞」，SPEC_hx-common_v0.27.0_黑框字看不全+跨页报名字，DS实现15.9秒完整回件+Kimi终审翻案1处亲手落地：_wizBox开头补摘旧hxChkWizFull防换步残留）：刀1黑框文字区看得全（去两行截断→字号14px+最多约3行可上下滑+点文字区弹大框看全文再点收起，_wizBoxClose同步收大框）刀2跨页步骤报页面名（step.page，默认「主界面（首页）」，配验收清单t21.s1加page字段）；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold IDENTICAL，HX.chk除_wizBox/_wizStep/_wizBoxClose三函数外IDENTICAL
    v0.26.0（2026-10-15 晚班②，洪老师真机三连报「黑框不是人话/跳过没反应/挡住版面看不见黄圈」+拍板六条浮窗化，SPEC_hx-common_v0.26.0_向导浮条+跳过根治，DS实现+Kimi终审翻案3处亲手落地：①document拖动监听泄漏→留引用_wizBoxClose全摘 ②touchmove改挂document防拖快断拖+preventDefault防页面跟滚 ③wizSkipped三入口清零核讫）：刀A跳过根治（_wizSkipped会话记账，跳过不再原地踏步）刀B大黑框→顶部可拖动窄浮条（⠿把手三路拖动+hx_chk_wiz_top记位置）刀C文案全人话刀D黄圈自动scrollIntoView屏中间+浮条遮挡自动让位；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold IDENTICAL，HX.chk除向导段（刀A~D）外IDENTICAL
 v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减负——壳领着洪老师一步一步验，
@@ -1427,6 +1427,7 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
         for(var tid in p){ if(keep[tid]) np[tid]=p[tid]; else hit=true; }
         if(hit) saveProg(np);
         try{ localStorage.removeItem('hx_chk_ask'); }catch(e){} /* v0.24.0 ver变问账清：旧问账作废 */
+        try{ localStorage.removeItem('hx_chk_ai_asked'); }catch(e){} /* v0.40.0：ver变AI问账清 */
         /* v0.25.0 刀A：ver变（清单换版）hx_chk_wiz_n清零重新计 */
         try{
           var vNow = String((_list && _list.ver)||'');
@@ -1544,6 +1545,10 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
             if(st.lane==='auto' && !_autoOff()){ /* v0.39.0 机核档：侦测命中直接销不弹窗 */
               if(st.auto && autoHit(st.auto)){ _autoGreen(t, st); }
               else if(!st.auto){ _autoNoteOnce(t, st); } /* 防呆：机核档没配侦测器=永不销，记note */
+              continue;
+            }
+            if(st.lane==='ai' && !_aiOff()){ /* v0.40.0 AI质检档：AI+快照双过才销 */
+              _aiCheck(t, st);
               continue;
             }
             if(st.auto && autoHit(st.auto)){ askConfirm(t, st); } /* v0.24.0 弹窗销号：侦中不再直接变绿，弹确认条，点✓才markGreen */
@@ -1731,6 +1736,10 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
       }catch(e){}
     }
     function _autoOff(){ try{ return localStorage.getItem('hx_chk_auto_off')==='1'; }catch(e){ return false; } } /* v0.39.0：机核档总开关，1=退休机核落回弹确认条老路 */
+    function _aiOff(){ try{ return localStorage.getItem('hx_chk_ai_off')==='1'; }catch(e){ return false; } } /* v0.40.0：AI质检总开关 */
+    var _aiBusy = false; /* 泵在飞闸：一次只问一件 */
+    var _aiCount = 0;    /* 本次开门会话已质检件数 */
+    function _aiMax(){ try{ var n=parseInt(localStorage.getItem('hx_chk_ai_max')||'3',10); return (n>0&&n<20)?n:3; }catch(e){ return 3; } }
     /* ---- v0.39.0 机核台账：谁被机器销的号，一笔一笔留账，只增 ---- */
     function _autoLogAdd(tid, sid, autoStr){
       try{
@@ -1762,6 +1771,96 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
           }, function(){});
         }, function(){});
       }catch(e){}
+    }
+
+    /* ---- v0.40.0 AI质检台账：AI看过谁，一笔一笔留账，只增裁100；照机核台账同款 ---- */
+    function _aiLog(tid, sid, verdict, say){
+      try{
+        var arr=[]; try{ arr=JSON.parse(localStorage.getItem('hx_chk_ailog')||'[]')||[]; }catch(e){ arr=[]; }
+        if(!Array.isArray(arr)) arr=[];
+        arr.push({t:Date.now(), tid:String(tid), sid:String(sid), verdict:String(verdict||''), say:String(say||'')});
+        if(arr.length>100) arr=arr.slice(arr.length-100);
+        try{ localStorage.setItem('hx_chk_ailog', JSON.stringify(arr)); }catch(e){}
+        _pushAiLog();
+      }catch(e){}
+    }
+    function _pushAiLog(){
+      try{
+        if(_off()) return;
+        if(!window.fetch) return;
+        if(typeof HX._autoNetOk==='function'){ if(!HX._autoNetOk()) return; }
+        var g=null; try{ g=HX.keys.gh(); }catch(e){ g=null; }
+        if(!g) return;
+        var body=''; try{ body=localStorage.getItem('hx_chk_ailog')||'[]'; }catch(e){ body='[]'; }
+        var prev=''; try{ prev=localStorage.getItem('hx_chk_ailog_up')||''; }catch(e){ prev=''; }
+        if(body===prev) return; /* 镜像：没变不重推 */
+        var api='https://api.github.com/repos/'+encodeURIComponent(g.u)+'/'+encodeURIComponent(g.r)+'/contents/'+encodeURIComponent('AI质检台账.json');
+        var H={'Authorization':'token '+g.t,'Accept':'application/vnd.github+json'};
+        fetch(api,{headers:H}).then(function(resp){ if(resp.status===404) return {sha:null}; if(!resp.ok) throw 0; return resp.json(); }).then(function(j){
+          var put={message:'AI质检台账上行', content:_enc(body)};
+          if(j && j.sha) put.sha=j.sha;
+          fetch(api,{method:'PUT',headers:H,body:JSON.stringify(put)}).then(function(r2){
+            if(r2 && r2.ok){ try{ localStorage.setItem('hx_chk_ailog_up', body); }catch(e){} }
+          }, function(){});
+        }, function(){});
+      }catch(e){}
+    }
+
+    /* v0.40.0：验收快照=页面标题+近24小时err条数+spot元素现场+正文摘要，全读型 */
+    function _aiSnap(st){
+      var snap={page:'', err24:0, spot:'', body:''};
+      try{ snap.page=String(document.title||''); }catch(e){}
+      try{
+        if(HX.bb && typeof HX.bb.tail==='function'){
+          var arr=HX.bb.tail(300), now=Date.now(), c=0;
+          for(var i=0;i<arr.length;i++){ var it=arr[i]||{}; if(String(it.k||'')==='err' && (now-(Number(it.t)||0))<86400000) c++; }
+          snap.err24=c;
+        }
+      }catch(e){}
+      try{
+        if(st && st.spot){
+          var el=document.querySelector(String(st.spot));
+          if(el){
+            var r=el.getBoundingClientRect();
+            snap.spot='选择器'+String(st.spot)+'：在屏位置'+Math.round(r.left)+','+Math.round(r.top)+' 宽'+Math.round(r.width)+' 高'+Math.round(r.height)+'；内容前200字：'+String(el.outerHTML||'').slice(0,200);
+          }else{ snap.spot='选择器'+String(st.spot)+'：元素没找到'; }
+        }
+      }catch(e){}
+      try{ snap.body=String((document.body&&document.body.innerText)||'').slice(0,300); }catch(e){}
+      return snap;
+    }
+
+    /* v0.40.0：问AI一件——节流+问过不再问；正常才销，其余一律留人 */
+    function _aiCheck(t, st){
+      try{
+        if(_aiBusy) return;
+        if(_aiCount >= _aiMax()) return;
+        var key=String(t.id)+'_'+String(st.id);
+        var asked={}; try{ asked=JSON.parse(localStorage.getItem('hx_chk_ai_asked')||'{}')||{}; }catch(e){ asked={}; }
+        if(asked[key]) return; /* 问过（无论结果）本清单期不再问，拿不准留人 */
+        if(!(HX.chat && HX.chat.pump && typeof HX.chat.pump==='function')) return; /* 没泵=跳过下回补 */
+        _aiBusy=true; _aiCount++;
+        asked[key]=Date.now(); try{ localStorage.setItem('hx_chk_ai_asked', JSON.stringify(asked)); }catch(e){}
+        var sys='你是手机学习软件的验收质检员。给你一条验收标准和一页界面的现场快照（含近24小时报错数err24）。只许回答「正常」或「拿不准」开头，再加一句20字以内理由。凡快照对不上标准、err24大于0、或你判断不了，一律答拿不准。';
+        var usr='验收标准：'+String(st.text||'')+'\n现场快照：'+JSON.stringify(_aiSnap(st));
+        var done=false;
+        setTimeout(function(){ if(!done){ done=true; _aiBusy=false; try{ HX.bb.log('note','AI质检超时:'+key); }catch(e){} try{ var a3=JSON.parse(localStorage.getItem('hx_chk_ai_asked')||'{}')||{}; delete a3[key]; localStorage.setItem('hx_chk_ai_asked', JSON.stringify(a3)); }catch(e){} } }, 60000); /* 60秒死心；超时也回删问账下回补 */
+        HX.chat.pump(sys, usr, {}, function(ok, txt, by){ /* 真签名：cb(ok布尔, txt, by哪家)——照HX.jc里三处调用先例 */
+          try{
+            if(done) return; done=true; _aiBusy=false;
+            var say=String(txt||'').slice(0,80);
+            if(ok && /^正常/.test(say)){
+              markGreen(t.id, st.id);
+              try{ HX.bb.job('AI质检销:'+String(t.id)+'/'+String(st.id), true); }catch(e){}
+              _aiLog(t.id, st.id, '正常', say);
+              try{ refreshUI(); }catch(e){}
+            }else{
+              _aiLog(t.id, st.id, '拿不准', say||'泵没回话'); /* 不销，留人 */
+            }
+            if(!(ok && /^正常/.test(say))){ try{ var a2=JSON.parse(localStorage.getItem('hx_chk_ai_asked')||'{}')||{}; delete a2[key]; localStorage.setItem('hx_chk_ai_asked', JSON.stringify(a2)); }catch(e){} } /* 泵没答成或拿不准=回删问账，下回开门在对应页补问（拿不准不封口） */
+          }catch(e){ _aiBusy=false; }
+        });
+      }catch(e){ _aiBusy=false; }
     }
 
     /* ---- 进度推云仓（照sjUpload PUT模式：GET取sha→PUT；没钥匙/没网静默跳过下回补） ---- */
@@ -2072,6 +2171,10 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
               sb.appendChild(stx);
               if(held){ var hh=document.createElement('div'); hh.style.cssText='font-size:13px;color:#b5aca0;margin-top:2px'; hh.textContent='已挂号'; sb.appendChild(hh); }
               else if(st.lane==='auto'){ var au=document.createElement('div'); au.style.cssText='font-size:13px;color:#8a7f70;margin-top:2px'; au.textContent='🤖机核：它自己核过就变绿，不用您点'; sb.appendChild(au); } /* v0.39.0 */
+              else if(st.lane==='ai'){ /* v0.40.0 AI质检档小字：查台账该步最新verdict */
+                var aiV=''; try{ var al=JSON.parse(localStorage.getItem('hx_chk_ailog')||'[]')||[]; for(var ai=al.length-1;ai>=0;ai--){ var ae=al[ai]||{}; if(String(ae.tid)===String(task.id) && String(ae.sid)===String(st.id)){ aiV=String(ae.verdict||''); break; } } }catch(e){ aiV=''; }
+                var ad=document.createElement('div'); ad.style.cssText='font-size:13px;color:#8a7f70;margin-top:2px'; ad.textContent=(aiV==='拿不准')?'🤖AI拿不准，等您看一眼':'🤖AI质检：它看过说行才变绿'; sb.appendChild(ad);
+              }
               else if(st.auto){ var ah=document.createElement('div'); ah.style.cssText='font-size:13px;color:#8a7f70;margin-top:2px'; ah.textContent='做好了它自己变绿'; sb.appendChild(ah); }
               srow.appendChild(sd); srow.appendChild(sb);
               if(!st.auto && !ok && !held && st.lane!=='auto'){
