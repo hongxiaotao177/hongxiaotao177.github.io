@@ -2,6 +2,7 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.29.0 2026-10-18（t64，洪老师拍板「放弃旧更新说明重新设计」：刀1 updLine绿版强制隐藏/刀2 新增homeUpd容器/刀3 __home1209.relList自包含本次更新清单（逐件中文名+编码时间t倒序+最新●+有新版红字点装=三标记刷新走老装件链）+start改只调relList（bindFish/lamp/track退休不删）/fmtT2自带不跨IIFE；终审加1处=有新版没装上时面板边框变红；装件链/复核链/任务单/updMsg写账/hx_last_upd账一行未动）
     v1.28.1 2026-10-18（洪老师17:05真机截图报「第1点没办到」——病根=v1.28.0只给手动检查两条finish路存人话账，开门直装段装完只刷新不存账，他手机正是开门自动装的→hx_last_upd空→📋行永不亮；DS实现+Kimi终审亲手落地）：刀1开门直装装完补存人话账（名字+“刚写好的”）/刀2 lastUpdNote无账兜底人话行（含catch）/刀3本条目；装件钾/复核链/任务单/灯/版面一行未动。
     v1.28.0 2026-10-18（洪老师真机问「我要的升级人话版在哪」——回执只在装件那一刻闪3秒被复核后自动刷新冲掉，过后无处可看；治=人话账存localStorage hx_last_upd，全绿界面顶部常驻「📋 上次更新：哪几件（几点几分写的）」随时可查，t61，SPEC_index_v1.28.0，DS实现+Kimi终审亲手落地）：刀1 helper lastUpdNote（终审翻案自家1处：原定在updCheck函数内，管家路刀6跨作用域调用必炸，挪全局）/刀2刀3两处finish存账（老路+管家路）/刀4刀5刀6三处全绿顶部拼账（老路else+125摘要与明细+管家路）；装件链/复核链/dlWrite/任务单/灯/版面一行未动。
     v1.27.2 2026-10-18（洪老师真机报「升级说明页还没改、刚更新完也这样」拍板根治，t60，SPEC_index_v1.27.2，DS实现零编造+Kimi终审亲手落地）：上一版追踪条人话化——一行账与点开明细全去版本号（拍板「不报版本号」补刀），只留名字+交活钟点，三段对账保留说法人话化；云侧补推发版任务单t59（t57/t58/t59三班漏刷，本班补账）；判定逻辑/三段灯/任务单/灯/装件链一行未动。
@@ -301,6 +302,7 @@
     display:none; background:#eef6ee; border:1px solid #d4e4d4; color:#4a6b4f;
     border-radius:12px; padding:12px 16px; font-size:13px; line-height:1.7;
     margin-bottom:8px; white-space:pre-wrap;
+    display:none !important; /* v1.29.0 刀1：绿版面板强制隐藏（updMsg仍会inline display:block，必须!important压过）；updMsg函数与写账行为一字不动，面板只是不再显示 */
   }
   /* v1.20.9 件①更新鱼骨头化：updLine默认只露一行，点一下展开看全文、再点收起（回退hx_home1209_off=1时JS不绑点按，此条无害留着） */
   #updLine:not(.hxOpen){ max-height:1.7em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; }
@@ -353,6 +355,7 @@
 <main>
 
   <!-- v1.20.9（洪老师拍板三件：更新鱼骨头化+管家灯上首页+上一版追踪）首页常显区：灯第一行，追踪第二行 -->
+  <div id="homeUpd" style="margin:0 0 8px;padding:10px 14px;border:1px solid #e3dccf;border-radius:12px;background:#fdfbf6;font-size:13px;line-height:1.7;color:#5a5346;white-space:pre-wrap;"></div><!-- v1.29.0 刀2：本次更新清单容器（首页第一行常显区），由__home1209.relList填 -->
   <div id="homeLamp" style="display:none;margin:0 0 8px;padding:10px 14px;border:1px solid #e3dccf;border-radius:12px;background:#fdfbf6;font-size:13px;line-height:1.7;color:#5a5346;white-space:pre-wrap;cursor:pointer;"></div>
   <div id="lastRel" style="display:none;margin:0 0 8px;padding:10px 14px;border:1px solid #e3dccf;border-radius:12px;background:#fdfbf6;font-size:13px;line-height:1.7;color:#5a5346;white-space:pre-wrap;cursor:pointer;"></div>
   <div id="updLine"></div>
@@ -614,6 +617,7 @@ CUR.index="1.26.1"; /* v1.26.1 t55管家路人话回执补钟点，见顶部修�
 CUR.index="1.27.0"; /* v1.27.0 手机账房消费链上岗（配壳vc59子目录桥），见顶部修改记录 */
 CUR.index="1.27.2"; /* v1.27.2 上一版追踪条人话化（顺手根治v1.27.1班CUR行漏升=开门装循环隐患），见顶部修改记录 */
 CUR.index="1.28.1"; /* v1.28.1 开门直装补存人话账+无账兜底，见顶部修改记录 */
+CUR.index="1.29.0"; /* v1.29.0 首页本次更新清单，见顶部修改记录 */
 CUR.tuomin="0"; /* v1.19.10修404：CUR=壳内已装版本，单体手机还没装必须填"0"才会下载（CUR.ppt同款老坑，见230行） */ /* v1.19.8（2026-09-20班⑮，洪老师真机报"升级说装成功主界面还是19.6，几次都这样，没重启应该直接变19.7"）病根=班⑮发v1.19.7时新赋值插在同一行旧赋值前面，CUR.index="1.19.7"刚赋上就被同行的CUR.index="1.19.6"盖回→页脚活字永远亮1.19.6（文件真身早是新版，升级链/壳全无辜，大管家0.54.5上机为证）；还连带v1.19.5刀2开门自校对误把账本1.19.7当谎回滚→每次都提示重装。治=删同行可执行旧赋值（注释留档）+升号v1.19.8让真机重新下载。其余一行未动 */
 try{document.getElementById("ftVer").textContent=CUR.index;}catch(eF){} /* v1.19.6 页脚死字改活字：ftVer亮CUR.index真身 */
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
@@ -2488,6 +2492,7 @@ var __home1209 = (function(){
   /* 件①：updLine点一下展开/收起（CSS管只露一行） */
   M.bindFish=function(){ try{ var el=document.getElementById("updLine"); if(el&&!el.__hxFish){ el.__hxFish=1; el.title="点一下展开/收起"; el.addEventListener("click",function(){ try{ el.classList.toggle("hxOpen"); }catch(e){} }); } }catch(e){} };
   /* 件②：管家灯（规则同v1.20.0刀4：心跳只认管家亲笔件 mg_ver.json.t / mg_progress.json末条.t；绿=15分钟内，红=超15分钟/从没见过） */
+  /* v1.29.0退休：不再调用（函数体留，后台心跳由大管家自记不依赖此处） */
   M.lamp=function(){
     try{
       var el=document.getElementById("homeLamp"); if(!el) return;
@@ -2584,6 +2589,7 @@ var __home1209 = (function(){
     return key;
   };
   /* 件③：上一版追踪——任务单第1件（最近发的活）三段对账：上传/下载/安装 */
+  /* v1.29.0退休：不再调用（fmtT跨IIFE炸源，整条废弃；函数体留档） */
   M.track=function(){
     try{
       var el=document.getElementById("lastRel"); if(!el) return;
@@ -2616,11 +2622,70 @@ var __home1209 = (function(){
       });
     }catch(e){}
   };
+  /* v1.29.0 刀3a（t64，洪老师拍板新设计：藏绿版+首页列本次更新逐件编码时间+有新版红字点装）：
+     自包含铁律——本函数及其内层不调用任何模块外函数（fmtT跨IIFE炸的教训@旧2609行）；
+     只准调用：M.fetchJson、M.localVer（本模块自有）、localStorage、sessionStorage（红件点击三标记照抄btnVerTop）、document、Date、setTimeout、location */
+  M.relList=function(){
+    /* 时间格式化自带给定格式「10月18日 20:10」：月日不补零，时分补零24小时；坏t/空t回"" */
+    function fmtT2(t){ try{ var d=new Date(Number(t)); if(!t||isNaN(d.getTime())) return ""; return (d.getMonth()+1)+"月"+d.getDate()+"日 "+("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2); }catch(e){ return ""; } }
+    /* 中文名自带表，不依赖SUITE */
+    var NAME={index:"首页","hx-common":"公共件",guanjia:"大管家",tuomin:"脱敏单体",xiaotao:"小涛笔记",chat:"AI对话框"};
+    function nm(k){ return NAME[k]||String(k); }
+    function render(va, isCache){
+      try{
+        var el=document.getElementById("homeUpd"); if(!el) return;
+        var arr=(va&&va.items)||[];
+        if(!arr.length){ el.textContent="📋 本次更新：更新账是空的，联网开门后自动补上"; return; }
+        var rows=arr.slice();
+        rows.sort(function(a,b){ return (Number(b&&b.t)||0)-(Number(a&&a.t)||0); }); /* t倒序，最新在上 */
+        var maxT=0; rows.forEach(function(it){ var t=Number(it&&it.t)||0; if(t>maxT) maxT=t; });
+        var out=["📋 本次更新"+(isCache?"（本地账，联网对牌中）":"")];
+        var hasStale=false;
+        rows.forEach(function(it){
+          if(!it) return;
+          var key=String(it.key||""), ver=String(it.version||""), ts=fmtT2(it.t||0)||"钟点没查到";
+          var mark=((Number(it.t)||0)===maxT&&maxT>0)?"● ":"　";
+          /* 红字判定：本机版本与云牌都判得出且不等=有新版没装上；判不出（任一边空）不红不绿只列时间 */
+          var local=""; try{ local=M.localVer(key); }catch(eL){}
+          var stale=(local!==""&&ver!==""&&local!==ver);
+          if(stale) hasStale=true;
+          out.push(mark+nm(key)+"　"+ts+(stale?"　🔴有新版没装上，点我装":""));
+        });
+        el.textContent=out.join("\n");
+        el.style.color="#5a5346";
+        el.style.borderColor=hasStale?"#b94a48":"#e3dccf"; /* v1.29.0终审加：有新版没装上时面板边框变红，老远看得见（textContent不能单行变色，这是不引innerHTML的稳做法） */
+        /* 红件点击=照抄btnVerTop同款三标记+刷新重查（装件链一字不动，走老路）；点击时刻重算stale，不信渲染时旧标记 */
+        el.onclick=function(){
+          try{
+            var rows2=(va&&va.items)||[]; var anyStale=false;
+            rows2.forEach(function(it){ if(!it) return; var l=""; try{ l=M.localVer(String(it.key||"")); }catch(e2){} if(l!==""&&String(it.version||"")!==""&&l!==String(it.version)) anyStale=true; });
+            if(!anyStale) return;
+            el.textContent="🔍 正在查新版本，请稍等…";
+            sessionStorage.removeItem('hx_ver_checked');sessionStorage.setItem('hx_ver_manual','1');sessionStorage.setItem('hx_sj_skip_once','1');
+            setTimeout(function(){ location.reload(); },120);
+          }catch(eC){}
+        };
+      }catch(e){ try{ var el2=document.getElementById("homeUpd"); if(el2) el2.textContent="📋 本次更新：账读取出错，不碍用"; }catch(e3){} }
+    }
+    try{
+      var el=document.getElementById("homeUpd"); if(!el) return;
+      /* ①秒显本地账（不等网） */
+      var cached=null; try{ cached=JSON.parse(localStorage.getItem("hx_verall_cache")||"null"); }catch(eP){}
+      if(cached&&cached.items&&cached.items.length){ render(cached,true); }
+      else{ el.textContent="📋 本次更新：正在对更新账…"; }
+      /* ②后台拉云牌，拉到存缓存+重渲；拉不到有缓存就保持，没缓存给兜底人话 */
+      M.fetchJson("version-all.json").then(function(va){
+        if(va&&va.items&&va.items.length){ try{ localStorage.setItem("hx_verall_cache", JSON.stringify(va)); }catch(eS){} render(va,false); }
+        else if(!(cached&&cached.items&&cached.items.length)){ try{ el.textContent="📋 本次更新：更新账还没拉到，联网开门后自动补上"; }catch(e4){} }
+      });
+    }catch(e){}
+  };
   M.start=function(){
     try{
-      M.bindFish(); M.lamp(); M.track();
-      setInterval(function(){ try{ M.lamp(); }catch(e){} },60000);
-      setInterval(function(){ try{ M.track(); }catch(e){} },300000);
+      M.relList(); /* v1.29.0 刀3b：首页只留本次更新清单 */
+      setInterval(function(){ try{ M.relList(); }catch(e){} },300000);
+      /* 退休不删（v1.29.0，洪老师拍板：绿版/追踪条/管家灯不显示，后台心跳由大管家自记不依赖此处）：
+         M.bindFish / M.lamp / M.track 三函数体保留原样，不再调用；旧两条setInterval摘除 */
     }catch(e){}
   };
   return M;
