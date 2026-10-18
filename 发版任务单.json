@@ -1,1 +1,1 @@
-{"ver":"2026-10-19-自检审计+问诊室刀2","t":1792366558646,"items":[{"key":"hx-common","version":"0.44.0","dl":"hx-common.js","sig":"b6848dd7cb7bf5eb","t":1792366558646,"task":"t71 HX.audit七哨审计+wzPoll回话下行"},{"key":"index","version":"1.32.0","dl":"index.html","sig":"f33946714e2a7831","t":1792366558646,"task":"t71 🩺自检报告钮"}],"note":"t71 审计报告随时出+一钮现做"}
+{"ver":"2026-10-19-审计账单","t":1792367623715,"items":[{"key":"hx-common","version":"0.45.0","dl":"hx-common.js","sig":"5199369a7a13d20d","t":1792367623715,"task":"t72 自检报告v2：每哨最近账单（谁做的/做完了啥/卡在哪，人话）"}],"note":"t72 审计账单"}
