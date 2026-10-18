@@ -1,1 +1,1 @@
-{"version": "0.39.0", "dl": "hx-common.js", "sig": "21fcc3573bbbd37c", "t": 1792305513055, "fix": "t58", "note": "机核档：侦测命中自动销号不弹窗+机核台账留痕+key_eq；总开关hx_chk_auto_off"}
+{"version": "0.40.0", "dl": "hx-common.js", "sig": "c7323a6be686d5a7", "t": 1792306957109, "fix": "t59", "note": "AI质检岗：体验步AI先看，正常才自动销，拿不准留给您；监察员盯着台账"}
