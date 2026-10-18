@@ -2,6 +2,7 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.27.1 2026-10-18晚（黑匣子真机账逮住反复err「fmtT is not defined @index.html」：t55补丁IIFE跨作用域调fmtT必炸——fmtT住在查新主链IIFE里，管家路回执IIFE够不着；DS出补丁+Kimi终审落地：1705 IIFE内_finH前补本地fmtT照抄行1223同款一字不差；验：锚点唯一+3个script块语法PASS+IIFE内fmtT仅此一处调用；其余一行未动）
     v1.27.0 2026-10-18（SPEC_手机账房落地，刀B，DS实现+Kimi终审翻案2处亲手落地：①DS编HX.bb.job(msg,obj)假签名翻真签名HX.bb.log(k,m) ②DS跨闭包用hasApi/base/H局部变量翻模块内现取ghCfg/ghHeaders）：新增账房消费链独立IIFE（开门查新IIFE之后）——老壳无writeFileRel静默退/hx_zf_checked每开门一次/总回退hx_zfang_off=1/闲时60秒起跑；双腿取bridge-outbox.json→deliveries（done跳过/dest!=="zfang"跳过，老测试件不动）→写「账房/」子目录→回读字节对账→冲突改名留底→receipt→PUT回写（ghFetch先GET取sha，失败投信mg_out_管家代发，没Token存hx_zf_pending下次补投）；全程静默只写黑匣子；开门查新链/装件链/dlWrite/hxWriteSmart/任务单/灯/updHuman/版面一行未动；配壳vc59子目录桥四件套
     v1.26.1 2026-10-18（洪老师真机报「人话回执没钟点、按两次没反应」，t55，SPEC_index_v1.26.1_管家路回执补钟点，DS+千问补丁一致Kimi终审全采纳并翻案自家1处——初稿把✅已装上进度行圈进return后面变死代码，挪前根治；千问版本史编造一串不存在的版本号记帐1笔正文弃用）：管家路装件成功人话回执补真钟点——管家回信行本无t（壳Java不动），装件成功顺手hxRawGet版本牌取t，取到带钟点/取不到退「刚写好的」/9秒硬帽；成功件续链挪进取钟点回调（renderProg+setTimeout(applyOne,50)一字不差），失败分支老续链一行未动；legacyRun刀2b①②/任务单/版面/壳/管家/hx-common全不动。
     v1.26.0 2026-10-18（洪老师拍板「绿字界面彻底取消+升级报几点几分写好的+生长树不另立门户」，SPEC_index_v1.26.0，DS实现+Kimi终审：DS漏交顶部留痕亲手补/刀2c扩及管家路同款两处报备）：刀1全绿定格摘点开展层（回退hx_home126_off=1）/刀2升级人话回执=中文名+fmtT改版时刻不亮版本号（updHuman平行账，复核细账不再亮）/刀3摘生长树卡片+SUITE+CUR三处户口（单体与数据保留，并入小涛笔记后回来）；装件链/dlWrite/verifyAfter机制/任务单/灯/信件链一行未动。
@@ -1705,6 +1706,7 @@ try{ updHuman.push((typeof cn!=="undefined"&&cn?cn:pName)+"（"+(info&&info.t?fm
                 (function(){
                   var _nmH=(typeof nm2!=="undefined"&&nm2?nm2:it.localName.replace(".html",""));
                   var _doneH=false;
+                  function fmtT(t){ try{ var d=new Date(Number(t)); if(!t||isNaN(d.getTime())) return ""; return (d.getMonth()+1)+"-"+d.getDate()+" "+("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2)+"改的"; }catch(e){ return ""; } } /* v1.27.1：跨IIFE引用fmtT必炸根治，本地照抄行1223同款 */
                   var _finH=function(_t){ if(_doneH) return; _doneH=true; try{ updHuman.push(_nmH+"（"+(_t?fmtT(_t):"刚写好的")+"）"); }catch(e){} renderProg(); setTimeout(applyOne, 50); };
                   try{ hxRawGet(it.verFile).then(function(_vt){ var _tt=0; try{ var _pj=JSON.parse(_vt); if(_pj&&_pj.t) _tt=_pj.t; }catch(e){} _finH(_tt); }).catch(function(){ _finH(0); }); setTimeout(function(){ _finH(0); }, 9000); }catch(e){ _finH(0); }
                 })();
