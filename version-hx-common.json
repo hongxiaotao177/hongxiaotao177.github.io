@@ -1,1 +1,1 @@
-{"version": "0.34.0", "dl": "hx-common.js", "sig": "18729b6ddb4da3c9", "note": "速记面板键盘自适应sjKbFit：visualViewport算键盘吃掉高度，面板抬到键盘上方，治真机「想法输入框顶天看不到字」（F3b没断根）；DS+千问补丁一致Kimi终审全采纳，仿真键盘半屏面板自抬PASS", "fix": "t47", "t": 1792288329327}
+{"version": "0.35.0", "dl": "hx-common.js", "sig": "ddc0b3f7630a55aa", "note": "窄条补「在等谁」（F4a尾刀）：手动步明说等您点✓，auto/cloud/watch步明说云侧在盯，治「窄条不变化像死机」；DS+千问复核可落地，四态仿真PASS", "fix": "t49", "t": 1792288810227}
