@@ -1,1 +1,1 @@
-{"version": "0.37.0", "dl": "hx-common.js", "sig": "80430aab31a458d5", "t": 1792292791964, "fix": "t53", "note": "黑匣子看门狗12→30秒治虚惊；补传成功补一句「账没丢」"}
+{"version": "0.39.0", "dl": "hx-common.js", "sig": "21fcc3573bbbd37c", "t": 1792305513055, "fix": "t58", "note": "机核档：侦测命中自动销号不弹窗+机核台账留痕+key_eq；总开关hx_chk_auto_off"}
