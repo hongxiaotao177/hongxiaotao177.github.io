@@ -1,1 +1,1 @@
-{"ver":"2026-10-19-清单钟点兜底","t":1792365599126,"items":[{"key":"index","version":"1.31.0","dl":"index.html","sig":"744110ba66e82ca4","t":1792365599126,"task":"t70 本次更新清单钟点兜底：items无t时退用牌子顶层t，绝不空着；云侧items补t"}],"note":"t70 治07:13真机报全显示钟点没查到"}
+{"ver":"2026-10-19-自检审计+问诊室刀2","t":1792366558646,"items":[{"key":"hx-common","version":"0.44.0","dl":"hx-common.js","sig":"b6848dd7cb7bf5eb","t":1792366558646,"task":"t71 HX.audit七哨审计+wzPoll回话下行"},{"key":"index","version":"1.32.0","dl":"index.html","sig":"f33946714e2a7831","t":1792366558646,"task":"t71 🩺自检报告钮"}],"note":"t71 审计报告随时出+一钮现做"}
