@@ -2,6 +2,7 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.32.0 2026-10-19（t71，洪老师拍板「自检的东西做审计报告随时出+按一个钮现做+我是最后控制人」，与问诊室刀2同班，SPEC_t71，DS实现+Kimi终审落地）：刀3=📋本次更新面板下加「🩺自检报告」钮（按下HX.audit.reportText()全屏人话层逐哨点名死活+顺手putFile推仓根审计_YYYYMMDD_HHMM.json报喜黑框，失败存hx_audit_pend下回补；老公共件没audit则黑框提示先点检查新版本）+btnAudit bind IIFE纯加法；配套hx-common v0.44.0（HX.audit+HX.wzPoll问诊室回话下行📬）。装件链/复核链/任务单/灯/relList/版面其余一行未动。
     v1.31.0 2026-10-19（洪老师07:13真机截图报「本次更新清单全部显示钟点没查到」+拍板「不管怎样都给我显示一个时间，单体最后更新编码写成的时间」，t70；病根=v1.29.0的relList只读version-all.json的items[i].t，而牌上items本无t字段（t在顶层）→六件全空；DS实现零编造+Kimi终审落地）：刀1排序/maxT/行内时间三处兜底链 it.t→(va&&va.t)（单体没钟点就用牌子顶层钟点，绝不空着）；装件链/复核链/任务单/灯/版面/其余一行未动。配套云侧刀A：version-all.json的items补t（各单体牌真钟点抄入，洪老师再开门即见六件钟点）
     v1.30.0 2026-10-18（t67装件假账根治四刀，SPEC_装件假账根治_v0.1.0_设计稿，DS实现锚点1/2/3/4+md5函数、锚点5编造MG_ITEMS/_md5不存在函数记账1笔=刀D由Kimi终审亲手写，全补丁Kimi终审落地；md5实现用现行牌反推实测对牌通过28cd6f926ad9b0a8）：刀A三处装完刷新改location.replace带?v=版本&r=时间戳破X5缓存（开门直装_installOne收尾+老路finish+管家路finish）/刀B防谎岗先问真身（包IIFE异步fetch真身取最后一条CUR.index，真身≥账本=不回滚改一次性闸replace破门，真身<账本=原回滚逐字保留，8秒超时取不到不动作）/刀C_mgGet三腿按稳排序（GitHub API→坚果云WebDAV→公开站raw兜底）+每腿_sigChk对_sigBook的md5前16不符换腿/锚点4取牌处顺手建_sigBook（无sig退化为只比长度不报错）/刀D装完读回对账（_withBody成功分支_done.push前读回真身比md5/长度，不符记_fail+黑匣子err不假报成功，读回异常不拦账）；管家路/手动路取件留待下版见SPEC留账；复核链verifyAfter/任务单/灯/版面/hx_last_upd账一行未动）
     v1.29.0 2026-10-18（t64，洪老师拍板「放弃旧更新说明重新设计」：刀1 updLine绿版强制隐藏/刀2 新增homeUpd容器/刀3 __home1209.relList自包含本次更新清单（逐件中文名+编码时间t倒序+最新●+有新版红字点装=三标记刷新走老装件链）+start改只调relList（bindFish/lamp/track退休不删）/fmtT2自带不跨IIFE；终审加1处=有新版没装上时面板边框变红；装件链/复核链/任务单/updMsg写账/hx_last_upd账一行未动）
@@ -358,6 +359,7 @@
 
   <!-- v1.20.9（洪老师拍板三件：更新鱼骨头化+管家灯上首页+上一版追踪）首页常显区：灯第一行，追踪第二行 -->
   <div id="homeUpd" style="margin:0 0 8px;padding:10px 14px;border:1px solid #e3dccf;border-radius:12px;background:#fdfbf6;font-size:13px;line-height:1.7;color:#5a5346;white-space:pre-wrap;"></div><!-- v1.29.0 刀2：本次更新清单容器（首页第一行常显区），由__home1209.relList填 -->
+  <button id="btnAudit" style="background:none;border:none;padding:4px 0;color:#4a6b8a;text-decoration:underline;font-size:14px;cursor:pointer;margin:0 0 8px;display:inline-block;">🩺 自检报告</button><!-- v1.32.0 t71：自检审计报告钮，按下现做一遍+抄送云仓 -->
   <div id="homeLamp" style="display:none;margin:0 0 8px;padding:10px 14px;border:1px solid #e3dccf;border-radius:12px;background:#fdfbf6;font-size:13px;line-height:1.7;color:#5a5346;white-space:pre-wrap;cursor:pointer;"></div>
   <div id="lastRel" style="display:none;margin:0 0 8px;padding:10px 14px;border:1px solid #e3dccf;border-radius:12px;background:#fdfbf6;font-size:13px;line-height:1.7;color:#5a5346;white-space:pre-wrap;cursor:pointer;"></div>
   <div id="updLine"></div>
@@ -622,6 +624,7 @@ CUR.index="1.28.1"; /* v1.28.1 开门直装补存人话账+无账兜底，见顶
 CUR.index="1.29.0"; /* v1.29.0 首页本次更新清单，见顶部修改记录 */
 CUR.index="1.30.0"; /* v1.30.0 t67装件假账根治四刀，见顶部修改记录 */
 CUR.index="1.31.0"; /* v1.31.0 本次更新清单钟点兜底链，见顶部修改记录 */
+CUR.index="1.32.0"; /* v1.32.0 🩺自检报告钮+问诊室回话下行配套，见顶部修改记录 */
 CUR.tuomin="0"; /* v1.19.10修404：CUR=壳内已装版本，单体手机还没装必须填"0"才会下载（CUR.ppt同款老坑，见230行） */ /* v1.19.8（2026-09-20班⑮，洪老师真机报"升级说装成功主界面还是19.6，几次都这样，没重启应该直接变19.7"）病根=班⑮发v1.19.7时新赋值插在同一行旧赋值前面，CUR.index="1.19.7"刚赋上就被同行的CUR.index="1.19.6"盖回→页脚活字永远亮1.19.6（文件真身早是新版，升级链/壳全无辜，大管家0.54.5上机为证）；还连带v1.19.5刀2开门自校对误把账本1.19.7当谎回滚→每次都提示重装。治=删同行可执行旧赋值（注释留档）+升号v1.19.8让真机重新下载。其余一行未动 */
 try{document.getElementById("ftVer").textContent=CUR.index;}catch(eF){} /* v1.19.6 页脚死字改活字：ftVer亮CUR.index真身 */
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
@@ -2781,5 +2784,109 @@ try{
 <!-- v1.12.0 公共件收编（plan2军规5）：内嵌速记snippet（sjGhKeys/sjToast/sjUpload+浮标UI+style）已删除，
      改 HX.sj.init({app:'主界面'})（见上方 hxCommonLoad 的 onHxReady 回调；UI由HX.sj自动注入，行为一字未改）。
      HX不在时浮标不出=静默降级，主功能照常（军规1）。 -->
+<script>
+/* ===== btnAudit 绑定（纯加法，IIFE 包裹） ===== */
+(function () {
+  try {
+    function toast(msg) {
+      try {
+        if (typeof window.hxToastHold === 'function') {
+          window.hxToastHold(msg);
+        } else {
+          alert(msg);
+        }
+      } catch (e) {
+        try { alert(msg); } catch (e2) {}
+      }
+    }
+
+    function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+
+    function showReportLayer(txt) {
+      try {
+        var wrap = document.createElement('div');
+        wrap.style.cssText = 'position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;';
+
+        var card = document.createElement('div');
+        card.style.cssText = 'position:relative;background:#fff;color:#222;border-radius:10px;max-width:560px;width:100%;max-height:80vh;padding:16px 16px 12px;box-sizing:border-box;box-shadow:0 8px 30px rgba(0,0,0,0.35);display:flex;flex-direction:column;';
+
+        var title = document.createElement('div');
+        title.textContent = '🩺自检报告';
+        title.style.cssText = 'font-size:16px;font-weight:bold;margin-bottom:10px;padding-right:28px;';
+
+        var closeBtn = document.createElement('button');
+        closeBtn.textContent = '✕';
+        closeBtn.style.cssText = 'position:absolute;right:8px;top:8px;width:28px;height:28px;border:none;background:transparent;font-size:18px;line-height:1;cursor:pointer;color:#666;';
+        closeBtn.onclick = function () {
+          try {
+            if (wrap && wrap.parentNode) { wrap.parentNode.removeChild(wrap); }
+          } catch (e) {}
+        };
+
+        var ta = document.createElement('textarea');
+        ta.readOnly = true;
+        ta.value = txt;
+        ta.style.cssText = 'width:100%;min-height:220px;max-height:60vh;box-sizing:border-box;font-size:13px;line-height:1.5;padding:8px;border:1px solid #ddd;border-radius:6px;resize:vertical;font-family:inherit;';
+
+        card.appendChild(title);
+        card.appendChild(closeBtn);
+        card.appendChild(ta);
+        wrap.appendChild(card);
+        document.body.appendChild(wrap);
+      } catch (e) {}
+    }
+
+    function bind() {
+      try {
+        var btn = document.getElementById('btnAudit');
+        if (!btn) { return; }
+        btn.onclick = function () {
+          try {
+            if (window.HX && HX.audit) {
+              var txt = HX.audit.reportText();
+              showReportLayer(txt);
+
+              var ts = Date.now();
+              var d = new Date(ts);
+              var stamp = d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()) + '_' +
+                pad2(d.getHours()) + pad2(d.getMinutes()) + pad2(d.getSeconds());
+              var fname = '审计_' + stamp + '.json';
+              var payload = JSON.stringify({ t: ts, report: txt }, null, 1);
+
+              try {
+                if (window.HX && HX.gh && typeof HX.gh.putFile === 'function') {
+                  HX.gh.putFile(null, fname, payload, '审计报告').then(function () {
+                    toast('报告已发云仓');
+                  }).catch(function () {
+                    try { localStorage.setItem('hx_audit_pend', payload); } catch (e) {}
+                    toast('报告存在手机下回补发');
+                  });
+                } else {
+                  try { localStorage.setItem('hx_audit_pend', payload); } catch (e) {}
+                  toast('报告存在手机下回补发');
+                }
+              } catch (e) {
+                try { localStorage.setItem('hx_audit_pend', payload); } catch (e2) {}
+                toast('报告存在手机下回补发');
+              }
+            } else {
+              toast('公共件还没更新，点🔍检查新版本后再按');
+            }
+          } catch (e) {}
+        };
+      } catch (e) {}
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', bind);
+    } else {
+      bind();
+    }
+  } catch (e) {
+    // 静默
+  }
+})();
+
+</script>
 </body>
 </html>
