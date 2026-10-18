@@ -1,1 +1,1 @@
-{"version": "0.33.0", "dl": "hx-common.js", "note": "千问四治法（SPEC_千问四治法，DS实现+Kimi终审翻案1处）：callQwen回信上限2048→8192治腰斩+finish_reason截断自动续写一回拼接+钥匙trim；仿真9场景全过", "sig": "6b89401a8e67e0af", "fix": "t-qwen-fix"}
+{"version": "0.34.0", "dl": "hx-common.js", "sig": "18729b6ddb4da3c9", "note": "速记面板键盘自适应sjKbFit：visualViewport算键盘吃掉高度，面板抬到键盘上方，治真机「想法输入框顶天看不到字」（F3b没断根）；DS+千问补丁一致Kimi终审全采纳，仿真键盘半屏面板自抬PASS", "fix": "t47", "t": 1792288329327}
