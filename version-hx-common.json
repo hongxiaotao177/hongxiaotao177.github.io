@@ -1,1 +1,1 @@
-{"version": "0.41.0", "dl": "hx-common.js", "sig": "7c90a34030477ffe", "t": 1792323508803, "note": "治v0.38.0起截断雷：恢复HX.chk启动段if头（ntListener→addEventListener），验收牌模块复活（t63）", "fix": "t63"}
+{"version": "0.42.0", "dl": "hx-common.js", "sig": "1c461dbbc0251e75", "t": 1792330029987, "note": "t65：index真身侦察兵，破缓存死循环", "fix": "t63"}
