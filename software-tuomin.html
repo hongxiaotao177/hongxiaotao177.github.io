@@ -5,8 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>脱敏单体</title>
 <!--
-  红小涛学习套装 · 脱敏单体 v1.2.0
+  红小涛学习套装 · 脱敏单体 v1.3.0
   定位：病历脱敏/聚合/标红/规则库/AI体检 单体工具（原病人大管家「🛡 脱敏间」整搬分出）。
+    v1.3.0 2026-10-18 班（分家④步「泵归公共件」10-10_2316拍板，SPEC_fenjia4，DS+千问同稿+Kimi终审亲手落地）：aiChat变外壳——公共泵HX.chat.pump在且本活不要流式/联网就委托（千问→Kimi→DS链），全败或不在自动落自带泵；原aiChat函数体整段改名_tmOwnPump一字符不动留作兜底；回退开关hx_tm_pump_off=1。脱敏引擎三件套/buildAIView/dsm_*一切/规则库一行未动。
     v1.2.0 2026-10-11 班⑨（洪老师拍板"开工"，AI审标红自动改规则+三层后悔药，DeepSeek实现+Kimi终审亲手落地）：刀1点亮件随行发AI——HX.ai.init补传litText钩子（新函数dsm_litTextForAI，点亮标红件全文+现行规则清单+⟦R⟧说明随行，开关hx_dsm_lit_off）；刀2发送前人名安全闸（新函数dsm_maskNamesInMarks，⟦R⟧内2~4全汉字+常见姓盖▢▢防医生真名漏给AI，开关hx_dsm_maskname_off）；刀3 AI回信带===规则开始===免同意自动改规则（新函数dsm_aiRuleAutoApply，改前快照→应用→回读核对→不符自动还原→留版本库，开关hx_dsm_autorule_off）；刀4版本库加「↩️倒回上一版」快钮（新函数dsm_rulelibBack，可连点连倒三层以上，后悔药）。红线（脱敏引擎三件套/buildAIView/buildHalfView/aiChat/dsm_parseAIRules/dsm_ruleApply/dsm_rulelibAdd）一字符未动。
     v1.1.1 2026-10-11 班⑧（洪老师拍板"同意开始"，标红根治三刀，DeepSeek实现+Kimi终审）：刀1 _noRaw判据改数有效红对（新函数dsm_validRedPairs，假红空壳对不算数，开关hx_dsm_redcnt_off）；刀2 viewFile含⟦R⟧件不二次脱敏+默认显示标红pane+两pane标签随件出词（开关hx_dsm_viewfix_off）；刀3 剥孤儿改栈式配对剥（新函数dsm_stripOrphanMarks，四站点统一调用，开关hx_dsm_orphan_off）。引擎三件套与dsm_buildAIView一字符未动。
     v1.1.0 2026-10-11 班⑥（洪老师拍板开工，DeepSeek回件⑤采用+Kimi终审亲手落地截断部分）：刀1半脱敏件顶替纯标红件（dsm_buildHalfView=先标红⟦R⟧再盖硬隐私占位、已标红处跳过不盖，引擎三件套零动）；刀2版面——两小方块窄屏常显只露几行/宽屏照旧撑满、点框看全文长按点亮、删「交给AI查脱敏」钮AI归浮窗、病人卡只显聚合件、数据区空壳删、提示词静态占位框（aiPrompt变量留）、加🗑️重新开始（清内存+存档+锁+保险柜，名册成品不动）；刀3撤「只聚一次」——dsm_autoAggDone改防递归锁，收件/重新开始重置锁必重聚；刀4补浮窗接入HX.sj.init/HX.ai.init（分家漏搬的真bug）+DSM_AI_MANIFEST体检条目。终审修回件一处错：bigZone⟦R⟧转换改剥孤儿成对转span（回件把⟦R⟧换成[敏感]字样整span会丢内容）。
@@ -68,7 +69,7 @@
 <body>
 <div class="wrap">
   <h1>🛡 脱敏单体</h1>
-  <div class="ver">v1.2.0 · 自病人大管家 v0.56.8 分出 · 病历脱敏/聚合/半脱敏标红/规则库/AI体检</div>
+  <div class="ver">v1.3.0 · 自病人大管家 v0.56.8 分出 · 病历脱敏/聚合/半脱敏标红/规则库/AI体检</div>
   <style>
     /* v0.21.1 洪老师拍板：不分横竖屏一律左右分栏（左原文标红、右脱敏后各半宽，字号不动，字随栏宽折行） */
     /* v0.37.0 挂号#113（2026-09-17 09:10速记，洪老师拍板）：窄屏手机预览只显两行字（未脱敏原文一行/脱敏后一行），点哪行全屏看哪份；宽屏电脑照旧左右分栏一字不变 */
@@ -354,7 +355,7 @@ function qwenKey(){ var v=''; try{ if(window.HX&&HX.keys) v=HX.keys.getQwen(); }
 function kimiKey(){ var v=''; try{ if(window.HX&&HX.keys) v=HX.keys.get(); }catch(e){} if(!v) v=(localStorage.getItem('hx_apikey')||localStorage.getItem('bg_apikey')||''); return String(v||'').replace(/^\s+|\s+$/g,''); }
 function kimiModel(){ return localStorage.getItem('hx_aimodel')||'kimi-k2.7-code-highspeed'; } /* v0.54.0刀4：缺省改⚡快模型kimi-k2.7-code-highspeed（实测9.7秒出活）；选🧠慢写回kimi-k2.6 */
 
-function aiChat(sys, usr, onOk, onErr, opt){
+function _tmOwnPump(sys, usr, onOk, onErr, opt){
   opt=opt||{};
   var what=opt.what||'名片';
   function doQwen(){
@@ -552,6 +553,27 @@ function aiChat(sys, usr, onOk, onErr, opt){
   if(opt.force==='kimi'){ doKimi(); return; } /* 交叉核查指定Kimi当核查员，不问千问 */
   if(!doQwen()) doKimi();
 }
+
+function aiChat(sys, usr, onOk, onErr, opt){
+  opt=opt||{};
+  /* v1.3.0 分家④：泵归公共件——公共泵在且本活不要流式/联网，就委托HX.chat.pump（千问→Kimi→DS），
+     自带泵副本留作老壳兜底一行不删；回退开关 hx_tm_pump_off=1 照旧走自带泵 */
+  try{
+    var _pumpOff=false; try{ _pumpOff=(localStorage.getItem('hx_tm_pump_off')==='1'); }catch(e0){}
+    if(!_pumpOff && !opt.onProg && !opt.web && window.HX && HX.chat && typeof HX.chat.pump==='function'){
+      HX.chat.pump(sys, usr, { which:'' }, function(ok, txt, by){
+        if(ok){ try{ onOk(txt); }catch(e1){} }
+        else{
+          /* 公共泵三家全败→回落自带泵老链（不直接onErr，给老链再试一回的机会） */
+          try{ _tmOwnPump(sys, usr, onOk, onErr, opt); }catch(e2){ try{ onErr('公共泵和自带泵都没通'); }catch(e3){} }
+        }
+      });
+      return;
+    }
+  }catch(e){}
+  return _tmOwnPump(sys, usr, onOk, onErr, opt);
+}
+
 
 /* ══════════════ v0.24.0 AI面板试点（洪老师2026-09-11拍板方法论落地）：AI_MANIFEST 8条，run全指现有函数，功能本体一行未动 ══════════════
    壳统一（hx-common HX.ai面板）芯自带（本清单）；面板只调run，不新造取数通道；HX不在时7处原按钮拦截行一律放行，降级=v0.23.0原行为 */
