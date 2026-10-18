@@ -1,1 +1,1 @@
-{"version": "0.36.0", "dl": "hx-common.js", "note": "v0.36.0：分家④泵归公共件——HX.chat新增api.pump（千问→Kimi→DS链），单体只管出提示词", "sig": "99c7ecd44c0dd860", "fix": "t51", "t": 1792290269921}
+{"version": "0.37.0", "dl": "hx-common.js", "sig": "80430aab31a458d5", "t": 1792292791964, "fix": "t53", "note": "黑匣子看门狗12→30秒治虚惊；补传成功补一句「账没丢」"}
