@@ -2,6 +2,7 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.28.1 2026-10-18（洪老师17:05真机截图报「第1点没办到」——病根=v1.28.0只给手动检查两条finish路存人话账，开门直装段装完只刷新不存账，他手机正是开门自动装的→hx_last_upd空→📋行永不亮；DS实现+Kimi终审亲手落地）：刀1开门直装装完补存人话账（名字+“刚写好的”）/刀2 lastUpdNote无账兜底人话行（含catch）/刀3本条目；装件钾/复核链/任务单/灯/版面一行未动。
     v1.28.0 2026-10-18（洪老师真机问「我要的升级人话版在哪」——回执只在装件那一刻闪3秒被复核后自动刷新冲掉，过后无处可看；治=人话账存localStorage hx_last_upd，全绿界面顶部常驻「📋 上次更新：哪几件（几点几分写的）」随时可查，t61，SPEC_index_v1.28.0，DS实现+Kimi终审亲手落地）：刀1 helper lastUpdNote（终审翻案自家1处：原定在updCheck函数内，管家路刀6跨作用域调用必炸，挪全局）/刀2刀3两处finish存账（老路+管家路）/刀4刀5刀6三处全绿顶部拼账（老路else+125摘要与明细+管家路）；装件链/复核链/dlWrite/任务单/灯/版面一行未动。
     v1.27.2 2026-10-18（洪老师真机报「升级说明页还没改、刚更新完也这样」拍板根治，t60，SPEC_index_v1.27.2，DS实现零编造+Kimi终审亲手落地）：上一版追踪条人话化——一行账与点开明细全去版本号（拍板「不报版本号」补刀），只留名字+交活钟点，三段对账保留说法人话化；云侧补推发版任务单t59（t57/t58/t59三班漏刷，本班补账）；判定逻辑/三段灯/任务单/灯/装件链一行未动。
     v1.27.1 2026-10-18晚（黑匣子真机账逮住反复err「fmtT is not defined @index.html」：t55补丁IIFE跨作用域调fmtT必炸——fmtT住在查新主链IIFE里，管家路回执IIFE够不着；DS出补丁+Kimi终审落地：1705 IIFE内_finH前补本地fmtT照抄行1223同款一字不差；验：锚点唯一+3个script块语法PASS+IIFE内fmtT仅此一处调用；其余一行未动）
@@ -612,7 +613,7 @@ CUR.index="1.25.1"; /* v1.25.1 开门自动装新版加腿，见顶部修改记�
 CUR.index="1.26.1"; /* v1.26.1 t55管家路人话回执补钟点，见顶部修改记录 */
 CUR.index="1.27.0"; /* v1.27.0 手机账房消费链上岗（配壳vc59子目录桥），见顶部修改记录 */
 CUR.index="1.27.2"; /* v1.27.2 上一版追踪条人话化（顺手根治v1.27.1班CUR行漏升=开门装循环隐患），见顶部修改记录 */
-CUR.index="1.28.0"; /* v1.28.0 升级人话常驻，见顶部修改记录 */
+CUR.index="1.28.1"; /* v1.28.1 开门直装补存人话账+无账兜底，见顶部修改记录 */
 CUR.tuomin="0"; /* v1.19.10修404：CUR=壳内已装版本，单体手机还没装必须填"0"才会下载（CUR.ppt同款老坑，见230行） */ /* v1.19.8（2026-09-20班⑮，洪老师真机报"升级说装成功主界面还是19.6，几次都这样，没重启应该直接变19.7"）病根=班⑮发v1.19.7时新赋值插在同一行旧赋值前面，CUR.index="1.19.7"刚赋上就被同行的CUR.index="1.19.6"盖回→页脚活字永远亮1.19.6（文件真身早是新版，升级链/壳全无辜，大管家0.54.5上机为证）；还连带v1.19.5刀2开门自校对误把账本1.19.7当谎回滚→每次都提示重装。治=删同行可执行旧赋值（注释留档）+升号v1.19.8让真机重新下载。其余一行未动 */
 try{document.getElementById("ftVer").textContent=CUR.index;}catch(eF){} /* v1.19.6 页脚死字改活字：ftVer亮CUR.index真身 */
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
@@ -996,7 +997,7 @@ function hxIdle0(){ /* v1.7.0 保底闹钟：闲时优先，但最长等10秒强
    同款文件每次发版都同步推到公开站 hongxiaotao177.github.io，读它不要Token。
    hxGetText=先走API（私有仓库），不通/没填Token就走公开直链。 */
 /* v1.28.0 刀1（终审翻案自家1处：helper原定义在updCheck函数内，管家路刀6跨作用域调用必炸ReferenceError，挪全局；SPEC其余刀口不动） */
-function lastUpdNote(){ try{ var s=localStorage.getItem("hx_last_upd"); if(!s) return ""; var o=JSON.parse(s); if(!o||!o.items||!o.items.length) return ""; return "\ud83d\udccb 上次更新："+o.items.join("、")+"\n\n"; }catch(e){ return ""; } }
+function lastUpdNote(){ try{ var s=localStorage.getItem("hx_last_upd"); if(!s) return "\ud83d\udccb 上次更新：开门自动装上的（这回没留下细账，从下回更新起写明哪几件、几点几分改的）\n\n"; var o=JSON.parse(s); if(!o||!o.items||!o.items.length) return "\ud83d\udccb 上次更新：开门自动装上的（这回没留下细账，从下回更新起写明哪几件、几点几分改的）\n\n"; return "\ud83d\udccb 上次更新："+o.items.join("、")+"\n\n"; }catch(e){ return "\ud83d\udccb 上次更新：开门自动装上的（这回没留下细账，从下回更新起写明哪几件、几点几分改的）\n\n"; } } /* v1.28.1 刀2：无账/坏账兜底人话行（DS顺手把catch也改并如实报，终审采纳），有账逻辑一字未动 */
 function hxRawGet(name){
   /* v1.7.0 防缓存尾巴：手机WebView/X5常无视no-store把旧响应缓存数天（治"发了版手机还是旧版"频发），
      每次请求URL带时间戳=永远是新地址，缓存存不住 */
@@ -1995,6 +1996,7 @@ try{ mgSuiteWrite(); }catch(e){}
     function _installOne(idx){
       if(idx>=ready.length){
         if(_done.length){
+          try{ var _hxItems=_done.map(function(x){ return String(x).replace(/→v.*$/,"")+"（刚写好的）"; }); localStorage.setItem("hx_last_upd", JSON.stringify({t:Date.now(), items:_hxItems})); }catch(e){} /* v1.28.1 刀1：开门直装装完补存人话账 hx_last_upd，治全绿顶部📋行永不显示病根 */
           try{ if(sessionStorage.getItem("hx_upd_toasted")!=="1"){ sessionStorage.setItem("hx_upd_toasted","1"); window.LearnShell.toast("✅ 套装已自动更新"); } }catch(e){} /* v1.20.1（2026-10-14 班⑨救火，装循环根治，SPEC_index_v1.20.1，DS实现+Kimi终审亲手落地）*/
           updMsg("✅ 已装好新版："+_done.join("、")+(_fail.length?"。有"+_fail.length+"件没装成（"+_fail.join("、")+"），下次开门再试":"")+"。3秒后自动刷新生效…（版本号以打开软件关于页看到的为准）"); /* v1.19.5（2026-09-19 班①，减桥工程治连环谎）刀3装完说真话：开门直装段装成功提示末尾补实话一句，记账/判定/updMsg调用结构一行未动 */
           setTimeout(function(){ location.reload(); }, 3000);
