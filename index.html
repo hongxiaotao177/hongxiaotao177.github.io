@@ -2,6 +2,7 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.30.0 2026-10-18（t67装件假账根治四刀，SPEC_装件假账根治_v0.1.0_设计稿，DS实现锚点1/2/3/4+md5函数、锚点5编造MG_ITEMS/_md5不存在函数记账1笔=刀D由Kimi终审亲手写，全补丁Kimi终审落地；md5实现用现行牌反推实测对牌通过28cd6f926ad9b0a8）：刀A三处装完刷新改location.replace带?v=版本&r=时间戳破X5缓存（开门直装_installOne收尾+老路finish+管家路finish）/刀B防谎岗先问真身（包IIFE异步fetch真身取最后一条CUR.index，真身≥账本=不回滚改一次性闸replace破门，真身<账本=原回滚逐字保留，8秒超时取不到不动作）/刀C_mgGet三腿按稳排序（GitHub API→坚果云WebDAV→公开站raw兜底）+每腿_sigChk对_sigBook的md5前16不符换腿/锚点4取牌处顺手建_sigBook（无sig退化为只比长度不报错）/刀D装完读回对账（_withBody成功分支_done.push前读回真身比md5/长度，不符记_fail+黑匣子err不假报成功，读回异常不拦账）；管家路/手动路取件留待下版见SPEC留账；复核链verifyAfter/任务单/灯/版面/hx_last_upd账一行未动）
     v1.29.0 2026-10-18（t64，洪老师拍板「放弃旧更新说明重新设计」：刀1 updLine绿版强制隐藏/刀2 新增homeUpd容器/刀3 __home1209.relList自包含本次更新清单（逐件中文名+编码时间t倒序+最新●+有新版红字点装=三标记刷新走老装件链）+start改只调relList（bindFish/lamp/track退休不删）/fmtT2自带不跨IIFE；终审加1处=有新版没装上时面板边框变红；装件链/复核链/任务单/updMsg写账/hx_last_upd账一行未动）
     v1.28.1 2026-10-18（洪老师17:05真机截图报「第1点没办到」——病根=v1.28.0只给手动检查两条finish路存人话账，开门直装段装完只刷新不存账，他手机正是开门自动装的→hx_last_upd空→📋行永不亮；DS实现+Kimi终审亲手落地）：刀1开门直装装完补存人话账（名字+“刚写好的”）/刀2 lastUpdNote无账兜底人话行（含catch）/刀3本条目；装件钾/复核链/任务单/灯/版面一行未动。
     v1.28.0 2026-10-18（洪老师真机问「我要的升级人话版在哪」——回执只在装件那一刻闪3秒被复核后自动刷新冲掉，过后无处可看；治=人话账存localStorage hx_last_upd，全绿界面顶部常驻「📋 上次更新：哪几件（几点几分写的）」随时可查，t61，SPEC_index_v1.28.0，DS实现+Kimi终审亲手落地）：刀1 helper lastUpdNote（终审翻案自家1处：原定在updCheck函数内，管家路刀6跨作用域调用必炸，挪全局）/刀2刀3两处finish存账（老路+管家路）/刀4刀5刀6三处全绿顶部拼账（老路else+125摘要与明细+管家路）；装件链/复核链/dlWrite/任务单/灯/版面一行未动。
@@ -618,6 +619,7 @@ CUR.index="1.27.0"; /* v1.27.0 手机账房消费链上岗（配壳vc59子目录
 CUR.index="1.27.2"; /* v1.27.2 上一版追踪条人话化（顺手根治v1.27.1班CUR行漏升=开门装循环隐患），见顶部修改记录 */
 CUR.index="1.28.1"; /* v1.28.1 开门直装补存人话账+无账兜底，见顶部修改记录 */
 CUR.index="1.29.0"; /* v1.29.0 首页本次更新清单，见顶部修改记录 */
+CUR.index="1.30.0"; /* v1.30.0 t67装件假账根治四刀，见顶部修改记录 */
 CUR.tuomin="0"; /* v1.19.10修404：CUR=壳内已装版本，单体手机还没装必须填"0"才会下载（CUR.ppt同款老坑，见230行） */ /* v1.19.8（2026-09-20班⑮，洪老师真机报"升级说装成功主界面还是19.6，几次都这样，没重启应该直接变19.7"）病根=班⑮发v1.19.7时新赋值插在同一行旧赋值前面，CUR.index="1.19.7"刚赋上就被同行的CUR.index="1.19.6"盖回→页脚活字永远亮1.19.6（文件真身早是新版，升级链/壳全无辜，大管家0.54.5上机为证）；还连带v1.19.5刀2开门自校对误把账本1.19.7当谎回滚→每次都提示重装。治=删同行可执行旧赋值（注释留档）+升号v1.19.8让真机重新下载。其余一行未动 */
 try{document.getElementById("ftVer").textContent=CUR.index;}catch(eF){} /* v1.19.6 页脚死字改活字：ftVer亮CUR.index真身 */
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
@@ -626,7 +628,28 @@ try{ var _sv=JSON.parse(localStorage.getItem("hx_suite_ver")||"{}"); var _fxC=nu
 /* v1.19.5（2026-09-19 班①，减桥工程治连环谎）刀2开门自校对堵谎（主界面自己）：hx_suite_ver账本里index版本>CUR.index硬编码（刀1校正后的值）=上次装主界面没生效（X5缓存旧版/没写进，真身是旧的）→账本index回滚为CUR.index硬编码真身+写回hx_suite_ver+红字提示；其他软件（guanjia等）真身主界面够不着，不做回滚，只index自己。
    实现报备：直接复用刀1读出的_sv（同<script>块顶层var，此处可见）——账本须拿原始谎账对比硬编码，刀1写回后账本index已被压成真身，重读就再也测不出谎了；
    时机报备：updMsg定义在627行但与本段同处一个<script>块（492起），函数声明提升此处可调用，且updLine节点（311行）早已就绪，故选直接调updMsg（try护栏兜底）——不选DOM就绪后追加，因本段执行时DOM已具备 */
-try{ if(typeof _sv!=="undefined" && _sv.index && cmpVer(_sv.index, CUR.index)>0){ _sv.index=CUR.index; Object.keys(CUR).forEach(function(k){ if(CUR[k] && typeof _sv[k]==="undefined") _sv[k]=CUR[k]; }); try{ localStorage.setItem("hx_suite_ver", JSON.stringify(_sv)); }catch(e3){} updMsg("⚠️ 上次主界面新版没装成（壳缓存旧版），账本已改回真身 v"+CUR.index+"；请再点一次🔍检查新版本重装"); } }catch(e){}
+/* v1.30.0 t67刀B：防谎岗先问真身——fetch真身取最后一条CUR.index=fileVer：fileVer≥账本=「装上了没给你看」不回滚，一次性闸(hx_idx_fix)+replace破门；fileVer<账本=真吹牛走原回滚（原逻辑逐字保留）；8秒超时/取不到/异常=不动作（宁可不回滚）。DS实现+Kimi终审落地 */
+(function(){
+  try{
+    if(typeof _sv==="undefined" || !_sv.index || cmpVer(_sv.index, CUR.index)<=0) return;
+    var _ac=(typeof AbortController!=="undefined")?new AbortController():null;
+    var _to=setTimeout(function(){ try{ if(_ac) _ac.abort(); }catch(eA){} }, 8000);
+    var _fo={cache:"no-store"}; if(_ac) _fo.signal=_ac.signal;
+    fetch("index.html?probe="+Date.now(), _fo).then(function(r){ return r.text(); }).then(function(txt){
+      clearTimeout(_to);
+      var _m=null, _re=/CUR\.index="([\d.]+)"/g, _x;
+      while((_x=_re.exec(txt))!==null){ _m=_x[1]; }
+      if(!_m) return;
+      if(cmpVer(_m, _sv.index)>=0){
+        try{ if(sessionStorage.getItem("hx_idx_fix")==="1") return; sessionStorage.setItem("hx_idx_fix","1"); }catch(eS){}
+        try{ if(window.HX&&HX.bb&&HX.bb.log) HX.bb.log("act","防谎岗问真身：账本"+_sv.index+"真身"+_m+"≥，破门不滚账"); }catch(eB){}
+        location.replace("index.html?v="+encodeURIComponent(_sv.index)+"&r="+Date.now());
+        return;
+      }
+      _sv.index=CUR.index; Object.keys(CUR).forEach(function(k){ if(CUR[k] && typeof _sv[k]==="undefined") _sv[k]=CUR[k]; }); try{ localStorage.setItem("hx_suite_ver", JSON.stringify(_sv)); }catch(e3){} updMsg("⚠️ 上次主界面新版没装成（壳缓存旧版），账本已改回真身 v"+CUR.index+"；请再点一次🔍检查新版本重装");
+    }).catch(function(){ clearTimeout(_to); });
+  }catch(e){}
+})();
 /* key: [云端软件文件, 壳内文件名, 云端版本文件, 标签id] */
 var SUITE = {
   notes:  ["software-notes.html",  "学习笔记.html", "version.json",        "tagNotes"],
@@ -1276,7 +1299,7 @@ try{ updHuman.push((typeof cn!=="undefined"&&cn?cn:pName)+"（"+(info&&info.t?fm
         var el=document.getElementById("updLine");
         updMsg("✅ 升级好了，这次新换："+(updHuman.length?updHuman.join("、"):updated.join("、"))+"\n钟点跟您教我的时候对得上，就是真装上了。\n旧版不用管，新版备份已存进您的文件夹。"+(allOk?"\n复核过了，都对。3秒后自动刷新…":"\n\n⚠️ 有件没装对，请再点一次「🔍 检查新版本」")); /* v1.26.0 刀2c②：复核细账（progLog/vlines）不再亮给洪老师，账照记 */
         if(!allOk){ el.style.background="#fdecec"; el.style.border="1px solid #eec2c2"; el.style.color="#a33"; }
-        else setTimeout(function(){ location.reload(); }, 3000);
+        else setTimeout(function(){ location.replace("index.html?v="+encodeURIComponent(CUR.index||"")+"&r="+Date.now()); }, 3000); /* v1.30.0 t67刀A2：老路装完跳转破X5缓存 */
       });
     }else if(failed.length){
       updMsg(progLog.join("\n")+"\n\n⚠️ 有新版但下载没成功："+failed.join("、")+"\n不影响使用，下次打开会再试。");
@@ -1688,7 +1711,7 @@ try{ updHuman.push((typeof cn!=="undefined"&&cn?cn:pName)+"（"+(info&&info.t?fm
                   var el=document.getElementById("updLine");
                   updMsg("✅ 升级好了，这次新换："+(updHuman.length?updHuman.join("、"):updated.join("、"))+"\n钟点跟您教我的时候对得上，就是真装上了。\n旧版不用管，新版备份已存进您的文件夹。"+(allOk?"\n复核过了，都对。3秒后自动刷新…":"\n\n⚠️ 有件没装对，请再点一次「🔍 检查新版本」")); /* v1.26.0 刀2c②：复核细账（progLog/vlines）不再亮给洪老师，账照记 */
                   if(!allOk){ el.style.background="#fdecec"; el.style.border="1px solid #eec2c2"; el.style.color="#a33"; }
-                  else setTimeout(function(){ location.reload(); }, 3000);
+                  else setTimeout(function(){ location.replace("index.html?v="+encodeURIComponent(CUR.index||"")+"&r="+Date.now()); }, 3000); /* v1.30.0 t67刀A3：管家路装完跳转破X5缓存 */
                 });
               }else if(failed.length){
                 updMsg(progLog.join("\n")+"\n\n⚠️ 有没查成/没下成的："+failed.join("、")+"\n不影响使用，下次打开会再试。");
@@ -1947,15 +1970,53 @@ try{ mgSuiteWrite(); }catch(e){}
     /* 专区有件=管家在您不用手机时已下载好新版（它当时看您在工作就没装）。
        v1.19.3（2026-09-17班⑦，洪老师拍板方案A）：专区直装静默化——旧法立hx_ver_manual刷新重跑整链
        （开门满屏自动查11件很烦），改原地逐件直装：不投信不重查不弹大框，装完一行小字+3秒一次安静刷新 */
-    var _verBook={}; try{ var _bk64b=LearnShell.readFile('mg_ver.json'); if(_bk64b){ var _bkb=JSON.parse(decodeURIComponent(escape(atob(String(_bk64b).replace(/\s+/g,''))))); if(_bkb&&_bkb.items){ _bkb.items.forEach(function(r){ if(r&&r.key&&r.cloud) _verBook[r.key]=r.cloud; }); } } }catch(e){}
+    var _verBook={}, _sigBook={}; try{ var _bk64b=LearnShell.readFile('mg_ver.json'); if(_bk64b){ var _bkb=JSON.parse(decodeURIComponent(escape(atob(String(_bk64b).replace(/\s+/g,''))))); if(_bkb&&_bkb.items){ _bkb.items.forEach(function(r){ if(r&&r.key&&r.cloud) _verBook[r.key]=r.cloud; if(r&&r.dl&&r.sig) _sigBook[r.dl]=String(r.sig); }); } } }catch(e){} /* v1.30.0 t67锚点4：顺手建_sigBook（r.dl文件名→sig），牌无sig留空=只比长度不报错 */
     /* 文件名→key 反查（软件走SUITE名单，部件走PARTS名单） */
     var _keyOf={};
     /* 独立验证工兵一审抓虫修正：专区件名=壳内文件名SUITE[k][1]（中文名如"学习笔记.html"），不是云端名[0]；两列都登记防漏 */
     try{ Object.keys(SUITE).forEach(function(k){ _keyOf[SUITE[k][0]]=k; if(SUITE[k][1]&&SUITE[k][1]!==SUITE[k][0]) _keyOf[SUITE[k][1]]=k; }); }catch(e){}
     try{ PARTS.forEach(function(p){ _keyOf[p[0]]=p[0]; }); }catch(e){}
+    /* v1.30.0 t67刀0：纯JS精简md5（UTF-8编码，返回hex前16），供刀C/刀D对_sigBook对账用；全新函数不影响他处。已用现行index.html实测对牌通过（28cd6f926ad9b0a8） */
+    function hxMd5_16(txt){
+      function rl(x,c){ return (x<<c)|(x>>>(32-c)); }
+      function ad(a,b){ return (a+b)|0; }
+      var s=[7,12,17,22,7,12,17,22,7,12,17,22,7,12,17,22,5,9,14,20,5,9,14,20,5,9,14,20,5,9,14,20,4,11,16,23,4,11,16,23,4,11,16,23,4,11,16,23,6,10,15,21,6,10,15,21,6,10,15,21,6,10,15,21];
+      var K=[]; for(var i=0;i<64;i++){ K[i]=(Math.floor(Math.abs(Math.sin(i+1))*4294967296))|0; }
+      var str=unescape(encodeURIComponent(String(txt)));
+      var n=str.length, bl=[], i2;
+      for(i2=0;i2<n;i2++){ bl[i2>>2]|=str.charCodeAt(i2)<<((i2%4)*8); }
+      bl[n>>2]|=0x80<<((n%4)*8);
+      var wl=(((n+8)>>6)+1)*16;
+      for(i2=0;i2<wl;i2++){ if(bl[i2]===undefined) bl[i2]=0; }
+      bl[wl-2]=n*8; bl[wl-1]=(n*8)>>>29;
+      var a0=1732584193,b0=-271733879,c0=-1732584194,d0=271733878;
+      for(i2=0;i2<wl;i2+=16){
+        var oa=a0,ob=b0,oc=c0,od=d0;
+        for(var j=0;j<64;j++){
+          var f,g;
+          if(j<16){ f=(b0&c0)|((~b0)&d0); g=j; }
+          else if(j<32){ f=(d0&b0)|((~d0)&c0); g=(5*j+1)%16; }
+          else if(j<48){ f=b0^c0^d0; g=(3*j+5)%16; }
+          else{ f=c0^(b0|(~d0)); g=(7*j)%16; }
+          var tmp=d0; d0=c0; c0=b0;
+          b0=ad(b0, rl(ad(ad(a0,f),ad(K[j],bl[i2+g])), s[j]));
+          a0=tmp;
+        }
+        a0=ad(a0,oa); b0=ad(b0,ob); c0=ad(c0,oc); d0=ad(d0,od);
+      }
+      function hx(x){ var r="",k; for(k=0;k<4;k++){ r+=("0"+((x>>>(k*8))&255).toString(16)).slice(-2); } return r; }
+      return (hx(a0)+hx(b0)+hx(c0)+hx(d0)).slice(0,16);
+    }
     /* v1.25.1：开门直装取件加腿②GitHub API——公开站刚开门常常没热/国内时断时续，单腿白败 */
+    /* v1.30.0 t67刀C：取件三腿按稳排序（GitHub API→坚果云WebDAV→公开站raw兜底），每腿取回过_sigChk对_sigBook的md5前16，不符换腿；三腿全败reject走原catch回落专区老路 */
     function _mgGet(name){
-      return hxRawGet(name).catch(function(){
+      function _sigChk(txt){
+        if(_sigBook && _sigBook[name]){
+          if(hxMd5_16(txt)!==_sigBook[name]) throw new Error('sig不符');
+        }
+        return txt;
+      }
+      function _legGh(){
         var c=ghCfg();
         var u='https://api.github.com/repos/'+encodeURIComponent(c.user)+'/'+encodeURIComponent(c.repo)+'/contents/'+encodeURIComponent(name)+'?t='+Date.now();
         return ghFetch(u,{headers:ghHeaders()},60000).then(function(r){
@@ -1965,6 +2026,20 @@ try{ mgSuiteWrite(); }catch(e){}
           if(j.content) return u8dec(j.content);
           if(j.download_url) return ghFetch(j.download_url+'?t='+Date.now(),{},60000).then(function(r2){ if(!r2.ok) throw new Error('HTTP '+r2.status); return r2.text(); });
           throw new Error('空件');
+        });
+      }
+      function _legDav(){
+        var dk=null; try{ dk=(window.HX&&HX.keys&&HX.keys.dav)?HX.keys.dav():null; }catch(e){}
+        if(!dk||!dk.user) throw new Error('无dav');
+        var u='https://dav.jianguoyun.com/dav/'+encodeURIComponent('学习套装备份')+'/'+encodeURIComponent(name)+'?t='+Date.now();
+        return fetch(u,{headers:{Authorization:'Basic '+btoa(dk.user+':'+(dk.pass||''))},cache:'no-store'}).then(function(r){
+          if(!r.ok) throw new Error('HTTP '+r.status);
+          return r.text();
+        });
+      }
+      return _legGh().then(_sigChk).catch(function(){
+        return _legDav().then(_sigChk).catch(function(){
+          return hxRawGet(name).then(_sigChk);
         });
       });
     }
@@ -2003,7 +2078,7 @@ try{ mgSuiteWrite(); }catch(e){}
           try{ var _hxItems=_done.map(function(x){ return String(x).replace(/→v.*$/,"")+"（刚写好的）"; }); localStorage.setItem("hx_last_upd", JSON.stringify({t:Date.now(), items:_hxItems})); }catch(e){} /* v1.28.1 刀1：开门直装装完补存人话账 hx_last_upd，治全绿顶部📋行永不显示病根 */
           try{ if(sessionStorage.getItem("hx_upd_toasted")!=="1"){ sessionStorage.setItem("hx_upd_toasted","1"); window.LearnShell.toast("✅ 套装已自动更新"); } }catch(e){} /* v1.20.1（2026-10-14 班⑨救火，装循环根治，SPEC_index_v1.20.1，DS实现+Kimi终审亲手落地）*/
           updMsg("✅ 已装好新版："+_done.join("、")+(_fail.length?"。有"+_fail.length+"件没装成（"+_fail.join("、")+"），下次开门再试":"")+"。3秒后自动刷新生效…（版本号以打开软件关于页看到的为准）"); /* v1.19.5（2026-09-19 班①，减桥工程治连环谎）刀3装完说真话：开门直装段装成功提示末尾补实话一句，记账/判定/updMsg调用结构一行未动 */
-          setTimeout(function(){ location.reload(); }, 3000);
+          setTimeout(function(){ location.replace("index.html?v="+encodeURIComponent(_verBook.index||CUR.index||"")+"&r="+Date.now()); }, 3000); /* v1.30.0 t67刀A1：装完跳转破X5缓存（URL变=缓存必miss），与hx-common侦察兵双保险不冲突 */
         }else if(_fail.length){
           updMsg("⚠️ 新版没装成（"+_fail.join("、")+"），不影响使用，下次开门再试。");
         }
@@ -2021,6 +2096,8 @@ try{ mgSuiteWrite(); }catch(e){}
         var _afterW2=function(_okw){ /* v1.20.5 桥门岗：部件写入改异步过门岗，原if(_okw)后续整块挪本回调，一行未动 */
         if(_okw){
           try{ LearnShell.deleteFile('mgver_'+_ln); }catch(e){}
+          /* v1.30.0 t67刀D：装完读回真身对账（Kimi终审亲手写，DS锚点5编造不存在函数弃用）——读回_ln比_sigBook的md5前16（无sig只比长度>0），不符记_fail+黑匣子err跳下一件，绝不_done假报；读回异常不拦账照老路走 */
+          try{ var _rb=LearnShell.readFile(_ln); var _rt=_rb?u8dec(String(_rb).replace(/\s+/g,'')):''; var _rok=false; if(_rt){ if(_sigBook[_ln]){ try{ _rok=(hxMd5_16(_rt)===_sigBook[_ln]); }catch(eM){ _rok=(_rt.length>0); } }else{ _rok=(_rt.length>0); } } if(!_rok){ _fail.push(_ln); try{ if(window.HX&&HX.bb&&HX.bb.log) HX.bb.log('err','装件读回对账不符：'+_ln); }catch(eL){} setTimeout(function(){ _installOne(idx+1); }, 50); return; } }catch(eR){}
           if(!_isPart && _k && _cv!=="?"){ CUR[_k]=_cv; try{ localStorage.setItem("hx_suite_ver", JSON.stringify(CUR)); }catch(e){} try{ var _fx4=JSON.parse(localStorage.getItem("hx_cur_fix")||"{}"); _fx4[_k]=_cv; localStorage.setItem("hx_cur_fix", JSON.stringify(_fx4)); }catch(e){} /* v1.20.1（2026-10-14 班⑨救火，装循环根治，SPEC_index_v1.20.1，DS实现+Kimi终审亲手落地）*/ }
           _done.push(_ln.replace(".html","").replace(".js","")+"→v"+_cv);
         }else{ _fail.push(_ln); }
