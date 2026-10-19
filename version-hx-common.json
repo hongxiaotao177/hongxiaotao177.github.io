@@ -1,1 +1,1 @@
-{"version":"0.45.0","dl":"hx-common.js","sig":"5199369a7a13d20d","t":1792367623715,"note":"t72：自检报告v2每哨加最近账单人话行","fix":"t72"}
+{"version": "0.46.0", "dl": "hx-common.js", "sig": "64b7bba22df08eae", "t": 1792383986348, "note": "t73：手机账房刀B传话筒HX.mqtt（WS连传达室9001，问诊室秒回+云仓留底）", "fix": "t73"}
