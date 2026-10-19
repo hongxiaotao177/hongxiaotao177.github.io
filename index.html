@@ -2,6 +2,7 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.33.0 2026-10-19（t74，洪老师真机报「点我装反复装不上+没说法」「接班变快没觉得」：病根①发0.46.0漏推单件牌version-hx-common.json停0.45.0→手动路以为已最新永不下载（云侧已补推三仓154B一致，不动码）/病根②手动路管家路无坚果云腿大件装不上（t68留账本版根治）/病根③v1.29.0强藏updLine后失败人话全看不见；刀1全局_mgGetM三腿+hxMd5_16M照抄改名/刀2手动路checkPart换三腿/刀3管家路换三腿/刀4失败记账hx_last_fail进📋清单+装成清账/刀5升号；SPEC_index_v1.33.0，DS两轮翻车（无视锚点自造补丁+函数名不改，记账1笔）五刀Kimi终审亲手落地；updLine藏匿/装件写入/复核链/任务单/版面一行未动）
     v1.32.0 2026-10-19（t71，洪老师拍板「自检的东西做审计报告随时出+按一个钮现做+我是最后控制人」，与问诊室刀2同班，SPEC_t71，DS实现+Kimi终审落地）：刀3=📋本次更新面板下加「🩺自检报告」钮（按下HX.audit.reportText()全屏人话层逐哨点名死活+顺手putFile推仓根审计_YYYYMMDD_HHMM.json报喜黑框，失败存hx_audit_pend下回补；老公共件没audit则黑框提示先点检查新版本）+btnAudit bind IIFE纯加法；配套hx-common v0.44.0（HX.audit+HX.wzPoll问诊室回话下行📬）。装件链/复核链/任务单/灯/relList/版面其余一行未动。
     v1.31.0 2026-10-19（洪老师07:13真机截图报「本次更新清单全部显示钟点没查到」+拍板「不管怎样都给我显示一个时间，单体最后更新编码写成的时间」，t70；病根=v1.29.0的relList只读version-all.json的items[i].t，而牌上items本无t字段（t在顶层）→六件全空；DS实现零编造+Kimi终审落地）：刀1排序/maxT/行内时间三处兜底链 it.t→(va&&va.t)（单体没钟点就用牌子顶层钟点，绝不空着）；装件链/复核链/任务单/灯/版面/其余一行未动。配套云侧刀A：version-all.json的items补t（各单体牌真钟点抄入，洪老师再开门即见六件钟点）
     v1.30.0 2026-10-18（t67装件假账根治四刀，SPEC_装件假账根治_v0.1.0_设计稿，DS实现锚点1/2/3/4+md5函数、锚点5编造MG_ITEMS/_md5不存在函数记账1笔=刀D由Kimi终审亲手写，全补丁Kimi终审落地；md5实现用现行牌反推实测对牌通过28cd6f926ad9b0a8）：刀A三处装完刷新改location.replace带?v=版本&r=时间戳破X5缓存（开门直装_installOne收尾+老路finish+管家路finish）/刀B防谎岗先问真身（包IIFE异步fetch真身取最后一条CUR.index，真身≥账本=不回滚改一次性闸replace破门，真身<账本=原回滚逐字保留，8秒超时取不到不动作）/刀C_mgGet三腿按稳排序（GitHub API→坚果云WebDAV→公开站raw兜底）+每腿_sigChk对_sigBook的md5前16不符换腿/锚点4取牌处顺手建_sigBook（无sig退化为只比长度不报错）/刀D装完读回对账（_withBody成功分支_done.push前读回真身比md5/长度，不符记_fail+黑匣子err不假报成功，读回异常不拦账）；管家路/手动路取件留待下版见SPEC留账；复核链verifyAfter/任务单/灯/版面/hx_last_upd账一行未动）
@@ -625,6 +626,7 @@ CUR.index="1.29.0"; /* v1.29.0 首页本次更新清单，见顶部修改记录 
 CUR.index="1.30.0"; /* v1.30.0 t67装件假账根治四刀，见顶部修改记录 */
 CUR.index="1.31.0"; /* v1.31.0 本次更新清单钟点兜底链，见顶部修改记录 */
 CUR.index="1.32.0"; /* v1.32.0 🩺自检报告钮+问诊室回话下行配套，见顶部修改记录 */
+CUR.index="1.33.0"; /* v1.33.0 t74装件三腿化+失败人话进清单，见顶部修改记录 */
 CUR.tuomin="0"; /* v1.19.10修404：CUR=壳内已装版本，单体手机还没装必须填"0"才会下载（CUR.ppt同款老坑，见230行） */ /* v1.19.8（2026-09-20班⑮，洪老师真机报"升级说装成功主界面还是19.6，几次都这样，没重启应该直接变19.7"）病根=班⑮发v1.19.7时新赋值插在同一行旧赋值前面，CUR.index="1.19.7"刚赋上就被同行的CUR.index="1.19.6"盖回→页脚活字永远亮1.19.6（文件真身早是新版，升级链/壳全无辜，大管家0.54.5上机为证）；还连带v1.19.5刀2开门自校对误把账本1.19.7当谎回滚→每次都提示重装。治=删同行可执行旧赋值（注释留档）+升号v1.19.8让真机重新下载。其余一行未动 */
 try{document.getElementById("ftVer").textContent=CUR.index;}catch(eF){} /* v1.19.6 页脚死字改活字：ftVer亮CUR.index真身 */
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
@@ -1030,6 +1032,74 @@ function hxIdle0(){ /* v1.7.0 保底闹钟：闲时优先，但最长等10秒强
    hxGetText=先走API（私有仓库），不通/没填Token就走公开直链。 */
 /* v1.28.0 刀1（终审翻案自家1处：helper原定义在updCheck函数内，管家路刀6跨作用域调用必炸ReferenceError，挪全局；SPEC其余刀口不动） */
 function lastUpdNote(){ try{ var s=localStorage.getItem("hx_last_upd"); if(!s) return "\ud83d\udccb 上次更新：开门自动装上的（这回没留下细账，从下回更新起写明哪几件、几点几分改的）\n\n"; var o=JSON.parse(s); if(!o||!o.items||!o.items.length) return "\ud83d\udccb 上次更新：开门自动装上的（这回没留下细账，从下回更新起写明哪几件、几点几分改的）\n\n"; return "\ud83d\udccb 上次更新："+o.items.join("、")+"\n\n"; }catch(e){ return "\ud83d\udccb 上次更新：开门自动装上的（这回没留下细账，从下回更新起写明哪几件、几点几分改的）\n\n"; } } /* v1.28.1 刀2：无账/坏账兜底人话行（DS顺手把catch也改并如实报，终审采纳），有账逻辑一字未动 */
+/* v1.33.0 t74刀1：装件取件三腿化全局母本（照抄开门直装IIFE内hxMd5_16/_mgGet逐字改名hxMd5_16M/_mgGetM，手动路/管家路共用——母本在IIFE内跨作用域够不着故照抄；hardLimit在手动路IIFE内全局够不着，坚果云腿用Promise.race内联60秒帽；换腿/全败记黑匣子，治「装不上还没账」） */
+function hxMd5_16M(txt){
+  function rl(x,c){ return (x<<c)|(x>>>(32-c)); }
+  function ad(a,b){ return (a+b)|0; }
+  var s=[7,12,17,22,7,12,17,22,7,12,17,22,7,12,17,22,5,9,14,20,5,9,14,20,5,9,14,20,5,9,14,20,4,11,16,23,4,11,16,23,4,11,16,23,4,11,16,23,6,10,15,21,6,10,15,21,6,10,15,21,6,10,15,21];
+  var K=[]; for(var i=0;i<64;i++){ K[i]=(Math.floor(Math.abs(Math.sin(i+1))*4294967296))|0; }
+  var str=unescape(encodeURIComponent(String(txt)));
+  var n=str.length, bl=[], i2;
+  for(i2=0;i2<n;i2++){ bl[i2>>2]|=str.charCodeAt(i2)<<((i2%4)*8); }
+  bl[n>>2]|=0x80<<((n%4)*8);
+  var wl=(((n+8)>>6)+1)*16;
+  for(i2=0;i2<wl;i2++){ if(bl[i2]===undefined) bl[i2]=0; }
+  bl[wl-2]=n*8; bl[wl-1]=(n*8)>>>29;
+  var a0=1732584193,b0=-271733879,c0=-1732584194,d0=271733878;
+  for(var i2=0;i2<wl;i2+=16){
+    var oa=a0,ob=b0,oc=c0,od=d0;
+    for(var j=0;j<64;j++){
+      var f,g;
+      if(j<16){ f=(b0&c0)|((~b0)&d0); g=j; }
+      else if(j<32){ f=(d0&b0)|((~d0)&c0); g=(5*j+1)%16; }
+      else if(j<48){ f=b0^c0^d0; g=(3*j+5)%16; }
+      else{ f=c0^(b0|(~d0)); g=(7*j)%16; }
+      var tmp=d0; d0=c0; c0=b0;
+      b0=ad(b0, rl(ad(ad(a0,f),ad(K[j],bl[i2+g])), s[j]));
+      a0=tmp;
+    }
+    a0=ad(a0,oa); b0=ad(b0,ob); c0=ad(c0,oc); d0=ad(d0,od);
+  }
+  function hx(x){ var r="",k; for(k=0;k<4;k++){ r+=("0"+((x>>>(k*8))&255).toString(16)).slice(-2); } return r; }
+  return (hx(a0)+hx(b0)+hx(c0)+hx(d0)).slice(0,16);
+}
+function _mgGetM(name, sig){
+  function _sigChkM(txt){
+    if(sig){ if(hxMd5_16M(txt)!==sig) throw new Error('sig不符'); }
+    return txt;
+  }
+  function _legGhM(){
+    var c=ghCfg();
+    var u='https://api.github.com/repos/'+encodeURIComponent(c.user)+'/'+encodeURIComponent(c.repo)+'/contents/'+encodeURIComponent(name)+'?t='+Date.now();
+    return ghFetch(u,{headers:ghHeaders()},60000).then(function(r){
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      return r.json();
+    }).then(function(j){
+      if(j.content) return u8dec(j.content);
+      if(j.download_url) return ghFetch(j.download_url+'?t='+Date.now(),{},60000).then(function(r2){ if(!r2.ok) throw new Error('HTTP '+r2.status); return r2.text(); });
+      throw new Error('空件');
+    });
+  }
+  function _legDavM(){
+    var dk=null; try{ dk=(window.HX&&HX.keys&&HX.keys.dav)?HX.keys.dav():null; }catch(e){}
+    if(!dk||!dk.user) throw new Error('无dav');
+    var u='https://dav.jianguoyun.com/dav/'+encodeURIComponent('学习套装备份')+'/'+encodeURIComponent(name)+'?t='+Date.now();
+    return Promise.race([fetch(u,{headers:{Authorization:'Basic '+btoa(dk.user+':'+(dk.pass||''))},cache:'no-store'}).then(function(r){
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      return r.text();
+    }), new Promise(function(_,rej){ setTimeout(function(){ rej(new Error("坚果云腿60秒超时")); }, 60000); })]);
+  }
+  return _legGhM().then(_sigChkM).catch(function(e1){
+    try{ if(window.HX&&HX.bb&&HX.bb.log) HX.bb.log('note','装件换腿:'+name+' GitHub不通走坚果云'); }catch(eL1){}
+    return _legDavM().then(_sigChkM).catch(function(e2){
+      try{ if(window.HX&&HX.bb&&HX.bb.log) HX.bb.log('note','装件换腿:'+name+' 坚果云不通走公开站'); }catch(eL2){}
+      return hxRawGet(name).then(_sigChkM).catch(function(e3){
+        try{ if(window.HX&&HX.bb&&HX.bb.log) HX.bb.log('err','装件三腿全败:'+name); }catch(eL3){}
+        throw e3;
+      });
+    });
+  });
+}
 function hxRawGet(name){
   /* v1.7.0 防缓存尾巴：手机WebView/X5常无视no-store把旧响应缓存数天（治"发了版手机还是旧版"频发），
      每次请求URL带时间戳=永远是新地址，缓存存不住 */
@@ -1232,7 +1302,7 @@ try{ updHuman.push((typeof cnName!=="undefined"&&cnName?cnName:localName.replace
         setSlot(slot, "✅ "+cn+"：已是最新（本机=云端 v"+lv+"）"+(info.t?" · "+fmtT(info.t):"")+devNote(pName, info.version)); doneOne(); return; /* v1.19.7：尾巴亮研发最新号；v1.25.0刀4：有t才加改版时刻 */
       }
       setSlot(slot, "📥 "+cn+"：本机"+(lv?("v"+lv):"（没装）")+" / 云端v"+info.version+"，有新版，正在下载…"+devNote(pName, info.version)); /* v1.19.7 */
-      hardLimit(fetchJson(pName), 80000).then(function(txt2){
+      hardLimit(_mgGetM(pName, (info&&info.sig)?String(info.sig):""), 200000).then(function(txt2){ /* v1.33.0 t74刀2：手动路部件下载换三腿（GitHub→坚果云→公开站），原fetchJson双腿+80秒帽修；其余一行未动 */
         var wrote=false;
         try{
           if(window.LearnShell && LearnShell.folderSet && LearnShell.folderSet()){
@@ -1255,7 +1325,7 @@ try{ updHuman.push((typeof cn!=="undefined"&&cn?cn:pName)+"（"+(info&&info.t?fm
         else{ failed.push(pName);
           setSlot(slot, "❌ "+cn+"：写入没成功（没壳或文件夹没授权），下次再试"); }
         doneOne();
-      }).catch(function(e){ failed.push(pName);
+      }).catch(function(e){ failed.push(pName); try{ var _fn={"hx-common.js":"公共件","guanjia-pdf-engine.js":"PDF引擎"}[pName]||pName; var _lf={}; try{ _lf=JSON.parse(localStorage.getItem("hx_last_fail")||"{}"); }catch(eP){} _lf.t=Date.now(); _lf.items=_lf.items||[]; if(_lf.items.indexOf(_fn)<0) _lf.items.push(_fn); localStorage.setItem("hx_last_fail", JSON.stringify(_lf)); }catch(eW){} /* v1.33.0 t74刀4a：下载失败记人话账hx_last_fail，供📋清单亮❌ */
         setSlot(slot, "❌ "+cn+"：下载没成功（"+((e&&e.message)||"网络不通")+"），下次再试"); doneOne(); });
     }).catch(function(e){ var _em=(e&&e.message)||"网络不通"; if(/abort/i.test(_em)) _em="网络不通或太慢"; setSlot(slot, "⚠️ "+cn+"：版本文件没读到（"+_em+"），跳过"); doneOne(); });
   }
@@ -1294,7 +1364,7 @@ try{ updHuman.push((typeof cn!=="undefined"&&cn?cn:pName)+"（"+(info&&info.t?fm
     /* v1.9.0 洪老师拍板：开门三停——原v1.8.0"对账②"（跑完5秒自动再全查重下一遍）删除，自动化只认手动按钮；
        升级为"升级后复核"（verifyAfter，只读不下载），见下面 updated 分支。 */
     if(updated.length){
-      try{ sessionStorage.setItem("hx_postaudit","1"); }catch(e){}  /* v1.8.0 刷新回来后自动对账① */
+      try{ sessionStorage.setItem("hx_postaudit","1"); }catch(e){} try{ localStorage.removeItem("hx_last_fail"); }catch(eC){} /* v1.33.0 t74刀4c：装成清失败账 */  /* v1.8.0 刷新回来后自动对账① */
       try{ localStorage.setItem("hx_last_upd", JSON.stringify({t:Date.now(), items:updHuman})); }catch(e){} /* v1.28.0 刀2：人话账存底 */
       updMsg("✅ 升级好了，这次新换："+(updHuman.length?updHuman.join("、"):updated.join("、"))+"\n钟点跟您教我的时候对得上，就是真装上了。\n旧版不用管，新版备份已存进您的文件夹。\n正在复核…"); /* v1.26.0 刀2c①：人话回执，不亮版本号 */
       try{ if(sessionStorage.getItem("hx_upd_toasted")!=="1"){ sessionStorage.setItem("hx_upd_toasted","1"); window.LearnShell.toast("✅ 套装已自动更新"); } }catch(e){} /* v1.20.1（2026-10-14 班⑨救火，装循环根治，SPEC_index_v1.20.1，DS实现+Kimi终审亲手落地）*/
@@ -1768,7 +1838,7 @@ try{ updHuman.push((typeof cn!=="undefined"&&cn?cn:pName)+"（"+(info&&info.t?fm
             };
             /* 先公开站现取（不过桥），失败回落专区老路 */
             try{
-              hxRawGet(it.dl).then(function(_txt){ _go(u8enc(_txt)); }).catch(function(e){
+              _mgGetM(it.dl, (it&&it.sig)?String(it.sig):"").then(function(_txt){ _go(u8enc(_txt)); }) /* v1.33.0 t74刀3：管家路取件换三腿，原hxRawGet单腿修；后续catch/续链一行未动 */.catch(function(e){
                 var fb=null; try{ fb=LearnShell.readFile('mgver_'+it.localName); }catch(e2){}
                 _go(fb);
               });
@@ -2733,6 +2803,8 @@ var __home1209 = (function(){
           if(stale) hasStale=true;
           out.push(mark+nm(key)+"　"+ts+(stale?"　🔴有新版没装上，点我装":""));
         });
+        /* v1.33.0 t74刀4b：装件失败账进📋清单（updLine被强藏后失败人话全看不见的根治）——只留真没装上的账，装上的自动摘 */
+        try{ var _lf=JSON.parse(localStorage.getItem("hx_last_fail")||"{}"); var _lfItems=(_lf&&_lf.items)||[]; if(_lfItems.length){ var _keep=[]; _lfItems.forEach(function(_fn){ var _still=false; rows.forEach(function(it){ if(!it) return; var _k=String(it.key||""); if(nm(_k)!==_fn&&_k!==_fn) return; var _lv2=""; try{ _lv2=M.localVer(_k); }catch(eV){} if(_lv2!==""&&String(it.version||"")!==""&&_lv2!==String(it.version)) _still=true; }); if(_still){ _keep.push(_fn); out.push("❌ 上次"+(fmtT2(_lf.t)||"没记下钟点")+"没装上："+_fn+"——多半是网络不通，过会儿再点我；老装不上点🆘叫Kimi会诊"); } }); if(_keep.length!==_lfItems.length){ try{ if(_keep.length){ _lf.items=_keep; localStorage.setItem("hx_last_fail", JSON.stringify(_lf)); }else{ localStorage.removeItem("hx_last_fail"); } }catch(eS2){} } } }catch(eF){}
         el.textContent=out.join("\n");
         el.style.color="#5a5346";
         el.style.borderColor=hasStale?"#b94a48":"#e3dccf"; /* v1.29.0终审加：有新版没装上时面板边框变红，老远看得见（textContent不能单行变色，这是不引innerHTML的稳做法） */
