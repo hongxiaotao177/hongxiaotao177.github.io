@@ -1,1 +1,1 @@
-{"version": "0.47.1", "dl": "hx-common.js", "sig": "ecc336450651b99a", "t": 1792460015279, "note": "t76：idxProbe侦察兵正则行首锚定（被注释1.19.6骗住从没跳过病根）", "fix": "t76"}
+{"version": "0.48.0", "dl": "hx-common.js", "sig": "338795648588c574", "t": 1792462886344, "note": "t77：真机自报HX.zb上岗——err节流双通道喊疼（mqtt hx/to_kimi+仓根真机自报_时间戳.json），失败pend补传", "fix": "t77"}
