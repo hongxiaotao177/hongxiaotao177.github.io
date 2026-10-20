@@ -1,5 +1,5 @@
 {
- "ver": "2026-10-20e",
+ "ver": "2026-10-21a",
  "items": [
   {
    "id": "zc1",
@@ -205,18 +205,35 @@
   },
   {
    "id": "zc17",
-   "title": "新壳vc62上岗（t85真机检验）",
+   "title": "新壳vc63上岗（t85真机检验）",
    "page": "主界面",
    "steps": [
     {
      "id": "s1",
-     "say": "壳版本hx_shell_vc应为62",
+     "say": "壳版本hx_shell_vc应为63",
      "see": "hx_shell_vc"
     },
     {
      "id": "s2",
      "say": "公共件版本牌在线对账",
      "see": "hx_verall_cache"
+    }
+   ]
+  },
+  {
+   "id": "zc18",
+   "title": "套装档案柜上岗（v0.53.0真机检验）",
+   "page": "主界面",
+   "steps": [
+    {
+     "id": "s1",
+     "say": "档案柜台账.json仓根有且新鲜",
+     "file": "档案柜台账.json"
+    },
+    {
+     "id": "s2",
+     "say": "HX.arc公开口挂着",
+     "see": "HX.arc"
     }
    ]
   }
