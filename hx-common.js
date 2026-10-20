@@ -1,5 +1,11 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    hx-common.js —— 全家9件软件共用公共件母版
+   v0.53.0 2026-10-21（洪老师拍板「这一版尽量把手机全量备份和对账规矩落地，保证下一个接班可以在手机本地取到文件」，合并总账t87档案柜真名归档+上行全量留底；SPEC_hx-common_v0.53.0_套装档案柜，DS实现+Kimi终审翻案2处亲手落地）：
+     刀A 新增HX.arc套装档案柜模块（自包含IIFE挂window.HX，文件尾追加）——开门120秒起跑（错开jc/mqtt 60秒），过HX._autoNetOk闸；GitHub API列仓根三层分流：L1一层十四件（13常件+门条指名交接说明，每次必对：size一致断点续备单计l1ok，不一致才重下），三层其余.md/.json/.txt不含_备份_且≤2MB每轮hx_arc_max件（缺省5）断点续备；逐件HX.gh.getFile→utf8字节数→LearnShell.writeFileRel写→listFilesRel回读len对账，不等重试一次仍不等记fail；SAF老家模式先试写探针写不进直接收；档案柜台账.json本地+仓根双写（hx_arc_up镜像防重推，照HX.jc先例）；总开关hx_arc_off=1全停；公开口HX.arc.status()/run()。
+     刀B HX.mqtt的handleMessage白名单加arcList（列档案柜清单）/arcRead（点名取一件，白名单=L1十三件+档案柜台账.json+门条指名交接说明，含..或/一律拒，件缺答lack）两op，全程try护栏；mqtt既有连接/重连/可见性/钥匙逻辑及jbSave/jbRead等旧op一行未动。
+     刀C 版本行0.52.0→0.53.0+版本史本条。
+     不做什么：本地永不反压写仓（正本仍是GitHub主账房，本地副本+救急）；jb.py四层选路留下一班（mqtt假勤A7治疗中，治好即通）；走查单加zc18巡档案柜台账=仓数据件Kimi亲手办不动码。
+     红线：HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold/HX.chk/HX.chat/HX.jc/HX.audit/HX.wzPoll/HX.jbl全件IDENTICAL；HX.mqtt除刀B两分支外IDENTICAL；壳APK/index/其他单体一行未动。
    v0.52.0 2026-10-20晚班（t82踹门刀，洪老师19:55真机拍板「你现在就办吧」）：侦察兵原只比CUR.index，hx-common单件发版时index没变不破门→X5缓存旧页照跑，新零件躺尸（洪老师19:48自检报告无第8哨实锤）；新增HX.probeHx与idxProbe并行——直fetch公开仓version-hx-common.json在线小牌比HX_COMMON_VERSION，牌新→同款破缓存跳一次（与index破门共用hx_idx_probe防连跳标记）；index比对逻辑一字未动，index.html不动。SPEC_hx-common_v0.52.0_踹门刀，DS实现零编造6处拿不准如实标注，Kimi终审翻案1处=小牌fetch改在线真源（本地相对路径小牌可能旧/缺）。
    v0.51.0 2026-10-20晚班（t81 MQTT连线哨，改进闭环单A7漏检案第二号——传达室登记簿实锤hx_suit自10-19建室从未连接，传话筒/真机自报/交班本地存取三批假勤；洪老师拍板「干」；SPEC_hx-common_v0.51.0_MQTT连线哨，DS实现零编造2处拿不准如实标注+Kimi终审亲手落地）：
      刀A HX.mqtt段三处纯加法记账——A1两处连上分支写hx_mqtt_ok_t并清hx_mqtt_err；A2 onFailure写hx_mqtt_err错误码+黑匣子；A3取钥匙失败写hx_mqtt_err。连接/重连/可见性/取钥匙逻辑一字未动。
@@ -99,7 +105,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 (function(){
   'use strict';
-  var HX_COMMON_VERSION = '0.52.0';  /* ── v0.49.0 2026-10-20（t79交班本地存取：handleMessage加jbSave/jbRead两op+HX.jbl公开口，详见文件头v0.49.0段；其余一行未动） */  /* ── v0.47.1 2026-10-20（t76刀3，洪老师真机报案「更新四遍三遍错特别是首页」配套：idxProbe侦察兵正则行首锚定，治「被注释里CUR.index=1.19.6骗住fileVer恒1.19.6、上岗以来从没跳过」病根2；配套index v1.35.0 CUR行错位扶正；其余一行未动） */
+  var HX_COMMON_VERSION = '0.53.0';  /* ── v0.53.0 2026-10-21（洪老师原话「这一版尽量把手机全量备份和对账规矩落地，保证下一个接班可以在手机本地取到文件」；合并总账t87；SPEC_hx-common_v0.53.0_套装档案柜，DS实现+Kimi终审翻案2处亲手落地：①一层l1ok双重计数翻断点续备单计②SAF四桥全返false补试写探针）：刀A新增HX.arc套装档案柜模块（开门120秒起跑过_autoNetOk闸，API列仓根三层分流，L1十四件每次必对+三层≤2MB小件每轮hx_arc_max缺省5件断点续备，逐件writeFileRel写+listFilesRel回读字节对账不等重试一次记fail，档案柜台账.json本地+仓根双写hx_arc_up防重推，总开关hx_arc_off=1，公开口status/run）；刀B mqtt白名单加arcList/arcRead两op（点名取件白名单制含..或/一律拒）；刀C版本行+版本史；红线HX.keys/air/pick/mg/store/dav/gh/bill/step/selfUp/fm/ai/sj/bb/hxToastHold/chk/chat/jc/audit/wzPoll/jbl及mqtt既有逻辑全IDENTICAL，壳/index不动） */  /* ── v0.49.0 2026-10-20（t79交班本地存取：handleMessage加jbSave/jbRead两op+HX.jbl公开口，详见文件头v0.49.0段；其余一行未动） */  /* ── v0.47.1 2026-10-20（t76刀3，洪老师真机报案「更新四遍三遍错特别是首页」配套：idxProbe侦察兵正则行首锚定，治「被注释里CUR.index=1.19.6骗住fileVer恒1.19.6、上岗以来从没跳过」病根2；配套index v1.35.0 CUR行错位扶正；其余一行未动） */
    /* ── v0.48.0 2026-10-20（t77真机自报，洪老师拍板「现在就真机自报吧」）：HX.zb上岗——开门60秒后包住黑匣子log，err条经60秒节流（同m 60秒不重+全局60秒1条）双通道喊疼：mqtt hx/to_kimi实时+仓根「真机自报_时间戳.json」留底，失败存hx_zb_pend≤10条补传；总开关hx_zb_off=1；公开口status/test；纯加法一IIFE+版本行，其余一行未动 【Kimi终审翻案DS 1处：report成功分支漏调flushPend（SPEC行为5成功补传）亲手补上——漏料非编造记账】 */
    /* ── v0.47.0 2026-10-19晚班（t75，洪老师看自检报告截图拍板「做成点一下就出详细结果，开工」；SPEC_t75→DS实现三切片零编造→Kimi终审翻案1处=index尾行DS自编口径丢「好/可疑」统计，亲手改取报告原文末行与云仓同口径）：刀A HX.audit新增rows2()（reportText改调它输出逐字节不变）+detail(key)七哨明细（bbTail/localStorage台账全本地零联网，最多5条最新在前，空账回「还没有明细账」）+exports挂rows2/detail；刀B index配套v1.34.0自检弹窗点主行展开明细；刀C _aiSnap尺子修口径——err含「黑匣子」三字的哨兵账（上行失败/没钥匙/疑似哑火=账房自家网络账）不计入err24改记errNet，sys提示词追加一句「errNet不算软件毛病」，治AI质检被117条假报错吓得连说12次拿不准；红线除HX.audit IIFE内申报3处+_aiSnap申报2处+版本行外全件IDENTICAL */  /* v0.43.0（2026-10-19 t69刀1，问诊室呼叫钮：SPEC_问诊室_v0.1.0_设计稿洪老师拍板）：HX.jc新增三公开只读口wzBbTail/wzLayout/wzCur+sj面板📮叫Kimi会诊钮（抓bbTail20+layout+cur+主诉→HX.gh.putFile推仓根急诊_YYYYMMDD_HHMM.json→成功hxToastHold黑框常驻报喜，失败存hx_wz_sos_pend下回补）；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.bb/hxToastHold/HX.chk/HX.chat IDENTICAL，HX.jc除return一处+三新函数外IDENTICAL，HX.sj除按钮HTML一行+bind一处+sjWzSos新函数外IDENTICAL */  /* ── v0.46.0 2026-10-19（t73手机账房刀B，母图纸SPEC_手机主账房_v0.1.0洪老师拍板「图纸行，开工」）：HX.mqtt传话筒上岗——闲时WS连传达室39.97.246.65:9001，问诊室问答走hx/to_suit→hx/to_kimi秒回+云仓问诊室_答_留底双通道；密码管家路私仓取传达室钥匙.json存localStorage不落公开仓；闲时才连(开门60秒+前台)、切后台断、退避重连1s→30s；总开关hx_mqtt_off=1；纯加法两段（paho-mqtt-min v1.1.0自包含32236B+HX.mqtt IIFE），其余一行未动。【Kimi终审翻案DS 4处：①HX.gh.ready()编成Promise链必炸（现役同步boolean）②Paho五参构造旧API必炸改两参+凭证进connect③putFile三参签名错（现役四参null打头）留底必败④取钥匙失败永不再试补退避——「编假签名」前科重演记账】 */
   /* ── v0.45.0（2026-10-19早班②，t72，洪老师拍板「自检报告单一了要加：查他们最近干了什么活、谁做的、哪个做完哪个卡住，重点说人话」）：HX.audit加workline最近账单helper（七哨各一句人话账：jc走查一轮卡没卡/verify对账原文/sos按过几次/mg管家最近act/auto·ai台账笔数+末笔/zf最近查账）+reportText每哨行后追加「　　账单：」行；DS_HELPER段采用零编造，REPORT段DS自作主张重写整个reportText+私改哨名（监察员走查编成'jc走查'等7名全编）违反「保持现有格式」铁约束，全段弃用Kimi终审亲手改（记账1笔=界外重写前科同型）；audit()/list()/其余一行未动，红线全件除audit IIFE内2处+版本行外IDENTICAL */  /* ── v0.44.0（2026-10-19早班，t71，洪老师拍板「自检的东西要有审计报告随时出+一个按钮现做+我是最后控制人」，与问诊室刀2下行同班做，SPEC_t71→DS实现三段交齐→Kimi终审翻案1处=管家心跳源DS查bb的m（m只是'黑匣子在线 vX'永远查不到会误判死）翻查app含'管家'亲手落地）：刀1新增HX.audit自检审计模块（七哨户口：jc监察员/auto机核/ai质检/📮会诊链/装件防谎岗/管家心跳/账房链，心跳源=黑匣子倒查或localStorage台账末条，超期2倍判🔴可疑，按需型不判死，reportText人话报告，总开关hx_audit_off=1）/刀2新增HX.wzPoll问诊室回话下行（开门90秒后fetch公开站问诊室_out.json破缓存8秒帽，t>hx_wz_out_seen且answer非空→全屏📬Kimi回话层textarea只读可全选+✕常驻，点✕记seen；没件网断静默；HX.wzPoll.check()可手动）；纯加法两IIFE挂window.HX，红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold/HX.chk/HX.chat/HX.jc全件IDENTICAL */  /* ── v0.40.0（2026-10-18晚，AI质检岗：洪老师拍板「看得顺不顺眼也叫AI帮忙，现在就做；二期真截图排任务监察员监察」→SPEC_AI质检岗_v0.1.0→DS实现16秒交齐8hunk→Kimi终审翻案2处（①自家SPEC废函数_aiAsked删 ②Hunk3/4/5同位锚点落地顺序调5→3→4）亲手落地）：AI档步lane:'ai'——快照（标题+近24h黑匣子err条数+spot现场+正文摘要）发HX.chat.pump真签名cb(ok,txt,by)，AI答「正常」才markGreen，拿不准/泵灭/超时一律留人手动✓（泵灭或拿不准都回删问账下回补，拿不准不封口——终审补）；节流hx_chk_ai_max缺省3+泵在飞闸+60秒死心；AI质检台账.json只增裁100镜像hx_chk_ailog_up；renderPg显「🤖AI拿不准等您看一眼」；reconcile清hx_chk_ai_asked；总开关hx_chk_ai_off=1落回老路；红线除HX.chk申报8处+版本行外全件IDENTICAL，HX.jc/HX.chat/壳/单体一行未动 *//* ── v0.39.0（2026-10-18晚，机核档·自动真机检验一期：洪老师问「自动真机检验」→Kimi报方案（机器能核的自动销、核不了的攒短清单、开门一次清账）→洪老师拍板「同意你的选择，开工」→SPEC_机核档_自动真机检验一期→DS实现13秒交齐8申报点→Kimi终审翻案1处（DS版本行hunk锚点截断不可用，亲手改定点插段）亲手落地）：六刀=①detect机核分流（watch优先照旧，机核档排第二，hx_chk_auto_off=1落回弹确认条老路）②_autoGreen侦中直接markGreen不弹窗（bb.job+机核台账双留痕）③_autoNoteOnce机核档缺侦测器note会话防重永不销 ④_autoOff总开关 ⑤机核台账_autoLogAdd+_pushAutoLog（hx_chk_autolog只增裁100条，闲时PUT仓根机核台账.json，镜像hx_chk_autolog_up没变不重推）⑥key_eq侦测器（非空且全等才中）+renderPg机核标（机核档步不显✓钮防手滑）；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold/HX.chat/HX.jc IDENTICAL，HX.chk除本版申报8处外IDENTICAL */ /* ── v0.38.0（2026-10-18，监察员上岗：设计稿SPEC_监察员_v0.1.0_设计稿洪老师2026-10-18两次拍板合成→正式SPEC_监察员_v0.1.0 Kimi起草已落仓→DS实现（千问钥匙401没进去本班没上工）→Kimi终审翻案4处亲手落地：①afterStep引用回调局部变量rec必炸ReferenceError改传参 ②calcBacklog编不存在的t.sim/t.cloud/t.watch翻真字段t.lane（照HX.chk）③卡件没跳下一件还走剩余步翻cb(out)收尾 ④saveRes漏ver变清旧结果补上）：纯加法新增HX.jc监察员——走查单.json双腿三兜底（dav/api/raw+缓存）、开门闲时60秒起跑每次最多hx_jc_max件（缺省3）件间歇5秒、五算子全读型（see/seeText/ls/lsKey/file）绝不自动点击输入、卡件记黑匣子+AI病根分析（HX.chat.pump公共泵，判词仅记录）、vision快照参谋（文字快照代真截图，「不正常」只立visionFlag等Kimi终审）、结果账hx_jc_res+壳真源hxdata_hx_jc.json双写、闲时PUT走查记录.json/监察台账.json（镜像防重推）、督查岗台账hist只增+health()/report()供交班；总开关hx_jc_off=1全退休；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold/HX.chk/HX.chat IDENTICAL *//* v0.37.0（2026-10-18，洪老师真机报「传黑匣子12秒没动静/上行失败」云侧查明=虚惊（网慢超12秒看门狗误报，PUT其实传上），拍板治，SPEC_hx-common_v0.37.0，DS+千问同稿、Kimi终审翻案1处=DS版本留痕插位错插v0.23.0前，亲手改插版本行）：刀1黑匣子看门狗12→30秒；刀2补传成功补人话（hx_bb_lastfail标记，败立成消）；红线HX.bb除本版申报三处外IDENTICAL，其他所有模块IDENTICAL *//* v0.36.0（2026-10-18，分家④步「泵归公共件」10-10_2316拍板，SPEC_fenjia4，DS+千问同稿、Kimi终审亲手落地）：HX.chat新增公共泵api.pump(sys,usr,opt,cb)——链默认千问→Kimi→DeepSeek复用闭包私有callQwen/callKimi/callDS（cb(st,txt)签，st==='ok'才成），opt.which='qwen'/'kimi'/'ds'可点名只走一家，cb(ok,text,by)；流式onProg/联网web暂不支持，要用这两样的单体照旧走自带老泵；红线除本加法与版本行外IDENTICAL *//* v0.35.0（2026-10-18，F4a尾刀：窄条「不变化像死机」v0.24.4查明是手动步等人点✓但没说清）：窄条补「在等谁」——手动步说等您点✓点这条展开，watch/auto步说在帮您盯，cloud步说云侧核不用动，watch档说观察哨自己销；红线除本刀文案与版本行外IDENTICAL *//* v0.34.0（2026-10-18，想法流水10-18 09:01真机报「想法输入框顶天看不到打的内容」，F3b没断根）：新增sjKbFit键盘自适应——visualViewport算出键盘吃掉的高度，面板底边抬到键盘上方、最高随可视高收缩；键盘收/没visualViewport接口自动回老样；红线除本两刀与版本行外IDENTICAL *//* v0.33.0（2026-10-17深夜班，洪老师拍板「把千问修好修完为止」，SPEC_千问四治法，DS实现+Kimi终审翻案1处亲手落地：DS续写漏拼半截只回第二回正文，补acc累加）：治千问三刀落callQwen——刀①回信上限2048→8192治腰斩（删Math.min死代码）刀②读finish_reason截断自动续写一回拼接全文（slice拷贝不动原数组，硬上限1次，仍截断报fail换棒）刀④正式调用钥匙trim（探活已修本处补上）；配套chat v0.4.1+大管家v0.57.4同治病根；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold/HX.chk/callDS/callKimi/fetchJson/buildMessages/tryCompress IDENTICAL，callQwen除本三刀申报点外IDENTICAL *//* v0.32.0（2026-10-16，洪老师拍板「把AI对话框从空白一直完成到最后」，SPEC_AI对话框一期，DS实现+Kimi终审翻案2处亲手落地：①toast改调闭包内真接口hxToastHold（DS又编不存在的window.hxToastHold/hxToast/HX.toast，记账）②callKimi兜底模型名改真机现行kimi-k2.7-code-highspeed删修正贴纸）：纯加法新增HX.chat对话心脏——索引hx_chat_v1+对话壳真源hxdata_hx_chat_<id>.json三层写（真源/localStorage兜底/坚果云mirror），通道链DS→千问→Kimi各60秒死心换棒，三层记忆（原文永存+超10轮DS压缩摘要+事实卡），pullCloud云端捞回，总开关hx_chat_off=1全退休；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold/HX.chk IDENTICAL */ /* v0.31.0/* v0.31.0（2026-10-16，洪老师真机报F3b输入框顶头拍板「干」，DS实现+Kimi终审零翻案）：#hxSjPanel加max-height:calc(100vh-170px)+overflow-y:auto，键盘起面板内部滑，输入框不再被顶出屏；红线除本刀CSS与版本行外IDENTICAL *//* v0.30.0（2026-10-15 夜班⑦，洪老师拍板「做」，SPEC_index_v1.22.0+hx-common_v0.30.0_预下载+双击回环，DS实现+Kimi终审翻案3处亲手落地：①腿D的upFile/downFile回调式签名翻Promise式（DS编了不存在的第三参回调）②腿G写断/读断拆两条链各自catch精确判 ③腿D删wrote判返回照_writeFile同款try调用）：刀A1 HX.bb新增公开口loopback()双击🆘回环体检（腿G GitHub仓根「黑匣子回环.txt」+腿D坚果云/学习套装备份/黑匣子回环.txt，写上去读回来码对=通，写不成/读不回/码不对=哪腿哪环断一句话说清，双腿独立全settle后bbToast常驻汇总+job报账）刀A2 sj🆘钮双击判定（hx_lb_off=1单击照旧flush(true)整刀退休，否则单击600ms后flush、600ms内第二击loopback()）；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.chk/hxToastHold IDENTICAL，HX.sj除刀A2一处bind外IDENTICAL，HX.bb除刀A1新增函数+return一处外IDENTICAL */ /* v0.29.0（2026-10-15 夜班④，洪老师拍板「三个任务一起做」，SPEC_hx-common_v0.29.0_被动观察法+黑匣子心跳，DS实现+Kimi终审）：①bb开门心跳hb（云侧对时知在线）②collectSide哑火对照（壳有开门主账没动→哨兵err）③被动观察法：清单步骤带watch关键词，bb记账通报HX.chk.bbHit命中→24小时（hx_chk_watch_hours可配）没err自动markGreen销号全程不弹窗，err命中删账不销 ④撤开门8秒自动问（hx_chk_wiz_ask=1才问，🧪手动链不动）；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/hxToastHold IDENTICAL，HX.bb除块2~3申报点外IDENTICAL，HX.chk除块4~6申报点外IDENTICAL */ /* v0.28.0（2026-10-15 夜班，洪老师拍板「开工」，SPEC_hx-common_v0.28.0_黑匣子五案，DS实现+Kimi终审）：黑匣子五案——①HX.bb.job办完报账（成记job/败记err立刻上行）②重点钮12秒看门狗「点了没反应」③哨兵_silentLog（flush失败/没钥匙直写账防递归）④hxToastHold黑框留账note（hxBbToast自家除外）⑤err截断120→300字；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.chk IDENTICAL，HX.bb除块2~5申报点外IDENTICAL，hxToastHold除块4一处加法外IDENTICAL */ /* ═══════════════════════════════════════════════════════════════════════════
@@ -7331,6 +7337,53 @@ HX.chat = (function () {
         try { manObj = JSON.parse(manRaw); } catch (e) {}
         publishAnswer(req.id, true, { manifest: manObj, files: have });
         return;
+      } else if (op === 'arcList') {
+        /* v0.53.0 刀B1：点名列手机档案柜清单（SPEC_hx-common_v0.53.0_套装档案柜） */
+        try {
+          var arcOff1 = false;
+          try { arcOff1 = (localStorage.getItem('hx_arc_off') === '1'); } catch (e) {}
+          if (arcOff1) { publishAnswer(req.id, false, '已关'); return; }
+          if (!window.LearnShell || typeof window.LearnShell.listFilesRel !== 'function') { publishAnswer(req.id, false, '桥不在'); return; }
+          var arrL = null;
+          try { arrL = JSON.parse(window.LearnShell.listFilesRel('套装档案柜') || '[]'); } catch (e) { arrL = null; }
+          if (!arrL) { publishAnswer(req.id, false, '清单读不出'); return; }
+          var listOut = { files: [] };
+          for (var li = 0; li < arrL.length; li++) {
+            var lf = arrL[li];
+            if (!lf || !lf.name) continue;
+            listOut.files.push({ name: lf.name, len: (typeof lf.len === 'number') ? lf.len : -1 });
+          }
+          publishAnswer(req.id, true, listOut);
+          return;
+        } catch (e) { publishAnswer(req.id, false, '异常'); return; }
+      } else if (op === 'arcRead') {
+        /* v0.53.0 刀B2：点名取手机档案柜一件（白名单=L1十三件+台账+门条指名，含..或/一律拒） */
+        try {
+          var arcOff2 = false;
+          try { arcOff2 = (localStorage.getItem('hx_arc_off') === '1'); } catch (e) {}
+          if (arcOff2) { publishAnswer(req.id, false, '已关'); return; }
+          if (!window.LearnShell || typeof window.LearnShell.readFileRel !== 'function') { publishAnswer(req.id, false, '桥不在'); return; }
+          var ARC_L1 = ['最新交班表.txt', '任务总账.md', 'next.json', 'version-all.json', 'version-shell.json', 'version-hx-common.json', '改进闭环单.json', '余额账.md', '走查单.json', '验收清单.json', '验收单.json', '记忆库.md', '想法流水.txt', '档案柜台账.json'];
+          var wantName = (arg && arg.name) ? String(arg.name) : '';
+          if (!wantName || wantName.indexOf('..') >= 0 || wantName.indexOf('/') >= 0) { publishAnswer(req.id, false, '名不在白名单'); return; }
+          var proceedRead = function () {
+            try {
+              var rb = window.LearnShell.readFileRel('套装档案柜/' + wantName);
+              if (!rb) { publishAnswer(req.id, false, { lack: wantName }); return; }
+              var cont = null;
+              try { cont = decodeURIComponent(escape(atob(rb))); } catch (e) { cont = null; }
+              if (cont === null) { publishAnswer(req.id, false, { lack: wantName }); return; }
+              publishAnswer(req.id, true, { name: wantName, content: cont });
+            } catch (e) { publishAnswer(req.id, false, '异常'); }
+          };
+          if (ARC_L1.indexOf(wantName) >= 0) { proceedRead(); return; }
+          HX.gh.getFile(null, '最新交班表.txt').then(function (txt) {
+            var first = txt ? String(txt).replace(/^\uFEFF/, '').split(/\r?\n/)[0].trim() : '';
+            if (first && first === wantName) { proceedRead(); return; }
+            publishAnswer(req.id, false, '名不在白名单');
+          }, function () { publishAnswer(req.id, false, '名不在白名单'); });
+          return;
+        } catch (e) { publishAnswer(req.id, false, '异常'); return; }
       } else {
         publishAnswer(req.id, false, 'op不在白名单');
         return;
@@ -7811,5 +7864,279 @@ HX.chat = (function () {
         } catch (e) {}
       }, 60000);
     } catch (e) {}
+  } catch (e) {}
+})();
+
+/* ===== v0.53.0 刀A：套装档案柜 HX.arc（手机全量备份+对账+接班本地取件；SPEC_hx-common_v0.53.0_套装档案柜，DS实现+Kimi终审翻案2处亲手落地：①一层l1ok双重计数（预计数+重下成功重复计）翻断点续备单计——size一致才计l1ok+skipped，不一致才重下；②SAF老家模式四桥全返false会14件全fail炸台账，补试写探针写不进直接收） ===== */
+(function () {
+  try {
+    var HX = window.HX = window.HX || {};
+    var DIR = '套装档案柜';
+    var LEDGER = '档案柜台账.json';
+    var L1 = ['最新交班表.txt', '任务总账.md', 'next.json', 'version-all.json', 'version-shell.json', 'version-hx-common.json', '改进闭环单.json', '余额账.md', '走查单.json', '验收清单.json', '验收单.json', '记忆库.md', '想法流水.txt'];
+    var LS_OFF = 'hx_arc_off';
+    var LS_MAX = 'hx_arc_max';
+    var LS_UP = 'hx_arc_up';
+
+    function isOff() {
+      try { return localStorage.getItem(LS_OFF) === '1'; } catch (e) { return false; }
+    }
+    function getMax() {
+      try {
+        var n = parseInt(localStorage.getItem(LS_MAX), 10);
+        if (!isNaN(n) && n > 0) return n;
+      } catch (e) {}
+      return 5;
+    }
+    function shOk() {
+      try {
+        return !!(window.LearnShell && typeof window.LearnShell.writeFileRel === 'function' && typeof window.LearnShell.listFilesRel === 'function');
+      } catch (e) { return false; }
+    }
+    function b64enc(s) {
+      try { return btoa(unescape(encodeURIComponent(String(s)))); } catch (e) { return ''; }
+    }
+    function b64dec(s) {
+      try { return decodeURIComponent(escape(atob(String(s)))); } catch (e) { return null; }
+    }
+    function utf8len(s) {
+      try { return unescape(encodeURIComponent(String(s))).length; } catch (e) { return 0; }
+    }
+    function ledPath() { return DIR + '/' + LEDGER; }
+    function filePath(n) { return DIR + '/' + n; }
+
+    /* 回读 listFilesRel(DIR) → {name:len} 映射（SAF返"[]"=空映射，不炸） */
+    function listMap() {
+      var map = {};
+      try {
+        var raw = window.LearnShell.listFilesRel(DIR);
+        var arr = null;
+        if (typeof raw === 'string') {
+          try { arr = JSON.parse(raw); } catch (e) { arr = null; }
+        }
+        if (arr && arr.length) {
+          for (var i = 0; i < arr.length; i++) {
+            var it = arr[i];
+            if (!it || !it.name) continue;
+            map[it.name] = (typeof it.len === 'number') ? it.len : -1;
+          }
+        }
+      } catch (e) {}
+      return map;
+    }
+
+    /* 读一层第14件：门条指名交接说明文件名（读门条「最新交班表.txt」内容第一行 trim；含/或..弃用） */
+    function pickJiaobanName() {
+      try {
+        if (!HX.gh || typeof HX.gh.getFile !== 'function') return Promise.resolve(null);
+        return HX.gh.getFile(null, '最新交班表.txt').then(function (txt) {
+          if (!txt) return null;
+          var s = String(txt).replace(/^﻿/, '');
+          var first = (s.split(/\r?\n/)[0] || '').trim();
+          if (!first) return null;
+          if (first.indexOf('/') >= 0 || first.indexOf('..') >= 0) return null;
+          if (!/\.(md|txt|json)$/i.test(first)) return null;
+          return first;
+        }, function () { return null; });
+      } catch (e) { return Promise.resolve(null); }
+    }
+
+    /* 单件下载+写+回读对账；回读不等同轮再下一次再写再对，仍不等记fail */
+    function backupOne(name) {
+      return new Promise(function (resolve) {
+        var done = function (r) { resolve(r); };
+        try {
+          var tryWrite = function (s, attempt) {
+            var n = utf8len(s);
+            try {
+              if (!window.LearnShell.writeFileRel(filePath(name), b64enc(s))) {
+                if (attempt < 1) { tryWrite(s, attempt + 1); return; }
+                done({ name: name, ok: false, reason: 'writeFalse' }); return;
+              }
+            } catch (e) {
+              done({ name: name, ok: false, reason: 'writeErr' }); return;
+            }
+            var m = listMap();
+            if (m[name] === n) { done({ name: name, ok: true, len: n }); return; }
+            if (attempt < 1) { tryWrite(s, attempt + 1); return; }
+            done({ name: name, ok: false, reason: 'lenMismatch' });
+          };
+          HX.gh.getFile(null, name).then(function (txt) {
+            if (txt === null || typeof txt === 'undefined') { done({ name: name, ok: false, reason: 'noContent' }); return; }
+            tryWrite(String(txt), 0);
+          }, function () { done({ name: name, ok: false, reason: 'getErr' }); });
+        } catch (e) {
+          done({ name: name, ok: false, reason: 'exception' });
+        }
+      });
+    }
+
+    /* 列仓根（GitHub API，钥匙HX.keys.gh()，照HX.gh段同款headers） */
+    function listRepo() {
+      return new Promise(function (resolve) {
+        try {
+          var keys = null;
+          try { keys = (HX.keys && typeof HX.keys.gh === 'function') ? HX.keys.gh() : null; } catch (e) { keys = null; }
+          if (!keys || !keys.u || !keys.r || !keys.t) { resolve({ ok: false, reason: '没钥匙', items: [] }); return; }
+          var url = 'https://api.github.com/repos/' + encodeURIComponent(keys.u) + '/' + encodeURIComponent(keys.r) + '/contents/';
+          var headers = { 'Authorization': 'token ' + keys.t, 'Accept': 'application/vnd.github+json' };
+          fetch(url, { method: 'GET', headers: headers }).then(function (resp) {
+            if (!resp || !resp.ok) { resolve({ ok: false, reason: 'apiFail', items: [] }); return; }
+            resp.json().then(function (arr) {
+              resolve({ ok: true, items: (arr && arr.length) ? arr : [] });
+            }, function () { resolve({ ok: false, reason: 'jsonErr', items: [] }); });
+          }, function () { resolve({ ok: false, reason: 'netErr', items: [] }); });
+        } catch (e) { resolve({ ok: false, reason: 'exception', items: [] }); }
+      });
+    }
+
+    /* 推台账镜像（hx_arc_up防重推，照HX.jc镜像先例） */
+    function pushLedger(led) {
+      try {
+        if (!HX.gh || typeof HX.gh.putFile !== 'function') return;
+        var s = JSON.stringify(led, null, 1);
+        var last = null;
+        try { last = localStorage.getItem(LS_UP); } catch (e) {}
+        if (last === s) return;
+        HX.gh.putFile(null, LEDGER, s, '档案柜台账').then(function () {
+          try { localStorage.setItem(LS_UP, s); } catch (e) {}
+        }, function () {});
+      } catch (e) {}
+    }
+
+    /* 本地台账写+读 */
+    function writeLedger(led) {
+      try { window.LearnShell.writeFileRel(ledPath(), b64enc(JSON.stringify(led, null, 1))); } catch (e) {}
+    }
+    function readLedger() {
+      try {
+        var b = window.LearnShell.readFileRel(ledPath());
+        if (typeof b === 'string' && b) {
+          var raw = b64dec(b);
+          if (raw) return JSON.parse(raw);
+        }
+      } catch (e) {}
+      return null;
+    }
+
+    /* 一轮流程 */
+    function runOnce() {
+      return new Promise(function (resolve) {
+        if (isOff()) { resolve({ ok: false, note: '已关' }); return; }
+        if (!shOk()) { resolve({ ok: false, note: '桥不在' }); return; }
+        /* 终审修2：SAF老家模式四桥全返false——先试写探针，写不进直接收，不炸14件fail */
+        try {
+          if (!window.LearnShell.writeFileRel(DIR + '/.probe', b64enc('1'))) {
+            resolve({ ok: false, note: '桥写不进' }); return;
+          }
+          try { if (typeof window.LearnShell.deleteFileRel === 'function') window.LearnShell.deleteFileRel(DIR + '/.probe'); } catch (e0) {}
+        } catch (e) { resolve({ ok: false, note: '桥写不进' }); return; }
+        var gate = true;
+        try { if (typeof HX._autoNetOk === 'function') gate = !!HX._autoNetOk({}); } catch (e) { gate = true; }
+        if (!gate) { resolve({ ok: false, note: '闸不过' }); return; }
+
+        listRepo().then(function (rep) {
+          if (!rep.ok) {
+            var failLed = { ver: '0.53.0', t: Date.now(), l1ok: 0, l1total: 0, arcTotal: 0, lack: [], fail: [], skipped: 0, note: rep.reason || '仓列不出' };
+            writeLedger(failLed);
+            resolve({ ok: false, note: failLed.note, ledger: failLed }); return;
+          }
+          var items = rep.items || [];
+          var repoMap = {};
+          var i, it, nm;
+          for (i = 0; i < items.length; i++) {
+            it = items[i] || {};
+            nm = it.name || '';
+            if (!nm || it.type !== 'file') continue;
+            repoMap[nm] = { size: (typeof it.size === 'number' ? it.size : -1) };
+          }
+          var map0 = listMap();
+
+          pickJiaobanName().then(function (jbName) {
+            var l1List = L1.slice(0);
+            if (jbName && l1List.indexOf(jbName) < 0) l1List.push(jbName);
+            var lack = [], fail = [];
+            var l1ok = 0, skipped = 0;
+            var l1total = l1List.length;
+            /* 终审修1：一层也断点续备——仓里有的、本地size一致=已对账通过（计l1ok+skipped），不一致/没有才进重下队列，单计不双计 */
+            var l1Redo = [];
+            var a, ln, wantS, haveL;
+            for (a = 0; a < l1List.length; a++) {
+              ln = l1List[a];
+              if (!repoMap[ln]) { lack.push(ln); continue; }
+              wantS = repoMap[ln].size;
+              haveL = map0[ln];
+              if (typeof haveL === 'number' && haveL >= 0 && haveL === wantS) { l1ok++; skipped++; continue; }
+              l1Redo.push(ln);
+            }
+            /* 三层候选：其余.md/.json/.txt、不含_备份_、≤2MB、不在一层名单；断点续备size一致跳过 */
+            var l3Todo = [];
+            for (var bn in repoMap) {
+              if (!Object.prototype.hasOwnProperty.call(repoMap, bn)) continue;
+              if (l1List.indexOf(bn) >= 0) continue;
+              if (bn === LEDGER) continue;
+              if (bn.indexOf('_备份_') >= 0) continue;
+              if (bn.indexOf('..') >= 0 || bn.indexOf('/') >= 0) continue;
+              if (!/\.(md|json|txt)$/i.test(bn)) continue;
+              if (repoMap[bn].size > 2097152) continue;
+              if (map0[bn] === repoMap[bn].size) { skipped++; continue; }
+              l3Todo.push(bn);
+            }
+            var maxN = getMax();
+            if (l3Todo.length > maxN) l3Todo = l3Todo.slice(0, maxN);
+
+            var seq = l1Redo.concat(l3Todo);
+            var idx = 0;
+            var walk = function () {
+              if (idx >= seq.length) {
+                var curMap = listMap();
+                var arcTotal = 0, k;
+                for (k in curMap) { if (Object.prototype.hasOwnProperty.call(curMap, k)) arcTotal++; }
+                var led = { ver: '0.53.0', t: Date.now(), l1ok: l1ok, l1total: l1total, arcTotal: arcTotal, lack: lack, fail: fail, skipped: skipped, note: '一轮完成' };
+                if (!jbName) led.note = '门条读不到，仅备前13件';
+                writeLedger(led);
+                pushLedger(led);
+                resolve({ ok: true, ledger: led }); return;
+              }
+              var cur = seq[idx++];
+              var isL1 = (l1List.indexOf(cur) >= 0);
+              backupOne(cur).then(function (r) {
+                if (r && r.ok) { if (isL1) l1ok++; }
+                else { fail.push(cur); }
+                walk();
+              }, function () { fail.push(cur); walk(); });
+            };
+            walk();
+          });
+        });
+      });
+    }
+
+    HX.arc = {
+      status: function () {
+        var out = { on: !isOff(), bridge: shOk(), l1ok: null, l1total: null, arcTotal: null, last: null, lastNote: null };
+        try {
+          var led = readLedger();
+          if (led) {
+            out.l1ok = (typeof led.l1ok === 'number') ? led.l1ok : null;
+            out.l1total = (typeof led.l1total === 'number') ? led.l1total : null;
+            out.arcTotal = (typeof led.arcTotal === 'number') ? led.arcTotal : null;
+            out.last = led.t || null;
+            out.lastNote = led.note || null;
+          }
+        } catch (e) {}
+        return out;
+      },
+      run: function () { return runOnce(); }
+    };
+
+    /* 调度：开门120秒起跑（错开jc60秒/mqtt60秒），每开门最多一轮；hx_arc_off=1不挂 */
+    if (!isOff() && shOk()) {
+      try {
+        setTimeout(function () {
+          try { runOnce().then(function () {}, function () {}); } catch (e) {}
+        }, 120000);
+      } catch (e) {}
+    }
   } catch (e) {}
 })();
