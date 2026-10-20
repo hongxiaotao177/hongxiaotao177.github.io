@@ -1,7 +1,1 @@
-{
- "vc": 57,
- "vn": "2.1.0",
- "dl": "hxshell.apk",
- "sig": "8c4e9531d55e3ca8",
- "note": "桥门岗：新增fileWriteBegin/Chunk/End/Abort+fileReadChunk五桥，治部件大件writeFile假成功（hx-common 290KB拉磨）；捆index v1.20.5+hx-common v0.24.4；补vc56漏刷versionCode账"
-}
+{"vc": 61, "vn": "2.2.0", "dl": "hxshell.apk", "sig": "afafb6d7852ed729", "note": "vc61/v2.2.0 五刀：在用也装+装完自动刷新+API优先腿序+套装档案柜目录；assets/www刷index v1.36.0+hx-common v0.52.0；签名同钥匙覆盖装不丢数据", "t": 1792505912495}
