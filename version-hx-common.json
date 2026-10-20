@@ -1,1 +1,1 @@
-{"version": "0.48.0", "dl": "hx-common.js", "sig": "338795648588c574", "t": 1792462886344, "note": "t77：真机自报HX.zb上岗——err节流双通道喊疼（mqtt hx/to_kimi+仓根真机自报_时间戳.json），失败pend补传", "fix": "t77"}
+{"version": "0.49.0", "dl": "hx-common.js", "sig": "2e21506da5c80a8d", "t": 1792482898224, "note": "t79任务2：交班本地存取——handleMessage加jbSave/jbRead两op（三小件落壳授权文件夹+manifest比对锚）+HX.jbl公开口status；配套jb.py v3.4（接班①手机本地层+push_local交班推送）", "fix": "t79"}
