@@ -1,0 +1,224 @@
+{
+ "ver": "2026-10-20e",
+ "items": [
+  {
+   "id": "zc1",
+   "title": "钥匙齐",
+   "page": "主界面",
+   "steps": [
+    {
+     "id": "s1",
+     "say": "Kimi钥匙在",
+     "lsKey": "hx_apikey"
+    },
+    {
+     "id": "s2",
+     "say": "GitHub钥匙在",
+     "lsKey": "hx_gh_tok"
+    }
+   ]
+  },
+  {
+   "id": "zc2",
+   "title": "想法流水能读",
+   "page": "主界面",
+   "steps": [
+    {
+     "id": "s1",
+     "say": "想法流水.txt读得到",
+     "file": "想法流水.txt"
+    }
+   ]
+  },
+  {
+   "id": "zc3",
+   "title": "验收清单在",
+   "page": "主界面",
+   "steps": [
+    {
+     "id": "s1",
+     "say": "验收清单缓存有",
+     "lsKey": "hx_chk_list"
+    }
+   ]
+  },
+  {
+   "id": "zc4",
+   "title": "黑匣子在记账",
+   "page": "主界面",
+   "steps": [
+    {
+     "id": "s1",
+     "say": "黑匣子账本有",
+     "lsKey": "hx_bb_log"
+    }
+   ]
+  },
+  {
+   "id": "zc5",
+   "title": "AI质检在干活",
+   "page": "主界面",
+   "steps": [
+    {
+     "id": "s1",
+     "say": "AI质检问账键有（发过泵就有）",
+     "lsKey": "hx_chk_ai_asked"
+    }
+   ]
+  },
+  {
+   "id": "zc6",
+   "title": "📋本次更新清单本地账在",
+   "page": "主界面",
+   "steps": [
+    {
+     "id": "s1",
+     "say": "📋清单本地账hx_verall_cache有",
+     "lsKey": "hx_verall_cache"
+    }
+   ]
+  },
+  {
+   "id": "zc7",
+   "title": "升级人话账在",
+   "page": "主界面",
+   "steps": [
+    {
+     "id": "s1",
+     "say": "人话账hx_last_upd有",
+     "lsKey": "hx_last_upd"
+    }
+   ]
+  },
+  {
+   "id": "zc8",
+   "title": "真机自报在岗",
+   "page": "主界面",
+   "steps": [
+    {
+     "id": "s1",
+     "say": "HX.zb在",
+     "has": "HX.zb"
+    }
+   ]
+  },
+  {
+   "id": "zc9",
+   "title": "自检审计在岗",
+   "page": "主界面",
+   "steps": [
+    {
+     "id": "s1",
+     "say": "HX.audit在",
+     "has": "HX.audit"
+    }
+   ]
+  },
+  {
+   "id": "zc10",
+   "title": "传话筒mqtt在岗",
+   "page": "主界面",
+   "steps": [
+    {
+     "id": "s1",
+     "say": "HX.mqtt在",
+     "has": "HX.mqtt"
+    }
+   ]
+  },
+  {
+   "id": "zc11",
+   "title": "问诊室下行在岗",
+   "page": "主界面",
+   "steps": [
+    {
+     "id": "s1",
+     "say": "HX.wzPoll在",
+     "has": "HX.wzPoll"
+    }
+   ]
+  },
+  {
+   "id": "zc12",
+   "title": "交班本地存取在岗",
+   "page": "主界面",
+   "steps": [
+    {
+     "id": "s1",
+     "say": "HX.jbl在",
+     "has": "HX.jbl"
+    }
+   ]
+  },
+  {
+   "id": "zc13",
+   "title": "真身侦察兵在岗",
+   "page": "主界面",
+   "steps": [
+    {
+     "id": "s1",
+     "say": "HX.idxProbe在",
+     "has": "HX.idxProbe"
+    }
+   ]
+  },
+  {
+   "id": "zc14",
+   "title": "机核台账有账",
+   "page": "主界面",
+   "steps": [
+    {
+     "id": "s1",
+     "say": "机核台账hx_chk_autolog有",
+     "lsKey": "hx_chk_autolog"
+    }
+   ]
+  },
+  {
+   "id": "zc15",
+   "title": "AI质检台账有账",
+   "page": "主界面",
+   "steps": [
+    {
+     "id": "s1",
+     "say": "AI质检台账hx_chk_ailog有",
+     "lsKey": "hx_chk_ailog"
+    }
+   ]
+  },
+  {
+   "id": "zc16",
+   "title": "传达室连线账（A7）",
+   "page": "主界面",
+   "steps": [
+    {
+     "id": "s1",
+     "say": "连上时刻hx_mqtt_ok_t的值",
+     "see": "hx_mqtt_ok_t"
+    },
+    {
+     "id": "s2",
+     "say": "连不上错误码hx_mqtt_err的值",
+     "see": "hx_mqtt_err"
+    }
+   ]
+  },
+  {
+   "id": "zc17",
+   "title": "新壳vc62上岗（t85真机检验）",
+   "page": "主界面",
+   "steps": [
+    {
+     "id": "s1",
+     "say": "壳版本hx_shell_vc应为62",
+     "see": "hx_shell_vc"
+    },
+    {
+     "id": "s2",
+     "say": "公共件版本牌在线对账",
+     "see": "hx_verall_cache"
+    }
+   ]
+  }
+ ]
+}
