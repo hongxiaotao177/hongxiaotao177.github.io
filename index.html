@@ -2,6 +2,7 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.36.0 2026-10-20晚班（t83，洪老师真机口供「红点点装按10次也没用+顶部说套装已经安好」云侧实锤：红点onclick只reload走🔍检查链，而检查链只查SUITE九件、hx-common不在名单→永远装不上→红点永在死循环；本机hx-common v0.51.0 vs 仓牌0.52.0）：刀1=relList红件onclick在anyStale判定后加hx-common专装通道（本机版vs仓牌stale则_mgGetM三腿拉件+sig校验→LearnShell.writeFile写壳→黑匣子记成败+人话提示关套装重开；不stale照旧走老reload一字未动）；刀2=CUR.index升1.36.0；SPEC_index_v1.36.0_点装公共件，DS实现零编造（1处拿不准_mgGetM同步/异步如实标注）+Kimi终审翻案1处=外层catch不应拦截正常reload（改静默只内层报红）；红线=除刀1插入段+CUR.index一行+本条外全文件IDENTICAL，_mgGetM/hxMd5_16M全局顶层函数只调不改。
     v1.35.0 2026-10-20（t76，洪老师真机报案「自动检查更新安装经常报错四遍三遍错特别是首页」：Kimi云侧查实=非网络非偶然，纯代码事故——t75补登CUR.index="1.34.0"插到1.33.0行之前被盖回，最终值停1.33.0→红点永不消/装件链反复装/侦察兵取最后一条不跳三保险全废，v1.19.7盖回事故重演；刀1=CUR行1.34.0挪到1.33.0之后+追加1.35.0；新流程闸=发版前必断言「文件最后一条CUR.index赋值==本版号」；其余一行未动）
     v1.34.0 2026-10-19晚班（t75，洪老师看自检报告截图拍板「点一下就出详细结果，开工」；SPEC_t75→DS实现+Kimi终审翻案1处=尾行口径亲手改取报告末行）：自检弹窗结构化——每哨主行可点，点开就地展开该岗最近5笔明细（调HX.audit.detail现取不缓存，明细行也可点收起），老公共件没detail自动回textarea老路不炸；发云仓payload照旧reportText全文一字未变；配套hx-common v0.47.0（rows2/detail/errNet尺子）；装件链/复核链/任务单/灯/relList/版面/其余一行未动；顺带补登v1.33.0忘升CUR.index本版扶正
     v1.33.0 2026-10-19（t74，洪老师真机报「点我装反复装不上+没说法」「接班变快没觉得」：病根①发0.46.0漏推单件牌version-hx-common.json停0.45.0→手动路以为已最新永不下载（云侧已补推三仓154B一致，不动码）/病根②手动路管家路无坚果云腿大件装不上（t68留账本版根治）/病根③v1.29.0强藏updLine后失败人话全看不见；刀1全局_mgGetM三腿+hxMd5_16M照抄改名/刀2手动路checkPart换三腿/刀3管家路换三腿/刀4失败记账hx_last_fail进📋清单+装成清账/刀5升号；SPEC_index_v1.33.0，DS两轮翻车（无视锚点自造补丁+函数名不改，记账1笔）五刀Kimi终审亲手落地；updLine藏匿/装件写入/复核链/任务单/版面一行未动）
@@ -630,6 +631,7 @@ CUR.index="1.31.0"; /* v1.31.0 本次更新清单钟点兜底链，见顶部修�
 CUR.index="1.33.0"; /* v1.33.0 t74装件三腿化+失败人话进清单，见顶部修改记录 */
 CUR.index="1.34.0"; /* v1.34.0 自检报告点行看明细配套，见顶部修改记录（顺带补登：v1.33.0发版时本行忘升停在1.32.0，牌链为准无碍，本版扶正） */
 CUR.index="1.35.0"; /* v1.35.0 t76 CUR行错位扶正（1.34.0行原插在1.33.0行之前被盖回，真机红点永不消+反复装），见顶部修改记录 */
+CUR.index="1.36.0"; /* v1.36.0 t83点装公共件通道，见顶部修改记录 */
 CUR.tuomin="0"; /* v1.19.10修404：CUR=壳内已装版本，单体手机还没装必须填"0"才会下载（CUR.ppt同款老坑，见230行） */ /* v1.19.8（2026-09-20班⑮，洪老师真机报"升级说装成功主界面还是19.6，几次都这样，没重启应该直接变19.7"）病根=班⑮发v1.19.7时新赋值插在同一行旧赋值前面，CUR.index="1.19.7"刚赋上就被同行的CUR.index="1.19.6"盖回→页脚活字永远亮1.19.6（文件真身早是新版，升级链/壳全无辜，大管家0.54.5上机为证）；还连带v1.19.5刀2开门自校对误把账本1.19.7当谎回滚→每次都提示重装。治=删同行可执行旧赋值（注释留档）+升号v1.19.8让真机重新下载。其余一行未动 */
 try{document.getElementById("ftVer").textContent=CUR.index;}catch(eF){} /* v1.19.6 页脚死字改活字：ftVer亮CUR.index真身 */
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
@@ -2817,6 +2819,34 @@ var __home1209 = (function(){
             var rows2=(va&&va.items)||[]; var anyStale=false;
             rows2.forEach(function(it){ if(!it) return; var l=""; try{ l=M.localVer(String(it.key||"")); }catch(e2){} if(l!==""&&String(it.version||"")!==""&&l!==String(it.version)) anyStale=true; });
             if(!anyStale) return;
+            /* t83 点装公共件hx-common专装通道：红点原只reload走检查链，检查链不含hx-common=死循环（洪老师20:40口供「按10次也没用+顶部说套装已经安好」） */
+            var hxc=null;
+            try{ for(var _hi=0;_hi<rows2.length;_hi++){ if(rows2[_hi]&&rows2[_hi].key==='hx-common'){ hxc=rows2[_hi]; break; } } }catch(eH){}
+            var hxStale=false;
+            try{ var _lv=M.localVer('hx-common'); hxStale=(_lv!==""&&hxc&&String(hxc.version||"")!==""&&_lv!==String(hxc.version)); }catch(eL){}
+            if(hxStale){
+              el.textContent="📥 正在装公共件hx-common，请稍等…";
+              try{
+                if(typeof _mgGetM!=='function'){ throw new Error('装件腿不可用'); }
+                _mgGetM('hx-common.js', hxc.sig||'').then(function(txt){
+                  try{
+                    LearnShell.writeFile('hx-common.js', btoa(unescape(encodeURIComponent(txt))));
+                    try{ HX.bb.log('act','点装hx-common成功 '+unescape(encodeURIComponent(txt)).length+'字节 牌v'+hxc.version); }catch(eB){}
+                    el.textContent="✅ 公共件装好了，请把套装完全关掉再打开一次";
+                  }catch(eW){
+                    try{ HX.bb.log('err','点装hx-common写壳失败:'+((eW&&eW.message)||eW)); }catch(eB2){}
+                    el.textContent="🔴 公共件写不进手机，过一会儿再点我";
+                  }
+                }).catch(function(e){
+                  try{ HX.bb.log('err','点装hx-common下载失败:'+((e&&e.message)||e)); }catch(eB3){}
+                  el.textContent="🔴 公共件没装上：" +((e&&e.message)||'网络不通')+"，过一会儿再点我";
+                });
+              }catch(e){
+                try{ HX.bb.log('err','点装hx-common失败:'+((e&&e.message)||e)); }catch(eB4){}
+                el.textContent="🔴 公共件没装上：" +((e&&e.message)||'网络不通')+"，过一会儿再点我";
+              }
+              return;
+            }
             el.textContent="🔍 正在查新版本，请稍等…";
             sessionStorage.removeItem('hx_ver_checked');sessionStorage.setItem('hx_ver_manual','1');sessionStorage.setItem('hx_sj_skip_once','1');
             setTimeout(function(){ location.reload(); },120);
