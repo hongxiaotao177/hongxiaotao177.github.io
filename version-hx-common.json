@@ -1,1 +1,1 @@
-{"version": "0.49.0", "dl": "hx-common.js", "sig": "2e21506da5c80a8d", "t": 1792482898224, "note": "t79任务2：交班本地存取——handleMessage加jbSave/jbRead两op（三小件落壳授权文件夹+manifest比对锚）+HX.jbl公开口status；配套jb.py v3.4（接班①手机本地层+push_local交班推送）", "fix": "t79"}
+{"version": "0.50.0", "dl": "hx-common.js", "sig": "c5e225731cc21393", "t": 1792490854003, "note": "A1走查单扩容：HX.jc新增只探测算子has（限HX.开头方括号逐段取，禁eval），zc6~zc15巡📋清单/人话账/自报/审计/传话筒/问诊室/交班本地/侦察兵/机核档/AI质检台账", "fix": "A1"}
