@@ -1,1 +1,1 @@
-{"version": "0.47.0", "dl": "hx-common.js", "sig": "1cd58c080bcd1915", "t": 1792456038657, "note": "t75：hx-common v0.47.0 自检明细detail+rows2（点行看账配套）+errNet尺子修口径（治AI质检假报错117吓住）", "fix": "t75"}
+{"version": "0.47.1", "dl": "hx-common.js", "sig": "ecc336450651b99a", "t": 1792460015279, "note": "t76：idxProbe侦察兵正则行首锚定（被注释1.19.6骗住从没跳过病根）", "fix": "t76"}
