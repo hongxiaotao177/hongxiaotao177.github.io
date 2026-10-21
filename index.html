@@ -2,6 +2,7 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.37.0 2026-10-21（R1闭环刀2，真机检验套件第1件，冻结令唯一开工件；黑匣子实锤v0.55.0装不上=网页腿全卡：X5联网弱+坚果云CORS拦死+GitHub偶断，而管家HxPostService原生通道一直在岗装件路却从没用过；刀A/B=两条取件母本各加管家腿×2成五腿+首轮全败歇20秒补一轮；SPEC_index_v1.37.0，DS实现+Kimi终审落地；其余一行未动）
     v1.36.0 2026-10-20晚班（t83，洪老师真机口供「红点点装按10次也没用+顶部说套装已经安好」云侧实锤：红点onclick只reload走🔍检查链，而检查链只查SUITE九件、hx-common不在名单→永远装不上→红点永在死循环；本机hx-common v0.51.0 vs 仓牌0.52.0）：刀1=relList红件onclick在anyStale判定后加hx-common专装通道（本机版vs仓牌stale则_mgGetM三腿拉件+sig校验→LearnShell.writeFile写壳→黑匣子记成败+人话提示关套装重开；不stale照旧走老reload一字未动）；刀2=CUR.index升1.36.0；SPEC_index_v1.36.0_点装公共件，DS实现零编造（1处拿不准_mgGetM同步/异步如实标注）+Kimi终审翻案1处=外层catch不应拦截正常reload（改静默只内层报红）；红线=除刀1插入段+CUR.index一行+本条外全文件IDENTICAL，_mgGetM/hxMd5_16M全局顶层函数只调不改。
     v1.35.0 2026-10-20（t76，洪老师真机报案「自动检查更新安装经常报错四遍三遍错特别是首页」：Kimi云侧查实=非网络非偶然，纯代码事故——t75补登CUR.index="1.34.0"插到1.33.0行之前被盖回，最终值停1.33.0→红点永不消/装件链反复装/侦察兵取最后一条不跳三保险全废，v1.19.7盖回事故重演；刀1=CUR行1.34.0挪到1.33.0之后+追加1.35.0；新流程闸=发版前必断言「文件最后一条CUR.index赋值==本版号」；其余一行未动）
     v1.34.0 2026-10-19晚班（t75，洪老师看自检报告截图拍板「点一下就出详细结果，开工」；SPEC_t75→DS实现+Kimi终审翻案1处=尾行口径亲手改取报告末行）：自检弹窗结构化——每哨主行可点，点开就地展开该岗最近5笔明细（调HX.audit.detail现取不缓存，明细行也可点收起），老公共件没detail自动回textarea老路不炸；发云仓payload照旧reportText全文一字未变；配套hx-common v0.47.0（rows2/detail/errNet尺子）；装件链/复核链/任务单/灯/relList/版面/其余一行未动；顺带补登v1.33.0忘升CUR.index本版扶正
@@ -632,6 +633,7 @@ CUR.index="1.33.0"; /* v1.33.0 t74装件三腿化+失败人话进清单，见顶
 CUR.index="1.34.0"; /* v1.34.0 自检报告点行看明细配套，见顶部修改记录（顺带补登：v1.33.0发版时本行忘升停在1.32.0，牌链为准无碍，本版扶正） */
 CUR.index="1.35.0"; /* v1.35.0 t76 CUR行错位扶正（1.34.0行原插在1.33.0行之前被盖回，真机红点永不消+反复装），见顶部修改记录 */
 CUR.index="1.36.0"; /* v1.36.0 t83点装公共件通道，见顶部修改记录 */
+  CUR.index="1.37.0"; /* v1.37.0 R1装件管家腿+二轮重试，见顶部修改记录 */
 CUR.tuomin="0"; /* v1.19.10修404：CUR=壳内已装版本，单体手机还没装必须填"0"才会下载（CUR.ppt同款老坑，见230行） */ /* v1.19.8（2026-09-20班⑮，洪老师真机报"升级说装成功主界面还是19.6，几次都这样，没重启应该直接变19.7"）病根=班⑮发v1.19.7时新赋值插在同一行旧赋值前面，CUR.index="1.19.7"刚赋上就被同行的CUR.index="1.19.6"盖回→页脚活字永远亮1.19.6（文件真身早是新版，升级链/壳全无辜，大管家0.54.5上机为证）；还连带v1.19.5刀2开门自校对误把账本1.19.7当谎回滚→每次都提示重装。治=删同行可执行旧赋值（注释留档）+升号v1.19.8让真机重新下载。其余一行未动 */
 try{document.getElementById("ftVer").textContent=CUR.index;}catch(eF){} /* v1.19.6 页脚死字改活字：ftVer亮CUR.index真身 */
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
@@ -1085,6 +1087,28 @@ function _mgGetM(name, sig){
       throw new Error('空件');
     });
   }
+  function _legMgGhM(){ /* v1.37.0 R1刀A1：管家腿GitHub API——网页fetch被X5/CORS卡时，管家HxPostService原生网络代取（无CORS），治装件双腿皆卡 */
+    var _mok=false; try{ _mok=!!(window.HX&&HX.mg&&HX.mg.ok&&HX.mg.ok()); }catch(eK){}
+    if(!_mok) return Promise.reject(new Error('没管家')); /* v1.37.0终审翻案：同步throw会跳过后续所有腿（找不到下一个catch），改异步reject才逐级落腿 */
+    var c=ghCfg();
+    var u='https://api.github.com/repos/'+encodeURIComponent(c.user)+'/'+encodeURIComponent(c.repo)+'/contents/'+encodeURIComponent(name)+'?t='+Date.now();
+    return HX.mg.call('GET', u, null).then(function(r){
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      return r.json();
+    }).then(function(j){
+      if(j.content) return u8dec(j.content);
+      if(j.download_url) return HX.mg.call('GET', j.download_url, null).then(function(r2){ if(!r2.ok) throw new Error('HTTP '+r2.status); return r2.text(); });
+      throw new Error('空件');
+    });
+  }
+  function _legMgRawM(){ /* v1.37.0 R1刀A1：管家腿公开站兜底（原生网络无CORS） */
+    var _mok=false; try{ _mok=!!(window.HX&&HX.mg&&HX.mg.ok&&HX.mg.ok()); }catch(eK){}
+    if(!_mok) return Promise.reject(new Error('没管家')); /* v1.37.0终审翻案：同步throw会跳过后续所有腿（找不到下一个catch），改异步reject才逐级落腿 */
+    return HX.mg.call('GET', 'https://hongxiaotao177.github.io/'+encodeURIComponent(name)+'?t='+Date.now(), null).then(function(r){
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      return r.text();
+    });
+  }
   function _legDavM(){
     var dk=null; try{ dk=(window.HX&&HX.keys&&HX.keys.dav)?HX.keys.dav():null; }catch(e){}
     if(!dk||!dk.user) throw new Error('无dav');
@@ -1094,14 +1118,27 @@ function _mgGetM(name, sig){
       return r.text();
     }), new Promise(function(_,rej){ setTimeout(function(){ rej(new Error("坚果云腿60秒超时")); }, 60000); })]);
   }
-  return _legGhM().then(_sigChkM).catch(function(e1){
-    try{ if(window.HX&&HX.bb&&HX.bb.log) HX.bb.log('note','装件换腿:'+name+' GitHub不通走坚果云'); }catch(eL1){}
-    return _legDavM().then(_sigChkM).catch(function(e2){
-      try{ if(window.HX&&HX.bb&&HX.bb.log) HX.bb.log('note','装件换腿:'+name+' 坚果云不通走公开站'); }catch(eL2){}
-      return hxRawGet(name).then(_sigChkM).catch(function(e3){
-        try{ if(window.HX&&HX.bb&&HX.bb.log) HX.bb.log('err','装件三腿全败:'+name); }catch(eL3){}
-        throw e3;
+  function _passM(){ /* v1.37.0 R1刀A2：五腿一轮（网页GitHub→管家GitHub→网页坚果云→管家公开站→网页公开站），逐腿过_sigChkM */
+    return _legGhM().then(_sigChkM).catch(function(e1){
+      try{ if(window.HX&&HX.bb&&HX.bb.log) HX.bb.log('note','装件换腿:'+name+' GitHub不通走管家腿'); }catch(eL1){}
+      return _legMgGhM().then(_sigChkM).catch(function(e1b){
+        try{ if(window.HX&&HX.bb&&HX.bb.log) HX.bb.log('note','装件换腿:'+name+' 管家腿不通走坚果云'); }catch(eL1b){}
+        return _legDavM().then(_sigChkM).catch(function(e2){
+          try{ if(window.HX&&HX.bb&&HX.bb.log) HX.bb.log('note','装件换腿:'+name+' 坚果云不通走管家公开站'); }catch(eL2){}
+          return _legMgRawM().then(_sigChkM).catch(function(e2b){
+            try{ if(window.HX&&HX.bb&&HX.bb.log) HX.bb.log('note','装件换腿:'+name+' 管家公开站不通走网页公开站'); }catch(eL2b){}
+            return hxRawGet(name).then(_sigChkM);
+          });
+        });
       });
+    });
+  }
+  /* v1.37.0 R1刀A2：首轮全败=多半是网络抖一下，歇20秒再跑一轮（只补一轮不无限重试，治GitHub偶断） */
+  return _passM().catch(function(eAll){
+    try{ if(window.HX&&HX.bb&&HX.bb.log) HX.bb.log('note','装件首轮全败歇20秒再试:'+name); }catch(eN){}
+    return new Promise(function(res){ setTimeout(res,20000); }).then(function(){ return _passM(); }).catch(function(e3){
+      try{ if(window.HX&&HX.bb&&HX.bb.log) HX.bb.log('err','装件五腿两轮全败:'+name); }catch(eL3){}
+      throw e3;
     });
   });
 }
@@ -2108,6 +2145,28 @@ try{ mgSuiteWrite(); }catch(e){}
           throw new Error('空件');
         });
       }
+      function _legMgGh(){ /* v1.37.0 R1刀B1：管家腿GitHub API（原生网络无CORS） */
+        var _mok=false; try{ _mok=!!(window.HX&&HX.mg&&HX.mg.ok&&HX.mg.ok()); }catch(eK){}
+        if(!_mok) return Promise.reject(new Error('没管家')); /* v1.37.0终审翻案：同步throw会跳过后续所有腿（找不到下一个catch），改异步reject才逐级落腿 */
+        var c=ghCfg();
+        var u='https://api.github.com/repos/'+encodeURIComponent(c.user)+'/'+encodeURIComponent(c.repo)+'/contents/'+encodeURIComponent(name)+'?t='+Date.now();
+        return HX.mg.call('GET', u, null).then(function(r){
+          if(!r.ok) throw new Error('HTTP '+r.status);
+          return r.json();
+        }).then(function(j){
+          if(j.content) return u8dec(j.content);
+          if(j.download_url) return HX.mg.call('GET', j.download_url, null).then(function(r2){ if(!r2.ok) throw new Error('HTTP '+r2.status); return r2.text(); });
+          throw new Error('空件');
+        });
+      }
+      function _legMgRaw(){ /* v1.37.0 R1刀B1：管家腿公开站兜底（原生网络无CORS） */
+        var _mok=false; try{ _mok=!!(window.HX&&HX.mg&&HX.mg.ok&&HX.mg.ok()); }catch(eK){}
+        if(!_mok) return Promise.reject(new Error('没管家')); /* v1.37.0终审翻案：同步throw会跳过后续所有腿（找不到下一个catch），改异步reject才逐级落腿 */
+        return HX.mg.call('GET', 'https://hongxiaotao177.github.io/'+encodeURIComponent(name)+'?t='+Date.now(), null).then(function(r){
+          if(!r.ok) throw new Error('HTTP '+r.status);
+          return r.text();
+        });
+      }
       function _legDav(){
         var dk=null; try{ dk=(window.HX&&HX.keys&&HX.keys.dav)?HX.keys.dav():null; }catch(e){}
         if(!dk||!dk.user) throw new Error('无dav');
@@ -2117,9 +2176,27 @@ try{ mgSuiteWrite(); }catch(e){}
           return r.text();
         });
       }
-      return _legGh().then(_sigChk).catch(function(){
-        return _legDav().then(_sigChk).catch(function(){
-          return hxRawGet(name).then(_sigChk);
+      function _pass(){ /* v1.37.0 R1刀B2：五腿一轮 */
+        return _legGh().then(_sigChk).catch(function(){
+          try{ if(window.HX&&HX.bb&&HX.bb.log) HX.bb.log('note','装件换腿:'+name+' GitHub不通走管家腿'); }catch(eL1){}
+          return _legMgGh().then(_sigChk).catch(function(){
+            try{ if(window.HX&&HX.bb&&HX.bb.log) HX.bb.log('note','装件换腿:'+name+' 管家腿不通走坚果云'); }catch(eL1b){}
+            return _legDav().then(_sigChk).catch(function(){
+              try{ if(window.HX&&HX.bb&&HX.bb.log) HX.bb.log('note','装件换腿:'+name+' 坚果云不通走管家公开站'); }catch(eL2){}
+              return _legMgRaw().then(_sigChk).catch(function(){
+                try{ if(window.HX&&HX.bb&&HX.bb.log) HX.bb.log('note','装件换腿:'+name+' 管家公开站不通走网页公开站'); }catch(eL2b){}
+                return hxRawGet(name).then(_sigChk);
+              });
+            });
+          });
+        });
+      }
+      /* v1.37.0 R1刀B2：首轮全败歇20秒再跑一轮（只补一轮） */
+      return _pass().catch(function(eAll){
+        try{ if(window.HX&&HX.bb&&HX.bb.log) HX.bb.log('note','装件首轮全败歇20秒再试:'+name); }catch(eN){}
+        return new Promise(function(res){ setTimeout(res,20000); }).then(function(){ return _pass(); }).catch(function(e3){
+          try{ if(window.HX&&HX.bb&&HX.bb.log) HX.bb.log('err','装件五腿两轮全败:'+name); }catch(eL3){}
+          throw e3;
         });
       });
     }
