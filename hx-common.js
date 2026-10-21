@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    hx-common.js —— 全家9件软件共用公共件母版
-   v0.56.0 2026-10-21（t91 mqtt三条静默死路补账，洪老师批「读不到值自己治别烦我」后不再等zc16直接全治；SPEC_hx-common_v0.56.0_mqtt静默路径补账，DS实现零编造+Kimi终审diff全绿）：刀A Paho缺失记hx_mqtt_err+上黑匣子+退避再试／刀B取钥匙失败补黑匣子／刀C 60秒到点在后台记hx_mqtt_err（不调退避，onVisChange兜底）；只动HX.mqtt IIFE四行，其余全件IDENTICAL，壳/index不动
+   v0.57.0 2026-10-21（t92 Paho库入库根治传话筒缺引擎，SPEC_hx-common_v0.57.0_Paho入库；上一版v0.56.0 t91补账逮住病根；洪老师批「读不到值自己治别烦我」后不再等zc16直接全治；SPEC_hx-common_v0.56.0_mqtt静默路径补账，DS实现零编造+Kimi终审diff全绿）：刀A Paho缺失记hx_mqtt_err+上黑匣子+退避再试／刀B取钥匙失败补黑匣子／刀C 60秒到点在后台记hx_mqtt_err（不调退避，onVisChange兜底）；只动HX.mqtt IIFE四行，其余全件IDENTICAL，壳/index不动
    v0.55.0 2026-10-21（t89手机主账房闭环刀1，mqtt根治，洪老师冻结令唯一开工件；SPEC_hx-common_v0.55.0_mqtt根治，DS实现零编造+Kimi终审全采用）：HOST补/mqtt路径治paho构造同步抛异常（2参构造正则强制URI带路径，无斜杠即抛→静默吞→connecting永卡true→从未连上的真病根）+connecting=true挪构造成功后、构造失败记hx_mqtt_err退避重试；其余全件IDENTICAL，壳/index不动
    v0.54.0 2026-10-21（洪老师真机报自检报告「两个哨兵假报错」拍板开工；SPEC_t88_t86，DS实现5hunk零编造+缺版本锚点如实申报，Kimi终审全采用亲手落版本行）：刀A账房链哨假报错根治（t88/总账号6）——哨7翻localStorage hx_zf_checked永远空（index账房链写的是sessionStorage开门闸同名不同柜），哨/workline/detail三处改翻黑匣子k='zf'；刀B走查兵轮转（t86/总账号1）——HX.jc runRound slice(0,maxN)永远巡头3件，改hx_jc_cursor游标绕环取件；哨8传达室连线经核为真红（mqtt从未连上=A7在修）非假报错；红线HX.keys/air/pick/mg/store/dav/gh/bill/step/selfUp/fm/ai/sj/bb/hxToastHold/chk/chat/jc除申报点/audit/wzPoll/jbl/mqtt/arc全件IDENTICAL，壳/index不动
    v0.53.0 2026-10-21（洪老师拍板「这一版尽量把手机全量备份和对账规矩落地，保证下一个接班可以在手机本地取到文件」，合并总账t87档案柜真名归档+上行全量留底；SPEC_hx-common_v0.53.0_套装档案柜，DS实现+Kimi终审翻案2处亲手落地）：
@@ -108,7 +108,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 (function(){
   'use strict';
-  var HX_COMMON_VERSION = '0.56.0';  /* ── v0.53.0 2026-10-21（洪老师原话「这一版尽量把手机全量备份和对账规矩落地，保证下一个接班可以在手机本地取到文件」；合并总账t87；SPEC_hx-common_v0.53.0_套装档案柜，DS实现+Kimi终审翻案2处亲手落地：①一层l1ok双重计数翻断点续备单计②SAF四桥全返false补试写探针）：刀A新增HX.arc套装档案柜模块（开门120秒起跑过_autoNetOk闸，API列仓根三层分流，L1十四件每次必对+三层≤2MB小件每轮hx_arc_max缺省5件断点续备，逐件writeFileRel写+listFilesRel回读字节对账不等重试一次记fail，档案柜台账.json本地+仓根双写hx_arc_up防重推，总开关hx_arc_off=1，公开口status/run）；刀B mqtt白名单加arcList/arcRead两op（点名取件白名单制含..或/一律拒）；刀C版本行+版本史；红线HX.keys/air/pick/mg/store/dav/gh/bill/step/selfUp/fm/ai/sj/bb/hxToastHold/chk/chat/jc/audit/wzPoll/jbl及mqtt既有逻辑全IDENTICAL，壳/index不动） */  /* ── v0.49.0 2026-10-20（t79交班本地存取：handleMessage加jbSave/jbRead两op+HX.jbl公开口，详见文件头v0.49.0段；其余一行未动） */  /* ── v0.47.1 2026-10-20（t76刀3，洪老师真机报案「更新四遍三遍错特别是首页」配套：idxProbe侦察兵正则行首锚定，治「被注释里CUR.index=1.19.6骗住fileVer恒1.19.6、上岗以来从没跳过」病根2；配套index v1.35.0 CUR行错位扶正；其余一行未动） */
+  var HX_COMMON_VERSION = '0.57.0';  /* v0.57.0 t92 Paho入库 */  /* ── v0.53.0 2026-10-21（洪老师原话「这一版尽量把手机全量备份和对账规矩落地，保证下一个接班可以在手机本地取到文件」；合并总账t87；SPEC_hx-common_v0.53.0_套装档案柜，DS实现+Kimi终审翻案2处亲手落地：①一层l1ok双重计数翻断点续备单计②SAF四桥全返false补试写探针）：刀A新增HX.arc套装档案柜模块（开门120秒起跑过_autoNetOk闸，API列仓根三层分流，L1十四件每次必对+三层≤2MB小件每轮hx_arc_max缺省5件断点续备，逐件writeFileRel写+listFilesRel回读字节对账不等重试一次记fail，档案柜台账.json本地+仓根双写hx_arc_up防重推，总开关hx_arc_off=1，公开口status/run）；刀B mqtt白名单加arcList/arcRead两op（点名取件白名单制含..或/一律拒）；刀C版本行+版本史；红线HX.keys/air/pick/mg/store/dav/gh/bill/step/selfUp/fm/ai/sj/bb/hxToastHold/chk/chat/jc/audit/wzPoll/jbl及mqtt既有逻辑全IDENTICAL，壳/index不动） */  /* ── v0.49.0 2026-10-20（t79交班本地存取：handleMessage加jbSave/jbRead两op+HX.jbl公开口，详见文件头v0.49.0段；其余一行未动） */  /* ── v0.47.1 2026-10-20（t76刀3，洪老师真机报案「更新四遍三遍错特别是首页」配套：idxProbe侦察兵正则行首锚定，治「被注释里CUR.index=1.19.6骗住fileVer恒1.19.6、上岗以来从没跳过」病根2；配套index v1.35.0 CUR行错位扶正；其余一行未动） */
    /* ── v0.48.0 2026-10-20（t77真机自报，洪老师拍板「现在就真机自报吧」）：HX.zb上岗——开门60秒后包住黑匣子log，err条经60秒节流（同m 60秒不重+全局60秒1条）双通道喊疼：mqtt hx/to_kimi实时+仓根「真机自报_时间戳.json」留底，失败存hx_zb_pend≤10条补传；总开关hx_zb_off=1；公开口status/test；纯加法一IIFE+版本行，其余一行未动 【Kimi终审翻案DS 1处：report成功分支漏调flushPend（SPEC行为5成功补传）亲手补上——漏料非编造记账】 */
    /* ── v0.47.0 2026-10-19晚班（t75，洪老师看自检报告截图拍板「做成点一下就出详细结果，开工」；SPEC_t75→DS实现三切片零编造→Kimi终审翻案1处=index尾行DS自编口径丢「好/可疑」统计，亲手改取报告原文末行与云仓同口径）：刀A HX.audit新增rows2()（reportText改调它输出逐字节不变）+detail(key)七哨明细（bbTail/localStorage台账全本地零联网，最多5条最新在前，空账回「还没有明细账」）+exports挂rows2/detail；刀B index配套v1.34.0自检弹窗点主行展开明细；刀C _aiSnap尺子修口径——err含「黑匣子」三字的哨兵账（上行失败/没钥匙/疑似哑火=账房自家网络账）不计入err24改记errNet，sys提示词追加一句「errNet不算软件毛病」，治AI质检被117条假报错吓得连说12次拿不准；红线除HX.audit IIFE内申报3处+_aiSnap申报2处+版本行外全件IDENTICAL */  /* v0.43.0（2026-10-19 t69刀1，问诊室呼叫钮：SPEC_问诊室_v0.1.0_设计稿洪老师拍板）：HX.jc新增三公开只读口wzBbTail/wzLayout/wzCur+sj面板📮叫Kimi会诊钮（抓bbTail20+layout+cur+主诉→HX.gh.putFile推仓根急诊_YYYYMMDD_HHMM.json→成功hxToastHold黑框常驻报喜，失败存hx_wz_sos_pend下回补）；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.bb/hxToastHold/HX.chk/HX.chat IDENTICAL，HX.jc除return一处+三新函数外IDENTICAL，HX.sj除按钮HTML一行+bind一处+sjWzSos新函数外IDENTICAL */  /* ── v0.46.0 2026-10-19（t73手机账房刀B，母图纸SPEC_手机主账房_v0.1.0洪老师拍板「图纸行，开工」）：HX.mqtt传话筒上岗——闲时WS连传达室39.97.246.65:9001，问诊室问答走hx/to_suit→hx/to_kimi秒回+云仓问诊室_答_留底双通道；密码管家路私仓取传达室钥匙.json存localStorage不落公开仓；闲时才连(开门60秒+前台)、切后台断、退避重连1s→30s；总开关hx_mqtt_off=1；纯加法两段（paho-mqtt-min v1.1.0自包含32236B+HX.mqtt IIFE），其余一行未动。【Kimi终审翻案DS 4处：①HX.gh.ready()编成Promise链必炸（现役同步boolean）②Paho五参构造旧API必炸改两参+凭证进connect③putFile三参签名错（现役四参null打头）留底必败④取钥匙失败永不再试补退避——「编假签名」前科重演记账】 */
   /* ── v0.45.0（2026-10-19早班②，t72，洪老师拍板「自检报告单一了要加：查他们最近干了什么活、谁做的、哪个做完哪个卡住，重点说人话」）：HX.audit加workline最近账单helper（七哨各一句人话账：jc走查一轮卡没卡/verify对账原文/sos按过几次/mg管家最近act/auto·ai台账笔数+末笔/zf最近查账）+reportText每哨行后追加「　　账单：」行；DS_HELPER段采用零编造，REPORT段DS自作主张重写整个reportText+私改哨名（监察员走查编成'jc走查'等7名全编）违反「保持现有格式」铁约束，全段弃用Kimi终审亲手改（记账1笔=界外重写前科同型）；audit()/list()/其余一行未动，红线全件除audit IIFE内2处+版本行外IDENTICAL */  /* ── v0.44.0（2026-10-19早班，t71，洪老师拍板「自检的东西要有审计报告随时出+一个按钮现做+我是最后控制人」，与问诊室刀2下行同班做，SPEC_t71→DS实现三段交齐→Kimi终审翻案1处=管家心跳源DS查bb的m（m只是'黑匣子在线 vX'永远查不到会误判死）翻查app含'管家'亲手落地）：刀1新增HX.audit自检审计模块（七哨户口：jc监察员/auto机核/ai质检/📮会诊链/装件防谎岗/管家心跳/账房链，心跳源=黑匣子倒查或localStorage台账末条，超期2倍判🔴可疑，按需型不判死，reportText人话报告，总开关hx_audit_off=1）/刀2新增HX.wzPoll问诊室回话下行（开门90秒后fetch公开站问诊室_out.json破缓存8秒帽，t>hx_wz_out_seen且answer非空→全屏📬Kimi回话层textarea只读可全选+✕常驻，点✕记seen；没件网断静默；HX.wzPoll.check()可手动）；纯加法两IIFE挂window.HX，红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold/HX.chk/HX.chat/HX.jc全件IDENTICAL */  /* ── v0.40.0（2026-10-18晚，AI质检岗：洪老师拍板「看得顺不顺眼也叫AI帮忙，现在就做；二期真截图排任务监察员监察」→SPEC_AI质检岗_v0.1.0→DS实现16秒交齐8hunk→Kimi终审翻案2处（①自家SPEC废函数_aiAsked删 ②Hunk3/4/5同位锚点落地顺序调5→3→4）亲手落地）：AI档步lane:'ai'——快照（标题+近24h黑匣子err条数+spot现场+正文摘要）发HX.chat.pump真签名cb(ok,txt,by)，AI答「正常」才markGreen，拿不准/泵灭/超时一律留人手动✓（泵灭或拿不准都回删问账下回补，拿不准不封口——终审补）；节流hx_chk_ai_max缺省3+泵在飞闸+60秒死心；AI质检台账.json只增裁100镜像hx_chk_ailog_up；renderPg显「🤖AI拿不准等您看一眼」；reconcile清hx_chk_ai_asked；总开关hx_chk_ai_off=1落回老路；红线除HX.chk申报8处+版本行外全件IDENTICAL，HX.jc/HX.chat/壳/单体一行未动 *//* ── v0.39.0（2026-10-18晚，机核档·自动真机检验一期：洪老师问「自动真机检验」→Kimi报方案（机器能核的自动销、核不了的攒短清单、开门一次清账）→洪老师拍板「同意你的选择，开工」→SPEC_机核档_自动真机检验一期→DS实现13秒交齐8申报点→Kimi终审翻案1处（DS版本行hunk锚点截断不可用，亲手改定点插段）亲手落地）：六刀=①detect机核分流（watch优先照旧，机核档排第二，hx_chk_auto_off=1落回弹确认条老路）②_autoGreen侦中直接markGreen不弹窗（bb.job+机核台账双留痕）③_autoNoteOnce机核档缺侦测器note会话防重永不销 ④_autoOff总开关 ⑤机核台账_autoLogAdd+_pushAutoLog（hx_chk_autolog只增裁100条，闲时PUT仓根机核台账.json，镜像hx_chk_autolog_up没变不重推）⑥key_eq侦测器（非空且全等才中）+renderPg机核标（机核档步不显✓钮防手滑）；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold/HX.chat/HX.jc IDENTICAL，HX.chk除本版申报8处外IDENTICAL */ /* ── v0.38.0（2026-10-18，监察员上岗：设计稿SPEC_监察员_v0.1.0_设计稿洪老师2026-10-18两次拍板合成→正式SPEC_监察员_v0.1.0 Kimi起草已落仓→DS实现（千问钥匙401没进去本班没上工）→Kimi终审翻案4处亲手落地：①afterStep引用回调局部变量rec必炸ReferenceError改传参 ②calcBacklog编不存在的t.sim/t.cloud/t.watch翻真字段t.lane（照HX.chk）③卡件没跳下一件还走剩余步翻cb(out)收尾 ④saveRes漏ver变清旧结果补上）：纯加法新增HX.jc监察员——走查单.json双腿三兜底（dav/api/raw+缓存）、开门闲时60秒起跑每次最多hx_jc_max件（缺省3）件间歇5秒、五算子全读型（see/seeText/ls/lsKey/file）绝不自动点击输入、卡件记黑匣子+AI病根分析（HX.chat.pump公共泵，判词仅记录）、vision快照参谋（文字快照代真截图，「不正常」只立visionFlag等Kimi终审）、结果账hx_jc_res+壳真源hxdata_hx_jc.json双写、闲时PUT走查记录.json/监察台账.json（镜像防重推）、督查岗台账hist只增+health()/report()供交班；总开关hx_jc_off=1全退休；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold/HX.chk/HX.chat IDENTICAL *//* v0.37.0（2026-10-18，洪老师真机报「传黑匣子12秒没动静/上行失败」云侧查明=虚惊（网慢超12秒看门狗误报，PUT其实传上），拍板治，SPEC_hx-common_v0.37.0，DS+千问同稿、Kimi终审翻案1处=DS版本留痕插位错插v0.23.0前，亲手改插版本行）：刀1黑匣子看门狗12→30秒；刀2补传成功补人话（hx_bb_lastfail标记，败立成消）；红线HX.bb除本版申报三处外IDENTICAL，其他所有模块IDENTICAL *//* v0.36.0（2026-10-18，分家④步「泵归公共件」10-10_2316拍板，SPEC_fenjia4，DS+千问同稿、Kimi终审亲手落地）：HX.chat新增公共泵api.pump(sys,usr,opt,cb)——链默认千问→Kimi→DeepSeek复用闭包私有callQwen/callKimi/callDS（cb(st,txt)签，st==='ok'才成），opt.which='qwen'/'kimi'/'ds'可点名只走一家，cb(ok,text,by)；流式onProg/联网web暂不支持，要用这两样的单体照旧走自带老泵；红线除本加法与版本行外IDENTICAL *//* v0.35.0（2026-10-18，F4a尾刀：窄条「不变化像死机」v0.24.4查明是手动步等人点✓但没说清）：窄条补「在等谁」——手动步说等您点✓点这条展开，watch/auto步说在帮您盯，cloud步说云侧核不用动，watch档说观察哨自己销；红线除本刀文案与版本行外IDENTICAL *//* v0.34.0（2026-10-18，想法流水10-18 09:01真机报「想法输入框顶天看不到打的内容」，F3b没断根）：新增sjKbFit键盘自适应——visualViewport算出键盘吃掉的高度，面板底边抬到键盘上方、最高随可视高收缩；键盘收/没visualViewport接口自动回老样；红线除本两刀与版本行外IDENTICAL *//* v0.33.0（2026-10-17深夜班，洪老师拍板「把千问修好修完为止」，SPEC_千问四治法，DS实现+Kimi终审翻案1处亲手落地：DS续写漏拼半截只回第二回正文，补acc累加）：治千问三刀落callQwen——刀①回信上限2048→8192治腰斩（删Math.min死代码）刀②读finish_reason截断自动续写一回拼接全文（slice拷贝不动原数组，硬上限1次，仍截断报fail换棒）刀④正式调用钥匙trim（探活已修本处补上）；配套chat v0.4.1+大管家v0.57.4同治病根；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold/HX.chk/callDS/callKimi/fetchJson/buildMessages/tryCompress IDENTICAL，callQwen除本三刀申报点外IDENTICAL *//* v0.32.0（2026-10-16，洪老师拍板「把AI对话框从空白一直完成到最后」，SPEC_AI对话框一期，DS实现+Kimi终审翻案2处亲手落地：①toast改调闭包内真接口hxToastHold（DS又编不存在的window.hxToastHold/hxToast/HX.toast，记账）②callKimi兜底模型名改真机现行kimi-k2.7-code-highspeed删修正贴纸）：纯加法新增HX.chat对话心脏——索引hx_chat_v1+对话壳真源hxdata_hx_chat_<id>.json三层写（真源/localStorage兜底/坚果云mirror），通道链DS→千问→Kimi各60秒死心换棒，三层记忆（原文永存+超10轮DS压缩摘要+事实卡），pullCloud云端捞回，总开关hx_chat_off=1全退休；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold/HX.chk IDENTICAL */ /* v0.31.0/* v0.31.0（2026-10-16，洪老师真机报F3b输入框顶头拍板「干」，DS实现+Kimi终审零翻案）：#hxSjPanel加max-height:calc(100vh-170px)+overflow-y:auto，键盘起面板内部滑，输入框不再被顶出屏；红线除本刀CSS与版本行外IDENTICAL *//* v0.30.0（2026-10-15 夜班⑦，洪老师拍板「做」，SPEC_index_v1.22.0+hx-common_v0.30.0_预下载+双击回环，DS实现+Kimi终审翻案3处亲手落地：①腿D的upFile/downFile回调式签名翻Promise式（DS编了不存在的第三参回调）②腿G写断/读断拆两条链各自catch精确判 ③腿D删wrote判返回照_writeFile同款try调用）：刀A1 HX.bb新增公开口loopback()双击🆘回环体检（腿G GitHub仓根「黑匣子回环.txt」+腿D坚果云/学习套装备份/黑匣子回环.txt，写上去读回来码对=通，写不成/读不回/码不对=哪腿哪环断一句话说清，双腿独立全settle后bbToast常驻汇总+job报账）刀A2 sj🆘钮双击判定（hx_lb_off=1单击照旧flush(true)整刀退休，否则单击600ms后flush、600ms内第二击loopback()）；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.chk/hxToastHold IDENTICAL，HX.sj除刀A2一处bind外IDENTICAL，HX.bb除刀A1新增函数+return一处外IDENTICAL */ /* v0.29.0（2026-10-15 夜班④，洪老师拍板「三个任务一起做」，SPEC_hx-common_v0.29.0_被动观察法+黑匣子心跳，DS实现+Kimi终审）：①bb开门心跳hb（云侧对时知在线）②collectSide哑火对照（壳有开门主账没动→哨兵err）③被动观察法：清单步骤带watch关键词，bb记账通报HX.chk.bbHit命中→24小时（hx_chk_watch_hours可配）没err自动markGreen销号全程不弹窗，err命中删账不销 ④撤开门8秒自动问（hx_chk_wiz_ask=1才问，🧪手动链不动）；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/hxToastHold IDENTICAL，HX.bb除块2~3申报点外IDENTICAL，HX.chk除块4~6申报点外IDENTICAL */ /* v0.28.0（2026-10-15 夜班，洪老师拍板「开工」，SPEC_hx-common_v0.28.0_黑匣子五案，DS实现+Kimi终审）：黑匣子五案——①HX.bb.job办完报账（成记job/败记err立刻上行）②重点钮12秒看门狗「点了没反应」③哨兵_silentLog（flush失败/没钥匙直写账防递归）④hxToastHold黑框留账note（hxBbToast自家除外）⑤err截断120→300字；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.chk IDENTICAL，HX.bb除块2~5申报点外IDENTICAL，hxToastHold除块4一处加法外IDENTICAL */ /* ═══════════════════════════════════════════════════════════════════════════
@@ -8160,3 +8160,2403 @@ HX.chat = (function () {
     }
   } catch (e) {}
 })();
+
+/* ═══ v0.57.0 2026-10-21（t92 Paho库入库：来源eclipse-paho/paho.mqtt.javascript v1.1.0 src/paho-mqtt.js，90293字节原样内嵌未改一字，EPL/EDL许可头随库保留；置于IIFE之外因内层use strict使顶层this=undefined） ═══ */
+/*******************************************************************************
+ * Copyright (c) 2013 IBM Corp.
+ *
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * and Eclipse Distribution License v1.0 which accompany this distribution.
+ *
+ * The Eclipse Public License is available at
+ *    http://www.eclipse.org/legal/epl-v10.html
+ * and the Eclipse Distribution License is available at
+ *   http://www.eclipse.org/org/documents/edl-v10.php.
+ *
+ * Contributors:
+ *    Andrew Banks - initial API and implementation and initial documentation
+ *******************************************************************************/
+
+
+// Only expose a single object name in the global namespace.
+// Everything must go through this module. Global Paho module
+// only has a single public function, client, which returns
+// a Paho client object given connection details.
+
+/**
+ * Send and receive messages using web browsers.
+ * <p>
+ * This programming interface lets a JavaScript client application use the MQTT V3.1 or
+ * V3.1.1 protocol to connect to an MQTT-supporting messaging server.
+ *
+ * The function supported includes:
+ * <ol>
+ * <li>Connecting to and disconnecting from a server. The server is identified by its host name and port number.
+ * <li>Specifying options that relate to the communications link with the server,
+ * for example the frequency of keep-alive heartbeats, and whether SSL/TLS is required.
+ * <li>Subscribing to and receiving messages from MQTT Topics.
+ * <li>Publishing messages to MQTT Topics.
+ * </ol>
+ * <p>
+ * The API consists of two main objects:
+ * <dl>
+ * <dt><b>{@link Paho.Client}</b></dt>
+ * <dd>This contains methods that provide the functionality of the API,
+ * including provision of callbacks that notify the application when a message
+ * arrives from or is delivered to the messaging server,
+ * or when the status of its connection to the messaging server changes.</dd>
+ * <dt><b>{@link Paho.Message}</b></dt>
+ * <dd>This encapsulates the payload of the message along with various attributes
+ * associated with its delivery, in particular the destination to which it has
+ * been (or is about to be) sent.</dd>
+ * </dl>
+ * <p>
+ * The programming interface validates parameters passed to it, and will throw
+ * an Error containing an error message intended for developer use, if it detects
+ * an error with any parameter.
+ * <p>
+ * Example:
+ *
+ * <code><pre>
+var client = new Paho.MQTT.Client(location.hostname, Number(location.port), "clientId");
+client.onConnectionLost = onConnectionLost;
+client.onMessageArrived = onMessageArrived;
+client.connect({onSuccess:onConnect});
+
+function onConnect() {
+  // Once a connection has been made, make a subscription and send a message.
+  console.log("onConnect");
+  client.subscribe("/World");
+  var message = new Paho.MQTT.Message("Hello");
+  message.destinationName = "/World";
+  client.send(message);
+};
+function onConnectionLost(responseObject) {
+  if (responseObject.errorCode !== 0)
+	console.log("onConnectionLost:"+responseObject.errorMessage);
+};
+function onMessageArrived(message) {
+  console.log("onMessageArrived:"+message.payloadString);
+  client.disconnect();
+};
+ * </pre></code>
+ * @namespace Paho
+ */
+
+/* jshint shadow:true */
+(function ExportLibrary(root, factory) {
+	if(typeof exports === "object" && typeof module === "object"){
+		module.exports = factory();
+	} else if (typeof define === "function" && define.amd){
+		define(factory);
+	} else if (typeof exports === "object"){
+		exports = factory();
+	} else {
+		//if (typeof root.Paho === "undefined"){
+		//	root.Paho = {};
+		//}
+		root.Paho = factory();
+	}
+})(this, function LibraryFactory(){
+
+
+	var PahoMQTT = (function (global) {
+
+	// Private variables below, these are only visible inside the function closure
+	// which is used to define the module.
+	var version = "@VERSION@-@BUILDLEVEL@";
+
+	/**
+	 * @private
+	 */
+	var localStorage = global.localStorage || (function () {
+		var data = {};
+
+		return {
+			setItem: function (key, item) { data[key] = item; },
+			getItem: function (key) { return data[key]; },
+			removeItem: function (key) { delete data[key]; },
+		};
+	})();
+
+		/**
+	 * Unique message type identifiers, with associated
+	 * associated integer values.
+	 * @private
+	 */
+		var MESSAGE_TYPE = {
+			CONNECT: 1,
+			CONNACK: 2,
+			PUBLISH: 3,
+			PUBACK: 4,
+			PUBREC: 5,
+			PUBREL: 6,
+			PUBCOMP: 7,
+			SUBSCRIBE: 8,
+			SUBACK: 9,
+			UNSUBSCRIBE: 10,
+			UNSUBACK: 11,
+			PINGREQ: 12,
+			PINGRESP: 13,
+			DISCONNECT: 14
+		};
+
+		// Collection of utility methods used to simplify module code
+		// and promote the DRY pattern.
+
+		/**
+	 * Validate an object's parameter names to ensure they
+	 * match a list of expected variables name for this option
+	 * type. Used to ensure option object passed into the API don't
+	 * contain erroneous parameters.
+	 * @param {Object} obj - User options object
+	 * @param {Object} keys - valid keys and types that may exist in obj.
+	 * @throws {Error} Invalid option parameter found.
+	 * @private
+	 */
+		var validate = function(obj, keys) {
+			for (var key in obj) {
+				if (obj.hasOwnProperty(key)) {
+					if (keys.hasOwnProperty(key)) {
+						if (typeof obj[key] !== keys[key])
+							throw new Error(format(ERROR.INVALID_TYPE, [typeof obj[key], key]));
+					} else {
+						var errorStr = "Unknown property, " + key + ". Valid properties are:";
+						for (var validKey in keys)
+							if (keys.hasOwnProperty(validKey))
+								errorStr = errorStr+" "+validKey;
+						throw new Error(errorStr);
+					}
+				}
+			}
+		};
+
+		/**
+	 * Return a new function which runs the user function bound
+	 * to a fixed scope.
+	 * @param {function} User function
+	 * @param {object} Function scope
+	 * @return {function} User function bound to another scope
+	 * @private
+	 */
+		var scope = function (f, scope) {
+			return function () {
+				return f.apply(scope, arguments);
+			};
+		};
+
+		/**
+	 * Unique message type identifiers, with associated
+	 * associated integer values.
+	 * @private
+	 */
+		var ERROR = {
+			OK: {code:0, text:"AMQJSC0000I OK."},
+			CONNECT_TIMEOUT: {code:1, text:"AMQJSC0001E Connect timed out."},
+			SUBSCRIBE_TIMEOUT: {code:2, text:"AMQJS0002E Subscribe timed out."},
+			UNSUBSCRIBE_TIMEOUT: {code:3, text:"AMQJS0003E Unsubscribe timed out."},
+			PING_TIMEOUT: {code:4, text:"AMQJS0004E Ping timed out."},
+			INTERNAL_ERROR: {code:5, text:"AMQJS0005E Internal error. Error Message: {0}, Stack trace: {1}"},
+			CONNACK_RETURNCODE: {code:6, text:"AMQJS0006E Bad Connack return code:{0} {1}."},
+			SOCKET_ERROR: {code:7, text:"AMQJS0007E Socket error:{0}."},
+			SOCKET_CLOSE: {code:8, text:"AMQJS0008I Socket closed."},
+			MALFORMED_UTF: {code:9, text:"AMQJS0009E Malformed UTF data:{0} {1} {2}."},
+			UNSUPPORTED: {code:10, text:"AMQJS0010E {0} is not supported by this browser."},
+			INVALID_STATE: {code:11, text:"AMQJS0011E Invalid state {0}."},
+			INVALID_TYPE: {code:12, text:"AMQJS0012E Invalid type {0} for {1}."},
+			INVALID_ARGUMENT: {code:13, text:"AMQJS0013E Invalid argument {0} for {1}."},
+			UNSUPPORTED_OPERATION: {code:14, text:"AMQJS0014E Unsupported operation."},
+			INVALID_STORED_DATA: {code:15, text:"AMQJS0015E Invalid data in local storage key={0} value={1}."},
+			INVALID_MQTT_MESSAGE_TYPE: {code:16, text:"AMQJS0016E Invalid MQTT message type {0}."},
+			MALFORMED_UNICODE: {code:17, text:"AMQJS0017E Malformed Unicode string:{0} {1}."},
+			BUFFER_FULL: {code:18, text:"AMQJS0018E Message buffer is full, maximum buffer size: {0}."},
+		};
+
+		/** CONNACK RC Meaning. */
+		var CONNACK_RC = {
+			0:"Connection Accepted",
+			1:"Connection Refused: unacceptable protocol version",
+			2:"Connection Refused: identifier rejected",
+			3:"Connection Refused: server unavailable",
+			4:"Connection Refused: bad user name or password",
+			5:"Connection Refused: not authorized"
+		};
+
+	/**
+	 * Format an error message text.
+	 * @private
+	 * @param {error} ERROR value above.
+	 * @param {substitutions} [array] substituted into the text.
+	 * @return the text with the substitutions made.
+	 */
+		var format = function(error, substitutions) {
+			var text = error.text;
+			if (substitutions) {
+				var field,start;
+				for (var i=0; i<substitutions.length; i++) {
+					field = "{"+i+"}";
+					start = text.indexOf(field);
+					if(start > 0) {
+						var part1 = text.substring(0,start);
+						var part2 = text.substring(start+field.length);
+						text = part1+substitutions[i]+part2;
+					}
+				}
+			}
+			return text;
+		};
+
+		//MQTT protocol and version          6    M    Q    I    s    d    p    3
+		var MqttProtoIdentifierv3 = [0x00,0x06,0x4d,0x51,0x49,0x73,0x64,0x70,0x03];
+		//MQTT proto/version for 311         4    M    Q    T    T    4
+		var MqttProtoIdentifierv4 = [0x00,0x04,0x4d,0x51,0x54,0x54,0x04];
+
+		/**
+	 * Construct an MQTT wire protocol message.
+	 * @param type MQTT packet type.
+	 * @param options optional wire message attributes.
+	 *
+	 * Optional properties
+	 *
+	 * messageIdentifier: message ID in the range [0..65535]
+	 * payloadMessage:	Application Message - PUBLISH only
+	 * connectStrings:	array of 0 or more Strings to be put into the CONNECT payload
+	 * topics:			array of strings (SUBSCRIBE, UNSUBSCRIBE)
+	 * requestQoS:		array of QoS values [0..2]
+	 *
+	 * "Flag" properties
+	 * cleanSession:	true if present / false if absent (CONNECT)
+	 * willMessage:  	true if present / false if absent (CONNECT)
+	 * isRetained:		true if present / false if absent (CONNECT)
+	 * userName:		true if present / false if absent (CONNECT)
+	 * password:		true if present / false if absent (CONNECT)
+	 * keepAliveInterval:	integer [0..65535]  (CONNECT)
+	 *
+	 * @private
+	 * @ignore
+	 */
+		var WireMessage = function (type, options) {
+			this.type = type;
+			for (var name in options) {
+				if (options.hasOwnProperty(name)) {
+					this[name] = options[name];
+				}
+			}
+		};
+
+		WireMessage.prototype.encode = function() {
+		// Compute the first byte of the fixed header
+			var first = ((this.type & 0x0f) << 4);
+
+			/*
+		 * Now calculate the length of the variable header + payload by adding up the lengths
+		 * of all the component parts
+		 */
+
+			var remLength = 0;
+			var topicStrLength = [];
+			var destinationNameLength = 0;
+			var willMessagePayloadBytes;
+
+			// if the message contains a messageIdentifier then we need two bytes for that
+			if (this.messageIdentifier !== undefined)
+				remLength += 2;
+
+			switch(this.type) {
+			// If this a Connect then we need to include 12 bytes for its header
+			case MESSAGE_TYPE.CONNECT:
+				switch(this.mqttVersion) {
+				case 3:
+					remLength += MqttProtoIdentifierv3.length + 3;
+					break;
+				case 4:
+					remLength += MqttProtoIdentifierv4.length + 3;
+					break;
+				}
+
+				remLength += UTF8Length(this.clientId) + 2;
+				if (this.willMessage !== undefined) {
+					remLength += UTF8Length(this.willMessage.destinationName) + 2;
+					// Will message is always a string, sent as UTF-8 characters with a preceding length.
+					willMessagePayloadBytes = this.willMessage.payloadBytes;
+					if (!(willMessagePayloadBytes instanceof Uint8Array))
+						willMessagePayloadBytes = new Uint8Array(payloadBytes);
+					remLength += willMessagePayloadBytes.byteLength +2;
+				}
+				if (this.userName !== undefined)
+					remLength += UTF8Length(this.userName) + 2;
+				if (this.password !== undefined)
+					remLength += UTF8Length(this.password) + 2;
+				break;
+
+			// Subscribe, Unsubscribe can both contain topic strings
+			case MESSAGE_TYPE.SUBSCRIBE:
+				first |= 0x02; // Qos = 1;
+				for ( var i = 0; i < this.topics.length; i++) {
+					topicStrLength[i] = UTF8Length(this.topics[i]);
+					remLength += topicStrLength[i] + 2;
+				}
+				remLength += this.requestedQos.length; // 1 byte for each topic's Qos
+				// QoS on Subscribe only
+				break;
+
+			case MESSAGE_TYPE.UNSUBSCRIBE:
+				first |= 0x02; // Qos = 1;
+				for ( var i = 0; i < this.topics.length; i++) {
+					topicStrLength[i] = UTF8Length(this.topics[i]);
+					remLength += topicStrLength[i] + 2;
+				}
+				break;
+
+			case MESSAGE_TYPE.PUBREL:
+				first |= 0x02; // Qos = 1;
+				break;
+
+			case MESSAGE_TYPE.PUBLISH:
+				if (this.payloadMessage.duplicate) first |= 0x08;
+				first  = first |= (this.payloadMessage.qos << 1);
+				if (this.payloadMessage.retained) first |= 0x01;
+				destinationNameLength = UTF8Length(this.payloadMessage.destinationName);
+				remLength += destinationNameLength + 2;
+				var payloadBytes = this.payloadMessage.payloadBytes;
+				remLength += payloadBytes.byteLength;
+				if (payloadBytes instanceof ArrayBuffer)
+					payloadBytes = new Uint8Array(payloadBytes);
+				else if (!(payloadBytes instanceof Uint8Array))
+					payloadBytes = new Uint8Array(payloadBytes.buffer);
+				break;
+
+			case MESSAGE_TYPE.DISCONNECT:
+				break;
+
+			default:
+				break;
+			}
+
+			// Now we can allocate a buffer for the message
+
+			var mbi = encodeMBI(remLength);  // Convert the length to MQTT MBI format
+			var pos = mbi.length + 1;        // Offset of start of variable header
+			var buffer = new ArrayBuffer(remLength + pos);
+			var byteStream = new Uint8Array(buffer);    // view it as a sequence of bytes
+
+			//Write the fixed header into the buffer
+			byteStream[0] = first;
+			byteStream.set(mbi,1);
+
+			// If this is a PUBLISH then the variable header starts with a topic
+			if (this.type == MESSAGE_TYPE.PUBLISH)
+				pos = writeString(this.payloadMessage.destinationName, destinationNameLength, byteStream, pos);
+			// If this is a CONNECT then the variable header contains the protocol name/version, flags and keepalive time
+
+			else if (this.type == MESSAGE_TYPE.CONNECT) {
+				switch (this.mqttVersion) {
+				case 3:
+					byteStream.set(MqttProtoIdentifierv3, pos);
+					pos += MqttProtoIdentifierv3.length;
+					break;
+				case 4:
+					byteStream.set(MqttProtoIdentifierv4, pos);
+					pos += MqttProtoIdentifierv4.length;
+					break;
+				}
+				var connectFlags = 0;
+				if (this.cleanSession)
+					connectFlags = 0x02;
+				if (this.willMessage !== undefined ) {
+					connectFlags |= 0x04;
+					connectFlags |= (this.willMessage.qos<<3);
+					if (this.willMessage.retained) {
+						connectFlags |= 0x20;
+					}
+				}
+				if (this.userName !== undefined)
+					connectFlags |= 0x80;
+				if (this.password !== undefined)
+					connectFlags |= 0x40;
+				byteStream[pos++] = connectFlags;
+				pos = writeUint16 (this.keepAliveInterval, byteStream, pos);
+			}
+
+			// Output the messageIdentifier - if there is one
+			if (this.messageIdentifier !== undefined)
+				pos = writeUint16 (this.messageIdentifier, byteStream, pos);
+
+			switch(this.type) {
+			case MESSAGE_TYPE.CONNECT:
+				pos = writeString(this.clientId, UTF8Length(this.clientId), byteStream, pos);
+				if (this.willMessage !== undefined) {
+					pos = writeString(this.willMessage.destinationName, UTF8Length(this.willMessage.destinationName), byteStream, pos);
+					pos = writeUint16(willMessagePayloadBytes.byteLength, byteStream, pos);
+					byteStream.set(willMessagePayloadBytes, pos);
+					pos += willMessagePayloadBytes.byteLength;
+
+				}
+				if (this.userName !== undefined)
+					pos = writeString(this.userName, UTF8Length(this.userName), byteStream, pos);
+				if (this.password !== undefined)
+					pos = writeString(this.password, UTF8Length(this.password), byteStream, pos);
+				break;
+
+			case MESSAGE_TYPE.PUBLISH:
+				// PUBLISH has a text or binary payload, if text do not add a 2 byte length field, just the UTF characters.
+				byteStream.set(payloadBytes, pos);
+
+				break;
+
+				//    	    case MESSAGE_TYPE.PUBREC:
+				//    	    case MESSAGE_TYPE.PUBREL:
+				//    	    case MESSAGE_TYPE.PUBCOMP:
+				//    	    	break;
+
+			case MESSAGE_TYPE.SUBSCRIBE:
+				// SUBSCRIBE has a list of topic strings and request QoS
+				for (var i=0; i<this.topics.length; i++) {
+					pos = writeString(this.topics[i], topicStrLength[i], byteStream, pos);
+					byteStream[pos++] = this.requestedQos[i];
+				}
+				break;
+
+			case MESSAGE_TYPE.UNSUBSCRIBE:
+				// UNSUBSCRIBE has a list of topic strings
+				for (var i=0; i<this.topics.length; i++)
+					pos = writeString(this.topics[i], topicStrLength[i], byteStream, pos);
+				break;
+
+			default:
+				// Do nothing.
+			}
+
+			return buffer;
+		};
+
+		function decodeMessage(input,pos) {
+			var startingPos = pos;
+			var first = input[pos];
+			var type = first >> 4;
+			var messageInfo = first &= 0x0f;
+			pos += 1;
+
+
+			// Decode the remaining length (MBI format)
+
+			var digit;
+			var remLength = 0;
+			var multiplier = 1;
+			do {
+				if (pos == input.length) {
+					return [null,startingPos];
+				}
+				digit = input[pos++];
+				remLength += ((digit & 0x7F) * multiplier);
+				multiplier *= 128;
+			} while ((digit & 0x80) !== 0);
+
+			var endPos = pos+remLength;
+			if (endPos > input.length) {
+				return [null,startingPos];
+			}
+
+			var wireMessage = new WireMessage(type);
+			switch(type) {
+			case MESSAGE_TYPE.CONNACK:
+				var connectAcknowledgeFlags = input[pos++];
+				if (connectAcknowledgeFlags & 0x01)
+					wireMessage.sessionPresent = true;
+				wireMessage.returnCode = input[pos++];
+				break;
+
+			case MESSAGE_TYPE.PUBLISH:
+				var qos = (messageInfo >> 1) & 0x03;
+
+				var len = readUint16(input, pos);
+				pos += 2;
+				var topicName = parseUTF8(input, pos, len);
+				pos += len;
+				// If QoS 1 or 2 there will be a messageIdentifier
+				if (qos > 0) {
+					wireMessage.messageIdentifier = readUint16(input, pos);
+					pos += 2;
+				}
+
+				var message = new Message(input.subarray(pos, endPos));
+				if ((messageInfo & 0x01) == 0x01)
+					message.retained = true;
+				if ((messageInfo & 0x08) == 0x08)
+					message.duplicate =  true;
+				message.qos = qos;
+				message.destinationName = topicName;
+				wireMessage.payloadMessage = message;
+				break;
+
+			case  MESSAGE_TYPE.PUBACK:
+			case  MESSAGE_TYPE.PUBREC:
+			case  MESSAGE_TYPE.PUBREL:
+			case  MESSAGE_TYPE.PUBCOMP:
+			case  MESSAGE_TYPE.UNSUBACK:
+				wireMessage.messageIdentifier = readUint16(input, pos);
+				break;
+
+			case  MESSAGE_TYPE.SUBACK:
+				wireMessage.messageIdentifier = readUint16(input, pos);
+				pos += 2;
+				wireMessage.returnCode = input.subarray(pos, endPos);
+				break;
+
+			default:
+				break;
+			}
+
+			return [wireMessage,endPos];
+		}
+
+		function writeUint16(input, buffer, offset) {
+			buffer[offset++] = input >> 8;      //MSB
+			buffer[offset++] = input % 256;     //LSB
+			return offset;
+		}
+
+		function writeString(input, utf8Length, buffer, offset) {
+			offset = writeUint16(utf8Length, buffer, offset);
+			stringToUTF8(input, buffer, offset);
+			return offset + utf8Length;
+		}
+
+		function readUint16(buffer, offset) {
+			return 256*buffer[offset] + buffer[offset+1];
+		}
+
+		/**
+	 * Encodes an MQTT Multi-Byte Integer
+	 * @private
+	 */
+		function encodeMBI(number) {
+			var output = new Array(1);
+			var numBytes = 0;
+
+			do {
+				var digit = number % 128;
+				number = number >> 7;
+				if (number > 0) {
+					digit |= 0x80;
+				}
+				output[numBytes++] = digit;
+			} while ( (number > 0) && (numBytes<4) );
+
+			return output;
+		}
+
+		/**
+	 * Takes a String and calculates its length in bytes when encoded in UTF8.
+	 * @private
+	 */
+		function UTF8Length(input) {
+			var output = 0;
+			for (var i = 0; i<input.length; i++)
+			{
+				var charCode = input.charCodeAt(i);
+				if (charCode > 0x7FF)
+				{
+					// Surrogate pair means its a 4 byte character
+					if (0xD800 <= charCode && charCode <= 0xDBFF)
+					{
+						i++;
+						output++;
+					}
+					output +=3;
+				}
+				else if (charCode > 0x7F)
+					output +=2;
+				else
+					output++;
+			}
+			return output;
+		}
+
+		/**
+	 * Takes a String and writes it into an array as UTF8 encoded bytes.
+	 * @private
+	 */
+		function stringToUTF8(input, output, start) {
+			var pos = start;
+			for (var i = 0; i<input.length; i++) {
+				var charCode = input.charCodeAt(i);
+
+				// Check for a surrogate pair.
+				if (0xD800 <= charCode && charCode <= 0xDBFF) {
+					var lowCharCode = input.charCodeAt(++i);
+					if (isNaN(lowCharCode)) {
+						throw new Error(format(ERROR.MALFORMED_UNICODE, [charCode, lowCharCode]));
+					}
+					charCode = ((charCode - 0xD800)<<10) + (lowCharCode - 0xDC00) + 0x10000;
+
+				}
+
+				if (charCode <= 0x7F) {
+					output[pos++] = charCode;
+				} else if (charCode <= 0x7FF) {
+					output[pos++] = charCode>>6  & 0x1F | 0xC0;
+					output[pos++] = charCode     & 0x3F | 0x80;
+				} else if (charCode <= 0xFFFF) {
+					output[pos++] = charCode>>12 & 0x0F | 0xE0;
+					output[pos++] = charCode>>6  & 0x3F | 0x80;
+					output[pos++] = charCode     & 0x3F | 0x80;
+				} else {
+					output[pos++] = charCode>>18 & 0x07 | 0xF0;
+					output[pos++] = charCode>>12 & 0x3F | 0x80;
+					output[pos++] = charCode>>6  & 0x3F | 0x80;
+					output[pos++] = charCode     & 0x3F | 0x80;
+				}
+			}
+			return output;
+		}
+
+		function parseUTF8(input, offset, length) {
+			var output = "";
+			var utf16;
+			var pos = offset;
+
+			while (pos < offset+length)
+			{
+				var byte1 = input[pos++];
+				if (byte1 < 128)
+					utf16 = byte1;
+				else
+				{
+					var byte2 = input[pos++]-128;
+					if (byte2 < 0)
+						throw new Error(format(ERROR.MALFORMED_UTF, [byte1.toString(16), byte2.toString(16),""]));
+					if (byte1 < 0xE0)             // 2 byte character
+						utf16 = 64*(byte1-0xC0) + byte2;
+					else
+					{
+						var byte3 = input[pos++]-128;
+						if (byte3 < 0)
+							throw new Error(format(ERROR.MALFORMED_UTF, [byte1.toString(16), byte2.toString(16), byte3.toString(16)]));
+						if (byte1 < 0xF0)        // 3 byte character
+							utf16 = 4096*(byte1-0xE0) + 64*byte2 + byte3;
+						else
+						{
+							var byte4 = input[pos++]-128;
+							if (byte4 < 0)
+								throw new Error(format(ERROR.MALFORMED_UTF, [byte1.toString(16), byte2.toString(16), byte3.toString(16), byte4.toString(16)]));
+							if (byte1 < 0xF8)        // 4 byte character
+								utf16 = 262144*(byte1-0xF0) + 4096*byte2 + 64*byte3 + byte4;
+							else                     // longer encodings are not supported
+								throw new Error(format(ERROR.MALFORMED_UTF, [byte1.toString(16), byte2.toString(16), byte3.toString(16), byte4.toString(16)]));
+						}
+					}
+				}
+
+				if (utf16 > 0xFFFF)   // 4 byte character - express as a surrogate pair
+				{
+					utf16 -= 0x10000;
+					output += String.fromCharCode(0xD800 + (utf16 >> 10)); // lead character
+					utf16 = 0xDC00 + (utf16 & 0x3FF);  // trail character
+				}
+				output += String.fromCharCode(utf16);
+			}
+			return output;
+		}
+
+		/**
+	 * Repeat keepalive requests, monitor responses.
+	 * @ignore
+	 */
+		var Pinger = function(client, keepAliveInterval) {
+			this._client = client;
+			this._keepAliveInterval = keepAliveInterval*1000;
+			this.isReset = false;
+
+			var pingReq = new WireMessage(MESSAGE_TYPE.PINGREQ).encode();
+
+			var doTimeout = function (pinger) {
+				return function () {
+					return doPing.apply(pinger);
+				};
+			};
+
+			/** @ignore */
+			var doPing = function() {
+				if (!this.isReset) {
+					this._client._trace("Pinger.doPing", "Timed out");
+					this._client._disconnected( ERROR.PING_TIMEOUT.code , format(ERROR.PING_TIMEOUT));
+				} else {
+					this.isReset = false;
+					this._client._trace("Pinger.doPing", "send PINGREQ");
+					this._client.socket.send(pingReq);
+					this.timeout = setTimeout(doTimeout(this), this._keepAliveInterval);
+				}
+			};
+
+			this.reset = function() {
+				this.isReset = true;
+				clearTimeout(this.timeout);
+				if (this._keepAliveInterval > 0)
+					this.timeout = setTimeout(doTimeout(this), this._keepAliveInterval);
+			};
+
+			this.cancel = function() {
+				clearTimeout(this.timeout);
+			};
+		};
+
+		/**
+	 * Monitor request completion.
+	 * @ignore
+	 */
+		var Timeout = function(client, timeoutSeconds, action, args) {
+			if (!timeoutSeconds)
+				timeoutSeconds = 30;
+
+			var doTimeout = function (action, client, args) {
+				return function () {
+					return action.apply(client, args);
+				};
+			};
+			this.timeout = setTimeout(doTimeout(action, client, args), timeoutSeconds * 1000);
+
+			this.cancel = function() {
+				clearTimeout(this.timeout);
+			};
+		};
+
+	/**
+	 * Internal implementation of the Websockets MQTT V3.1 client.
+	 *
+	 * @name Paho.ClientImpl @constructor
+	 * @param {String} host the DNS nameof the webSocket host.
+	 * @param {Number} port the port number for that host.
+	 * @param {String} clientId the MQ client identifier.
+	 */
+		var ClientImpl = function (uri, host, port, path, clientId) {
+		// Check dependencies are satisfied in this browser.
+			if (!("WebSocket" in global && global.WebSocket !== null)) {
+				throw new Error(format(ERROR.UNSUPPORTED, ["WebSocket"]));
+			}
+			if (!("ArrayBuffer" in global && global.ArrayBuffer !== null)) {
+				throw new Error(format(ERROR.UNSUPPORTED, ["ArrayBuffer"]));
+			}
+			this._trace("Paho.Client", uri, host, port, path, clientId);
+
+			this.host = host;
+			this.port = port;
+			this.path = path;
+			this.uri = uri;
+			this.clientId = clientId;
+			this._wsuri = null;
+
+			// Local storagekeys are qualified with the following string.
+			// The conditional inclusion of path in the key is for backward
+			// compatibility to when the path was not configurable and assumed to
+			// be /mqtt
+			this._localKey=host+":"+port+(path!="/mqtt"?":"+path:"")+":"+clientId+":";
+
+			// Create private instance-only message queue
+			// Internal queue of messages to be sent, in sending order.
+			this._msg_queue = [];
+			this._buffered_msg_queue = [];
+
+			// Messages we have sent and are expecting a response for, indexed by their respective message ids.
+			this._sentMessages = {};
+
+			// Messages we have received and acknowleged and are expecting a confirm message for
+			// indexed by their respective message ids.
+			this._receivedMessages = {};
+
+			// Internal list of callbacks to be executed when messages
+			// have been successfully sent over web socket, e.g. disconnect
+			// when it doesn't have to wait for ACK, just message is dispatched.
+			this._notify_msg_sent = {};
+
+			// Unique identifier for SEND messages, incrementing
+			// counter as messages are sent.
+			this._message_identifier = 1;
+
+			// Used to determine the transmission sequence of stored sent messages.
+			this._sequence = 0;
+
+
+			// Load the local state, if any, from the saved version, only restore state relevant to this client.
+			for (var key in localStorage)
+				if (   key.indexOf("Sent:"+this._localKey) === 0 || key.indexOf("Received:"+this._localKey) === 0)
+					this.restore(key);
+		};
+
+		// Messaging Client public instance members.
+		ClientImpl.prototype.host = null;
+		ClientImpl.prototype.port = null;
+		ClientImpl.prototype.path = null;
+		ClientImpl.prototype.uri = null;
+		ClientImpl.prototype.clientId = null;
+
+		// Messaging Client private instance members.
+		ClientImpl.prototype.socket = null;
+		/* true once we have received an acknowledgement to a CONNECT packet. */
+		ClientImpl.prototype.connected = false;
+		/* The largest message identifier allowed, may not be larger than 2**16 but
+		 * if set smaller reduces the maximum number of outbound messages allowed.
+		 */
+		ClientImpl.prototype.maxMessageIdentifier = 65536;
+		ClientImpl.prototype.connectOptions = null;
+		ClientImpl.prototype.hostIndex = null;
+		ClientImpl.prototype.onConnected = null;
+		ClientImpl.prototype.onConnectionLost = null;
+		ClientImpl.prototype.onMessageDelivered = null;
+		ClientImpl.prototype.onMessageArrived = null;
+		ClientImpl.prototype.traceFunction = null;
+		ClientImpl.prototype._msg_queue = null;
+		ClientImpl.prototype._buffered_msg_queue = null;
+		ClientImpl.prototype._connectTimeout = null;
+		/* The sendPinger monitors how long we allow before we send data to prove to the server that we are alive. */
+		ClientImpl.prototype.sendPinger = null;
+		/* The receivePinger monitors how long we allow before we require evidence that the server is alive. */
+		ClientImpl.prototype.receivePinger = null;
+		ClientImpl.prototype._reconnectInterval = 1; // Reconnect Delay, starts at 1 second
+		ClientImpl.prototype._reconnecting = false;
+		ClientImpl.prototype._reconnectTimeout = null;
+		ClientImpl.prototype.disconnectedPublishing = false;
+		ClientImpl.prototype.disconnectedBufferSize = 5000;
+
+		ClientImpl.prototype.receiveBuffer = null;
+
+		ClientImpl.prototype._traceBuffer = null;
+		ClientImpl.prototype._MAX_TRACE_ENTRIES = 100;
+
+		ClientImpl.prototype.connect = function (connectOptions) {
+			var connectOptionsMasked = this._traceMask(connectOptions, "password");
+			this._trace("Client.connect", connectOptionsMasked, this.socket, this.connected);
+
+			if (this.connected)
+				throw new Error(format(ERROR.INVALID_STATE, ["already connected"]));
+			if (this.socket)
+				throw new Error(format(ERROR.INVALID_STATE, ["already connected"]));
+
+			if (this._reconnecting) {
+			// connect() function is called while reconnect is in progress.
+			// Terminate the auto reconnect process to use new connect options.
+				this._reconnectTimeout.cancel();
+				this._reconnectTimeout = null;
+				this._reconnecting = false;
+			}
+
+			this.connectOptions = connectOptions;
+			this._reconnectInterval = 1;
+			this._reconnecting = false;
+			if (connectOptions.uris) {
+				this.hostIndex = 0;
+				this._doConnect(connectOptions.uris[0]);
+			} else {
+				this._doConnect(this.uri);
+			}
+
+		};
+
+		ClientImpl.prototype.subscribe = function (filter, subscribeOptions) {
+			this._trace("Client.subscribe", filter, subscribeOptions);
+
+			if (!this.connected)
+				throw new Error(format(ERROR.INVALID_STATE, ["not connected"]));
+
+            var wireMessage = new WireMessage(MESSAGE_TYPE.SUBSCRIBE);
+            wireMessage.topics = filter.constructor === Array ? filter : [filter];
+            if (subscribeOptions.qos === undefined)
+                subscribeOptions.qos = 0;
+            wireMessage.requestedQos = [];
+            for (var i = 0; i < wireMessage.topics.length; i++)
+                wireMessage.requestedQos[i] = subscribeOptions.qos;
+
+			if (subscribeOptions.onSuccess) {
+				wireMessage.onSuccess = function(grantedQos) {subscribeOptions.onSuccess({invocationContext:subscribeOptions.invocationContext,grantedQos:grantedQos});};
+			}
+
+			if (subscribeOptions.onFailure) {
+				wireMessage.onFailure = function(errorCode) {subscribeOptions.onFailure({invocationContext:subscribeOptions.invocationContext,errorCode:errorCode, errorMessage:format(errorCode)});};
+			}
+
+			if (subscribeOptions.timeout) {
+				wireMessage.timeOut = new Timeout(this, subscribeOptions.timeout, subscribeOptions.onFailure,
+					[{invocationContext:subscribeOptions.invocationContext,
+						errorCode:ERROR.SUBSCRIBE_TIMEOUT.code,
+						errorMessage:format(ERROR.SUBSCRIBE_TIMEOUT)}]);
+			}
+
+			// All subscriptions return a SUBACK.
+			this._requires_ack(wireMessage);
+			this._schedule_message(wireMessage);
+		};
+
+		/** @ignore */
+		ClientImpl.prototype.unsubscribe = function(filter, unsubscribeOptions) {
+			this._trace("Client.unsubscribe", filter, unsubscribeOptions);
+
+			if (!this.connected)
+				throw new Error(format(ERROR.INVALID_STATE, ["not connected"]));
+
+            var wireMessage = new WireMessage(MESSAGE_TYPE.UNSUBSCRIBE);
+            wireMessage.topics = filter.constructor === Array ? filter : [filter];
+
+			if (unsubscribeOptions.onSuccess) {
+				wireMessage.callback = function() {unsubscribeOptions.onSuccess({invocationContext:unsubscribeOptions.invocationContext});};
+			}
+			if (unsubscribeOptions.timeout) {
+				wireMessage.timeOut = new Timeout(this, unsubscribeOptions.timeout, unsubscribeOptions.onFailure,
+					[{invocationContext:unsubscribeOptions.invocationContext,
+						errorCode:ERROR.UNSUBSCRIBE_TIMEOUT.code,
+						errorMessage:format(ERROR.UNSUBSCRIBE_TIMEOUT)}]);
+			}
+
+			// All unsubscribes return a SUBACK.
+			this._requires_ack(wireMessage);
+			this._schedule_message(wireMessage);
+		};
+
+		ClientImpl.prototype.send = function (message) {
+			this._trace("Client.send", message);
+
+			var wireMessage = new WireMessage(MESSAGE_TYPE.PUBLISH);
+			wireMessage.payloadMessage = message;
+
+			if (this.connected) {
+			// Mark qos 1 & 2 message as "ACK required"
+			// For qos 0 message, invoke onMessageDelivered callback if there is one.
+			// Then schedule the message.
+				if (message.qos > 0) {
+					this._requires_ack(wireMessage);
+				} else if (this.onMessageDelivered) {
+					this._notify_msg_sent[wireMessage] = this.onMessageDelivered(wireMessage.payloadMessage);
+				}
+				this._schedule_message(wireMessage);
+			} else {
+			// Currently disconnected, will not schedule this message
+			// Check if reconnecting is in progress and disconnected publish is enabled.
+				if (this._reconnecting && this.disconnectedPublishing) {
+				// Check the limit which include the "required ACK" messages
+					var messageCount = Object.keys(this._sentMessages).length + this._buffered_msg_queue.length;
+					if (messageCount > this.disconnectedBufferSize) {
+						throw new Error(format(ERROR.BUFFER_FULL, [this.disconnectedBufferSize]));
+					} else {
+						if (message.qos > 0) {
+						// Mark this message as "ACK required"
+							this._requires_ack(wireMessage);
+						} else {
+							wireMessage.sequence = ++this._sequence;
+							// Add messages in fifo order to array, by adding to start
+							this._buffered_msg_queue.unshift(wireMessage);
+						}
+					}
+				} else {
+					throw new Error(format(ERROR.INVALID_STATE, ["not connected"]));
+				}
+			}
+		};
+
+		ClientImpl.prototype.disconnect = function () {
+			this._trace("Client.disconnect");
+
+			if (this._reconnecting) {
+			// disconnect() function is called while reconnect is in progress.
+			// Terminate the auto reconnect process.
+				this._reconnectTimeout.cancel();
+				this._reconnectTimeout = null;
+				this._reconnecting = false;
+			}
+
+			if (!this.socket)
+				throw new Error(format(ERROR.INVALID_STATE, ["not connecting or connected"]));
+
+			var wireMessage = new WireMessage(MESSAGE_TYPE.DISCONNECT);
+
+			// Run the disconnected call back as soon as the message has been sent,
+			// in case of a failure later on in the disconnect processing.
+			// as a consequence, the _disconected call back may be run several times.
+			this._notify_msg_sent[wireMessage] = scope(this._disconnected, this);
+
+			this._schedule_message(wireMessage);
+		};
+
+		ClientImpl.prototype.getTraceLog = function () {
+			if ( this._traceBuffer !== null ) {
+				this._trace("Client.getTraceLog", new Date());
+				this._trace("Client.getTraceLog in flight messages", this._sentMessages.length);
+				for (var key in this._sentMessages)
+					this._trace("_sentMessages ",key, this._sentMessages[key]);
+				for (var key in this._receivedMessages)
+					this._trace("_receivedMessages ",key, this._receivedMessages[key]);
+
+				return this._traceBuffer;
+			}
+		};
+
+		ClientImpl.prototype.startTrace = function () {
+			if ( this._traceBuffer === null ) {
+				this._traceBuffer = [];
+			}
+			this._trace("Client.startTrace", new Date(), version);
+		};
+
+		ClientImpl.prototype.stopTrace = function () {
+			delete this._traceBuffer;
+		};
+
+		ClientImpl.prototype._doConnect = function (wsurl) {
+		// When the socket is open, this client will send the CONNECT WireMessage using the saved parameters.
+			if (this.connectOptions.useSSL) {
+				var uriParts = wsurl.split(":");
+				uriParts[0] = "wss";
+				wsurl = uriParts.join(":");
+			}
+			this._wsuri = wsurl;
+			this.connected = false;
+
+
+
+			if (this.connectOptions.mqttVersion < 4) {
+				this.socket = new WebSocket(wsurl, ["mqttv3.1"]);
+			} else {
+				this.socket = new WebSocket(wsurl, ["mqtt"]);
+			}
+			this.socket.binaryType = "arraybuffer";
+			this.socket.onopen = scope(this._on_socket_open, this);
+			this.socket.onmessage = scope(this._on_socket_message, this);
+			this.socket.onerror = scope(this._on_socket_error, this);
+			this.socket.onclose = scope(this._on_socket_close, this);
+
+			this.sendPinger = new Pinger(this, this.connectOptions.keepAliveInterval);
+			this.receivePinger = new Pinger(this, this.connectOptions.keepAliveInterval);
+			if (this._connectTimeout) {
+				this._connectTimeout.cancel();
+				this._connectTimeout = null;
+			}
+			this._connectTimeout = new Timeout(this, this.connectOptions.timeout, this._disconnected,  [ERROR.CONNECT_TIMEOUT.code, format(ERROR.CONNECT_TIMEOUT)]);
+		};
+
+
+		// Schedule a new message to be sent over the WebSockets
+		// connection. CONNECT messages cause WebSocket connection
+		// to be started. All other messages are queued internally
+		// until this has happened. When WS connection starts, process
+		// all outstanding messages.
+		ClientImpl.prototype._schedule_message = function (message) {
+			// Add messages in fifo order to array, by adding to start
+			this._msg_queue.unshift(message);
+			// Process outstanding messages in the queue if we have an  open socket, and have received CONNACK.
+			if (this.connected) {
+				this._process_queue();
+			}
+		};
+
+		ClientImpl.prototype.store = function(prefix, wireMessage) {
+			var storedMessage = {type:wireMessage.type, messageIdentifier:wireMessage.messageIdentifier, version:1};
+
+			switch(wireMessage.type) {
+			case MESSAGE_TYPE.PUBLISH:
+				if(wireMessage.pubRecReceived)
+					storedMessage.pubRecReceived = true;
+
+				// Convert the payload to a hex string.
+				storedMessage.payloadMessage = {};
+				var hex = "";
+				var messageBytes = wireMessage.payloadMessage.payloadBytes;
+				for (var i=0; i<messageBytes.length; i++) {
+					if (messageBytes[i] <= 0xF)
+						hex = hex+"0"+messageBytes[i].toString(16);
+					else
+						hex = hex+messageBytes[i].toString(16);
+				}
+				storedMessage.payloadMessage.payloadHex = hex;
+
+				storedMessage.payloadMessage.qos = wireMessage.payloadMessage.qos;
+				storedMessage.payloadMessage.destinationName = wireMessage.payloadMessage.destinationName;
+				if (wireMessage.payloadMessage.duplicate)
+					storedMessage.payloadMessage.duplicate = true;
+				if (wireMessage.payloadMessage.retained)
+					storedMessage.payloadMessage.retained = true;
+
+				// Add a sequence number to sent messages.
+				if ( prefix.indexOf("Sent:") === 0 ) {
+					if ( wireMessage.sequence === undefined )
+						wireMessage.sequence = ++this._sequence;
+					storedMessage.sequence = wireMessage.sequence;
+				}
+				break;
+
+			default:
+				throw Error(format(ERROR.INVALID_STORED_DATA, [prefix+this._localKey+wireMessage.messageIdentifier, storedMessage]));
+			}
+			localStorage.setItem(prefix+this._localKey+wireMessage.messageIdentifier, JSON.stringify(storedMessage));
+		};
+
+		ClientImpl.prototype.restore = function(key) {
+			var value = localStorage.getItem(key);
+			var storedMessage = JSON.parse(value);
+
+			var wireMessage = new WireMessage(storedMessage.type, storedMessage);
+
+			switch(storedMessage.type) {
+			case MESSAGE_TYPE.PUBLISH:
+				// Replace the payload message with a Message object.
+				var hex = storedMessage.payloadMessage.payloadHex;
+				var buffer = new ArrayBuffer((hex.length)/2);
+				var byteStream = new Uint8Array(buffer);
+				var i = 0;
+				while (hex.length >= 2) {
+					var x = parseInt(hex.substring(0, 2), 16);
+					hex = hex.substring(2, hex.length);
+					byteStream[i++] = x;
+				}
+				var payloadMessage = new Message(byteStream);
+
+				payloadMessage.qos = storedMessage.payloadMessage.qos;
+				payloadMessage.destinationName = storedMessage.payloadMessage.destinationName;
+				if (storedMessage.payloadMessage.duplicate)
+					payloadMessage.duplicate = true;
+				if (storedMessage.payloadMessage.retained)
+					payloadMessage.retained = true;
+				wireMessage.payloadMessage = payloadMessage;
+
+				break;
+
+			default:
+				throw Error(format(ERROR.INVALID_STORED_DATA, [key, value]));
+			}
+
+			if (key.indexOf("Sent:"+this._localKey) === 0) {
+				wireMessage.payloadMessage.duplicate = true;
+				this._sentMessages[wireMessage.messageIdentifier] = wireMessage;
+			} else if (key.indexOf("Received:"+this._localKey) === 0) {
+				this._receivedMessages[wireMessage.messageIdentifier] = wireMessage;
+			}
+		};
+
+		ClientImpl.prototype._process_queue = function () {
+			var message = null;
+
+			// Send all queued messages down socket connection
+			while ((message = this._msg_queue.pop())) {
+				this._socket_send(message);
+				// Notify listeners that message was successfully sent
+				if (this._notify_msg_sent[message]) {
+					this._notify_msg_sent[message]();
+					delete this._notify_msg_sent[message];
+				}
+			}
+		};
+
+		/**
+	 * Expect an ACK response for this message. Add message to the set of in progress
+	 * messages and set an unused identifier in this message.
+	 * @ignore
+	 */
+		ClientImpl.prototype._requires_ack = function (wireMessage) {
+			var messageCount = Object.keys(this._sentMessages).length;
+			if (messageCount > this.maxMessageIdentifier)
+				throw Error ("Too many messages:"+messageCount);
+
+			while(this._sentMessages[this._message_identifier] !== undefined) {
+				this._message_identifier++;
+			}
+			wireMessage.messageIdentifier = this._message_identifier;
+			this._sentMessages[wireMessage.messageIdentifier] = wireMessage;
+			if (wireMessage.type === MESSAGE_TYPE.PUBLISH) {
+				this.store("Sent:", wireMessage);
+			}
+			if (this._message_identifier === this.maxMessageIdentifier) {
+				this._message_identifier = 1;
+			}
+		};
+
+		/**
+	 * Called when the underlying websocket has been opened.
+	 * @ignore
+	 */
+		ClientImpl.prototype._on_socket_open = function () {
+		// Create the CONNECT message object.
+			var wireMessage = new WireMessage(MESSAGE_TYPE.CONNECT, this.connectOptions);
+			wireMessage.clientId = this.clientId;
+			this._socket_send(wireMessage);
+		};
+
+		/**
+	 * Called when the underlying websocket has received a complete packet.
+	 * @ignore
+	 */
+		ClientImpl.prototype._on_socket_message = function (event) {
+			this._trace("Client._on_socket_message", event.data);
+			var messages = this._deframeMessages(event.data);
+			for (var i = 0; i < messages.length; i+=1) {
+				this._handleMessage(messages[i]);
+			}
+		};
+
+		ClientImpl.prototype._deframeMessages = function(data) {
+			var byteArray = new Uint8Array(data);
+			var messages = [];
+			if (this.receiveBuffer) {
+				var newData = new Uint8Array(this.receiveBuffer.length+byteArray.length);
+				newData.set(this.receiveBuffer);
+				newData.set(byteArray,this.receiveBuffer.length);
+				byteArray = newData;
+				delete this.receiveBuffer;
+			}
+			try {
+				var offset = 0;
+				while(offset < byteArray.length) {
+					var result = decodeMessage(byteArray,offset);
+					var wireMessage = result[0];
+					offset = result[1];
+					if (wireMessage !== null) {
+						messages.push(wireMessage);
+					} else {
+						break;
+					}
+				}
+				if (offset < byteArray.length) {
+					this.receiveBuffer = byteArray.subarray(offset);
+				}
+			} catch (error) {
+				var errorStack = ((error.hasOwnProperty("stack") == "undefined") ? error.stack.toString() : "No Error Stack Available");
+				this._disconnected(ERROR.INTERNAL_ERROR.code , format(ERROR.INTERNAL_ERROR, [error.message,errorStack]));
+				return;
+			}
+			return messages;
+		};
+
+		ClientImpl.prototype._handleMessage = function(wireMessage) {
+
+			this._trace("Client._handleMessage", wireMessage);
+
+			try {
+				switch(wireMessage.type) {
+				case MESSAGE_TYPE.CONNACK:
+					this._connectTimeout.cancel();
+					if (this._reconnectTimeout)
+						this._reconnectTimeout.cancel();
+
+					// If we have started using clean session then clear up the local state.
+					if (this.connectOptions.cleanSession) {
+						for (var key in this._sentMessages) {
+							var sentMessage = this._sentMessages[key];
+							localStorage.removeItem("Sent:"+this._localKey+sentMessage.messageIdentifier);
+						}
+						this._sentMessages = {};
+
+						for (var key in this._receivedMessages) {
+							var receivedMessage = this._receivedMessages[key];
+							localStorage.removeItem("Received:"+this._localKey+receivedMessage.messageIdentifier);
+						}
+						this._receivedMessages = {};
+					}
+					// Client connected and ready for business.
+					if (wireMessage.returnCode === 0) {
+
+						this.connected = true;
+						// Jump to the end of the list of uris and stop looking for a good host.
+
+						if (this.connectOptions.uris)
+							this.hostIndex = this.connectOptions.uris.length;
+
+					} else {
+						this._disconnected(ERROR.CONNACK_RETURNCODE.code , format(ERROR.CONNACK_RETURNCODE, [wireMessage.returnCode, CONNACK_RC[wireMessage.returnCode]]));
+						break;
+					}
+
+					// Resend messages.
+					var sequencedMessages = [];
+					for (var msgId in this._sentMessages) {
+						if (this._sentMessages.hasOwnProperty(msgId))
+							sequencedMessages.push(this._sentMessages[msgId]);
+					}
+
+					// Also schedule qos 0 buffered messages if any
+					if (this._buffered_msg_queue.length > 0) {
+						var msg = null;
+						while ((msg = this._buffered_msg_queue.pop())) {
+							sequencedMessages.push(msg);
+							if (this.onMessageDelivered)
+								this._notify_msg_sent[msg] = this.onMessageDelivered(msg.payloadMessage);
+						}
+					}
+
+					// Sort sentMessages into the original sent order.
+					var sequencedMessages = sequencedMessages.sort(function(a,b) {return a.sequence - b.sequence;} );
+					for (var i=0, len=sequencedMessages.length; i<len; i++) {
+						var sentMessage = sequencedMessages[i];
+						if (sentMessage.type == MESSAGE_TYPE.PUBLISH && sentMessage.pubRecReceived) {
+							var pubRelMessage = new WireMessage(MESSAGE_TYPE.PUBREL, {messageIdentifier:sentMessage.messageIdentifier});
+							this._schedule_message(pubRelMessage);
+						} else {
+							this._schedule_message(sentMessage);
+						}
+					}
+
+					// Execute the connectOptions.onSuccess callback if there is one.
+					// Will also now return if this connection was the result of an automatic
+					// reconnect and which URI was successfully connected to.
+					if (this.connectOptions.onSuccess) {
+						this.connectOptions.onSuccess({invocationContext:this.connectOptions.invocationContext});
+					}
+
+					var reconnected = false;
+					if (this._reconnecting) {
+						reconnected = true;
+						this._reconnectInterval = 1;
+						this._reconnecting = false;
+					}
+
+					// Execute the onConnected callback if there is one.
+					this._connected(reconnected, this._wsuri);
+
+					// Process all queued messages now that the connection is established.
+					this._process_queue();
+					break;
+
+				case MESSAGE_TYPE.PUBLISH:
+					this._receivePublish(wireMessage);
+					break;
+
+				case MESSAGE_TYPE.PUBACK:
+					var sentMessage = this._sentMessages[wireMessage.messageIdentifier];
+					// If this is a re flow of a PUBACK after we have restarted receivedMessage will not exist.
+					if (sentMessage) {
+						delete this._sentMessages[wireMessage.messageIdentifier];
+						localStorage.removeItem("Sent:"+this._localKey+wireMessage.messageIdentifier);
+						if (this.onMessageDelivered)
+							this.onMessageDelivered(sentMessage.payloadMessage);
+					}
+					break;
+
+				case MESSAGE_TYPE.PUBREC:
+					var sentMessage = this._sentMessages[wireMessage.messageIdentifier];
+					// If this is a re flow of a PUBREC after we have restarted receivedMessage will not exist.
+					if (sentMessage) {
+						sentMessage.pubRecReceived = true;
+						var pubRelMessage = new WireMessage(MESSAGE_TYPE.PUBREL, {messageIdentifier:wireMessage.messageIdentifier});
+						this.store("Sent:", sentMessage);
+						this._schedule_message(pubRelMessage);
+					}
+					break;
+
+				case MESSAGE_TYPE.PUBREL:
+					var receivedMessage = this._receivedMessages[wireMessage.messageIdentifier];
+					localStorage.removeItem("Received:"+this._localKey+wireMessage.messageIdentifier);
+					// If this is a re flow of a PUBREL after we have restarted receivedMessage will not exist.
+					if (receivedMessage) {
+						this._receiveMessage(receivedMessage);
+						delete this._receivedMessages[wireMessage.messageIdentifier];
+					}
+					// Always flow PubComp, we may have previously flowed PubComp but the server lost it and restarted.
+					var pubCompMessage = new WireMessage(MESSAGE_TYPE.PUBCOMP, {messageIdentifier:wireMessage.messageIdentifier});
+					this._schedule_message(pubCompMessage);
+
+
+					break;
+
+				case MESSAGE_TYPE.PUBCOMP:
+					var sentMessage = this._sentMessages[wireMessage.messageIdentifier];
+					delete this._sentMessages[wireMessage.messageIdentifier];
+					localStorage.removeItem("Sent:"+this._localKey+wireMessage.messageIdentifier);
+					if (this.onMessageDelivered)
+						this.onMessageDelivered(sentMessage.payloadMessage);
+					break;
+
+				case MESSAGE_TYPE.SUBACK:
+					var sentMessage = this._sentMessages[wireMessage.messageIdentifier];
+					if (sentMessage) {
+						if(sentMessage.timeOut)
+							sentMessage.timeOut.cancel();
+						// This will need to be fixed when we add multiple topic support
+						if (wireMessage.returnCode[0] === 0x80) {
+							if (sentMessage.onFailure) {
+								sentMessage.onFailure(wireMessage.returnCode);
+							}
+						} else if (sentMessage.onSuccess) {
+							sentMessage.onSuccess(wireMessage.returnCode);
+						}
+						delete this._sentMessages[wireMessage.messageIdentifier];
+					}
+					break;
+
+				case MESSAGE_TYPE.UNSUBACK:
+					var sentMessage = this._sentMessages[wireMessage.messageIdentifier];
+					if (sentMessage) {
+						if (sentMessage.timeOut)
+							sentMessage.timeOut.cancel();
+						if (sentMessage.callback) {
+							sentMessage.callback();
+						}
+						delete this._sentMessages[wireMessage.messageIdentifier];
+					}
+
+					break;
+
+				case MESSAGE_TYPE.PINGRESP:
+				/* The sendPinger or receivePinger may have sent a ping, the receivePinger has already been reset. */
+					this.sendPinger.reset();
+					break;
+
+				case MESSAGE_TYPE.DISCONNECT:
+				// Clients do not expect to receive disconnect packets.
+					this._disconnected(ERROR.INVALID_MQTT_MESSAGE_TYPE.code , format(ERROR.INVALID_MQTT_MESSAGE_TYPE, [wireMessage.type]));
+					break;
+
+				default:
+					this._disconnected(ERROR.INVALID_MQTT_MESSAGE_TYPE.code , format(ERROR.INVALID_MQTT_MESSAGE_TYPE, [wireMessage.type]));
+				}
+			} catch (error) {
+				var errorStack = ((error.hasOwnProperty("stack") == "undefined") ? error.stack.toString() : "No Error Stack Available");
+				this._disconnected(ERROR.INTERNAL_ERROR.code , format(ERROR.INTERNAL_ERROR, [error.message,errorStack]));
+				return;
+			}
+		};
+
+		/** @ignore */
+		ClientImpl.prototype._on_socket_error = function (error) {
+			if (!this._reconnecting) {
+				this._disconnected(ERROR.SOCKET_ERROR.code , format(ERROR.SOCKET_ERROR, [error.data]));
+			}
+		};
+
+		/** @ignore */
+		ClientImpl.prototype._on_socket_close = function () {
+			if (!this._reconnecting) {
+				this._disconnected(ERROR.SOCKET_CLOSE.code , format(ERROR.SOCKET_CLOSE));
+			}
+		};
+
+		/** @ignore */
+		ClientImpl.prototype._socket_send = function (wireMessage) {
+
+			if (wireMessage.type == 1) {
+				var wireMessageMasked = this._traceMask(wireMessage, "password");
+				this._trace("Client._socket_send", wireMessageMasked);
+			}
+			else this._trace("Client._socket_send", wireMessage);
+
+			this.socket.send(wireMessage.encode());
+			/* We have proved to the server we are alive. */
+			this.sendPinger.reset();
+		};
+
+		/** @ignore */
+		ClientImpl.prototype._receivePublish = function (wireMessage) {
+			switch(wireMessage.payloadMessage.qos) {
+			case "undefined":
+			case 0:
+				this._receiveMessage(wireMessage);
+				break;
+
+			case 1:
+				var pubAckMessage = new WireMessage(MESSAGE_TYPE.PUBACK, {messageIdentifier:wireMessage.messageIdentifier});
+				this._schedule_message(pubAckMessage);
+				this._receiveMessage(wireMessage);
+				break;
+
+			case 2:
+				this._receivedMessages[wireMessage.messageIdentifier] = wireMessage;
+				this.store("Received:", wireMessage);
+				var pubRecMessage = new WireMessage(MESSAGE_TYPE.PUBREC, {messageIdentifier:wireMessage.messageIdentifier});
+				this._schedule_message(pubRecMessage);
+
+				break;
+
+			default:
+				throw Error("Invaild qos=" + wireMessage.payloadMessage.qos);
+			}
+		};
+
+		/** @ignore */
+		ClientImpl.prototype._receiveMessage = function (wireMessage) {
+			if (this.onMessageArrived) {
+				this.onMessageArrived(wireMessage.payloadMessage);
+			}
+		};
+
+		/**
+	 * Client has connected.
+	 * @param {reconnect} [boolean] indicate if this was a result of reconnect operation.
+	 * @param {uri} [string] fully qualified WebSocket URI of the server.
+	 */
+		ClientImpl.prototype._connected = function (reconnect, uri) {
+		// Execute the onConnected callback if there is one.
+			if (this.onConnected)
+				this.onConnected(reconnect, uri);
+		};
+
+		/**
+	 * Attempts to reconnect the client to the server.
+   * For each reconnect attempt, will double the reconnect interval
+   * up to 128 seconds.
+	 */
+		ClientImpl.prototype._reconnect = function () {
+			this._trace("Client._reconnect");
+			if (!this.connected) {
+				this._reconnecting = true;
+				this.sendPinger.cancel();
+				this.receivePinger.cancel();
+				if (this._reconnectInterval < 128)
+					this._reconnectInterval = this._reconnectInterval * 2;
+				if (this.connectOptions.uris) {
+					this.hostIndex = 0;
+					this._doConnect(this.connectOptions.uris[0]);
+				} else {
+					this._doConnect(this.uri);
+				}
+			}
+		};
+
+		/**
+	 * Client has disconnected either at its own request or because the server
+	 * or network disconnected it. Remove all non-durable state.
+	 * @param {errorCode} [number] the error number.
+	 * @param {errorText} [string] the error text.
+	 * @ignore
+	 */
+		ClientImpl.prototype._disconnected = function (errorCode, errorText) {
+			this._trace("Client._disconnected", errorCode, errorText);
+
+			if (errorCode !== undefined && this._reconnecting) {
+				//Continue automatic reconnect process
+				this._reconnectTimeout = new Timeout(this, this._reconnectInterval, this._reconnect);
+				return;
+			}
+
+			this.sendPinger.cancel();
+			this.receivePinger.cancel();
+			if (this._connectTimeout) {
+				this._connectTimeout.cancel();
+				this._connectTimeout = null;
+			}
+
+			// Clear message buffers.
+			this._msg_queue = [];
+			this._buffered_msg_queue = [];
+			this._notify_msg_sent = {};
+
+			if (this.socket) {
+			// Cancel all socket callbacks so that they cannot be driven again by this socket.
+				this.socket.onopen = null;
+				this.socket.onmessage = null;
+				this.socket.onerror = null;
+				this.socket.onclose = null;
+				if (this.socket.readyState === 1)
+					this.socket.close();
+				delete this.socket;
+			}
+
+			if (this.connectOptions.uris && this.hostIndex < this.connectOptions.uris.length-1) {
+			// Try the next host.
+				this.hostIndex++;
+				this._doConnect(this.connectOptions.uris[this.hostIndex]);
+			} else {
+
+				if (errorCode === undefined) {
+					errorCode = ERROR.OK.code;
+					errorText = format(ERROR.OK);
+				}
+
+				// Run any application callbacks last as they may attempt to reconnect and hence create a new socket.
+				if (this.connected) {
+					this.connected = false;
+					// Execute the connectionLostCallback if there is one, and we were connected.
+					if (this.onConnectionLost) {
+						this.onConnectionLost({errorCode:errorCode, errorMessage:errorText, reconnect:this.connectOptions.reconnect, uri:this._wsuri});
+					}
+					if (errorCode !== ERROR.OK.code && this.connectOptions.reconnect) {
+					// Start automatic reconnect process for the very first time since last successful connect.
+						this._reconnectInterval = 1;
+						this._reconnect();
+						return;
+					}
+				} else {
+				// Otherwise we never had a connection, so indicate that the connect has failed.
+					if (this.connectOptions.mqttVersion === 4 && this.connectOptions.mqttVersionExplicit === false) {
+						this._trace("Failed to connect V4, dropping back to V3");
+						this.connectOptions.mqttVersion = 3;
+						if (this.connectOptions.uris) {
+							this.hostIndex = 0;
+							this._doConnect(this.connectOptions.uris[0]);
+						} else {
+							this._doConnect(this.uri);
+						}
+					} else if(this.connectOptions.onFailure) {
+						this.connectOptions.onFailure({invocationContext:this.connectOptions.invocationContext, errorCode:errorCode, errorMessage:errorText});
+					}
+				}
+			}
+		};
+
+		/** @ignore */
+		ClientImpl.prototype._trace = function () {
+		// Pass trace message back to client's callback function
+			if (this.traceFunction) {
+				var args = Array.prototype.slice.call(arguments);
+				for (var i in args)
+				{
+					if (typeof args[i] !== "undefined")
+						args.splice(i, 1, JSON.stringify(args[i]));
+				}
+				var record = args.join("");
+				this.traceFunction ({severity: "Debug", message: record	});
+			}
+
+			//buffer style trace
+			if ( this._traceBuffer !== null ) {
+				for (var i = 0, max = arguments.length; i < max; i++) {
+					if ( this._traceBuffer.length == this._MAX_TRACE_ENTRIES ) {
+						this._traceBuffer.shift();
+					}
+					if (i === 0) this._traceBuffer.push(arguments[i]);
+					else if (typeof arguments[i] === "undefined" ) this._traceBuffer.push(arguments[i]);
+					else this._traceBuffer.push("  "+JSON.stringify(arguments[i]));
+				}
+			}
+		};
+
+		/** @ignore */
+		ClientImpl.prototype._traceMask = function (traceObject, masked) {
+			var traceObjectMasked = {};
+			for (var attr in traceObject) {
+				if (traceObject.hasOwnProperty(attr)) {
+					if (attr == masked)
+						traceObjectMasked[attr] = "******";
+					else
+						traceObjectMasked[attr] = traceObject[attr];
+				}
+			}
+			return traceObjectMasked;
+		};
+
+		// ------------------------------------------------------------------------
+		// Public Programming interface.
+		// ------------------------------------------------------------------------
+
+		/**
+	 * The JavaScript application communicates to the server using a {@link Paho.Client} object.
+	 * <p>
+	 * Most applications will create just one Client object and then call its connect() method,
+	 * however applications can create more than one Client object if they wish.
+	 * In this case the combination of host, port and clientId attributes must be different for each Client object.
+	 * <p>
+	 * The send, subscribe and unsubscribe methods are implemented as asynchronous JavaScript methods
+	 * (even though the underlying protocol exchange might be synchronous in nature).
+	 * This means they signal their completion by calling back to the application,
+	 * via Success or Failure callback functions provided by the application on the method in question.
+	 * Such callbacks are called at most once per method invocation and do not persist beyond the lifetime
+	 * of the script that made the invocation.
+	 * <p>
+	 * In contrast there are some callback functions, most notably <i>onMessageArrived</i>,
+	 * that are defined on the {@link Paho.Client} object.
+	 * These may get called multiple times, and aren't directly related to specific method invocations made by the client.
+	 *
+	 * @name Paho.Client
+	 *
+	 * @constructor
+	 *
+	 * @param {string} host - the address of the messaging server, as a fully qualified WebSocket URI, as a DNS name or dotted decimal IP address.
+	 * @param {number} port - the port number to connect to - only required if host is not a URI
+	 * @param {string} path - the path on the host to connect to - only used if host is not a URI. Default: '/mqtt'.
+	 * @param {string} clientId - the Messaging client identifier, between 1 and 23 characters in length.
+	 *
+	 * @property {string} host - <i>read only</i> the server's DNS hostname or dotted decimal IP address.
+	 * @property {number} port - <i>read only</i> the server's port.
+	 * @property {string} path - <i>read only</i> the server's path.
+	 * @property {string} clientId - <i>read only</i> used when connecting to the server.
+	 * @property {function} onConnectionLost - called when a connection has been lost.
+	 *                            after a connect() method has succeeded.
+	 *                            Establish the call back used when a connection has been lost. The connection may be
+	 *                            lost because the client initiates a disconnect or because the server or network
+	 *                            cause the client to be disconnected. The disconnect call back may be called without
+	 *                            the connectionComplete call back being invoked if, for example the client fails to
+	 *                            connect.
+	 *                            A single response object parameter is passed to the onConnectionLost callback containing the following fields:
+	 *                            <ol>
+	 *                            <li>errorCode
+	 *                            <li>errorMessage
+	 *                            </ol>
+	 * @property {function} onMessageDelivered - called when a message has been delivered.
+	 *                            All processing that this Client will ever do has been completed. So, for example,
+	 *                            in the case of a Qos=2 message sent by this client, the PubComp flow has been received from the server
+	 *                            and the message has been removed from persistent storage before this callback is invoked.
+	 *                            Parameters passed to the onMessageDelivered callback are:
+	 *                            <ol>
+	 *                            <li>{@link Paho.Message} that was delivered.
+	 *                            </ol>
+	 * @property {function} onMessageArrived - called when a message has arrived in this Paho.client.
+	 *                            Parameters passed to the onMessageArrived callback are:
+	 *                            <ol>
+	 *                            <li>{@link Paho.Message} that has arrived.
+	 *                            </ol>
+	 * @property {function} onConnected - called when a connection is successfully made to the server.
+	 *                                  after a connect() method.
+	 *                                  Parameters passed to the onConnected callback are:
+	 *                                  <ol>
+	 *                                  <li>reconnect (boolean) - If true, the connection was the result of a reconnect.</li>
+	 *                                  <li>URI (string) - The URI used to connect to the server.</li>
+	 *                                  </ol>
+	 * @property {boolean} disconnectedPublishing - if set, will enable disconnected publishing in
+	 *                                            in the event that the connection to the server is lost.
+	 * @property {number} disconnectedBufferSize - Used to set the maximum number of messages that the disconnected
+	 *                                             buffer will hold before rejecting new messages. Default size: 5000 messages
+	 * @property {function} trace - called whenever trace is called. TODO
+	 */
+		var Client = function (host, port, path, clientId) {
+
+			var uri;
+
+			if (typeof host !== "string")
+				throw new Error(format(ERROR.INVALID_TYPE, [typeof host, "host"]));
+
+			if (arguments.length == 2) {
+			// host: must be full ws:// uri
+			// port: clientId
+				clientId = port;
+				uri = host;
+				var match = uri.match(/^(wss?):\/\/((\[(.+)\])|([^\/]+?))(:(\d+))?(\/.*)$/);
+				if (match) {
+					host = match[4]||match[2];
+					port = parseInt(match[7]);
+					path = match[8];
+				} else {
+					throw new Error(format(ERROR.INVALID_ARGUMENT,[host,"host"]));
+				}
+			} else {
+				if (arguments.length == 3) {
+					clientId = path;
+					path = "/mqtt";
+				}
+				if (typeof port !== "number" || port < 0)
+					throw new Error(format(ERROR.INVALID_TYPE, [typeof port, "port"]));
+				if (typeof path !== "string")
+					throw new Error(format(ERROR.INVALID_TYPE, [typeof path, "path"]));
+
+				var ipv6AddSBracket = (host.indexOf(":") !== -1 && host.slice(0,1) !== "[" && host.slice(-1) !== "]");
+				uri = "ws://"+(ipv6AddSBracket?"["+host+"]":host)+":"+port+path;
+			}
+
+			var clientIdLength = 0;
+			for (var i = 0; i<clientId.length; i++) {
+				var charCode = clientId.charCodeAt(i);
+				if (0xD800 <= charCode && charCode <= 0xDBFF)  {
+					i++; // Surrogate pair.
+				}
+				clientIdLength++;
+			}
+			if (typeof clientId !== "string" || clientIdLength > 65535)
+				throw new Error(format(ERROR.INVALID_ARGUMENT, [clientId, "clientId"]));
+
+			var client = new ClientImpl(uri, host, port, path, clientId);
+
+			//Public Properties
+			Object.defineProperties(this,{
+				"host":{
+					get: function() { return host; },
+					set: function() { throw new Error(format(ERROR.UNSUPPORTED_OPERATION)); }
+				},
+				"port":{
+					get: function() { return port; },
+					set: function() { throw new Error(format(ERROR.UNSUPPORTED_OPERATION)); }
+				},
+				"path":{
+					get: function() { return path; },
+					set: function() { throw new Error(format(ERROR.UNSUPPORTED_OPERATION)); }
+				},
+				"uri":{
+					get: function() { return uri; },
+					set: function() { throw new Error(format(ERROR.UNSUPPORTED_OPERATION)); }
+				},
+				"clientId":{
+					get: function() { return client.clientId; },
+					set: function() { throw new Error(format(ERROR.UNSUPPORTED_OPERATION)); }
+				},
+				"onConnected":{
+					get: function() { return client.onConnected; },
+					set: function(newOnConnected) {
+						if (typeof newOnConnected === "function")
+							client.onConnected = newOnConnected;
+						else
+							throw new Error(format(ERROR.INVALID_TYPE, [typeof newOnConnected, "onConnected"]));
+					}
+				},
+				"disconnectedPublishing":{
+					get: function() { return client.disconnectedPublishing; },
+					set: function(newDisconnectedPublishing) {
+						client.disconnectedPublishing = newDisconnectedPublishing;
+					}
+				},
+				"disconnectedBufferSize":{
+					get: function() { return client.disconnectedBufferSize; },
+					set: function(newDisconnectedBufferSize) {
+						client.disconnectedBufferSize = newDisconnectedBufferSize;
+					}
+				},
+				"onConnectionLost":{
+					get: function() { return client.onConnectionLost; },
+					set: function(newOnConnectionLost) {
+						if (typeof newOnConnectionLost === "function")
+							client.onConnectionLost = newOnConnectionLost;
+						else
+							throw new Error(format(ERROR.INVALID_TYPE, [typeof newOnConnectionLost, "onConnectionLost"]));
+					}
+				},
+				"onMessageDelivered":{
+					get: function() { return client.onMessageDelivered; },
+					set: function(newOnMessageDelivered) {
+						if (typeof newOnMessageDelivered === "function")
+							client.onMessageDelivered = newOnMessageDelivered;
+						else
+							throw new Error(format(ERROR.INVALID_TYPE, [typeof newOnMessageDelivered, "onMessageDelivered"]));
+					}
+				},
+				"onMessageArrived":{
+					get: function() { return client.onMessageArrived; },
+					set: function(newOnMessageArrived) {
+						if (typeof newOnMessageArrived === "function")
+							client.onMessageArrived = newOnMessageArrived;
+						else
+							throw new Error(format(ERROR.INVALID_TYPE, [typeof newOnMessageArrived, "onMessageArrived"]));
+					}
+				},
+				"trace":{
+					get: function() { return client.traceFunction; },
+					set: function(trace) {
+						if(typeof trace === "function"){
+							client.traceFunction = trace;
+						}else{
+							throw new Error(format(ERROR.INVALID_TYPE, [typeof trace, "onTrace"]));
+						}
+					}
+				},
+			});
+
+			/**
+		 * Connect this Messaging client to its server.
+		 *
+		 * @name Paho.Client#connect
+		 * @function
+		 * @param {object} connectOptions - Attributes used with the connection.
+		 * @param {number} connectOptions.timeout - If the connect has not succeeded within this
+		 *                    number of seconds, it is deemed to have failed.
+		 *                    The default is 30 seconds.
+		 * @param {string} connectOptions.userName - Authentication username for this connection.
+		 * @param {string} connectOptions.password - Authentication password for this connection.
+		 * @param {Paho.Message} connectOptions.willMessage - sent by the server when the client
+		 *                    disconnects abnormally.
+		 * @param {number} connectOptions.keepAliveInterval - the server disconnects this client if
+		 *                    there is no activity for this number of seconds.
+		 *                    The default value of 60 seconds is assumed if not set.
+		 * @param {boolean} connectOptions.cleanSession - if true(default) the client and server
+		 *                    persistent state is deleted on successful connect.
+		 * @param {boolean} connectOptions.useSSL - if present and true, use an SSL Websocket connection.
+		 * @param {object} connectOptions.invocationContext - passed to the onSuccess callback or onFailure callback.
+		 * @param {function} connectOptions.onSuccess - called when the connect acknowledgement
+		 *                    has been received from the server.
+		 * A single response object parameter is passed to the onSuccess callback containing the following fields:
+		 * <ol>
+		 * <li>invocationContext as passed in to the onSuccess method in the connectOptions.
+		 * </ol>
+	 * @param {function} connectOptions.onFailure - called when the connect request has failed or timed out.
+		 * A single response object parameter is passed to the onFailure callback containing the following fields:
+		 * <ol>
+		 * <li>invocationContext as passed in to the onFailure method in the connectOptions.
+		 * <li>errorCode a number indicating the nature of the error.
+		 * <li>errorMessage text describing the error.
+		 * </ol>
+	 * @param {array} connectOptions.hosts - If present this contains either a set of hostnames or fully qualified
+		 * WebSocket URIs (ws://iot.eclipse.org:80/ws), that are tried in order in place
+		 * of the host and port paramater on the construtor. The hosts are tried one at at time in order until
+		 * one of then succeeds.
+	 * @param {array} connectOptions.ports - If present the set of ports matching the hosts. If hosts contains URIs, this property
+		 * is not used.
+	 * @param {boolean} connectOptions.reconnect - Sets whether the client will automatically attempt to reconnect
+	 * to the server if the connection is lost.
+	 *<ul>
+	 *<li>If set to false, the client will not attempt to automatically reconnect to the server in the event that the
+	 * connection is lost.</li>
+	 *<li>If set to true, in the event that the connection is lost, the client will attempt to reconnect to the server.
+	 * It will initially wait 1 second before it attempts to reconnect, for every failed reconnect attempt, the delay
+	 * will double until it is at 2 minutes at which point the delay will stay at 2 minutes.</li>
+	 *</ul>
+	 * @param {number} connectOptions.mqttVersion - The version of MQTT to use to connect to the MQTT Broker.
+	 *<ul>
+	 *<li>3 - MQTT V3.1</li>
+	 *<li>4 - MQTT V3.1.1</li>
+	 *</ul>
+	 * @param {boolean} connectOptions.mqttVersionExplicit - If set to true, will force the connection to use the
+	 * selected MQTT Version or will fail to connect.
+	 * @param {array} connectOptions.uris - If present, should contain a list of fully qualified WebSocket uris
+	 * (e.g. ws://iot.eclipse.org:80/ws), that are tried in order in place of the host and port parameter of the construtor.
+	 * The uris are tried one at a time in order until one of them succeeds. Do not use this in conjunction with hosts as
+	 * the hosts array will be converted to uris and will overwrite this property.
+		 * @throws {InvalidState} If the client is not in disconnected state. The client must have received connectionLost
+		 * or disconnected before calling connect for a second or subsequent time.
+		 */
+			this.connect = function (connectOptions) {
+				connectOptions = connectOptions || {} ;
+				validate(connectOptions,  {timeout:"number",
+					userName:"string",
+					password:"string",
+					willMessage:"object",
+					keepAliveInterval:"number",
+					cleanSession:"boolean",
+					useSSL:"boolean",
+					invocationContext:"object",
+					onSuccess:"function",
+					onFailure:"function",
+					hosts:"object",
+					ports:"object",
+					reconnect:"boolean",
+					mqttVersion:"number",
+					mqttVersionExplicit:"boolean",
+					uris: "object"});
+
+				// If no keep alive interval is set, assume 60 seconds.
+				if (connectOptions.keepAliveInterval === undefined)
+					connectOptions.keepAliveInterval = 60;
+
+				if (connectOptions.mqttVersion > 4 || connectOptions.mqttVersion < 3) {
+					throw new Error(format(ERROR.INVALID_ARGUMENT, [connectOptions.mqttVersion, "connectOptions.mqttVersion"]));
+				}
+
+				if (connectOptions.mqttVersion === undefined) {
+					connectOptions.mqttVersionExplicit = false;
+					connectOptions.mqttVersion = 4;
+				} else {
+					connectOptions.mqttVersionExplicit = true;
+				}
+
+				//Check that if password is set, so is username
+				if (connectOptions.password !== undefined && connectOptions.userName === undefined)
+					throw new Error(format(ERROR.INVALID_ARGUMENT, [connectOptions.password, "connectOptions.password"]));
+
+				if (connectOptions.willMessage) {
+					if (!(connectOptions.willMessage instanceof Message))
+						throw new Error(format(ERROR.INVALID_TYPE, [connectOptions.willMessage, "connectOptions.willMessage"]));
+					// The will message must have a payload that can be represented as a string.
+					// Cause the willMessage to throw an exception if this is not the case.
+					connectOptions.willMessage.stringPayload = null;
+
+					if (typeof connectOptions.willMessage.destinationName === "undefined")
+						throw new Error(format(ERROR.INVALID_TYPE, [typeof connectOptions.willMessage.destinationName, "connectOptions.willMessage.destinationName"]));
+				}
+				if (typeof connectOptions.cleanSession === "undefined")
+					connectOptions.cleanSession = true;
+				if (connectOptions.hosts) {
+
+					if (!(connectOptions.hosts instanceof Array) )
+						throw new Error(format(ERROR.INVALID_ARGUMENT, [connectOptions.hosts, "connectOptions.hosts"]));
+					if (connectOptions.hosts.length <1 )
+						throw new Error(format(ERROR.INVALID_ARGUMENT, [connectOptions.hosts, "connectOptions.hosts"]));
+
+					var usingURIs = false;
+					for (var i = 0; i<connectOptions.hosts.length; i++) {
+						if (typeof connectOptions.hosts[i] !== "string")
+							throw new Error(format(ERROR.INVALID_TYPE, [typeof connectOptions.hosts[i], "connectOptions.hosts["+i+"]"]));
+						if (/^(wss?):\/\/((\[(.+)\])|([^\/]+?))(:(\d+))?(\/.*)$/.test(connectOptions.hosts[i])) {
+							if (i === 0) {
+								usingURIs = true;
+							} else if (!usingURIs) {
+								throw new Error(format(ERROR.INVALID_ARGUMENT, [connectOptions.hosts[i], "connectOptions.hosts["+i+"]"]));
+							}
+						} else if (usingURIs) {
+							throw new Error(format(ERROR.INVALID_ARGUMENT, [connectOptions.hosts[i], "connectOptions.hosts["+i+"]"]));
+						}
+					}
+
+					if (!usingURIs) {
+						if (!connectOptions.ports)
+							throw new Error(format(ERROR.INVALID_ARGUMENT, [connectOptions.ports, "connectOptions.ports"]));
+						if (!(connectOptions.ports instanceof Array) )
+							throw new Error(format(ERROR.INVALID_ARGUMENT, [connectOptions.ports, "connectOptions.ports"]));
+						if (connectOptions.hosts.length !== connectOptions.ports.length)
+							throw new Error(format(ERROR.INVALID_ARGUMENT, [connectOptions.ports, "connectOptions.ports"]));
+
+						connectOptions.uris = [];
+
+						for (var i = 0; i<connectOptions.hosts.length; i++) {
+							if (typeof connectOptions.ports[i] !== "number" || connectOptions.ports[i] < 0)
+								throw new Error(format(ERROR.INVALID_TYPE, [typeof connectOptions.ports[i], "connectOptions.ports["+i+"]"]));
+							var host = connectOptions.hosts[i];
+							var port = connectOptions.ports[i];
+
+							var ipv6 = (host.indexOf(":") !== -1);
+							uri = "ws://"+(ipv6?"["+host+"]":host)+":"+port+path;
+							connectOptions.uris.push(uri);
+						}
+					} else {
+						connectOptions.uris = connectOptions.hosts;
+					}
+				}
+
+				client.connect(connectOptions);
+			};
+
+			/**
+		 * Subscribe for messages, request receipt of a copy of messages sent to the destinations described by the filter.
+		 *
+		 * @name Paho.Client#subscribe
+		 * @function
+		 * @param {string} filter describing the destinations to receive messages from.
+		 * <br>
+		 * @param {object} subscribeOptions - used to control the subscription
+		 *
+		 * @param {number} subscribeOptions.qos - the maximum qos of any publications sent
+		 *                                  as a result of making this subscription.
+		 * @param {object} subscribeOptions.invocationContext - passed to the onSuccess callback
+		 *                                  or onFailure callback.
+		 * @param {function} subscribeOptions.onSuccess - called when the subscribe acknowledgement
+		 *                                  has been received from the server.
+		 *                                  A single response object parameter is passed to the onSuccess callback containing the following fields:
+		 *                                  <ol>
+		 *                                  <li>invocationContext if set in the subscribeOptions.
+		 *                                  </ol>
+		 * @param {function} subscribeOptions.onFailure - called when the subscribe request has failed or timed out.
+		 *                                  A single response object parameter is passed to the onFailure callback containing the following fields:
+		 *                                  <ol>
+		 *                                  <li>invocationContext - if set in the subscribeOptions.
+		 *                                  <li>errorCode - a number indicating the nature of the error.
+		 *                                  <li>errorMessage - text describing the error.
+		 *                                  </ol>
+		 * @param {number} subscribeOptions.timeout - which, if present, determines the number of
+		 *                                  seconds after which the onFailure calback is called.
+		 *                                  The presence of a timeout does not prevent the onSuccess
+		 *                                  callback from being called when the subscribe completes.
+		 * @throws {InvalidState} if the client is not in connected state.
+		 */
+			this.subscribe = function (filter, subscribeOptions) {
+				if (typeof filter !== "string" && filter.constructor !== Array)
+					throw new Error("Invalid argument:"+filter);
+				subscribeOptions = subscribeOptions || {} ;
+				validate(subscribeOptions,  {qos:"number",
+					invocationContext:"object",
+					onSuccess:"function",
+					onFailure:"function",
+					timeout:"number"
+				});
+				if (subscribeOptions.timeout && !subscribeOptions.onFailure)
+					throw new Error("subscribeOptions.timeout specified with no onFailure callback.");
+				if (typeof subscribeOptions.qos !== "undefined" && !(subscribeOptions.qos === 0 || subscribeOptions.qos === 1 || subscribeOptions.qos === 2 ))
+					throw new Error(format(ERROR.INVALID_ARGUMENT, [subscribeOptions.qos, "subscribeOptions.qos"]));
+				client.subscribe(filter, subscribeOptions);
+			};
+
+		/**
+		 * Unsubscribe for messages, stop receiving messages sent to destinations described by the filter.
+		 *
+		 * @name Paho.Client#unsubscribe
+		 * @function
+		 * @param {string} filter - describing the destinations to receive messages from.
+		 * @param {object} unsubscribeOptions - used to control the subscription
+		 * @param {object} unsubscribeOptions.invocationContext - passed to the onSuccess callback
+											  or onFailure callback.
+		 * @param {function} unsubscribeOptions.onSuccess - called when the unsubscribe acknowledgement has been received from the server.
+		 *                                    A single response object parameter is passed to the
+		 *                                    onSuccess callback containing the following fields:
+		 *                                    <ol>
+		 *                                    <li>invocationContext - if set in the unsubscribeOptions.
+		 *                                    </ol>
+		 * @param {function} unsubscribeOptions.onFailure called when the unsubscribe request has failed or timed out.
+		 *                                    A single response object parameter is passed to the onFailure callback containing the following fields:
+		 *                                    <ol>
+		 *                                    <li>invocationContext - if set in the unsubscribeOptions.
+		 *                                    <li>errorCode - a number indicating the nature of the error.
+		 *                                    <li>errorMessage - text describing the error.
+		 *                                    </ol>
+		 * @param {number} unsubscribeOptions.timeout - which, if present, determines the number of seconds
+		 *                                    after which the onFailure callback is called. The presence of
+		 *                                    a timeout does not prevent the onSuccess callback from being
+		 *                                    called when the unsubscribe completes
+		 * @throws {InvalidState} if the client is not in connected state.
+		 */
+			this.unsubscribe = function (filter, unsubscribeOptions) {
+				if (typeof filter !== "string" && filter.constructor !== Array)
+					throw new Error("Invalid argument:"+filter);
+				unsubscribeOptions = unsubscribeOptions || {} ;
+				validate(unsubscribeOptions,  {invocationContext:"object",
+					onSuccess:"function",
+					onFailure:"function",
+					timeout:"number"
+				});
+				if (unsubscribeOptions.timeout && !unsubscribeOptions.onFailure)
+					throw new Error("unsubscribeOptions.timeout specified with no onFailure callback.");
+				client.unsubscribe(filter, unsubscribeOptions);
+			};
+
+			/**
+		 * Send a message to the consumers of the destination in the Message.
+		 *
+		 * @name Paho.Client#send
+		 * @function
+		 * @param {string|Paho.Message} topic - <b>mandatory</b> The name of the destination to which the message is to be sent.
+		 * 					   - If it is the only parameter, used as Paho.Message object.
+		 * @param {String|ArrayBuffer} payload - The message data to be sent.
+		 * @param {number} qos The Quality of Service used to deliver the message.
+		 * 		<dl>
+		 * 			<dt>0 Best effort (default).
+		 *     			<dt>1 At least once.
+		 *     			<dt>2 Exactly once.
+		 * 		</dl>
+		 * @param {Boolean} retained If true, the message is to be retained by the server and delivered
+		 *                     to both current and future subscriptions.
+		 *                     If false the server only delivers the message to current subscribers, this is the default for new Messages.
+		 *                     A received message has the retained boolean set to true if the message was published
+		 *                     with the retained boolean set to true
+		 *                     and the subscrption was made after the message has been published.
+		 * @throws {InvalidState} if the client is not connected.
+		 */
+			this.send = function (topic,payload,qos,retained) {
+				var message ;
+
+				if(arguments.length === 0){
+					throw new Error("Invalid argument."+"length");
+
+				}else if(arguments.length == 1) {
+
+					if (!(topic instanceof Message) && (typeof topic !== "string"))
+						throw new Error("Invalid argument:"+ typeof topic);
+
+					message = topic;
+					if (typeof message.destinationName === "undefined")
+						throw new Error(format(ERROR.INVALID_ARGUMENT,[message.destinationName,"Message.destinationName"]));
+					client.send(message);
+
+				}else {
+				//parameter checking in Message object
+					message = new Message(payload);
+					message.destinationName = topic;
+					if(arguments.length >= 3)
+						message.qos = qos;
+					if(arguments.length >= 4)
+						message.retained = retained;
+					client.send(message);
+				}
+			};
+
+			/**
+		 * Publish a message to the consumers of the destination in the Message.
+		 * Synonym for Paho.Mqtt.Client#send
+		 *
+		 * @name Paho.Client#publish
+		 * @function
+		 * @param {string|Paho.Message} topic - <b>mandatory</b> The name of the topic to which the message is to be published.
+		 * 					   - If it is the only parameter, used as Paho.Message object.
+		 * @param {String|ArrayBuffer} payload - The message data to be published.
+		 * @param {number} qos The Quality of Service used to deliver the message.
+		 * 		<dl>
+		 * 			<dt>0 Best effort (default).
+		 *     			<dt>1 At least once.
+		 *     			<dt>2 Exactly once.
+		 * 		</dl>
+		 * @param {Boolean} retained If true, the message is to be retained by the server and delivered
+		 *                     to both current and future subscriptions.
+		 *                     If false the server only delivers the message to current subscribers, this is the default for new Messages.
+		 *                     A received message has the retained boolean set to true if the message was published
+		 *                     with the retained boolean set to true
+		 *                     and the subscrption was made after the message has been published.
+		 * @throws {InvalidState} if the client is not connected.
+		 */
+			this.publish = function(topic,payload,qos,retained) {
+				var message ;
+
+				if(arguments.length === 0){
+					throw new Error("Invalid argument."+"length");
+
+				}else if(arguments.length == 1) {
+
+					if (!(topic instanceof Message) && (typeof topic !== "string"))
+						throw new Error("Invalid argument:"+ typeof topic);
+
+					message = topic;
+					if (typeof message.destinationName === "undefined")
+						throw new Error(format(ERROR.INVALID_ARGUMENT,[message.destinationName,"Message.destinationName"]));
+					client.send(message);
+
+				}else {
+					//parameter checking in Message object
+					message = new Message(payload);
+					message.destinationName = topic;
+					if(arguments.length >= 3)
+						message.qos = qos;
+					if(arguments.length >= 4)
+						message.retained = retained;
+					client.send(message);
+				}
+			};
+
+			/**
+		 * Normal disconnect of this Messaging client from its server.
+		 *
+		 * @name Paho.Client#disconnect
+		 * @function
+		 * @throws {InvalidState} if the client is already disconnected.
+		 */
+			this.disconnect = function () {
+				client.disconnect();
+			};
+
+			/**
+		 * Get the contents of the trace log.
+		 *
+		 * @name Paho.Client#getTraceLog
+		 * @function
+		 * @return {Object[]} tracebuffer containing the time ordered trace records.
+		 */
+			this.getTraceLog = function () {
+				return client.getTraceLog();
+			};
+
+			/**
+		 * Start tracing.
+		 *
+		 * @name Paho.Client#startTrace
+		 * @function
+		 */
+			this.startTrace = function () {
+				client.startTrace();
+			};
+
+			/**
+		 * Stop tracing.
+		 *
+		 * @name Paho.Client#stopTrace
+		 * @function
+		 */
+			this.stopTrace = function () {
+				client.stopTrace();
+			};
+
+			this.isConnected = function() {
+				return client.connected;
+			};
+		};
+
+		/**
+	 * An application message, sent or received.
+	 * <p>
+	 * All attributes may be null, which implies the default values.
+	 *
+	 * @name Paho.Message
+	 * @constructor
+	 * @param {String|ArrayBuffer} payload The message data to be sent.
+	 * <p>
+	 * @property {string} payloadString <i>read only</i> The payload as a string if the payload consists of valid UTF-8 characters.
+	 * @property {ArrayBuffer} payloadBytes <i>read only</i> The payload as an ArrayBuffer.
+	 * <p>
+	 * @property {string} destinationName <b>mandatory</b> The name of the destination to which the message is to be sent
+	 *                    (for messages about to be sent) or the name of the destination from which the message has been received.
+	 *                    (for messages received by the onMessage function).
+	 * <p>
+	 * @property {number} qos The Quality of Service used to deliver the message.
+	 * <dl>
+	 *     <dt>0 Best effort (default).
+	 *     <dt>1 At least once.
+	 *     <dt>2 Exactly once.
+	 * </dl>
+	 * <p>
+	 * @property {Boolean} retained If true, the message is to be retained by the server and delivered
+	 *                     to both current and future subscriptions.
+	 *                     If false the server only delivers the message to current subscribers, this is the default for new Messages.
+	 *                     A received message has the retained boolean set to true if the message was published
+	 *                     with the retained boolean set to true
+	 *                     and the subscrption was made after the message has been published.
+	 * <p>
+	 * @property {Boolean} duplicate <i>read only</i> If true, this message might be a duplicate of one which has already been received.
+	 *                     This is only set on messages received from the server.
+	 *
+	 */
+		var Message = function (newPayload) {
+			var payload;
+			if (   typeof newPayload === "string" ||
+		newPayload instanceof ArrayBuffer ||
+		(ArrayBuffer.isView(newPayload) && !(newPayload instanceof DataView))
+			) {
+				payload = newPayload;
+			} else {
+				throw (format(ERROR.INVALID_ARGUMENT, [newPayload, "newPayload"]));
+			}
+
+			var destinationName;
+			var qos = 0;
+			var retained = false;
+			var duplicate = false;
+
+			Object.defineProperties(this,{
+				"payloadString":{
+					enumerable : true,
+					get : function () {
+						if (typeof payload === "string")
+							return payload;
+						else
+							return parseUTF8(payload, 0, payload.length);
+					}
+				},
+				"payloadBytes":{
+					enumerable: true,
+					get: function() {
+						if (typeof payload === "string") {
+							var buffer = new ArrayBuffer(UTF8Length(payload));
+							var byteStream = new Uint8Array(buffer);
+							stringToUTF8(payload, byteStream, 0);
+
+							return byteStream;
+						} else {
+							return payload;
+						}
+					}
+				},
+				"destinationName":{
+					enumerable: true,
+					get: function() { return destinationName; },
+					set: function(newDestinationName) {
+						if (typeof newDestinationName === "string")
+							destinationName = newDestinationName;
+						else
+							throw new Error(format(ERROR.INVALID_ARGUMENT, [newDestinationName, "newDestinationName"]));
+					}
+				},
+				"qos":{
+					enumerable: true,
+					get: function() { return qos; },
+					set: function(newQos) {
+						if (newQos === 0 || newQos === 1 || newQos === 2 )
+							qos = newQos;
+						else
+							throw new Error("Invalid argument:"+newQos);
+					}
+				},
+				"retained":{
+					enumerable: true,
+					get: function() { return retained; },
+					set: function(newRetained) {
+						if (typeof newRetained === "boolean")
+							retained = newRetained;
+						else
+							throw new Error(format(ERROR.INVALID_ARGUMENT, [newRetained, "newRetained"]));
+					}
+				},
+				"topic":{
+					enumerable: true,
+					get: function() { return destinationName; },
+					set: function(newTopic) {destinationName=newTopic;}
+				},
+				"duplicate":{
+					enumerable: true,
+					get: function() { return duplicate; },
+					set: function(newDuplicate) {duplicate=newDuplicate;}
+				}
+			});
+		};
+
+		// Module contents.
+		return {
+			Client: Client,
+			Message: Message
+		};
+	// eslint-disable-next-line no-nested-ternary
+	})(typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {});
+	return PahoMQTT;
+});
+
+/* v0.57.0适配器：官方源root.Paho={Client,Message}，HX.mqtt调Paho.MQTT.Client，包一层对齐（既有代码零改动） */
+try { var _p = window.Paho || (typeof Paho !== 'undefined' ? Paho : null); if (_p && !_p.MQTT) { window.Paho = { MQTT: _p }; } } catch (ePA) {}
