@@ -2,6 +2,7 @@
 <!--
   红小涛的学习园地 · 套装主界面
   修改记录:
+    v1.38.0 2026-10-21（t94单体资料找回·喂回刀，洪老师令「都捞回来马上完成」；接班实锤手机localStorage四家单体资料被清：习题banks=空壳/工坊/笔记/书库全null，云仓09-06备份+notes-backup 08-12提取件已回补主账房13件字节全验；刀法=开门45秒资料回填哨HX.refill：6键空判定命中才从仓根三腿（网页GH→管家GH→坚果云）取回填入，有值一律不动，JSON坏不填，全败静默记黑匣子，成功常驻黑框报喜，总开关hx_refill_off=1；SPEC_index_v1.38.0_资料回填哨，DS实现（漏交顶部版本史记账1笔Kimi亲手补），装件链/查新/版面/其余一行未动）
     v1.37.0 2026-10-21（R1闭环刀2，真机检验套件第1件，冻结令唯一开工件；黑匣子实锤v0.55.0装不上=网页腿全卡：X5联网弱+坚果云CORS拦死+GitHub偶断，而管家HxPostService原生通道一直在岗装件路却从没用过；刀A/B=两条取件母本各加管家腿×2成五腿+首轮全败歇20秒补一轮；SPEC_index_v1.37.0，DS实现+Kimi终审落地；其余一行未动）
     v1.36.0 2026-10-20晚班（t83，洪老师真机口供「红点点装按10次也没用+顶部说套装已经安好」云侧实锤：红点onclick只reload走🔍检查链，而检查链只查SUITE九件、hx-common不在名单→永远装不上→红点永在死循环；本机hx-common v0.51.0 vs 仓牌0.52.0）：刀1=relList红件onclick在anyStale判定后加hx-common专装通道（本机版vs仓牌stale则_mgGetM三腿拉件+sig校验→LearnShell.writeFile写壳→黑匣子记成败+人话提示关套装重开；不stale照旧走老reload一字未动）；刀2=CUR.index升1.36.0；SPEC_index_v1.36.0_点装公共件，DS实现零编造（1处拿不准_mgGetM同步/异步如实标注）+Kimi终审翻案1处=外层catch不应拦截正常reload（改静默只内层报红）；红线=除刀1插入段+CUR.index一行+本条外全文件IDENTICAL，_mgGetM/hxMd5_16M全局顶层函数只调不改。
     v1.35.0 2026-10-20（t76，洪老师真机报案「自动检查更新安装经常报错四遍三遍错特别是首页」：Kimi云侧查实=非网络非偶然，纯代码事故——t75补登CUR.index="1.34.0"插到1.33.0行之前被盖回，最终值停1.33.0→红点永不消/装件链反复装/侦察兵取最后一条不跳三保险全废，v1.19.7盖回事故重演；刀1=CUR行1.34.0挪到1.33.0之后+追加1.35.0；新流程闸=发版前必断言「文件最后一条CUR.index赋值==本版号」；其余一行未动）
@@ -634,6 +635,7 @@ CUR.index="1.34.0"; /* v1.34.0 自检报告点行看明细配套，见顶部修�
 CUR.index="1.35.0"; /* v1.35.0 t76 CUR行错位扶正（1.34.0行原插在1.33.0行之前被盖回，真机红点永不消+反复装），见顶部修改记录 */
 CUR.index="1.36.0"; /* v1.36.0 t83点装公共件通道，见顶部修改记录 */
   CUR.index="1.37.0"; /* v1.37.0 R1装件管家腿+二轮重试，见顶部修改记录 */
+CUR.index="1.38.0"; /* v1.38.0 2026-10-21 t94资料回填哨，见顶部修改记录 */
 CUR.tuomin="0"; /* v1.19.10修404：CUR=壳内已装版本，单体手机还没装必须填"0"才会下载（CUR.ppt同款老坑，见230行） */ /* v1.19.8（2026-09-20班⑮，洪老师真机报"升级说装成功主界面还是19.6，几次都这样，没重启应该直接变19.7"）病根=班⑮发v1.19.7时新赋值插在同一行旧赋值前面，CUR.index="1.19.7"刚赋上就被同行的CUR.index="1.19.6"盖回→页脚活字永远亮1.19.6（文件真身早是新版，升级链/壳全无辜，大管家0.54.5上机为证）；还连带v1.19.5刀2开门自校对误把账本1.19.7当谎回滚→每次都提示重装。治=删同行可执行旧赋值（注释留档）+升号v1.19.8让真机重新下载。其余一行未动 */
 try{document.getElementById("ftVer").textContent=CUR.index;}catch(eF){} /* v1.19.6 页脚死字改活字：ftVer亮CUR.index真身 */
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
@@ -2967,6 +2969,105 @@ try{
      改 HX.sj.init({app:'主界面'})（见上方 hxCommonLoad 的 onHxReady 回调；UI由HX.sj自动注入，行为一字未改）。
      HX不在时浮标不出=静默降级，主功能照常（军规1）。 -->
 <script>
+/* ===== 资料回填哨 v1.38.0（t94·单体资料找回·喂回刀）纯加法 IIFE ===== */
+(function(){
+  var OFF='hx_refill_off';
+  var MAP=[
+    {k:'xitixuexi_v01',     f:'hxdata_xitixuexi_v01.json',     n:'题集'},
+    {k:'ppt_gongfang_v01',  f:'hxdata_ppt_gongfang_v01.json',  n:'工坊'},
+    {k:'study_notes_v1',    f:'hxdata_study_notes_v1.json',    n:'笔记'},
+    {k:'study_books_v1',    f:'hxdata_study_books_v1.json',    n:'书库'},
+    {k:'bijiben_booklib_v1',f:'hxdata_bijiben_booklib_v1.json',n:'书架'},
+    {k:'bijiben_lit_v1',    f:'hxdata_bijiben_lit_v1.json',    n:'文献'}
+  ];
+  function bb(lv,msg){ try{ if(window.HX&&HX.bb&&HX.bb.log) HX.bb.log(lv,msg); }catch(e){} }
+  function isEmpty(k){
+    var raw=null; try{ raw=localStorage.getItem(k); }catch(e){ return true; }
+    if(raw===null||raw===''||raw==='null'||raw==='undefined') return true;
+    var v=null; try{ v=JSON.parse(raw); }catch(e){ return false; } /* 非JSON但有字=有值不动 */
+    if(v===null||v===undefined) return true;
+    if(k==='xitixuexi_v01'){ return !(v&&v.banks&&v.banks.length); }
+    if(k==='ppt_gongfang_v01'){ return !(v&&v.projects&&v.projects.length); }
+    if(Object.prototype.toString.call(v)==='[object Array]'){ return v.length===0; }
+    return false;
+  }
+  function legGh(name){
+    var c=ghCfg();
+    var u='https://api.github.com/repos/'+encodeURIComponent(c.user)+'/'+encodeURIComponent(c.repo)+'/contents/'+encodeURIComponent(name)+'?t='+Date.now();
+    return ghFetch(u,{headers:ghHeaders()},60000).then(function(r){
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      return r.json();
+    }).then(function(j){
+      if(j.content) return u8dec(j.content);
+      if(j.download_url) return ghFetch(j.download_url+'?t='+Date.now(),{},60000).then(function(r2){ if(!r2.ok) throw new Error('HTTP '+r2.status); return r2.text(); });
+      throw new Error('空件');
+    });
+  }
+  function legMgGh(name){
+    var _mok=false; try{ _mok=!!(window.HX&&HX.mg&&HX.mg.ok&&HX.mg.ok()); }catch(eK){}
+    if(!_mok) return Promise.reject(new Error('没管家'));
+    var c=ghCfg();
+    var u='https://api.github.com/repos/'+encodeURIComponent(c.user)+'/'+encodeURIComponent(c.repo)+'/contents/'+encodeURIComponent(name)+'?t='+Date.now();
+    return HX.mg.call('GET', u, null).then(function(r){
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      return r.json();
+    }).then(function(j){
+      if(j.content) return u8dec(j.content);
+      if(j.download_url) return HX.mg.call('GET', j.download_url, null).then(function(r2){ if(!r2.ok) throw new Error('HTTP '+r2.status); return r2.text(); });
+      throw new Error('空件');
+    });
+  }
+  function legDav(name){
+    var dk=null; try{ dk=(window.HX&&HX.keys&&HX.keys.dav)?HX.keys.dav():null; }catch(e){}
+    if(!dk||!dk.user) return Promise.reject(new Error('无dav'));
+    var u='https://dav.jianguoyun.com/dav/'+encodeURIComponent('学习套装备份')+'/'+encodeURIComponent(name)+'?t='+Date.now();
+    return Promise.race([fetch(u,{headers:{Authorization:'Basic '+btoa(dk.user+':'+(dk.pass||''))},cache:'no-store'}).then(function(r){
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      return r.text();
+    }), new Promise(function(_,rej){ setTimeout(function(){ rej(new Error("坚果云腿60秒超时")); }, 60000); })]);
+  }
+  function fetchOne(name){
+    return legGh(name).catch(function(){
+      return legMgGh(name).catch(function(){
+        return legDav(name);
+      });
+    });
+  }
+  function runOne(it){
+    if(!isEmpty(it.k)){ bb('note','回填哨:'+it.k+' 有值不动'); return Promise.resolve(0); }
+    return fetchOne(it.f).then(function(txt){
+      var v=null;
+      try{ v=JSON.parse(txt); }catch(eP){ bb('err','资料回填JSON坏:'+it.k); return 0; }
+      if(v===null||v===undefined){ bb('err','资料回填空件:'+it.k); return 0; }
+      try{ localStorage.setItem(it.k, txt); }catch(eS){ bb('err','资料回填写入失败:'+it.k); return 0; }
+      bb('note','资料回填:'+it.k+' '+txt.length+'字节');
+      return 1;
+    }).catch(function(){
+      bb('err','资料回填三腿全败:'+it.k);
+      return 0;
+    });
+  }
+  function run(){
+    var off=false; try{ off=(localStorage.getItem(OFF)==='1'); }catch(e){}
+    if(off){ bb('note','回填哨:总开关关，不跑'); return; }
+    var total=0;
+    var chain=Promise.resolve();
+    MAP.forEach(function(it){
+      chain=chain.then(function(){ return runOne(it); }).then(function(ok){ total+=ok; });
+    });
+    chain.then(function(){
+      if(total>0){
+        var msg='找回了'+total+'件学习资料：题集/笔记/书库…已放回各家';
+        try{
+          if(typeof window.hxToastHold==='function'){ window.hxToastHold(msg); }
+        }catch(eT){}
+        bb('note','资料回填哨总账:回填'+total+'件');
+      }
+    }).catch(function(eAll){ bb('err','回填哨异常:'+(eAll&&eAll.message||eAll)); });
+  }
+  try{ setTimeout(run, 45000); }catch(e){}
+  try{ window.HX=window.HX||{}; window.HX.refill={run:run,isEmpty:isEmpty,MAP:MAP}; }catch(e){}
+})();
 /* ===== btnAudit 绑定（纯加法，IIFE 包裹） ===== */
 (function () {
   try {
