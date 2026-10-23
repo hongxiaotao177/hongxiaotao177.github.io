@@ -366,6 +366,7 @@
 
   <!-- v1.20.9（洪老师拍板三件：更新鱼骨头化+管家灯上首页+上一版追踪）首页常显区：灯第一行，追踪第二行 -->
   <div id="ybScore" style="display:none;margin:0 0 8px;padding:8px 14px;border:1px solid #cfe3d2;border-radius:12px;background:#f4faf5;font-size:13px;line-height:1.7;color:#3d6b4a;white-space:pre-wrap;"></div><!-- v1.39.0 t95刀4：夜班成绩单条（首页最上一行常显区），由ybScore渲染IIFE填，无账自藏 -->
+  <button id="btnZj" style="margin:0 0 8px;padding:8px 14px;border:1px solid #c9d6e8;border-radius:12px;background:#f2f6fc;font-size:14px;color:#33465e;cursor:pointer;display:inline-block;">🧪 真机检验</button><!-- v1.40.0 t96：真机检验总钮（拍板常显不许自藏），弹窗三层=值班段/单体点名段/报告段 -->
   <div id="homeUpd" style="margin:0 0 8px;padding:10px 14px;border:1px solid #e3dccf;border-radius:12px;background:#fdfbf6;font-size:13px;line-height:1.7;color:#5a5346;white-space:pre-wrap;"></div><!-- v1.29.0 刀2：本次更新清单容器（首页第一行常显区），由__home1209.relList填 -->
   <button id="btnAudit" style="background:none;border:none;padding:4px 0;color:#4a6b8a;text-decoration:underline;font-size:14px;cursor:pointer;margin:0 0 8px;display:inline-block;">🩺 自检报告</button><!-- v1.32.0 t71：自检审计报告钮，按下现做一遍+抄送云仓 -->
   <div id="homeLamp" style="display:none;margin:0 0 8px;padding:10px 14px;border:1px solid #e3dccf;border-radius:12px;background:#fdfbf6;font-size:13px;line-height:1.7;color:#5a5346;white-space:pre-wrap;cursor:pointer;"></div>
@@ -637,7 +638,8 @@ CUR.index="1.34.0"; /* v1.34.0 自检报告点行看明细配套，见顶部修�
 CUR.index="1.35.0"; /* v1.35.0 t76 CUR行错位扶正（1.34.0行原插在1.33.0行之前被盖回，真机红点永不消+反复装），见顶部修改记录 */
 CUR.index="1.36.0"; /* v1.36.0 t83点装公共件通道，见顶部修改记录 */
   CUR.index="1.37.0"; /* v1.37.0 R1装件管家腿+二轮重试，见顶部修改记录 */
-CUR.index="1.38.0"; /* v1.38.0 2026-10-21 t94资料回填哨，见顶部修改记录 */ CUR.index="1.39.0"; /* v1.39.0 2026-10-22 t95值夜班套件刀4：首页🌙成绩单条，见顶部修改记录 */
+CUR.index="1.38.0"; /* v1.38.0 2026-10-21 t94资料回填哨，见顶部修改记录 */ CUR.index="1.39.0";
+CUR.index="1.40.0"; /* v1.40.0（2026-10-23 t96，洪老师回「行，开工」拍板🧪真机检验总钮一期，SPEC_真机检验总钮一期_t96，设计Kimi/DS实现刀1/Kimi亲手刀2刀3/终审Kimi）：首页常显🧪真机检验钮+弹窗三层（值班段白天2/4/8小时+收工+夜班状态／单体点名段一期=三本账过滤显示+自动点验二期／报告段红字置顶四本账）+hx-common v0.59.0 HX.zhiban白天质检员+壳vc67白天值班触发器；装件链/查新/relList/ybScore渲染/其余一行未动 */ /* v1.39.0 2026-10-22 t95值夜班套件刀4：首页🌙成绩单条，见顶部修改记录 */
 CUR.tuomin="0"; /* v1.19.10修404：CUR=壳内已装版本，单体手机还没装必须填"0"才会下载（CUR.ppt同款老坑，见230行） */ /* v1.19.8（2026-09-20班⑮，洪老师真机报"升级说装成功主界面还是19.6，几次都这样，没重启应该直接变19.7"）病根=班⑮发v1.19.7时新赋值插在同一行旧赋值前面，CUR.index="1.19.7"刚赋上就被同行的CUR.index="1.19.6"盖回→页脚活字永远亮1.19.6（文件真身早是新版，升级链/壳全无辜，大管家0.54.5上机为证）；还连带v1.19.5刀2开门自校对误把账本1.19.7当谎回滚→每次都提示重装。治=删同行可执行旧赋值（注释留档）+升号v1.19.8让真机重新下载。其余一行未动 */
 try{document.getElementById("ftVer").textContent=CUR.index;}catch(eF){} /* v1.19.6 页脚死字改活字：ftVer亮CUR.index真身 */
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
@@ -3251,4 +3253,121 @@ setTimeout(function () {
     if (redN) { el.style.color = '#b3342a'; el.style.borderColor = '#b3342a'; el.style.background = '#fdf3f2'; }
   } catch (e) {}
 }, 1500);
+</script>
+
+<script>
+/* v1.40.0（2026-10-23 t96 🧪真机检验总钮一期刀2c，SPEC_真机检验总钮一期_t96，Kimi亲手）：#btnZj弹窗三层——
+   报告段红字置顶（黑匣子err24/白班成绩hx_zb_score/夜班成绩hx_yb_score/值班中剩余）；
+   值班段白天2/4/8小时开工（写hx_zb_day+桥令LearnShell.dayDuty，桥不在=仅记账提示旧壳）+收工；
+   单体点名段一期=点单体滤三本账（hx_chk_autolog机核/hx_chk_ailog AI质检/hx_jc_res走查）进报告区+提示自动点验二期。
+   自包含不跨IIFE（t55/t62/t64教训），每次开窗重读账不缓存；✕常驻点✕才关；全try/catch。 */
+(function () {
+  function gj(k, d) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }
+  function sj(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  function p2(n) { return (n < 10 ? '0' : '') + n; }
+  function fmtT(ms) { if (!ms) return ''; var d = new Date(ms); return (d.getMonth() + 1) + '-' + p2(d.getDate()) + ' ' + p2(d.getHours()) + ':' + p2(d.getMinutes()); }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function toast(m) { try { if (typeof window.hxToastHold === 'function') { window.hxToastHold(m); return; } } catch (e) {} try { alert(m); } catch (e2) {} }
+  var UNITS = [['index', '首页'], ['hx-common', '公共件'], ['chat', 'AI对话框'], ['xiaotao', '小涛笔记'], ['guanjia', '大管家'], ['tuomin', '脱敏间'], ['xueqi', '雪球'], ['xiti', '习题'], ['pai', '拍照'], ['ppt', '幻灯片'], ['shu', '生长树']];
+  var mask = null;
+  function reportHtml(filterKey) {
+    var h = '';
+    /* 值班中状态 */
+    var day = gj('hx_zb_day', null);
+    if (day && day.until && day.until > Date.now()) {
+      var left = Math.ceil((day.until - Date.now()) / 60000);
+      h += '<div style="color:#2c6e3f;">☀️ 白天值班中：还剩 ' + Math.floor(left / 60) + ' 小时 ' + (left % 60) + ' 分（到点自收工）</div>';
+    }
+    /* 黑匣子近24h err */
+    var errN = 0;
+    try {
+      if (window.HX && HX.bb && HX.bb.log && HX.bb.log.length) {
+        var cut = Date.now() - 86400000;
+        HX.bb.log.forEach(function (e) { try { if (e && (e.t || 0) > cut && (e.lv === 'err' || /^\[err\]|error/i.test(String(e.m || '')))) errN++; } catch (e1) {} });
+      }
+    } catch (e) {}
+    if (errN > 5) h += '<div style="color:#b3342a;font-weight:bold;">🔴 黑匣子近24小时报错 ' + errN + ' 条，点🩺自检报告看明细</div>';
+    /* 白班成绩 */
+    var zs = gj('hx_zb_score', null);
+    if (zs && zs.total) h += '<div>☀️ ' + esc(zs.date || '') + ' 白班成绩：查 ' + zs.total + ' 件｜绿 ' + (zs.green || 0) + '｜红 ' + (zs.red || 0) + '</div>';
+    /* 夜班成绩 */
+    var ys = gj('hx_yb_score', null);
+    if (ys && ys.total) h += '<div>🌙 ' + esc(ys.date || '') + ' 夜班成绩：查 ' + ys.total + ' 件｜绿 ' + (ys.green || 0) + '｜红 ' + ((ys.red || 0) + ((ys.todo && ys.todo.length) || 0)) + '</div>';
+    /* 单体过滤结果 */
+    if (filterKey) {
+      var found = [], name = filterKey;
+      for (var u = 0; u < UNITS.length; u++) if (UNITS[u][0] === filterKey) name = UNITS[u][1] + '（' + filterKey + '）';
+      function skim(lsKey, tag) {
+        var arr = gj(lsKey, []);
+        if (!arr || !arr.length) return;
+        arr.slice(-50).forEach(function (it) {
+          try { var s = JSON.stringify(it); if (s.indexOf(filterKey) >= 0) found.push(tag + '：' + esc(s.slice(0, 120))); } catch (e) {}
+        });
+      }
+      skim('hx_chk_autolog', '机核'); skim('hx_chk_ailog', 'AI质检'); skim('hx_jc_res', '走查');
+      h += '<div style="margin-top:6px;border-top:1px dashed #ccc;padding-top:6px;">🔎 点名 ' + esc(name) + '：三本账里相关 ' + found.length + ' 条（自动点验二期上）</div>';
+      if (found.length) h += '<div style="font-size:12px;color:#666;max-height:120px;overflow-y:auto;">' + found.slice(-5).join('<br>') + '</div>';
+    }
+    if (!h) h = '<div style="color:#888;">还没有检验账——值过班或跑过检验这里就有数。</div>';
+    return h;
+  }
+  function dutyOn(hours) {
+    try {
+      var until = Date.now() + hours * 3600000;
+      sj('hx_zb_day', { until: until, hours: hours, t: Date.now() });
+      var bridged = false;
+      try { if (window.LearnShell && typeof LearnShell.dayDuty === 'function') { LearnShell.dayDuty(JSON.stringify({ action: 'on', hours: hours })); bridged = true; } } catch (eB) {}
+      toast('☀️ 白天值班 ' + hours + ' 小时已开工' + (bridged ? '，壳质检员到点自动查' : '（旧壳未升级，本机先记账；装新壳vc67后自动查）'));
+      render();
+    } catch (e) {}
+  }
+  function dutyOff() {
+    try {
+      localStorage.removeItem('hx_zb_day');
+      try { if (window.LearnShell && typeof LearnShell.dayDuty === 'function') LearnShell.dayDuty(JSON.stringify({ action: 'off' })); } catch (eB) {}
+      toast('已收工，白天值班停了');
+      render();
+    } catch (e) {}
+  }
+  function render(filterKey) {
+    try {
+      var rp = document.getElementById('zjReport');
+      if (rp) rp.innerHTML = reportHtml(filterKey || null);
+    } catch (e) {}
+  }
+  function open() {
+    try {
+      if (mask) { render(); return; }
+      mask = document.createElement('div');
+      mask.id = 'zjMask';
+      mask.style.cssText = 'position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,.45);z-index:99999;display:flex;align-items:center;justify-content:center;';
+      var h = '<div style="background:#fff;border-radius:14px;width:92%;max-width:520px;max-height:86vh;overflow-y:auto;padding:14px 16px;font-size:14px;line-height:1.8;color:#333;">';
+      h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><b style="font-size:16px;">🧪 真机检验</b><span id="zjX" style="cursor:pointer;font-size:20px;padding:2px 10px;border:1px solid #ccc;border-radius:8px;">✕</span></div>';
+      h += '<div id="zjReport" style="border:1px solid #eee;border-radius:10px;padding:8px 10px;margin-bottom:10px;background:#fdfdfd;"></div>';
+      h += '<div style="margin-bottom:4px;"><b>☀️ 值班</b></div>';
+      h += '<div style="margin-bottom:10px;">';
+      h += '<button data-h="2" class="zjOn" style="margin:0 6px 6px 0;padding:6px 12px;border:1px solid #c9d6e8;border-radius:10px;background:#f2f6fc;cursor:pointer;">白天2小时</button>';
+      h += '<button data-h="4" class="zjOn" style="margin:0 6px 6px 0;padding:6px 12px;border:1px solid #c9d6e8;border-radius:10px;background:#f2f6fc;cursor:pointer;">白天4小时</button>';
+      h += '<button data-h="8" class="zjOn" style="margin:0 6px 6px 0;padding:6px 12px;border:1px solid #c9d6e8;border-radius:10px;background:#f2f6fc;cursor:pointer;">白天8小时</button>';
+      h += '<button id="zjOff" style="margin:0 6px 6px 0;padding:6px 12px;border:1px solid #e0c9c9;border-radius:10px;background:#fdf3f2;color:#b3342a;cursor:pointer;">收工</button></div>';
+      h += '<div style="margin-bottom:4px;"><b>🔎 单体点名</b>（点哪个就翻哪本的账）</div>';
+      h += '<div style="margin-bottom:6px;">';
+      for (var u = 0; u < UNITS.length; u++) h += '<button data-k="' + UNITS[u][0] + '" class="zjU" style="margin:0 6px 6px 0;padding:5px 10px;border:1px solid #ddd;border-radius:10px;background:#fafafa;cursor:pointer;font-size:13px;">' + UNITS[u][1] + '</button>';
+      h += '</div></div>';
+      mask.innerHTML = h;
+      document.body.appendChild(mask);
+      document.getElementById('zjX').onclick = function () { try { mask.remove(); mask = null; } catch (e) {} };
+      var ons = mask.querySelectorAll('.zjOn');
+      for (var i = 0; i < ons.length; i++) ons[i].onclick = function () { dutyOn(parseInt(this.getAttribute('data-h'), 10)); };
+      document.getElementById('zjOff').onclick = dutyOff;
+      var us = mask.querySelectorAll('.zjU');
+      for (var j = 0; j < us.length; j++) us[j].onclick = function () { render(this.getAttribute('data-k')); };
+      render();
+    } catch (e) {}
+  }
+  function bind() {
+    try { var b = document.getElementById('btnZj'); if (b) b.onclick = open; } catch (e) {}
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind); else bind();
+})();
 </script>
