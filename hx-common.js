@@ -109,7 +109,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 (function(){
   'use strict';
-  var HX_COMMON_VERSION = '0.59.0';  /* v0.59.0 t96🧪总钮一期刀1：HX.zhiban白天质检员 */  /* v0.58.0 t95值夜班套件刀3：HX.yeban值夜质检员 */  /* ── v0.53.0 2026-10-21（洪老师原话「这一版尽量把手机全量备份和对账规矩落地，保证下一个接班可以在手机本地取到文件」；合并总账t87；SPEC_hx-common_v0.53.0_套装档案柜，DS实现+Kimi终审翻案2处亲手落地：①一层l1ok双重计数翻断点续备单计②SAF四桥全返false补试写探针）：刀A新增HX.arc套装档案柜模块（开门120秒起跑过_autoNetOk闸，API列仓根三层分流，L1十四件每次必对+三层≤2MB小件每轮hx_arc_max缺省5件断点续备，逐件writeFileRel写+listFilesRel回读字节对账不等重试一次记fail，档案柜台账.json本地+仓根双写hx_arc_up防重推，总开关hx_arc_off=1，公开口status/run）；刀B mqtt白名单加arcList/arcRead两op（点名取件白名单制含..或/一律拒）；刀C版本行+版本史；红线HX.keys/air/pick/mg/store/dav/gh/bill/step/selfUp/fm/ai/sj/bb/hxToastHold/chk/chat/jc/audit/wzPoll/jbl及mqtt既有逻辑全IDENTICAL，壳/index不动） */  /* ── v0.49.0 2026-10-20（t79交班本地存取：handleMessage加jbSave/jbRead两op+HX.jbl公开口，详见文件头v0.49.0段；其余一行未动） */  /* ── v0.47.1 2026-10-20（t76刀3，洪老师真机报案「更新四遍三遍错特别是首页」配套：idxProbe侦察兵正则行首锚定，治「被注释里CUR.index=1.19.6骗住fileVer恒1.19.6、上岗以来从没跳过」病根2；配套index v1.35.0 CUR行错位扶正；其余一行未动） */
+  var HX_COMMON_VERSION = '0.60.0';  /* v0.60.0 t98 AI总管一期刀B：HX.zg总管模块（书库直连读写/历史版5层/外改戳/命令识别/三步命令链走chat.pump，SPEC_AI总管一期，外援双缺Kimi亲手写） */  /* v0.59.0 t96🧪总钮一期刀1：HX.zhiban白天质检员 */  /* v0.58.0 t95值夜班套件刀3：HX.yeban值夜质检员 */  /* ── v0.53.0 2026-10-21（洪老师原话「这一版尽量把手机全量备份和对账规矩落地，保证下一个接班可以在手机本地取到文件」；合并总账t87；SPEC_hx-common_v0.53.0_套装档案柜，DS实现+Kimi终审翻案2处亲手落地：①一层l1ok双重计数翻断点续备单计②SAF四桥全返false补试写探针）：刀A新增HX.arc套装档案柜模块（开门120秒起跑过_autoNetOk闸，API列仓根三层分流，L1十四件每次必对+三层≤2MB小件每轮hx_arc_max缺省5件断点续备，逐件writeFileRel写+listFilesRel回读字节对账不等重试一次记fail，档案柜台账.json本地+仓根双写hx_arc_up防重推，总开关hx_arc_off=1，公开口status/run）；刀B mqtt白名单加arcList/arcRead两op（点名取件白名单制含..或/一律拒）；刀C版本行+版本史；红线HX.keys/air/pick/mg/store/dav/gh/bill/step/selfUp/fm/ai/sj/bb/hxToastHold/chk/chat/jc/audit/wzPoll/jbl及mqtt既有逻辑全IDENTICAL，壳/index不动） */  /* ── v0.49.0 2026-10-20（t79交班本地存取：handleMessage加jbSave/jbRead两op+HX.jbl公开口，详见文件头v0.49.0段；其余一行未动） */  /* ── v0.47.1 2026-10-20（t76刀3，洪老师真机报案「更新四遍三遍错特别是首页」配套：idxProbe侦察兵正则行首锚定，治「被注释里CUR.index=1.19.6骗住fileVer恒1.19.6、上岗以来从没跳过」病根2；配套index v1.35.0 CUR行错位扶正；其余一行未动） */
    /* ── v0.48.0 2026-10-20（t77真机自报，洪老师拍板「现在就真机自报吧」）：HX.zb上岗——开门60秒后包住黑匣子log，err条经60秒节流（同m 60秒不重+全局60秒1条）双通道喊疼：mqtt hx/to_kimi实时+仓根「真机自报_时间戳.json」留底，失败存hx_zb_pend≤10条补传；总开关hx_zb_off=1；公开口status/test；纯加法一IIFE+版本行，其余一行未动 【Kimi终审翻案DS 1处：report成功分支漏调flushPend（SPEC行为5成功补传）亲手补上——漏料非编造记账】 */
    /* ── v0.47.0 2026-10-19晚班（t75，洪老师看自检报告截图拍板「做成点一下就出详细结果，开工」；SPEC_t75→DS实现三切片零编造→Kimi终审翻案1处=index尾行DS自编口径丢「好/可疑」统计，亲手改取报告原文末行与云仓同口径）：刀A HX.audit新增rows2()（reportText改调它输出逐字节不变）+detail(key)七哨明细（bbTail/localStorage台账全本地零联网，最多5条最新在前，空账回「还没有明细账」）+exports挂rows2/detail；刀B index配套v1.34.0自检弹窗点主行展开明细；刀C _aiSnap尺子修口径——err含「黑匣子」三字的哨兵账（上行失败/没钥匙/疑似哑火=账房自家网络账）不计入err24改记errNet，sys提示词追加一句「errNet不算软件毛病」，治AI质检被117条假报错吓得连说12次拿不准；红线除HX.audit IIFE内申报3处+_aiSnap申报2处+版本行外全件IDENTICAL */  /* v0.43.0（2026-10-19 t69刀1，问诊室呼叫钮：SPEC_问诊室_v0.1.0_设计稿洪老师拍板）：HX.jc新增三公开只读口wzBbTail/wzLayout/wzCur+sj面板📮叫Kimi会诊钮（抓bbTail20+layout+cur+主诉→HX.gh.putFile推仓根急诊_YYYYMMDD_HHMM.json→成功hxToastHold黑框常驻报喜，失败存hx_wz_sos_pend下回补）；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.bb/hxToastHold/HX.chk/HX.chat IDENTICAL，HX.jc除return一处+三新函数外IDENTICAL，HX.sj除按钮HTML一行+bind一处+sjWzSos新函数外IDENTICAL */  /* ── v0.46.0 2026-10-19（t73手机账房刀B，母图纸SPEC_手机主账房_v0.1.0洪老师拍板「图纸行，开工」）：HX.mqtt传话筒上岗——闲时WS连传达室39.97.246.65:9001，问诊室问答走hx/to_suit→hx/to_kimi秒回+云仓问诊室_答_留底双通道；密码管家路私仓取传达室钥匙.json存localStorage不落公开仓；闲时才连(开门60秒+前台)、切后台断、退避重连1s→30s；总开关hx_mqtt_off=1；纯加法两段（paho-mqtt-min v1.1.0自包含32236B+HX.mqtt IIFE），其余一行未动。【Kimi终审翻案DS 4处：①HX.gh.ready()编成Promise链必炸（现役同步boolean）②Paho五参构造旧API必炸改两参+凭证进connect③putFile三参签名错（现役四参null打头）留底必败④取钥匙失败永不再试补退避——「编假签名」前科重演记账】 */
   /* ── v0.45.0（2026-10-19早班②，t72，洪老师拍板「自检报告单一了要加：查他们最近干了什么活、谁做的、哪个做完哪个卡住，重点说人话」）：HX.audit加workline最近账单helper（七哨各一句人话账：jc走查一轮卡没卡/verify对账原文/sos按过几次/mg管家最近act/auto·ai台账笔数+末笔/zf最近查账）+reportText每哨行后追加「　　账单：」行；DS_HELPER段采用零编造，REPORT段DS自作主张重写整个reportText+私改哨名（监察员走查编成'jc走查'等7名全编）违反「保持现有格式」铁约束，全段弃用Kimi终审亲手改（记账1笔=界外重写前科同型）；audit()/list()/其余一行未动，红线全件除audit IIFE内2处+版本行外IDENTICAL */  /* ── v0.44.0（2026-10-19早班，t71，洪老师拍板「自检的东西要有审计报告随时出+一个按钮现做+我是最后控制人」，与问诊室刀2下行同班做，SPEC_t71→DS实现三段交齐→Kimi终审翻案1处=管家心跳源DS查bb的m（m只是'黑匣子在线 vX'永远查不到会误判死）翻查app含'管家'亲手落地）：刀1新增HX.audit自检审计模块（七哨户口：jc监察员/auto机核/ai质检/📮会诊链/装件防谎岗/管家心跳/账房链，心跳源=黑匣子倒查或localStorage台账末条，超期2倍判🔴可疑，按需型不判死，reportText人话报告，总开关hx_audit_off=1）/刀2新增HX.wzPoll问诊室回话下行（开门90秒后fetch公开站问诊室_out.json破缓存8秒帽，t>hx_wz_out_seen且answer非空→全屏📬Kimi回话层textarea只读可全选+✕常驻，点✕记seen；没件网断静默；HX.wzPoll.check()可手动）；纯加法两IIFE挂window.HX，红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold/HX.chk/HX.chat/HX.jc全件IDENTICAL */  /* ── v0.40.0（2026-10-18晚，AI质检岗：洪老师拍板「看得顺不顺眼也叫AI帮忙，现在就做；二期真截图排任务监察员监察」→SPEC_AI质检岗_v0.1.0→DS实现16秒交齐8hunk→Kimi终审翻案2处（①自家SPEC废函数_aiAsked删 ②Hunk3/4/5同位锚点落地顺序调5→3→4）亲手落地）：AI档步lane:'ai'——快照（标题+近24h黑匣子err条数+spot现场+正文摘要）发HX.chat.pump真签名cb(ok,txt,by)，AI答「正常」才markGreen，拿不准/泵灭/超时一律留人手动✓（泵灭或拿不准都回删问账下回补，拿不准不封口——终审补）；节流hx_chk_ai_max缺省3+泵在飞闸+60秒死心；AI质检台账.json只增裁100镜像hx_chk_ailog_up；renderPg显「🤖AI拿不准等您看一眼」；reconcile清hx_chk_ai_asked；总开关hx_chk_ai_off=1落回老路；红线除HX.chk申报8处+版本行外全件IDENTICAL，HX.jc/HX.chat/壳/单体一行未动 *//* ── v0.39.0（2026-10-18晚，机核档·自动真机检验一期：洪老师问「自动真机检验」→Kimi报方案（机器能核的自动销、核不了的攒短清单、开门一次清账）→洪老师拍板「同意你的选择，开工」→SPEC_机核档_自动真机检验一期→DS实现13秒交齐8申报点→Kimi终审翻案1处（DS版本行hunk锚点截断不可用，亲手改定点插段）亲手落地）：六刀=①detect机核分流（watch优先照旧，机核档排第二，hx_chk_auto_off=1落回弹确认条老路）②_autoGreen侦中直接markGreen不弹窗（bb.job+机核台账双留痕）③_autoNoteOnce机核档缺侦测器note会话防重永不销 ④_autoOff总开关 ⑤机核台账_autoLogAdd+_pushAutoLog（hx_chk_autolog只增裁100条，闲时PUT仓根机核台账.json，镜像hx_chk_autolog_up没变不重推）⑥key_eq侦测器（非空且全等才中）+renderPg机核标（机核档步不显✓钮防手滑）；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold/HX.chat/HX.jc IDENTICAL，HX.chk除本版申报8处外IDENTICAL */ /* ── v0.38.0（2026-10-18，监察员上岗：设计稿SPEC_监察员_v0.1.0_设计稿洪老师2026-10-18两次拍板合成→正式SPEC_监察员_v0.1.0 Kimi起草已落仓→DS实现（千问钥匙401没进去本班没上工）→Kimi终审翻案4处亲手落地：①afterStep引用回调局部变量rec必炸ReferenceError改传参 ②calcBacklog编不存在的t.sim/t.cloud/t.watch翻真字段t.lane（照HX.chk）③卡件没跳下一件还走剩余步翻cb(out)收尾 ④saveRes漏ver变清旧结果补上）：纯加法新增HX.jc监察员——走查单.json双腿三兜底（dav/api/raw+缓存）、开门闲时60秒起跑每次最多hx_jc_max件（缺省3）件间歇5秒、五算子全读型（see/seeText/ls/lsKey/file）绝不自动点击输入、卡件记黑匣子+AI病根分析（HX.chat.pump公共泵，判词仅记录）、vision快照参谋（文字快照代真截图，「不正常」只立visionFlag等Kimi终审）、结果账hx_jc_res+壳真源hxdata_hx_jc.json双写、闲时PUT走查记录.json/监察台账.json（镜像防重推）、督查岗台账hist只增+health()/report()供交班；总开关hx_jc_off=1全退休；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold/HX.chk/HX.chat IDENTICAL *//* v0.37.0（2026-10-18，洪老师真机报「传黑匣子12秒没动静/上行失败」云侧查明=虚惊（网慢超12秒看门狗误报，PUT其实传上），拍板治，SPEC_hx-common_v0.37.0，DS+千问同稿、Kimi终审翻案1处=DS版本留痕插位错插v0.23.0前，亲手改插版本行）：刀1黑匣子看门狗12→30秒；刀2补传成功补人话（hx_bb_lastfail标记，败立成消）；红线HX.bb除本版申报三处外IDENTICAL，其他所有模块IDENTICAL *//* v0.36.0（2026-10-18，分家④步「泵归公共件」10-10_2316拍板，SPEC_fenjia4，DS+千问同稿、Kimi终审亲手落地）：HX.chat新增公共泵api.pump(sys,usr,opt,cb)——链默认千问→Kimi→DeepSeek复用闭包私有callQwen/callKimi/callDS（cb(st,txt)签，st==='ok'才成），opt.which='qwen'/'kimi'/'ds'可点名只走一家，cb(ok,text,by)；流式onProg/联网web暂不支持，要用这两样的单体照旧走自带老泵；红线除本加法与版本行外IDENTICAL *//* v0.35.0（2026-10-18，F4a尾刀：窄条「不变化像死机」v0.24.4查明是手动步等人点✓但没说清）：窄条补「在等谁」——手动步说等您点✓点这条展开，watch/auto步说在帮您盯，cloud步说云侧核不用动，watch档说观察哨自己销；红线除本刀文案与版本行外IDENTICAL *//* v0.34.0（2026-10-18，想法流水10-18 09:01真机报「想法输入框顶天看不到打的内容」，F3b没断根）：新增sjKbFit键盘自适应——visualViewport算出键盘吃掉的高度，面板底边抬到键盘上方、最高随可视高收缩；键盘收/没visualViewport接口自动回老样；红线除本两刀与版本行外IDENTICAL *//* v0.33.0（2026-10-17深夜班，洪老师拍板「把千问修好修完为止」，SPEC_千问四治法，DS实现+Kimi终审翻案1处亲手落地：DS续写漏拼半截只回第二回正文，补acc累加）：治千问三刀落callQwen——刀①回信上限2048→8192治腰斩（删Math.min死代码）刀②读finish_reason截断自动续写一回拼接全文（slice拷贝不动原数组，硬上限1次，仍截断报fail换棒）刀④正式调用钥匙trim（探活已修本处补上）；配套chat v0.4.1+大管家v0.57.4同治病根；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold/HX.chk/callDS/callKimi/fetchJson/buildMessages/tryCompress IDENTICAL，callQwen除本三刀申报点外IDENTICAL *//* v0.32.0（2026-10-16，洪老师拍板「把AI对话框从空白一直完成到最后」，SPEC_AI对话框一期，DS实现+Kimi终审翻案2处亲手落地：①toast改调闭包内真接口hxToastHold（DS又编不存在的window.hxToastHold/hxToast/HX.toast，记账）②callKimi兜底模型名改真机现行kimi-k2.7-code-highspeed删修正贴纸）：纯加法新增HX.chat对话心脏——索引hx_chat_v1+对话壳真源hxdata_hx_chat_<id>.json三层写（真源/localStorage兜底/坚果云mirror），通道链DS→千问→Kimi各60秒死心换棒，三层记忆（原文永存+超10轮DS压缩摘要+事实卡），pullCloud云端捞回，总开关hx_chat_off=1全退休；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.bb/hxToastHold/HX.chk IDENTICAL */ /* v0.31.0/* v0.31.0（2026-10-16，洪老师真机报F3b输入框顶头拍板「干」，DS实现+Kimi终审零翻案）：#hxSjPanel加max-height:calc(100vh-170px)+overflow-y:auto，键盘起面板内部滑，输入框不再被顶出屏；红线除本刀CSS与版本行外IDENTICAL *//* v0.30.0（2026-10-15 夜班⑦，洪老师拍板「做」，SPEC_index_v1.22.0+hx-common_v0.30.0_预下载+双击回环，DS实现+Kimi终审翻案3处亲手落地：①腿D的upFile/downFile回调式签名翻Promise式（DS编了不存在的第三参回调）②腿G写断/读断拆两条链各自catch精确判 ③腿D删wrote判返回照_writeFile同款try调用）：刀A1 HX.bb新增公开口loopback()双击🆘回环体检（腿G GitHub仓根「黑匣子回环.txt」+腿D坚果云/学习套装备份/黑匣子回环.txt，写上去读回来码对=通，写不成/读不回/码不对=哪腿哪环断一句话说清，双腿独立全settle后bbToast常驻汇总+job报账）刀A2 sj🆘钮双击判定（hx_lb_off=1单击照旧flush(true)整刀退休，否则单击600ms后flush、600ms内第二击loopback()）；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.chk/hxToastHold IDENTICAL，HX.sj除刀A2一处bind外IDENTICAL，HX.bb除刀A1新增函数+return一处外IDENTICAL */ /* v0.29.0（2026-10-15 夜班④，洪老师拍板「三个任务一起做」，SPEC_hx-common_v0.29.0_被动观察法+黑匣子心跳，DS实现+Kimi终审）：①bb开门心跳hb（云侧对时知在线）②collectSide哑火对照（壳有开门主账没动→哨兵err）③被动观察法：清单步骤带watch关键词，bb记账通报HX.chk.bbHit命中→24小时（hx_chk_watch_hours可配）没err自动markGreen销号全程不弹窗，err命中删账不销 ④撤开门8秒自动问（hx_chk_wiz_ask=1才问，🧪手动链不动）；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/hxToastHold IDENTICAL，HX.bb除块2~3申报点外IDENTICAL，HX.chk除块4~6申报点外IDENTICAL */ /* v0.28.0（2026-10-15 夜班，洪老师拍板「开工」，SPEC_hx-common_v0.28.0_黑匣子五案，DS实现+Kimi终审）：黑匣子五案——①HX.bb.job办完报账（成记job/败记err立刻上行）②重点钮12秒看门狗「点了没反应」③哨兵_silentLog（flush失败/没钥匙直写账防递归）④hxToastHold黑框留账note（hxBbToast自家除外）⑤err截断120→300字；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.sj/HX.chk IDENTICAL，HX.bb除块2~5申报点外IDENTICAL，hxToastHold除块4一处加法外IDENTICAL */ /* ═══════════════════════════════════════════════════════════════════════════
@@ -6161,6 +6161,264 @@ HX.chat = (function () {
         });
       } catch (e) { go(i + 1); }
     })(0);
+  };
+
+  return api;
+})();
+
+/* ════ HX.zg AI总管（v0.60.0 2026-10-23，SPEC_AI总管一期 刀B，洪老师拍板「直接开干干完为止」；外援双缺DS破线/千问401，Kimi亲手写全程）════
+   职责：手伸进小涛的书——书库直连读写（不依赖小涛页面开着，走HX.store仓管员一本账+壳档案柜）、
+   章正文历史版留底退回、命令识别（融进/写进/塞进/并入+《书》+第N章）、三步命令链（取章→AI融合走HX.chat.pump→写回留底）。
+   数据键：书台账xt_books_v1、章正文导出账xt_chapters_v1（{"bid_cid":"正文"}）、外改戳xt_chapstamp_v1（{"bid_cid":ts}，小涛v0.22.0开门消费对齐IDB防旧盖新）、历史版xt_chapHist_v1（{"bid_cid":[{ts,why,text}]}每章封顶5版新的在前）。
+   总开关hx_zg_off=1全模块退休（公开口返空/false）。全函数try护栏，单点炸不牵连宿主。 */
+HX.zg = (function () {
+  'use strict';
+  var LS_BOOKS = 'xt_books_v1';
+  var LS_CHAPS = 'xt_chapters_v1';
+  var LS_STAMP = 'xt_chapstamp_v1';
+  var LS_HIST = 'xt_chapHist_v1';
+  var HIST_MAX = 5;
+
+  function zgOff() {
+    try { return lsGet('hx_zg_off') === '1'; } catch (e) { return false; }
+  }
+  function ckey(bid, cid) { return String(bid) + '_' + String(cid); }
+  function mirr(fn) { try { if (HX.dav && HX.dav.mirror) HX.dav.mirror(fn); } catch (e) {} }
+
+  /* 读一个JSON键：HX.store缓存优先（sync后缓存即对齐值），无则真源rRead路=HX.store.get兜底；解析失败返null */
+  function readJson(key) {
+    var raw = null;
+    try { if (HX.store && HX.store.get) raw = HX.store.get(key, null); } catch (e) { raw = null; }
+    if (raw === null || raw === undefined) {
+      try { raw = lsGet(key); } catch (e2) { raw = null; }
+      if (raw === '') raw = null;
+    }
+    if (raw === null) return null;
+    try { var o = JSON.parse(raw); return o; } catch (e) { return null; }
+  }
+  /* 写一个JSON键：HX.store.set（缓存+影子ts+壳真源一筢）+坚果云镜像；无store降级localStorage */
+  function writeJson(key, obj, mirrorName) {
+    var txt = '';
+    try { txt = JSON.stringify(obj); } catch (e) { return false; }
+    var ok = false;
+    try {
+      if (HX.store && HX.store.set) { ok = !!HX.store.set(key, txt); }
+    } catch (e) { ok = false; }
+    if (!ok) { try { lsSet(key, txt); ok = true; } catch (e2) {} }
+    if (ok && mirrorName) mirr(mirrorName);
+    return ok;
+  }
+
+  var api = {};
+
+  /* 书库清单：[{id,title,chapters:[{id,t}]}]；没有/坏账返[] */
+  api.listBooks = function () {
+    if (zgOff()) return [];
+    var o = readJson(LS_BOOKS);
+    if (!(o instanceof Array)) return [];
+    var out = [];
+    try {
+      for (var i = 0; i < o.length; i++) {
+        var b = o[i];
+        if (!b || !b.id) continue;
+        var chs = [];
+        var arr = (b.chapters instanceof Array) ? b.chapters : [];
+        for (var j = 0; j < arr.length; j++) {
+          var c = arr[j];
+          if (!c || !c.id) continue;
+          chs.push({ id: c.id, t: String(c.t || ('第' + (j + 1) + '章')) });
+        }
+        out.push({ id: b.id, title: String(b.title || '未命名书'), chapters: chs });
+      }
+    } catch (e) {}
+    return out;
+  };
+
+  /* 取章正文：找不到返null（空串=真空章也返''原文） */
+  api.getChap = function (bid, cid) {
+    if (zgOff()) return null;
+    var o = readJson(LS_CHAPS);
+    if (!o || typeof o !== 'object') return null;
+    var k = ckey(bid, cid);
+    if (!Object.prototype.hasOwnProperty.call(o, k)) return null;
+    try { return String(o[k]); } catch (e) { return null; }
+  };
+
+  /* 历史版清单（不回报全文）：[{ts,why,len}]新的在前 */
+  api.histList = function (bid, cid) {
+    if (zgOff()) return [];
+    var o = readJson(LS_HIST);
+    if (!o || typeof o !== 'object') return [];
+    var arr = o[ckey(bid, cid)];
+    if (!(arr instanceof Array)) return [];
+    var out = [];
+    try {
+      for (var i = 0; i < arr.length; i++) {
+        var h = arr[i];
+        if (!h) continue;
+        out.push({ ts: (+h.ts) || 0, why: String(h.why || ''), len: String(h.text || '').length });
+      }
+    } catch (e) {}
+    return out;
+  };
+
+  function histPush(bid, cid, text, why) {
+    try {
+      var o = readJson(LS_HIST);
+      if (!o || typeof o !== 'object') o = {};
+      var k = ckey(bid, cid);
+      var arr = (o[k] instanceof Array) ? o[k] : [];
+      arr.unshift({ ts: Date.now(), why: String(why || ''), text: String(text) });
+      if (arr.length > HIST_MAX) arr = arr.slice(0, HIST_MAX);
+      o[k] = arr;
+      writeJson(LS_HIST, o, 'hxdata_' + LS_HIST + '.json');
+    } catch (e) {}
+  }
+
+  /* 写章：旧文留历史→写新文→盖外改戳；返回true/false */
+  api.putChap = function (bid, cid, newText, why) {
+    if (zgOff()) return false;
+    if (bid === null || bid === undefined || cid === null || cid === undefined) return false;
+    var oldTxt = api.getChap(bid, cid);
+    if (oldTxt !== null && String(oldTxt) !== String(newText)) {
+      try { histPush(bid, cid, oldTxt, '改写前留底' + (why ? ('（' + why + '）') : '')); } catch (e) {}
+    }
+    var o = readJson(LS_CHAPS);
+    if (!o || typeof o !== 'object') o = {};
+    o[ckey(bid, cid)] = String(newText);
+    var ok = writeJson(LS_CHAPS, o, 'hxdata_' + LS_CHAPS + '.json');
+    if (ok) {
+      try {
+        var st = readJson(LS_STAMP);
+        if (!st || typeof st !== 'object') st = {};
+        st[ckey(bid, cid)] = Date.now();
+        writeJson(LS_STAMP, st, 'hxdata_' + LS_STAMP + '.json');
+      } catch (e) {}
+    }
+    return ok;
+  };
+
+  /* 退回历史版：把ts那版写回（走putChap同链，当前版自动进历史）；成功true */
+  api.rollback = function (bid, cid, ts) {
+    if (zgOff()) return false;
+    var o = readJson(LS_HIST);
+    if (!o || typeof o !== 'object') return false;
+    var arr = o[ckey(bid, cid)];
+    if (!(arr instanceof Array)) return false;
+    var hit = null;
+    try {
+      for (var i = 0; i < arr.length; i++) {
+        if (arr[i] && (+arr[i].ts) === (+ts)) { hit = arr[i]; break; }
+      }
+    } catch (e) { hit = null; }
+    if (!hit) return false;
+    return api.putChap(bid, cid, String(hit.text), '退回历史版');
+  };
+
+  /* 中文数字→阿拉伯（一到三十封顶够用） */
+  function cn2num(s) {
+    try {
+      var m = { '一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6, '七': 7, '八': 8, '九': 9, '十': 10 };
+      s = String(s || '');
+      if (m[s] !== undefined) return m[s];
+      if (s.length === 2 && s.charAt(0) === '十') return 10 + (m[s.charAt(1)] || 0);
+      if (s.length === 2 && s.charAt(1) === '十') return (m[s.charAt(0)] || 0) * 10;
+      if (s.length === 3 && s.charAt(1) === '十') return (m[s.charAt(0)] || 0) * 10 + (m[s.charAt(2)] || 0);
+    } catch (e) {}
+    return 0;
+  }
+
+  /* 命令识别：命中返{book,bookId,chapNo,chapId,chapTitle,material}，否则null。
+     宁漏不误：必须四动词条其一+能定位到唯一章才触发；书名缺省=全库只有一本书时免点名。 */
+  api.detectCmd = function (text) {
+    if (zgOff()) return null;
+    var t = String(text || '');
+    if (!t) return null;
+    var m = t.match(/(融进|写进|塞进|并入)/);
+    if (!m) return null;
+    var verbAt = m.index;
+    var tail = t.substring(verbAt + m[1].length); /* 动词后面=目的地 */
+    var head = t.substring(0, verbAt);            /* 动词前面=材料 */
+    /* 书名《》 */
+    var bookName = '';
+    var bm = tail.match(/《([^》]+)》/);
+    if (bm) bookName = bm[1];
+    /* 章号：第N章（阿拉伯或中文数字）或 章名 */
+    var chapNo = 0, chapName = '';
+    var cm = tail.match(/第\s*([0-9]+)\s*章/);
+    if (cm) chapNo = parseInt(cm[1], 10) || 0;
+    if (!chapNo) {
+      var cm2 = tail.match(/第\s*([一二三四五六七八九十]{1,3})\s*章/);
+      if (cm2) chapNo = cn2num(cm2[1]);
+    }
+    if (!chapNo) {
+      var cm3 = tail.match(/[《「『]?([^《》「』，。；第]{2,12}章)[》」』]?/);
+      if (cm3) chapName = cm3[1];
+    }
+    if (!chapNo && !chapName) return null;
+    /* 定位书 */
+    var books = api.listBooks();
+    if (!books.length) return null;
+    var book = null;
+    if (bookName) {
+      for (var i = 0; i < books.length; i++) {
+        if (books[i].title.indexOf(bookName) >= 0 || bookName.indexOf(books[i].title) >= 0) { book = books[i]; break; }
+      }
+      if (!book) return null;
+    } else {
+      if (books.length !== 1) return null; /* 多本书又不点名=不猜 */
+      book = books[0];
+    }
+    /* 定位章：章号优先（第N章=目录第N条），章名次之（含包含即中，多义不猜） */
+    var chap = null;
+    if (chapNo >= 1 && chapNo <= book.chapters.length) {
+      chap = book.chapters[chapNo - 1];
+    } else if (chapName) {
+      var hits = [];
+      for (var j = 0; j < book.chapters.length; j++) {
+        if (book.chapters[j].t.indexOf(chapName) >= 0 || chapName.indexOf(book.chapters[j].t) >= 0) hits.push(book.chapters[j]);
+      }
+      if (hits.length === 1) chap = hits[0];
+    }
+    if (!chap) return null;
+    return {
+      book: book.title, bookId: book.id,
+      chapNo: chapNo, chapId: chap.id, chapTitle: chap.t,
+      material: head.replace(/^\s*(把|将|请|帮我把|帮我将)\s*/, '').replace(/[\s，。]+$/, '')
+    };
+  };
+
+  /* 三步命令链：①取章→②AI融合(HX.chat.pump公共口)→③写回留底。每步onStep(n,人话)；失败onErr停下绝不半成品写章。 */
+  api.merge = function (opts, cbs) {
+    cbs = cbs || {};
+    function step(n, s) { try { if (cbs.onStep) cbs.onStep(n, s); } catch (e) {} }
+    function bad(msg) { try { if (cbs.onErr) cbs.onErr(msg); } catch (e) {} }
+    function good(info) { try { if (cbs.onOk) cbs.onOk(info); } catch (e) {} }
+    if (zgOff()) { bad('总管总开关关着（hx_zg_off=1）'); return; }
+    opts = opts || {};
+    var bid = opts.bid, cid = opts.cid;
+    var material = String(opts.material || '');
+    if (!material) { bad('没带材料，不知道融什么'); return; }
+    step(1, '正在取《' + String(opts.book || '') + '》' + String(opts.chapTitle || '') + '的原章…');
+    var oldTxt = api.getChap(bid, cid);
+    if (oldTxt === null) { bad('这章还没正文或账上没找着，不能融'); return; }
+    step(1, '取到原章（' + oldTxt.length + '字）✓');
+    step(2, 'AI 正在把新材料揉进原章…');
+    var sys = '你是中文医学笔记整理助手。把【新材料】揉进【原章】，输出融合后的完整新章全文。规矩：原章知识一个字不许丢；新材料揉在合适的位置，重复内容合并；保持原章语气格式；只输出新章正文，不加任何解释、不加前后缀。';
+    var usr = '【原章】\n' + oldTxt + '\n\n【新材料】\n' + material;
+    try {
+      HX.chat.pump(sys, usr, {}, function (ok, txt, by) {
+        if (!ok || !txt) { bad('AI没融成：' + String(txt || '三家都没通')); return; }
+        var newTxt = String(txt).replace(/^\s+|\s+$/g, '');
+        if (newTxt.length < Math.min(20, oldTxt.length)) { bad('AI回信太短不对劲，没敢写回'); return; }
+        step(2, 'AI 融好（' + newTxt.length + '字，' + String(by || '') + '出的力）✓');
+        step(3, '正在写回并给旧版留底…');
+        var okW = api.putChap(bid, cid, newTxt, 'AI总管融合');
+        if (!okW) { bad('写回没成功，章没动'); return; }
+        step(3, '写回成功，旧版已留底 ✓');
+        good({ book: opts.book, chapTitle: opts.chapTitle, oldLen: oldTxt.length, newLen: newTxt.length, by: by });
+      });
+    } catch (e) { bad('命令链中途出错，章没动'); }
   };
 
   return api;
