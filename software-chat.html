@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>AI对话框</title>
+<title>AI总管</title>
 <!-- v0.1.0 2026-10-16 AI对话框一期上线（SPEC_AI对话框一期） -->
 <!-- v0.1.1 2026-10-16 洪老师真机报：只有DS钥匙也弹没钥匙黑框；病根门脸钥匙检查漏DeepSeek一路；治法hasKeys加查xt_dskey及壳真源deepseek字段；终审补：顶栏显示版本号同步0.1.1（DS漏改） -->
 <!-- v0.1.2 2026-10-16 t32黄条误报根治（首查不到每2秒复查30秒死心，查到收条+补载对话）+t33发送钮左让64px避壳回家钮（bottom-bar右padding）+t34补挂HX.sj速记浮标+HX.pick点亮（sjDot/Panel上提避让右下热区） -->
@@ -419,8 +419,9 @@ body {
 
 <!-- 顶行 -->
 <div class="top-bar">
-  <div class="top-title">💬 AI对话框<span class="top-version">v0.4.1</span></div>
+  <div class="top-title">💬 AI总管<span class="top-version">v0.7.0</span></div>
   <div>
+    <button id="zgBtn" class="top-btn" style="margin-right:6px;">📚</button>
     <button id="menuBtn" class="top-btn">☰对话</button>
     <button id="newBtn" class="top-btn">✚新聊</button>
   </div>
@@ -446,6 +447,15 @@ body {
   </div>
 </div>
 
+<!-- v0.7.0 刀D：📚收发室浮层 -->
+<div id="zgRoom" class="drawer" style="z-index:9999;">
+  <div class="drawer-header">
+    <div>📚 收发室（小涛的书）</div>
+    <button id="zgRoomClose" class="drawer-close">×</button>
+  </div>
+  <div id="zgRoomBody" class="drawer-list"></div>
+</div>
+
 <!-- 抽屉层 -->
 <div id="drawer" class="drawer">
   <div class="drawer-header">
@@ -468,7 +478,7 @@ body {
 
 <script>
 // SW_VERSION 全局变量
-var SW_VERSION = "0.5.0"; /* v0.5.0（2026-10-18，想法流水09:03拍板）：📥层加「🪄让AI找家」——presetCallAI三兄弟链问归哪书哪章confirm过目才塞+chatConfirmSend一字不差重复闸；终审翻案1处（DS/千问回调都当单参实为ok,out双参）；手选老链一行未动 */ /* v0.4.1（2026-10-17深夜班，洪老师拍板「把千问修好修完为止」，SPEC_千问四治法，千问实现+Kimi终审翻案2处亲手落地：①千问把续写闸_continued写进then每次重置=没闸，挪进attempt闭包 ②千问!r.ok直return致下家被连跳两次，补__skip哨兵）：presetCallAI四刀——钥匙trim/max_tokens2048→8192/finish_reason截断自动续写一回拼接（仍截断换下一家）/HTTP400不再当JSON误解析静默跳；预设系统其余全IDENTICAL */
+var SW_VERSION = "0.7.0"; /* v0.7.0（2026-10-23 AI总管一期，SPEC_AI总管一期，洪老师拍板「直接开干干完为止」，外援双缺Kimi亲手写）：刀A改名「💬 AI总管」（title/顶栏/sj.init三处，文件名不动）；刀C命令闸+三步命令链（融进《书》第N章→取章→AI融合走HX.chat.pump→写回留历史版，进度气泡逐步亮失败红字停下，成功记进对话账）；刀D📚收发室浮层（列书列章/📥取进对话/🪄融最近回信/↩历史版退回）；全走HX.zg公开口，总开关hx_zg_off=1全退。红线：发送链/预设/PDF问答/📥送书/看门狗 IDENTICAL */ /* v0.5.0（2026-10-18，想法流水09:03拍板）：📥层加「🪄让AI找家」——presetCallAI三兄弟链问归哪书哪章confirm过目才塞+chatConfirmSend一字不差重复闸；终审翻案1处（DS/千问回调都当单参实为ok,out双参）；手选老链一行未动 */ /* v0.4.1（2026-10-17深夜班，洪老师拍板「把千问修好修完为止」，SPEC_千问四治法，千问实现+Kimi终审翻案2处亲手落地：①千问把续写闸_continued写进then每次重置=没闸，挪进attempt闭包 ②千问!r.ok直return致下家被连跳两次，补__skip哨兵）：presetCallAI四刀——钥匙trim/max_tokens2048→8192/finish_reason截断自动续写一回拼接（仍截断换下一家）/HTTP400不再当JSON误解析静默跳；预设系统其余全IDENTICAL */
 
 // 全局状态
 var curChatId = null;
@@ -1707,7 +1717,7 @@ function initPage() {
         $warnBar.style.display = 'none';
         loadCurrentChat();
         renderDrawerList();
-        try{ if(HX.sj && HX.sj.init) HX.sj.init({app:'AI对话框'}); }catch(e){} /* Kimi终审翻案②：公共件晚到场景，复查命中时补挂浮标+点亮（sj.init有inited防重、pick.bind有防重，重复调用无害） */
+        try{ if(HX.sj && HX.sj.init) HX.sj.init({app:'AI总管'}); }catch(e){} /* Kimi终审翻案②：公共件晚到场景，复查命中时补挂浮标+点亮（sj.init有inited防重、pick.bind有防重，重复调用无害） */
         try{ if(HX.pick && HX.pick.bind) HX.pick.bind(); }catch(e){}
       } else if (_hxRetry >= 15) {
         clearInterval(_hxT);
@@ -1798,6 +1808,84 @@ function initPage() {
       if ($pdfFileInput) $pdfFileInput.onchange = function() { try { chatOnPdfChosen(); } catch (ePdfF) {} };
     }
   } catch (ePdfAll) {}
+  /* v0.7.0（2026-10-23 AI总管一期刀C/刀D，SPEC_AI总管一期，外援双缺Kimi亲手写）：
+     刀C=命令闸+三步命令链（detectCmd命中→接管发送，进度气泡逐步亮，失败红字停下，成功记进对话账全量留存）；
+     刀D=📚收发室浮层（列书列章/取进对话/融最近回信/历史版退回）。全走HX.zg公开口，总开关hx_zg_off=1全退。 */
+  function zgOn() {
+    try {
+      if (!window.HX || !HX.zg) return false;
+      if (localStorage.getItem('hx_zg_off') === '1') return false;
+      return true;
+    } catch (e) { return false; }
+  }
+  /* 把一条总管回话记进当前对话账（全量留存规矩）：追加 u/a 两条进HX.chat真源 */
+  function zgLogToChat(userText, aiText) {
+    try {
+      var d = HX.chat.load(curChatId);
+      if (!d) return;
+      if (!(d.msgs instanceof Array)) d.msgs = [];
+      d.msgs.push({ r: 'u', c: String(userText), t: Date.now() });
+      d.msgs.push({ r: 'a', c: String(aiText), t: Date.now() });
+      HX.chat.save(d);
+    } catch (e) {}
+  }
+  /* 命令闸：命中命令→接管，返true；未命中返false走普通发送。文字=用户原始输入（未拼预设） */
+  function zgTryCmd(rawText) {
+    if (!zgOn()) return false;
+    var cmd = null;
+    try { cmd = HX.zg.detectCmd(rawText); } catch (e) { cmd = null; }
+    if (!cmd) return false;
+    /* 材料缺省=本对话最近3条AI回信拼一起（「材料」字样=收发室按钮来的，也算缺省） */
+    if (!cmd.material || cmd.material === '材料') {
+      try {
+        var d0 = HX.chat.load(curChatId);
+        var acc = [];
+        if (d0 && (d0.msgs instanceof Array)) {
+          for (var i = d0.msgs.length - 1; i >= 0 && acc.length < 3; i--) {
+            if (d0.msgs[i] && d0.msgs[i].r === 'a' && d0.msgs[i].c) acc.unshift(String(d0.msgs[i].c));
+          }
+        }
+        cmd.material = acc.join('\n---\n');
+      } catch (eM) {}
+    }
+    /* 贴用户气泡+进度气泡 */
+    try {
+      $inputArea.value = '';
+      adjustTextareaHeight();
+      var nowC = Date.now();
+      $mainArea.appendChild(createBubble('user', rawText, nowC, false));
+      var ph = createBubble('ai', '🔧 总管开工…', nowC, false);
+      $mainArea.appendChild(ph);
+      scrollBottom();
+      var lines = [];
+      function renderPh(failMsg) {
+        var h = '';
+        for (var k = 0; k < lines.length; k++) h += '<div>' + escHtml(lines[k]) + '</div>';
+        if (failMsg) h += '<div style="color:#cc6666;">' + escHtml(failMsg) + '</div>';
+        h += '<div class="bubble-time">' + formatTime(nowC) + '</div>';
+        ph.innerHTML = h;
+        ph.className = 'bubble bubble-ai round';
+        scrollBottom();
+      }
+      var failTxt = '';
+      HX.zg.merge(cmd, {
+        onStep: function(n, s) { lines.push(s); renderPh(''); },
+        onErr: function(msg) {
+          failTxt = '没办成：' + String(msg) + '（章没动，您的东西一个字没丢）';
+          renderPh(failTxt);
+          zgLogToChat(rawText, '【总管】' + lines.join(' / ') + ' / ' + failTxt);
+        },
+        onOk: function(info) {
+          var doneTxt = '已把材料融进《' + String(info.book || '') + '》「' + String(info.chapTitle || '') + '」（' + info.oldLen + '字→' + info.newLen + '字），旧版已留底，点📚里「↩历史版」能退回。';
+          lines.push(doneTxt);
+          renderPh('');
+          try { showToast('已融进书，旧版留底可退回'); } catch (eT) {}
+          zgLogToChat(rawText, '【总管】' + lines.join(' / '));
+        }
+      });
+    } catch (eAll) {}
+    return true;
+  }
   $sendBtn.onclick = function() {
     if (!window.HX || !HX.chat) return;
     if (!curChatId) return;
@@ -1812,6 +1900,9 @@ function initPage() {
       try { if (curPreset) { showToast('先写一句或先选预设配字'); return; } } catch (eEmptyPre) {}
       return;
     }
+    try { /* v0.7.0 刀C：AI总管命令闸——命中「融进《书》第N章」类命令→接管走命令链，不进普通发送；宁漏不误 */
+      if (zgTryCmd(text)) return;
+    } catch (eZgCmd) {}
     var _presetRawText = text; /* v0.4.0终审加：气泡显示用原文 */
     var _presetUsed = curPreset;
     var _presetIsLit = false;
@@ -2016,7 +2107,7 @@ function initPage() {
   // 初始化
   loadCurrentChat();
   renderDrawerList();
-  try{ if(window.HX && HX.sj && HX.sj.init) HX.sj.init({app:'AI对话框'}); }catch(e){}
+  try{ if(window.HX && HX.sj && HX.sj.init) HX.sj.init({app:'AI总管'}); }catch(e){}
   try{ if(window.HX && HX.pick && HX.pick.bind) HX.pick.bind(); }catch(e){}
   /* v0.4.0 提示词预设系统：绑定入口、出厂三条、总开关、云补拉 */
   try { presetBindUI(); } catch (ePresetBind) {}
@@ -2055,6 +2146,122 @@ function initPage() {
 document.addEventListener('DOMContentLoaded', function() {
   initPage();
 });
+</script>
+
+<script>
+/* v0.7.0 刀D：📚收发室逻辑（独立script块，全try护栏；zgOn/createBubble/escHtml等在主块，缺席静默） */
+(function(){
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ try{ return (typeof escHtml==='function') ? escHtml(String(s)) : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }catch(e){ return ''; } }
+  function on(){ try{ return (typeof zgOn==='function') && zgOn(); }catch(e){ return false; } }
+  function toast(m){ try{ if(typeof showToast==='function') showToast(m); }catch(e){} }
+  var room=$('zgRoom'), body=$('zgRoomBody');
+  if(!room||!body) return;
+  var $btn=$('zgBtn');
+  if($btn){ if(!on()){ $btn.style.display='none'; } }
+  /* 公共件三级加载晚到场景：每3秒复查10拍，zg到岗就把📚钮亮回来（治晚到永藏） */
+  (function(){ var n=0; var t=setInterval(function(){ n++; try{ if($btn && on()){ $btn.style.display=''; clearInterval(t); return; } }catch(e){} if(n>=10) clearInterval(t); }, 3000); })();
+  function close(){ try{ room.className='drawer'; }catch(e){} }
+  var $x=$('zgRoomClose'); if($x) $x.onclick=close;
+  if(!$btn) return;
+  $btn.onclick=function(){
+    try{
+      if(!on()){ toast('总管没在岗（公共件没装上或总开关关着）'); return; }
+      room.className='drawer open';
+      renderBooks();
+    }catch(e){}
+  };
+  function row(html, onclick){
+    var d=document.createElement('div');
+    d.style.cssText='padding:10px 8px;border-bottom:1px solid #eee;font-size:15px;';
+    d.innerHTML=html;
+    if(onclick) d.onclick=onclick;
+    return d;
+  }
+  function smallBtn(label, fn){
+    var b=document.createElement('button');
+    b.className='top-btn';
+    b.style.cssText='margin:2px 4px 2px 0;font-size:13px;padding:4px 8px;';
+    b.textContent=label;
+    b.onclick=function(ev){ try{ ev.stopPropagation(); }catch(e){} try{ fn(); }catch(e2){} };
+    return b;
+  }
+  /* 取最近一条AI回信 */
+  function lastAiText(){
+    try{
+      var d=HX.chat.load(curChatId);
+      if(d && (d.msgs instanceof Array)){
+        for(var i=d.msgs.length-1;i>=0;i--){
+          if(d.msgs[i] && d.msgs[i].r==='a' && d.msgs[i].c) return String(d.msgs[i].c);
+        }
+      }
+    }catch(e){}
+    return '';
+  }
+  function renderBooks(){
+    body.innerHTML='';
+    var books=[];
+    try{ books=HX.zg.listBooks(); }catch(e){ books=[]; }
+    if(!books.length){ body.appendChild(row('<span style="color:#999;">小涛的书架上还没有书</span>')); return; }
+    books.forEach(function(bk){
+      body.appendChild(row('<b>📖 '+esc(bk.title)+'</b><span style="color:#999;font-size:12px;">（'+bk.chapters.length+'章，点开看章）</span>', function(){ renderChaps(bk); }));
+    });
+  }
+  function renderChaps(bk){
+    body.innerHTML='';
+    body.appendChild(row('<a style="color:#4a6b4f;">← 返回书架</a>', renderBooks));
+    body.appendChild(row('<b>📖 '+esc(bk.title)+'</b>'));
+    bk.chapters.forEach(function(ch, idx){
+      var wrap=document.createElement('div');
+      wrap.style.cssText='padding:8px;border-bottom:1px solid #eee;';
+      var t=document.createElement('div');
+      t.style.cssText='font-size:15px;margin-bottom:4px;';
+      t.textContent='第'+(idx+1)+'章 '+ch.t;
+      wrap.appendChild(t);
+      var bar=document.createElement('div');
+      /* 📥取进对话：章正文贴进输入框（待发，不直发） */
+      bar.appendChild(smallBtn('📥取进对话', function(){
+        try{
+          var txt=HX.zg.getChap(bk.id, ch.id);
+          if(txt===null){ toast('这章还没正文'); return; }
+          var $ta=document.getElementById('inputArea');
+          if($ta){ $ta.value='【《'+bk.title+'》'+ch.t+' 原文】\n'+txt+'\n【我的事】\n'; }
+          close(); toast('章已取进输入框，补一句您要干啥再发');
+        }catch(e){ toast('取章失败'); }
+      }));
+      /* 🪄融最近回信 */
+      bar.appendChild(smallBtn('🪄融最近回信', function(){
+        try{
+          var mat=lastAiText();
+          if(!mat){ toast('本对话还没有AI回信可融'); return; }
+          if(!window.confirm('把本对话最近一条AI回信融进「'+ch.t+'」？旧版自动留底可退回。')) return;
+          close();
+          zgTryCmd('把材料融进《'+bk.title+'》第'+(idx+1)+'章');
+        }catch(e){ toast('命令发不出去'); }
+      }));
+      /* ↩历史版 */
+      bar.appendChild(smallBtn('↩历史版', function(){
+        try{
+          var hs=HX.zg.histList(bk.id, ch.id);
+          if(!hs.length){ toast('这章没有留底旧版'); return; }
+          var menu='留底旧版（新的在前）：\n';
+          for(var i=0;i<hs.length;i++){
+            var d=new Date(hs[i].ts);
+            menu+=(i+1)+'. '+(d.getMonth()+1)+'月'+d.getDate()+'日 '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)+'　'+hs[i].len+'字　'+hs[i].why+'\n';
+          }
+          var pick=window.prompt(menu+'\n退回第几版？输序号（别的不动）：','1');
+          var n=parseInt(pick,10);
+          if(!(n>=1 && n<=hs.length)) return;
+          if(!window.confirm('把「'+ch.t+'」退回第'+n+'版？现在的版本也会留底，不丢。')) return;
+          var ok=HX.zg.rollback(bk.id, ch.id, hs[n-1].ts);
+          toast(ok?'已退回，现在的版本也留了底':'退回失败，章没动');
+        }catch(e){ toast('退回失败'); }
+      }));
+      wrap.appendChild(bar);
+      body.appendChild(wrap);
+    });
+  }
+})();
 </script>
 
 </body>
