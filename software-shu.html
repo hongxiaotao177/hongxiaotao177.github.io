@@ -5,9 +5,12 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <!--
 ============================================================
-software-shu.html  「生长树」v0.1.0
-版本: 0.1.0
-日期: 2026-10-18
+software-shu.html  「生长树」v0.2.0
+版本: 0.2.0
+日期: 2026-10-23
+修改记录:
+  v0.2.0 2026-10-23 t54并入小涛：首页顶条认来路——URL带from=xiaotao时多一枚「←回小涛」钮回software-xiaotao.html，不带from界面逐字不变；DS实现零编造+Kimi终审亲手落地；申报动处=renderHome顶条拼接+绑定处+版本三处；红线树页btnBack/切座/异见/导出/AI链 IDENTICAL
+  v0.1.0 2026-10-18 一期：种子切座/展开/喂新文/异见/翻转/文献身份证/导出
 拍板人: 洪晓涛
 一句话: 种子文章→观点座→异形标装异见→文献身份证永不动号。
 终审: DS实现+Kimi终审翻案2处亲手落地（①toast翻自家常驻黑框hx-common未导出hxToastHold②软删补摘rootIds/父children）；
@@ -202,7 +205,7 @@ body{padding-bottom:80px}
   'use strict';
 
   /* ---------- 常量 ---------- */
-  var VER = '0.1.0';
+  var VER = '0.2.0';
   var IDX_KEY = 'hx_shu_idx_v1';
   var DOC_PREFIX = 'hx_shu_';
   var MAX_LOG = 500;
@@ -535,7 +538,12 @@ body{padding-bottom:80px}
   function renderHome(app) {
     var idx = loadIdx();
     var h = '';
-    h += '<div class="hx-top"><div class="hx-title">🌳生长树</div>' +
+    var _fromXt = location.search.indexOf('from=xiaotao') >= 0; /* v0.2.0 t54：认来路 */
+    h += '<div class="hx-top">';
+    if (_fromXt) {
+      h += '<button class="hx-btn mini" id="btnBackXt">←回小涛</button>';
+    }
+    h += '<div class="hx-title">🌳生长树</div>' +
       '<button class="hx-btn primary" id="btnNewTree">＋新建树</button></div>';
     h += '<div class="hx-wrap">';
     if (!idx.list || idx.list.length === 0) {
@@ -555,6 +563,8 @@ body{padding-bottom:80px}
     app.innerHTML = h;
 
     on(el('btnNewTree'), 'click', function () { safe(onNewTree); });
+    var _bbx = el('btnBackXt'); /* v0.2.0 t54：←回小涛（仅from=xiaotao时有此钮） */
+    if (_bbx) { on(_bbx, 'click', function () { safe(function () { location.href = 'software-xiaotao.html'; }); }); }
     var cards = app.querySelectorAll('[data-open]');
     for (var j = 0; j < cards.length; j++) {
       on(cards[j], 'click', function () {
