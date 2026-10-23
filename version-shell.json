@@ -1,1 +1,1 @@
-{"vc": 67, "vn": "2.3.3", "dl": "hxshell.apk", "sig": "741bd73379058b85", "note": "vc67/v2.3.3 🧪总钮一期：白天值班触发器（dayUntil闸+dayOn/dayOff两令+桥dayDuty+dyHb心跳），签名同钥匙覆盖装不丢数据；夜班逻辑一行未动", "t": 1792725595249}
+{"vc": 68, "vn": "2.3.4", "dl": "hxshell.apk", "sig": "ea56ae0fc59701fa", "note": "vc68/v2.3.4 t97手机本地接班链补板：代答补jbSave代写档案柜（arcSave闸同arcRead）+无id信回fail防呆；签名同钥匙覆盖装不丢数据；MainActivity一行未动", "t": 1792729494933}
