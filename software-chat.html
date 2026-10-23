@@ -478,7 +478,7 @@ body {
 
 <script>
 // SW_VERSION 全局变量
-var SW_VERSION = "0.7.0"; /* v0.7.0（2026-10-23 AI总管一期，SPEC_AI总管一期，洪老师拍板「直接开干干完为止」，外援双缺Kimi亲手写）：刀A改名「💬 AI总管」（title/顶栏/sj.init三处，文件名不动）；刀C命令闸+三步命令链（融进《书》第N章→取章→AI融合走HX.chat.pump→写回留历史版，进度气泡逐步亮失败红字停下，成功记进对话账）；刀D📚收发室浮层（列书列章/📥取进对话/🪄融最近回信/↩历史版退回）；全走HX.zg公开口，总开关hx_zg_off=1全退。红线：发送链/预设/PDF问答/📥送书/看门狗 IDENTICAL */ /* v0.5.0（2026-10-18，想法流水09:03拍板）：📥层加「🪄让AI找家」——presetCallAI三兄弟链问归哪书哪章confirm过目才塞+chatConfirmSend一字不差重复闸；终审翻案1处（DS/千问回调都当单参实为ok,out双参）；手选老链一行未动 */ /* v0.4.1（2026-10-17深夜班，洪老师拍板「把千问修好修完为止」，SPEC_千问四治法，千问实现+Kimi终审翻案2处亲手落地：①千问把续写闸_continued写进then每次重置=没闸，挪进attempt闭包 ②千问!r.ok直return致下家被连跳两次，补__skip哨兵）：presetCallAI四刀——钥匙trim/max_tokens2048→8192/finish_reason截断自动续写一回拼接（仍截断换下一家）/HTTP400不再当JSON误解析静默跳；预设系统其余全IDENTICAL */
+var SW_VERSION = "0.8.0"; /* v0.8.0（2026-10-23 AI总管二期刀G，SPEC_AI总管二期，洪老师拍板「二期开工」）：命令闸接模糊链——detectCmd未命中但含四动词→findChap找章（补用户气泡insertBefore保序）→dupRate≥70出三选（跳过/照融/重写融，10秒默认跳过）→miss/err摘泡还文挂_zgPassOnce旗放行普通发送不吞话；点名单链/收发室/预设/PDF问答/送书/看门狗全IDENTICAL；DS实现+Kimi终审翻案2处（递归死循环/双贴气泡） */ /* v0.7.0（2026-10-23 AI总管一期，SPEC_AI总管一期，洪老师拍板「直接开干干完为止」，外援双缺Kimi亲手写）：刀A改名「💬 AI总管」（title/顶栏/sj.init三处，文件名不动）；刀C命令闸+三步命令链（融进《书》第N章→取章→AI融合走HX.chat.pump→写回留历史版，进度气泡逐步亮失败红字停下，成功记进对话账）；刀D📚收发室浮层（列书列章/📥取进对话/🪄融最近回信/↩历史版退回）；全走HX.zg公开口，总开关hx_zg_off=1全退。红线：发送链/预设/PDF问答/📥送书/看门狗 IDENTICAL */ /* v0.5.0（2026-10-18，想法流水09:03拍板）：📥层加「🪄让AI找家」——presetCallAI三兄弟链问归哪书哪章confirm过目才塞+chatConfirmSend一字不差重复闸；终审翻案1处（DS/千问回调都当单参实为ok,out双参）；手选老链一行未动 */ /* v0.4.1（2026-10-17深夜班，洪老师拍板「把千问修好修完为止」，SPEC_千问四治法，千问实现+Kimi终审翻案2处亲手落地：①千问把续写闸_continued写进then每次重置=没闸，挪进attempt闭包 ②千问!r.ok直return致下家被连跳两次，补__skip哨兵）：presetCallAI四刀——钥匙trim/max_tokens2048→8192/finish_reason截断自动续写一回拼接（仍截断换下一家）/HTTP400不再当JSON误解析静默跳；预设系统其余全IDENTICAL */
 
 // 全局状态
 var curChatId = null;
@@ -1830,11 +1830,126 @@ function initPage() {
     } catch (e) {}
   }
   /* 命令闸：命中命令→接管，返true；未命中返false走普通发送。文字=用户原始输入（未拼预设） */
+  var _zgPassOnce = false; /* v0.8.0二期刀G：模糊链放行旗，passF再点发送时挡递归（点前挂true，闸口认出即清并放行） */
   function zgTryCmd(rawText) {
     if (!zgOn()) return false;
+    if (_zgPassOnce) { _zgPassOnce = false; return false; }
     var cmd = null;
     try { cmd = HX.zg.detectCmd(rawText); } catch (e) { cmd = null; }
-    if (!cmd) return false;
+    /* ════ 二期刀G：detectCmd未命中但含四动词→模糊链（chat v0.8.0 2026-10-23，SPEC_AI总管二期；DS实现+Kimi终审翻案2处亲手落地：①passThrough点sendBtn会重进本闸递归死循环，加_zgPassOnce放行旗②用户气泡改onOk时insertBefore补在进度泡前，miss/err摘泡还文不双贴；另扶正DS编造的listBooks假字段走hx-common侧真身）════ */
+    if (!cmd) {
+      if (!/融进|写进|塞进|并入/.test(String(rawText || ''))) return false;
+      /* 材料缺省=本对话最近3条AI回信拼一起（同一期规则） */
+      var matF = '';
+      try {
+        var dF = HX.chat.load(curChatId);
+        var accF = [];
+        if (dF && (dF.msgs instanceof Array)) {
+          for (var iF = dF.msgs.length - 1; iF >= 0 && accF.length < 3; iF--) {
+            if (dF.msgs[iF] && dF.msgs[iF].r === 'a' && dF.msgs[iF].c) accF.unshift(String(dF.msgs[iF].c));
+          }
+        }
+        matF = accF.join('\n---\n');
+      } catch (eMF) {}
+      try {
+        $inputArea.value = '';
+        adjustTextareaHeight();
+        var nowF = Date.now();
+        var phF = createBubble('ai', '🔎 总管正在找该融进哪章…', nowF, false);
+        $mainArea.appendChild(phF);
+        scrollBottom();
+        var linesF = [];
+        function renderPhF(failMsg) {
+          var hF = '';
+          for (var kF = 0; kF < linesF.length; kF++) hF += '<div>' + escHtml(linesF[kF]) + '</div>';
+          if (failMsg) hF += '<div style="color:#cc6666;">' + escHtml(failMsg) + '</div>';
+          hF += '<div class="bubble-time">' + formatTime(nowF) + '</div>';
+          phF.innerHTML = hF;
+          phF.className = 'bubble bubble-ai round';
+          scrollBottom();
+        }
+        /* 放行原句走普通发送（不吞话不双贴）：摘进度泡+还原文+挂放行旗再点发送（旗挡递归） */
+        function passF() {
+          try { if (phF && phF.parentNode) phF.parentNode.removeChild(phF); } catch (eRm) {}
+          try {
+            _zgPassOnce = true;
+            $inputArea.value = rawText;
+            adjustTextareaHeight();
+            $sendBtn.click();
+          } catch (eP) {}
+        }
+        HX.zg.findChap(String(rawText || '') + '\n' + matF, {
+          onOk: function (info) {
+            /* 找到章才补用户气泡，插在进度泡前面（原顺序不乱） */
+            try { $mainArea.insertBefore(createBubble('user', rawText, nowF, false), phF); scrollBottom(); } catch (eU) {}
+            var confTxt = (info.conf === 'ai') ? '（AI配的）' : '（直接配的）';
+            linesF.push('找到《' + String(info.book || '') + '》「' + String(info.chapTitle || '') + '」' + confTxt);
+            renderPhF('');
+            var chapTxt = '';
+            try { chapTxt = HX.zg.getChap(info.bid, info.cid) || ''; } catch (eG) { chapTxt = ''; }
+            var rate = 0;
+            try { rate = HX.zg.dupRate(matF, chapTxt); } catch (eRt) { rate = 0; }
+            function runMergeF(rewrite) {
+              var mOpts = { bid: info.bid, cid: info.cid, book: info.book, chapTitle: info.chapTitle, material: matF };
+              if (rewrite) mOpts.rewrite = 1;
+              HX.zg.merge(mOpts, {
+                onStep: function (n, s) { linesF.push(s); renderPhF(''); },
+                onErr: function (msg) {
+                  var failTxtF = '没办成：' + String(msg) + '（章没动，您的东西一个字没丢）';
+                  renderPhF(failTxtF);
+                  zgLogToChat(rawText, '【总管】' + linesF.join(' / ') + ' / ' + failTxtF);
+                },
+                onOk: function (info2) {
+                  var doneTxtF = '已把材料融进《' + String(info2.book || '') + '》「' + String(info2.chapTitle || '') + '」（' + info2.oldLen + '字→' + info2.newLen + '字），旧版已留底，点📚里「↩历史版」能退回。';
+                  linesF.push(doneTxtF);
+                  renderPhF('');
+                  try { showToast('已融进书，旧版留底可退回'); } catch (eTs) {}
+                  zgLogToChat(rawText, '【总管】' + linesF.join(' / '));
+                }
+              });
+            }
+            if (rate >= 70) {
+              /* 重复三选：跳过/照融/重写融，10秒不点默认跳过不写章 */
+              linesF.push('材料跟原章重复约' + rate + '%，您选（10秒不点=跳过）：');
+              renderPhF('');
+              var btnWrap = document.createElement('div');
+              btnWrap.style.marginTop = '6px';
+              var picked = false;
+              var tmr = null;
+              function unPick() { picked = true; try { if (tmr) clearTimeout(tmr); } catch (eCt) {} try { btnWrap.innerHTML = ''; } catch (eCw) {} }
+              function doSkipF() {
+                if (picked) return; unPick();
+                linesF.push('已跳过，章一个字没动。');
+                renderPhF('');
+                zgLogToChat(rawText, '【总管】' + linesF.join(' / '));
+              }
+              function doMergeF(rw) { if (picked) return; unPick(); runMergeF(rw); }
+              var bSkip = document.createElement('button'); bSkip.textContent = '跳过'; bSkip.style.marginRight = '6px';
+              bSkip.onclick = function () { doSkipF(); };
+              var bKeep = document.createElement('button'); bKeep.textContent = '照融'; bKeep.style.marginRight = '6px';
+              bKeep.onclick = function () { doMergeF(0); };
+              var bRe = document.createElement('button'); bRe.textContent = '重写融';
+              bRe.onclick = function () { doMergeF(1); };
+              btnWrap.appendChild(bSkip); btnWrap.appendChild(bKeep); btnWrap.appendChild(bRe);
+              phF.appendChild(btnWrap);
+              scrollBottom();
+              tmr = setTimeout(function () { doSkipF(); }, 10000);
+            } else {
+              runMergeF(0);
+            }
+          },
+          onMiss: function (msg) {
+            zgLogToChat(rawText, '【总管】没找到该融进哪章（' + String(msg || '') + '），已当普通对话');
+            passF();
+          },
+          onErr: function (msg) {
+            zgLogToChat(rawText, '【总管】找章中途出错（' + String(msg || '') + '），已当普通对话');
+            passF();
+          }
+        });
+      } catch (eAllF) { return false; }
+      return true;
+    }
     /* 材料缺省=本对话最近3条AI回信拼一起（「材料」字样=收发室按钮来的，也算缺省） */
     if (!cmd.material || cmd.material === '材料') {
       try {
