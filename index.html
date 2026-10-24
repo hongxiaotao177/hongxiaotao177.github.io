@@ -642,7 +642,7 @@ CUR.index="1.36.0"; /* v1.36.0 t83点装公共件通道，见顶部修改记录 
   CUR.index="1.37.0"; /* v1.37.0 R1装件管家腿+二轮重试，见顶部修改记录 */
 CUR.index="1.38.0"; /* v1.38.0 2026-10-21 t94资料回填哨，见顶部修改记录 */ CUR.index="1.39.0";
 CUR.index="1.40.0"; /* v1.40.0（2026-10-23 t96，洪老师回「行，开工」拍板🧪真机检验总钮一期，SPEC_真机检验总钮一期_t96，设计Kimi/DS实现刀1/Kimi亲手刀2刀3/终审Kimi）：首页常显🧪真机检验钮+弹窗三层（值班段白天2/4/8小时+收工+夜班状态／单体点名段一期=三本账过滤显示+自动点验二期／报告段红字置顶四本账）+hx-common v0.59.0 HX.zhiban白天质检员+壳vc67白天值班触发器；装件链/查新/relList/ybScore渲染/其余一行未动 */ /* v1.39.0 2026-10-22 t95值夜班套件刀4：首页🌙成绩单条，见顶部修改记录 */
-CUR.index="1.42.0"; /* v1.41.0 2026-10-23（t98 AI总管一期刀A，SPEC_AI总管一期，洪老师拍板「直接开干干完为止」，外援双缺Kimi亲手写）：💬AI对话框改名「💬 AI总管」三处（卡片h2/NAME表/UNITS表），文件名AI对话框.html不动保户口；配套chat v0.7.0+hx-common v0.60.0（HX.zg总管模块）+xiaotao v0.22.0（外改戳对齐）；查新/装件/对账/relList/版面其余一行未动 */
+CUR.index="1.43.0"; /* v1.43.0（2026-10-24晚班t105，洪老师真机报红点点装两次没反应：黑匣子实锤19:04:38红点onclick只触发reload，非hx-common件走「reload→投信管家→等回信→装件」绕手路，人离开套装页面回信没人收装件搁半路。刀法=把t83 hx-common专装通道直装模式推广到SUITE软件件：红点当场串行直装stale软件件、写账三样、黑匣子记账、全成3秒破缓存刷新；带忙闸/回退闸hx_dianzhuang_off/失败红字定格+hx_last_fail入账；index主界面stale仍走老reload路）*/ /* v1.41.0 2026-10-23（t98 AI总管一期刀A，SPEC_AI总管一期，洪老师拍板「直接开干干完为止」，外援双缺Kimi亲手写）：💬AI对话框改名「💬 AI总管」三处（卡片h2/NAME表/UNITS表），文件名AI对话框.html不动保户口；配套chat v0.7.0+hx-common v0.60.0（HX.zg总管模块）+xiaotao v0.22.0（外改戳对齐）；查新/装件/对账/relList/版面其余一行未动 */
 CUR.tuomin="0"; /* v1.19.10修404：CUR=壳内已装版本，单体手机还没装必须填"0"才会下载（CUR.ppt同款老坑，见230行） */ /* v1.19.8（2026-09-20班⑮，洪老师真机报"升级说装成功主界面还是19.6，几次都这样，没重启应该直接变19.7"）病根=班⑮发v1.19.7时新赋值插在同一行旧赋值前面，CUR.index="1.19.7"刚赋上就被同行的CUR.index="1.19.6"盖回→页脚活字永远亮1.19.6（文件真身早是新版，升级链/壳全无辜，大管家0.54.5上机为证）；还连带v1.19.5刀2开门自校对误把账本1.19.7当谎回滚→每次都提示重装。治=删同行可执行旧赋值（注释留档）+升号v1.19.8让真机重新下载。其余一行未动 */
 try{document.getElementById("ftVer").textContent=CUR.index;}catch(eF){} /* v1.19.6 页脚死字改活字：ftVer亮CUR.index真身 */
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
@@ -2933,6 +2933,113 @@ var __home1209 = (function(){
               }
               return;
             }
+            /* t105 点装软件件直装通道：红点对SUITE软件件当场直装，不再reload绕管家（洪老师19:04连点两次没反应，回信没人收装件搁半路） */
+            try{
+              if(el.__hxDzBusy) return;
+              if(localStorage.getItem('hx_dianzhuang_off')==='1'){ /* 回退闸：落老reload路 */ }
+              else{
+                var dzList=[];
+                try{
+                  for(var _di=0;_di<rows2.length;_di++){
+                    var _it=rows2[_di]; if(!_it) continue;
+                    var _k=String(_it.key||"");
+                    if(_k==='hx-common'||_k==='index') continue;
+                    if(!SUITE[_k]) continue;
+                    var _lv2=""; try{ _lv2=M.localVer(_k); }catch(eD0){}
+                    if(_lv2==='') continue;
+                    if(String(_it.version||"")==='') continue;
+                    if(_lv2===String(_it.version)) continue;
+                    var _nm2=_k; try{ _nm2=nm(_k)||_k; }catch(eD1){}
+                    dzList.push({key:_k, dl:SUITE[_k][0], localName:SUITE[_k][1], ver:String(_it.version||""), sig:_it.sig||'', name:_nm2});
+                  }
+                }catch(eD2){ dzList=[]; }
+                if(dzList.length>0){
+                  el.__hxDzBusy=true;
+                  var _dzIdx=0;
+                  var _dzNext=function(){
+                    if(_dzIdx>=dzList.length){
+                      var _names=[]; for(var _ni=0;_ni<dzList.length;_ni++){ _names.push(dzList[_ni].name); }
+                      el.textContent="✅ 装好了："+_names.join("、")+"——3秒后自动刷新生效";
+                      setTimeout(function(){ location.replace("index.html?v="+encodeURIComponent(CUR.index||"")+"&r="+Date.now()); },3000);
+                      return;
+                    }
+                    var _d=dzList[_dzIdx];
+                    el.textContent="📥 正在装"+_d.name+"（"+(_dzIdx+1)+"/"+dzList.length+"）…";
+                    var _dzFail=function(e){
+                      try{ HX.bb.log('err','点装'+_d.name+'失败:'+((e&&e.message)||e)); }catch(eB0){}
+                      try{
+                        var _lf=null; try{ _lf=JSON.parse(localStorage.getItem('hx_last_fail')||'null'); }catch(eL0){}
+                        if(!_lf||typeof _lf!=='object'){ _lf={t:Date.now(),items:[]}; }
+                        if(!_lf.items||!(_lf.items instanceof Array)){ _lf.items=[]; }
+                        var _dup=false; for(var _li=0;_li<_lf.items.length;_li++){ if(_lf.items[_li]===_d.name){ _dup=true; break; } }
+                        if(!_dup){ _lf.items.push(_d.name); }
+                        _lf.t=Date.now();
+                        localStorage.setItem('hx_last_fail', JSON.stringify(_lf));
+                      }catch(eL1){}
+                      el.textContent="🔴 "+_d.name+"没装上："+((e&&e.message)||'写入没成功')+"，过一会儿再点我；老装不上点🆘叫Kimi会诊";
+                    };
+                    try{
+                      if(typeof _mgGetM!=='function'){ throw new Error('装件腿不可用'); }
+                      _mgGetM(_d.dl, _d.sig).then(function(txt){
+                        try{
+                          var b64=btoa(unescape(encodeURIComponent(txt)));
+                          var _pad=0; if(b64.charAt(b64.length-1)==='=') _pad++; if(b64.charAt(b64.length-2)==='=') _pad++;
+                          var expect=Math.floor(b64.length*3/4)-_pad;
+                          var _ok=false;
+                          if(LearnShell&&typeof LearnShell.applyUpdateBegin==='function'){
+                            var _r0=LearnShell.applyUpdateBegin(_d.localName);
+                            if(_r0!=='ok'){ throw new Error('写壳开始失败'); }
+                            var _pos=0; var _chunkErr=null;
+                            while(_pos<b64.length){
+                              var _chunk=b64.slice(_pos,_pos+60000);
+                              var _rc=LearnShell.applyUpdateChunk(_chunk);
+                              if(!(typeof _rc==='string'&&_rc.indexOf('ok:')===0)){
+                                try{ LearnShell.applyUpdateAbort(); }catch(eA0){}
+                                _chunkErr=new Error('写壳分块失败'); break;
+                              }
+                              _pos+=60000;
+                            }
+                            if(_chunkErr){ throw _chunkErr; }
+                            var _re=LearnShell.applyUpdateEnd();
+                            if(typeof _re==='string'&&_re.indexOf('ok:')===0){
+                              var _parts=_re.split(':');
+                              var _n1=parseInt(_parts[1],10); var _n2=parseInt(_parts[2],10);
+                              if(_n1===expect&&_n2===expect){ _ok=true; }
+                              else{ throw new Error('写壳字节不符'); }
+                            }else{ throw new Error('写壳收尾失败'); }
+                          }else if(LearnShell&&typeof LearnShell.applyUpdate==='function'){
+                            var _rr=LearnShell.applyUpdate(_d.localName, b64);
+                            if(_rr){ _ok=true; } else { throw new Error('写壳失败'); }
+                          }else{
+                            throw new Error('写壳腿不可用');
+                          }
+                          if(!_ok){ throw new Error('写入没成功'); }
+                          try{ CUR[_d.key]=_d.ver; localStorage.setItem("hx_suite_ver", JSON.stringify(CUR)); }catch(eC0){}
+                          try{
+                            var _fix=null; try{ _fix=JSON.parse(localStorage.getItem('hx_cur_fix')||'null'); }catch(eF0){}
+                            if(!_fix||typeof _fix!=='object'){ _fix={}; }
+                            _fix[_d.key]=_d.ver;
+                            localStorage.setItem('hx_cur_fix', JSON.stringify(_fix));
+                          }catch(eF1){}
+                          try{ HX.bb.log('act','点装'+_d.name+'成功 '+unescape(encodeURIComponent(txt)).length+'字节 牌v'+_d.ver); }catch(eB1){}
+                          _dzIdx++;
+                          _dzNext();
+                        }catch(eW){
+                          _dzFail(eW);
+                        }
+                      }).catch(function(e){
+                        _dzFail(e);
+                      });
+                    }catch(e){
+                      _dzFail(e);
+                    }
+                  };
+                  _dzNext();
+                  return;
+                }
+              }
+            }catch(eDz){ /* 直装通道异常落老路 */ }
+
             el.textContent="🔍 正在查新版本，请稍等…";
             sessionStorage.removeItem('hx_ver_checked');sessionStorage.setItem('hx_ver_manual','1');sessionStorage.setItem('hx_sj_skip_once','1');
             setTimeout(function(){ location.reload(); },120);
