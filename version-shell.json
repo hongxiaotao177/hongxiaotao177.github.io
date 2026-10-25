@@ -1,1 +1,1 @@
-{"vc": 70, "vn": "2.3.6", "dl": "hxshell.apk", "sig": "1e7137912e494f4c", "note": "vc70/v2.3.6 夜班岗叫醒根治（t119号6，SPEC_t119，DS实现Kimi终审）：整夜不睡+5分钟闹钟兜底拉起YbWakeReceiver+心跳发不出不记账下分钟重试+ver令壳自报门牌；assets刷4件（index1.44.0/hx-common0.71.0/xiaotao0.25.0，engine0字节占位不动）；签名同钥匙覆盖装不丢数据", "t": 1792939744751}
+{"vc": 71, "vn": "2.3.7", "dl": "hxshell.apk", "sig": "4767d7845a8acb5a", "note": "vc71/v2.3.7 整点响铃（t121，洪老师拍板「每小时响铃」）：YbWakeReceiver每5分钟闹钟首趟且7..21点发通知「学习套装整点报平安」带铃声震动，hx_ring按小时去重不重复响；assets刷现行（index1.49.0/hx-common0.71.0/xiaotao0.25.0，engine0字节占位不动）；签名同钥匙覆盖装不丢数据", "t": 1792967791040}
