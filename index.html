@@ -642,7 +642,7 @@ CUR.index="1.36.0"; /* v1.36.0 t83点装公共件通道，见顶部修改记录 
   CUR.index="1.37.0"; /* v1.37.0 R1装件管家腿+二轮重试，见顶部修改记录 */
 CUR.index="1.38.0"; /* v1.38.0 2026-10-21 t94资料回填哨，见顶部修改记录 */ CUR.index="1.39.0";
 CUR.index="1.40.0"; /* v1.40.0（2026-10-23 t96，洪老师回「行，开工」拍板🧪真机检验总钮一期，SPEC_真机检验总钮一期_t96，设计Kimi/DS实现刀1/Kimi亲手刀2刀3/终审Kimi）：首页常显🧪真机检验钮+弹窗三层（值班段白天2/4/8小时+收工+夜班状态／单体点名段一期=三本账过滤显示+自动点验二期／报告段红字置顶四本账）+hx-common v0.59.0 HX.zhiban白天质检员+壳vc67白天值班触发器；装件链/查新/relList/ybScore渲染/其余一行未动 */ /* v1.39.0 2026-10-22 t95值夜班套件刀4：首页🌙成绩单条，见顶部修改记录 */
-CUR.index="1.43.0"; /* v1.43.0（2026-10-24晚班t105，洪老师真机报红点点装两次没反应：黑匣子实锤19:04:38红点onclick只触发reload，非hx-common件走「reload→投信管家→等回信→装件」绕手路，人离开套装页面回信没人收装件搁半路。刀法=把t83 hx-common专装通道直装模式推广到SUITE软件件：红点当场串行直装stale软件件、写账三样、黑匣子记账、全成3秒破缓存刷新；带忙闸/回退闸hx_dianzhuang_off/失败红字定格+hx_last_fail入账；index主界面stale仍走老reload路）*/ /* v1.41.0 2026-10-23（t98 AI总管一期刀A，SPEC_AI总管一期，洪老师拍板「直接开干干完为止」，外援双缺Kimi亲手写）：💬AI对话框改名「💬 AI总管」三处（卡片h2/NAME表/UNITS表），文件名AI对话框.html不动保户口；配套chat v0.7.0+hx-common v0.60.0（HX.zg总管模块）+xiaotao v0.22.0（外改戳对齐）；查新/装件/对账/relList/版面其余一行未动 */
+/* v1.44.0（2026-10-25 t108，洪老师真机报「该出现的时候还是没有」：主链查牌fetchJson只有GitHub双腿全断即瘫，面板/任务单全败静默吞掉，管家无信干等；刀法=fetchJsonEx加坚果云+管家原生两腿/面板任务单全败黑匣子留痕/管家90秒无信自动落legacyRun/缓存账标日期；SPEC_t108，DS实现+Kimi终审；hx_t108_off=1回退）*/ CUR.index="1.44.0"; /* v1.43.0（2026-10-24晚班t105，洪老师真机报红点点装两次没反应：黑匣子实锤19:04:38红点onclick只触发reload，非hx-common件走「reload→投信管家→等回信→装件」绕手路，人离开套装页面回信没人收装件搁半路。刀法=把t83 hx-common专装通道直装模式推广到SUITE软件件：红点当场串行直装stale软件件、写账三样、黑匣子记账、全成3秒破缓存刷新；带忙闸/回退闸hx_dianzhuang_off/失败红字定格+hx_last_fail入账；index主界面stale仍走老reload路）*/ /* v1.41.0 2026-10-23（t98 AI总管一期刀A，SPEC_AI总管一期，洪老师拍板「直接开干干完为止」，外援双缺Kimi亲手写）：💬AI对话框改名「💬 AI总管」三处（卡片h2/NAME表/UNITS表），文件名AI对话框.html不动保户口；配套chat v0.7.0+hx-common v0.60.0（HX.zg总管模块）+xiaotao v0.22.0（外改戳对齐）；查新/装件/对账/relList/版面其余一行未动 */
 CUR.tuomin="0"; /* v1.19.10修404：CUR=壳内已装版本，单体手机还没装必须填"0"才会下载（CUR.ppt同款老坑，见230行） */ /* v1.19.8（2026-09-20班⑮，洪老师真机报"升级说装成功主界面还是19.6，几次都这样，没重启应该直接变19.7"）病根=班⑮发v1.19.7时新赋值插在同一行旧赋值前面，CUR.index="1.19.7"刚赋上就被同行的CUR.index="1.19.6"盖回→页脚活字永远亮1.19.6（文件真身早是新版，升级链/壳全无辜，大管家0.54.5上机为证）；还连带v1.19.5刀2开门自校对误把账本1.19.7当谎回滚→每次都提示重装。治=删同行可执行旧赋值（注释留档）+升号v1.19.8让真机重新下载。其余一行未动 */
 try{document.getElementById("ftVer").textContent=CUR.index;}catch(eF){} /* v1.19.6 页脚死字改活字：ftVer亮CUR.index真身 */
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
@@ -1245,6 +1245,23 @@ function hxRawGet(name){
     }
     return hxRawGet(name);
   }
+  /* t108刀1：GitHub双腿败→坚果云→管家原生腿（治国内网拉牌全断）；hx_t108_off=1回退 */
+  function fetchJsonEx(name){
+    if(localStorage.getItem('hx_t108_off')==='1') return fetchJson(name);
+    return fetchJson(name).catch(function(e0){
+      try{ if(window.HX&&HX.bb&&HX.bb.log) HX.bb.log('note','拉牌GitHub双腿败，走坚果云:'+name); }catch(eL0){}
+      var dk=null; try{ dk=(window.HX&&HX.keys&&HX.keys.dav)?HX.keys.dav():null; }catch(eK){}
+      if(!dk||!dk.user||!dk.pass) throw e0;
+      var u='https://dav.jianguoyun.com/dav/'+encodeURIComponent('学习套装备份')+'/'+encodeURIComponent(name)+'?t='+Date.now();
+      var hdr={headers:{Authorization:'Basic '+btoa(dk.user+':'+dk.pass)},cache:'no-store'};
+      return ghFetch(u,hdr,15000).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.text(); }).catch(function(e1){
+        try{ if(window.HX&&HX.bb&&HX.bb.log) HX.bb.log('note','拉牌坚果云败，走管家原生腿:'+name); }catch(eL1){}
+        var mok=false; try{ mok=!!(window.HX&&HX.mg&&HX.mg.ok&&HX.mg.ok()); }catch(eM){}
+        if(!mok) throw e1;
+        return HX.mg.call('GET', u, null).then(function(r2){ if(!r2.ok) throw new Error('HTTP '+r2.status); return r2.text(); });
+      });
+    });
+  }
   var apiDead=false; /* v1.16.0 */
   /* v1.1.5 踩坑：旧版把"ppt已装0.1.1"的假记忆写进了 hx_suite_ver（其实从没装上），
      光看版本记忆会永远跳过下载。所以现在"版本不用更新"还要再敲一下文件的门：
@@ -1344,7 +1361,7 @@ try{ updHuman.push((typeof cnName!=="undefined"&&cnName?cnName:localName.replace
     var pName=PARTS[pi][0], pVer=PARTS[pi][1], pRe=PARTS[pi][2];
     var cn="部件"+pName;
     setSlot(slot, "⏳ "+cn+"：正在查…");
-    hardLimit(fetchJson(pVer), 20000).then(function(txt){
+    hardLimit(fetchJsonEx(pVer), 20000).then(function(txt){
       var info; try{ info=JSON.parse(txt); }catch(e){ info=null; }
       if(!info || !info.version){ setSlot(slot, "⚠️ "+cn+"：版本文件没读到，跳过"); doneOne(); return; }
       var lv=partLocalVer(pName, pRe);
@@ -1386,7 +1403,7 @@ try{ updHuman.push((typeof cn!=="undefined"&&cn?cn:pName)+"（"+(info&&info.t?fm
     var remote=SUITE[k][0], localName=SUITE[k][1], verFile=SUITE[k][2];
     var cnName=(k==="index"?"主界面自己":localName.replace(".html",""));  /* v1.8.0 主界面入名单后报进度说人话 */
     setSlot(slot, "⏳ "+cnName+"：正在查…");
-    hardLimit(hxIdle0().then(function(){ return fetchJson(verFile); }), 20000).then(function(txt){  /* v1.6.2 每查一个软件前先等你闲下来；v1.15.0 20秒硬超时兜底 */
+    hardLimit(hxIdle0().then(function(){ return fetchJsonEx(verFile); }), 20000).then(function(txt){  /* v1.6.2 每查一个软件前先等你闲下来；v1.15.0 20秒硬超时兜底 */
       var info;
       try{ info=JSON.parse(txt); }catch(e){ info=null; }
       if(!info || !info.version){ setSlot(slot, "⚠️ "+cnName+"：版本文件没读到，跳过"); doneOne(); return; }
@@ -1498,7 +1515,7 @@ try{ updHuman.push((typeof cn!=="undefined"&&cn?cn:pName)+"（"+(info&&info.t?fm
             if(!dk||!dk.user||!dk.pass){ ok(null); return; }
             var url='https://dav.jianguoyun.com/dav/'+encodeURIComponent('学习套装备份')+'/'+encodeURIComponent('发版任务单.json');
             var hdr={"Authorization":"Basic "+btoa(dk.user+":"+dk.pass)};
-            ghFetch(url,{headers:hdr,cache:"no-store"},8000).then(function(r){ if(!r.ok) throw 0; return r.text(); }).then(ok).catch(function(){ ok(null); });
+            ghFetch(url,{headers:hdr,cache:"no-store"},8000).then(function(r){ if(!r.ok) throw 0; return r.text(); }).then(ok).catch(function(){ try{ if(window.HX&&HX.bb&&HX.bb.log) HX.bb.log('err','任务单API+坚果云全败'); }catch(eL){} ok(null); });
           }catch(e){ ok(null); }
         }
         var timer=setTimeout(function(){ ok(null); },8000);
@@ -1792,6 +1809,11 @@ try{ updHuman.push((typeof cn!=="undefined"&&cn?cn:pName)+"（"+(info&&info.t?fm
         /* v1.18.7 修理清单#4：安心条等待话术改明白（已等N分钟，不是卡死），分钟变了才重画 */
         try{ if(window.HX&&HX.step){ var _wmin=Math.floor((Date.now()-tStart)/60000); if(_wmin!==lastWaitMin){ lastWaitMin=_wmin; HX.step.upd('IDX.ver.start','在等管家回信（已等'+_wmin+'分钟），不是卡死，管家查完这里自动出结果'); } } }catch(e){}
         /* v1.18.7 修理清单#2：等回信超2分钟没等到→列出文件夹里实际的mg_/mgver_件名+重新查钮，不再干等 */
+        /* t108刀4：管家90秒无回信→主界面同时自己查，不干等（装件链有sig校验+已装跳过，双腿不打架） */
+        if(Date.now()-tStart>90*1000 && !window.__t108Fell){
+          try{ window.__t108Fell=true; if(window.HX&&HX.bb&&HX.bb.log) HX.bb.log('note','管家90秒无信，主界面自己查'); }catch(eF90){}
+          if(localStorage.getItem('hx_t108_off')!=='1'){ updMsg('⏳ 管家90秒没回话，主界面自己上手查（两条路谁先到听谁的）…'); try{ legacyRun(); }catch(eR90){} }
+        }
         if(Date.now()-tStart>2*60*1000 && !diagTold){ diagTold=true;
           try{
             var _lf=LearnShell.listFiles(); var _mg=[];
@@ -2788,7 +2810,7 @@ var __home1209 = (function(){
           var dk=null; try{ if(window.HX&&HX.keys&&HX.keys.dav) dk=HX.keys.dav(); }catch(e){}
           if(!dk||!dk.user||!dk.pass){ ok(null); return; }
           var url='https://dav.jianguoyun.com/dav/'+encodeURIComponent('学习套装备份')+'/'+encodeURIComponent(name);
-          ghFetch(url,{headers:{"Authorization":"Basic "+btoa(dk.user+":"+dk.pass)},cache:"no-store"},8000).then(function(r){ if(!r.ok) throw 0; return r.text(); }).then(function(t){ try{ ok(JSON.parse(t)); }catch(e){ ok(null); } }).catch(function(){ ok(null); });
+          ghFetch(url,{headers:{"Authorization":"Basic "+btoa(dk.user+":"+dk.pass)},cache:"no-store"},8000).then(function(r){ if(!r.ok) throw 0; return r.text(); }).then(function(t){ try{ ok(JSON.parse(t)); }catch(e){ ok(null); } }).catch(function(){ try{ if(window.HX&&HX.bb&&HX.bb.log) HX.bb.log('err','面板更新账API+坚果云全败:'+name); }catch(eL){} ok(null); });
         }catch(e){ ok(null); }
       }
       try{
@@ -2882,7 +2904,7 @@ var __home1209 = (function(){
         var rows=arr.slice();
         rows.sort(function(a,b){ return (Number(b&&(b.t||(va&&va.t)))||0)-(Number(a&&(a.t||(va&&va.t)))||0); }); /* t倒序，最新在上 */
         var maxT=0; rows.forEach(function(it){ var t=Number(it&&(it.t||(va&&va.t)))||0; if(t>maxT) maxT=t; });
-        var out=["📋 本次更新"+(isCache?"（本地账，联网对牌中）":"")];
+        var out=["📋 本次更新"+(isCache?"（此账记于"+(fmtT2(va&&va.t)||"没钟点")+"，正在对云牌）":"")];
         var hasStale=false;
         rows.forEach(function(it){
           if(!it) return;
