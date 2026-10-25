@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>AI总管</title>
+<!-- v0.9.0 2026-10-25 t110话仓（SPEC_t110_话仓）：📦话仓浮层+发送前查仓闸，详SW_VERSION注释 -->
 <!-- v0.1.0 2026-10-16 AI对话框一期上线（SPEC_AI对话框一期） -->
 <!-- v0.1.1 2026-10-16 洪老师真机报：只有DS钥匙也弹没钥匙黑框；病根门脸钥匙检查漏DeepSeek一路；治法hasKeys加查xt_dskey及壳真源deepseek字段；终审补：顶栏显示版本号同步0.1.1（DS漏改） -->
 <!-- v0.1.2 2026-10-16 t32黄条误报根治（首查不到每2秒复查30秒死心，查到收条+补载对话）+t33发送钮左让64px避壳回家钮（bottom-bar右padding）+t34补挂HX.sj速记浮标+HX.pick点亮（sjDot/Panel上提避让右下热区） -->
@@ -422,6 +423,7 @@ body {
 <div class="top-bar">
   <div class="top-title">💬 AI总管<span class="top-version">v0.7.0</span></div>
   <div>
+    <button id="hcBtn" class="top-btn" style="margin-right:6px;">📦</button>
     <button id="zgBtn" class="top-btn" style="margin-right:6px;">📚</button>
     <button id="menuBtn" class="top-btn">☰对话</button>
     <button id="newBtn" class="top-btn">✚新聊</button>
@@ -457,6 +459,15 @@ body {
   <div id="zgRoomBody" class="drawer-list"></div>
 </div>
 
+<!-- v0.9.0 t110刀1：📦话仓浮层 -->
+<div id="hcRoom" class="drawer" style="z-index:9999;">
+  <div class="drawer-header">
+    <div>📦 话仓（AI对话小仓库）</div>
+    <button id="hcRoomClose" class="drawer-close">×</button>
+  </div>
+  <div id="hcRoomBody" class="drawer-list"></div>
+</div>
+
 <!-- 抽屉层 -->
 <div id="drawer" class="drawer">
   <div class="drawer-header">
@@ -479,7 +490,7 @@ body {
 
 <script>
 // SW_VERSION 全局变量
-var SW_VERSION = "0.8.3"; /* v0.8.3（2026-10-24 SPEC_AI总管三期，洪老师拍板三条新规）刀B.1 zgTryCmd前置改AI判令制（废四动词暗号）/刀B.2旧detectCmd模糊链保留不删/刀B.4预设浮层灰字透明；刀B.3回信截断治本体转下批（锚点在HX.chat泵内，DS停报，留痕）；外援DS实现，Kimi终审翻案1处（passThrough双贴补摘用户气泡）亲手落地 */ /* v0.8.2（2026-10-24 t104，洪老师17:31真机报「选成书单发预设空字点发送被拦死」）：修空字闸——单发预设空字放行显（预设名），带上文/无预设照旧；SPEC_chat_v0.8.2，DS实现Kimi终审 */ /* v0.8.1（2026-10-23深夜 t99，洪老师22:37真机报「AI总管输入框没反应」截图实锤被压成窄条）：底栏两行——textarea-wrap加flex-wrap+textarea-input flex:1 1 100%独占首行，按钮落第二行；病根=media小屏可用宽268<三钮352；只动CSS两行，HTML/JS/发送链全IDENTICAL；外援双缺Kimi亲手 */ /* v0.8.0（2026-10-23 AI总管二期刀G，SPEC_AI总管二期，洪老师拍板「二期开工」）：命令闸接模糊链——detectCmd未命中但含四动词→findChap找章（补用户气泡insertBefore保序）→dupRate≥70出三选（跳过/照融/重写融，10秒默认跳过）→miss/err摘泡还文挂_zgPassOnce旗放行普通发送不吞话；点名单链/收发室/预设/PDF问答/送书/看门狗全IDENTICAL；DS实现+Kimi终审翻案2处（递归死循环/双贴气泡） */ /* v0.7.0（2026-10-23 AI总管一期，SPEC_AI总管一期，洪老师拍板「直接开干干完为止」，外援双缺Kimi亲手写）：刀A改名「💬 AI总管」（title/顶栏/sj.init三处，文件名不动）；刀C命令闸+三步命令链（融进《书》第N章→取章→AI融合走HX.chat.pump→写回留历史版，进度气泡逐步亮失败红字停下，成功记进对话账）；刀D📚收发室浮层（列书列章/📥取进对话/🪄融最近回信/↩历史版退回）；全走HX.zg公开口，总开关hx_zg_off=1全退。红线：发送链/预设/PDF问答/📥送书/看门狗 IDENTICAL */ /* v0.5.0（2026-10-18，想法流水09:03拍板）：📥层加「🪄让AI找家」——presetCallAI三兄弟链问归哪书哪章confirm过目才塞+chatConfirmSend一字不差重复闸；终审翻案1处（DS/千问回调都当单参实为ok,out双参）；手选老链一行未动 */ /* v0.4.1（2026-10-17深夜班，洪老师拍板「把千问修好修完为止」，SPEC_千问四治法，千问实现+Kimi终审翻案2处亲手落地：①千问把续写闸_continued写进then每次重置=没闸，挪进attempt闭包 ②千问!r.ok直return致下家被连跳两次，补__skip哨兵）：presetCallAI四刀——钥匙trim/max_tokens2048→8192/finish_reason截断自动续写一回拼接（仍截断换下一家）/HTTP400不再当JSON误解析静默跳；预设系统其余全IDENTICAL */ /* v0.8.2（2026-10-24 t104，洪老师17:31真机报「选成书单发预设空字点发送被拦死」）：修空字闸——单发预设空字放行显（预设名），带上文/无预设照旧；SPEC_chat_v0.8.2，DS实现Kimi终审 */ /* v0.8.1（2026-10-23深夜 t99，洪老师22:37真机报「AI总管输入框没反应」截图实锤被压成窄条）：底栏两行——textarea-wrap加flex-wrap+textarea-input flex:1 1 100%独占首行，按钮落第二行；病根=media小屏可用宽268<三钮352；只动CSS两行，HTML/JS/发送链全IDENTICAL；外援双缺Kimi亲手 */ /* v0.8.0（2026-10-23 AI总管二期刀G，SPEC_AI总管二期，洪老师拍板「二期开工」）：命令闸接模糊链——detectCmd未命中但含四动词→findChap找章（补用户气泡insertBefore保序）→dupRate≥70出三选（跳过/照融/重写融，10秒默认跳过）→miss/err摘泡还文挂_zgPassOnce旗放行普通发送不吞话；点名单链/收发室/预设/PDF问答/送书/看门狗全IDENTICAL；DS实现+Kimi终审翻案2处（递归死循环/双贴气泡） */ /* v0.7.0（2026-10-23 AI总管一期，SPEC_AI总管一期，洪老师拍板「直接开干干完为止」，外援双缺Kimi亲手写）：刀A改名「💬 AI总管」（title/顶栏/sj.init三处，文件名不动）；刀C命令闸+三步命令链（融进《书》第N章→取章→AI融合走HX.chat.pump→写回留历史版，进度气泡逐步亮失败红字停下，成功记进对话账）；刀D📚收发室浮层（列书列章/📥取进对话/🪄融最近回信/↩历史版退回）；全走HX.zg公开口，总开关hx_zg_off=1全退。红线：发送链/预设/PDF问答/📥送书/看门狗 IDENTICAL */ /* v0.5.0（2026-10-18，想法流水09:03拍板）：📥层加「🪄让AI找家」——presetCallAI三兄弟链问归哪书哪章confirm过目才塞+chatConfirmSend一字不差重复闸；终审翻案1处（DS/千问回调都当单参实为ok,out双参）；手选老链一行未动 */ /* v0.4.1（2026-10-17深夜班，洪老师拍板「把千问修好修完为止」，SPEC_千问四治法，千问实现+Kimi终审翻案2处亲手落地：①千问把续写闸_continued写进then每次重置=没闸，挪进attempt闭包 ②千问!r.ok直return致下家被连跳两次，补__skip哨兵）：presetCallAI四刀——钥匙trim/max_tokens2048→8192/finish_reason截断自动续写一回拼接（仍截断换下一家）/HTTP400不再当JSON误解析静默跳；预设系统其余全IDENTICAL */
+var SW_VERSION = "0.9.0"; /* v0.9.0（2026-10-25晚班 SPEC_t110_话仓，洪老师拍板「先干话仓，开工」插队总待办第1位，外援双缺Kimi亲手）：刀1 📦话仓浮层（顶栏📦钮+总账/话题数数/条目展开/📥塞书走chatSendBook/🗑删，hx_hc_off=1藏钮3秒复查10拍）；刀2 发送前查仓闸hcTryAsk（zgTryCmd前——仓里命中直接贴双泡📦来自话仓没花AI钱+🔄问AI钮挂_hcPassOnce，记对话账a前缀【话仓答】防循环，hx_hc_ask_off=1关闸）；配套hx-common v0.69.0 HX.hc模块+persist入库钩。红线：除两刀+本行外一行未动。 */ /* v0.8.3（2026-10-24 SPEC_AI总管三期，洪老师拍板三条新规）刀B.1 zgTryCmd前置改AI判令制（废四动词暗号）/刀B.2旧detectCmd模糊链保留不删/刀B.4预设浮层灰字透明；刀B.3回信截断治本体转下批（锚点在HX.chat泵内，DS停报，留痕）；外援DS实现，Kimi终审翻案1处（passThrough双贴补摘用户气泡）亲手落地 */ /* v0.8.2（2026-10-24 t104，洪老师17:31真机报「选成书单发预设空字点发送被拦死」）：修空字闸——单发预设空字放行显（预设名），带上文/无预设照旧；SPEC_chat_v0.8.2，DS实现Kimi终审 */ /* v0.8.1（2026-10-23深夜 t99，洪老师22:37真机报「AI总管输入框没反应」截图实锤被压成窄条）：底栏两行——textarea-wrap加flex-wrap+textarea-input flex:1 1 100%独占首行，按钮落第二行；病根=media小屏可用宽268<三钮352；只动CSS两行，HTML/JS/发送链全IDENTICAL；外援双缺Kimi亲手 */ /* v0.8.0（2026-10-23 AI总管二期刀G，SPEC_AI总管二期，洪老师拍板「二期开工」）：命令闸接模糊链——detectCmd未命中但含四动词→findChap找章（补用户气泡insertBefore保序）→dupRate≥70出三选（跳过/照融/重写融，10秒默认跳过）→miss/err摘泡还文挂_zgPassOnce旗放行普通发送不吞话；点名单链/收发室/预设/PDF问答/送书/看门狗全IDENTICAL；DS实现+Kimi终审翻案2处（递归死循环/双贴气泡） */ /* v0.7.0（2026-10-23 AI总管一期，SPEC_AI总管一期，洪老师拍板「直接开干干完为止」，外援双缺Kimi亲手写）：刀A改名「💬 AI总管」（title/顶栏/sj.init三处，文件名不动）；刀C命令闸+三步命令链（融进《书》第N章→取章→AI融合走HX.chat.pump→写回留历史版，进度气泡逐步亮失败红字停下，成功记进对话账）；刀D📚收发室浮层（列书列章/📥取进对话/🪄融最近回信/↩历史版退回）；全走HX.zg公开口，总开关hx_zg_off=1全退。红线：发送链/预设/PDF问答/📥送书/看门狗 IDENTICAL */ /* v0.5.0（2026-10-18，想法流水09:03拍板）：📥层加「🪄让AI找家」——presetCallAI三兄弟链问归哪书哪章confirm过目才塞+chatConfirmSend一字不差重复闸；终审翻案1处（DS/千问回调都当单参实为ok,out双参）；手选老链一行未动 */ /* v0.4.1（2026-10-17深夜班，洪老师拍板「把千问修好修完为止」，SPEC_千问四治法，千问实现+Kimi终审翻案2处亲手落地：①千问把续写闸_continued写进then每次重置=没闸，挪进attempt闭包 ②千问!r.ok直return致下家被连跳两次，补__skip哨兵）：presetCallAI四刀——钥匙trim/max_tokens2048→8192/finish_reason截断自动续写一回拼接（仍截断换下一家）/HTTP400不再当JSON误解析静默跳；预设系统其余全IDENTICAL */ /* v0.8.2（2026-10-24 t104，洪老师17:31真机报「选成书单发预设空字点发送被拦死」）：修空字闸——单发预设空字放行显（预设名），带上文/无预设照旧；SPEC_chat_v0.8.2，DS实现Kimi终审 */ /* v0.8.1（2026-10-23深夜 t99，洪老师22:37真机报「AI总管输入框没反应」截图实锤被压成窄条）：底栏两行——textarea-wrap加flex-wrap+textarea-input flex:1 1 100%独占首行，按钮落第二行；病根=media小屏可用宽268<三钮352；只动CSS两行，HTML/JS/发送链全IDENTICAL；外援双缺Kimi亲手 */ /* v0.8.0（2026-10-23 AI总管二期刀G，SPEC_AI总管二期，洪老师拍板「二期开工」）：命令闸接模糊链——detectCmd未命中但含四动词→findChap找章（补用户气泡insertBefore保序）→dupRate≥70出三选（跳过/照融/重写融，10秒默认跳过）→miss/err摘泡还文挂_zgPassOnce旗放行普通发送不吞话；点名单链/收发室/预设/PDF问答/送书/看门狗全IDENTICAL；DS实现+Kimi终审翻案2处（递归死循环/双贴气泡） */ /* v0.7.0（2026-10-23 AI总管一期，SPEC_AI总管一期，洪老师拍板「直接开干干完为止」，外援双缺Kimi亲手写）：刀A改名「💬 AI总管」（title/顶栏/sj.init三处，文件名不动）；刀C命令闸+三步命令链（融进《书》第N章→取章→AI融合走HX.chat.pump→写回留历史版，进度气泡逐步亮失败红字停下，成功记进对话账）；刀D📚收发室浮层（列书列章/📥取进对话/🪄融最近回信/↩历史版退回）；全走HX.zg公开口，总开关hx_zg_off=1全退。红线：发送链/预设/PDF问答/📥送书/看门狗 IDENTICAL */ /* v0.5.0（2026-10-18，想法流水09:03拍板）：📥层加「🪄让AI找家」——presetCallAI三兄弟链问归哪书哪章confirm过目才塞+chatConfirmSend一字不差重复闸；终审翻案1处（DS/千问回调都当单参实为ok,out双参）；手选老链一行未动 */ /* v0.4.1（2026-10-17深夜班，洪老师拍板「把千问修好修完为止」，SPEC_千问四治法，千问实现+Kimi终审翻案2处亲手落地：①千问把续写闸_continued写进then每次重置=没闸，挪进attempt闭包 ②千问!r.ok直return致下家被连跳两次，补__skip哨兵）：presetCallAI四刀——钥匙trim/max_tokens2048→8192/finish_reason截断自动续写一回拼接（仍截断换下一家）/HTTP400不再当JSON误解析静默跳；预设系统其余全IDENTICAL */
 
 // 全局状态
 var curChatId = null;
@@ -2019,6 +2030,62 @@ function zgTryCmd(rawText) {
     }
     return true;
   }
+  /* ════ v0.9.0 t110刀2：发送前查仓闸（SPEC_t110_话仓，洪老师拍板「问问题先查仓有就给仓里的，没有才问AI」）════
+     命中话仓→直接贴双泡（仓答标注📦来自话仓+🔄问AI钮）接管return true；不中/退休/选预设/<4字/异常→放行走老路。
+     开关 hx_hc_ask_off=1 关闸；hx_hc_off=1 模块退休闸自然哑。 */
+  var _hcPassOnce = false; /* 🔄问AI放行旗（仿_zgPassOnce）：点前挂true，闸口认出即清并放行 */
+  function hcTryAsk(rawText) {
+    try {
+      if (_hcPassOnce) { _hcPassOnce = false; return false; }
+      if (!window.HX || !HX.hc || !HX.hc.find) return false;
+      try { if (localStorage.getItem('hx_hc_off') === '1') return false; } catch (eOff) {}
+      try { if (localStorage.getItem('hx_hc_ask_off') === '1') return false; } catch (eOff2) {}
+      try { if (curPreset) return false; } catch (ePre) {} /* 选预设不问仓 */
+      if (!rawText || String(rawText).length < 4) return false;
+      var hit = null;
+      try { hit = HX.hc.find(rawText); } catch (eFind) { hit = null; }
+      if (!hit || !hit.a) return false;
+      /* 命中：接管 */
+      var nowH = Date.now();
+      var rawCopy = String(rawText);
+      try {
+        $inputArea.value = '';
+        adjustTextareaHeight();
+        var uBubH = createBubble('user', rawCopy, nowH, false);
+        $mainArea.appendChild(uBubH);
+        var aBubH = createBubble('ai', hit.a + '\n\n——📦来自话仓（没花AI钱，相似度' + Math.round(hit.score * 100) + '%）', nowH, false);
+        $mainArea.appendChild(aBubH);
+        /* 🔄问AI小行 */
+        var actH = document.createElement('div');
+        actH.style.cssText = 'text-align:left;margin:2px 0 8px 8px;';
+        var btnH = document.createElement('button');
+        btnH.style.cssText = 'font-size:12px;color:#888;background:#f5f5f5;border:1px solid #ddd;border-radius:12px;padding:3px 10px;';
+        btnH.textContent = '🔄这条不够好，问AI';
+        btnH.onclick = function () {
+          try {
+            _hcPassOnce = true;
+            $inputArea.value = rawCopy;
+            adjustTextareaHeight();
+            $sendBtn.click();
+          } catch (eRe) {}
+        };
+        actH.appendChild(btnH);
+        $mainArea.appendChild(actH);
+        scrollBottom();
+      } catch (eBubH) { return false; }
+      /* 记进当前对话账（a前缀【话仓答】防再入仓循环） */
+      try {
+        var dH = HX.chat.load(curChatId);
+        if (dH) {
+          if (!(dH.msgs instanceof Array)) dH.msgs = [];
+          dH.msgs.push({ r: 'u', c: rawCopy, t: nowH });
+          dH.msgs.push({ r: 'a', c: '【话仓答】' + hit.a, t: nowH });
+          HX.chat.save(dH);
+        }
+      } catch (eLogH) {}
+      return true;
+    } catch (e) { return false; }
+  }
   $sendBtn.onclick = function() {
     if (!window.HX || !HX.chat) return;
     if (!curChatId) return;
@@ -2040,6 +2107,9 @@ function zgTryCmd(rawText) {
         return;
       }
     }
+    try { /* v0.9.0 t110刀2：发送前查仓闸——话仓有现成答直接给（没花AI钱），不中放行；宁漏不误 */
+      if (hcTryAsk(text)) return;
+    } catch (eHcAsk) {}
     try { /* v0.7.0 刀C：AI总管命令闸——命中「融进《书》第N章」类命令→接管走命令链，不进普通发送；宁漏不误 */
       if (zgTryCmd(text)) return;
     } catch (eZgCmd) {}
@@ -2398,6 +2468,113 @@ document.addEventListener('DOMContentLoaded', function() {
         }catch(e){ toast('退回失败'); }
       }));
       wrap.appendChild(bar);
+      body.appendChild(wrap);
+    });
+  }
+})();
+
+/* ════ v0.9.0 t110刀1：📦话仓浮层（SPEC_t110_话仓）════
+   顶部总账+话题数数+条目列表（点开看问答/📥塞书走现成chatSendBook/🗑删）。
+   开关hx_hc_off=1藏钮；照zgBtn逻辑公共件晚到3秒复查10拍。 */
+(function(){
+  function $(id){ return document.getElementById(id); }
+  function on(){ try{ return !!(window.HX&&HX.hc)&&localStorage.getItem('hx_hc_off')!=='1'; }catch(e){ return false; } }
+  function toast(m){ try{ if(typeof showToast==='function') showToast(m); }catch(e){} }
+  function esc(s){ try{ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }catch(e){ return ''; } }
+  var room=$('hcRoom'), body=$('hcRoomBody');
+  if(!room||!body) return;
+  var $btn=$('hcBtn');
+  if($btn){ if(!on()){ $btn.style.display='none'; } }
+  /* 公共件三级加载晚到场景：每3秒复查10拍，hc到岗就把📦钮亮回来 */
+  (function(){ var n=0; var t=setInterval(function(){ try{ n++; if(on()){ if($btn) $btn.style.display=''; clearInterval(t); } if(n>=10) clearInterval(t); }catch(e){ clearInterval(t); } },3000); })();
+  function close(){ room.classList.remove('open'); }
+  if($('hcRoomClose')) $('hcRoomClose').onclick=close;
+  if($btn) $btn.onclick=function(){ try{ if(!on()){ toast('话仓没上岗（hx-common没到或已退休）'); return; } render(); room.classList.add('open'); }catch(e){} };
+  function fmtT(ts){ try{ var d=new Date(ts); return (d.getMonth()+1)+'月'+d.getDate()+'日'; }catch(e){ return ''; } }
+  function smallBtn2(txt, fn){ var b=document.createElement('button'); b.style.cssText='font-size:13px;color:#4a6b4f;background:#eef5ee;border:1px solid #cfe0cf;border-radius:12px;padding:4px 10px;margin-right:6px;'; b.textContent=txt; b.onclick=fn; return b; }
+  function render(){
+    body.innerHTML='';
+    /* 顶部总账 */
+    var head=document.createElement('div');
+    head.style.cssText='padding:10px;border-bottom:1px solid #eee;';
+    var tot={n:0,turns:0};
+    try{ tot=HX.hc.count(''); }catch(e){}
+    head.innerHTML='<div style="font-size:15px;margin-bottom:8px;">📦 仓里共存 <b>'+tot.n+'</b> 条 · <b>'+tot.turns+'</b> 轮问答</div>';
+    /* 话题数数行 */
+    var row0=document.createElement('div');
+    row0.style.cssText='display:flex;align-items:center;gap:6px;';
+    var inp=document.createElement('input');
+    inp.style.cssText='flex:1;font-size:14px;padding:6px 8px;border:1px solid #ddd;border-radius:8px;';
+    inp.placeholder='输入话题，数数仓里存了多少';
+    var cntBtn=smallBtn2('数数', function(){
+      try{
+        var tp=inp.value.replace(/^\s+|\s+$/g,'');
+        if(!tp){ toast('先写个话题词'); return; }
+        var r=HX.hc.count(tp);
+        resLine.textContent='「'+tp+'」话题：仓里存了 '+r.n+' 条';
+        resLine.style.display='block';
+      }catch(e){ toast('数数出错'); }
+    });
+    row0.appendChild(inp); row0.appendChild(cntBtn);
+    head.appendChild(row0);
+    var resLine=document.createElement('div');
+    resLine.style.cssText='display:none;margin-top:6px;font-size:14px;color:#4a6b4f;font-weight:bold;';
+    head.appendChild(resLine);
+    body.appendChild(head);
+    /* 条目列表 */
+    var lst=[];
+    try{ lst=HX.hc.list().slice().reverse(); }catch(e){}
+    if(!lst.length){
+      var emp=document.createElement('div');
+      emp.style.cssText='padding:20px;text-align:center;color:#999;font-size:14px;';
+      emp.textContent='话仓还空着——跟AI总管聊几句，问答自动存进来';
+      body.appendChild(emp);
+      return;
+    }
+    lst.forEach(function(rec){
+      if(!rec) return;
+      var wrap=document.createElement('div');
+      wrap.style.cssText='padding:10px;border-bottom:1px solid #eee;';
+      var t=document.createElement('div');
+      t.style.cssText='font-size:15px;margin-bottom:4px;cursor:pointer;';
+      t.textContent='📦 '+(rec.title||'未命名')+'（'+(rec.turns||0)+'轮 · '+fmtT(rec.updated)+'）';
+      var detailBox=document.createElement('div');
+      detailBox.style.cssText='display:none;margin-top:6px;';
+      var opened=false;
+      t.onclick=function(){
+        try{
+          if(!opened){
+            opened=true;
+            detailBox.style.display='block';
+            var det=HX.hc.detail(rec.id);
+            if(det&&det.qa){
+              det.qa.forEach(function(pair){
+                var pb=document.createElement('div');
+                pb.style.cssText='margin-bottom:8px;padding:6px;background:#fafafa;border-radius:8px;';
+                pb.innerHTML='<div style="font-size:13px;color:#333;margin-bottom:4px;"><b>问：</b>'+esc(pair.q)+'</div>'
+                  +'<div style="font-size:13px;color:#666;white-space:pre-wrap;max-height:120px;overflow:auto;"><b>答：</b>'+esc(pair.a)+'</div>';
+                var bar=document.createElement('div');
+                bar.style.cssText='margin-top:4px;';
+                bar.appendChild(smallBtn2('📥塞书', function(){
+                  try{ if(typeof chatSendBook==='function') chatSendBook('问：'+pair.q+'\n\n答：'+pair.a); else toast('塞书通道没上岗'); }catch(e){ toast('塞书失败'); }
+                }));
+                pb.appendChild(bar);
+                detailBox.appendChild(pb);
+              });
+            }
+            var delBar=document.createElement('div');
+            delBar.style.cssText='margin-top:6px;text-align:right;';
+            delBar.appendChild(smallBtn2('🗑删掉这条', function(){
+              try{ if(window.confirm('把「'+(rec.title||'')+'」整条从话仓删掉？')){ HX.hc.del(rec.id); render(); toast('已删'); } }catch(e){}
+            }));
+            detailBox.appendChild(delBar);
+          } else {
+            detailBox.style.display = detailBox.style.display==='none' ? 'block' : 'none';
+          }
+        }catch(e){}
+      };
+      wrap.appendChild(t);
+      wrap.appendChild(detailBox);
       body.appendChild(wrap);
     });
   }
