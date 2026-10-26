@@ -1,8 +1,1 @@
-{
- "version": "0.13.0",
- "t": 1792976944002,
- "sig": "86d236bda730cd79",
- "dl": "software-chat.html",
- "note": "t122-1 问话类预设限200字+话仓条目标题下划线（冻结令唯一开工件第一步）",
- "size": 133253
-}
+{"version": "0.14.0", "dl": "software-chat.html", "sig": "0a72203a4c0aca5f", "t": 1792977837598, "note": "t122-2点亮送浮窗（version-all.json为准）"}
