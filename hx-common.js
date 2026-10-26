@@ -109,7 +109,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 (function(){
   'use strict';
-  var HX_COMMON_VERSION = '0.77.0'; /* v0.77.0（2026-10-26 SPEC_t130 速记面板折叠+输入框兼提示词编辑+收发记录，洪老师两轮讨论拍板「SOS和AI留外面其他折起来」）：HX.sj独改四刀（折叠版面/🪄AI编提示词生成+改预设双模式/📋收发记录/hx_t130_off全退），详HX.sj模块头注。Kimi终审翻案3处（openPanel丢hint行/fcLog字段/常驻黑框当等待提示）亲手落地；其余模块一行未动。 */
+  var HX_COMMON_VERSION = '0.78.0'; /* v0.77.0（2026-10-26 SPEC_t130 速记面板折叠+输入框兼提示词编辑+收发记录，洪老师两轮讨论拍板「SOS和AI留外面其他折起来」）：HX.sj独改四刀（折叠版面/🪄AI编提示词生成+改预设双模式/📋收发记录/hx_t130_off全退），详HX.sj模块头注。Kimi终审翻案3处（openPanel丢hint行/fcLog字段/常驻黑框当等待提示）亲手落地；其余模块一行未动。 */
   /* v0.76.0（2026-10-26晚班 SPEC_t128，洪老师拍板「全部做」）：刀1新增HX.fc浮窗收发台（统一AI收发口/账本hx_fc_log环形200+壳双写hxdata_hx_fc.json/每笔bb.job真签名/hx_fc_off=1直调总泵不记账/tail新在前）+刀4a急诊rep加fcTail30笔（刀4b v0.65.0 pend补传核验在岗一行未动）；外援DS出稿，Kimi终审翻案2处亲手落地（①tail补.reverse()新在前②IIFE首行var HX=window.HX防卷尾TDZ前科）；配套chat v0.23.0。红线HX.keys/air/pick/mg/store/dav/gh/bill/step/selfUp/fm/ai/sj/bb本体/hxToastHold/chk/chat/jc其余/audit/wzPoll/jbl/aip本体/hc/zg/mqtt全件IDENTICAL，壳/index/其他单体一行未动 */ /* v0.75.0（2026-10-26接班班 SPEC_t126，冻结令唯一开工件；外援DS出稿+Kimi终审翻案1处亲手落地=DS编造HX.aip.call/HX.bill.add签名报废改真签名HX.aip.go，记账=「编假签名」前科同型）：刀1病人标签错联根治——sj save贴「病人:」前判HX_SJ_APP含「管家」才贴（hx_sj_ctx_off=1落回老行为）+📜翻看sjShowBrowse显示层剥「　病人:…　页面:…」尾巴（档案存储一字不动）；刀4a clean词表扩全角星号＊/全角井号＃/粗体**残留（幂等，hx_hc_clean2_off=1不补）；配套chat v0.21.0。红线HX.keys/air/pick/mg/store/dav/gh/bill/step/selfUp/fm/ai/sj其余/bb/hxToastHold/chk/chat/jc/audit/wzPoll/jbl/aip/hc其余/zg/mqtt全件IDENTICAL，壳/index/xiaotao一行未动 */ /* v0.74.0（2026-10-26 SPEC_t125 AI总管仓库与浮窗篇配套，DS出稿Kimi终审亲手落地）：刀3a clean补强去【三核：X】判词行/连续横线---/markdown表格竖线（幂等，hx_hc_clean2_off=1不补）；刀3b暴露_writeDetail供洗净全仓钮；刀5b浮窗户口镜像进HX.glow公开口（getSel/setSel/clear，hx_fuchuang_off=1不挂）；配套chat v0.20.0+xiaotao v0.27.0。红线find/ask/count/del/索引结构/壳备份全IDENTICAL */ /* v0.73.0（2026-10-26 SPEC_t124 AI总管想法五连二批刀1a，洪老师拍板「AI总管的任务继续」）：judge判令提示词加固——问话求答（讨论/讲讲/分析/怎么看等）一律算闲聊，治11:33「讨论治疗心脏被判成找书」误判；其余一行未动 */ /* v0.72.0（2026-10-26 SPEC_t123刀3，洪老师拍板「今天的想法归类成任务列表去执行」；想法输入框顶天四犯根治：sjKbFit键盘弹起分支钉顶改贴键盘上方——top=vv.offsetTop+vv.height-8-面板实际高，量不到高/比可视区高才退钉顶，hx_sj_kbfit_off=1退老钉顶法；键盘收还原/监听挂法/不自动focus/面板其余零件一行未动；Kimi亲手，配套chat v0.18.0） */ /* v0.71.0（2026-10-25 SPEC_鱼骨版面配套，DS实现+Kimi终审零翻案亲手落地）：done落msg.by记哪家AI+onOk第2参model透传，两刀+版本行外全件IDENTICAL，配套chat v0.12.0鱼骨版面 */ /* v0.70.0（2026-10-25 SPEC_t113 AI总泵归拢一期，洪老师拍板「AI功能归拢插队+联网要+AI对话当试验田」，外援双缺DS破线/千问401自动降级Kimi亲手全包）：刀A 新增HX.aip总泵（链千问→Kimi→DS/which点名/web联网只走千问enable_search/千问流式+截断续写一回+400砍料重发一回/Kimi空包重发/死心非流式60秒流式30秒无新字/换棒人话吐司/air.report终败/HX.bill记账/hx_aip_off全退）+HX.chat.pump内部改转调总泵（签名cb口径不变调用方零改动，老链全保留）+刀B HX.chat.send加第4参opt={web}心脏改走总泵（三层记忆/压缩/账本IDENTICAL）；配套chat v0.10.0 presetCallAI走总泵+🌐联网钮。红线：除本IIFE+pump函数体+send签名与踢脚+版本行外全件IDENTICAL，callQwen/callKimi/callDS/fetchJson/buildMessages/tryCompress全保留，管家/壳/index/其他单体一行未动 */ /* v0.69.0（2026-10-25晚班 SPEC_t110_话仓，洪老师拍板「先干话仓，开工」插队总待办第1位，DS破线+千问401自动降级Kimi亲手全包）：刀B HX.chat的persist()加一行ingest钩（每次对话保存自动增量入话仓，a以【话仓答】开头不入防循环）；刀C 新增HX.hc话仓模块（挂HX.zg后）——clean去废符号/find bigram覆盖率0.5阈/ask先仓后AI（pump答存仓）/count话题数数/list/detail/del，存储hx_hc_v1索引+hx_hc_d_详情localStorage为主+壳writeFile备份，500条FIFO单答截10000字，开关hx_hc_off=1全退；配套chat v0.9.0📦浮层+发送前查仓闸。红线：除刀A版本行/刀B一行/刀C新增外全件IDENTICAL，壳/其他单体一行未动。 */ /* v0.68.0（2026-10-25 SPEC_t111阿里云当唯一真账房一期，洪老师拍板「干完为止」，DS破线+千问401自动降级Kimi亲手）：刀A mqtt连上多订hx/ver（hx_mqtt_ver_off闸）+刀B onMessageArrived截存retained牌+刀C公开口HX.mqtt.ver()；配套index v1.45.0 fetchJsonEx第①腿；ECS侧pub目录+systemd path看守hx_pub_ver.sh+ACL开hx/ver户口；红线：handleMessage白名单/其余全件IDENTICAL，壳/其余单体一行未动 */ /* v0.67.0（2026-10-25 SPEC_t107成书空章根治，洪老师真机报第1位「书传到地方内容是空的」+SOS 06:22）：putChap写LS_CHAPS成功后追加①双写IndexedDB正本xt-lib-db/chunks（键=ckey）②翻books账state未写→已写；外援DS实现，Kimi终审翻案1处（onupgradeneeded补建kv仓与xiaotao一致）亲手落地；主链返回值/histPush/rollback/写戳原有一字未动 */ /* v0.66.0（2026-10-24 SPEC_AI总管三期，洪老师拍板三条新规：废暗号/版本制/不黑箱）刀A.1 judge判令/刀A.2 findChap扩独立成书/刀A.3 addBook+addChapter/刀A.4 merge提示词改版本制；外援DS实现，Kimi终审翻案2处（judge剥围栏/src数组）亲手落地 */ /* v0.65.0 t103（2026-10-24，洪老师勾想法两条一起干，SPEC_hx-common_v0.65.0，外援双缺Kimi全包）：刀A sj面板按钮缺省下划线文字风（hx_sj_btnbox='1'回老彩底方框，想法10-21）；刀B 会诊件先存本地永不丢+闲时补传sjWzPendFlush（想法10-20，pend在=云上没有，成功清账报喜，失败静默留账）；申报点=ensureUI开关1行+CSS3行/sjWzSos先存1行/新函数/闲时1行/版本行，其余IDENTICAL */ /* v0.64.0 t102（2026-10-24，洪老师12:58真机截图报「想法输入框又顶了天」三翻同尺，SPEC_hx-common_v0.64.0，外援双缺Kimi全包）：sjKbFit换顶钉法——判定只看innerHeight-vv.height>80（不看offsetTop，X5上推模式老算法必误判），弹着钉可视区上沿top=offsetTop+8/bottom auto/maxHeight vv.height-16，收了三行还原；监听挂法/不自动focus/面板其余零件一行未动 */ /* v0.63.0 t101（2026-10-24，E1后续刀，SPEC_hx-common_v0.63.0，外援双缺Kimi全包）：刀A jbSave/jbRead三处白名单加jb_闭环实验单.json（实验单随交接班走手机层）；刀B 新增HX.syRemind开门实验提醒（开门100秒前台起跑，readJson闭环实验单.json，在途件常驻黑框🧪提醒点✕才关，一天一次hx_sy_remind_d节流，总开关hx_sy_remind_off=1，公开口status/run） */  /* v0.62.0 t100交接班闭环配套（2026-10-24，洪老师拍板闭环任务+真机报红点消不了/印记不对连发）：刀1 jbSave假账根治（桥writeFile返false不再计saved，收failed名单回执ok=false，病根=10-23_2246班push报saved=3实缺jb_交接说明.md）；刀2 三处白名单加jb_交接班记录.md；壳印记闸修复见vc69 SPEC */  /* v0.61.0 t99 AI总管二期刀F（2026-10-23，SPEC_AI总管二期，洪老师拍板「二期开工」）：HX.zg加findChap模糊找章（本地粗配+AI精配走chat.pump，AI只回行号真身本地取防编id）+dupRate重复粗筛+merge加rewrite可选参，既有七口IDENTICAL；DS实现+Kimi终审翻案1处（DS编造listBooks字段已扶正） */  /* v0.60.0 t98 AI总管一期刀B：HX.zg总管模块（书库直连读写/历史版5层/外改戳/命令识别/三步命令链走chat.pump，SPEC_AI总管一期，外援双缺Kimi亲手写） */  /* v0.59.0 t96🧪总钮一期刀1：HX.zhiban白天质检员 */  /* v0.58.0 t95值夜班套件刀3：HX.yeban值夜质检员 */  /* ── v0.53.0 2026-10-21（洪老师原话「这一版尽量把手机全量备份和对账规矩落地，保证下一个接班可以在手机本地取到文件」；合并总账t87；SPEC_hx-common_v0.53.0_套装档案柜，DS实现+Kimi终审翻案2处亲手落地：①一层l1ok双重计数翻断点续备单计②SAF四桥全返false补试写探针）：刀A新增HX.arc套装档案柜模块（开门120秒起跑过_autoNetOk闸，API列仓根三层分流，L1十四件每次必对+三层≤2MB小件每轮hx_arc_max缺省5件断点续备，逐件writeFileRel写+listFilesRel回读字节对账不等重试一次记fail，档案柜台账.json本地+仓根双写hx_arc_up防重推，总开关hx_arc_off=1，公开口status/run）；刀B mqtt白名单加arcList/arcRead两op（点名取件白名单制含..或/一律拒）；刀C版本行+版本史；红线HX.keys/air/pick/mg/store/dav/gh/bill/step/selfUp/fm/ai/sj/bb/hxToastHold/chk/chat/jc/audit/wzPoll/jbl及mqtt既有逻辑全IDENTICAL，壳/index不动） */  /* ── v0.49.0 2026-10-20（t79交班本地存取：handleMessage加jbSave/jbRead两op+HX.jbl公开口，详见文件头v0.49.0段；其余一行未动） */  /* ── v0.47.1 2026-10-20（t76刀3，洪老师真机报案「更新四遍三遍错特别是首页」配套：idxProbe侦察兵正则行首锚定，治「被注释里CUR.index=1.19.6骗住fileVer恒1.19.6、上岗以来从没跳过」病根2；配套index v1.35.0 CUR行错位扶正；其余一行未动） */
    /* ── v0.48.0 2026-10-20（t77真机自报，洪老师拍板「现在就真机自报吧」）：HX.zb上岗——开门60秒后包住黑匣子log，err条经60秒节流（同m 60秒不重+全局60秒1条）双通道喊疼：mqtt hx/to_kimi实时+仓根「真机自报_时间戳.json」留底，失败存hx_zb_pend≤10条补传；总开关hx_zb_off=1；公开口status/test；纯加法一IIFE+版本行，其余一行未动 【Kimi终审翻案DS 1处：report成功分支漏调flushPend（SPEC行为5成功补传）亲手补上——漏料非编造记账】 */
    /* ── v0.47.0 2026-10-19晚班（t75，洪老师看自检报告截图拍板「做成点一下就出详细结果，开工」；SPEC_t75→DS实现三切片零编造→Kimi终审翻案1处=index尾行DS自编口径丢「好/可疑」统计，亲手改取报告原文末行与云仓同口径）：刀A HX.audit新增rows2()（reportText改调它输出逐字节不变）+detail(key)七哨明细（bbTail/localStorage台账全本地零联网，最多5条最新在前，空账回「还没有明细账」）+exports挂rows2/detail；刀B index配套v1.34.0自检弹窗点主行展开明细；刀C _aiSnap尺子修口径——err含「黑匣子」三字的哨兵账（上行失败/没钥匙/疑似哑火=账房自家网络账）不计入err24改记errNet，sys提示词追加一句「errNet不算软件毛病」，治AI质检被117条假报错吓得连说12次拿不准；红线除HX.audit IIFE内申报3处+_aiSnap申报2处+版本行外全件IDENTICAL */  /* v0.43.0（2026-10-19 t69刀1，问诊室呼叫钮：SPEC_问诊室_v0.1.0_设计稿洪老师拍板）：HX.jc新增三公开只读口wzBbTail/wzLayout/wzCur+sj面板📮叫Kimi会诊钮（抓bbTail20+layout+cur+主诉→HX.gh.putFile推仓根急诊_YYYYMMDD_HHMM.json→成功hxToastHold黑框常驻报喜，失败存hx_wz_sos_pend下回补）；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.bb/hxToastHold/HX.chk/HX.chat IDENTICAL，HX.jc除return一处+三新函数外IDENTICAL，HX.sj除按钮HTML一行+bind一处+sjWzSos新函数外IDENTICAL */  /* ── v0.46.0 2026-10-19（t73手机账房刀B，母图纸SPEC_手机主账房_v0.1.0洪老师拍板「图纸行，开工」）：HX.mqtt传话筒上岗——闲时WS连传达室39.97.246.65:9001，问诊室问答走hx/to_suit→hx/to_kimi秒回+云仓问诊室_答_留底双通道；密码管家路私仓取传达室钥匙.json存localStorage不落公开仓；闲时才连(开门60秒+前台)、切后台断、退避重连1s→30s；总开关hx_mqtt_off=1；纯加法两段（paho-mqtt-min v1.1.0自包含32236B+HX.mqtt IIFE），其余一行未动。【Kimi终审翻案DS 4处：①HX.gh.ready()编成Promise链必炸（现役同步boolean）②Paho五参构造旧API必炸改两参+凭证进connect③putFile三参签名错（现役四参null打头）留底必败④取钥匙失败永不再试补退避——「编假签名」前科重演记账】 */
@@ -3062,7 +3062,15 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
     return { init:init, open:open, reload:reload, bbHit:bbHit }; /* v0.29.0 */
   })();
 
-  /* hx-common.js v0.77.0 2026-10-26 SPEC_t130 速记面板折叠+输入框兼提示词编辑+收发记录：HX.sj 模块独改——刀1 面板加 #hxSjFoldBar 折叠条 + #hxSjFoldBox 折叠盒（🆘/🤖AI/折叠条三件套常驻，其余钮/输入框/图行/选条列表全折入，开面板默认收起、键盘不请不来）；刀2 #hxSjText 兼做提示词编辑框（读 chat_preset_cur 判生成/改预设模式，🪄AI编提示词走 HX.fc.go kind:presetgen/presetedit，回填前暂存 hx_sj_idea_bak 最多3条，💾存成预设双写 chat_presets+chat_preset_cur）；刀3 #hxSjFcPg 整屏 📋收发记录（HX.fc.tail(50) 只读列每笔成败+入出字数）；刀4 hx_t130_off=1 整刀退老样。其他模块一行未动。 */
+  /* hx-common.js v0.77.0 2026-10-26 SPEC_t130 速记面板折叠+输入框兼提示词编辑+收发记录：HX.sj 模块独改——刀1 面板加 #hxSjFoldBar 折叠条 + #hxSjFoldBox 折叠盒（🆘/🤖AI/折叠条三件套常驻，其余钮/输入框/图行/选条列表全折入，开面板默认收起、键盘不请不来）；刀2 #hxSjText 兼做提示词编辑框（读 chat_preset_cur 判生成/改预设模式，🪄AI编提示词走 HX.fc.go kind:presetgen/presetedit，回填前暂存 hx_sj_idea_bak 最多3条，💾存成预设双写 chat_presets+chat_preset_cur）；刀3 #hxSjFcPg 整屏 📋收发记录（HX.fc.tail(50) 只读列每笔成败+入出字数）；刀4 hx_t130_off=1 整刀退老样。其他模块一行未动。
+   v0.78.0 2026-10-27（SPEC_t131 浮窗对齐改造，洪老师2026-10-26晚班拍板三处：命令预设头批4个以后随便加/词解释①②③带圈标号/提示词对照带「AI说改了啥」）：
+   刀1 输入框hxSjText常驻面板（拨正t130折输入框错路）+两下划线钮排💡想法/🪄AI编辑各管一盒（hxSjIdeaBox装老钮排全保留id/hxSjAiBox装点亮显示条+命令排+🚀发送）+🆘🤖AI常驻外面一排（10-26「SOS和AI留外面」拍板不动）；
+   刀2 命令预设账hx_sj_cmds（出厂🔤解释/🌿扩充/✏️改提示词/📝总结，点=填框不直发，长按500ms编辑/删，➕新增）；
+   刀3 点亮显示条sjGlowLineRefresh（chat_preset_lit→xt_glow_pend(鱼骨/词)→hx_pick_v1，全无灰字）；
+   刀4 sjAiSend走HX.fc.go kind=sj_ai（点亮对象行+命令文组usr，选中预设chat_preset_cur的rule作sys一起发，改提示词加格式尾巴：首行说改了啥+其后新全文）；
+   刀5 sjAiBack三路回流（丙改提示词=sjPptDiffOpen新旧对照整屏✅放回去才写chat_presets双写/乙鱼骨=xt_glow_back type=fish回chat落账/甲词=解释账hx_sj_exp对象账+xt_glow_back type=exp回小涛插①②③标号）；
+   刀7 hx_t131_off=1回v0.77.0老版面（foldBar+foldBox输入框回盒内，bind里foldBar原绑定保留）。
+   外援DS三调出稿，Kimi终审翻案6处亲手落地（①🆘🤖AI挪出IdeaBox常驻外面②bind保留foldBar原绑定③点亮/选中两键分开lit/cur④丙判定加isPptCmd⑤解释账数组改对象与小涛口径一致⑥命令钮名textContent防注入+样式段补hxSjPptDiff/hxSjCmdEdit全套）。其他模块一行未动。 */
 
   HX.sj = (function(){
     var sj = {};
@@ -3420,7 +3428,8 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
     }
 
     /* v0.77.0 2026-10-26 SPEC_t130 刀1/刀2：openPanel 开门时 foldBox 一律收起态（每次开门简洁版面）、折叠条箭头回 ▾；hx_t130_off=1 时 foldBox 保持展开；开门后调 sjPptModeRefresh() 刷提示词模式。 */
-    function openPanel(){
+        /* v0.78.0 2026-10-27 SPEC_t131 刀1 版面重构：openPanel全文（两盒皆关+箭头▾+不autofocus+刷点亮条） */
+function openPanel(){
       try{
         var p=$('hxSjPanel'); if(!p) return;
         var toShow=(p.style.display!=='block');
@@ -3428,9 +3437,18 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
         if(toShow){
           var _hnt=$('hxSjHint'); if(_hnt) _hnt.style.display=bridged()?'none':'block'; /* Kimi终审翻案①：DS稿丢了挂号#128的hxSjHint bridged行，补回（开面板不再自动focus键盘不弹的规矩不动） */
           var _off=false; try{ _off=(localStorage.getItem('hx_t130_off')==='1'); }catch(eT){}
-          if(!_off){
-            var fb=$('hxSjFoldBox'); if(fb) fb.style.display='none';
-            var fbar=$('hxSjFoldBar'); if(fbar) fbar.innerHTML='✏️ 写想法/改提示词 ▾';
+          var _off131=false; try{ _off131=(localStorage.getItem('hx_t131_off')==='1'); }catch(eT131){}
+          if(!_off131){
+            var ib=$('hxSjIdeaBox'); if(ib) ib.style.display='none';
+            var ab=$('hxSjAiBox'); if(ab) ab.style.display='none';
+            var ti=$('hxSjTabIdea'); if(ti) ti.innerHTML='💡想法 ▾';
+            var ta=$('hxSjTabAi'); if(ta) ta.innerHTML='🪄AI编辑 ▾';
+            try{ sjGlowLineRefresh(); }catch(eG){} /* 刀3：开面板刷点亮条一次 */
+          }else{
+            if(!_off){
+              var fb=$('hxSjFoldBox'); if(fb) fb.style.display='none';
+              var fbar=$('hxSjFoldBar'); if(fbar) fbar.innerHTML='✏️ 写想法/改提示词 ▾';
+            }
           }
           try{ sjPptModeRefresh(); }catch(eM){} /* 刀2：开面板刷模式一次 */
         }
@@ -3614,12 +3632,14 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
     }
     /* 页面里还没有速记UI就自动注入（样式+圆点+面板+toast，和9件内嵌版一模一样的结构） */
     /* v0.77.0 2026-10-26 SPEC_t130 刀1/刀2/刀3：ensureUI 重构——面板加折叠条 #hxSjFoldBar + 折叠盒 #hxSjFoldBox；原 #hxSjText/#hxSjImgLine/除 hxSjSos、hxSjAiBtn 外所有钮/#hxSjPrevList 挪进折叠盒；折叠盒外常驻 折叠条 + 🆘 + 🤖AI 三件套。刀2 折叠盒内加 hxSjPptGen/hxSjPptSave 两钮 + hxSjPptMode 模式行 + hxSjPptReq 小输入条。刀3 新增 #hxSjFcPg 整屏容器 + 折叠盒内 hxSjFcLog 钮。hx_t130_off=1 整刀退老样。 */
-    function ensureUI(){
+        /* v0.78.0 2026-10-27 SPEC_t131 刀1 版面重构：ensureUI全文（输入框常驻+两下划线钮排+两盒） */
+function ensureUI(){
       if($('hxSjDot')) return true;
       try{
         if(!document.body) return false;
         var _sjBtnBox=false; try{ _sjBtnBox=(localStorage.getItem('hx_sj_btnbox')==='1'); }catch(eSw){} /* v0.65.0 刀A：'1'=老彩底方框 */
         var _sjT130Off=false; try{ _sjT130Off=(localStorage.getItem('hx_t130_off')==='1'); }catch(eT130){} /* v0.77.0 刀4：'1'=t130整刀退老样 */
+        var _sjT131Off=false; try{ _sjT131Off=(localStorage.getItem('hx_t131_off')==='1'); }catch(eT131){} /* v0.78.0 刀7：'1'=t131整刀退老样（回v0.77.0版面） */
         var st=document.createElement('style'); st.id='hxSjStyle';
         st.textContent=
           "#hxSjDot{position:fixed;right:18px;bottom:88px;width:52px;height:52px;border-radius:50%;background:rgba(122,158,126,.55);border:2px solid rgba(255,255,255,.75);color:#fff;font-size:22px;z-index:99990;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.18);user-select:none;-webkit-user-select:none}\n"+
@@ -3635,7 +3655,27 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
           "#hxSjFoldBar{font-size:18px;color:#3f5b45;text-decoration:underline;cursor:pointer;padding:4px 0;user-select:none;-webkit-user-select:none;margin-bottom:8px}\n"+
           "#hxSjPptMode{font-size:13px;color:#7a5a30;background:#f5efe4;border-radius:8px;padding:4px 8px;margin-bottom:6px}\n"+
           "#hxSjPptReq{width:100%;box-sizing:border-box;font-size:15px;border:1px solid #ddd2c2;border-radius:8px;padding:6px 8px;background:#fff;color:#4a4238;margin-bottom:8px}\n"+
-          "#hxSjFcPg{position:fixed;left:0;top:0;right:0;bottom:0;z-index:99993;background:#fffdf8;overflow-y:auto;display:none;padding:14px;box-sizing:border-box}\n"; /* v0.77.0 刀1：折叠条下划线小条；刀2：模式行+小输入条；刀3：#hxSjFcPg 收发记录整屏 */
+          "#hxSjFcPg{position:fixed;left:0;top:0;right:0;bottom:0;z-index:99993;background:#fffdf8;overflow-y:auto;display:none;padding:14px;box-sizing:border-box}\n"+ /* v0.77.0 刀1：折叠条下划线小条；刀2：模式行+小输入条；刀3：#hxSjFcPg 收发记录整屏 */
+          "#hxSjTabs{display:flex;gap:14px;margin-top:10px;margin-bottom:8px}\n"+ /* v0.78.0 刀1：两条下划线钮排 */
+          "#hxSjTabIdea,#hxSjTabAi{font-size:18px;color:#3f5b45;text-decoration:underline;cursor:pointer;padding:4px 0;user-select:none;-webkit-user-select:none}\n"+
+          "#hxSjIdeaBox{margin-top:4px}\n"+
+          "#hxSjAiBox{margin-top:4px}\n"+
+          "#hxSjGlowLine{font-size:13px;color:#4a4238;background:#f5efe4;border-radius:8px;padding:6px 8px;margin-bottom:8px;line-height:1.4}\n"+ /* v0.78.0 刀3：点亮显示条 */
+          "#hxSjCmdRow{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}\n"+ /* v0.78.0 刀2：命令钮排 */
+          "#hxSjCmdRow button{flex:1 1 18%;font-size:16px;padding:8px 0;cursor:pointer;border:none;background:transparent;color:#3f5b45;border-bottom:2px solid #7a9e7e;border-radius:0;padding-bottom:6px}\n"+
+          "#hxSjAiSend{width:100%;box-sizing:border-box;font-size:18px;padding:10px 0;cursor:pointer;border:none;border-radius:10px;background:#7a9e7e;color:#fff;margin-top:4px}\n"+ /* v0.78.0 刀1：两盒/显示条/命令排/发送钮 */
+          "#hxSjGlowLine.hxSjGlowEmpty{color:#a79d8c}\n"+
+          "#hxSjCmdEdit{display:flex;gap:6px;align-items:center;background:#f5efe4;border-radius:8px;padding:6px 8px;margin-bottom:8px}\n"+ /* v0.78.0 刀2：命令编辑条 */
+          "#hxSjCmdEdit input{flex:1;min-width:0;font-size:15px;border:1px solid #ddd2c2;border-radius:6px;padding:4px 6px;background:#fff;color:#4a4238}\n"+
+          "#hxSjCmdEdit button{flex:none;font-size:15px;padding:4px 8px;border:none;background:transparent;color:#6b6257;cursor:pointer}\n"+
+          "#hxSjPptDiff{position:fixed;left:0;top:0;right:0;bottom:0;z-index:99994;background:#fffdf8;overflow-y:auto;padding:14px;box-sizing:border-box}\n"+ /* v0.78.0 刀5丙：提示词新旧对照整屏 */
+          "#hxSjPptDiff .hxSjPptDiffHead{font-size:15px;color:#4a4238;background:#f5efe4;border-radius:8px;padding:8px 10px;margin-bottom:10px;line-height:1.5}\n"+
+          "#hxSjPptDiff .hxSjPptDiffCols{display:flex;flex-direction:column;gap:10px}\n"+
+          "#hxSjPptDiff .hxSjPptDiffColT{font-size:13px;color:#8a7a4a;margin-bottom:4px}\n"+
+          "#hxSjPptDiff .hxSjPptDiffPre{white-space:pre-wrap;font-size:14px;color:#4a4238;background:#fff;border:1px solid #e5ddd0;border-radius:8px;padding:10px;margin:0;line-height:1.6}\n"+
+          "#hxSjPptDiff .hxSjPptDiffFoot{display:flex;gap:10px;margin-top:12px}\n"+
+          "#hxSjPptDiff .hxSjPptDiffOk{flex:1;font-size:18px;padding:10px 0;border:none;border-radius:10px;background:#7a9e7e;color:#fff;cursor:pointer}\n"+
+          "#hxSjPptDiff .hxSjPptDiffNo{flex:1;font-size:18px;padding:10px 0;border:none;border-radius:10px;background:#efe9df;color:#6b6257;cursor:pointer}\n";
         if(_sjT130Off){ st.textContent+= "#hxSjFoldBar{display:none !important}\n"; } /* v0.77.0 刀4：hx_t130_off=1 折叠条不出 */
         document.head.appendChild(st);
 
@@ -3672,17 +3712,57 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
           '  <div id="hxSjPrevList" style="display:none;margin-top:8px;max-height:240px;overflow-y:auto"></div>'+ /* v0.15.0 最近3条选条列表容器：默认藏，点「↩ 补充上一条」才填内容亮出 */
           '</div>';
 
-        var wrap=document.createElement('div');
-        wrap.innerHTML=
-          '<div id="hxSjDot" title="速记">🏥</div>'+
-          '<div id="hxSjPanel">'+
-          oOuter+
-          oFoldBox+
-          '  <div id="hxSjHint">浏览器里存不了，请在手机壳里用</div>'+
+        /* v0.78.0 刀1：新结构——输入框常驻 + 两条下划线钮排 + 两盒 */
+        var oIdeaBox=
+          '<div id="hxSjIdeaBox" style="display:none">'+
+          '  <div id="hxSjPptMode" style="display:none">正在改预设：<span id="hxSjPptName"></span> <span id="hxSjPptExit" style="cursor:pointer;color:#a05848">✕退出</span></div>'+
+          '  <input id="hxSjPptReq" type="text" placeholder="" style="display:none" />'+
+          '  <div class="hxSjBtns">'+oFoldBtns+'</div>'+
+          '  <div id="hxSjPrevList" style="display:none;margin-top:8px;max-height:240px;overflow-y:auto"></div>'+
+          '</div>';
+        var oAiBox=
+          '<div id="hxSjAiBox" style="display:none">'+
+          '  <div id="hxSjGlowLine">还没点亮东西——去正文长按点亮一个词/一根鱼骨/一条提示词</div>'+
+          '  <div id="hxSjCmdRow"></div>'+ /* v0.78.0 刀2：命令钮排，刀2填 */
+          '  <button id="hxSjAiSend" type="button">🚀发送</button>'+
+          '</div>';
+        var oNewBody=
+          '<textarea id="hxSjText" placeholder="发现啥毛病，写一句…"></textarea>'+
+          '<div id="hxSjImgLine" style="display:none;font-size:13px;color:#4a4238;margin-top:6px;background:#f5efe4;border-radius:8px;padding:4px 8px"></div>'+
+          '<div class="hxSjBtns">'+ /* v0.78.0 终审翻案：🆘/🤖AI常驻外面一排（2026-10-26拍板「SOS和AI留外面」不动） */
+          '<button id="hxSjSos" type="button" style="background:#a05848;color:#fff;">🆘传黑匣子</button>'+
+          ((HX.ai && HX.ai.ready && HX.ai.ready()) ? '<button id="hxSjAiBtn" type="button" style="background:#efe9df;color:#6b6257;">🤖AI</button>' : '')+
           '</div>'+
-          '<div id="hxSjToast"></div>'+
-          '<div id="hxSjBrowsePg"></div>'+ /* v0.19.0 整屏翻看页容器：默认藏，点📜翻看才填内容亮出 */
-          '<div id="hxSjFcPg"></div>'; /* v0.77.0 刀3：收发记录整屏容器 */
+          '<div id="hxSjTabs">'+
+          '  <div id="hxSjTabIdea">💡想法 ▾</div>'+
+          '  <div id="hxSjTabAi">🪄AI编辑 ▾</div>'+
+          '</div>'+
+          oIdeaBox+
+          oAiBox;
+
+        var wrap=document.createElement('div');
+        if(_sjT131Off){ /* v0.78.0 刀7：hx_t131_off=1——回v0.77.0老结构（foldBar+foldBox，输入框在盒内） */
+          wrap.innerHTML=
+            '<div id="hxSjDot" title="速记">🏥</div>'+
+            '<div id="hxSjPanel">'+
+            oOuter+
+            oFoldBox+
+            '  <div id="hxSjHint">浏览器里存不了，请在手机壳里用</div>'+
+            '</div>'+
+            '<div id="hxSjToast"></div>'+
+            '<div id="hxSjBrowsePg"></div>'+
+            '<div id="hxSjFcPg"></div>';
+        }else{
+          wrap.innerHTML=
+            '<div id="hxSjDot" title="速记">🏥</div>'+
+            '<div id="hxSjPanel">'+
+            oNewBody+
+            '  <div id="hxSjHint">浏览器里存不了，请在手机壳里用</div>'+
+            '</div>'+
+            '<div id="hxSjToast"></div>'+
+            '<div id="hxSjBrowsePg"></div>'+
+            '<div id="hxSjFcPg"></div>';
+        }
         while(wrap.firstChild){ document.body.appendChild(wrap.firstChild); }
 
         if(_sjT130Off){ /* v0.77.0 刀4：hx_t130_off=1——折叠条不出、foldBox默认展开、按钮位置回老样（🆘/🤖AI 与其余钮同排；#hxSjPptMode/#hxSjPptReq/#hxSjPptGen/#hxSjPptSave/#hxSjFcLog 全藏） */
@@ -3738,7 +3818,428 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
         }, function(){ /* 失败静默留账，下回闲时再补 */ });
       }catch(eAll){}
     }
-    /* v0.77.0 2026-10-26 SPEC_t130 刀1/刀2/刀3：bind 加 foldBar 折叠开合绑定；加 hxSjPptGen/hxSjPptSave/hxSjPptExit/hxSjFcLog 绑定。原所有绑定一行不动照搬（挪父容器不影响 id 绑定）。 */
+        /* v0.78.0 2026-10-27 SPEC_t131 刀2 命令预设账 hx_sj_cmds */
+    function sjCmdsLoad(){
+      var raw=null;
+      try{ raw=localStorage.getItem('hx_sj_cmds'); }catch(e){ raw=null; }
+      var a=null;
+      if(raw){
+        try{ a=JSON.parse(raw); }catch(e){ a=null; }
+      }
+      if(!a || !Array.isArray(a) || a.length===0){ /* 终审：Array.isArray跨realm稳 */
+        a=[
+          {name:'🔤解释',cmd:'解释这个词：用大白话讲清意思和用处'},
+          {name:'🌿扩充',cmd:'把这根鱼骨头扩充一层，给出3-5个子点，每点一句话'},
+          {name:'✏️改提示词',cmd:''},
+          {name:'📝总结',cmd:'把点亮的内容总结成三句话'}
+        ];
+        sjCmdsSave(a);
+      }
+      return a;
+    }
+    function sjCmdsSave(a){
+      try{ localStorage.setItem('hx_sj_cmds',JSON.stringify(a)); }catch(e){}
+    }
+    function sjCmdRowRender(){
+      var row=document.getElementById('hxSjCmdRow');
+      if(!row) return;
+      row.innerHTML='';
+      var cmds=sjCmdsLoad();
+      var i;
+      for(i=0;i<cmds.length;i++){
+        (function(idx){
+          var c=cmds[idx];
+          var b=document.createElement('button');
+          b.className='hxSjCmdBtn';
+          b.setAttribute('type','button');
+          b.setAttribute('data-idx',String(idx));
+          b.textContent=c.name; /* 终审翻案：用户可改名，textContent防注入 */
+          var lpTimer=null;
+          var lpFired=false;
+          b.onclick=function(ev){
+            if(lpFired){ lpFired=false; return; }
+            if(ev && ev.preventDefault) ev.preventDefault();
+            var arr=sjCmdsLoad();
+            var cur=arr[idx];
+            if(!cur) return;
+            if(cur.name==='✏️改提示词' || cur.cmd===''){
+              if(cur.name==='✏️改提示词'){
+                sjToast('在输入框写要怎么改，再点发送');
+                return;
+              }
+            }
+            var ta=document.getElementById('hxSjText');
+            if(!ta) return;
+            var add=cur.cmd||'';
+            if(!add) return;
+            if(ta.value && ta.value.length>0){
+              ta.value=ta.value+' '+add;
+            }else{
+              ta.value=add;
+            }
+            b.disabled=true;
+            setTimeout(function(){ b.disabled=false; },300);
+          };
+          b.onmousedown=function(){
+            lpFired=false;
+            if(lpTimer) clearTimeout(lpTimer);
+            lpTimer=setTimeout(function(){
+              lpFired=true;
+              sjCmdEditOpen(idx,b);
+            },500);
+          };
+          b.onmouseup=function(){ if(lpTimer){ clearTimeout(lpTimer); lpTimer=null; } };
+          b.onmouseleave=function(){ if(lpTimer){ clearTimeout(lpTimer); lpTimer=null; } };
+          b.ontouchstart=function(){
+            lpFired=false;
+            if(lpTimer) clearTimeout(lpTimer);
+            lpTimer=setTimeout(function(){
+              lpFired=true;
+              sjCmdEditOpen(idx,b);
+            },500);
+          };
+          b.ontouchend=function(){ if(lpTimer){ clearTimeout(lpTimer); lpTimer=null; } };
+          row.appendChild(b);
+        })(i);
+      }
+      var addBtn=document.createElement('button');
+      addBtn.className='hxSjCmdBtn hxSjCmdAdd';
+      addBtn.setAttribute('type','button');
+      addBtn.innerHTML='➕';
+      addBtn.onclick=function(ev){
+        if(ev && ev.preventDefault) ev.preventDefault();
+        sjCmdEditOpen(-1,addBtn);
+      };
+      row.appendChild(addBtn);
+    }
+    function sjCmdEditOpen(idx,anchor){
+      var old=document.getElementById('hxSjCmdEdit');
+      if(old && old.parentNode) old.parentNode.removeChild(old);
+      var arr=sjCmdsLoad();
+      var isNew=(idx<0);
+      var cur=isNew?{name:'',cmd:''}:arr[idx];
+      if(!cur) return;
+      var box=document.createElement('div');
+      box.id='hxSjCmdEdit';
+      box.className='hxSjCmdEdit';
+      var nameIn=document.createElement('input');
+      nameIn.type='text';
+      nameIn.className='hxSjCmdEditName';
+      nameIn.placeholder='钮名';
+      nameIn.value=cur.name||'';
+      var cmdIn=document.createElement('input');
+      cmdIn.type='text';
+      cmdIn.className='hxSjCmdEditCmd';
+      cmdIn.placeholder='命令内容';
+      cmdIn.value=cur.cmd||'';
+      var delBtn=document.createElement('button');
+      delBtn.type='button';
+      delBtn.className='hxSjCmdEditDel';
+      delBtn.innerHTML='🗑';
+      var closeBtn=document.createElement('button');
+      closeBtn.type='button';
+      closeBtn.className='hxSjCmdEditClose';
+      closeBtn.innerHTML='✕';
+      box.appendChild(nameIn);
+      box.appendChild(cmdIn);
+      if(!isNew) box.appendChild(delBtn);
+      box.appendChild(closeBtn);
+      if(anchor && anchor.parentNode){
+        anchor.parentNode.insertBefore(box,anchor.nextSibling);
+      }else{
+        document.body.appendChild(box);
+      }
+      function commit(){
+        var a=sjCmdsLoad();
+        var nm=nameIn.value||'';
+        var cm=cmdIn.value||'';
+        if(isNew){
+          if(nm==='' && cm===''){ sjCmdEditClose(); return; }
+          a.push({name:nm,cmd:cm});
+        }else{
+          if(!a[idx]){ sjCmdEditClose(); return; }
+          a[idx].name=nm;
+          a[idx].cmd=cm;
+        }
+        sjCmdsSave(a);
+        sjCmdEditClose();
+        sjCmdRowRender();
+      }
+      function sjCmdEditClose(){
+        if(box.parentNode) box.parentNode.removeChild(box);
+        document.removeEventListener('mousedown',outside,true);
+        document.removeEventListener('touchstart',outside,true);
+      }
+      function outside(ev){
+        var t=ev.target;
+        if(box===t) return;
+        if(box.contains && box.contains(t)) return;
+        commit();
+      }
+      delBtn.onclick=function(ev){
+        if(ev && ev.preventDefault) ev.preventDefault();
+        var a=sjCmdsLoad();
+        if(!isNew && a[idx]){ a.splice(idx,1); sjCmdsSave(a); }
+        sjCmdEditClose();
+        sjCmdRowRender();
+      };
+      closeBtn.onclick=function(ev){
+        if(ev && ev.preventDefault) ev.preventDefault();
+        commit();
+      };
+      setTimeout(function(){
+        document.addEventListener('mousedown',outside,true);
+        document.addEventListener('touchstart',outside,true);
+      },0);
+    }
+    
+    /* v0.78.0 2026-10-27 SPEC_t131 刀3 点亮显示条 sjGlowLineRefresh() */
+    function sjGlowLineRefresh(){
+      var el=document.getElementById('hxSjGlowLine');
+      if(!el) return;
+      var txt='';
+      var cur=null;
+      try{ cur=localStorage.getItem('chat_preset_lit'); }catch(e){ cur=null; } /* 终审翻案：点亮键chat_preset_lit（chat_preset_cur=选中发话用，两键分开不混） */
+      if(cur){
+        var pname='';
+        try{
+          var ps=JSON.parse(localStorage.getItem('chat_presets')||'[]');
+          var i;
+          for(i=0;i<ps.length;i++){
+            if(String(ps[i].id)===String(cur)){ pname=ps[i].name||''; break; }
+          }
+        }catch(e){}
+        txt='当前点亮：提示词「'+(pname||cur)+'」';
+        el.className='hxSjGlowLine';
+        el.innerHTML=txt;
+        return;
+      }
+      var pend=null;
+      try{ pend=JSON.parse(localStorage.getItem('xt_glow_pend')||'null'); }catch(e){ pend=null; }
+      if(pend && pend.text){
+        var t=String(pend.text);
+        var short=t.length>12?(t.substring(0,12)+'…'):t;
+        var from=String(pend.from||'');
+        if(from.indexOf('鱼骨')>=0){
+          txt='当前点亮：鱼骨「'+short+'」';
+        }else{
+          txt='当前点亮：词「'+short+'」';
+        }
+        el.className='hxSjGlowLine';
+        el.innerHTML=txt;
+        return;
+      }
+      var pk=null;
+      try{ pk=JSON.parse(localStorage.getItem('hx_pick_v1')||'null'); }catch(e){ pk=null; }
+      if(pk && pk.pkey){
+        txt='当前点亮：元素 '+String(pk.pkey);
+        el.className='hxSjGlowLine';
+        el.innerHTML=txt;
+        return;
+      }
+      el.className='hxSjGlowLine hxSjGlowEmpty';
+      el.innerHTML='还没点亮东西——去正文长按点亮一个词/一根鱼骨/一条提示词';
+    }
+    
+    /* v0.78.0 2026-10-27 SPEC_t131 刀4 发送链 sjAiSend() */
+    function sjAiSend(){
+      var btn=document.getElementById('hxSjAiSend');
+      var ta=document.getElementById('hxSjText');
+      var cmdTxt=ta?(ta.value||''):'';
+      /* 终审翻案：两键分开——chat_preset_lit=点亮的提示词（改提示词目标），chat_preset_cur=选中的预设（发话sys用） */
+      var lit=null, cur=null;
+      try{ lit=localStorage.getItem('chat_preset_lit'); }catch(eL){ lit=null; }
+      try{ cur=localStorage.getItem('chat_preset_cur'); }catch(e){ cur=null; }
+      var presets=[];
+      try{ presets=JSON.parse(localStorage.getItem('chat_presets')||'[]'); }catch(e){ presets=[]; }
+      var litPreset=null, selPreset=null;
+      var i;
+      for(i=0;i<presets.length;i++){
+        if(lit && String(presets[i].id)===String(lit)) litPreset=presets[i];
+        if(cur && String(presets[i].id)===String(cur)) selPreset=presets[i];
+      }
+      var isPptCmd=false;
+      if(litPreset) isPptCmd=true; /* 终审翻案（仿真逮）：点亮着提示词=就是要对它动手，大白话不会正好含「改提示词」四字；点亮别的自动灭lit不冲突 */
+      var objLine='';
+      var pend=null;
+      try{ pend=JSON.parse(localStorage.getItem('xt_glow_pend')||'null'); }catch(e){ pend=null; }
+      if(litPreset){
+        objLine='【点亮对象】提示词「'+(litPreset.name||'')+'」\n'+(litPreset.rule||'');
+      }else if(pend && pend.text){
+        var from=String(pend.from||'');
+        if(from.indexOf('鱼骨')>=0){
+          objLine='【点亮对象】鱼骨\n'+String(pend.text);
+        }else{
+          objLine='【点亮对象】词/选段\n'+String(pend.text);
+        }
+      }else{
+        var pk=null;
+        try{ pk=JSON.parse(localStorage.getItem('hx_pick_v1')||'null'); }catch(e){ pk=null; }
+        if(pk && pk.pkey){
+          objLine='【点亮对象】元素 '+String(pk.pkey);
+        }else{
+          objLine='【点亮对象】无';
+        }
+      }
+      var usr=objLine+'\n\n'+cmdTxt;
+      var sys='';
+      if(selPreset && !isPptCmd){
+        sys=selPreset.rule||''; /* 选中的预设随命令一起发（洪老师：发送时把提示词一起发送） */
+      }
+      var _pptSysTail='';
+      if(litPreset && isPptCmd){ _pptSysTail='\n\n注意：第一行只写一句话说清你改了啥，第二行起写改完的新提示词全文，不许写别的。'; } /* 终审翻案：改提示词约定格式（首行改动说明+其后新全文） */
+      if(btn){
+        btn.disabled=true;
+        btn.innerHTML='⏳AI想着呢…';
+      }
+      function restore(){
+        if(btn){ btn.disabled=false; btn.innerHTML='🚀发送'; }
+      }
+      if(!window.HX || !HX.fc || typeof HX.fc.go!=='function'){
+        restore();
+        sjToast('AI总泵没上岗，先发不出去');
+        return;
+      }
+      try{
+        HX.fc.go({kind:'sj_ai',from:'速记面板',sys:(sys+_pptSysTail),usr:usr},function(ok,txt,by){
+          restore();
+          if(!ok){
+            sjToast('发送失败：'+(txt||'未知原因'));
+            return;
+          }
+          sjAiBack(txt||'',isPptCmd);
+        });
+      }catch(e){
+        restore();
+        sjToast('发送失败：'+(e&&e.message?e.message:'异常'));
+      }
+    }
+    
+    /* v0.78.0 2026-10-27 SPEC_t131 刀5 回流三路 sjAiBack(txt) */
+    function sjAiBack(txt,isPptCmd){
+      /* 终审翻案：丙判定=点亮着提示词且本条是改提示词命令（只点亮没发改令的，回流按普通词/鱼骨走不弹对照） */
+      var lit=null;
+      try{ lit=localStorage.getItem('chat_preset_lit'); }catch(e){ lit=null; }
+      var pend=null;
+      try{ pend=JSON.parse(localStorage.getItem('xt_glow_pend')||'null'); }catch(e){ pend=null; }
+      var isFish=false;
+      if(pend && pend.from && String(pend.from).indexOf('鱼骨')>=0) isFish=true;
+      var ta=document.getElementById('hxSjText');
+      if(lit && isPptCmd){
+        sjPptDiffOpen(txt,lit);
+        return;
+      }
+      if(isFish){
+        var ts=Date.now();
+        var back={type:'fish',text:txt,ts:ts};
+        try{ localStorage.setItem('xt_glow_back',JSON.stringify(back)); }catch(e){}
+        sjToast('扩充已送回鱼骨（回书落账）');
+        if(ta) ta.value='';
+        if(window.HX && HX.glow && typeof HX.glow.clear==='function'){ try{ HX.glow.clear(); }catch(e){} }
+        sjGlowLineRefresh();
+        return;
+      }
+      var word='';
+      if(pend && pend.text) word=String(pend.text);
+      var ts2=Date.now();
+      var eid='e'+ts2;
+      /* 终审翻案：解释账=对象{eid:{word,exp,ts}}（与小涛xtGlowBackTake读取口径一致；只增不丢，超100条清最老） */
+      var expObj={};
+      try{ expObj=JSON.parse(localStorage.getItem('hx_sj_exp')||'{}'); }catch(e){ expObj={}; }
+      if(!expObj || typeof expObj!=='object' || Array.isArray(expObj)) expObj={}; /* 终审：Array.isArray跨realm稳 */
+      expObj[eid]={word:word,exp:txt,ts:ts2};
+      try{
+        var _ks=Object.keys(expObj);
+        if(_ks.length>100){ _ks.sort(function(a,b){ return (expObj[a].ts||0)-(expObj[b].ts||0); }); for(var _ki=0;_ki<_ks.length-100;_ki++) delete expObj[_ks[_ki]]; }
+      }catch(eK){}
+      try{ localStorage.setItem('hx_sj_exp',JSON.stringify(expObj)); }catch(e){}
+      var back2={type:'exp',word:word,eid:eid,ts:ts2};
+      try{ localStorage.setItem('xt_glow_back',JSON.stringify(back2)); }catch(e){}
+      sjToast('解释已放到词后面（回书生效）');
+      if(ta) ta.value='';
+      if(window.HX && HX.glow && typeof HX.glow.clear==='function'){ try{ HX.glow.clear(); }catch(e){} }
+      sjGlowLineRefresh();
+    }
+    function sjPptDiffOpen(txt,curId){
+      var old=document.getElementById('hxSjPptDiff');
+      if(old && old.parentNode) old.parentNode.removeChild(old);
+      var lines=String(txt||'').split('\n');
+      var head=lines.length>0?lines[0]:'';
+      var newRule=lines.length>1?lines.slice(1).join('\n'):'';
+      var presets=[];
+      try{ presets=JSON.parse(localStorage.getItem('chat_presets')||'[]'); }catch(e){ presets=[]; }
+      var oldRule='';
+      var idx=-1;
+      var i;
+      for(i=0;i<presets.length;i++){
+        if(String(presets[i].id)===String(curId)){ oldRule=presets[i].rule||''; idx=i; break; }
+      }
+      var layer=document.createElement('div');
+      layer.id='hxSjPptDiff';
+      layer.className='hxSjPptDiff';
+      var headDiv=document.createElement('div');
+      headDiv.className='hxSjPptDiffHead';
+      headDiv.innerHTML='AI说改了啥：'+head;
+      var cols=document.createElement('div');
+      cols.className='hxSjPptDiffCols';
+      var colOld=document.createElement('div');
+      colOld.className='hxSjPptDiffCol';
+      colOld.innerHTML='<div class="hxSjPptDiffColT">旧全文</div><pre class="hxSjPptDiffPre">'+sjEsc(oldRule)+'</pre>';
+      var colNew=document.createElement('div');
+      colNew.className='hxSjPptDiffCol';
+      colNew.innerHTML='<div class="hxSjPptDiffColT">新全文</div><pre class="hxSjPptDiffPre">'+sjEsc(newRule)+'</pre>';
+      cols.appendChild(colOld);
+      cols.appendChild(colNew);
+      var foot=document.createElement('div');
+      foot.className='hxSjPptDiffFoot';
+      var okBtn=document.createElement('button');
+      okBtn.type='button';
+      okBtn.className='hxSjPptDiffOk';
+      okBtn.innerHTML='✅放回去';
+      var noBtn=document.createElement('button');
+      noBtn.type='button';
+      noBtn.className='hxSjPptDiffNo';
+      noBtn.innerHTML='✕算了';
+      foot.appendChild(okBtn);
+      foot.appendChild(noBtn);
+      layer.appendChild(headDiv);
+      layer.appendChild(cols);
+      layer.appendChild(foot);
+      document.body.appendChild(layer);
+      function closeLayer(){
+        if(layer.parentNode) layer.parentNode.removeChild(layer);
+      }
+      noBtn.onclick=function(ev){
+        if(ev && ev.preventDefault) ev.preventDefault();
+        closeLayer();
+      };
+      okBtn.onclick=function(ev){
+        if(ev && ev.preventDefault) ev.preventDefault();
+        var ps=[];
+        try{ ps=JSON.parse(localStorage.getItem('chat_presets')||'[]'); }catch(e){ ps=[]; }
+        var j;
+        for(j=0;j<ps.length;j++){
+          if(String(ps[j].id)===String(curId)){ ps[j].rule=newRule; break; }
+        }
+        try{ localStorage.setItem('chat_presets',JSON.stringify(ps)); }catch(e){}
+        if(window.HX && HX.store && typeof HX.store.set==='function'){
+          try{ HX.store.set('chat_presets',JSON.stringify(ps)); }catch(e){}
+        }
+        sjToast('提示词已放回去');
+        closeLayer();
+        var ta=document.getElementById('hxSjText');
+        if(ta) ta.value='';
+        if(window.HX && HX.glow && typeof HX.glow.clear==='function'){ try{ HX.glow.clear(); }catch(e){} }
+        sjGlowLineRefresh();
+      };
+    }
+    function sjEsc(s){
+      return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+    
+    /* v0.78.0 2026-10-27 SPEC_t131 刀4/刀2 bind追加段 */
+
+/* v0.77.0 2026-10-26 SPEC_t130 刀1/刀2/刀3：bind 加 foldBar 折叠开合绑定；加 hxSjPptGen/hxSjPptSave/hxSjPptExit/hxSjFcLog 绑定。原所有绑定一行不动照搬（挪父容器不影响 id 绑定）。 */
     function bind(){
       var _sosT=null, _sosTimer=null; /* v0.30.0 刀A2 双击🆘回环：单击600ms后flush(true)，600ms内第二击loopback() */
       var dot=$('hxSjDot'); if(!dot) return;
@@ -3763,6 +4264,23 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
         box.style.display=open?'block':'none';
         sjFoldBar.innerHTML=(open?'✏️ 写想法/改提示词 ▴':'✏️ 写想法/改提示词 ▾');
       }catch(eFB){} });
+      var sjTabIdea=$('hxSjTabIdea');
+      if(sjTabIdea) sjTabIdea.addEventListener('click', function(){ try{
+        if(localStorage.getItem('hx_t131_off')==='1') return;
+        var box=$('hxSjIdeaBox'); if(!box) return;
+        var open=(box.style.display!=='block');
+        box.style.display=open?'block':'none';
+        sjTabIdea.innerHTML=(open?'💡想法 ▴':'💡想法 ▾');
+      }catch(eTI){} });
+      var sjTabAi=$('hxSjTabAi');
+      if(sjTabAi) sjTabAi.addEventListener('click', function(){ try{
+        if(localStorage.getItem('hx_t131_off')==='1') return;
+        var box=$('hxSjAiBox'); if(!box) return;
+        var open=(box.style.display!=='block');
+        box.style.display=open?'block':'none';
+        sjTabAi.innerHTML=(open?'🪄AI编辑 ▴':'🪄AI编辑 ▾');
+        if(open){ try{ sjGlowLineRefresh(); }catch(eG){} }
+      }catch(eTA){} });
       /* v0.77.0 刀2：🪄AI编提示词 / 💾存成预设 / ✕退出 绑定 */
       var sjPptGenBtn=$('hxSjPptGen'); if(sjPptGenBtn) sjPptGenBtn.addEventListener('click', function(){ try{ sjPptGen(); }catch(e){ try{ sjToast('AI编提示词没成'); }catch(e2){} } });
       var sjPptSaveBtn=$('hxSjPptSave'); if(sjPptSaveBtn) sjPptSaveBtn.addEventListener('click', function(){ try{ sjPptSave(); }catch(e){ try{ sjToast('存预设没成'); }catch(e2){} } });
@@ -3796,6 +4314,13 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
         if(!_skip && HX._autoNetOk()) sjUpload(false);
         try{ sjWzPendFlush(); }catch(ePF){} /* v0.65.0 刀B3：会诊件闲时补传（同批闲时，失败留账下回） */
       }catch(e){} }, 8000); /* 速记自动上行：开门闲时对账补推（上次没网漏的在这补）；v0.8.0开门静默令：没点按钮不补 */
+      /* v0.78.0 2026-10-27 SPEC_t131 刀4/刀2：🚀发送绑定+命令钮排初渲+点亮显示条初刷 */
+      try{
+        var sjAiSendBtn=$('hxSjAiSend');
+        if(sjAiSendBtn) sjAiSendBtn.addEventListener('click', function(){ try{ sjAiSend(); }catch(eS){ try{ sjToast('发送没成'); }catch(e2){} } });
+        try{ sjCmdRowRender(); }catch(eR){}
+        try{ sjGlowLineRefresh(); }catch(eG){}
+      }catch(eAll){}
     }
     /* 一行接入：HX.sj.init({app:'软件名', getCtx:fn可选})；重复调用只补上下文不重复绑 */
     sj.init = function(opt){
