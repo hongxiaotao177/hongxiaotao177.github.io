@@ -505,7 +505,7 @@ body {
 /* v0.14.0（2026-10-26 SPEC_t122_2 AI总管工作流改造第二步，冻结令唯一开工件t122）：刀1 AI回信气泡长按1.5秒点亮送小涛浮窗（黄底+hx_pick_v1账本+xt_glow_pend+hxToastHold常驻黑框，再长按熄灭，点亮别个自动换，堵安卓系统菜单；hx_t122b_off=1不绑）；真实改点=createBubble内sendBook段后新增点亮手势块+本行+版本号；红线：发送链/命令闸/话仓闸/收发室/预设拼装/PDF问答/送书/看门狗/🌐联网/鱼骨/户口/单条删 全IDENTICAL */
 /* v0.13.0（2026-10-26 SPEC_t122_1 AI总管工作流改造第一步，冻结令唯一开工件）：刀1预设加kind问话类限200字（出厂三条补kind/编辑卡加类型下拉/老数据名字猜测迁移）/刀2自动存仓核实零改动（HX.hc ingest钩本在）/刀3话仓条目标题加下划线；总开关hx_t122_off=1全退（刀1限字+刀3下划线，预设功能本体不退）。红线：发送链/命令闸/话仓闸/收发室/PDF问答/送书/看门狗/鱼骨/联网/户口全IDENTICAL */
 /* v0.15.0（2026-10-26 SPEC_t122_3 AI总管工作流改造第三步，冻结令唯一开工件t122条目⑥）：刀1 btnAI回调改对照制（AI写完不直盖，调presetDiffConfirm，hx_t122_off=1回老路直盖）/刀2 新增presetDiffConfirm新旧对照层（旧灰底新黄底，✅进表单仍需点存落盘，❌/遮罩一字不动）；真实改点=btnAI回调一行+presetShowForm后新增一函数+本行+版本号；终审翻案1处（DS写whiteSpace驼峰cssText无效改white-space两处）；红线：发送链/命令闸/话仓闸/收发室/预设拼装/文献双岗/PDF问答/送书/看门狗/🌐联网/鱼骨/户口/单条删/t122-1 kind闸/t122-2点亮块 全IDENTICAL */
-var SW_VERSION = "0.17.0"; /* v0.17.0（2026-10-26 SPEC_t122_5 AI总管工作流改造第五步，冻结令唯一开工件t122条目⑧最后一件）：刀1新增presetRefAudit（第三家DS凭自身知识逐条判靠谱/存疑/像编的，没回cb(false)不挡附录）／刀2新增refAppendixFormat2（带【三核：X】判词附录）／刀3 t122-4刀5附录钩改走三核（失败走老refAppendixFormat+吐司「三核没回，附录照旧」；外援DS骨架，Kimi终审翻案判词口径）／刀4版本号。联网核对=二期一行没碰。红线：发送链/双岗四函数/presetCallAI/refAppendixFormat本体/对照层/PDF问答/送书/看门狗/联网/鱼骨/户口/单条删/t122-1/t122-2/hx-common/壳/index 全IDENTICAL */ /* v0.16.0（2026-10-26 SPEC_t122_4 AI总管工作流改造第四步，冻结令唯一开工件t122条目⑦）：刀1出厂新增「附参考文献」预设（ask类）/刀2 presetIsRefPreset识别/刀3 refAppendixFormat论文格式拼文本/刀4发送前捕获_presetIsRef/刀5 onOk收尾附录钩——回答落泡后后台走现成文献双岗presetLitRun，核过文献拼进末条a消息c字段HX.chat.save存盘重渲染（重开对话仍在；hc.ingest成对增量不重复入仓，仓内保持正文版），查不到/没查成只吐司不动字，hx_t122_off=1不跑/刀6版本行；外援DS出补丁一次成，Kimi终审零翻案（刀2/3/5锚点过短由Kimi亲手加长定位，DS刀6锚点不全诚实申报）。红线：发送链主体/命令闸/话仓闸/文献双岗四函数本体/presetBuildPrompt/对照层/PDF问答/送书/看门狗/🌐联网/鱼骨/户口/单条删/t122-1 kind闸/t122-2点亮块 全IDENTICAL */ /* v0.12.0（2026-10-25 SPEC_鱼骨版面，洪老师拍板总待办第1位「开始第一个任务把DS拉进来」，DS实现+Kimi终审翻案1处亲手落地：🗑挪函数尾部user/ai都挂，DS版挂sendBook的if块内只有ai有）：刀1 CSS鱼骨样式/刀2 ygOff+applyFishbone+delBubble三新函数/刀3 createBubble签名加byName+by标注+鱼骨化+🗑/刀4 renderChat传by/刀5 onOk收byName+新回信鱼骨化+by标注+🗑/刀6版本行；折叠下划线行/点亮选中/行尾小字链（段字数）/新展旧折/标哪家AI答的+单条气泡删；总开关hx_yg_off=1全退。红线：发送链/预设/命令闸/话仓/收发室/PDF问答/送书/看门狗/🌐联网全IDENTICAL；配套hx-common v0.71.0。 */  /* v0.11.0（2026-10-25 SPEC_t114 浮窗AI全家上户口一期·AI总管户口，总待办第1位，外援双缺DS破线/千问401自动降级Kimi亲手全包）：HX.ai.init上户口（🤖AI钮进sj面板，CHAT_AI_MANIFEST四条=📋提示词/📦话仓/📚收发室/🌐联网搜全指现有钮，钮被开关藏掉时toast提示不炸；send走HX.chat.pump公共泵只给＋加AI功能自建条目用；hx_hukou_off=1回退）；配套index v1.47.0首页户口。红线：命令闸/话仓闸/收发室/预设/发送链/PDF问答/送书/看门狗/🌐联网全IDENTICAL，只加init一段+manifest定义+本行 */ /* v0.10.0（2026-10-25 SPEC_t113 AI总泵归拢一期，洪老师拍板「归拢插队+联网要+AI对话试验田」，外援双缺Kimi亲手）：刀1 presetCallAI走HX.aip总泵（老链保留，缺省序归拢成千问→Kimi→DS）；刀2 🌐联网钮（点亮只对下一条生效发完自动灭，走总泵web链千问enable_search，hx_chat_web_off=1藏钮）；两处HX.chat.send加第4参_takeWebOpt()透传；配套hx-common v0.70.0。红线：除三刀+版本行外一行未动，命令闸/话仓/收发室/送书/看门狗IDENTICAL */ /* v0.9.0（2026-10-25晚班 SPEC_t110_话仓，洪老师拍板「先干话仓，开工」插队总待办第1位，外援双缺Kimi亲手）：刀1 📦话仓浮层（顶栏📦钮+总账/话题数数/条目展开/📥塞书走chatSendBook/🗑删，hx_hc_off=1藏钮3秒复查10拍）；刀2 发送前查仓闸hcTryAsk（zgTryCmd前——仓里命中直接贴双泡📦来自话仓没花AI钱+🔄问AI钮挂_hcPassOnce，记对话账a前缀【话仓答】防循环，hx_hc_ask_off=1关闸）；配套hx-common v0.69.0 HX.hc模块+persist入库钩。红线：除两刀+本行外一行未动。 */ /* v0.8.3（2026-10-24 SPEC_AI总管三期，洪老师拍板三条新规）刀B.1 zgTryCmd前置改AI判令制（废四动词暗号）/刀B.2旧detectCmd模糊链保留不删/刀B.4预设浮层灰字透明；刀B.3回信截断治本体转下批（锚点在HX.chat泵内，DS停报，留痕）；外援DS实现，Kimi终审翻案1处（passThrough双贴补摘用户气泡）亲手落地 */ /* v0.8.2（2026-10-24 t104，洪老师17:31真机报「选成书单发预设空字点发送被拦死」）：修空字闸——单发预设空字放行显（预设名），带上文/无预设照旧；SPEC_chat_v0.8.2，DS实现Kimi终审 */ /* v0.8.1（2026-10-23深夜 t99，洪老师22:37真机报「AI总管输入框没反应」截图实锤被压成窄条）：底栏两行——textarea-wrap加flex-wrap+textarea-input flex:1 1 100%独占首行，按钮落第二行；病根=media小屏可用宽268<三钮352；只动CSS两行，HTML/JS/发送链全IDENTICAL；外援双缺Kimi亲手 */ /* v0.8.0（2026-10-23 AI总管二期刀G，SPEC_AI总管二期，洪老师拍板「二期开工」）：命令闸接模糊链——detectCmd未命中但含四动词→findChap找章（补用户气泡insertBefore保序）→dupRate≥70出三选（跳过/照融/重写融，10秒默认跳过）→miss/err摘泡还文挂_zgPassOnce旗放行普通发送不吞话；点名单链/收发室/预设/PDF问答/送书/看门狗全IDENTICAL；DS实现+Kimi终审翻案2处（递归死循环/双贴气泡） */ /* v0.7.0（2026-10-23 AI总管一期，SPEC_AI总管一期，洪老师拍板「直接开干干完为止」，外援双缺Kimi亲手写）：刀A改名「💬 AI总管」（title/顶栏/sj.init三处，文件名不动）；刀C命令闸+三步命令链（融进《书》第N章→取章→AI融合走HX.chat.pump→写回留历史版，进度气泡逐步亮失败红字停下，成功记进对话账）；刀D📚收发室浮层（列书列章/📥取进对话/🪄融最近回信/↩历史版退回）；全走HX.zg公开口，总开关hx_zg_off=1全退。红线：发送链/预设/PDF问答/📥送书/看门狗 IDENTICAL */ /* v0.5.0（2026-10-18，想法流水09:03拍板）：📥层加「🪄让AI找家」——presetCallAI三兄弟链问归哪书哪章confirm过目才塞+chatConfirmSend一字不差重复闸；终审翻案1处（DS/千问回调都当单参实为ok,out双参）；手选老链一行未动 */ /* v0.4.1（2026-10-17深夜班，洪老师拍板「把千问修好修完为止」，SPEC_千问四治法，千问实现+Kimi终审翻案2处亲手落地：①千问把续写闸_continued写进then每次重置=没闸，挪进attempt闭包 ②千问!r.ok直return致下家被连跳两次，补__skip哨兵）：presetCallAI四刀——钥匙trim/max_tokens2048→8192/finish_reason截断自动续写一回拼接（仍截断换下一家）/HTTP400不再当JSON误解析静默跳；预设系统其余全IDENTICAL */ /* v0.8.2（2026-10-24 t104，洪老师17:31真机报「选成书单发预设空字点发送被拦死」）：修空字闸——单发预设空字放行显（预设名），带上文/无预设照旧；SPEC_chat_v0.8.2，DS实现Kimi终审 */ /* v0.8.1（2026-10-23深夜 t99，洪老师22:37真机报「AI总管输入框没反应」截图实锤被压成窄条）：底栏两行——textarea-wrap加flex-wrap+textarea-input flex:1 1 100%独占首行，按钮落第二行；病根=media小屏可用宽268<三钮352；只动CSS两行，HTML/JS/发送链全IDENTICAL；外援双缺Kimi亲手 */ /* v0.8.0（2026-10-23 AI总管二期刀G，SPEC_AI总管二期，洪老师拍板「二期开工」）：命令闸接模糊链——detectCmd未命中但含四动词→findChap找章（补用户气泡insertBefore保序）→dupRate≥70出三选（跳过/照融/重写融，10秒默认跳过）→miss/err摘泡还文挂_zgPassOnce旗放行普通发送不吞话；点名单链/收发室/预设/PDF问答/送书/看门狗全IDENTICAL；DS实现+Kimi终审翻案2处（递归死循环/双贴气泡） */ /* v0.7.0（2026-10-23 AI总管一期，SPEC_AI总管一期，洪老师拍板「直接开干干完为止」，外援双缺Kimi亲手写）：刀A改名「💬 AI总管」（title/顶栏/sj.init三处，文件名不动）；刀C命令闸+三步命令链（融进《书》第N章→取章→AI融合走HX.chat.pump→写回留历史版，进度气泡逐步亮失败红字停下，成功记进对话账）；刀D📚收发室浮层（列书列章/📥取进对话/🪄融最近回信/↩历史版退回）；全走HX.zg公开口，总开关hx_zg_off=1全退。红线：发送链/预设/PDF问答/📥送书/看门狗 IDENTICAL */ /* v0.5.0（2026-10-18，想法流水09:03拍板）：📥层加「🪄让AI找家」——presetCallAI三兄弟链问归哪书哪章confirm过目才塞+chatConfirmSend一字不差重复闸；终审翻案1处（DS/千问回调都当单参实为ok,out双参）；手选老链一行未动 */ /* v0.4.1（2026-10-17深夜班，洪老师拍板「把千问修好修完为止」，SPEC_千问四治法，千问实现+Kimi终审翻案2处亲手落地：①千问把续写闸_continued写进then每次重置=没闸，挪进attempt闭包 ②千问!r.ok直return致下家被连跳两次，补__skip哨兵）：presetCallAI四刀——钥匙trim/max_tokens2048→8192/finish_reason截断自动续写一回拼接（仍截断换下一家）/HTTP400不再当JSON误解析静默跳；预设系统其余全IDENTICAL */
+var SW_VERSION = "0.18.0"; /* v0.18.0（2026-10-26 SPEC_t123 AI总管今日想法五件，洪老师拍板「今天的想法归类成任务列表去执行」，真机毛病插队治t122验收不合格；外援DS稿拆碎+链式锚点两次截断报废，Kimi亲手全包五刀）：刀1点亮长按touchstart/mousedown排除泡内button与.fb-line——治v0.14.0 touchend preventDefault吞click（10-26三键/🗑/下划线全失灵唯一病根）／刀2鱼骨折法改整封回信一条下划线（点开整封、再点折回，门槛与闸不动）／刀4📚收发室+📦话仓浮层加➖缩小成右缘迷你钮（可拖、点开重开自毁，hx_mini_off=1不加）／刀5版本行；红线：发送链/命令闸/话仓闸/预设/文献双岗三核/PDF问答/送书/看门狗/联网/户口/点亮手势本体/delBubble本体/记账全IDENTICAL */ /* v0.17.0（2026-10-26 SPEC_t122_5 AI总管工作流改造第五步，冻结令唯一开工件t122条目⑧最后一件）：刀1新增presetRefAudit（第三家DS凭自身知识逐条判靠谱/存疑/像编的，没回cb(false)不挡附录）／刀2新增refAppendixFormat2（带【三核：X】判词附录）／刀3 t122-4刀5附录钩改走三核（失败走老refAppendixFormat+吐司「三核没回，附录照旧」；外援DS骨架，Kimi终审翻案判词口径）／刀4版本号。联网核对=二期一行没碰。红线：发送链/双岗四函数/presetCallAI/refAppendixFormat本体/对照层/PDF问答/送书/看门狗/联网/鱼骨/户口/单条删/t122-1/t122-2/hx-common/壳/index 全IDENTICAL */ /* v0.16.0（2026-10-26 SPEC_t122_4 AI总管工作流改造第四步，冻结令唯一开工件t122条目⑦）：刀1出厂新增「附参考文献」预设（ask类）/刀2 presetIsRefPreset识别/刀3 refAppendixFormat论文格式拼文本/刀4发送前捕获_presetIsRef/刀5 onOk收尾附录钩——回答落泡后后台走现成文献双岗presetLitRun，核过文献拼进末条a消息c字段HX.chat.save存盘重渲染（重开对话仍在；hc.ingest成对增量不重复入仓，仓内保持正文版），查不到/没查成只吐司不动字，hx_t122_off=1不跑/刀6版本行；外援DS出补丁一次成，Kimi终审零翻案（刀2/3/5锚点过短由Kimi亲手加长定位，DS刀6锚点不全诚实申报）。红线：发送链主体/命令闸/话仓闸/文献双岗四函数本体/presetBuildPrompt/对照层/PDF问答/送书/看门狗/🌐联网/鱼骨/户口/单条删/t122-1 kind闸/t122-2点亮块 全IDENTICAL */ /* v0.12.0（2026-10-25 SPEC_鱼骨版面，洪老师拍板总待办第1位「开始第一个任务把DS拉进来」，DS实现+Kimi终审翻案1处亲手落地：🗑挪函数尾部user/ai都挂，DS版挂sendBook的if块内只有ai有）：刀1 CSS鱼骨样式/刀2 ygOff+applyFishbone+delBubble三新函数/刀3 createBubble签名加byName+by标注+鱼骨化+🗑/刀4 renderChat传by/刀5 onOk收byName+新回信鱼骨化+by标注+🗑/刀6版本行；折叠下划线行/点亮选中/行尾小字链（段字数）/新展旧折/标哪家AI答的+单条气泡删；总开关hx_yg_off=1全退。红线：发送链/预设/命令闸/话仓/收发室/PDF问答/送书/看门狗/🌐联网全IDENTICAL；配套hx-common v0.71.0。 */  /* v0.11.0（2026-10-25 SPEC_t114 浮窗AI全家上户口一期·AI总管户口，总待办第1位，外援双缺DS破线/千问401自动降级Kimi亲手全包）：HX.ai.init上户口（🤖AI钮进sj面板，CHAT_AI_MANIFEST四条=📋提示词/📦话仓/📚收发室/🌐联网搜全指现有钮，钮被开关藏掉时toast提示不炸；send走HX.chat.pump公共泵只给＋加AI功能自建条目用；hx_hukou_off=1回退）；配套index v1.47.0首页户口。红线：命令闸/话仓闸/收发室/预设/发送链/PDF问答/送书/看门狗/🌐联网全IDENTICAL，只加init一段+manifest定义+本行 */ /* v0.10.0（2026-10-25 SPEC_t113 AI总泵归拢一期，洪老师拍板「归拢插队+联网要+AI对话试验田」，外援双缺Kimi亲手）：刀1 presetCallAI走HX.aip总泵（老链保留，缺省序归拢成千问→Kimi→DS）；刀2 🌐联网钮（点亮只对下一条生效发完自动灭，走总泵web链千问enable_search，hx_chat_web_off=1藏钮）；两处HX.chat.send加第4参_takeWebOpt()透传；配套hx-common v0.70.0。红线：除三刀+版本行外一行未动，命令闸/话仓/收发室/送书/看门狗IDENTICAL */ /* v0.9.0（2026-10-25晚班 SPEC_t110_话仓，洪老师拍板「先干话仓，开工」插队总待办第1位，外援双缺Kimi亲手）：刀1 📦话仓浮层（顶栏📦钮+总账/话题数数/条目展开/📥塞书走chatSendBook/🗑删，hx_hc_off=1藏钮3秒复查10拍）；刀2 发送前查仓闸hcTryAsk（zgTryCmd前——仓里命中直接贴双泡📦来自话仓没花AI钱+🔄问AI钮挂_hcPassOnce，记对话账a前缀【话仓答】防循环，hx_hc_ask_off=1关闸）；配套hx-common v0.69.0 HX.hc模块+persist入库钩。红线：除两刀+本行外一行未动。 */ /* v0.8.3（2026-10-24 SPEC_AI总管三期，洪老师拍板三条新规）刀B.1 zgTryCmd前置改AI判令制（废四动词暗号）/刀B.2旧detectCmd模糊链保留不删/刀B.4预设浮层灰字透明；刀B.3回信截断治本体转下批（锚点在HX.chat泵内，DS停报，留痕）；外援DS实现，Kimi终审翻案1处（passThrough双贴补摘用户气泡）亲手落地 */ /* v0.8.2（2026-10-24 t104，洪老师17:31真机报「选成书单发预设空字点发送被拦死」）：修空字闸——单发预设空字放行显（预设名），带上文/无预设照旧；SPEC_chat_v0.8.2，DS实现Kimi终审 */ /* v0.8.1（2026-10-23深夜 t99，洪老师22:37真机报「AI总管输入框没反应」截图实锤被压成窄条）：底栏两行——textarea-wrap加flex-wrap+textarea-input flex:1 1 100%独占首行，按钮落第二行；病根=media小屏可用宽268<三钮352；只动CSS两行，HTML/JS/发送链全IDENTICAL；外援双缺Kimi亲手 */ /* v0.8.0（2026-10-23 AI总管二期刀G，SPEC_AI总管二期，洪老师拍板「二期开工」）：命令闸接模糊链——detectCmd未命中但含四动词→findChap找章（补用户气泡insertBefore保序）→dupRate≥70出三选（跳过/照融/重写融，10秒默认跳过）→miss/err摘泡还文挂_zgPassOnce旗放行普通发送不吞话；点名单链/收发室/预设/PDF问答/送书/看门狗全IDENTICAL；DS实现+Kimi终审翻案2处（递归死循环/双贴气泡） */ /* v0.7.0（2026-10-23 AI总管一期，SPEC_AI总管一期，洪老师拍板「直接开干干完为止」，外援双缺Kimi亲手写）：刀A改名「💬 AI总管」（title/顶栏/sj.init三处，文件名不动）；刀C命令闸+三步命令链（融进《书》第N章→取章→AI融合走HX.chat.pump→写回留历史版，进度气泡逐步亮失败红字停下，成功记进对话账）；刀D📚收发室浮层（列书列章/📥取进对话/🪄融最近回信/↩历史版退回）；全走HX.zg公开口，总开关hx_zg_off=1全退。红线：发送链/预设/PDF问答/📥送书/看门狗 IDENTICAL */ /* v0.5.0（2026-10-18，想法流水09:03拍板）：📥层加「🪄让AI找家」——presetCallAI三兄弟链问归哪书哪章confirm过目才塞+chatConfirmSend一字不差重复闸；终审翻案1处（DS/千问回调都当单参实为ok,out双参）；手选老链一行未动 */ /* v0.4.1（2026-10-17深夜班，洪老师拍板「把千问修好修完为止」，SPEC_千问四治法，千问实现+Kimi终审翻案2处亲手落地：①千问把续写闸_continued写进then每次重置=没闸，挪进attempt闭包 ②千问!r.ok直return致下家被连跳两次，补__skip哨兵）：presetCallAI四刀——钥匙trim/max_tokens2048→8192/finish_reason截断自动续写一回拼接（仍截断换下一家）/HTTP400不再当JSON误解析静默跳；预设系统其余全IDENTICAL */ /* v0.8.2（2026-10-24 t104，洪老师17:31真机报「选成书单发预设空字点发送被拦死」）：修空字闸——单发预设空字放行显（预设名），带上文/无预设照旧；SPEC_chat_v0.8.2，DS实现Kimi终审 */ /* v0.8.1（2026-10-23深夜 t99，洪老师22:37真机报「AI总管输入框没反应」截图实锤被压成窄条）：底栏两行——textarea-wrap加flex-wrap+textarea-input flex:1 1 100%独占首行，按钮落第二行；病根=media小屏可用宽268<三钮352；只动CSS两行，HTML/JS/发送链全IDENTICAL；外援双缺Kimi亲手 */ /* v0.8.0（2026-10-23 AI总管二期刀G，SPEC_AI总管二期，洪老师拍板「二期开工」）：命令闸接模糊链——detectCmd未命中但含四动词→findChap找章（补用户气泡insertBefore保序）→dupRate≥70出三选（跳过/照融/重写融，10秒默认跳过）→miss/err摘泡还文挂_zgPassOnce旗放行普通发送不吞话；点名单链/收发室/预设/PDF问答/送书/看门狗全IDENTICAL；DS实现+Kimi终审翻案2处（递归死循环/双贴气泡） */ /* v0.7.0（2026-10-23 AI总管一期，SPEC_AI总管一期，洪老师拍板「直接开干干完为止」，外援双缺Kimi亲手写）：刀A改名「💬 AI总管」（title/顶栏/sj.init三处，文件名不动）；刀C命令闸+三步命令链（融进《书》第N章→取章→AI融合走HX.chat.pump→写回留历史版，进度气泡逐步亮失败红字停下，成功记进对话账）；刀D📚收发室浮层（列书列章/📥取进对话/🪄融最近回信/↩历史版退回）；全走HX.zg公开口，总开关hx_zg_off=1全退。红线：发送链/预设/PDF问答/📥送书/看门狗 IDENTICAL */ /* v0.5.0（2026-10-18，想法流水09:03拍板）：📥层加「🪄让AI找家」——presetCallAI三兄弟链问归哪书哪章confirm过目才塞+chatConfirmSend一字不差重复闸；终审翻案1处（DS/千问回调都当单参实为ok,out双参）；手选老链一行未动 */ /* v0.4.1（2026-10-17深夜班，洪老师拍板「把千问修好修完为止」，SPEC_千问四治法，千问实现+Kimi终审翻案2处亲手落地：①千问把续写闸_continued写进then每次重置=没闸，挪进attempt闭包 ②千问!r.ok直return致下家被连跳两次，补__skip哨兵）：presetCallAI四刀——钥匙trim/max_tokens2048→8192/finish_reason截断自动续写一回拼接（仍截断换下一家）/HTTP400不再当JSON误解析静默跳；预设系统其余全IDENTICAL */
 
 /* v0.11.0 t114户口刀：AI总管面板清单（四条入口全指现有钮，钮被开关藏掉/不在时toast提示不炸） */
 var CHAT_AI_MANIFEST=[
@@ -1753,46 +1753,61 @@ function presetBindUI() {
 /* v0.12.0 鱼骨版面：ygOff闸 / applyFishbone鱼骨化 / delBubble单条删 */
 function ygOff() { try { return localStorage.getItem('hx_yg_off') === '1'; } catch (e) { return false; } }
 
-/* AI长回复鱼骨化：按双换行分段，段数≥2且总长≥120字才折；每段一行下划线摘要行（首句≤40字+行尾小字=本段字数），点行展开/再点折回，新展旧折，展开行点亮 */
+/* AI长回复鱼骨化：门槛照旧（按双换行分段≥2且总长≥120字才折，不达标return false老样）；v0.18.0 t123 刀2改折法=整封回信一条下划线（首句≤40字+行尾「全文X字」），点开整封展开、再点折回，只有一行（想法10-26 08:07/10:10洪老师要的是整封一条线，不是一段一条） */
 function applyFishbone(bubble, content) {
   try {
     if (ygOff()) return false;
     var parts = String(content).split(/\n\s*\n/);
     if (parts.length < 2 || String(content).length < 120) return false;
     var box = document.createElement('div');
-    var openIdx = -1;
-    var bodies = [];
-    var lines = [];
-    for (var i = 0; i < parts.length; i++) {
-      (function (idx) {
-        var seg = parts[idx];
-        var line = document.createElement('div');
-        line.className = 'fb-line';
-        var first = seg.split('\n')[0];
-        if (first.length > 40) first = first.substring(0, 40) + '…';
-        line.innerHTML = escHtml(first) + '<span class="fb-tail">' + seg.length + '字</span>';
-        var body = document.createElement('div');
-        body.className = 'fb-body';
-        body.style.display = 'none';
-        body.innerHTML = escHtml(seg).replace(/\n/g, '<br>');
-        line.onclick = function () {
-          try {
-            if (openIdx === idx) { /* 再点折回 */
-              bodies[idx].style.display = 'none'; lines[idx].className = 'fb-line'; openIdx = -1;
-            } else { /* 新展旧折 */
-              if (openIdx >= 0) { bodies[openIdx].style.display = 'none'; lines[openIdx].className = 'fb-line'; }
-              bodies[idx].style.display = 'block'; lines[idx].className = 'fb-line fb-sel'; openIdx = idx;
-            }
-          } catch (e) {}
-        };
-        lines.push(line); bodies.push(body);
-        box.appendChild(line); box.appendChild(body);
-      })(i);
-    }
+    var line = document.createElement('div');
+    line.className = 'fb-line';
+    var first = String(content).split('\n')[0];
+    if (first.length > 40) first = first.substring(0, 40) + '…';
+    line.innerHTML = escHtml(first) + '<span class="fb-tail">全文' + String(content).length + '字</span>';
+    var body = document.createElement('div');
+    body.className = 'fb-body';
+    body.style.display = 'none';
+    body.innerHTML = escHtml(String(content)).replace(/\n/g, '<br>');
+    var _open = false;
+    line.onclick = function () {
+      try {
+        _open = !_open;
+        body.style.display = _open ? 'block' : 'none';
+        line.className = _open ? 'fb-line fb-sel' : 'fb-line';
+      } catch (e) {}
+    };
+    box.appendChild(line); box.appendChild(body);
     bubble.innerHTML = '';
     bubble.appendChild(box);
     return true;
   } catch (e) { return false; }
+}
+
+/* v0.18.0 t123 刀4：浮层缩小迷你钮——➖关浮层后在屏幕右缘落一颗迷你钮，点它重开浮层并自毁，可上下拖；hx_mini_off=1不加（想法10-26 10:27） */
+function miniFloat(icon, reopenFn) {
+  try {
+    if (localStorage.getItem('hx_mini_off') === '1') return;
+    var b = document.createElement('button');
+    b.textContent = icon;
+    b.style.cssText = 'position:fixed;right:6px;top:45%;z-index:9998;width:44px;height:44px;border-radius:50%;border:1px solid #d8cfc0;background:#fffdf8;box-shadow:0 4px 14px rgba(0,0,0,.22);font-size:20px;padding:0;';
+    var _ty = 0, _drag = false;
+    b.addEventListener('touchstart', function (e) { try { _ty = e.touches[0].clientY; _drag = false; } catch (e1) {} }, { passive: true });
+    b.addEventListener('touchmove', function (e) {
+      try {
+        var y = e.touches[0].clientY;
+        if (Math.abs(y - _ty) > 8) { _drag = true; b.style.top = Math.max(8, Math.min(window.innerHeight - 52, y - 22)) + 'px'; }
+      } catch (e2) {}
+    }, { passive: true });
+    b.addEventListener('click', function () {
+      try {
+        if (_drag) { _drag = false; return; }
+        if (b.parentNode) b.parentNode.removeChild(b);
+        reopenFn();
+      } catch (e3) {}
+    });
+    document.body.appendChild(b);
+  } catch (e) {}
 }
 
 /* 单条气泡删：按r+内容末匹配删账再删DOM；删前confirm */
@@ -1940,6 +1955,8 @@ function createBubble(type, content, timeMs, hasCopy, byName) {
       });
       bubble.addEventListener('touchstart', function(e) {
         try {
+          /* v0.18.0 t123 刀1：泡内控件（三钮/下划线）不起点亮计时——治touchend preventDefault吞click（想法10-26三键/🗑/下划线全失灵病根） */
+          if (e.target && e.target.closest && (e.target.closest('button') || e.target.closest('.fb-line'))) return;
           var t = e.touches[0];
           _startGlow(t.clientX, t.clientY);
         } catch (e8) {}
@@ -1959,6 +1976,8 @@ function createBubble(type, content, timeMs, hasCopy, byName) {
         _clearGlowTimer();
       });
       bubble.addEventListener('mousedown', function(e) {
+        /* v0.18.0 t123 刀1：桌面同款排除泡内控件 */
+        try { if (e.target && e.target.closest && (e.target.closest('button') || e.target.closest('.fb-line'))) return; } catch (eMd) {}
         _startGlow(e.clientX, e.clientY);
       });
       bubble.addEventListener('mousemove', function(e) {
@@ -2852,6 +2871,17 @@ document.addEventListener('DOMContentLoaded', function() {
   (function(){ var n=0; var t=setInterval(function(){ n++; try{ if($btn && on()){ $btn.style.display=''; clearInterval(t); return; } }catch(e){} if(n>=10) clearInterval(t); }, 3000); })();
   function close(){ try{ room.className='drawer'; }catch(e){} }
   var $x=$('zgRoomClose'); if($x) $x.onclick=close;
+  /* v0.18.0 t123 刀4：📚收发室➖缩小成迷你钮（方便边对话边点亮取用） */
+  try {
+    if (localStorage.getItem('hx_mini_off') !== '1' && $('zgRoomClose')) {
+      var _miniZ = document.createElement('button');
+      _miniZ.textContent = '➖';
+      _miniZ.className = 'drawer-close';
+      _miniZ.style.marginRight = '6px';
+      _miniZ.onclick = function () { try { close(); miniFloat('📚', function () { try { if ($btn) $btn.click(); } catch (eR) {} }); } catch (e) {} };
+      $('zgRoomClose').parentNode.insertBefore(_miniZ, $('zgRoomClose'));
+    }
+  } catch (eMiniZ) {}
   if(!$btn) return;
   $btn.onclick=function(){
     try{
@@ -2968,6 +2998,17 @@ document.addEventListener('DOMContentLoaded', function() {
   (function(){ var n=0; var t=setInterval(function(){ try{ n++; if(on()){ if($btn) $btn.style.display=''; clearInterval(t); } if(n>=10) clearInterval(t); }catch(e){ clearInterval(t); } },3000); })();
   function close(){ room.classList.remove('open'); }
   if($('hcRoomClose')) $('hcRoomClose').onclick=close;
+  /* v0.18.0 t123 刀4：📦话仓➖缩小成迷你钮 */
+  try {
+    if (localStorage.getItem('hx_mini_off') !== '1' && $('hcRoomClose')) {
+      var _miniH = document.createElement('button');
+      _miniH.textContent = '➖';
+      _miniH.className = 'drawer-close';
+      _miniH.style.marginRight = '6px';
+      _miniH.onclick = function () { try { close(); miniFloat('📦', function () { try { if ($btn) $btn.click(); } catch (eR) {} }); } catch (e) {} };
+      $('hcRoomClose').parentNode.insertBefore(_miniH, $('hcRoomClose'));
+    }
+  } catch (eMiniH) {}
   if($btn) $btn.onclick=function(){ try{ if(!on()){ toast('话仓没上岗（hx-common没到或已退休）'); return; } render(); room.classList.add('open'); }catch(e){} };
   function fmtT(ts){ try{ var d=new Date(ts); return (d.getMonth()+1)+'月'+d.getDate()+'日'; }catch(e){ return ''; } }
   function smallBtn2(txt, fn){ var b=document.createElement('button'); b.style.cssText='font-size:13px;color:#4a6b4f;background:#eef5ee;border:1px solid #cfe0cf;border-radius:12px;padding:4px 10px;margin-right:6px;'; b.textContent=txt; b.onclick=fn; return b; }
