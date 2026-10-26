@@ -499,8 +499,9 @@ body {
 
 <script>
 // SW_VERSION 全局变量
+/* v0.14.0（2026-10-26 SPEC_t122_2 AI总管工作流改造第二步，冻结令唯一开工件t122）：刀1 AI回信气泡长按1.5秒点亮送小涛浮窗（黄底+hx_pick_v1账本+xt_glow_pend+hxToastHold常驻黑框，再长按熄灭，点亮别个自动换，堵安卓系统菜单；hx_t122b_off=1不绑）；真实改点=createBubble内sendBook段后新增点亮手势块+本行+版本号；红线：发送链/命令闸/话仓闸/收发室/预设拼装/PDF问答/送书/看门狗/🌐联网/鱼骨/户口/单条删 全IDENTICAL */
 /* v0.13.0（2026-10-26 SPEC_t122_1 AI总管工作流改造第一步，冻结令唯一开工件）：刀1预设加kind问话类限200字（出厂三条补kind/编辑卡加类型下拉/老数据名字猜测迁移）/刀2自动存仓核实零改动（HX.hc ingest钩本在）/刀3话仓条目标题加下划线；总开关hx_t122_off=1全退（刀1限字+刀3下划线，预设功能本体不退）。红线：发送链/命令闸/话仓闸/收发室/PDF问答/送书/看门狗/鱼骨/联网/户口全IDENTICAL */
-var SW_VERSION = "0.13.0"; /* v0.12.0（2026-10-25 SPEC_鱼骨版面，洪老师拍板总待办第1位「开始第一个任务把DS拉进来」，DS实现+Kimi终审翻案1处亲手落地：🗑挪函数尾部user/ai都挂，DS版挂sendBook的if块内只有ai有）：刀1 CSS鱼骨样式/刀2 ygOff+applyFishbone+delBubble三新函数/刀3 createBubble签名加byName+by标注+鱼骨化+🗑/刀4 renderChat传by/刀5 onOk收byName+新回信鱼骨化+by标注+🗑/刀6版本行；折叠下划线行/点亮选中/行尾小字链（段字数）/新展旧折/标哪家AI答的+单条气泡删；总开关hx_yg_off=1全退。红线：发送链/预设/命令闸/话仓/收发室/PDF问答/送书/看门狗/🌐联网全IDENTICAL；配套hx-common v0.71.0。 */  /* v0.11.0（2026-10-25 SPEC_t114 浮窗AI全家上户口一期·AI总管户口，总待办第1位，外援双缺DS破线/千问401自动降级Kimi亲手全包）：HX.ai.init上户口（🤖AI钮进sj面板，CHAT_AI_MANIFEST四条=📋提示词/📦话仓/📚收发室/🌐联网搜全指现有钮，钮被开关藏掉时toast提示不炸；send走HX.chat.pump公共泵只给＋加AI功能自建条目用；hx_hukou_off=1回退）；配套index v1.47.0首页户口。红线：命令闸/话仓闸/收发室/预设/发送链/PDF问答/送书/看门狗/🌐联网全IDENTICAL，只加init一段+manifest定义+本行 */ /* v0.10.0（2026-10-25 SPEC_t113 AI总泵归拢一期，洪老师拍板「归拢插队+联网要+AI对话试验田」，外援双缺Kimi亲手）：刀1 presetCallAI走HX.aip总泵（老链保留，缺省序归拢成千问→Kimi→DS）；刀2 🌐联网钮（点亮只对下一条生效发完自动灭，走总泵web链千问enable_search，hx_chat_web_off=1藏钮）；两处HX.chat.send加第4参_takeWebOpt()透传；配套hx-common v0.70.0。红线：除三刀+版本行外一行未动，命令闸/话仓/收发室/送书/看门狗IDENTICAL */ /* v0.9.0（2026-10-25晚班 SPEC_t110_话仓，洪老师拍板「先干话仓，开工」插队总待办第1位，外援双缺Kimi亲手）：刀1 📦话仓浮层（顶栏📦钮+总账/话题数数/条目展开/📥塞书走chatSendBook/🗑删，hx_hc_off=1藏钮3秒复查10拍）；刀2 发送前查仓闸hcTryAsk（zgTryCmd前——仓里命中直接贴双泡📦来自话仓没花AI钱+🔄问AI钮挂_hcPassOnce，记对话账a前缀【话仓答】防循环，hx_hc_ask_off=1关闸）；配套hx-common v0.69.0 HX.hc模块+persist入库钩。红线：除两刀+本行外一行未动。 */ /* v0.8.3（2026-10-24 SPEC_AI总管三期，洪老师拍板三条新规）刀B.1 zgTryCmd前置改AI判令制（废四动词暗号）/刀B.2旧detectCmd模糊链保留不删/刀B.4预设浮层灰字透明；刀B.3回信截断治本体转下批（锚点在HX.chat泵内，DS停报，留痕）；外援DS实现，Kimi终审翻案1处（passThrough双贴补摘用户气泡）亲手落地 */ /* v0.8.2（2026-10-24 t104，洪老师17:31真机报「选成书单发预设空字点发送被拦死」）：修空字闸——单发预设空字放行显（预设名），带上文/无预设照旧；SPEC_chat_v0.8.2，DS实现Kimi终审 */ /* v0.8.1（2026-10-23深夜 t99，洪老师22:37真机报「AI总管输入框没反应」截图实锤被压成窄条）：底栏两行——textarea-wrap加flex-wrap+textarea-input flex:1 1 100%独占首行，按钮落第二行；病根=media小屏可用宽268<三钮352；只动CSS两行，HTML/JS/发送链全IDENTICAL；外援双缺Kimi亲手 */ /* v0.8.0（2026-10-23 AI总管二期刀G，SPEC_AI总管二期，洪老师拍板「二期开工」）：命令闸接模糊链——detectCmd未命中但含四动词→findChap找章（补用户气泡insertBefore保序）→dupRate≥70出三选（跳过/照融/重写融，10秒默认跳过）→miss/err摘泡还文挂_zgPassOnce旗放行普通发送不吞话；点名单链/收发室/预设/PDF问答/送书/看门狗全IDENTICAL；DS实现+Kimi终审翻案2处（递归死循环/双贴气泡） */ /* v0.7.0（2026-10-23 AI总管一期，SPEC_AI总管一期，洪老师拍板「直接开干干完为止」，外援双缺Kimi亲手写）：刀A改名「💬 AI总管」（title/顶栏/sj.init三处，文件名不动）；刀C命令闸+三步命令链（融进《书》第N章→取章→AI融合走HX.chat.pump→写回留历史版，进度气泡逐步亮失败红字停下，成功记进对话账）；刀D📚收发室浮层（列书列章/📥取进对话/🪄融最近回信/↩历史版退回）；全走HX.zg公开口，总开关hx_zg_off=1全退。红线：发送链/预设/PDF问答/📥送书/看门狗 IDENTICAL */ /* v0.5.0（2026-10-18，想法流水09:03拍板）：📥层加「🪄让AI找家」——presetCallAI三兄弟链问归哪书哪章confirm过目才塞+chatConfirmSend一字不差重复闸；终审翻案1处（DS/千问回调都当单参实为ok,out双参）；手选老链一行未动 */ /* v0.4.1（2026-10-17深夜班，洪老师拍板「把千问修好修完为止」，SPEC_千问四治法，千问实现+Kimi终审翻案2处亲手落地：①千问把续写闸_continued写进then每次重置=没闸，挪进attempt闭包 ②千问!r.ok直return致下家被连跳两次，补__skip哨兵）：presetCallAI四刀——钥匙trim/max_tokens2048→8192/finish_reason截断自动续写一回拼接（仍截断换下一家）/HTTP400不再当JSON误解析静默跳；预设系统其余全IDENTICAL */ /* v0.8.2（2026-10-24 t104，洪老师17:31真机报「选成书单发预设空字点发送被拦死」）：修空字闸——单发预设空字放行显（预设名），带上文/无预设照旧；SPEC_chat_v0.8.2，DS实现Kimi终审 */ /* v0.8.1（2026-10-23深夜 t99，洪老师22:37真机报「AI总管输入框没反应」截图实锤被压成窄条）：底栏两行——textarea-wrap加flex-wrap+textarea-input flex:1 1 100%独占首行，按钮落第二行；病根=media小屏可用宽268<三钮352；只动CSS两行，HTML/JS/发送链全IDENTICAL；外援双缺Kimi亲手 */ /* v0.8.0（2026-10-23 AI总管二期刀G，SPEC_AI总管二期，洪老师拍板「二期开工」）：命令闸接模糊链——detectCmd未命中但含四动词→findChap找章（补用户气泡insertBefore保序）→dupRate≥70出三选（跳过/照融/重写融，10秒默认跳过）→miss/err摘泡还文挂_zgPassOnce旗放行普通发送不吞话；点名单链/收发室/预设/PDF问答/送书/看门狗全IDENTICAL；DS实现+Kimi终审翻案2处（递归死循环/双贴气泡） */ /* v0.7.0（2026-10-23 AI总管一期，SPEC_AI总管一期，洪老师拍板「直接开干干完为止」，外援双缺Kimi亲手写）：刀A改名「💬 AI总管」（title/顶栏/sj.init三处，文件名不动）；刀C命令闸+三步命令链（融进《书》第N章→取章→AI融合走HX.chat.pump→写回留历史版，进度气泡逐步亮失败红字停下，成功记进对话账）；刀D📚收发室浮层（列书列章/📥取进对话/🪄融最近回信/↩历史版退回）；全走HX.zg公开口，总开关hx_zg_off=1全退。红线：发送链/预设/PDF问答/📥送书/看门狗 IDENTICAL */ /* v0.5.0（2026-10-18，想法流水09:03拍板）：📥层加「🪄让AI找家」——presetCallAI三兄弟链问归哪书哪章confirm过目才塞+chatConfirmSend一字不差重复闸；终审翻案1处（DS/千问回调都当单参实为ok,out双参）；手选老链一行未动 */ /* v0.4.1（2026-10-17深夜班，洪老师拍板「把千问修好修完为止」，SPEC_千问四治法，千问实现+Kimi终审翻案2处亲手落地：①千问把续写闸_continued写进then每次重置=没闸，挪进attempt闭包 ②千问!r.ok直return致下家被连跳两次，补__skip哨兵）：presetCallAI四刀——钥匙trim/max_tokens2048→8192/finish_reason截断自动续写一回拼接（仍截断换下一家）/HTTP400不再当JSON误解析静默跳；预设系统其余全IDENTICAL */
+var SW_VERSION = "0.14.0"; /* v0.12.0（2026-10-25 SPEC_鱼骨版面，洪老师拍板总待办第1位「开始第一个任务把DS拉进来」，DS实现+Kimi终审翻案1处亲手落地：🗑挪函数尾部user/ai都挂，DS版挂sendBook的if块内只有ai有）：刀1 CSS鱼骨样式/刀2 ygOff+applyFishbone+delBubble三新函数/刀3 createBubble签名加byName+by标注+鱼骨化+🗑/刀4 renderChat传by/刀5 onOk收byName+新回信鱼骨化+by标注+🗑/刀6版本行；折叠下划线行/点亮选中/行尾小字链（段字数）/新展旧折/标哪家AI答的+单条气泡删；总开关hx_yg_off=1全退。红线：发送链/预设/命令闸/话仓/收发室/PDF问答/送书/看门狗/🌐联网全IDENTICAL；配套hx-common v0.71.0。 */  /* v0.11.0（2026-10-25 SPEC_t114 浮窗AI全家上户口一期·AI总管户口，总待办第1位，外援双缺DS破线/千问401自动降级Kimi亲手全包）：HX.ai.init上户口（🤖AI钮进sj面板，CHAT_AI_MANIFEST四条=📋提示词/📦话仓/📚收发室/🌐联网搜全指现有钮，钮被开关藏掉时toast提示不炸；send走HX.chat.pump公共泵只给＋加AI功能自建条目用；hx_hukou_off=1回退）；配套index v1.47.0首页户口。红线：命令闸/话仓闸/收发室/预设/发送链/PDF问答/送书/看门狗/🌐联网全IDENTICAL，只加init一段+manifest定义+本行 */ /* v0.10.0（2026-10-25 SPEC_t113 AI总泵归拢一期，洪老师拍板「归拢插队+联网要+AI对话试验田」，外援双缺Kimi亲手）：刀1 presetCallAI走HX.aip总泵（老链保留，缺省序归拢成千问→Kimi→DS）；刀2 🌐联网钮（点亮只对下一条生效发完自动灭，走总泵web链千问enable_search，hx_chat_web_off=1藏钮）；两处HX.chat.send加第4参_takeWebOpt()透传；配套hx-common v0.70.0。红线：除三刀+版本行外一行未动，命令闸/话仓/收发室/送书/看门狗IDENTICAL */ /* v0.9.0（2026-10-25晚班 SPEC_t110_话仓，洪老师拍板「先干话仓，开工」插队总待办第1位，外援双缺Kimi亲手）：刀1 📦话仓浮层（顶栏📦钮+总账/话题数数/条目展开/📥塞书走chatSendBook/🗑删，hx_hc_off=1藏钮3秒复查10拍）；刀2 发送前查仓闸hcTryAsk（zgTryCmd前——仓里命中直接贴双泡📦来自话仓没花AI钱+🔄问AI钮挂_hcPassOnce，记对话账a前缀【话仓答】防循环，hx_hc_ask_off=1关闸）；配套hx-common v0.69.0 HX.hc模块+persist入库钩。红线：除两刀+本行外一行未动。 */ /* v0.8.3（2026-10-24 SPEC_AI总管三期，洪老师拍板三条新规）刀B.1 zgTryCmd前置改AI判令制（废四动词暗号）/刀B.2旧detectCmd模糊链保留不删/刀B.4预设浮层灰字透明；刀B.3回信截断治本体转下批（锚点在HX.chat泵内，DS停报，留痕）；外援DS实现，Kimi终审翻案1处（passThrough双贴补摘用户气泡）亲手落地 */ /* v0.8.2（2026-10-24 t104，洪老师17:31真机报「选成书单发预设空字点发送被拦死」）：修空字闸——单发预设空字放行显（预设名），带上文/无预设照旧；SPEC_chat_v0.8.2，DS实现Kimi终审 */ /* v0.8.1（2026-10-23深夜 t99，洪老师22:37真机报「AI总管输入框没反应」截图实锤被压成窄条）：底栏两行——textarea-wrap加flex-wrap+textarea-input flex:1 1 100%独占首行，按钮落第二行；病根=media小屏可用宽268<三钮352；只动CSS两行，HTML/JS/发送链全IDENTICAL；外援双缺Kimi亲手 */ /* v0.8.0（2026-10-23 AI总管二期刀G，SPEC_AI总管二期，洪老师拍板「二期开工」）：命令闸接模糊链——detectCmd未命中但含四动词→findChap找章（补用户气泡insertBefore保序）→dupRate≥70出三选（跳过/照融/重写融，10秒默认跳过）→miss/err摘泡还文挂_zgPassOnce旗放行普通发送不吞话；点名单链/收发室/预设/PDF问答/送书/看门狗全IDENTICAL；DS实现+Kimi终审翻案2处（递归死循环/双贴气泡） */ /* v0.7.0（2026-10-23 AI总管一期，SPEC_AI总管一期，洪老师拍板「直接开干干完为止」，外援双缺Kimi亲手写）：刀A改名「💬 AI总管」（title/顶栏/sj.init三处，文件名不动）；刀C命令闸+三步命令链（融进《书》第N章→取章→AI融合走HX.chat.pump→写回留历史版，进度气泡逐步亮失败红字停下，成功记进对话账）；刀D📚收发室浮层（列书列章/📥取进对话/🪄融最近回信/↩历史版退回）；全走HX.zg公开口，总开关hx_zg_off=1全退。红线：发送链/预设/PDF问答/📥送书/看门狗 IDENTICAL */ /* v0.5.0（2026-10-18，想法流水09:03拍板）：📥层加「🪄让AI找家」——presetCallAI三兄弟链问归哪书哪章confirm过目才塞+chatConfirmSend一字不差重复闸；终审翻案1处（DS/千问回调都当单参实为ok,out双参）；手选老链一行未动 */ /* v0.4.1（2026-10-17深夜班，洪老师拍板「把千问修好修完为止」，SPEC_千问四治法，千问实现+Kimi终审翻案2处亲手落地：①千问把续写闸_continued写进then每次重置=没闸，挪进attempt闭包 ②千问!r.ok直return致下家被连跳两次，补__skip哨兵）：presetCallAI四刀——钥匙trim/max_tokens2048→8192/finish_reason截断自动续写一回拼接（仍截断换下一家）/HTTP400不再当JSON误解析静默跳；预设系统其余全IDENTICAL */ /* v0.8.2（2026-10-24 t104，洪老师17:31真机报「选成书单发预设空字点发送被拦死」）：修空字闸——单发预设空字放行显（预设名），带上文/无预设照旧；SPEC_chat_v0.8.2，DS实现Kimi终审 */ /* v0.8.1（2026-10-23深夜 t99，洪老师22:37真机报「AI总管输入框没反应」截图实锤被压成窄条）：底栏两行——textarea-wrap加flex-wrap+textarea-input flex:1 1 100%独占首行，按钮落第二行；病根=media小屏可用宽268<三钮352；只动CSS两行，HTML/JS/发送链全IDENTICAL；外援双缺Kimi亲手 */ /* v0.8.0（2026-10-23 AI总管二期刀G，SPEC_AI总管二期，洪老师拍板「二期开工」）：命令闸接模糊链——detectCmd未命中但含四动词→findChap找章（补用户气泡insertBefore保序）→dupRate≥70出三选（跳过/照融/重写融，10秒默认跳过）→miss/err摘泡还文挂_zgPassOnce旗放行普通发送不吞话；点名单链/收发室/预设/PDF问答/送书/看门狗全IDENTICAL；DS实现+Kimi终审翻案2处（递归死循环/双贴气泡） */ /* v0.7.0（2026-10-23 AI总管一期，SPEC_AI总管一期，洪老师拍板「直接开干干完为止」，外援双缺Kimi亲手写）：刀A改名「💬 AI总管」（title/顶栏/sj.init三处，文件名不动）；刀C命令闸+三步命令链（融进《书》第N章→取章→AI融合走HX.chat.pump→写回留历史版，进度气泡逐步亮失败红字停下，成功记进对话账）；刀D📚收发室浮层（列书列章/📥取进对话/🪄融最近回信/↩历史版退回）；全走HX.zg公开口，总开关hx_zg_off=1全退。红线：发送链/预设/PDF问答/📥送书/看门狗 IDENTICAL */ /* v0.5.0（2026-10-18，想法流水09:03拍板）：📥层加「🪄让AI找家」——presetCallAI三兄弟链问归哪书哪章confirm过目才塞+chatConfirmSend一字不差重复闸；终审翻案1处（DS/千问回调都当单参实为ok,out双参）；手选老链一行未动 */ /* v0.4.1（2026-10-17深夜班，洪老师拍板「把千问修好修完为止」，SPEC_千问四治法，千问实现+Kimi终审翻案2处亲手落地：①千问把续写闸_continued写进then每次重置=没闸，挪进attempt闭包 ②千问!r.ok直return致下家被连跳两次，补__skip哨兵）：presetCallAI四刀——钥匙trim/max_tokens2048→8192/finish_reason截断自动续写一回拼接（仍截断换下一家）/HTTP400不再当JSON误解析静默跳；预设系统其余全IDENTICAL */
 
 /* v0.11.0 t114户口刀：AI总管面板清单（四条入口全指现有钮，钮被开关藏掉/不在时toast提示不炸） */
 var CHAT_AI_MANIFEST=[
@@ -1751,6 +1752,108 @@ function createBubble(type, content, timeMs, hasCopy, byName) {
       }
     } catch (e3) {}
   }
+
+  /* v0.14.0 t122-2 刀1：AI回信气泡长按1.5秒点亮送小涛浮窗（黄底+hx_pick_v1+xt_glow_pend+hxToastHold常驻；hx_t122b_off=1不绑） */
+  try {
+    if (type === 'ai' && localStorage.getItem('hx_t122b_off') !== '1') {
+      var _glowTimer = null;
+      var _glowStartX = 0, _glowStartY = 0;
+      var _glowActive = false;
+      window._glowBubble = window._glowBubble || null;
+      var _clearGlowTimer = function() {
+        if (_glowTimer) { clearTimeout(_glowTimer); _glowTimer = null; }
+        _glowActive = false;
+      };
+      var _doGlow = function() {
+        _clearGlowTimer();
+        try {
+          var _isOn = (bubble.style.backgroundColor === 'rgb(255, 243, 176)' || bubble.style.backgroundColor === '#fff3b0');
+          if (_isOn) {
+            try { localStorage.removeItem('hx_pick_v1'); } catch (e1) {}
+            try { localStorage.removeItem('xt_glow_pend'); } catch (e2) {}
+            bubble.style.backgroundColor = '';
+            if (window._glowBubble === bubble) { window._glowBubble = null; }
+          } else {
+            if (window._glowBubble && window._glowBubble !== bubble) {
+              try { window._glowBubble.style.backgroundColor = ''; } catch (e3b) {}
+            }
+            try {
+              localStorage.setItem('hx_pick_v1', JSON.stringify({
+                app: 'chat',
+                pkey: String(curChatId),
+                fname: content.slice(0, 24),
+                ts: Date.now()
+              }));
+            } catch (e4) {}
+            try {
+              localStorage.setItem('xt_glow_pend', JSON.stringify({
+                text: content,
+                from: 'AI总管',
+                ts: Date.now()
+              }));
+            } catch (e5) {}
+            bubble.style.backgroundColor = '#fff3b0';
+            window._glowBubble = bubble;
+            try {
+              if (typeof hxToastHold === 'function') {
+                hxToastHold('已点亮，到小涛笔记浮窗用（问AI/变笔记/寄PPT）');
+              } else {
+                showToast('已点亮，到小涛笔记浮窗用（问AI/变笔记/寄PPT）');
+              }
+            } catch (e6) { try { showToast('已点亮'); } catch (e7) {} }
+          }
+        } catch (eGlow) {}
+      };
+      var _startGlow = function(x, y) {
+        _glowStartX = x; _glowStartY = y;
+        _glowActive = true;
+        if (_glowTimer) { clearTimeout(_glowTimer); }
+        _glowTimer = setTimeout(function() {
+          if (_glowActive) { _doGlow(); }
+        }, 1500);
+      };
+      /* 堵安卓长按系统菜单（照HX.pick规格，Kimi终审补） */
+      bubble.addEventListener('contextmenu', function(e) {
+        try { e.preventDefault(); } catch (eCm) {}
+      });
+      bubble.addEventListener('touchstart', function(e) {
+        try {
+          var t = e.touches[0];
+          _startGlow(t.clientX, t.clientY);
+        } catch (e8) {}
+      }, { passive: true });
+      bubble.addEventListener('touchmove', function(e) {
+        try {
+          var t = e.touches[0];
+          if (Math.abs(t.clientX - _glowStartX) > 10 || Math.abs(t.clientY - _glowStartY) > 10) {
+            _clearGlowTimer();
+          }
+        } catch (e9) {}
+      }, { passive: true });
+      bubble.addEventListener('touchend', function(e) {
+        if (_glowActive && _glowTimer) {
+          try { e.preventDefault(); } catch (e10) {}
+        }
+        _clearGlowTimer();
+      });
+      bubble.addEventListener('mousedown', function(e) {
+        _startGlow(e.clientX, e.clientY);
+      });
+      bubble.addEventListener('mousemove', function(e) {
+        if (_glowActive) {
+          if (Math.abs(e.clientX - _glowStartX) > 10 || Math.abs(e.clientY - _glowStartY) > 10) {
+            _clearGlowTimer();
+          }
+        }
+      });
+      bubble.addEventListener('mouseup', function(e) {
+        if (_glowActive && _glowTimer) {
+          try { e.preventDefault(); } catch (e11) {}
+        }
+        _clearGlowTimer();
+      });
+    }
+  } catch (eGlowWrap) {}
 
   /* v0.12.0 单条气泡删（终审翻案：挪函数尾部，user/ai气泡都挂，DS版挂在sendBook的if块内只有ai有） */
   try {
