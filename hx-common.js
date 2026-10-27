@@ -109,7 +109,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 (function(){
   'use strict';
-  var HX_COMMON_VERSION = '0.78.0'; /* v0.77.0（2026-10-26 SPEC_t130 速记面板折叠+输入框兼提示词编辑+收发记录，洪老师两轮讨论拍板「SOS和AI留外面其他折起来」）：HX.sj独改四刀（折叠版面/🪄AI编提示词生成+改预设双模式/📋收发记录/hx_t130_off全退），详HX.sj模块头注。Kimi终审翻案3处（openPanel丢hint行/fcLog字段/常驻黑框当等待提示）亲手落地；其余模块一行未动。 */
+  var HX_COMMON_VERSION = '0.79.0'; /* t132（2026-10-27早班 SPEC_t132，详头注） */ /* v0.77.0（2026-10-26 SPEC_t130 速记面板折叠+输入框兼提示词编辑+收发记录，洪老师两轮讨论拍板「SOS和AI留外面其他折起来」）：HX.sj独改四刀（折叠版面/🪄AI编提示词生成+改预设双模式/📋收发记录/hx_t130_off全退），详HX.sj模块头注。Kimi终审翻案3处（openPanel丢hint行/fcLog字段/常驻黑框当等待提示）亲手落地；其余模块一行未动。 */
   /* v0.76.0（2026-10-26晚班 SPEC_t128，洪老师拍板「全部做」）：刀1新增HX.fc浮窗收发台（统一AI收发口/账本hx_fc_log环形200+壳双写hxdata_hx_fc.json/每笔bb.job真签名/hx_fc_off=1直调总泵不记账/tail新在前）+刀4a急诊rep加fcTail30笔（刀4b v0.65.0 pend补传核验在岗一行未动）；外援DS出稿，Kimi终审翻案2处亲手落地（①tail补.reverse()新在前②IIFE首行var HX=window.HX防卷尾TDZ前科）；配套chat v0.23.0。红线HX.keys/air/pick/mg/store/dav/gh/bill/step/selfUp/fm/ai/sj/bb本体/hxToastHold/chk/chat/jc其余/audit/wzPoll/jbl/aip本体/hc/zg/mqtt全件IDENTICAL，壳/index/其他单体一行未动 */ /* v0.75.0（2026-10-26接班班 SPEC_t126，冻结令唯一开工件；外援DS出稿+Kimi终审翻案1处亲手落地=DS编造HX.aip.call/HX.bill.add签名报废改真签名HX.aip.go，记账=「编假签名」前科同型）：刀1病人标签错联根治——sj save贴「病人:」前判HX_SJ_APP含「管家」才贴（hx_sj_ctx_off=1落回老行为）+📜翻看sjShowBrowse显示层剥「　病人:…　页面:…」尾巴（档案存储一字不动）；刀4a clean词表扩全角星号＊/全角井号＃/粗体**残留（幂等，hx_hc_clean2_off=1不补）；配套chat v0.21.0。红线HX.keys/air/pick/mg/store/dav/gh/bill/step/selfUp/fm/ai/sj其余/bb/hxToastHold/chk/chat/jc/audit/wzPoll/jbl/aip/hc其余/zg/mqtt全件IDENTICAL，壳/index/xiaotao一行未动 */ /* v0.74.0（2026-10-26 SPEC_t125 AI总管仓库与浮窗篇配套，DS出稿Kimi终审亲手落地）：刀3a clean补强去【三核：X】判词行/连续横线---/markdown表格竖线（幂等，hx_hc_clean2_off=1不补）；刀3b暴露_writeDetail供洗净全仓钮；刀5b浮窗户口镜像进HX.glow公开口（getSel/setSel/clear，hx_fuchuang_off=1不挂）；配套chat v0.20.0+xiaotao v0.27.0。红线find/ask/count/del/索引结构/壳备份全IDENTICAL */ /* v0.73.0（2026-10-26 SPEC_t124 AI总管想法五连二批刀1a，洪老师拍板「AI总管的任务继续」）：judge判令提示词加固——问话求答（讨论/讲讲/分析/怎么看等）一律算闲聊，治11:33「讨论治疗心脏被判成找书」误判；其余一行未动 */ /* v0.72.0（2026-10-26 SPEC_t123刀3，洪老师拍板「今天的想法归类成任务列表去执行」；想法输入框顶天四犯根治：sjKbFit键盘弹起分支钉顶改贴键盘上方——top=vv.offsetTop+vv.height-8-面板实际高，量不到高/比可视区高才退钉顶，hx_sj_kbfit_off=1退老钉顶法；键盘收还原/监听挂法/不自动focus/面板其余零件一行未动；Kimi亲手，配套chat v0.18.0） */ /* v0.71.0（2026-10-25 SPEC_鱼骨版面配套，DS实现+Kimi终审零翻案亲手落地）：done落msg.by记哪家AI+onOk第2参model透传，两刀+版本行外全件IDENTICAL，配套chat v0.12.0鱼骨版面 */ /* v0.70.0（2026-10-25 SPEC_t113 AI总泵归拢一期，洪老师拍板「AI功能归拢插队+联网要+AI对话当试验田」，外援双缺DS破线/千问401自动降级Kimi亲手全包）：刀A 新增HX.aip总泵（链千问→Kimi→DS/which点名/web联网只走千问enable_search/千问流式+截断续写一回+400砍料重发一回/Kimi空包重发/死心非流式60秒流式30秒无新字/换棒人话吐司/air.report终败/HX.bill记账/hx_aip_off全退）+HX.chat.pump内部改转调总泵（签名cb口径不变调用方零改动，老链全保留）+刀B HX.chat.send加第4参opt={web}心脏改走总泵（三层记忆/压缩/账本IDENTICAL）；配套chat v0.10.0 presetCallAI走总泵+🌐联网钮。红线：除本IIFE+pump函数体+send签名与踢脚+版本行外全件IDENTICAL，callQwen/callKimi/callDS/fetchJson/buildMessages/tryCompress全保留，管家/壳/index/其他单体一行未动 */ /* v0.69.0（2026-10-25晚班 SPEC_t110_话仓，洪老师拍板「先干话仓，开工」插队总待办第1位，DS破线+千问401自动降级Kimi亲手全包）：刀B HX.chat的persist()加一行ingest钩（每次对话保存自动增量入话仓，a以【话仓答】开头不入防循环）；刀C 新增HX.hc话仓模块（挂HX.zg后）——clean去废符号/find bigram覆盖率0.5阈/ask先仓后AI（pump答存仓）/count话题数数/list/detail/del，存储hx_hc_v1索引+hx_hc_d_详情localStorage为主+壳writeFile备份，500条FIFO单答截10000字，开关hx_hc_off=1全退；配套chat v0.9.0📦浮层+发送前查仓闸。红线：除刀A版本行/刀B一行/刀C新增外全件IDENTICAL，壳/其他单体一行未动。 */ /* v0.68.0（2026-10-25 SPEC_t111阿里云当唯一真账房一期，洪老师拍板「干完为止」，DS破线+千问401自动降级Kimi亲手）：刀A mqtt连上多订hx/ver（hx_mqtt_ver_off闸）+刀B onMessageArrived截存retained牌+刀C公开口HX.mqtt.ver()；配套index v1.45.0 fetchJsonEx第①腿；ECS侧pub目录+systemd path看守hx_pub_ver.sh+ACL开hx/ver户口；红线：handleMessage白名单/其余全件IDENTICAL，壳/其余单体一行未动 */ /* v0.67.0（2026-10-25 SPEC_t107成书空章根治，洪老师真机报第1位「书传到地方内容是空的」+SOS 06:22）：putChap写LS_CHAPS成功后追加①双写IndexedDB正本xt-lib-db/chunks（键=ckey）②翻books账state未写→已写；外援DS实现，Kimi终审翻案1处（onupgradeneeded补建kv仓与xiaotao一致）亲手落地；主链返回值/histPush/rollback/写戳原有一字未动 */ /* v0.66.0（2026-10-24 SPEC_AI总管三期，洪老师拍板三条新规：废暗号/版本制/不黑箱）刀A.1 judge判令/刀A.2 findChap扩独立成书/刀A.3 addBook+addChapter/刀A.4 merge提示词改版本制；外援DS实现，Kimi终审翻案2处（judge剥围栏/src数组）亲手落地 */ /* v0.65.0 t103（2026-10-24，洪老师勾想法两条一起干，SPEC_hx-common_v0.65.0，外援双缺Kimi全包）：刀A sj面板按钮缺省下划线文字风（hx_sj_btnbox='1'回老彩底方框，想法10-21）；刀B 会诊件先存本地永不丢+闲时补传sjWzPendFlush（想法10-20，pend在=云上没有，成功清账报喜，失败静默留账）；申报点=ensureUI开关1行+CSS3行/sjWzSos先存1行/新函数/闲时1行/版本行，其余IDENTICAL */ /* v0.64.0 t102（2026-10-24，洪老师12:58真机截图报「想法输入框又顶了天」三翻同尺，SPEC_hx-common_v0.64.0，外援双缺Kimi全包）：sjKbFit换顶钉法——判定只看innerHeight-vv.height>80（不看offsetTop，X5上推模式老算法必误判），弹着钉可视区上沿top=offsetTop+8/bottom auto/maxHeight vv.height-16，收了三行还原；监听挂法/不自动focus/面板其余零件一行未动 */ /* v0.63.0 t101（2026-10-24，E1后续刀，SPEC_hx-common_v0.63.0，外援双缺Kimi全包）：刀A jbSave/jbRead三处白名单加jb_闭环实验单.json（实验单随交接班走手机层）；刀B 新增HX.syRemind开门实验提醒（开门100秒前台起跑，readJson闭环实验单.json，在途件常驻黑框🧪提醒点✕才关，一天一次hx_sy_remind_d节流，总开关hx_sy_remind_off=1，公开口status/run） */  /* v0.62.0 t100交接班闭环配套（2026-10-24，洪老师拍板闭环任务+真机报红点消不了/印记不对连发）：刀1 jbSave假账根治（桥writeFile返false不再计saved，收failed名单回执ok=false，病根=10-23_2246班push报saved=3实缺jb_交接说明.md）；刀2 三处白名单加jb_交接班记录.md；壳印记闸修复见vc69 SPEC */  /* v0.61.0 t99 AI总管二期刀F（2026-10-23，SPEC_AI总管二期，洪老师拍板「二期开工」）：HX.zg加findChap模糊找章（本地粗配+AI精配走chat.pump，AI只回行号真身本地取防编id）+dupRate重复粗筛+merge加rewrite可选参，既有七口IDENTICAL；DS实现+Kimi终审翻案1处（DS编造listBooks字段已扶正） */  /* v0.60.0 t98 AI总管一期刀B：HX.zg总管模块（书库直连读写/历史版5层/外改戳/命令识别/三步命令链走chat.pump，SPEC_AI总管一期，外援双缺Kimi亲手写） */  /* v0.59.0 t96🧪总钮一期刀1：HX.zhiban白天质检员 */  /* v0.58.0 t95值夜班套件刀3：HX.yeban值夜质检员 */  /* ── v0.53.0 2026-10-21（洪老师原话「这一版尽量把手机全量备份和对账规矩落地，保证下一个接班可以在手机本地取到文件」；合并总账t87；SPEC_hx-common_v0.53.0_套装档案柜，DS实现+Kimi终审翻案2处亲手落地：①一层l1ok双重计数翻断点续备单计②SAF四桥全返false补试写探针）：刀A新增HX.arc套装档案柜模块（开门120秒起跑过_autoNetOk闸，API列仓根三层分流，L1十四件每次必对+三层≤2MB小件每轮hx_arc_max缺省5件断点续备，逐件writeFileRel写+listFilesRel回读字节对账不等重试一次记fail，档案柜台账.json本地+仓根双写hx_arc_up防重推，总开关hx_arc_off=1，公开口status/run）；刀B mqtt白名单加arcList/arcRead两op（点名取件白名单制含..或/一律拒）；刀C版本行+版本史；红线HX.keys/air/pick/mg/store/dav/gh/bill/step/selfUp/fm/ai/sj/bb/hxToastHold/chk/chat/jc/audit/wzPoll/jbl及mqtt既有逻辑全IDENTICAL，壳/index不动） */  /* ── v0.49.0 2026-10-20（t79交班本地存取：handleMessage加jbSave/jbRead两op+HX.jbl公开口，详见文件头v0.49.0段；其余一行未动） */  /* ── v0.47.1 2026-10-20（t76刀3，洪老师真机报案「更新四遍三遍错特别是首页」配套：idxProbe侦察兵正则行首锚定，治「被注释里CUR.index=1.19.6骗住fileVer恒1.19.6、上岗以来从没跳过」病根2；配套index v1.35.0 CUR行错位扶正；其余一行未动） */
    /* ── v0.48.0 2026-10-20（t77真机自报，洪老师拍板「现在就真机自报吧」）：HX.zb上岗——开门60秒后包住黑匣子log，err条经60秒节流（同m 60秒不重+全局60秒1条）双通道喊疼：mqtt hx/to_kimi实时+仓根「真机自报_时间戳.json」留底，失败存hx_zb_pend≤10条补传；总开关hx_zb_off=1；公开口status/test；纯加法一IIFE+版本行，其余一行未动 【Kimi终审翻案DS 1处：report成功分支漏调flushPend（SPEC行为5成功补传）亲手补上——漏料非编造记账】 */
    /* ── v0.47.0 2026-10-19晚班（t75，洪老师看自检报告截图拍板「做成点一下就出详细结果，开工」；SPEC_t75→DS实现三切片零编造→Kimi终审翻案1处=index尾行DS自编口径丢「好/可疑」统计，亲手改取报告原文末行与云仓同口径）：刀A HX.audit新增rows2()（reportText改调它输出逐字节不变）+detail(key)七哨明细（bbTail/localStorage台账全本地零联网，最多5条最新在前，空账回「还没有明细账」）+exports挂rows2/detail；刀B index配套v1.34.0自检弹窗点主行展开明细；刀C _aiSnap尺子修口径——err含「黑匣子」三字的哨兵账（上行失败/没钥匙/疑似哑火=账房自家网络账）不计入err24改记errNet，sys提示词追加一句「errNet不算软件毛病」，治AI质检被117条假报错吓得连说12次拿不准；红线除HX.audit IIFE内申报3处+_aiSnap申报2处+版本行外全件IDENTICAL */  /* v0.43.0（2026-10-19 t69刀1，问诊室呼叫钮：SPEC_问诊室_v0.1.0_设计稿洪老师拍板）：HX.jc新增三公开只读口wzBbTail/wzLayout/wzCur+sj面板📮叫Kimi会诊钮（抓bbTail20+layout+cur+主诉→HX.gh.putFile推仓根急诊_YYYYMMDD_HHMM.json→成功hxToastHold黑框常驻报喜，失败存hx_wz_sos_pend下回补）；红线HX.keys/HX.air/HX.pick/HX.mg/HX.store/HX.dav/HX.gh/HX.bill/HX.step/HX.selfUp/HX.fm/HX.ai/HX.bb/hxToastHold/HX.chk/HX.chat IDENTICAL，HX.jc除return一处+三新函数外IDENTICAL，HX.sj除按钮HTML一行+bind一处+sjWzSos新函数外IDENTICAL */  /* ── v0.46.0 2026-10-19（t73手机账房刀B，母图纸SPEC_手机主账房_v0.1.0洪老师拍板「图纸行，开工」）：HX.mqtt传话筒上岗——闲时WS连传达室39.97.246.65:9001，问诊室问答走hx/to_suit→hx/to_kimi秒回+云仓问诊室_答_留底双通道；密码管家路私仓取传达室钥匙.json存localStorage不落公开仓；闲时才连(开门60秒+前台)、切后台断、退避重连1s→30s；总开关hx_mqtt_off=1；纯加法两段（paho-mqtt-min v1.1.0自包含32236B+HX.mqtt IIFE），其余一行未动。【Kimi终审翻案DS 4处：①HX.gh.ready()编成Promise链必炸（现役同步boolean）②Paho五参构造旧API必炸改两参+凭证进connect③putFile三参签名错（现役四参null打头）留底必败④取钥匙失败永不再试补退避——「编假签名」前科重演记账】 */
@@ -3063,6 +3063,7 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
   })();
 
   /* hx-common.js v0.77.0 2026-10-26 SPEC_t130 速记面板折叠+输入框兼提示词编辑+收发记录：HX.sj 模块独改——刀1 面板加 #hxSjFoldBar 折叠条 + #hxSjFoldBox 折叠盒（🆘/🤖AI/折叠条三件套常驻，其余钮/输入框/图行/选条列表全折入，开面板默认收起、键盘不请不来）；刀2 #hxSjText 兼做提示词编辑框（读 chat_preset_cur 判生成/改预设模式，🪄AI编提示词走 HX.fc.go kind:presetgen/presetedit，回填前暂存 hx_sj_idea_bak 最多3条，💾存成预设双写 chat_presets+chat_preset_cur）；刀3 #hxSjFcPg 整屏 📋收发记录（HX.fc.tail(50) 只读列每笔成败+入出字数）；刀4 hx_t130_off=1 整刀退老样。其他模块一行未动。
+   v0.79.0 2026-10-27（SPEC_t132 AI总管治病线hx-common块，洪老师2026-10-27早班拍板，外援DS两调，Kimi终审亲手落地翻案1处）：刀4 sjKbFit顶天根治——键盘弹起分支改钉顶+限高内滚+强制scrollTop=0（不再跟X5算面板高），hx_sj_kbfit_off=1回v0.72.0贴键盘法；刀5 sjToast两处「没存成：e.message」英文尾巴改人话「没存成，再试一次」；刀6 两面板并一门——AI总管宿主下🤖AI钮（hxSjAiBtn）不再关面板开老HX.ai，改原地展开🪄AI编辑盒hxSjAiBox，hx_ai_old=1回老路，其他宿主一行不动；总开关hx_t132_off=1刀4/6全退。红线：HX.ai面板本体/HX.fc/HX.aip/HX.hc/HX.zg/点亮手势/话仓/书库全IDENTICAL，chat块见chat v0.26.0。
    v0.78.0 2026-10-27（SPEC_t131 浮窗对齐改造，洪老师2026-10-26晚班拍板三处：命令预设头批4个以后随便加/词解释①②③带圈标号/提示词对照带「AI说改了啥」）：
    刀1 输入框hxSjText常驻面板（拨正t130折输入框错路）+两下划线钮排💡想法/🪄AI编辑各管一盒（hxSjIdeaBox装老钮排全保留id/hxSjAiBox装点亮显示条+命令排+🚀发送）+🆘🤖AI常驻外面一排（10-26「SOS和AI留外面」拍板不动）；
    刀2 命令预设账hx_sj_cmds（出厂🔤解释/🌿扩充/✏️改提示词/📝总结，点=填框不直发，长按500ms编辑/删，➕新增）；
@@ -3245,21 +3246,32 @@ v0.25.0（2026-10-15 晚班①）洪老师拍板「开工」：真机检验减�
             p.style.bottom='auto';
             p.style.maxHeight=(vv.height-16)+'px';
           }else{
-            var _ph=p.offsetHeight||0;
-            var _wantTop=vv.offsetTop+vv.height-8-_ph;
-            if(_ph<=0 || _wantTop<vv.offsetTop+8){ /* 比可视区还高：退钉顶+限高内部滚 */
-              p.style.top=(vv.offsetTop+8)+'px';
-              p.style.maxHeight=(vv.height-16)+'px';
+            /* t132刀4：顶天五犯根治——不再算面板高贴键盘（X5四犯没断根），改钉顶+限高内滚+强制回顶：输入框区在面板顶部第一屏必可见；hx_sj_kbfit_off=1回v0.64.0老钉顶法（上面if分支） */
+            var _t132off4=false; try{ _t132off4=(localStorage.getItem('hx_t132_off')==='1'); }catch(eT4){}
+            if(_t132off4){
+              var _ph=p.offsetHeight||0;
+              var _wantTop=vv.offsetTop+vv.height-8-_ph;
+              if(_ph<=0 || _wantTop<vv.offsetTop+8){ /* 比可视区还高：退钉顶+限高内部滚 */
+                p.style.top=(vv.offsetTop+8)+'px';
+                p.style.maxHeight=(vv.height-16)+'px';
+              }else{
+                p.style.top=_wantTop+'px';
+                p.style.maxHeight='';
+              }
+              p.style.bottom='auto';
             }else{
-              p.style.top=_wantTop+'px';
-              p.style.maxHeight='';
+              p.style.top=(vv.offsetTop+8)+'px';
+              p.style.bottom='auto';
+              p.style.maxHeight=(vv.height-16)+'px';
+              p.style.overflowY='auto';
+              p.scrollTop=0;
             }
-            p.style.bottom='auto';
           }
-        }else{ /* 键盘收了：三行全还原CSS默认 */
+        }else{ /* 键盘收了：还原CSS默认（t132刀4补overflowY一行，钉顶内滚态不留残） */
           p.style.top='';
           p.style.bottom='';
           p.style.maxHeight='';
+          p.style.overflowY=''; /* t132刀4 */
         }
       }catch(e){}
     }
@@ -3482,7 +3494,7 @@ function openPanel(){
         try{ sjUpload(true); }catch(e){} /* v0.18.1 刀3：记下触发的上行带fromUser=true，失败弹明白话；原下一行无参重复调用删除（跑两遍没意义） */
         ta.value=''; /* v0.22.0 挂B：记下成功顺手清空输入框 */
         $('hxSjPanel').style.display='none'; /* v0.24.2 刀3（洪老师10-14真机报「记完还要再点关闭」）：记下成功自动关面板，照appendLast同款先例 */
-      }catch(e){ sjToast('没存成：'+e.message); } /* v0.24.2 刀3：失败不关面板留着改 */
+      }catch(e){ sjToast('没存成，再试一次') /* t132刀5：英文尾巴改人话 */; } /* v0.24.2 刀3：失败不关面板留着改 */
     }
     /* v0.1.1 extraBtn「补充上一条」（大管家 v0.19.0 #43 洪老师速记14:04"可以给上一条补充内容"，原文逻辑一字未改）：
        不开新行，把话以「　补充：」追加到速记流水.txt最后一行末尾；没有上一条提示先记 */
@@ -3499,7 +3511,7 @@ function openPanel(){
         LearnShell.writeFile(SJ_FILE, b64e(neu));
         sjToast('已补到上一条'); ta.value=''; $('hxSjPanel').style.display='none';
         try{ sjUpload(); }catch(e){} /* 顺手上行，失败静默下回补 */
-      }catch(e){ sjToast('没存成：'+e.message); }
+      }catch(e){ sjToast('没存成，再试一次') /* t132刀5：英文尾巴改人话 */; }
     }
     /* v0.15.0「↩ 补充上一条」选条回填（洪老师2026-09-18 08:10速记拍板，效果图屏③）：
        点钮弹最近3条速记列表，点哪条=那条原文整行回填进输入框接着加字；「记下」走原save=新增一条（铁律17：原条一个字不动）。
@@ -4306,7 +4318,19 @@ function ensureUI(){
         inp.addEventListener('change', function(){ try{ var f=inp.files&&inp.files[0]; if(f) saveImg(f); }catch(e){} try{ if(inp.parentNode) inp.parentNode.removeChild(inp); }catch(e2){} sjImgPicking=false; });
         inp.click();
       }catch(e){ sjImgPicking=false; } });
-      if(HX.ai && HX.ai.ready && HX.ai.ready()){ var sjAiBtn=$('hxSjAiBtn'); if(sjAiBtn) sjAiBtn.addEventListener('click', function(){ try{ $('hxSjPanel').style.display='none'; }catch(e){} try{ HX.ai.open(); }catch(e){} }); } /* v0.2.0 AI面板入口：点击=关速记面板+HX.ai.open() */
+      if(HX.ai && HX.ai.ready && HX.ai.ready()){ var sjAiBtn=$('hxSjAiBtn'); if(sjAiBtn) sjAiBtn.addEventListener('click', function(){
+        /* t132刀6：两面板并一门——AI总管宿主（路径含software-chat或标题含AI总管）且hx_ai_old!=='1'且hx_t132_off!=='1'时，🤖AI钮改原地展开🪄AI编辑盒hxSjAiBox，不再关面板开老HX.ai；其他宿主/开关在=老路一行不动 */
+        var _h132=false; try{ if(location.pathname.indexOf('software-chat')>=0) _h132=true; if(!_h132 && document.title && document.title.indexOf('AI总管')>=0) _h132=true; }catch(eH){}
+        var _old132=false; try{ _old132=(localStorage.getItem('hx_ai_old')==='1'); }catch(eO){}
+        var _off132b=false; try{ _off132b=(localStorage.getItem('hx_t132_off')==='1'); }catch(eO2){}
+        if(_h132 && !_old132 && !_off132b){
+          try{
+            var _ab132=$('hxSjAiBox'); if(_ab132) _ab132.style.display='block';
+            var _ib132=$('hxSjIdeaBox'); if(_ib132) _ib132.style.display='none';
+          }catch(eB){}
+          return;
+        }
+        try{ $('hxSjPanel').style.display='none'; }catch(e){} try{ HX.ai.open(); }catch(e){} }); } /* v0.2.0 AI面板入口：点击=关速记面板+HX.ai.open() */
       setTimeout(function(){ try{
         /* v0.13.2（2026-09-16，洪老师拍板"把这个多余的命令取消掉"）：「检查新版本」按钮刷新页面带出的这次开门闲时上行摘除——
            主界面v1.19.1按钮立 hx_sj_skip_once 标记，认到就清掉并跳过本次；「记下后上行」等其他入口一行未动 */
