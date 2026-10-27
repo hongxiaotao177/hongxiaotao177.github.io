@@ -443,6 +443,41 @@ body {
 /* A2 选中窄条（照warn-bar窄条） */
 .preset-chip { background-color: #fff9d9; color: #8a6d3b; padding: 8px 16px; font-size: 13px; border-bottom: 1px solid #f1e8c9; display: flex; align-items: center; justify-content: space-between; }
 .preset-chip-x { background: none; border: none; color: #8a6d3b; font-size: 16px; cursor: pointer; width: 28px; height: 28px; }
+
+/* v0.29.0 t136 SPEC_t136 刀2-C 脑图仓列表+画布向右长树CSS（z-index 9998：低于fbFull9999，叶节点看正文不被盖） */
+.mg-list-mask { position: fixed; left: 0; top: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.55); z-index: 9998; display: flex; align-items: center; justify-content: center; }
+.mg-list-card { background: #fff; width: 92%; max-width: 560px; max-height: 82vh; border-radius: 10px; display: flex; flex-direction: column; overflow: hidden; }
+.mg-list-top { display: flex; align-items: center; padding: 10px 12px; border-bottom: 1px solid #eee; gap: 8px; }
+.mg-list-title { flex: 1; font-weight: bold; font-size: 16px; }
+.mg-list-btn { background: #f0f0f0; border: 1px solid #ddd; border-radius: 6px; padding: 4px 10px; font-size: 13px; cursor: pointer; }
+.mg-list-close { background: transparent; border: none; font-size: 18px; cursor: pointer; padding: 2px 6px; }
+.mg-list-body { flex: 1; overflow-y: auto; padding: 6px 0; }
+.mg-list-empty { padding: 24px 16px; color: #888; text-align: center; font-size: 14px; }
+.mg-list-row { display: flex; align-items: center; padding: 10px 12px; border-bottom: 1px solid #f2f2f2; gap: 8px; }
+.mg-list-cb { width: 18px; height: 18px; }
+.mg-list-rowtitle { flex: 1; font-size: 15px; color: #1a5fb4; text-decoration: underline; cursor: pointer; word-break: break-all; }
+.mg-list-del { background: transparent; border: none; font-size: 16px; cursor: pointer; padding: 2px 6px; }
+.mg-canvas-mask { position: fixed; left: 0; top: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.55); z-index: 9998; display: flex; align-items: center; justify-content: center; }
+.mg-canvas-card { background: #fff; width: 96%; max-width: 720px; height: 86vh; border-radius: 10px; display: flex; flex-direction: column; overflow: hidden; }
+.mg-canvas-top { display: flex; align-items: center; padding: 10px 12px; border-bottom: 1px solid #eee; gap: 8px; }
+.mg-canvas-title { flex: 1; font-weight: bold; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mg-canvas-btn { background: #f0f0f0; border: 1px solid #ddd; border-radius: 6px; padding: 4px 10px; font-size: 13px; cursor: pointer; }
+.mg-canvas-close { background: transparent; border: none; font-size: 18px; cursor: pointer; padding: 2px 6px; }
+.mg-canvas-body { flex: 1; overflow: auto; padding: 12px; -webkit-overflow-scrolling: touch; }
+.mg-canvas-empty { color: #888; text-align: center; padding: 24px; }
+.mg-tree, .mg-children { list-style: none; margin: 0; padding: 0; }
+.mg-tree { display: inline-block; min-width: 100%; }
+.mg-li { position: relative; padding-left: 20px; margin: 2px 0; }
+.mg-li::before { content: ''; position: absolute; left: 8px; top: 0; bottom: 0; border-left: 1px solid #c8d4e0; }
+.mg-li::after { content: ''; position: absolute; left: 8px; top: 14px; width: 12px; border-top: 1px solid #c8d4e0; }
+.mg-tree > .mg-li { padding-left: 0; }
+.mg-tree > .mg-li::before, .mg-tree > .mg-li::after { display: none; }
+.mg-node { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 6px; background: #f7f9fc; border: 1px solid #e0e8f0; cursor: pointer; max-width: 260px; }
+.mg-node.mg-lit { background: #fff3b0; border-color: #e0c040; }
+.mg-toggle { width: 14px; text-align: center; color: #4a6fa5; font-size: 12px; flex: 0 0 auto; }
+.mg-title { font-size: 14px; color: #222; word-break: break-all; }
+.mg-count { font-size: 11px; color: #999; background: #eee; border-radius: 8px; padding: 0 5px; margin-left: 2px; }
+.mg-children { margin-left: 18px; }
 </style>
 </head>
 <body>
@@ -456,6 +491,7 @@ body {
 <div class="top-bar">
   <div class="top-title">💬 AI总管<span class="top-version" id="topVer"></span></div> <!-- t122-1刀4：顶栏版本号同步 --> <!-- t134刀1：版本号改动态跟SW_VERSION，治10-27真机报「更新了显旧号」（焊死v0.13.0前科） -->
   <div>
+    <button id="mgBtn" class="top-btn" style="margin-right:6px;" title="脑图仓">🧠</button> <!-- v0.29.0 t136刀1-C -->
     <button id="hcBtn" class="top-btn" style="margin-right:6px;">📦</button>
     <button id="zgBtn" class="top-btn" style="margin-right:6px;">📚</button>
     <button id="menuBtn" class="top-btn">☰对话</button>
@@ -527,7 +563,7 @@ body {
 /* v0.14.0（2026-10-26 SPEC_t122_2 AI总管工作流改造第二步，冻结令唯一开工件t122）：刀1 AI回信气泡长按1.5秒点亮送小涛浮窗（黄底+hx_pick_v1账本+xt_glow_pend+hxToastHold常驻黑框，再长按熄灭，点亮别个自动换，堵安卓系统菜单；hx_t122b_off=1不绑）；真实改点=createBubble内sendBook段后新增点亮手势块+本行+版本号；红线：发送链/命令闸/话仓闸/收发室/预设拼装/PDF问答/送书/看门狗/🌐联网/鱼骨/户口/单条删 全IDENTICAL */
 /* v0.13.0（2026-10-26 SPEC_t122_1 AI总管工作流改造第一步，冻结令唯一开工件）：刀1预设加kind问话类限200字（出厂三条补kind/编辑卡加类型下拉/老数据名字猜测迁移）/刀2自动存仓核实零改动（HX.hc ingest钩本在）/刀3话仓条目标题加下划线；总开关hx_t122_off=1全退（刀1限字+刀3下划线，预设功能本体不退）。红线：发送链/命令闸/话仓闸/收发室/PDF问答/送书/看门狗/鱼骨/联网/户口全IDENTICAL */
 /* v0.15.0（2026-10-26 SPEC_t122_3 AI总管工作流改造第三步，冻结令唯一开工件t122条目⑥）：刀1 btnAI回调改对照制（AI写完不直盖，调presetDiffConfirm，hx_t122_off=1回老路直盖）/刀2 新增presetDiffConfirm新旧对照层（旧灰底新黄底，✅进表单仍需点存落盘，❌/遮罩一字不动）；真实改点=btnAI回调一行+presetShowForm后新增一函数+本行+版本号；终审翻案1处（DS写whiteSpace驼峰cssText无效改white-space两处）；红线：发送链/命令闸/话仓闸/收发室/预设拼装/文献双岗/PDF问答/送书/看门狗/🌐联网/鱼骨/户口/单条删/t122-1 kind闸/t122-2点亮块 全IDENTICAL */
-var SW_VERSION = "0.28.0"; /* t134（2026-10-27午班 SPEC_t134，洪老师真机三连报+工作流修正口令「开始吧」）：刀1顶栏版本号动态跟SW_VERSION（治焊死v0.13.0）／刀2点亮元素禁系统选择菜单（user-select:none治系统复制黑泡挡视线）／刀3见hx-common v0.81.0 sjAiSend三通；DS一调Kimi终审零翻案；hx_t134_off=1退刀3 */ /* t133（2026-10-27接班班 SPEC_t133四刀：kbFit治顶天五犯/点亮到底+fb_del可删+砍补充钮/读链接闸/退回提示词闸+点亮代改提醒，DS两调出稿，Kimi终审翻案3处亲手落地：①fb_del的renderChat()无参改renderChat(d)②读链接闸_takeWebOpt函数名误用改真标记_webNext+_paintWeb③点亮提醒HX.glow.setHint不存在改走hxToastHold）；hx_t133_off退刀1刀2、hx_t133_url_off退刀3、hx_t133_preset_off退刀4 */ /* t132（2026-10-27早班 SPEC_t132，详头注） */ /* t129（2026-10-26夜班 SPEC_t129 鱼骨治回原设计，洪老师拍板「点开是下一层下划线题目不是方框／三层初步不够就长按往下延／内容里的字可点亮」，长按命令方式拍板保留）：刀1 fbRender非叶展开区不显示本层正文（点开只见下一层骨头不见肉，off退恢复bodyTxt）／刀2a fbFull正文按句切span长按500ms点亮送浮窗（HX.glow.setSel+黑框已点亮送浮窗+黄底fb-sent-sel，hx_fuchuang_off=1静默跳）／刀2b非叶行尾「看原文」小字（有肉才显、展开时才显、点它fbFull看本层正文；终审翻案DS稿1处=DS把小字放frag里另起一行不是行尾，亲手挪进line内复用.fb-line .fb-tail现成样式）／刀3 重排+补充两处提示词换代（人话题目不许抄原文开头/中间层不许挂正文）／刀4 总开关hx_t129_off=1全退；外援DS出稿可用+诚实申报6条。红线：发送链主体/命令闸/话仓闸/收发室/预设/文献双岗/PDF问答/送书/看门狗/🌐联网/户口/单条删/fbParse/fbSerialize/t128各开关与fc调用/applyFishbone签名与两试两败/onGrow落账 全IDENTICAL；hx-common/index/壳一行未动 */ /* t128（2026-10-26晚班 SPEC_t128，洪老师拍板「全部做」+最狠版一律重排）：刀2a裸问话补鱼骨版面段／刀2b撤「无记号且超120字」判断新回信一律立_reflow／刀2c重排走HX.fc浮窗收发台（fc缺位落回aip老码）／刀2d首败再排一次两败标「重排未成」+bb账／刀3鱼骨非叶行长按500ms点亮写pend+公共条➕补充这一层（AI扩写插回当子级+onGrow落账重开仍在+hx_t128_off=1全退）+fbSerialize+话仓详情同药（只本次看）；外援DS出稿，Kimi终审翻案4处亲手落地（①无记号回信解析空不再return false改原文兜底+重排照跑，DS稿重排块在return后=最狠版空话②fbSerialize正文改紧跟标题行，DS稿放子级后往返不恒等③长按拦click改_lpSuppress旗，DS稿capture拦不住同目标onclick④onGrow真接口=HX.chat.load/save(curChatId)，DS诚实申报未见原文）；重排成功也落账=终审补。红线：发送链主体/命令闸/话仓闸/收发室/预设表单存储/文献双岗三核/PDF问答/送书/看门狗/🌐联网/户口/点亮手势本体/delBubble/记账/fbParse/fbFull/miniFloat全IDENTICAL；配套hx-common v0.76.0 */ /* t127（2026-10-26晚班 SPEC_t127 鱼骨版面三期，洪老师拍板最高优先「鱼骨头是我每天工作保证质量的基础，费用不考虑」）：fbParse/fbRender/fbFull三层鱼骨树+人话标题+末层全屏+提示词换代+话仓详情同药+drawer头✕常驻+bb.job四处假账根治（真签名job(name,ok,why)）；总开关hx_fb3_off=1退单线折法 */ var SW_VERSION_T126 = "0.21.0"; /* v0.21.0（2026-10-26接班班 SPEC_t126，冻结令唯一开工件，t125验收3件不合格返修+鱼骨二期+病人标签配套；外援DS出稿+Kimi终审翻案1处亲手落地=DS编造HX.aip.call/HX.bill.add报废改真签名HX.aip.go）：刀2鱼骨版面二期=2a presetBuildPrompt非裸问话统一追加鱼骨格式约定段（hx_yugu_off=1不追加）+2b回信无层级记号且超120字自动二次叫AI走HX.aip.go重排（aip内部自动HX.bill记账，失败/超时落本地兜底不卡死）+2c本地兜底按句号/序号切一级；刀3a两处bb.job第二参传对象假账改字符串（2697/3202行，治永记「败」）；刀3b _t125Open炸了不静默——hxToastHold黑框报原因+黑匣子job带e.message（hx_hc_click2_off=1退静默）；刀4b🧹洗净全仓报「洗净N条，M条没洗动」+没洗动条目标题前20字记黑匣子t126_clean_left；刀5点亮链复审无断链不出块。红线：发送链主体/命令闸/话仓闸/收发室/预设表单存储/文献双岗三核/PDF问答/送书/看门狗/🌐联网/户口/点亮手势本体/delBubble/记账全IDENTICAL；配套hx-common v0.75.0 */ /* v0.20.0（2026-10-26 SPEC_t125 AI总管仓库与浮窗篇，洪老师拍板「我在AI里面点发送按钮，实际上是浮窗的功能。你现在开工吧」；DS出稿+Kimi终审翻案4处亲手落地：①DS刀5b锚点编造报废改治chat点亮吐司正名②刀2标题20字Kimi补③刀6b亮牌改hxToastHold常驻黑框④刀3b新码去重复append）：刀1话仓条目click+touchstart双路+detail读不出黑框明说+点击记黑匣子（hx_t125_off=1全退）；刀2条目规格扶正问句首句20字；刀3b🧹洗净全仓钮（hx_hc_clean2_off=1不显）；刀4知识类问话自动附参考文献（isKnowledgeText本地词表扩触发，hx_t125_ref_off=1退回只认预设）；刀5a点亮吐司正名套装浮窗·总开关（hx_fuchuang_off=1旧文案）；刀6点亮原文自动拼发送上下文（hx_t125_send_off=1落回老路）；配套hx-common v0.74.0+xiaotao v0.27.0。红线：发送链主体/命令闸/话仓闸/收发室/预设拼装/文献双岗三核四函数本体/presetBuildPrompt/对照层/PDF问答/送书/看门狗/🌐联网/鱼骨/户口/点亮手势本体/delBubble/记账 全IDENTICAL */ /* v0.19.0（2026-10-26 SPEC_t124 AI总管想法五连二批，洪老师拍板「AI总管的任务继续，读剩下的想法做成任务列表干了」；外援DS出C1/C2/C4前两点可用其余残缺，Kimi亲手补全终审）：刀1归档进度泡加⏹停钮（停写书改普通问话，五回调首行停住闸）／刀2裸问话前置「回答控制在200字以内。」（hx_chat200_off=1退）／刀3鱼骨门槛全撤所有回信一条下划线+气泡去方框flat／刀4📦话仓➖改落迷你列表点行点亮；红线：发送链/命令闸主体/话仓闸/收发室本体/预设表单/文献三核/PDF问答/送书/看门狗/联网/户口/点亮手势/delBubble/记账 全IDENTICAL */ /* v0.18.0（2026-10-26 SPEC_t123 AI总管今日想法五件，洪老师拍板「今天的想法归类成任务列表去执行」，真机毛病插队治t122验收不合格；外援DS稿拆碎+链式锚点两次截断报废，Kimi亲手全包五刀）：刀1点亮长按touchstart/mousedown排除泡内button与.fb-line——治v0.14.0 touchend preventDefault吞click（10-26三键/🗑/下划线全失灵唯一病根）／刀2鱼骨折法改整封回信一条下划线（点开整封、再点折回，门槛与闸不动）／刀4📚收发室+📦话仓浮层加➖缩小成右缘迷你钮（可拖、点开重开自毁，hx_mini_off=1不加）／刀5版本行；红线：发送链/命令闸/话仓闸/预设/文献双岗三核/PDF问答/送书/看门狗/联网/户口/点亮手势本体/delBubble本体/记账全IDENTICAL */ /* v0.17.0（2026-10-26 SPEC_t122_5 AI总管工作流改造第五步，冻结令唯一开工件t122条目⑧最后一件）：刀1新增presetRefAudit（第三家DS凭自身知识逐条判靠谱/存疑/像编的，没回cb(false)不挡附录）／刀2新增refAppendixFormat2（带【三核：X】判词附录）／刀3 t122-4刀5附录钩改走三核（失败走老refAppendixFormat+吐司「三核没回，附录照旧」；外援DS骨架，Kimi终审翻案判词口径）／刀4版本号。联网核对=二期一行没碰。红线：发送链/双岗四函数/presetCallAI/refAppendixFormat本体/对照层/PDF问答/送书/看门狗/联网/鱼骨/户口/单条删/t122-1/t122-2/hx-common/壳/index 全IDENTICAL */ /* v0.16.0（2026-10-26 SPEC_t122_4 AI总管工作流改造第四步，冻结令唯一开工件t122条目⑦）：刀1出厂新增「附参考文献」预设（ask类）/刀2 presetIsRefPreset识别/刀3 refAppendixFormat论文格式拼文本/刀4发送前捕获_presetIsRef/刀5 onOk收尾附录钩——回答落泡后后台走现成文献双岗presetLitRun，核过文献拼进末条a消息c字段HX.chat.save存盘重渲染（重开对话仍在；hc.ingest成对增量不重复入仓，仓内保持正文版），查不到/没查成只吐司不动字，hx_t122_off=1不跑/刀6版本行；外援DS出补丁一次成，Kimi终审零翻案（刀2/3/5锚点过短由Kimi亲手加长定位，DS刀6锚点不全诚实申报）。红线：发送链主体/命令闸/话仓闸/文献双岗四函数本体/presetBuildPrompt/对照层/PDF问答/送书/看门狗/🌐联网/鱼骨/户口/单条删/t122-1 kind闸/t122-2点亮块 全IDENTICAL */ /* v0.12.0（2026-10-25 SPEC_鱼骨版面，洪老师拍板总待办第1位「开始第一个任务把DS拉进来」，DS实现+Kimi终审翻案1处亲手落地：🗑挪函数尾部user/ai都挂，DS版挂sendBook的if块内只有ai有）：刀1 CSS鱼骨样式/刀2 ygOff+applyFishbone+delBubble三新函数/刀3 createBubble签名加byName+by标注+鱼骨化+🗑/刀4 renderChat传by/刀5 onOk收byName+新回信鱼骨化+by标注+🗑/刀6版本行；折叠下划线行/点亮选中/行尾小字链（段字数）/新展旧折/标哪家AI答的+单条气泡删；总开关hx_yg_off=1全退。红线：发送链/预设/命令闸/话仓/收发室/PDF问答/送书/看门狗/🌐联网全IDENTICAL；配套hx-common v0.71.0。 */  /* v0.11.0（2026-10-25 SPEC_t114 浮窗AI全家上户口一期·AI总管户口，总待办第1位，外援双缺DS破线/千问401自动降级Kimi亲手全包）：HX.ai.init上户口（🤖AI钮进sj面板，CHAT_AI_MANIFEST四条=📋提示词/📦话仓/📚收发室/🌐联网搜全指现有钮，钮被开关藏掉时toast提示不炸；send走HX.chat.pump公共泵只给＋加AI功能自建条目用；hx_hukou_off=1回退）；配套index v1.47.0首页户口。红线：命令闸/话仓闸/收发室/预设/发送链/PDF问答/送书/看门狗/🌐联网全IDENTICAL，只加init一段+manifest定义+本行 */ /* v0.10.0（2026-10-25 SPEC_t113 AI总泵归拢一期，洪老师拍板「归拢插队+联网要+AI对话试验田」，外援双缺Kimi亲手）：刀1 presetCallAI走HX.aip总泵（老链保留，缺省序归拢成千问→Kimi→DS）；刀2 🌐联网钮（点亮只对下一条生效发完自动灭，走总泵web链千问enable_search，hx_chat_web_off=1藏钮）；两处HX.chat.send加第4参_takeWebOpt()透传；配套hx-common v0.70.0。红线：除三刀+版本行外一行未动，命令闸/话仓/收发室/送书/看门狗IDENTICAL */ /* v0.9.0（2026-10-25晚班 SPEC_t110_话仓，洪老师拍板「先干话仓，开工」插队总待办第1位，外援双缺Kimi亲手）：刀1 📦话仓浮层（顶栏📦钮+总账/话题数数/条目展开/📥塞书走chatSendBook/🗑删，hx_hc_off=1藏钮3秒复查10拍）；刀2 发送前查仓闸hcTryAsk（zgTryCmd前——仓里命中直接贴双泡📦来自话仓没花AI钱+🔄问AI钮挂_hcPassOnce，记对话账a前缀【话仓答】防循环，hx_hc_ask_off=1关闸）；配套hx-common v0.69.0 HX.hc模块+persist入库钩。红线：除两刀+本行外一行未动。 */ /* v0.8.3（2026-10-24 SPEC_AI总管三期，洪老师拍板三条新规）刀B.1 zgTryCmd前置改AI判令制（废四动词暗号）/刀B.2旧detectCmd模糊链保留不删/刀B.4预设浮层灰字透明；刀B.3回信截断治本体转下批（锚点在HX.chat泵内，DS停报，留痕）；外援DS实现，Kimi终审翻案1处（passThrough双贴补摘用户气泡）亲手落地 */ /* v0.8.2（2026-10-24 t104，洪老师17:31真机报「选成书单发预设空字点发送被拦死」）：修空字闸——单发预设空字放行显（预设名），带上文/无预设照旧；SPEC_chat_v0.8.2，DS实现Kimi终审 */ /* v0.8.1（2026-10-23深夜 t99，洪老师22:37真机报「AI总管输入框没反应」截图实锤被压成窄条）：底栏两行——textarea-wrap加flex-wrap+textarea-input flex:1 1 100%独占首行，按钮落第二行；病根=media小屏可用宽268<三钮352；只动CSS两行，HTML/JS/发送链全IDENTICAL；外援双缺Kimi亲手 */ /* v0.8.0（2026-10-23 AI总管二期刀G，SPEC_AI总管二期，洪老师拍板「二期开工」）：命令闸接模糊链——detectCmd未命中但含四动词→findChap找章（补用户气泡insertBefore保序）→dupRate≥70出三选（跳过/照融/重写融，10秒默认跳过）→miss/err摘泡还文挂_zgPassOnce旗放行普通发送不吞话；点名单链/收发室/预设/PDF问答/送书/看门狗全IDENTICAL；DS实现+Kimi终审翻案2处（递归死循环/双贴气泡） */ /* v0.7.0（2026-10-23 AI总管一期，SPEC_AI总管一期，洪老师拍板「直接开干干完为止」，外援双缺Kimi亲手写）：刀A改名「💬 AI总管」（title/顶栏/sj.init三处，文件名不动）；刀C命令闸+三步命令链（融进《书》第N章→取章→AI融合走HX.chat.pump→写回留历史版，进度气泡逐步亮失败红字停下，成功记进对话账）；刀D📚收发室浮层（列书列章/📥取进对话/🪄融最近回信/↩历史版退回）；全走HX.zg公开口，总开关hx_zg_off=1全退。红线：发送链/预设/PDF问答/📥送书/看门狗 IDENTICAL */ /* v0.5.0（2026-10-18，想法流水09:03拍板）：📥层加「🪄让AI找家」——presetCallAI三兄弟链问归哪书哪章confirm过目才塞+chatConfirmSend一字不差重复闸；终审翻案1处（DS/千问回调都当单参实为ok,out双参）；手选老链一行未动 */ /* v0.4.1（2026-10-17深夜班，洪老师拍板「把千问修好修完为止」，SPEC_千问四治法，千问实现+Kimi终审翻案2处亲手落地：①千问把续写闸_continued写进then每次重置=没闸，挪进attempt闭包 ②千问!r.ok直return致下家被连跳两次，补__skip哨兵）：presetCallAI四刀——钥匙trim/max_tokens2048→8192/finish_reason截断自动续写一回拼接（仍截断换下一家）/HTTP400不再当JSON误解析静默跳；预设系统其余全IDENTICAL */ /* v0.8.2（2026-10-24 t104，洪老师17:31真机报「选成书单发预设空字点发送被拦死」）：修空字闸——单发预设空字放行显（预设名），带上文/无预设照旧；SPEC_chat_v0.8.2，DS实现Kimi终审 */ /* v0.8.1（2026-10-23深夜 t99，洪老师22:37真机报「AI总管输入框没反应」截图实锤被压成窄条）：底栏两行——textarea-wrap加flex-wrap+textarea-input flex:1 1 100%独占首行，按钮落第二行；病根=media小屏可用宽268<三钮352；只动CSS两行，HTML/JS/发送链全IDENTICAL；外援双缺Kimi亲手 */ /* v0.8.0（2026-10-23 AI总管二期刀G，SPEC_AI总管二期，洪老师拍板「二期开工」）：命令闸接模糊链——detectCmd未命中但含四动词→findChap找章（补用户气泡insertBefore保序）→dupRate≥70出三选（跳过/照融/重写融，10秒默认跳过）→miss/err摘泡还文挂_zgPassOnce旗放行普通发送不吞话；点名单链/收发室/预设/PDF问答/送书/看门狗全IDENTICAL；DS实现+Kimi终审翻案2处（递归死循环/双贴气泡） */ /* v0.7.0（2026-10-23 AI总管一期，SPEC_AI总管一期，洪老师拍板「直接开干干完为止」，外援双缺Kimi亲手写）：刀A改名「💬 AI总管」（title/顶栏/sj.init三处，文件名不动）；刀C命令闸+三步命令链（融进《书》第N章→取章→AI融合走HX.chat.pump→写回留历史版，进度气泡逐步亮失败红字停下，成功记进对话账）；刀D📚收发室浮层（列书列章/📥取进对话/🪄融最近回信/↩历史版退回）；全走HX.zg公开口，总开关hx_zg_off=1全退。红线：发送链/预设/PDF问答/📥送书/看门狗 IDENTICAL */ /* v0.5.0（2026-10-18，想法流水09:03拍板）：📥层加「🪄让AI找家」——presetCallAI三兄弟链问归哪书哪章confirm过目才塞+chatConfirmSend一字不差重复闸；终审翻案1处（DS/千问回调都当单参实为ok,out双参）；手选老链一行未动 */ /* v0.4.1（2026-10-17深夜班，洪老师拍板「把千问修好修完为止」，SPEC_千问四治法，千问实现+Kimi终审翻案2处亲手落地：①千问把续写闸_continued写进then每次重置=没闸，挪进attempt闭包 ②千问!r.ok直return致下家被连跳两次，补__skip哨兵）：presetCallAI四刀——钥匙trim/max_tokens2048→8192/finish_reason截断自动续写一回拼接（仍截断换下一家）/HTTP400不再当JSON误解析静默跳；预设系统其余全IDENTICAL */
+var SW_VERSION = "0.29.0"; /* v0.29.0（2026-10-27晚班 SPEC_t136 AI脑图，洪老师插队第1位拍板：向右长+AI主导生长+点亮即定位+全文归置+下划线条目+AI归并；每枝3~5芽4层封顶）：刀1脑图仓账chat_maps+🧠顶栏钮+下划线列表+☑归并／刀2画布向右长树+折叠显数字+长按点亮mg_glow_node／刀3点亮即定位=答树直接嫁接挂枝零二次调AI（Kimi终审翻案DS拦截方案）／刀4裸问自动归置=全文送出+挂接路径解析（hx_t136_auto=1停）／刀5 AI归并出新图／hx_t136_off=1全退；DS两调出稿，Kimi终审翻案4处亲手落地。红线：发送链主体/命令闸/话仓闸/收发室/预设表单/文献三核/PDF问答/看门狗/联网/户口/点亮手势本体/fbParse/fbSerialize/applyFishbone/renderNode/fbFull/fbGlowBackTake/delBubble/记账/t126~t135各开关 全IDENTICAL */ /* t134（2026-10-27午班 SPEC_t134，洪老师真机三连报+工作流修正口令「开始吧」）：刀1顶栏版本号动态跟SW_VERSION（治焊死v0.13.0）／刀2点亮元素禁系统选择菜单（user-select:none治系统复制黑泡挡视线）／刀3见hx-common v0.81.0 sjAiSend三通；DS一调Kimi终审零翻案；hx_t134_off=1退刀3 */ /* t133（2026-10-27接班班 SPEC_t133四刀：kbFit治顶天五犯/点亮到底+fb_del可删+砍补充钮/读链接闸/退回提示词闸+点亮代改提醒，DS两调出稿，Kimi终审翻案3处亲手落地：①fb_del的renderChat()无参改renderChat(d)②读链接闸_takeWebOpt函数名误用改真标记_webNext+_paintWeb③点亮提醒HX.glow.setHint不存在改走hxToastHold）；hx_t133_off退刀1刀2、hx_t133_url_off退刀3、hx_t133_preset_off退刀4 */ /* t132（2026-10-27早班 SPEC_t132，详头注） */ /* t129（2026-10-26夜班 SPEC_t129 鱼骨治回原设计，洪老师拍板「点开是下一层下划线题目不是方框／三层初步不够就长按往下延／内容里的字可点亮」，长按命令方式拍板保留）：刀1 fbRender非叶展开区不显示本层正文（点开只见下一层骨头不见肉，off退恢复bodyTxt）／刀2a fbFull正文按句切span长按500ms点亮送浮窗（HX.glow.setSel+黑框已点亮送浮窗+黄底fb-sent-sel，hx_fuchuang_off=1静默跳）／刀2b非叶行尾「看原文」小字（有肉才显、展开时才显、点它fbFull看本层正文；终审翻案DS稿1处=DS把小字放frag里另起一行不是行尾，亲手挪进line内复用.fb-line .fb-tail现成样式）／刀3 重排+补充两处提示词换代（人话题目不许抄原文开头/中间层不许挂正文）／刀4 总开关hx_t129_off=1全退；外援DS出稿可用+诚实申报6条。红线：发送链主体/命令闸/话仓闸/收发室/预设/文献双岗/PDF问答/送书/看门狗/🌐联网/户口/单条删/fbParse/fbSerialize/t128各开关与fc调用/applyFishbone签名与两试两败/onGrow落账 全IDENTICAL；hx-common/index/壳一行未动 */ /* t128（2026-10-26晚班 SPEC_t128，洪老师拍板「全部做」+最狠版一律重排）：刀2a裸问话补鱼骨版面段／刀2b撤「无记号且超120字」判断新回信一律立_reflow／刀2c重排走HX.fc浮窗收发台（fc缺位落回aip老码）／刀2d首败再排一次两败标「重排未成」+bb账／刀3鱼骨非叶行长按500ms点亮写pend+公共条➕补充这一层（AI扩写插回当子级+onGrow落账重开仍在+hx_t128_off=1全退）+fbSerialize+话仓详情同药（只本次看）；外援DS出稿，Kimi终审翻案4处亲手落地（①无记号回信解析空不再return false改原文兜底+重排照跑，DS稿重排块在return后=最狠版空话②fbSerialize正文改紧跟标题行，DS稿放子级后往返不恒等③长按拦click改_lpSuppress旗，DS稿capture拦不住同目标onclick④onGrow真接口=HX.chat.load/save(curChatId)，DS诚实申报未见原文）；重排成功也落账=终审补。红线：发送链主体/命令闸/话仓闸/收发室/预设表单存储/文献双岗三核/PDF问答/送书/看门狗/🌐联网/户口/点亮手势本体/delBubble/记账/fbParse/fbFull/miniFloat全IDENTICAL；配套hx-common v0.76.0 */ /* t127（2026-10-26晚班 SPEC_t127 鱼骨版面三期，洪老师拍板最高优先「鱼骨头是我每天工作保证质量的基础，费用不考虑」）：fbParse/fbRender/fbFull三层鱼骨树+人话标题+末层全屏+提示词换代+话仓详情同药+drawer头✕常驻+bb.job四处假账根治（真签名job(name,ok,why)）；总开关hx_fb3_off=1退单线折法 */ var SW_VERSION_T126 = "0.21.0"; /* v0.21.0（2026-10-26接班班 SPEC_t126，冻结令唯一开工件，t125验收3件不合格返修+鱼骨二期+病人标签配套；外援DS出稿+Kimi终审翻案1处亲手落地=DS编造HX.aip.call/HX.bill.add报废改真签名HX.aip.go）：刀2鱼骨版面二期=2a presetBuildPrompt非裸问话统一追加鱼骨格式约定段（hx_yugu_off=1不追加）+2b回信无层级记号且超120字自动二次叫AI走HX.aip.go重排（aip内部自动HX.bill记账，失败/超时落本地兜底不卡死）+2c本地兜底按句号/序号切一级；刀3a两处bb.job第二参传对象假账改字符串（2697/3202行，治永记「败」）；刀3b _t125Open炸了不静默——hxToastHold黑框报原因+黑匣子job带e.message（hx_hc_click2_off=1退静默）；刀4b🧹洗净全仓报「洗净N条，M条没洗动」+没洗动条目标题前20字记黑匣子t126_clean_left；刀5点亮链复审无断链不出块。红线：发送链主体/命令闸/话仓闸/收发室/预设表单存储/文献双岗三核/PDF问答/送书/看门狗/🌐联网/户口/点亮手势本体/delBubble/记账全IDENTICAL；配套hx-common v0.75.0 */ /* v0.20.0（2026-10-26 SPEC_t125 AI总管仓库与浮窗篇，洪老师拍板「我在AI里面点发送按钮，实际上是浮窗的功能。你现在开工吧」；DS出稿+Kimi终审翻案4处亲手落地：①DS刀5b锚点编造报废改治chat点亮吐司正名②刀2标题20字Kimi补③刀6b亮牌改hxToastHold常驻黑框④刀3b新码去重复append）：刀1话仓条目click+touchstart双路+detail读不出黑框明说+点击记黑匣子（hx_t125_off=1全退）；刀2条目规格扶正问句首句20字；刀3b🧹洗净全仓钮（hx_hc_clean2_off=1不显）；刀4知识类问话自动附参考文献（isKnowledgeText本地词表扩触发，hx_t125_ref_off=1退回只认预设）；刀5a点亮吐司正名套装浮窗·总开关（hx_fuchuang_off=1旧文案）；刀6点亮原文自动拼发送上下文（hx_t125_send_off=1落回老路）；配套hx-common v0.74.0+xiaotao v0.27.0。红线：发送链主体/命令闸/话仓闸/收发室/预设拼装/文献双岗三核四函数本体/presetBuildPrompt/对照层/PDF问答/送书/看门狗/🌐联网/鱼骨/户口/点亮手势本体/delBubble/记账 全IDENTICAL */ /* v0.19.0（2026-10-26 SPEC_t124 AI总管想法五连二批，洪老师拍板「AI总管的任务继续，读剩下的想法做成任务列表干了」；外援DS出C1/C2/C4前两点可用其余残缺，Kimi亲手补全终审）：刀1归档进度泡加⏹停钮（停写书改普通问话，五回调首行停住闸）／刀2裸问话前置「回答控制在200字以内。」（hx_chat200_off=1退）／刀3鱼骨门槛全撤所有回信一条下划线+气泡去方框flat／刀4📦话仓➖改落迷你列表点行点亮；红线：发送链/命令闸主体/话仓闸/收发室本体/预设表单/文献三核/PDF问答/送书/看门狗/联网/户口/点亮手势/delBubble/记账 全IDENTICAL */ /* v0.18.0（2026-10-26 SPEC_t123 AI总管今日想法五件，洪老师拍板「今天的想法归类成任务列表去执行」，真机毛病插队治t122验收不合格；外援DS稿拆碎+链式锚点两次截断报废，Kimi亲手全包五刀）：刀1点亮长按touchstart/mousedown排除泡内button与.fb-line——治v0.14.0 touchend preventDefault吞click（10-26三键/🗑/下划线全失灵唯一病根）／刀2鱼骨折法改整封回信一条下划线（点开整封、再点折回，门槛与闸不动）／刀4📚收发室+📦话仓浮层加➖缩小成右缘迷你钮（可拖、点开重开自毁，hx_mini_off=1不加）／刀5版本行；红线：发送链/命令闸/话仓闸/预设/文献双岗三核/PDF问答/送书/看门狗/联网/户口/点亮手势本体/delBubble本体/记账全IDENTICAL */ /* v0.17.0（2026-10-26 SPEC_t122_5 AI总管工作流改造第五步，冻结令唯一开工件t122条目⑧最后一件）：刀1新增presetRefAudit（第三家DS凭自身知识逐条判靠谱/存疑/像编的，没回cb(false)不挡附录）／刀2新增refAppendixFormat2（带【三核：X】判词附录）／刀3 t122-4刀5附录钩改走三核（失败走老refAppendixFormat+吐司「三核没回，附录照旧」；外援DS骨架，Kimi终审翻案判词口径）／刀4版本号。联网核对=二期一行没碰。红线：发送链/双岗四函数/presetCallAI/refAppendixFormat本体/对照层/PDF问答/送书/看门狗/联网/鱼骨/户口/单条删/t122-1/t122-2/hx-common/壳/index 全IDENTICAL */ /* v0.16.0（2026-10-26 SPEC_t122_4 AI总管工作流改造第四步，冻结令唯一开工件t122条目⑦）：刀1出厂新增「附参考文献」预设（ask类）/刀2 presetIsRefPreset识别/刀3 refAppendixFormat论文格式拼文本/刀4发送前捕获_presetIsRef/刀5 onOk收尾附录钩——回答落泡后后台走现成文献双岗presetLitRun，核过文献拼进末条a消息c字段HX.chat.save存盘重渲染（重开对话仍在；hc.ingest成对增量不重复入仓，仓内保持正文版），查不到/没查成只吐司不动字，hx_t122_off=1不跑/刀6版本行；外援DS出补丁一次成，Kimi终审零翻案（刀2/3/5锚点过短由Kimi亲手加长定位，DS刀6锚点不全诚实申报）。红线：发送链主体/命令闸/话仓闸/文献双岗四函数本体/presetBuildPrompt/对照层/PDF问答/送书/看门狗/🌐联网/鱼骨/户口/单条删/t122-1 kind闸/t122-2点亮块 全IDENTICAL */ /* v0.12.0（2026-10-25 SPEC_鱼骨版面，洪老师拍板总待办第1位「开始第一个任务把DS拉进来」，DS实现+Kimi终审翻案1处亲手落地：🗑挪函数尾部user/ai都挂，DS版挂sendBook的if块内只有ai有）：刀1 CSS鱼骨样式/刀2 ygOff+applyFishbone+delBubble三新函数/刀3 createBubble签名加byName+by标注+鱼骨化+🗑/刀4 renderChat传by/刀5 onOk收byName+新回信鱼骨化+by标注+🗑/刀6版本行；折叠下划线行/点亮选中/行尾小字链（段字数）/新展旧折/标哪家AI答的+单条气泡删；总开关hx_yg_off=1全退。红线：发送链/预设/命令闸/话仓/收发室/PDF问答/送书/看门狗/🌐联网全IDENTICAL；配套hx-common v0.71.0。 */  /* v0.11.0（2026-10-25 SPEC_t114 浮窗AI全家上户口一期·AI总管户口，总待办第1位，外援双缺DS破线/千问401自动降级Kimi亲手全包）：HX.ai.init上户口（🤖AI钮进sj面板，CHAT_AI_MANIFEST四条=📋提示词/📦话仓/📚收发室/🌐联网搜全指现有钮，钮被开关藏掉时toast提示不炸；send走HX.chat.pump公共泵只给＋加AI功能自建条目用；hx_hukou_off=1回退）；配套index v1.47.0首页户口。红线：命令闸/话仓闸/收发室/预设/发送链/PDF问答/送书/看门狗/🌐联网全IDENTICAL，只加init一段+manifest定义+本行 */ /* v0.10.0（2026-10-25 SPEC_t113 AI总泵归拢一期，洪老师拍板「归拢插队+联网要+AI对话试验田」，外援双缺Kimi亲手）：刀1 presetCallAI走HX.aip总泵（老链保留，缺省序归拢成千问→Kimi→DS）；刀2 🌐联网钮（点亮只对下一条生效发完自动灭，走总泵web链千问enable_search，hx_chat_web_off=1藏钮）；两处HX.chat.send加第4参_takeWebOpt()透传；配套hx-common v0.70.0。红线：除三刀+版本行外一行未动，命令闸/话仓/收发室/送书/看门狗IDENTICAL */ /* v0.9.0（2026-10-25晚班 SPEC_t110_话仓，洪老师拍板「先干话仓，开工」插队总待办第1位，外援双缺Kimi亲手）：刀1 📦话仓浮层（顶栏📦钮+总账/话题数数/条目展开/📥塞书走chatSendBook/🗑删，hx_hc_off=1藏钮3秒复查10拍）；刀2 发送前查仓闸hcTryAsk（zgTryCmd前——仓里命中直接贴双泡📦来自话仓没花AI钱+🔄问AI钮挂_hcPassOnce，记对话账a前缀【话仓答】防循环，hx_hc_ask_off=1关闸）；配套hx-common v0.69.0 HX.hc模块+persist入库钩。红线：除两刀+本行外一行未动。 */ /* v0.8.3（2026-10-24 SPEC_AI总管三期，洪老师拍板三条新规）刀B.1 zgTryCmd前置改AI判令制（废四动词暗号）/刀B.2旧detectCmd模糊链保留不删/刀B.4预设浮层灰字透明；刀B.3回信截断治本体转下批（锚点在HX.chat泵内，DS停报，留痕）；外援DS实现，Kimi终审翻案1处（passThrough双贴补摘用户气泡）亲手落地 */ /* v0.8.2（2026-10-24 t104，洪老师17:31真机报「选成书单发预设空字点发送被拦死」）：修空字闸——单发预设空字放行显（预设名），带上文/无预设照旧；SPEC_chat_v0.8.2，DS实现Kimi终审 */ /* v0.8.1（2026-10-23深夜 t99，洪老师22:37真机报「AI总管输入框没反应」截图实锤被压成窄条）：底栏两行——textarea-wrap加flex-wrap+textarea-input flex:1 1 100%独占首行，按钮落第二行；病根=media小屏可用宽268<三钮352；只动CSS两行，HTML/JS/发送链全IDENTICAL；外援双缺Kimi亲手 */ /* v0.8.0（2026-10-23 AI总管二期刀G，SPEC_AI总管二期，洪老师拍板「二期开工」）：命令闸接模糊链——detectCmd未命中但含四动词→findChap找章（补用户气泡insertBefore保序）→dupRate≥70出三选（跳过/照融/重写融，10秒默认跳过）→miss/err摘泡还文挂_zgPassOnce旗放行普通发送不吞话；点名单链/收发室/预设/PDF问答/送书/看门狗全IDENTICAL；DS实现+Kimi终审翻案2处（递归死循环/双贴气泡） */ /* v0.7.0（2026-10-23 AI总管一期，SPEC_AI总管一期，洪老师拍板「直接开干干完为止」，外援双缺Kimi亲手写）：刀A改名「💬 AI总管」（title/顶栏/sj.init三处，文件名不动）；刀C命令闸+三步命令链（融进《书》第N章→取章→AI融合走HX.chat.pump→写回留历史版，进度气泡逐步亮失败红字停下，成功记进对话账）；刀D📚收发室浮层（列书列章/📥取进对话/🪄融最近回信/↩历史版退回）；全走HX.zg公开口，总开关hx_zg_off=1全退。红线：发送链/预设/PDF问答/📥送书/看门狗 IDENTICAL */ /* v0.5.0（2026-10-18，想法流水09:03拍板）：📥层加「🪄让AI找家」——presetCallAI三兄弟链问归哪书哪章confirm过目才塞+chatConfirmSend一字不差重复闸；终审翻案1处（DS/千问回调都当单参实为ok,out双参）；手选老链一行未动 */ /* v0.4.1（2026-10-17深夜班，洪老师拍板「把千问修好修完为止」，SPEC_千问四治法，千问实现+Kimi终审翻案2处亲手落地：①千问把续写闸_continued写进then每次重置=没闸，挪进attempt闭包 ②千问!r.ok直return致下家被连跳两次，补__skip哨兵）：presetCallAI四刀——钥匙trim/max_tokens2048→8192/finish_reason截断自动续写一回拼接（仍截断换下一家）/HTTP400不再当JSON误解析静默跳；预设系统其余全IDENTICAL */ /* v0.8.2（2026-10-24 t104，洪老师17:31真机报「选成书单发预设空字点发送被拦死」）：修空字闸——单发预设空字放行显（预设名），带上文/无预设照旧；SPEC_chat_v0.8.2，DS实现Kimi终审 */ /* v0.8.1（2026-10-23深夜 t99，洪老师22:37真机报「AI总管输入框没反应」截图实锤被压成窄条）：底栏两行——textarea-wrap加flex-wrap+textarea-input flex:1 1 100%独占首行，按钮落第二行；病根=media小屏可用宽268<三钮352；只动CSS两行，HTML/JS/发送链全IDENTICAL；外援双缺Kimi亲手 */ /* v0.8.0（2026-10-23 AI总管二期刀G，SPEC_AI总管二期，洪老师拍板「二期开工」）：命令闸接模糊链——detectCmd未命中但含四动词→findChap找章（补用户气泡insertBefore保序）→dupRate≥70出三选（跳过/照融/重写融，10秒默认跳过）→miss/err摘泡还文挂_zgPassOnce旗放行普通发送不吞话；点名单链/收发室/预设/PDF问答/送书/看门狗全IDENTICAL；DS实现+Kimi终审翻案2处（递归死循环/双贴气泡） */ /* v0.7.0（2026-10-23 AI总管一期，SPEC_AI总管一期，洪老师拍板「直接开干干完为止」，外援双缺Kimi亲手写）：刀A改名「💬 AI总管」（title/顶栏/sj.init三处，文件名不动）；刀C命令闸+三步命令链（融进《书》第N章→取章→AI融合走HX.chat.pump→写回留历史版，进度气泡逐步亮失败红字停下，成功记进对话账）；刀D📚收发室浮层（列书列章/📥取进对话/🪄融最近回信/↩历史版退回）；全走HX.zg公开口，总开关hx_zg_off=1全退。红线：发送链/预设/PDF问答/📥送书/看门狗 IDENTICAL */ /* v0.5.0（2026-10-18，想法流水09:03拍板）：📥层加「🪄让AI找家」——presetCallAI三兄弟链问归哪书哪章confirm过目才塞+chatConfirmSend一字不差重复闸；终审翻案1处（DS/千问回调都当单参实为ok,out双参）；手选老链一行未动 */ /* v0.4.1（2026-10-17深夜班，洪老师拍板「把千问修好修完为止」，SPEC_千问四治法，千问实现+Kimi终审翻案2处亲手落地：①千问把续写闸_continued写进then每次重置=没闸，挪进attempt闭包 ②千问!r.ok直return致下家被连跳两次，补__skip哨兵）：presetCallAI四刀——钥匙trim/max_tokens2048→8192/finish_reason截断自动续写一回拼接（仍截断换下一家）/HTTP400不再当JSON误解析静默跳；预设系统其余全IDENTICAL */
 
 /* v0.11.0 t114户口刀：AI总管面板清单（四条入口全指现有钮，钮被开关藏掉/不在时toast提示不炸） */
 var CHAT_AI_MANIFEST=[
@@ -1841,6 +1877,526 @@ function ygOff() { try { return localStorage.getItem('hx_yg_off') === '1'; } cat
 /* AI长回复鱼骨化：门槛照旧（按双换行分段≥2且总长≥120字才折，不达标return false老样）；v0.18.0 t123 刀2改折法=整封回信一条下划线（首句≤40字+行尾「全文X字」），点开整封展开、再点折回，只有一行（想法10-26 08:07/10:10洪老师要的是整封一条线，不是一段一条） */
 /* ===== t127 鱼骨版面三期（SPEC_t127，洪老师2026-10-26晚拍板最高优先）：fbParse/fbRender/fbFull新增+applyFishbone重写；DS出稿+Kimi终审翻案2处亲手落地（①异步重排只重建鱼骨容器fbBox不抹🗑/by/点亮块②无子级行一律按叶走全屏）；✕常驻另治=drawer-header改sticky（想法17:09病根=整个抽屉滚头顶栏跟着跑） ===== */
 /* 刀1：fbParse(text)→树。行首「- 」一级、「-- 」二级、「--- 」三级（容忍全角／记号后无空格）；无记号行=上一节点正文续行；三级之外并进三级正文；全文无记号行→return []。返回 [{t:标题,c:正文,k:[子级]}] */
+
+/* ==================== v0.29.0 t136 SPEC_t136 AI脑图模块（Kimi终审落地，DS两调出稿翻案4处：①刀3不拦截发送链不二次调AI，答树直接嫁接②删刀3-C常驻轮询③顶栏🧠改静态HTML④mg层z-index压9998让fbFull开在上） ==================== */
+/* 刀1-A 脑图仓账（chat_maps），全try/catch */
+function mgLoadMaps() {
+  try {
+    var raw = localStorage.getItem('chat_maps');
+    if (!raw) return [];
+    var arr = JSON.parse(raw);
+    if (!(arr instanceof Array)) return [];
+    return arr;
+  } catch (e) { return []; }
+}
+function mgSaveMaps(arr) {
+  try {
+    if (!(arr instanceof Array)) arr = [];
+    localStorage.setItem('chat_maps', JSON.stringify(arr));
+    return true;
+  } catch (e) { return false; }
+}
+function mgNewId() { try { return 'm' + Date.now() + '_' + Math.floor(Math.random() * 1000); } catch (e) { return 'm' + Date.now(); } }
+function mgFindMap(id) {
+  try {
+    var arr = mgLoadMaps();
+    for (var i = 0; i < arr.length; i++) { if (arr[i] && arr[i].id === id) return arr[i]; }
+  } catch (e) {}
+  return null;
+}
+function mgUpsertMap(mapObj) {
+  try {
+    if (!mapObj) return null;
+    var arr = mgLoadMaps();
+    var found = -1;
+    for (var i = 0; i < arr.length; i++) { if (arr[i] && arr[i].id === mapObj.id) { found = i; break; } }
+    if (found >= 0) { arr[found] = mapObj; } else { arr.push(mapObj); }
+    mgSaveMaps(arr);
+    return mapObj;
+  } catch (e) { return null; }
+}
+function mgDelMap(id) {
+  try {
+    var arr = mgLoadMaps();
+    var out = [];
+    for (var i = 0; i < arr.length; i++) { if (arr[i] && arr[i].id !== id) out.push(arr[i]); }
+    mgSaveMaps(out);
+    return true;
+  } catch (e) { return false; }
+}
+function mgOff() { try { return (localStorage.getItem('hx_t136_off') === '1'); } catch (e) { return false; } }
+function mgAutoOff() { try { return (localStorage.getItem('hx_t136_auto') === '1'); } catch (e) { return false; } }
+/* 通用下钻：按idxPath取节点，失败null */
+function mgDrill(tree, path) {
+  try {
+    var cur = { k: tree || [] };
+    for (var i = 0; i < (path || []).length; i++) {
+      if (!cur || !cur.k || !cur.k[path[i]]) return null;
+      cur = cur.k[path[i]];
+    }
+    return cur;
+  } catch (e) { return null; }
+}
+function mgSamePath(a, b) {
+  try {
+    if (!(a instanceof Array) || !(b instanceof Array)) return false;
+    if (a.length !== b.length) return false;
+    for (var i = 0; i < a.length; i++) { if (a[i] !== b[i]) return false; }
+    return true;
+  } catch (e) { return false; }
+}
+/* 刀3-B 嫁接落账：把答树（fb树数组）挂到指定图的指定节点下，落账+画布重渲染+吐司；返回true=成 */
+function mgBackTake(payload) {
+  try {
+    if (mgOff()) return false;
+    if (!payload || !payload.mapId) return false;
+    var sub = payload.tree;
+    if (!(sub instanceof Array) || !sub.length) return false;
+    var map = mgFindMap(payload.mapId);
+    if (!map) return false;
+    map.tree = map.tree || [];
+    var node = mgDrill(map.tree, payload.idxPath || []);
+    if (!node) return false;
+    node.k = node.k || [];
+    for (var j = 0; j < sub.length; j++) { node.k.push(sub[j]); }
+    map.ts = Date.now();
+    mgUpsertMap(map);
+    try { if (window.HX && HX.mg && HX.mg._activeMapId === payload.mapId && typeof HX.mg._rerender === 'function') HX.mg._rerender(); } catch (eR) {}
+    try { if (typeof showToast === 'function') showToast('🧠已长进脑图'); } catch (eT) {}
+    return true;
+  } catch (e) { return false; }
+}
+
+
+/* 刀1-B 脑图仓列表浮层：一行一图标题下划线，行尾🗑；☑归并模式勾≥2出归并 */
+function mgOpenList() {
+  try {
+    if (mgOff()) return;
+    try { if (document.getElementById('mg-list-mask')) return; } catch (eDup) {}
+    var mask = document.createElement('div');
+    mask.id = 'mg-list-mask'; mask.className = 'mg-list-mask';
+    var card = document.createElement('div'); card.className = 'mg-list-card';
+    var topBar = document.createElement('div'); topBar.className = 'mg-list-top';
+    var titleEl = document.createElement('div'); titleEl.className = 'mg-list-title'; titleEl.textContent = '🧠脑图仓';
+    var mergeBtn = document.createElement('button'); mergeBtn.className = 'mg-list-btn'; mergeBtn.textContent = '☑归并';
+    var closeBtn = document.createElement('button'); closeBtn.className = 'mg-list-close'; closeBtn.textContent = '✕';
+    var _closed = false;
+    function doClose(e) {
+      try { if (e && e.preventDefault) e.preventDefault(); } catch (eP) {}
+      if (_closed) return; _closed = true;
+      try { if (mask.parentNode) mask.parentNode.removeChild(mask); } catch (eR) {}
+    }
+    closeBtn.addEventListener('click', doClose);
+    closeBtn.addEventListener('touchstart', doClose, { passive: false });
+    topBar.appendChild(titleEl); topBar.appendChild(mergeBtn); topBar.appendChild(closeBtn);
+    var bodyEl = document.createElement('div'); bodyEl.className = 'mg-list-body';
+    card.appendChild(topBar); card.appendChild(bodyEl);
+    mask.appendChild(card); document.body.appendChild(mask);
+    var _mergeMode = false, _checked = {};
+    function _renderList() {
+      try {
+        bodyEl.innerHTML = '';
+        var arr = mgLoadMaps();
+        if (!arr.length) {
+          var empty = document.createElement('div');
+          empty.className = 'mg-list-empty';
+          empty.textContent = '还没有脑图。问一句话，AI会自动长进来。';
+          bodyEl.appendChild(empty); _updateMergeBtn(); return;
+        }
+        for (var i = 0; i < arr.length; i++) {
+          (function (m) {
+            var row = document.createElement('div'); row.className = 'mg-list-row';
+            if (_mergeMode) {
+              var cb = document.createElement('input');
+              cb.type = 'checkbox'; cb.className = 'mg-list-cb'; cb.checked = !!_checked[m.id];
+              cb.addEventListener('change', function () {
+                try { if (cb.checked) _checked[m.id] = true; else delete _checked[m.id]; } catch (eC) {}
+                _updateMergeBtn();
+              });
+              row.appendChild(cb);
+            }
+            var t = document.createElement('div'); t.className = 'mg-list-rowtitle';
+            t.textContent = String(m.title || '（未命名脑图）');
+            t.addEventListener('click', function (ev) {
+              try { ev && ev.stopPropagation && ev.stopPropagation(); } catch (eP) {}
+              if (_mergeMode) {
+                try { if (_checked[m.id]) delete _checked[m.id]; else _checked[m.id] = true; } catch (eT) {}
+                _renderList(); return;
+              }
+              try { mgOpenCanvas(m.id); } catch (eO) {}
+            });
+            row.appendChild(t);
+            var del = document.createElement('button'); del.className = 'mg-list-del'; del.textContent = '🗑';
+            del.addEventListener('click', function (ev) {
+              try { ev && ev.stopPropagation && ev.stopPropagation(); } catch (eP2) {}
+              try { mgDelMap(m.id); } catch (eDel) {}
+              try { delete _checked[m.id]; } catch (eDel2) {}
+              _renderList();
+            });
+            row.appendChild(del);
+            bodyEl.appendChild(row);
+          })(arr[i]);
+        }
+        _updateMergeBtn();
+      } catch (eR) {}
+    }
+    function _updateMergeBtn() {
+      try {
+        var cnt = 0;
+        for (var k in _checked) { if (_checked[k]) cnt++; }
+        mergeBtn.textContent = (_mergeMode && cnt >= 2) ? ('🧠归并(' + cnt + ')') : '☑归并';
+      } catch (eU) {}
+    }
+    mergeBtn.addEventListener('click', function (ev) {
+      try { ev && ev.stopPropagation && ev.stopPropagation(); } catch (eP) {}
+      try {
+        if (!_mergeMode) { _mergeMode = true; _checked = {}; _renderList(); return; }
+        var ids = [];
+        for (var k in _checked) { if (_checked[k]) ids.push(k); }
+        if (ids.length < 2) { _mergeMode = false; _checked = {}; _renderList(); return; }
+        try { mgMergeMaps(ids, function () { _mergeMode = false; _checked = {}; _renderList(); }); } catch (eM) {}
+      } catch (eC) {}
+    });
+    _renderList();
+  } catch (e) {}
+}
+
+
+/* 刀2-A 画布：向右长的树（嵌套ul/li+CSS连线），折叠显数字，叶点标题=fbFull，全部展开/折叠 */
+function mgOpenCanvas(mapId) {
+  try {
+    if (mgOff()) return;
+    var map = mgFindMap(mapId);
+    if (!map) { try { if (typeof showToast === 'function') showToast('脑图不存在'); } catch (eT) {} return; }
+    try { if (document.getElementById('mg-canvas-mask')) return; } catch (eDup) {}
+    var mask = document.createElement('div');
+    mask.id = 'mg-canvas-mask'; mask.className = 'mg-canvas-mask';
+    var card = document.createElement('div'); card.className = 'mg-canvas-card';
+    var topBar = document.createElement('div'); topBar.className = 'mg-canvas-top';
+    var titleEl = document.createElement('div'); titleEl.className = 'mg-canvas-title'; titleEl.textContent = String(map.title || '脑图');
+    var expandBtn = document.createElement('button'); expandBtn.className = 'mg-canvas-btn'; expandBtn.textContent = '全部展开';
+    var closeBtn = document.createElement('button'); closeBtn.className = 'mg-canvas-close'; closeBtn.textContent = '✕';
+    var _closed = false;
+    function doClose(e) {
+      try { if (e && e.preventDefault) e.preventDefault(); } catch (eP) {}
+      if (_closed) return; _closed = true;
+      try { if (mask.parentNode) mask.parentNode.removeChild(mask); } catch (eR) {}
+      try { if (window.HX && HX.mg && HX.mg._activeCanvas === mask) { HX.mg._activeCanvas = null; HX.mg._activeMapId = ''; HX.mg._rerender = null; } } catch (eA) {}
+    }
+    closeBtn.addEventListener('click', doClose);
+    closeBtn.addEventListener('touchstart', doClose, { passive: false });
+    topBar.appendChild(titleEl); topBar.appendChild(expandBtn); topBar.appendChild(closeBtn);
+    var bodyEl = document.createElement('div'); bodyEl.className = 'mg-canvas-body';
+    card.appendChild(topBar); card.appendChild(bodyEl);
+    mask.appendChild(card); document.body.appendChild(mask);
+    try {
+      if (!window.HX) window.HX = {};
+      if (!HX.mg) HX.mg = {};
+      HX.mg._activeCanvas = mask; HX.mg._activeMapId = mapId;
+      HX.mg._rerender = function () { try { _renderTree(); } catch (eR) {} };
+    } catch (eHX) {}
+    var _allOpen = false;
+    function _renderTree() {
+      try {
+        var m = mgFindMap(mapId);
+        if (!m) { try { doClose(); } catch (eC) {} return; }
+        titleEl.textContent = String(m.title || '脑图');
+        bodyEl.innerHTML = '';
+        var tree = m.tree || [];
+        if (!tree.length) {
+          var empty = document.createElement('div'); empty.className = 'mg-canvas-empty'; empty.textContent = '（空图）';
+          bodyEl.appendChild(empty); return;
+        }
+        var rootUl = document.createElement('ul'); rootUl.className = 'mg-tree';
+        for (var i = 0; i < tree.length; i++) { rootUl.appendChild(_renderMgNode(tree[i], 1, [i])); }
+        bodyEl.appendChild(rootUl);
+      } catch (e) {}
+    }
+    function _renderMgNode(node, level, idxPath) {
+      var li = document.createElement('li'); li.className = 'mg-li';
+      var row = document.createElement('div'); row.className = 'mg-node';
+      var title = String((node && node.t) || '').replace(/^\s+|\s+$/g, '');
+      if (!title) title = '（要点）';
+      var kids = (node && node.k) || [];
+      var body = String((node && node.c) || '');
+      var hasKids = kids.length > 0;
+      var isLeaf = !hasKids || level >= 4; /* 4层封顶 */
+      var toggle = document.createElement('span'); toggle.className = 'mg-toggle';
+      if (hasKids && !isLeaf) { toggle.textContent = '▸'; } else { toggle.textContent = ''; toggle.style.visibility = 'hidden'; }
+      row.appendChild(toggle);
+      var tEl = document.createElement('span'); tEl.className = 'mg-title'; tEl.textContent = title;
+      row.appendChild(tEl);
+      var cntEl = document.createElement('span'); cntEl.className = 'mg-count'; cntEl.style.display = 'none'; cntEl.textContent = String(kids.length);
+      row.appendChild(cntEl);
+      try {
+        var graw = localStorage.getItem('mg_glow_node');
+        var glow = graw ? JSON.parse(graw) : null;
+        if (glow && glow.mapId === mapId && mgSamePath(glow.idxPath, idxPath)) { row.className = row.className + ' mg-lit'; }
+      } catch (eG) {}
+      var childUl = document.createElement('ul'); childUl.className = 'mg-children'; childUl.style.display = 'none';
+      if (hasKids && !isLeaf) {
+        for (var i = 0; i < kids.length; i++) { childUl.appendChild(_renderMgNode(kids[i], level + 1, idxPath.concat([i]))); }
+      }
+      var _open = false;
+      function _setOpen(open) {
+        try {
+          _open = open;
+          if (hasKids && !isLeaf) {
+            childUl.style.display = open ? 'block' : 'none';
+            toggle.textContent = open ? '▾' : '▸';
+            cntEl.style.display = open ? 'none' : 'inline';
+          }
+        } catch (eS) {}
+      }
+      toggle.addEventListener('click', function (ev) {
+        try { ev && ev.stopPropagation && ev.stopPropagation(); } catch (eP) {}
+        if (!hasKids || isLeaf) return; _setOpen(!_open);
+      });
+      cntEl.addEventListener('click', function (ev) {
+        try { ev && ev.stopPropagation && ev.stopPropagation(); } catch (eP2) {}
+        if (!hasKids || isLeaf) return; _setOpen(true);
+      });
+      tEl.addEventListener('click', function (ev) {
+        try { ev && ev.stopPropagation && ev.stopPropagation(); } catch (eP3) {}
+        if (isLeaf) { try { fbFull(title, body || title); } catch (eF) {} return; }
+        _setOpen(!_open);
+      });
+      _mgBindLongPress(row, mapId, idxPath, title);
+      li.appendChild(row);
+      if (hasKids && !isLeaf) li.appendChild(childUl);
+      return li;
+    }
+    expandBtn.addEventListener('click', function (ev) {
+      try { ev && ev.stopPropagation && ev.stopPropagation(); } catch (eP) {}
+      try {
+        _allOpen = !_allOpen;
+        expandBtn.textContent = _allOpen ? '全部折叠' : '全部展开';
+        var allUl = bodyEl.querySelectorAll('.mg-children');
+        for (var i = 0; i < allUl.length; i++) { allUl[i].style.display = _allOpen ? 'block' : 'none'; }
+        var allTg = bodyEl.querySelectorAll('.mg-toggle');
+        for (var j = 0; j < allTg.length; j++) { if (allTg[j].textContent === '▸' || allTg[j].textContent === '▾') allTg[j].textContent = _allOpen ? '▾' : '▸'; }
+        var allCnt = bodyEl.querySelectorAll('.mg-count');
+        for (var k = 0; k < allCnt.length; k++) { allCnt[k].style.display = _allOpen ? 'none' : 'inline'; }
+      } catch (eE) {}
+    });
+    _renderTree();
+  } catch (e) {}
+}
+/* 刀2-B 画布内长按500ms点亮/灭：写mg_glow_node={mapId,idxPath,title}；手势同_bindLongPress（本体不动） */
+function _mgBindLongPress(rowEl, mapId, idxPath, title) {
+  try {
+    if (mgOff()) return;
+    var _holdTimer = null, _startX = 0, _startY = 0, _fired = false;
+    function _clear() { try { if (_holdTimer) { clearTimeout(_holdTimer); _holdTimer = null; } } catch (e) {} }
+    function _fire() {
+      _fired = true;
+      try {
+        var cur = null;
+        try { var raw = localStorage.getItem('mg_glow_node'); if (raw) cur = JSON.parse(raw); } catch (eR) {}
+        var same = !!(cur && cur.mapId === mapId && mgSamePath(cur.idxPath, idxPath));
+        if (same) {
+          try { localStorage.removeItem('mg_glow_node'); } catch (eRm) {}
+          try { rowEl.className = rowEl.className.replace(/\s*mg-lit/g, ''); } catch (eCls) {}
+          try { if (typeof showToast === 'function') showToast('已取消点亮'); } catch (eT1) {}
+        } else {
+          try { localStorage.setItem('mg_glow_node', JSON.stringify({ mapId: mapId, idxPath: idxPath, title: title || '', ts: Date.now() })); } catch (eSet) {}
+          try {
+            var all = document.querySelectorAll('.mg-lit');
+            for (var j = 0; j < all.length; j++) { all[j].className = all[j].className.replace(/\s*mg-lit/g, ''); }
+          } catch (eClr) {}
+          try { if (rowEl.className.indexOf('mg-lit') < 0) rowEl.className = rowEl.className + ' mg-lit'; } catch (eCls2) {}
+          try { if (typeof showToast === 'function') showToast('已点亮「' + title + '」，再提问就长在这枝下'); } catch (eT2) {}
+        }
+      } catch (e) {}
+    }
+    rowEl.addEventListener('touchstart', function (ev) {
+      var t = ev && ev.touches && ev.touches[0]; if (!t) return;
+      _startX = t.clientX; _startY = t.clientY; _fired = false;
+      _clear(); _holdTimer = setTimeout(_fire, 500);
+    }, { passive: true });
+    rowEl.addEventListener('touchmove', function (ev) {
+      var t = ev && ev.touches && ev.touches[0]; if (!t) return;
+      if (Math.abs(t.clientX - _startX) > 10 || Math.abs(t.clientY - _startY) > 10) { _clear(); }
+    }, { passive: true });
+    rowEl.addEventListener('touchend', function (ev) { _clear(); try { if (_fired) { ev && ev.preventDefault && ev.preventDefault(); } } catch (e) {} _fired = false; }, { passive: false });
+    rowEl.addEventListener('mousedown', function (ev) { _fired = false; _clear(); _holdTimer = setTimeout(_fire, 500); });
+    rowEl.addEventListener('mouseup', function () { _clear(); _fired = false; });
+  } catch (e) {}
+}
+
+
+/* 刀4-B 裸问自动归置：全文送出（所有图标题+各图全文），AI答「挂接：路径」+层级芽；逐级模糊找标题，找不到就地新建；无图=建首图 */
+function mgAutoGrow(replyText, srcQuestion) {
+  try {
+    if (mgOff() || mgAutoOff()) return false;
+    var reply = String(replyText || '');
+    if (!reply) return false;
+    var maps = mgLoadMaps();
+    var fullText = '';
+    try {
+      if (!maps.length) { fullText = '（当前无脑图）'; }
+      else {
+        for (var i = 0; i < maps.length; i++) {
+          fullText += '【图名：' + String(maps[i].title || '') + '】\n';
+          try { fullText += fbSerialize(maps[i].tree || []) + '\n'; } catch (eS) {}
+        }
+      }
+    } catch (eF) {}
+    var sys = '你是知识树归置师。给你全文知识树和一段新答案：①判断新答案该挂哪根枝下（挂接路径用 > 分隔层级标题，如 糖尿病治疗 > 新药；多图时首段=图名）；②把新答案浓缩成层级芽（- 一级、-- 二级、--- 三级，每枝3~5芽、最深4层、同级标题字数尽量一致）。输出格式：第一行「挂接：路径」（无合适枝就写 挂接：新枝名），空行后只写层级芽，不要寒暄。';
+    var usr = '【全文知识树】\n' + fullText + '\n【新答案】\n' + reply;
+    var _cb = function (ok, txt, by) {
+      try {
+        if (!ok) return;
+        var s = String(txt || '');
+        var pathLine = '', budText = '';
+        try {
+          var lines = s.replace(/\r/g, '').split('\n');
+          var idx = -1;
+          for (var i = 0; i < lines.length; i++) {
+            var ln = String(lines[i] || '').replace(/^\s+|\s+$/g, '');
+            if (/^挂接[：:]/.test(ln)) { pathLine = ln.replace(/^挂接[：:]\s*/, ''); idx = i; break; }
+          }
+          if (idx >= 0) { budText = lines.slice(idx + 1).join('\n'); } else { budText = s; }
+        } catch (eParse) {}
+        var pathStr = String(pathLine || '').replace(/^\s+|\s+$/g, '');
+        var sub = null;
+        try { sub = fbParse(budText); } catch (eP) {}
+        if (!sub || !sub.length) return;
+        var targetMap = null;
+        var segs = pathStr ? pathStr.split(/\s*>\s*/) : [];
+        if (maps.length > 1 && segs.length) {
+          var first = String(segs[0] || '').replace(/\s/g, '');
+          for (var k = 0; k < maps.length; k++) {
+            if (String(maps[k].title || '').replace(/\s/g, '') === first) { targetMap = maps[k]; segs = segs.slice(1); break; }
+          }
+        }
+        if (!targetMap && maps.length) {
+          targetMap = maps[0];
+          /* v0.29.0 t136终审翻案⑤：单图时路径首段=图名同样剥掉（防建出与图名重复的顶层枝） */
+          try {
+            if (segs.length && String(segs[0] || '').replace(/\s/g, '') === String(targetMap.title || '').replace(/\s/g, '')) { segs = segs.slice(1); }
+          } catch (eSeg) {}
+        }
+        if (!targetMap) {
+          var q = String(srcQuestion || '').replace(/^\s+|\s+$/g, '');
+          targetMap = { id: mgNewId(), title: q ? q.slice(0, 20) : '脑图', tree: [], ts: Date.now(), q: q };
+        }
+        targetMap.tree = targetMap.tree || [];
+        var node = null;
+        try {
+          if (!segs.length) {
+            /* v0.29.0 t136终审翻案⑥：砍掉DS的/^新/特殊分支（「新药」被误砍成「药」）——空路径=芽整体挂顶层根；有路径一律逐级找、找不到就地按原文新建 */
+            for (var ti = 0; ti < sub.length; ti++) { targetMap.tree.push(sub[ti]); }
+            sub = [];
+            node = { t: '', c: '', k: [] };
+          } else {
+            var cur = { k: targetMap.tree };
+            for (var si = 0; si < segs.length; si++) {
+              var want = String(segs[si] || '').replace(/\s/g, '');
+              var found = null, kids = cur.k || [];
+              for (var ki = 0; ki < kids.length; ki++) {
+                if (String((kids[ki] && kids[ki].t) || '').replace(/\s/g, '') === want) { found = kids[ki]; break; }
+              }
+              if (!found) { found = { t: String(segs[si] || ''), c: '', k: [] }; cur.k = cur.k || []; cur.k.push(found); }
+              cur = found; node = found;
+            }
+          }
+        } catch (eNav) { node = null; }
+        if (!node) { node = { t: '新枝', c: '', k: [] }; targetMap.tree.push(node); }
+        node.k = node.k || [];
+        for (var bi = 0; bi < sub.length; bi++) { node.k.push(sub[bi]); }
+        targetMap.ts = Date.now();
+        mgUpsertMap(targetMap);
+        try { if (window.HX && HX.mg && HX.mg._activeMapId === targetMap.id && typeof HX.mg._rerender === 'function') HX.mg._rerender(); } catch (eR) {}
+        try { if (typeof showToast === 'function') showToast('🧠已长进脑图'); } catch (eT) {}
+      } catch (e) {}
+    };
+    try {
+      if (window.HX && HX.fc && typeof HX.fc.go === 'function' && localStorage.getItem('hx_fc_off') !== '1') {
+        HX.fc.go({ kind: 'mg_grow', from: 'chat', sys: sys, usr: usr, opt: {} }, _cb);
+        return true;
+      } else if (window.HX && HX.aip && typeof HX.aip.go === 'function') {
+        HX.aip.go(sys, usr, {}, _cb);
+        return true;
+      }
+    } catch (eG) {}
+    return false;
+  } catch (e) { return false; }
+}
+/* 刀5 AI归并：勾≥2图全文送出，AI答「图名：xxx」+层级芽，建新图入库 */
+function mgMergeMaps(ids, doneCb) {
+  try {
+    if (mgOff()) return false;
+    if (!(ids instanceof Array) || ids.length < 2) return false;
+    var maps = mgLoadMaps(), picked = [];
+    for (var i = 0; i < maps.length; i++) {
+      for (var j = 0; j < ids.length; j++) { if (maps[i] && maps[i].id === ids[j]) { picked.push(maps[i]); break; } }
+    }
+    if (picked.length < 2) return false;
+    var fullText = '';
+    try {
+      for (var k = 0; k < picked.length; k++) {
+        fullText += '【图名：' + String(picked[k].title || '') + '】\n';
+        try { fullText += fbSerialize(picked[k].tree || []) + '\n'; } catch (eS) {}
+      }
+    } catch (eF) {}
+    var sys = '你是知识整理师。把以下几棵知识树归并成一棵：- 一级主题、-- 二级、--- 三级，每枝3~5芽、最深4层、同级标题字数尽量一致。首行单独输出「图名：xxx」，其后只写层级芽，不要寒暄。';
+    var _cb = function (ok, txt, by) {
+      try {
+        if (!ok) { try { if (typeof showToast === 'function') showToast('归并未成，再试一次'); } catch (eT) {} return; }
+        var s = String(txt || ''), mapTitle = '归并脑图', budText = s;
+        try {
+          var lines = s.replace(/\r/g, '').split('\n');
+          var idx = -1;
+          for (var i = 0; i < lines.length; i++) {
+            var ln = String(lines[i] || '').replace(/^\s+|\s+$/g, '');
+            if (/^图名[：:]/.test(ln)) { mapTitle = ln.replace(/^图名[：:]\s*/, '') || '归并脑图'; idx = i; break; }
+          }
+          if (idx >= 0) { budText = lines.slice(idx + 1).join('\n'); }
+        } catch (eParse) {}
+        var sub = null;
+        try { sub = fbParse(budText); } catch (eP) {}
+        if (!sub || !sub.length) { try { if (typeof showToast === 'function') showToast('归并回来解析空'); } catch (eT2) {} return; }
+        var newMap = { id: mgNewId(), title: String(mapTitle), tree: sub, ts: Date.now(), q: '归并' };
+        mgUpsertMap(newMap);
+        try { if (typeof showToast === 'function') showToast('🧠已归并出新图：' + newMap.title); } catch (eT3) {}
+        try { if (typeof doneCb === 'function') doneCb(newMap); } catch (eD) {}
+      } catch (e) {}
+    };
+    try {
+      if (window.HX && HX.fc && typeof HX.fc.go === 'function' && localStorage.getItem('hx_fc_off') !== '1') {
+        HX.fc.go({ kind: 'mg_merge', from: 'chat', sys: sys, usr: fullText, opt: {} }, _cb);
+        return true;
+      } else if (window.HX && HX.aip && typeof HX.aip.go === 'function') {
+        HX.aip.go(sys, fullText, {}, _cb);
+        return true;
+      }
+    } catch (eG) {}
+    return false;
+  } catch (e) { return false; }
+}
+/* 刀6 对外接口+🧠钮绑定（script在DOM后执行，元素已在） */
+try {
+  if (!window.HX) window.HX = {};
+  if (!HX.mg) HX.mg = {};
+  HX.mg.openList = function () { try { mgOpenList(); } catch (e) {} };
+  HX.mg.openCanvas = function (id) { try { mgOpenCanvas(id); } catch (e) {} };
+  HX.mg.loadMaps = function () { try { return mgLoadMaps(); } catch (e) { return []; } };
+  HX.mg.backTake = function (p) { try { return mgBackTake(p); } catch (e) { return false; } };
+  HX.mg.autoGrow = function (r, q) { try { return mgAutoGrow(r, q); } catch (e) { return false; } };
+  HX.mg.merge = function (ids, cb) { try { return mgMergeMaps(ids, cb); } catch (e) { return false; } };
+} catch (eHXmg) {}
+try {
+  var _mgBtnEl = document.getElementById('mgBtn');
+  if (_mgBtnEl) {
+    if (mgOff()) { _mgBtnEl.style.display = 'none'; }
+    _mgBtnEl.addEventListener('click', function (ev) {
+      try { ev && ev.stopPropagation && ev.stopPropagation(); } catch (eP) {}
+      try { mgOpenList(); } catch (eO) {}
+    });
+  }
+} catch (eMgBtn) {}
+
 function fbParse(text) {
   try {
     var src = String(text == null ? '' : text).replace(/\r/g, '');
@@ -3551,6 +4107,34 @@ function zgTryCmd(rawText) {
             }
           }
         } catch (eFb2) {}
+        /* v0.29.0 t136 刀3/刀4触发：点亮即定位（答树直接嫁接挂枝，零二次调AI，嫁接成功跳过自动归置）；裸问=自动归置全文送出（hx_t136_auto=1停） */
+        try {
+          var _mgGlow = null;
+          try { var _mgRaw = localStorage.getItem('mg_glow_node'); if (_mgRaw) _mgGlow = JSON.parse(_mgRaw); } catch (eGR) {}
+          var _mgDone = false;
+          if (_mgGlow && _mgGlow.mapId && !mgOff()) {
+            var _mgTree = null;
+            try { _mgTree = fbParse(reply); } catch (eFP) {}
+            if (!_mgTree || !_mgTree.length) { _mgTree = [{ t: (String(text || '').slice(0, 20) || '问答'), c: String(reply || ''), k: [] }]; }
+            _mgDone = mgBackTake({ mapId: _mgGlow.mapId, idxPath: _mgGlow.idxPath || [], tree: _mgTree });
+            if (_mgDone) {
+              try { localStorage.removeItem('mg_glow_node'); } catch (eRm) {}
+              try {
+                var _mgTag = document.createElement('div');
+                _mgTag.className = 'fb-head';
+                _mgTag.textContent = '🧠已挂进脑图「' + String(_mgGlow.title || '') + '」枝下';
+                placeholderBubble.appendChild(_mgTag);
+              } catch (eTag) {}
+              try {
+                var _mgAll = document.querySelectorAll('.mg-lit');
+                for (var _mj = 0; _mj < _mgAll.length; _mj++) { _mgAll[_mj].className = _mgAll[_mj].className.replace(/\s*mg-lit/g, ''); }
+              } catch (eClr) {}
+            }
+          }
+          if (!_mgDone && !mgOff() && !mgAutoOff()) {
+            setTimeout(function () { try { mgAutoGrow(reply, text); } catch (eAG) {} }, 0);
+          }
+        } catch (eMgT) {}
         var timeDiv = document.createElement('div');
         timeDiv.className = 'bubble-time';
         timeDiv.textContent = formatTime(Date.now());
