@@ -109,7 +109,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 (function(){
   'use strict';
-  var HX_COMMON_VERSION = '0.86.0'; /* v0.86.0（2026-10-28晚班 SPEC_t141 第1任务列表L7话仓扩刀刀2，洪老师勾②拍板，DS出稿Kimi终审落地）：HX.hc索引rec补seq（localStorage hx_hc_seq递增计数器）+readIndex老账一次性迁移赋号（幂等）；hx_hc_seq_off=1全退；ingest/clean/writeIndex/readDetail/writeDetail/count/list/del/find/ask/查仓闸及HX.chat泵/persist钩/fc/glow/zg/bb/mqtt全件IDENTICAL，AI清洗在chat侧做本文件零动 */ /* 旧记 /* v0.85.0（2026-10-28晚班 SPEC_t139 第1任务列表第1/3条+第6条尾巴，洪老师逐条拍板）：刀A 保活遥测补字段（see arg=hx_suite_ver注入hxc/fcN/glowN/pptN/lit五键，终审翻案①hxc走window.HX.HX_COMMON_VERSION——DS稿typeof裸变量在mqtt IIFE外够不着恒空串）；刀B1 点亮提示词=用这条干活（isPptCmd仅明说改才true，sys补litPreset分支点亮优先于点选；改提示词直落老路t133刀4已有不动）；刀B2 增提示词直生直入（sjPptGen解析后直接入库chat_presets双写+吐司，过目框照灌💾不动）；总开关hx_t139_off=1三刀全退；外援DS一调11282tokens≈0.03元，Kimi终审翻案1处亲手落地。红线：HX.keys/air/pick/mg/store其余/dav/gh/bill/step/selfUp/fm/ai/HX.sj其余/bb/hxToastHold/chk/chat/jc/audit/wzPoll/jbl/aip/hc/zg/HX.fc/HX.mqtt其余op 全件IDENTICAL；chat/index/壳/其他单体一行未动 */ /* v0.84.0（2026-10-28接班班 SPEC_t138 浮窗四病根治，洪老师拍板「全是影响全局的毛病，做完闭环再交班」；真机实锤09:30探针chat=0.30.0+11:34/11:36/11:38三连报）：刀1 sjKbFit弃算几何改确定布局——键盘弹起或hxSjText聚焦即面板全屏四0+height100%+maxHeight none+输入框scrollIntoView钉第一屏（治顶天六犯），收起全还原；刀3 主输入框永不装提示词——sjPptModeRefresh改预设模式改灌过目框hxSjPptNewName/hxSjPptNewRule（治脏内容），sjPptGen presetedit改取过目框；刀4 sjAiBtnAdd补建🤖AI钮也走t132刀6新门（AI总管宿主原地展hxSjAiBox调HX.sj.pptListRender新公开口，不再开老面板）；总开关hx_t138_off=1刀1/3/4退老行为；外援DS一调7215tokens，Kimi终审翻案1处亲手落地（刀3b锚点不唯一伤及sjPptSave，加长锚点只打sjPptGen）。红线：发送链/命令闸/话仓闸/收发室/预设表单存储/文献三核/PDF问答/看门狗/🌐联网/户口/sjPptSave/记账/t122~t137各开关 全IDENTICAL；chat刀2见v0.31.0 */ /* t137（2026-10-28接班班 SPEC_t137，洪老师两轮讨论拍板「同意你的意见，开工」）：刀A sj面板两分家（想法分支只见想法件／问AI分支=提示词清单+更多…折叠收命令排与编提示词三钮+点亮条无点亮不占版面）／刀B 提示词清单sjPptListRender+加提示词过目存档链（AI回话不盖主输入框，填过目框名+词可改再存档，AI顺手起名）／总开关hx_t137_off=1全退；DS出稿，Kimi终审翻案4处亲手落地（①DS稿hx_t137_off闸全缺亲手补全②DS稿sjPptGen老路提前return丢「改好了」toast改if/else保尾部原样③DS稿hxSjMoreBar折叠条无绑定亲手补④DS稿sjPptReq新占位文案与sjPptModeRefresh重复改判走modeRefresh单点）。红线：HX.keys/air/pick/mg/store/dav/gh/bill/step/selfUp/fm/ai本体/sj其余各函数/bb/hxToastHold/chk/chat/jc/audit/wzPoll/jbl/aip/hc/zg/mqtt/fc 全件IDENTICAL，壳/index/其他单体一行未动 */ /* t135（2026-10-27午班二轮 SPEC_t135，洪老师拍板「开工」）：刀1发送前点亮清单确认闸——sjAiSend起跑盘点xt_glow_pend/chat_preset_lit/hx_pick_v1，≥1样弹sjT135Confirm清单层（逐行✕消账+「已消」灰显，🚀放行经__hx_t135_pass重进发送，✕取消不发，无点亮直发，hx_t135_off=1回直发）；刀2回退t134刀3三通修正（isPptCmd回litPreset单条件、objLine回单装、sys撤litPreset优先、hx_t134_off摘除）——正道=提示词点一下选中当预设，长按点亮=改它；chat不发版（v0.28.0不动）；Kimi亲手落地；其余模块一行未动。 */ /* t134（2026-10-27午班 SPEC_t134刀3 sjAiSend三通修正，洪老师拍板工作流：点亮文字+点亮提示词=用提示词处理文字，仅「提示词无文字」才算改提示词；objLine双拼/sys优先litPreset.rule/hx_t134_off=1回现码；DS一调Kimi终审零翻案；配套chat v0.28.0） */ /* t133（2026-10-27接班班 SPEC_t133刀4配套：丙路改提示词直落——sjPptApplyDirect新函数（AI返回直写chat_presets+旧版压hx_preset_his_<id>留档5层+黑框告知可退回+云同步），sjAiBack丙路加分派，hx_t133_preset_off=1回老对照sjPptDiffOpen（本体保留）；洪老师拍板「为什么不需要我个人干预，确认保险需要」；DS出稿，Kimi终审落地零翻案；配套chat v0.27.0；其余模块一行未动） */ /* t132（2026-10-27早班 SPEC_t132，详头注） */ /* v0.77.0（2026-10-26 SPEC_t130 速记面板折叠+输入框兼提示词编辑+收发记录，洪老师两轮讨论拍板「SOS和AI留外面其他折起来」）：HX.sj独改四刀（折叠版面/🪄AI编提示词生成+改预设双模式/📋收发记录/hx_t130_off全退），详HX.sj模块头注。Kimi终审翻案3处（openPanel丢hint行/fcLog字段/常驻黑框当等待提示）亲手落地；其余模块一行未动。 */
+  var HX_COMMON_VERSION = '0.87.0'; /* v0.87.0（2026-10-29接班班 SPEC_t143 R2监视闭环+R5闲置提醒，洪老师拍板「做闭环的事」；云侧腿监视台账v1同班部署ECS cron每30分钟）：刀1保活遥测补fcTail/rfTail/featTop三键（fc/重排细账摘要+功能使用台账随探针上云，治细账躺本地云侧盲）／刀2 HX.fc加_featUse功能使用台账hx_featuse_v1随go成功记账+公开口加_pushLog／刀3 HX.syRemind加_r5Check闲置提醒（点名功能>=72h无用弹人话常驻黑框一次开门一条24h不重弹落fc账上云）；外援DS一调4479tokens，Kimi终审翻案2处亲手落地（弹框用本模块showToast/挂接点移boot错峰钩躲gh.ready拦截）；总开关hx_t143_off=1刀1刀3退；红线HX.keys/air/pick/mg/store/dav/gh/bill/step/selfUp/fm/ai/sj其余/bb/hxToastHold/chk/chat/jc/audit/wzPoll/jbl/aip/hc/zg/mqtt/fc其余/syRemind其余 全件IDENTICAL，chat/index/壳/其他单体一行未动 */ /* v0.86.0（2026-10-28晚班 SPEC_t141 第1任务列表L7话仓扩刀刀2，洪老师勾②拍板，DS出稿Kimi终审落地）：HX.hc索引rec补seq（localStorage hx_hc_seq递增计数器）+readIndex老账一次性迁移赋号（幂等）；hx_hc_seq_off=1全退；ingest/clean/writeIndex/readDetail/writeDetail/count/list/del/find/ask/查仓闸及HX.chat泵/persist钩/fc/glow/zg/bb/mqtt全件IDENTICAL，AI清洗在chat侧做本文件零动 */ /* 旧记 /* v0.85.0（2026-10-28晚班 SPEC_t139 第1任务列表第1/3条+第6条尾巴，洪老师逐条拍板）：刀A 保活遥测补字段（see arg=hx_suite_ver注入hxc/fcN/glowN/pptN/lit五键，终审翻案①hxc走window.HX.HX_COMMON_VERSION——DS稿typeof裸变量在mqtt IIFE外够不着恒空串）；刀B1 点亮提示词=用这条干活（isPptCmd仅明说改才true，sys补litPreset分支点亮优先于点选；改提示词直落老路t133刀4已有不动）；刀B2 增提示词直生直入（sjPptGen解析后直接入库chat_presets双写+吐司，过目框照灌💾不动）；总开关hx_t139_off=1三刀全退；外援DS一调11282tokens≈0.03元，Kimi终审翻案1处亲手落地。红线：HX.keys/air/pick/mg/store其余/dav/gh/bill/step/selfUp/fm/ai/HX.sj其余/bb/hxToastHold/chk/chat/jc/audit/wzPoll/jbl/aip/hc/zg/HX.fc/HX.mqtt其余op 全件IDENTICAL；chat/index/壳/其他单体一行未动 */ /* v0.84.0（2026-10-28接班班 SPEC_t138 浮窗四病根治，洪老师拍板「全是影响全局的毛病，做完闭环再交班」；真机实锤09:30探针chat=0.30.0+11:34/11:36/11:38三连报）：刀1 sjKbFit弃算几何改确定布局——键盘弹起或hxSjText聚焦即面板全屏四0+height100%+maxHeight none+输入框scrollIntoView钉第一屏（治顶天六犯），收起全还原；刀3 主输入框永不装提示词——sjPptModeRefresh改预设模式改灌过目框hxSjPptNewName/hxSjPptNewRule（治脏内容），sjPptGen presetedit改取过目框；刀4 sjAiBtnAdd补建🤖AI钮也走t132刀6新门（AI总管宿主原地展hxSjAiBox调HX.sj.pptListRender新公开口，不再开老面板）；总开关hx_t138_off=1刀1/3/4退老行为；外援DS一调7215tokens，Kimi终审翻案1处亲手落地（刀3b锚点不唯一伤及sjPptSave，加长锚点只打sjPptGen）。红线：发送链/命令闸/话仓闸/收发室/预设表单存储/文献三核/PDF问答/看门狗/🌐联网/户口/sjPptSave/记账/t122~t137各开关 全IDENTICAL；chat刀2见v0.31.0 */ /* t137（2026-10-28接班班 SPEC_t137，洪老师两轮讨论拍板「同意你的意见，开工」）：刀A sj面板两分家（想法分支只见想法件／问AI分支=提示词清单+更多…折叠收命令排与编提示词三钮+点亮条无点亮不占版面）／刀B 提示词清单sjPptListRender+加提示词过目存档链（AI回话不盖主输入框，填过目框名+词可改再存档，AI顺手起名）／总开关hx_t137_off=1全退；DS出稿，Kimi终审翻案4处亲手落地（①DS稿hx_t137_off闸全缺亲手补全②DS稿sjPptGen老路提前return丢「改好了」toast改if/else保尾部原样③DS稿hxSjMoreBar折叠条无绑定亲手补④DS稿sjPptReq新占位文案与sjPptModeRefresh重复改判走modeRefresh单点）。红线：HX.keys/air/pick/mg/store/dav/gh/bill/step/selfUp/fm/ai本体/sj其余各函数/bb/hxToastHold/chk/chat/jc/audit/wzPoll/jbl/aip/hc/zg/mqtt/fc 全件IDENTICAL，壳/index/其他单体一行未动 */ /* t135（2026-10-27午班二轮 SPEC_t135，洪老师拍板「开工」）：刀1发送前点亮清单确认闸——sjAiSend起跑盘点xt_glow_pend/chat_preset_lit/hx_pick_v1，≥1样弹sjT135Confirm清单层（逐行✕消账+「已消」灰显，🚀放行经__hx_t135_pass重进发送，✕取消不发，无点亮直发，hx_t135_off=1回直发）；刀2回退t134刀3三通修正（isPptCmd回litPreset单条件、objLine回单装、sys撤litPreset优先、hx_t134_off摘除）——正道=提示词点一下选中当预设，长按点亮=改它；chat不发版（v0.28.0不动）；Kimi亲手落地；其余模块一行未动。 */ /* t134（2026-10-27午班 SPEC_t134刀3 sjAiSend三通修正，洪老师拍板工作流：点亮文字+点亮提示词=用提示词处理文字，仅「提示词无文字」才算改提示词；objLine双拼/sys优先litPreset.rule/hx_t134_off=1回现码；DS一调Kimi终审零翻案；配套chat v0.28.0） */ /* t133（2026-10-27接班班 SPEC_t133刀4配套：丙路改提示词直落——sjPptApplyDirect新函数（AI返回直写chat_presets+旧版压hx_preset_his_<id>留档5层+黑框告知可退回+云同步），sjAiBack丙路加分派，hx_t133_preset_off=1回老对照sjPptDiffOpen（本体保留）；洪老师拍板「为什么不需要我个人干预，确认保险需要」；DS出稿，Kimi终审落地零翻案；配套chat v0.27.0；其余模块一行未动） */ /* t132（2026-10-27早班 SPEC_t132，详头注） */ /* v0.77.0（2026-10-26 SPEC_t130 速记面板折叠+输入框兼提示词编辑+收发记录，洪老师两轮讨论拍板「SOS和AI留外面其他折起来」）：HX.sj独改四刀（折叠版面/🪄AI编提示词生成+改预设双模式/📋收发记录/hx_t130_off全退），详HX.sj模块头注。Kimi终审翻案3处（openPanel丢hint行/fcLog字段/常驻黑框当等待提示）亲手落地；其余模块一行未动。 */
   /* v0.81.0（2026-10-27午班 SPEC_t134刀3 sjAiSend三通修正，洪老师2026-10-27午班真机报+拍板工作流「点亮文字→点亮提示词→输要求→发送三样一起走」）：isPptCmd改=点亮提示词且无点亮文字才成立（有文字=用提示词处理那段文字不再误当改提示词）；objLine支持【点亮的原文】+【用这条提示词处理】双拼；sys在litPreset作处理提示词时优先litPreset.rule；hx_t134_off=1回现码行为；配套chat v0.28.0（版本号动态+禁系统复制黑泡）；DS一调Kimi终审零翻案。红线：sjAiBack三路/sjPptApplyDirect/发送链主体/其余模块全件IDENTICAL */
   /* v0.80.0（2026-10-27接班班 SPEC_t133刀4配套，洪老师拍板提示词归单体+AI代改不需人工干预+确认保险需要）：丙路改提示词直落——新增sjPptApplyDirect（AI返回首行=改动说明/余=新全文，直写chat_presets双写+sync，旧rule压hx_preset_his_<id>留档5层FIFO，黑框告知「退回提示词 名字」可退，bb.job留痕），sjAiBack丙路hx_t133_preset_off=1回老对照sjPptDiffOpen（本体保留不删）；配套chat v0.27.0退回闸+点亮提醒；外援DS出稿，Kimi终审落地零翻案。红线：HX.keys/air/pick/mg/store/dav/gh/bill/step/selfUp/fm/ai/sj其余/bb/hxToastHold/chk/chat/jc/audit/wzPoll/jbl/aip/hc/zg/mqtt/sjPptDiffOpen本体全件IDENTICAL，壳/index/其他单体一行未动 */
   /* v0.76.0（2026-10-26晚班 SPEC_t128，洪老师拍板「全部做」）：刀1新增HX.fc浮窗收发台（统一AI收发口/账本hx_fc_log环形200+壳双写hxdata_hx_fc.json/每笔bb.job真签名/hx_fc_off=1直调总泵不记账/tail新在前）+刀4a急诊rep加fcTail30笔（刀4b v0.65.0 pend补传核验在岗一行未动）；外援DS出稿，Kimi终审翻案2处亲手落地（①tail补.reverse()新在前②IIFE首行var HX=window.HX防卷尾TDZ前科）；配套chat v0.23.0。红线HX.keys/air/pick/mg/store/dav/gh/bill/step/selfUp/fm/ai/sj/bb本体/hxToastHold/chk/chat/jc其余/audit/wzPoll/jbl/aip本体/hc/zg/mqtt全件IDENTICAL，壳/index/其他单体一行未动 */ /* v0.75.0（2026-10-26接班班 SPEC_t126，冻结令唯一开工件；外援DS出稿+Kimi终审翻案1处亲手落地=DS编造HX.aip.call/HX.bill.add签名报废改真签名HX.aip.go，记账=「编假签名」前科同型）：刀1病人标签错联根治——sj save贴「病人:」前判HX_SJ_APP含「管家」才贴（hx_sj_ctx_off=1落回老行为）+📜翻看sjShowBrowse显示层剥「　病人:…　页面:…」尾巴（档案存储一字不动）；刀4a clean词表扩全角星号＊/全角井号＃/粗体**残留（幂等，hx_hc_clean2_off=1不补）；配套chat v0.21.0。红线HX.keys/air/pick/mg/store/dav/gh/bill/step/selfUp/fm/ai/sj其余/bb/hxToastHold/chk/chat/jc/audit/wzPoll/jbl/aip/hc其余/zg/mqtt全件IDENTICAL，壳/index/xiaotao一行未动 */ /* v0.74.0（2026-10-26 SPEC_t125 AI总管仓库与浮窗篇配套，DS出稿Kimi终审亲手落地）：刀3a clean补强去【三核：X】判词行/连续横线---/markdown表格竖线（幂等，hx_hc_clean2_off=1不补）；刀3b暴露_writeDetail供洗净全仓钮；刀5b浮窗户口镜像进HX.glow公开口（getSel/setSel/clear，hx_fuchuang_off=1不挂）；配套chat v0.20.0+xiaotao v0.27.0。红线find/ask/count/del/索引结构/壳备份全IDENTICAL */ /* v0.73.0（2026-10-26 SPEC_t124 AI总管想法五连二批刀1a，洪老师拍板「AI总管的任务继续」）：judge判令提示词加固——问话求答（讨论/讲讲/分析/怎么看等）一律算闲聊，治11:33「讨论治疗心脏被判成找书」误判；其余一行未动 */ /* v0.72.0（2026-10-26 SPEC_t123刀3，洪老师拍板「今天的想法归类成任务列表去执行」；想法输入框顶天四犯根治：sjKbFit键盘弹起分支钉顶改贴键盘上方——top=vv.offsetTop+vv.height-8-面板实际高，量不到高/比可视区高才退钉顶，hx_sj_kbfit_off=1退老钉顶法；键盘收还原/监听挂法/不自动focus/面板其余零件一行未动；Kimi亲手，配套chat v0.18.0） */ /* v0.71.0（2026-10-25 SPEC_鱼骨版面配套，DS实现+Kimi终审零翻案亲手落地）：done落msg.by记哪家AI+onOk第2参model透传，两刀+版本行外全件IDENTICAL，配套chat v0.12.0鱼骨版面 */ /* v0.70.0（2026-10-25 SPEC_t113 AI总泵归拢一期，洪老师拍板「AI功能归拢插队+联网要+AI对话当试验田」，外援双缺DS破线/千问401自动降级Kimi亲手全包）：刀A 新增HX.aip总泵（链千问→Kimi→DS/which点名/web联网只走千问enable_search/千问流式+截断续写一回+400砍料重发一回/Kimi空包重发/死心非流式60秒流式30秒无新字/换棒人话吐司/air.report终败/HX.bill记账/hx_aip_off全退）+HX.chat.pump内部改转调总泵（签名cb口径不变调用方零改动，老链全保留）+刀B HX.chat.send加第4参opt={web}心脏改走总泵（三层记忆/压缩/账本IDENTICAL）；配套chat v0.10.0 presetCallAI走总泵+🌐联网钮。红线：除本IIFE+pump函数体+send签名与踢脚+版本行外全件IDENTICAL，callQwen/callKimi/callDS/fetchJson/buildMessages/tryCompress全保留，管家/壳/index/其他单体一行未动 */ /* v0.69.0（2026-10-25晚班 SPEC_t110_话仓，洪老师拍板「先干话仓，开工」插队总待办第1位，DS破线+千问401自动降级Kimi亲手全包）：刀B HX.chat的persist()加一行ingest钩（每次对话保存自动增量入话仓，a以【话仓答】开头不入防循环）；刀C 新增HX.hc话仓模块（挂HX.zg后）——clean去废符号/find bigram覆盖率0.5阈/ask先仓后AI（pump答存仓）/count话题数数/list/detail/del，存储hx_hc_v1索引+hx_hc_d_详情localStorage为主+壳writeFile备份，500条FIFO单答截10000字，开关hx_hc_off=1全退；配套chat v0.9.0📦浮层+发送前查仓闸。红线：除刀A版本行/刀B一行/刀C新增外全件IDENTICAL，壳/其他单体一行未动。 */ /* v0.68.0（2026-10-25 SPEC_t111阿里云当唯一真账房一期，洪老师拍板「干完为止」，DS破线+千问401自动降级Kimi亲手）：刀A mqtt连上多订hx/ver（hx_mqtt_ver_off闸）+刀B onMessageArrived截存retained牌+刀C公开口HX.mqtt.ver()；配套index v1.45.0 fetchJsonEx第①腿；ECS侧pub目录+systemd path看守hx_pub_ver.sh+ACL开hx/ver户口；红线：handleMessage白名单/其余全件IDENTICAL，壳/其余单体一行未动 */ /* v0.67.0（2026-10-25 SPEC_t107成书空章根治，洪老师真机报第1位「书传到地方内容是空的」+SOS 06:22）：putChap写LS_CHAPS成功后追加①双写IndexedDB正本xt-lib-db/chunks（键=ckey）②翻books账state未写→已写；外援DS实现，Kimi终审翻案1处（onupgradeneeded补建kv仓与xiaotao一致）亲手落地；主链返回值/histPush/rollback/写戳原有一字未动 */ /* v0.66.0（2026-10-24 SPEC_AI总管三期，洪老师拍板三条新规：废暗号/版本制/不黑箱）刀A.1 judge判令/刀A.2 findChap扩独立成书/刀A.3 addBook+addChapter/刀A.4 merge提示词改版本制；外援DS实现，Kimi终审翻案2处（judge剥围栏/src数组）亲手落地 */ /* v0.65.0 t103（2026-10-24，洪老师勾想法两条一起干，SPEC_hx-common_v0.65.0，外援双缺Kimi全包）：刀A sj面板按钮缺省下划线文字风（hx_sj_btnbox='1'回老彩底方框，想法10-21）；刀B 会诊件先存本地永不丢+闲时补传sjWzPendFlush（想法10-20，pend在=云上没有，成功清账报喜，失败静默留账）；申报点=ensureUI开关1行+CSS3行/sjWzSos先存1行/新函数/闲时1行/版本行，其余IDENTICAL */ /* v0.64.0 t102（2026-10-24，洪老师12:58真机截图报「想法输入框又顶了天」三翻同尺，SPEC_hx-common_v0.64.0，外援双缺Kimi全包）：sjKbFit换顶钉法——判定只看innerHeight-vv.height>80（不看offsetTop，X5上推模式老算法必误判），弹着钉可视区上沿top=offsetTop+8/bottom auto/maxHeight vv.height-16，收了三行还原；监听挂法/不自动focus/面板其余零件一行未动 */ /* v0.63.0 t101（2026-10-24，E1后续刀，SPEC_hx-common_v0.63.0，外援双缺Kimi全包）：刀A jbSave/jbRead三处白名单加jb_闭环实验单.json（实验单随交接班走手机层）；刀B 新增HX.syRemind开门实验提醒（开门100秒前台起跑，readJson闭环实验单.json，在途件常驻黑框🧪提醒点✕才关，一天一次hx_sy_remind_d节流，总开关hx_sy_remind_off=1，公开口status/run） */  /* v0.62.0 t100交接班闭环配套（2026-10-24，洪老师拍板闭环任务+真机报红点消不了/印记不对连发）：刀1 jbSave假账根治（桥writeFile返false不再计saved，收failed名单回执ok=false，病根=10-23_2246班push报saved=3实缺jb_交接说明.md）；刀2 三处白名单加jb_交接班记录.md；壳印记闸修复见vc69 SPEC */  /* v0.61.0 t99 AI总管二期刀F（2026-10-23，SPEC_AI总管二期，洪老师拍板「二期开工」）：HX.zg加findChap模糊找章（本地粗配+AI精配走chat.pump，AI只回行号真身本地取防编id）+dupRate重复粗筛+merge加rewrite可选参，既有七口IDENTICAL；DS实现+Kimi终审翻案1处（DS编造listBooks字段已扶正） */  /* v0.60.0 t98 AI总管一期刀B：HX.zg总管模块（书库直连读写/历史版5层/外改戳/命令识别/三步命令链走chat.pump，SPEC_AI总管一期，外援双缺Kimi亲手写） */  /* v0.59.0 t96🧪总钮一期刀1：HX.zhiban白天质检员 */  /* v0.58.0 t95值夜班套件刀3：HX.yeban值夜质检员 */  /* ── v0.53.0 2026-10-21（洪老师原话「这一版尽量把手机全量备份和对账规矩落地，保证下一个接班可以在手机本地取到文件」；合并总账t87；SPEC_hx-common_v0.53.0_套装档案柜，DS实现+Kimi终审翻案2处亲手落地：①一层l1ok双重计数翻断点续备单计②SAF四桥全返false补试写探针）：刀A新增HX.arc套装档案柜模块（开门120秒起跑过_autoNetOk闸，API列仓根三层分流，L1十四件每次必对+三层≤2MB小件每轮hx_arc_max缺省5件断点续备，逐件writeFileRel写+listFilesRel回读字节对账不等重试一次记fail，档案柜台账.json本地+仓根双写hx_arc_up防重推，总开关hx_arc_off=1，公开口status/run）；刀B mqtt白名单加arcList/arcRead两op（点名取件白名单制含..或/一律拒）；刀C版本行+版本史；红线HX.keys/air/pick/mg/store/dav/gh/bill/step/selfUp/fm/ai/sj/bb/hxToastHold/chk/chat/jc/audit/wzPoll/jbl及mqtt既有逻辑全IDENTICAL，壳/index不动） */  /* ── v0.49.0 2026-10-20（t79交班本地存取：handleMessage加jbSave/jbRead两op+HX.jbl公开口，详见文件头v0.49.0段；其余一行未动） */  /* ── v0.47.1 2026-10-20（t76刀3，洪老师真机报案「更新四遍三遍错特别是首页」配套：idxProbe侦察兵正则行首锚定，治「被注释里CUR.index=1.19.6骗住fileVer恒1.19.6、上岗以来从没跳过」病根2；配套index v1.35.0 CUR行错位扶正；其余一行未动） */
@@ -9219,6 +9219,85 @@ try {
               var _t139lit='';
               try{ _t139lit=localStorage.getItem('chat_preset_lit')||''; }catch(eLit){ _t139lit=''; }
               _t139o.lit=_t139lit;
+              /* ===== t143刀1（2026-10-29接班班 SPEC_t143 R2监视闭环云侧腿，洪老师拍板「做闭环的事」）：遥测补三键fcTail/rfTail/featTop——fc/重排细账摘要+功能使用台账随保活探针上云（病根=细账全躺手机本地云侧盲）；外援DS出稿4479tokens，Kimi终审零翻案亲手落地；hx_t143_off=1不补新键 ===== */
+              try{
+                var _t143off1='';
+                try{ _t143off1=localStorage.getItem('hx_t143_off')||''; }catch(eOff1){ _t143off1=''; }
+                if(String(_t143off1)!=='1'){
+                  var _t143fcTail='';
+                  try{
+                    if(window.HX && window.HX.fc && typeof window.HX.fc.tail==='function'){
+                      var _t143fl5=window.HX.fc.tail(5);
+                      if(_t143fl5 instanceof Array){
+                        var _t143lines=[];
+                        for(var _t143i=0;_t143i<_t143fl5.length;_t143i++){
+                          var _r=_t143fl5[_t143i]||{};
+                          var _hh='--',_mm='--';
+                          try{
+                            var _d=new Date(Number(_r.t)||0);
+                            _hh=('0'+_d.getHours()).slice(-2);
+                            _mm=('0'+_d.getMinutes()).slice(-2);
+                          }catch(eT){}
+                          var _ok=_r.ok?'ok':'FAIL';
+                          var _why=String(_r.why==null?'':_r.why).slice(0,20);
+                          _t143lines.push(_hh+':'+_mm+'|'+String(_r.kind==null?'':_r.kind)+'|'+_ok+'|'+_why);
+                        }
+                        _t143fcTail=_t143lines.join('\n');
+                        if(_t143fcTail.length>400) _t143fcTail=_t143fcTail.slice(0,400);
+                      }
+                    }
+                  }catch(eFcTail){ _t143fcTail=''; }
+                  _t139o.fcTail=_t143fcTail;
+                  var _t143rfTail='';
+                  try{
+                    if(window.HX && window.HX.fc && typeof window.HX.fc.tail==='function'){
+                      var _t143fl30=window.HX.fc.tail(30);
+                      if(_t143fl30 instanceof Array){
+                        var _t143rlines=[];
+                        for(var _t143j=0;_t143j<_t143fl30.length && _t143rlines.length<3;_t143j++){
+                          var _rr=_t143fl30[_t143j]||{};
+                          var _rk=String(_rr.kind==null?'':_rr.kind);
+                          if(_rk.indexOf('reflow')<0 && _rk.indexOf('重排')<0) continue;
+                          var _rh='--',_rm='--';
+                          try{
+                            var _rd=new Date(Number(_rr.t)||0);
+                            _rh=('0'+_rd.getHours()).slice(-2);
+                            _rm=('0'+_rd.getMinutes()).slice(-2);
+                          }catch(eT2){}
+                          var _rok=_rr.ok?'ok':'FAIL';
+                          var _rwhy=String(_rr.why==null?'':_rr.why).slice(0,20);
+                          _t143rlines.push(_rh+':'+_rm+'|'+_rk+'|'+_rok+'|'+_rwhy);
+                        }
+                        _t143rfTail=_t143rlines.join('\n');
+                        if(_t143rfTail.length>200) _t143rfTail=_t143rfTail.slice(0,200);
+                      }
+                    }
+                  }catch(eRfTail){ _t143rfTail=''; }
+                  _t139o.rfTail=_t143rfTail;
+                  var _t143featTop='';
+                  try{
+                    var _t143fu=JSON.parse(localStorage.getItem('hx_featuse_v1')||'{}');
+                    if(_t143fu && typeof _t143fu==='object'){
+                      var _t143arr=[];
+                      for(var _t143k in _t143fu){
+                        if(!Object.prototype.hasOwnProperty.call(_t143fu,_t143k)) continue;
+                        _t143arr.push({ n:_t143k, t:Number(_t143fu[_t143k])||0 });
+                      }
+                      _t143arr.sort(function(a,b){ return b.t-a.t; });
+                      var _t143top=[];
+                      for(var _t143m=0;_t143m<_t143arr.length && _t143m<5;_t143m++){
+                        var _hrs=Math.floor((Date.now()-_t143arr[_t143m].t)/3600000);
+                        if(_hrs<0) _hrs=0;
+                        _t143top.push(_t143arr[_t143m].n+':'+_hrs+'小时前');
+                      }
+                      _t143featTop=_t143top.join(',');
+                      if(_t143featTop.length>150) _t143featTop=_t143featTop.slice(0,150);
+                    }
+                  }catch(eFeatTop){ _t143featTop=''; }
+                  _t139o.featTop=_t143featTop;
+                }
+              }catch(eT143a){ /* t143刀1全程兜底，绝不影响原五键 */ }
+              /* ===== t143刀1 end ===== */
               data=JSON.stringify(_t139o);
             }
           }
@@ -12764,6 +12843,45 @@ try { (function () {
       return '起跑';
     } catch (e) { return 'err:' + e.message; }
   }
+  /* ===== t143刀3（2026-10-29接班班 SPEC_t143 R5闲置提醒，洪老师10-28拍板「两三天没用到应该提醒一下，用人话」）：读hx_featuse_v1，点名功能>=72h无用弹人话常驻黑框，一次开门一条，同件24h不重弹，提醒落fc账随刀1上云；外援DS出稿，Kimi终审翻案2处亲手落地（①弹框用本模块showToast——DS稿标拿不准hxToastHold在主闭包够不着②挂接点放boot错峰钩内run之后——DS稿说的run尾部会被gh没ready拦死）；hx_t143_off=1不检查 ===== */
+  function _r5Check() {
+    try {
+      if (localStorage.getItem('hx_t143_off') === '1') return;
+      var NAMES = ['ai', 'reflow', '话仓', '文献'];
+      var LABEL = { 'ai': 'AI问答', 'reflow': '鱼骨重排', '话仓': '话仓', '文献': '文献核' };
+      var TTL = 259200000; /* 72小时 */
+      var fu = {};
+      try { fu = JSON.parse(localStorage.getItem('hx_featuse_v1') || '{}') || {}; } catch (e1) { fu = {}; }
+      if (!fu || typeof fu !== 'object') fu = {};
+      var shown = {};
+      try { shown = JSON.parse(localStorage.getItem('hx_r5_shown_v1') || '{}') || {}; } catch (e2) { shown = {}; }
+      if (!shown || typeof shown !== 'object') shown = {};
+      var now = Date.now();
+      var cand = null;
+      for (var i = 0; i < NAMES.length; i++) {
+        var n = NAMES[i];
+        var lastT = Number(fu[n]) || 0;
+        var idle = (lastT === 0) || ((now - lastT) >= TTL);
+        if (!idle) continue;
+        var shownT = Number(shown[n]) || 0;
+        if (shownT && (now - shownT) < 86400000) continue;
+        if (!cand || lastT < cand.lastT) cand = { name: n, lastT: lastT };
+      }
+      if (!cand) return;
+      var label = LABEL[cand.name] || cand.name;
+      showToast('您要的' + label + '三天没用了，是不好用还是忘了？');
+      try {
+        shown[cand.name] = now;
+        localStorage.setItem('hx_r5_shown_v1', JSON.stringify(shown));
+      } catch (e3) {}
+      try {
+        if (window.HX && window.HX.fc && typeof window.HX.fc._pushLog === 'function') {
+          window.HX.fc._pushLog({ t: Date.now(), kind: 'sys', from: 'r5', by: '', ok: true, why: '闲置提醒:' + cand.name, inN: 0, outN: 0 });
+        }
+      } catch (e4) {}
+    } catch (e) {}
+  }
+  /* ===== t143刀3 end ===== */
   function boot() {
     try {
       if (off()) return;
@@ -12771,6 +12889,7 @@ try { (function () {
         try {
           if (document.visibilityState && document.visibilityState !== 'visible') return;
           run(false);
+          try { _r5Check(); } catch (eR5) {} /* t143刀3b：R5闲置提醒随开门钩同跑（不依赖gh.ready，独立检查） */
         } catch (e) {}
       }, 100000); /* 错峰jc60s/wzPoll90s/arc120s */
     } catch (e) {}
@@ -13105,6 +13224,25 @@ window.HX.aip = (function () {
       _writeFile(a); /* t128刀4c：账本壳双写=本地档案自动存 */
     } catch (e) {}
   }
+  /* ===== t143刀2a（SPEC_t143）：功能使用台账_featUse——账本hx_featuse_v1{功能名:时间戳}，键数>50删最久未用；记账无害不受总开关管 ===== */
+  function _featUse(name) {
+    try {
+      var KEY = 'hx_featuse_v1';
+      var obj = {};
+      try { obj = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e1) { obj = {}; }
+      if (!obj || typeof obj !== 'object') obj = {};
+      obj[String(name)] = Date.now();
+      var keys = [];
+      for (var k in obj) { if (Object.prototype.hasOwnProperty.call(obj, k)) keys.push(k); }
+      if (keys.length > 50) {
+        keys.sort(function (a, b) { return (Number(obj[a]) || 0) - (Number(obj[b]) || 0); });
+        var drop = keys.length - 50;
+        for (var i = 0; i < drop; i++) { try { delete obj[keys[i]]; } catch (e2) {} }
+      }
+      localStorage.setItem(KEY, JSON.stringify(obj));
+    } catch (e) {}
+  }
+  /* ===== t143刀2a end ===== */
   function _bbJob(name, ok, why) {
     try { if (HX && HX.bb && typeof HX.bb.job === 'function') HX.bb.job(name, !!ok, String(why || '')); } catch (e) {}
   }
@@ -13135,6 +13273,7 @@ window.HX.aip = (function () {
       HX.aip.go(sys, usr, opt, function (ok, txt, by) {
         var why = ok ? '' : String(txt || '');
         pushLog({ t: Date.now(), kind: kind, from: from, by: String(by || ''), ok: !!ok, why: why, inN: inN, outN: String(txt || '').length });
+        try { _featUse(kind); } catch (eFU) {} /* t143刀2b：功能使用台账随收发账记一笔 */
         _bbJob('fc_' + kind, ok, why);
         try { cb(ok, txt, by); } catch (e) {}
       });
@@ -13148,5 +13287,5 @@ window.HX.aip = (function () {
   function tail(n) { try { var a = loadLog(); return a.slice(Math.max(0, a.length - (n || 10))).reverse(); } catch (e) { return []; } } /* 新在前 */
   function status() { return { off: (lsGet('hx_fc_off') === '1'), n: loadLog().length }; }
   window.HX = window.HX || {};
-  window.HX.fc = { go: go, tail: tail, status: status };
+  window.HX.fc = { go: go, tail: tail, status: status, _pushLog: pushLog }; /* t143刀3a：公开_pushLog供R5闲置提醒落fc账（SPEC_t143） */
 })();
