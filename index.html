@@ -666,7 +666,7 @@ CUR.index="1.36.0"; /* v1.36.0 t83点装公共件通道，见顶部修改记录 
   CUR.index="1.37.0"; /* v1.37.0 R1装件管家腿+二轮重试，见顶部修改记录 */
 CUR.index="1.38.0"; /* v1.38.0 2026-10-21 t94资料回填哨，见顶部修改记录 */ CUR.index="1.39.0";
 CUR.index="1.40.0"; /* v1.40.0（2026-10-23 t96，洪老师回「行，开工」拍板🧪真机检验总钮一期，SPEC_真机检验总钮一期_t96，设计Kimi/DS实现刀1/Kimi亲手刀2刀3/终审Kimi）：首页常显🧪真机检验钮+弹窗三层（值班段白天2/4/8小时+收工+夜班状态／单体点名段一期=三本账过滤显示+自动点验二期／报告段红字置顶四本账）+hx-common v0.59.0 HX.zhiban白天质检员+壳vc67白天值班触发器；装件链/查新/relList/ybScore渲染/其余一行未动 */ /* v1.39.0 2026-10-22 t95值夜班套件刀4：首页🌙成绩单条，见顶部修改记录 */
-/* v1.44.0（2026-10-25 t108，洪老师真机报「该出现的时候还是没有」：主链查牌fetchJson只有GitHub双腿全断即瘫，面板/任务单全败静默吞掉，管家无信干等；刀法=fetchJsonEx加坚果云+管家原生两腿/面板任务单全败黑匣子留痕/管家90秒无信自动落legacyRun/缓存账标日期；SPEC_t108，DS实现+Kimi终审；hx_t108_off=1回退）*/ CUR.index="1.46.0"; CUR.index="1.47.0"; CUR.index="1.48.0"; CUR.index="1.49.0"; /* v1.49.0（2026-10-26 t121想法小尾巴①③落地，洪老师拍板「紧接着干」：刀1更新清单加灯行——🟢全最新/🔴有件没装上一眼灯（10-20「简化成一个灯」设想，清单保留灯在最顶）；刀2开门进度快报——每天首开门3秒弹一页：装件账hx_last_upd/夜班成绩单hx_yb_score/欠账hx_last_fail三样，✕常驻点掉，hx_kb_off=1全退（10-25「开门一页进度快报」设想）；SPEC_t121，DS实现Kimi终审零翻案亲手落地；装件链/查新/直装/版面其余一行未动）*/ /* v1.48.0（2026-10-26 t120红点装不上根治，洪老师真机报「红点点好几次装不上、关套装重开也没用」+截图「在等管家回信」：病根=t105直装段把index主界面踢在直装名单外，落老路投信管家等回信搁半路红点永在；刀法=3016行跳过条件删index让首页自己进直装链（_mgGetM三腿+sig校验+分块写壳全复用现成件），其余一行未动；SPEC_t120，DS实现一行Kimi终审零翻案亲手落地；回退闸hx_dianzhuang_off=1照旧）*/ /* v1.47.0（2026-10-25 t114浮窗AI全家上户口一期·首页户口，SPEC_t114，外援双缺Kimi亲手全包）：HX.ai.init上户口（🤖AI钮进sj面板，manifest三条=🔍检查新版本/🩺自检报告/💬找AI总管说话全指现有钮与跳转，send走HX.chat.pump，hx_hukou_off=1回退）；配套chat v0.11.0 AI总管户口；sj面板下划线收纳核验=v0.65.0已落地不再动刀（再折叠会藏起AI钮与本意相反）；查新/装件/对账/relList/版面其余一行未动 */ /* v1.46.0（2026-10-25 t109升级自己吭声，洪老师拍板「先治小红点」，SPEC_t109，外援双缺Kimi亲手）：刀1全局母本updYell（黑匣子err级留痕自动上行+hxToastHold常驻黑框点✕才关+sessionStorage防轰炸同一件同一开门只吭一次，hx_t109_off=1全退）；刀2五挂刀点（dl下载败/dlWrite写壳败/手动查牌全腿败/红点直装_dzFail/开门直装_fail两分支，每处只加一行老逻辑一字未动）；红线=除母本新增+五行调用+本行外全文件IDENTICAL */ /* v1.45.0（2026-10-25 t111阿里云当唯一真账房一期，SPEC_t111，Kimi亲手）：fetchJsonEx仅version-all.json加第①腿=HX.mqtt.ver()新鲜retained牌（<10分钟），不通/陈旧/off（hx_t111_off=1）全落t108原三腿一行未动；配套hx-common v0.68.0+ECS pub目录+hx/ver频道；查新/装件/版面其余一行未动 */ /* v1.43.0（2026-10-24晚班t105，洪老师真机报红点点装两次没反应：黑匣子实锤19:04:38红点onclick只触发reload，非hx-common件走「reload→投信管家→等回信→装件」绕手路，人离开套装页面回信没人收装件搁半路。刀法=把t83 hx-common专装通道直装模式推广到SUITE软件件：红点当场串行直装stale软件件、写账三样、黑匣子记账、全成3秒破缓存刷新；带忙闸/回退闸hx_dianzhuang_off/失败红字定格+hx_last_fail入账；index主界面stale仍走老reload路）*/ /* v1.41.0 2026-10-23（t98 AI总管一期刀A，SPEC_AI总管一期，洪老师拍板「直接开干干完为止」，外援双缺Kimi亲手写）：💬AI对话框改名「💬 AI总管」三处（卡片h2/NAME表/UNITS表），文件名AI对话框.html不动保户口；配套chat v0.7.0+hx-common v0.60.0（HX.zg总管模块）+xiaotao v0.22.0（外改戳对齐）；查新/装件/对账/relList/版面其余一行未动 */
+/* v1.44.0（2026-10-25 t108，洪老师真机报「该出现的时候还是没有」：主链查牌fetchJson只有GitHub双腿全断即瘫，面板/任务单全败静默吞掉，管家无信干等；刀法=fetchJsonEx加坚果云+管家原生两腿/面板任务单全败黑匣子留痕/管家90秒无信自动落legacyRun/缓存账标日期；SPEC_t108，DS实现+Kimi终审；hx_t108_off=1回退）*/ CUR.index="1.46.0"; CUR.index="1.47.0"; CUR.index="1.48.0"; CUR.index="1.50.0"; /* v1.50.0 真机急修：坚果云取件改原生后台优先，保留网页兜底；对牌与换腿记真实错误；其余下载、写入与回退不动 */ /* v1.49.0（2026-10-26 t121想法小尾巴①③落地，洪老师拍板「紧接着干」：刀1更新清单加灯行——🟢全最新/🔴有件没装上一眼灯（10-20「简化成一个灯」设想，清单保留灯在最顶）；刀2开门进度快报——每天首开门3秒弹一页：装件账hx_last_upd/夜班成绩单hx_yb_score/欠账hx_last_fail三样，✕常驻点掉，hx_kb_off=1全退（10-25「开门一页进度快报」设想）；SPEC_t121，DS实现Kimi终审零翻案亲手落地；装件链/查新/直装/版面其余一行未动）*/ /* v1.48.0（2026-10-26 t120红点装不上根治，洪老师真机报「红点点好几次装不上、关套装重开也没用」+截图「在等管家回信」：病根=t105直装段把index主界面踢在直装名单外，落老路投信管家等回信搁半路红点永在；刀法=3016行跳过条件删index让首页自己进直装链（_mgGetM三腿+sig校验+分块写壳全复用现成件），其余一行未动；SPEC_t120，DS实现一行Kimi终审零翻案亲手落地；回退闸hx_dianzhuang_off=1照旧）*/ /* v1.47.0（2026-10-25 t114浮窗AI全家上户口一期·首页户口，SPEC_t114，外援双缺Kimi亲手全包）：HX.ai.init上户口（🤖AI钮进sj面板，manifest三条=🔍检查新版本/🩺自检报告/💬找AI总管说话全指现有钮与跳转，send走HX.chat.pump，hx_hukou_off=1回退）；配套chat v0.11.0 AI总管户口；sj面板下划线收纳核验=v0.65.0已落地不再动刀（再折叠会藏起AI钮与本意相反）；查新/装件/对账/relList/版面其余一行未动 */ /* v1.46.0（2026-10-25 t109升级自己吭声，洪老师拍板「先治小红点」，SPEC_t109，外援双缺Kimi亲手）：刀1全局母本updYell（黑匣子err级留痕自动上行+hxToastHold常驻黑框点✕才关+sessionStorage防轰炸同一件同一开门只吭一次，hx_t109_off=1全退）；刀2五挂刀点（dl下载败/dlWrite写壳败/手动查牌全腿败/红点直装_dzFail/开门直装_fail两分支，每处只加一行老逻辑一字未动）；红线=除母本新增+五行调用+本行外全文件IDENTICAL */ /* v1.45.0（2026-10-25 t111阿里云当唯一真账房一期，SPEC_t111，Kimi亲手）：fetchJsonEx仅version-all.json加第①腿=HX.mqtt.ver()新鲜retained牌（<10分钟），不通/陈旧/off（hx_t111_off=1）全落t108原三腿一行未动；配套hx-common v0.68.0+ECS pub目录+hx/ver频道；查新/装件/版面其余一行未动 */ /* v1.43.0（2026-10-24晚班t105，洪老师真机报红点点装两次没反应：黑匣子实锤19:04:38红点onclick只触发reload，非hx-common件走「reload→投信管家→等回信→装件」绕手路，人离开套装页面回信没人收装件搁半路。刀法=把t83 hx-common专装通道直装模式推广到SUITE软件件：红点当场串行直装stale软件件、写账三样、黑匣子记账、全成3秒破缓存刷新；带忙闸/回退闸hx_dianzhuang_off/失败红字定格+hx_last_fail入账；index主界面stale仍走老reload路）*/ /* v1.41.0 2026-10-23（t98 AI总管一期刀A，SPEC_AI总管一期，洪老师拍板「直接开干干完为止」，外援双缺Kimi亲手写）：💬AI对话框改名「💬 AI总管」三处（卡片h2/NAME表/UNITS表），文件名AI对话框.html不动保户口；配套chat v0.7.0+hx-common v0.60.0（HX.zg总管模块）+xiaotao v0.22.0（外改戳对齐）；查新/装件/对账/relList/版面其余一行未动 */
 CUR.tuomin="0"; /* v1.19.10修404：CUR=壳内已装版本，单体手机还没装必须填"0"才会下载（CUR.ppt同款老坑，见230行） */ /* v1.19.8（2026-09-20班⑮，洪老师真机报"升级说装成功主界面还是19.6，几次都这样，没重启应该直接变19.7"）病根=班⑮发v1.19.7时新赋值插在同一行旧赋值前面，CUR.index="1.19.7"刚赋上就被同行的CUR.index="1.19.6"盖回→页脚活字永远亮1.19.6（文件真身早是新版，升级链/壳全无辜，大管家0.54.5上机为证）；还连带v1.19.5刀2开门自校对误把账本1.19.7当谎回滚→每次都提示重装。治=删同行可执行旧赋值（注释留档）+升号v1.19.8让真机重新下载。其余一行未动 */
 try{document.getElementById("ftVer").textContent=CUR.index;}catch(eF){} /* v1.19.6 页脚死字改活字：ftVer亮CUR.index真身 */
 /* 已自动更新过的版本记在本机，刷新后不用重查重换（踩坑：CUR是写死的，不记住就会每次打开都重复更新） */
@@ -1105,7 +1105,7 @@ function hxMd5_16M(txt){
 }
 function _mgGetM(name, sig){
   function _sigChkM(txt){
-    if(sig){ if(hxMd5_16M(txt)!==sig) throw new Error('sig不符'); }
+    if(sig){ var _actual=hxMd5_16M(txt); if(_actual!==sig) throw new Error('sig不符 期望:'+sig+' 实际:'+_actual); }
     return txt;
   }
   function _legGhM(){
@@ -1142,24 +1142,40 @@ function _mgGetM(name, sig){
       return r.text();
     });
   }
-  function _legDavM(){
+  function _legDavM(){ /* v1.50.0：坚果云腿原生后台优先，绕开网页跨域；临时件不碰本体，成功失败都清理 */
     var dk=null; try{ dk=(window.HX&&HX.keys&&HX.keys.dav)?HX.keys.dav():null; }catch(e){}
-    if(!dk||!dk.user) throw new Error('无dav');
-    var u='https://dav.jianguoyun.com/dav/'+encodeURIComponent('学习套装备份')+'/'+encodeURIComponent(name)+'?t='+Date.now();
-    return Promise.race([fetch(u,{headers:{Authorization:'Basic '+btoa(dk.user+':'+(dk.pass||''))},cache:'no-store'}).then(function(r){
-      if(!r.ok) throw new Error('HTTP '+r.status);
-      return r.text();
-    }), new Promise(function(_,rej){ setTimeout(function(){ rej(new Error("坚果云腿60秒超时")); }, 60000); })]);
+    var _tmp='_mgTmp_'+Date.now()+'_'+Math.random().toString(36).slice(2)+'_'+String(name).replace(/[^A-Za-z0-9_.-]/g,'_');
+    function _cleanTmp(){ try{ if(window.LearnShell&&typeof LearnShell.deleteFile==='function') LearnShell.deleteFile(_tmp); }catch(eC){} }
+    function _webDav(){
+      if(!dk||!dk.user) return Promise.reject(new Error('无dav'));
+      var u='https://dav.jianguoyun.com/dav/'+encodeURIComponent('学习套装备份')+'/'+encodeURIComponent(name)+'?t='+Date.now();
+      return Promise.race([fetch(u,{headers:{Authorization:'Basic '+btoa(dk.user+':'+(dk.pass||''))},cache:'no-store'}).then(function(r){
+        if(!r.ok) throw new Error('HTTP '+r.status);
+        return r.text();
+      }), new Promise(function(_,rej){ setTimeout(function(){ rej(new Error('坚果云腿60秒超时')); }, 60000); })]);
+    }
+    var _native=false; try{ _native=!!(window.HX&&HX.dav&&typeof HX.dav.downFile==='function'); }catch(eN0){}
+    if(_native){
+      return HX.dav.downFile('/学习套装备份/'+name,_tmp).then(function(txt){
+        _cleanTmp();
+        if(txt===null||typeof txt==='undefined') throw new Error('原生下载没取到件');
+        return txt;
+      },function(eN){ _cleanTmp(); throw eN; }).catch(function(eNative){
+        try{ if(window.HX&&HX.bb&&HX.bb.log) HX.bb.log('note','装件坚果云原生腿转网页腿:'+name+' 因:'+((eNative&&eNative.message)||eNative)); }catch(eLN){}
+        return _webDav();
+      });
+    }
+    return _webDav();
   }
   function _passM(){ /* v1.37.0 R1刀A2：五腿一轮（网页GitHub→管家GitHub→网页坚果云→管家公开站→网页公开站），逐腿过_sigChkM */
     return _legGhM().then(_sigChkM).catch(function(e1){
-      try{ if(window.HX&&HX.bb&&HX.bb.log) HX.bb.log('note','装件换腿:'+name+' GitHub不通走管家腿'); }catch(eL1){}
+      try{ if(window.HX&&HX.bb&&HX.bb.log) HX.bb.log('note','装件换腿:'+name+' GitHub不通走管家腿 因:'+((e1&&e1.message)||e1)); }catch(eL1){}
       return _legMgGhM().then(_sigChkM).catch(function(e1b){
-        try{ if(window.HX&&HX.bb&&HX.bb.log) HX.bb.log('note','装件换腿:'+name+' 管家腿不通走坚果云'); }catch(eL1b){}
+        try{ if(window.HX&&HX.bb&&HX.bb.log) HX.bb.log('note','装件换腿:'+name+' 管家腿不通走坚果云 因:'+((e1b&&e1b.message)||e1b)); }catch(eL1b){}
         return _legDavM().then(_sigChkM).catch(function(e2){
-          try{ if(window.HX&&HX.bb&&HX.bb.log) HX.bb.log('note','装件换腿:'+name+' 坚果云不通走管家公开站'); }catch(eL2){}
+          try{ if(window.HX&&HX.bb&&HX.bb.log) HX.bb.log('note','装件换腿:'+name+' 坚果云不通走管家公开站 因:'+((e2&&e2.message)||e2)); }catch(eL2){}
           return _legMgRawM().then(_sigChkM).catch(function(e2b){
-            try{ if(window.HX&&HX.bb&&HX.bb.log) HX.bb.log('note','装件换腿:'+name+' 管家公开站不通走网页公开站'); }catch(eL2b){}
+            try{ if(window.HX&&HX.bb&&HX.bb.log) HX.bb.log('note','装件换腿:'+name+' 管家公开站不通走网页公开站 因:'+((e2b&&e2b.message)||e2b)); }catch(eL2b){}
             return hxRawGet(name).then(_sigChkM);
           });
         });
@@ -1168,9 +1184,9 @@ function _mgGetM(name, sig){
   }
   /* v1.37.0 R1刀A2：首轮全败=多半是网络抖一下，歇20秒再跑一轮（只补一轮不无限重试，治GitHub偶断） */
   return _passM().catch(function(eAll){
-    try{ if(window.HX&&HX.bb&&HX.bb.log) HX.bb.log('note','装件首轮全败歇20秒再试:'+name); }catch(eN){}
+    try{ if(window.HX&&HX.bb&&HX.bb.log) HX.bb.log('note','装件首轮全败歇20秒再试:'+name+' 因:'+((eAll&&eAll.message)||eAll)); }catch(eN){}
     return new Promise(function(res){ setTimeout(res,20000); }).then(function(){ return _passM(); }).catch(function(e3){
-      try{ if(window.HX&&HX.bb&&HX.bb.log) HX.bb.log('err','装件五腿两轮全败:'+name); }catch(eL3){}
+      try{ if(window.HX&&HX.bb&&HX.bb.log) HX.bb.log('err','装件五腿两轮全败:'+name+' 因:'+((e3&&e3.message)||e3)); }catch(eL3){}
       throw e3;
     });
   });
