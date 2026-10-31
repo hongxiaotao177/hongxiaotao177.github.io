@@ -1,1 +1,8 @@
-{"key":"hx-common","version":"0.88.2","dl":"hx-common.js","sig":"4517ec075def6fea","t":1793358264893}
+{
+ "key": "hx-common",
+ "version": "0.88.3",
+ "dl": "hx-common.js",
+ "sig": "7e3a43a3e3d3d929",
+ "t": 1793424993003,
+ "note": "求救在GitHub没钥匙、失败或异常时走坚果云原生后台补传；成功才清待传账"
+}
