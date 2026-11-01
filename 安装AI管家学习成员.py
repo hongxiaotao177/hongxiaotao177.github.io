@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """AI管家学习成员发布件核验脚本。
 
-只读公开网页，不保存也不接受任何钥匙。套装内的真实安装仍由首页原有
-查牌、下载、写壳、回读链完成；本脚本用于发布后的机器复核。
+只读公开网页；网页不通时改读公开仓，不保存也不接受任何钥匙。套装内的
+真实安装仍由首页原有查牌、下载、写壳、回读链完成；本脚本用于发布后的机器复核。
 """
 from __future__ import annotations
 
+import base64
 import hashlib
 import json
 import re
@@ -13,6 +14,7 @@ import sys
 from urllib.request import Request, urlopen
 
 BASE = "https://hongxiaotao177.github.io/"
+API = "https://api.github.com/repos/hongxiaotao177/hongxiaotao177.github.io/contents/"
 FILES = {
     "index": "index.html",
     "aimanager": "software-aimanager.html",
@@ -24,11 +26,21 @@ FILES = {
 
 
 def fetch(path: str) -> bytes:
-    req = Request(BASE + path, headers={"Cache-Control": "no-cache", "User-Agent": "suit-install-check"})
-    with urlopen(req, timeout=30) as response:
-        if response.status != 200:
-            raise RuntimeError(f"下载失败：{path}，状态{response.status}")
-        return response.read()
+    headers = {"Cache-Control": "no-cache", "User-Agent": "suit-install-check"}
+    try:
+        with urlopen(Request(BASE + path, headers=headers), timeout=30) as response:
+            if response.status != 200:
+                raise RuntimeError(f"下载失败：{path}，状态{response.status}")
+            return response.read()
+    except Exception as web_error:
+        print(f"公开网页暂不可读，改从公开仓核对：{path}")
+        try:
+            api_headers = dict(headers, Accept="application/vnd.github+json")
+            with urlopen(Request(API + path + "?ref=main", headers=api_headers), timeout=30) as response:
+                payload = json.loads(response.read())
+            return base64.b64decode(payload["content"])
+        except Exception as api_error:
+            raise RuntimeError(f"公开网页和公开仓均读取失败：{path}；{web_error}；{api_error}") from api_error
 
 
 def signature(data: bytes) -> str:
