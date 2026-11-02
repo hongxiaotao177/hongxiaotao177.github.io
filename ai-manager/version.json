@@ -1,0 +1,15 @@
+{
+  "name": "新AI管家功能网页",
+  "version": "1.3.0",
+  "versionName": "1.3.0",
+  "releasedAt": "2026-11-02T12:13:33+08:00",
+  "note": "首页亮版本，自动查新，更新写后回读，逐版历史可见；失败保留原因，旧缓存不盖新包。",
+  "web": {
+    "file": "index.html",
+    "bytes": 40439,
+    "md5": "cd199df056101b4f403f9070040bdab6",
+    "sha256": "2cb00440990607cff8af86762186394db03795274c0efc74a6b3b8a3a8b21f03"
+  },
+  "history": "releases.json",
+  "updateScope": "仅功能网页；安卓安装包仍需同签名覆盖安装"
+}
