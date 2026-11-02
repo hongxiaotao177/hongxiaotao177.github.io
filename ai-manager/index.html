@@ -4,7 +4,7 @@
 <script>
 /* 2026-11-02 版本可见与自动升级：只应用比当前运行版新的已校验缓存，旧缓存不得盖新包。 */
 (function(){try{
- window.__APP_VERSION__='1.4.0';
+ window.__APP_VERSION__='1.4.1';
  var raw=localStorage.getItem('aimanager_web_update_v1');if(!raw)return;
  var u=JSON.parse(raw);if(!u||u.validated!==true||!u.html||!u.version)return;
  function cmp(a,b){var x=String(a).split('.'),y=String(b).split('.'),n=Math.max(x.length,y.length);for(var i=0;i<n;i++){var p=parseInt(x[i]||'0',10)||0,q=parseInt(y[i]||'0',10)||0;if(p!==q)return p>q?1:-1;}return 0;}
@@ -24,7 +24,7 @@
 <body>
 <header class="top"><button id="historyBtn" aria-label="历史对话">历史</button><h1>AI管家</h1><button id="newBtn">新问话</button></header>
 <main class="wrap">
-<div class="version-strip"><button id="versionBtn" aria-label="查看版本与更新历史">当前版本 <span id="currentVersion">1.4.0</span></button><span id="updateStatus" class="update-status waiting">准备检查新版本</span></div>
+<div class="version-strip"><button id="versionBtn" aria-label="查看版本与更新历史">当前版本 <span id="currentVersion">1.4.1</span></button><span id="updateStatus" class="update-status waiting">准备检查新版本</span></div>
 <div class="notice">问话后用系统长按选好文字，再点下方“用所选文字”。脑图自动生长；对话仓库里的书只在您点“整理成书”后生成。</div>
 <section id="askPage">
   <div class="composer"><textarea id="question" placeholder="把您要问的话写在这里" aria-label="问话"></textarea><div class="sendline"><select id="preset" aria-label="提示词"></select><button id="sendBtn" class="primary">发送</button></div></div>
@@ -43,16 +43,17 @@
 <script src="updater.js"></script>
 <script>
 (function(){
-if(window.__CACHED_WEB_UPDATE__){try{
+if(window.__CACHED_WEB_UPDATE__){var previousVersion=window.__APP_VERSION__;try{
  var u=window.__CACHED_WEB_UPDATE__,doc=new DOMParser().parseFromString(u.html,'text/html'),code='';
+ try{localStorage.setItem('aimanager_update_boot_v1',JSON.stringify({version:u.version,stage:'接管开始',at:Date.now()}));}catch(e){}
  doc.querySelectorAll('script').forEach(function(s){if(!s.src&&s.textContent.indexOf("var STORE='aimanager_learning_state_v1'")>=0)code=s.textContent;});
  if(!code)throw new Error('cached_main_missing');
  var st=doc.querySelector('style');if(st){var old=document.querySelector('style');if(old)old.textContent=st.textContent;}
  document.body.innerHTML=doc.body.innerHTML;window.__APP_VERSION__=u.version;window.__CACHED_WEB_UPDATE__=null;(0,eval)(code);return;
-}catch(e){try{console.error('缓存更新接管失败',e);localStorage.removeItem('aimanager_web_update_v1');}catch(e2){}location.reload();return;}}
+}catch(e){var failure={version:u&&u.version||'',error:String(e.message||e).slice(0,160),at:Date.now()};window.__UPDATE_TAKEOVER_ERROR__=failure;window.__APP_VERSION__=previousVersion;window.__CACHED_WEB_UPDATE__=null;try{console.error('缓存更新接管失败',e);localStorage.setItem('aimanager_update_takeover_error_v1',JSON.stringify(failure));localStorage.removeItem('aimanager_web_update_v1');}catch(e2){}}}
 (function(){
 'use strict';
-var STORE='aimanager_learning_state_v1', VERSION=window.__APP_VERSION__||'1.4.0';
+var STORE='aimanager_learning_state_v1', VERSION=window.__APP_VERSION__||'1.4.1';
 var state={chats:[],currentId:'',books:[],presets:[]}, tab='ask', busy=false, bookBusy=false, migrated=false;
 var glowRegistry={}, glowSeq=0, mapSeq={}, nativeSelection=null, pendingNative=null;
 function $(id){return document.getElementById(id);}
@@ -156,7 +157,7 @@ function bind(){ $('sendBtn').onclick=sendFromInput;$('versionBtn').onclick=open
  });
  document.addEventListener('selectionchange',captureNativeSelection);
 }
-function init(){state=loadState();bind();if(migrated){try{saveState();logAct('旧管家问话已接回',true,{chats:state.chats.length});}catch(e){showToast('旧问话已接回，但保存未完全成功。');}}renderAll();logAct('学习成员打开',undefined,{version:VERSION,chats:state.chats.length});var restored=0;state.chats.forEach(function(c){restored+=c.annotations.filter(function(a){return a.nativeSelection&&a.status==='done';}).length;});if(restored){var badges=document.querySelectorAll('.selection-badge').length;logAct('原生选字重开恢复',badges>0,{count:restored,badges:badges});}if(window.Standalone)Standalone.init();if(window.AppUpdater)AppUpdater.init(VERSION);}
+function init(){state=loadState();bind();if(migrated){try{saveState();logAct('旧管家问话已接回',true,{chats:state.chats.length});}catch(e){showToast('旧问话已接回，但保存未完全成功。');}}renderAll();logAct('学习成员打开',undefined,{version:VERSION,chats:state.chats.length});var restored=0;state.chats.forEach(function(c){restored+=c.annotations.filter(function(a){return a.nativeSelection&&a.status==='done';}).length;});if(restored){var badges=document.querySelectorAll('.selection-badge').length;logAct('原生选字重开恢复',badges>0,{count:restored,badges:badges});}if(window.Standalone)Standalone.init();if(window.AppUpdater)AppUpdater.init(VERSION);if(window.Standalone){try{var boot=JSON.parse(localStorage.getItem('aimanager_update_boot_v1')||'null');if(boot&&boot.version===VERSION){Standalone.logStep('update_takeover_success',{target:VERSION});localStorage.removeItem('aimanager_update_boot_v1');}}catch(e){}}}
 window.__LEARNING_TEST__={getState:function(){return state;},setState:function(s){state=normalize(s);renderAll();},relay:relay,validateMap:validateMap,parseJsonText:parseJsonText,cleanText:cleanText,splitRefs:splitRefs,saveState:saveState,updateMap:updateMap,executeMessage:executeMessage,makeBook:makeBook,registerGlow:registerGlow,captureNativeSelection:captureNativeSelection,getNativeSelection:function(){return nativeSelection;}};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
